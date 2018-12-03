@@ -1,0 +1,11 @@
+language: python
+python:
+- "3.6"
+install:
+- pip install -r requirements.txt
+- pip install codacy-coverage
+- export CODACY_PROJECT_TOKEN=27cb3d8443544bfaac70140a0eff7650
+script:
+- pytest poptimizer -v --cov=poptimizer --cov-report=term-missing --cov-report=xml --setup-show
+after_success:
+- python-codacy-coverage -r coverage.xml
