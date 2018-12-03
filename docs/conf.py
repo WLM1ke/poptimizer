@@ -7,13 +7,13 @@ _start_year = 2018
 _description = "Оптимизация долгосрочного портфеля акций"
 _badges = [
     {
-        "image": "https://api.codacy.com/project/badge/Coverage/363c10e1d85b404882326cf62b78f25c",
+        "image": "https://api.codacy.com/project/badge/Coverage/209b56c013ae40cdbbb3843e0570f422",
         "target": "https://app.codacy.com/project/wlmike/poptimizer/dashboard",
         "height": "20",
         "alt": "Code coverage status",
     },
     {
-        "image": "https://api.codacy.com/project/badge/Grade/363c10e1d85b404882326cf62b78f25c",
+        "image": "https://api.codacy.com/project/badge/Grade/209b56c013ae40cdbbb3843e0570f422",
         "target": "https://app.codacy.com/project/wlmike/poptimizer/dashboard",
         "height": "20",
         "alt": "Code quality status",

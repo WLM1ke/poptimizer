@@ -5,7 +5,7 @@ import sys
 import setuptools
 
 name = "poptimizer"
-description="Оптимизация долгосрочного портфеля акций"
+description = "Оптимизация долгосрочного портфеля акций"
 python_minimal = "3.6"
 status = "Development Status :: 3 - Alpha"
 
@@ -49,6 +49,6 @@ setuptools.setup(
     keywords="robust portfolio optimization risk-management machine-learning moex dividends",
     project_urls={"Source": f"https://github.com/WLM1ke/{name}"},
     packages=setuptools.find_packages(exclude=["*.tests"]),
-    install_requires=["aiomoex"],
+    install_requires=["aiomoex", "pandas"],
     python_requires=f">={python_minimal}",
 )
