@@ -1,4 +1,6 @@
 pytest
-aiomoex
+pytest-cov
+
 pandas
 numpy
+aiomoex
