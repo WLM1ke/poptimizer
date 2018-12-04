@@ -32,16 +32,18 @@ def test_db_closed():
 def test_put():
     with store.DataStore() as db:
         db["aa"] = 1
-        assert db._env.stat()["entries"] == 1
+        assert db.stat()["entries"] == 1
+
         db["b"] = 2
-        assert db._env.stat()["entries"] == 2
+        assert db.stat()["entries"] == 2
+
         db["aa", "first"] = 3
-        assert db._env.stat()["entries"] == 3
+        assert db.stat()["entries"] == 3
+        assert db.stat("first")["entries"] == 1
+
         db["b", "first"] = 4
-        assert db._env.stat()["entries"] == 3
-        sub_db = db._env.open_db("first".encode())
-        with db._env.begin() as txn:
-            assert txn.stat(sub_db)["entries"] == 2
+        assert db.stat()["entries"] == 3
+        assert db.stat("first")["entries"] == 2
 
 
 def test_get():
@@ -50,8 +52,7 @@ def test_get():
         assert db["b"] == 2
         assert db["aa", "first"] == 3
         assert db["b", "first"] == 4
+
         db["c"] = 3
-        assert db._env.stat()["entries"] == 4
-        sub_db = db._env.open_db("first".encode())
-        with db._env.begin() as txn:
-            assert txn.stat(sub_db)["entries"] == 2
+        assert db.stat()["entries"] == 4
+        assert db.stat("first")["entries"] == 2

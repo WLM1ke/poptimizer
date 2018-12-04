@@ -87,3 +87,23 @@ class DataStore(AbstractContextManager):
         with self._env.begin(write=True, buffers=True) as txn:
             db = self._category_db(category, txn)
             txn.put(key.encode(), raw_value, db=db)
+
+    def stat(self, category: Optional[str] = None):
+        """Статистические данные базы для категории
+
+        :param category:
+            Категория. None - категория по умолчанию.
+        :return:
+            Статистика в виде словаря:
+
+            * psize	- размер страницы базыSize of a database page in bytes.
+            * depth	- глубина B-деревьев.
+            * branch_pages - количество внутренних страниц.
+            * leaf_pages - количество листовых страниц.
+            * overflow_pages - количество страниц с переполнением.
+            * entries	- количество сохраненных данных.
+
+        """
+        with self._env.begin() as txn:
+            db = self._category_db(category, txn)
+            return txn.stat(db)
