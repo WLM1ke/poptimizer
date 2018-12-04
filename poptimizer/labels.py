@@ -1,12 +1,4 @@
-"""Основные метки данных"""
-import enum
+"""Метки используемые для специальных полей в данных"""
 
-
-class Labels(enum.Enum):
-    """Метки используемые для специальных полей в данных"""
-
-    CASH = "CASH"
-    PORTFOLIO = "PORTFOLIO"
-
-    def __str__(self):
-        return self.value
+CASH = "CASH"
+PORTFOLIO = "PORTFOLIO"

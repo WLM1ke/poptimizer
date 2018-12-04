@@ -1,9 +1,12 @@
 """Реализация класса портфеля"""
 from typing import Dict, Optional
 
+import numpy as np
 import pandas as pd
 
-from poptimizer.labels import Labels
+from poptimizer import POptimizerError, CASH, PORTFOLIO
+from poptimizer.config import TURNOVER_CUT_OFF, TURNOVER_PERIOD
+from poptimizer.data import moex
 
 
 class Portfolio:
@@ -34,31 +37,35 @@ class Portfolio:
         self._date = date
         self._shares = pd.Series(positions)
         self._shares.sort_index(inplace=True)
-        self._shares[Labels.CASH] = cash
-        self._shares[Labels.PORTFOLIO] = 1
-        if value:
-            pass  # TODO
+        self._shares[CASH] = cash
+        self._shares[PORTFOLIO] = 1
+        if not np.isclose(self.value[PORTFOLIO], value):
+            raise POptimizerError(
+                f"Введенная стоимость портфеля {value} "
+                f"не равна расчетной {self.value[PORTFOLIO]}"
+            )
 
     def __str__(self):
         df = pd.concat(
             [
                 self.lot_size,
-                self.lots,
+                self.shares,
                 self.price,
                 self.value,
-                self.weight,
-                self.volume_factor,
+                self.weights,
+                self.turnover_factor,
             ],
             axis="columns",
         )
-        df.columns = ["LOT_SIZE", "LOTS", "PRICE", "VALUE", "WEIGHT", "VOLUME"]
-        return f"\nПОРТФЕЛЬ" f"\n" f"\nДата - {self._date}" f"\n" f"\n{df}"
+        df.columns = ["LOT_SIZE", "SHARES", "PRICE", "VALUE", "WEIGHT", "VOLUME"]
+        return f"\nПОРТФЕЛЬ\n\nДата - {self._date}\n\n{df}"
 
     @property
     def date(self):
         """Отчетная дата портфеля"""
         return self._date
 
+    @property
     def index(self):
         """Общий индекс всех характеристик портфеля - перечень позиций, включая CASH и PORTFOLIO"""
         return self.shares.index
@@ -76,7 +83,8 @@ class Portfolio:
 
         CASH и PORTFOLIO - 1
         """
-        pass  # TODO
+        lot_size = moex.lot_size(tuple(self.index[:-2]))
+        return lot_size.reindex(self.index, fill_value=1)
 
     @property
     def lots(self):
@@ -87,34 +95,44 @@ class Portfolio:
         return self.shares / self.lot_size
 
     @property
-    def prices(self):
+    def price(self):
         """Цены позиций
 
         CASH - 1 и PORTFOLIO - расчетная стоимость
         """
-        pass  # TODO
+        price = moex.prices(self.date, tuple(self.index[:-2]))
+        price = price.loc[self.date]
+        price[CASH] = 1
+        price[PORTFOLIO] = (self.shares[:-1] * price).sum(axis=0)
+        return price
 
     @property
     def value(self):
         """Стоимость позиций"""
-        return self.prices * self.shares
+        return self.price * self.shares
 
     @property
-    def weight(self):
+    def weights(self):
         """Доли позиций
 
         PORTFOLIO - 1
         """
         value = self.value
-        return value / value[Labels.PORTFOLIO]
+        return value / value[PORTFOLIO]
 
     @property
-    def volume_factor(self):
+    def turnover_factor(self):
         """Понижающий коэффициент для акций с малым объемом оборотов
 
         Ликвидность в первом приближении убывает пропорционально квадрату оборота
         """
-        pass  # TODO
+        last_turnover = moex.turnovers(self.date, tuple(self.index[:-2]))
+        last_turnover = last_turnover.iloc[-TURNOVER_PERIOD:]
+        last_turnover = last_turnover.sum(axis=0)
+        turnover_share_of_portfolio = last_turnover / self.value[PORTFOLIO]
+        turnover_factor = 1 - (TURNOVER_CUT_OFF / turnover_share_of_portfolio) ** 2
+        turnover_factor[turnover_factor < 0] = 0
+        return turnover_factor.reindex(self.index, fill_value=1)
 
 
 if __name__ == "__main__":
