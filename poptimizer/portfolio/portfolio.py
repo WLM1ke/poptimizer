@@ -128,7 +128,7 @@ class Portfolio:
         """
         last_turnover = moex.turnovers(self.date, tuple(self.index[:-2]))
         last_turnover = last_turnover.iloc[-TURNOVER_PERIOD:]
-        last_turnover = last_turnover.sum(axis=0)
+        last_turnover = last_turnover.median(axis=0)
         turnover_share_of_portfolio = last_turnover / self.value[PORTFOLIO]
         turnover_factor = 1 - (TURNOVER_CUT_OFF / turnover_share_of_portfolio) ** 2
         turnover_factor[turnover_factor < 0] = 0

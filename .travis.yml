@@ -3,9 +3,8 @@ python:
 - "3.6"
 install:
 - pip install -r requirements.txt
-- pip install codacy-coverage
-- export CODACY_PROJECT_TOKEN=8b3055820eb7471b92157745cd835794
+- pip install codecov
 script:
-- pytest poptimizer -v --cov=poptimizer --cov-report=term-missing --cov-report=xml --setup-show
+  - pytest poptimizer -v --cov=poptimizer --cov-report=term-missing --setup-show
 after_success:
-- python-codacy-coverage -r coverage.xml
+  - codecov

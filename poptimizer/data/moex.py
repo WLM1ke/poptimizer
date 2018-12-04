@@ -2,6 +2,10 @@
 import pandas as pd
 
 
+def securities_info():
+    pass
+
+
 def lot_size(tickers: tuple):
     """Размер лотов для указанных акций
 
@@ -10,7 +14,8 @@ def lot_size(tickers: tuple):
     :return:
         Размеры лотов
     """
-    pass  # TODO
+    securities = securities_info()
+    return securities.loc[list[tickers], "LOTSIZE"]
 
 
 def prices(last_date: pd.Timestamp, tickers: tuple):
