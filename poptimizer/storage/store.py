@@ -1,24 +1,35 @@
-"""Хранилище локальных данных"""
+"""Хранилище локальных данных."""
 import pickle
 from contextlib import AbstractContextManager
-from typing import Any
+from typing import Any, Optional
 
 import lmdb
 
 from poptimizer import config
 
 LMDB_SUBDIR = "lmdb"
-# Максимальное число вложенных баз - в иделае должно вычисляться по количеству типов данных
+# Предельный размер базы в байтах
+MAX_DB_SIZE = 20 * 2 ** 20
+# Максимальное число вложенных баз - в идеале должно вычисляться по количеству типов данных
 MAX_DBS = 2  # TODO: Переделать на автоматическое вычисление
 
 
-class DataStore(
-    AbstractContextManager
-):  # TODO: после использования посмотреть статистику базы
-    """Сохраняет/загружает значение для указанноых наименования и категории данных"""
+class DataStore(AbstractContextManager):
+    """Сохраняет/загружает значение для указанного ключа и категории.
+
+    Для каждого ключа можно сохранить несколько категорий значений ds[key, category]. Возможно сохранение
+    значения без категории ds[key].
+
+    Хранилище должно быть закрыто после использования методом close. Поддерживается автоматическое
+    закрытие с помощью протокола контекстного менеджера. Если предполагается несколько операций,
+    то для повышения скорости их следует осуществлять в рамках одной сессии, а не открывать/закрывать
+    после каждой операции.
+    """
 
     def __init__(self):
-        self._env = lmdb.open(str(config.DATA_PATH / LMDB_SUBDIR), max_dbs=MAX_DBS)
+        self._env = lmdb.open(
+            str(config.DATA_PATH / LMDB_SUBDIR), map_size=MAX_DB_SIZE, max_dbs=MAX_DBS
+        )
 
     def __enter__(self):
         return self
@@ -27,10 +38,15 @@ class DataStore(
         self.close()
 
     def __setitem__(self, key, value):
-        self.put(*key, value)
+        if isinstance(key, tuple):
+            self.put(key[0], value, key[1])
+        else:
+            self.put(key, value)
 
     def __getitem__(self, key):
-        return self.get(*key)
+        if isinstance(key, tuple):
+            return self.get(*key)
+        return self.get(key)
 
     def close(self):
         """Закрывает хранилище данных"""
@@ -42,32 +58,32 @@ class DataStore(
             return self._env.open_db(txn=txn, dupsort=False)
         return self._env.open_db(category.encode(), txn=txn, dupsort=False)
 
-    def get(self, category: str, name: str):
+    def get(self, key: str, category: Optional[str] = None):
         """Получить данные из хранилища
 
+        :param key:
+            Ключ
         :param category:
-            Категория данных
-        :param name:
-            Наименование данных
+            Необязательная категория
         :return:
-            Исходные данные
+            Значение
         """
-        with self._env.begin() as txn:
+        with self._env.begin(buffers=True) as txn:
             db = self._category_db(category, txn)
-            raw_value = txn.get(name.encode(), db=db)
+            raw_value = txn.get(key.encode(), db=db)
         return pickle.loads(raw_value)
 
-    def put(self, category: str, name: str, value: Any):
-        """Поместить данные в хранилищке
+    def put(self, key: str, value: Any, category: Optional[str] = None):
+        """Поместить данные в хранилище
 
+        :param key:
+            Ключ
         :param category:
-            Категория данных
-        :param name:
-            Наименование данных
+            Необязательная категория
         :param value:
             Данные
         """
         raw_value = pickle.dumps(value)
-        with self._env.begin(write=True) as txn:
+        with self._env.begin(write=True, buffers=True) as txn:
             db = self._category_db(category, txn)
-            txn.put(name.encode(), raw_value, db=db)
+            txn.put(key.encode(), raw_value, db=db)

@@ -1,7 +1,13 @@
 pytest
 pytest-cov
 
+sphinx
+sphinxcontrib-asyncio
+aiohttp_theme
+
 pandas
 numpy
+
 lmdb
+
 aiomoex

@@ -18,7 +18,7 @@ def fake_data_path(make_temp_dir, monkeypatch):
 
 
 def test_context_manager():
-    assert isinstance(store.DataStore(), AbstractContextManager)
+    assert issubclass(store.DataStore, AbstractContextManager)
 
 
 def test_db_closed():
@@ -31,21 +31,27 @@ def test_db_closed():
 
 def test_put():
     with store.DataStore() as db:
-        db[None, "a"] = 1
+        db["aa"] = 1
         assert db._env.stat()["entries"] == 1
-        db[None, "b"] = 2
+        db["b"] = 2
         assert db._env.stat()["entries"] == 2
-        db["first", "a"] = 3
+        db["aa", "first"] = 3
         assert db._env.stat()["entries"] == 3
-        db["first", "b"] = 4
+        db["b", "first"] = 4
         assert db._env.stat()["entries"] == 3
+        sub_db = db._env.open_db("first".encode())
+        with db._env.begin() as txn:
+            assert txn.stat(sub_db)["entries"] == 2
 
 
 def test_get():
     with store.DataStore() as db:
-        assert db[None, "a"] == 1
-        assert db[None, "b"] == 2
-        assert db["first", "a"] == 3
-        assert db["first", "b"] == 4
-        db[None, "c"] = 3
+        assert db["aa"] == 1
+        assert db["b"] == 2
+        assert db["aa", "first"] == 3
+        assert db["b", "first"] == 4
+        db["c"] = 3
         assert db._env.stat()["entries"] == 4
+        sub_db = db._env.open_db("first".encode())
+        with db._env.begin() as txn:
+            assert txn.stat(sub_db)["entries"] == 2
