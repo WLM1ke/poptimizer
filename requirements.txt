@@ -3,4 +3,5 @@ pytest-cov
 
 pandas
 numpy
+lmdb
 aiomoex

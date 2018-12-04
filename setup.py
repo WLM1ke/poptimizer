@@ -50,6 +50,6 @@ setuptools.setup(
     keywords="robust portfolio optimization risk-management machine-learning moex dividends",
     project_urls={"Source": f"https://github.com/WLM1ke/{name}"},
     packages=setuptools.find_packages(exclude=["*.tests"]),
-    install_requires=["aiomoex", "pandas", "numpy"],
+    install_requires=["aiomoex", "pandas", "numpy", "lmdb"],
     python_requires=f">={python_minimal}",
 )

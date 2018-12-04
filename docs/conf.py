@@ -1,3 +1,5 @@
+"""Конфигурационный файл для статического сайта на базе Sphinx и темы aiohttp_theme"""
+
 import os
 import re
 import sys
@@ -7,16 +9,10 @@ _start_year = 2018
 _description = "Оптимизация долгосрочного портфеля акций"
 _badges = [
     {
-        "image": "https://api.codacy.com/project/badge/Coverage/209b56c013ae40cdbbb3843e0570f422",
-        "target": "https://app.codacy.com/project/wlmike/poptimizer/dashboard",
+        "image": "https://codecov.io/gh/WLM1ke/poptimizer/branch/master/graph/badge.svg",
+        "target": "https://codecov.io/gh/WLM1ke/poptimizer",
         "height": "20",
         "alt": "Code coverage status",
-    },
-    {
-        "image": "https://api.codacy.com/project/badge/Grade/209b56c013ae40cdbbb3843e0570f422",
-        "target": "https://app.codacy.com/project/wlmike/poptimizer/dashboard",
-        "height": "20",
-        "alt": "Code quality status",
     },
     {
         "image": "https://badge.fury.io/py/poptimizer.svg",
