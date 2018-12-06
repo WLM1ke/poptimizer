@@ -1,7 +1,11 @@
 """Основные настраиваемые параметры"""
+import logging
 import pathlib
 
 import pandas as pd
+
+# Конфигурация логгера
+logging.basicConfig(level=logging.INFO)
 
 # Количество колонок в распечатках без переноса на несколько страниц
 pd.set_option("display.max_columns", 20)
@@ -12,6 +16,9 @@ DATA_PATH = pathlib.Path(__file__).parents[1] / "data"
 
 # Путь к директории с отчетам
 REPORTS_PATH = pathlib.Path(__file__).parents[1] / "reports"
+
+# Часовой пояс MOEX
+MOEX_TZ = "Europe/Moscow"
 
 # Максимальный объем одной торговой операции в долях портфеля
 MAX_TRADE = 0.01

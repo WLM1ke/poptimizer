@@ -3,8 +3,7 @@ from typing import Any
 
 import pandas as pd
 
-# Часовой пояс MOEX
-MOEX_TZ = "Europe/Moscow"
+from poptimizer.config import MOEX_TZ
 
 
 class Datum:
@@ -16,7 +15,7 @@ class Datum:
 
     @property
     def value(self):
-        """Данные"""
+        """Данные."""
         return self._value
 
     @value.setter
