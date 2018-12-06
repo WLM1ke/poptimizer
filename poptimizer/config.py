@@ -17,9 +17,6 @@ DATA_PATH = pathlib.Path(__file__).parents[1] / "data"
 # Путь к директории с отчетам
 REPORTS_PATH = pathlib.Path(__file__).parents[1] / "reports"
 
-# Часовой пояс MOEX
-MOEX_TZ = "Europe/Moscow"
-
 # Максимальный объем одной торговой операции в долях портфеля
 MAX_TRADE = 0.01
 

@@ -9,14 +9,8 @@ import pandas as pd
 
 from poptimizer import POptimizerError
 from poptimizer.config import DATA_PATH
-from poptimizer.storage import store, datum
-
-# Максимальный размер хранилища данных и количество вложенных баз
-MAX_SIZE = 10 * 2 ** 20
-MAX_DBS = 2
-
-# Торги заканчиваются в 19.00, но данные публикуются 19.45
-END_OF_TRADING_DAY = dict(hour=19, minute=45, second=0, microsecond=0)
+from poptimizer.storage import store, utils
+from poptimizer.storage.store import MAX_SIZE, MAX_DBS
 
 
 class AbstractDataManager(ABC):
@@ -42,9 +36,11 @@ class AbstractDataManager(ABC):
         self._data = self.load()
         aws = []
         for name, value in self.data:
-            if self.CREATE_FROM_SCRATCH or value is None:
+            if value is None:
                 aws.append(self.create(name))
-            else:
+            elif self.CREATE_FROM_SCRATCH and self._need_update(name):
+                aws.append(self.create(name))
+            elif self._need_update(name):
                 aws.append(self.update(name))
         asyncio.run(asyncio.gather(*aws))
 
@@ -68,6 +64,10 @@ class AbstractDataManager(ABC):
         with store.DataStore(DATA_PATH, MAX_SIZE, MAX_DBS) as db:
             return {name: db[name, self.category] for name in self.names}
 
+    def _need_update(self, name):
+        """Проверка необходимости обновления данных"""
+        return utils.update_timestamp() > self.data[name].timestamp
+
     async def create(self, name: str):
         """Создает локальные данные с нуля или перезаписывает существующие.
 
@@ -83,9 +83,9 @@ class AbstractDataManager(ABC):
     def _check_and_save_datum(self, name, df):
         """Проверяет индекс данных, сохраняет их в локальное хранилище и данные класса."""
         self._validate_index(df)
-        data = datum.Datum(df)
+        data = utils.Datum(df)
         self._put_in_store(name, data)
-        self._data[name] = datum.Datum(df)
+        self._data[name] = utils.Datum(df)
 
     def _validate_index(self, df):
         """Проверяет индекс данных с учетом настроек."""
@@ -94,7 +94,7 @@ class AbstractDataManager(ABC):
         if self.IS_MONOTONIC and not df.index.is_monotonic_increasing:
             raise POptimizerError(f"Индекс не возрастает монотонно")
 
-    def _put_in_store(self, name: str, data: datum.Datum):
+    def _put_in_store(self, name: str, data: utils.Datum):
         """Сохраняет данные в хранилище."""
         with store.DataStore(DATA_PATH, MAX_SIZE, MAX_DBS) as db:
             db[name, self.category] = data
@@ -107,7 +107,7 @@ class AbstractDataManager(ABC):
         а индекс всех данных при необходимости проверяется на уникальность и монотонность.
         """
         logging.info(f"Обновление локальных данных {self.category} -> {name}")
-        df_old = self.data[name]
+        df_old = self.data[name].value
         try:
             df_new = await self._download_update(name)
         except NotImplementedError:

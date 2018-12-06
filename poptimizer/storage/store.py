@@ -6,6 +6,10 @@ from typing import Any, Optional, Union
 
 import lmdb
 
+# Максимальный размер хранилища данных и количество вложенных баз
+MAX_SIZE = 10 * 2 ** 20
+MAX_DBS = 2
+
 
 class DataStore(AbstractContextManager):
     """Сохраняет/загружает значение для указанного ключа и категории.
