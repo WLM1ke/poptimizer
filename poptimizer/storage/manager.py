@@ -34,15 +34,7 @@ class AbstractDataManager(ABC):
         self._names = names
         self._category = category
         self._data = self.load()
-        aws = []
-        for name, value in self.data:
-            if value is None:
-                aws.append(self.create(name))
-            elif self.CREATE_FROM_SCRATCH and self._need_update(name):
-                aws.append(self.create(name))
-            elif self._need_update(name):
-                aws.append(self.update(name))
-        asyncio.run(asyncio.gather(*aws))
+        asyncio.run(self._check_update())
 
     @property
     def names(self):
@@ -59,14 +51,28 @@ class AbstractDataManager(ABC):
         """Словарь с обновленными по расписанию данными."""
         return self._data
 
+    async def _check_update(self):
+        """Запускает асинхронное обновление данных"""
+        aws = []
+        for name, value in self.data:
+            if value is None:
+                aws.append(self.create(name))
+            else:
+                if await self._need_update(name):
+                    if self.CREATE_FROM_SCRATCH:
+                        aws.append(self.create(name))
+                    else:
+                        aws.append(self.update(name))
+        await asyncio.gather(*aws)
+
     def load(self):
         """Загрузка локальных данных без обновления."""
         with store.DataStore(DATA_PATH, MAX_SIZE, MAX_DBS) as db:
             return {name: db[name, self.category] for name in self.names}
 
-    def _need_update(self, name):
+    async def _need_update(self, name):
         """Проверка необходимости обновления данных"""
-        return utils.update_timestamp() > self.data[name].timestamp
+        return self.data[name].timestamp < await utils.update_timestamp()
 
     async def create(self, name: str):
         """Создает локальные данные с нуля или перезаписывает существующие.
