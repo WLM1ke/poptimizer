@@ -1,17 +1,10 @@
 """Хранилище локальных данных."""
+import pathlib
 import pickle
 from contextlib import AbstractContextManager
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import lmdb
-
-from poptimizer import config
-
-LMDB_SUBDIR = "lmdb"
-# Предельный размер базы в байтах
-MAX_DB_SIZE = 20 * 2 ** 20
-# Максимальное число вложенных баз - в идеале должно вычисляться по количеству типов данных
-MAX_DBS = 2  # TODO: Переделать на автоматическое вычисление
 
 
 class DataStore(AbstractContextManager):
@@ -26,10 +19,29 @@ class DataStore(AbstractContextManager):
     после каждой операции.
     """
 
-    def __init__(self):
-        self._env = lmdb.open(
-            str(config.DATA_PATH / LMDB_SUBDIR), map_size=MAX_DB_SIZE, max_dbs=MAX_DBS
-        )
+    def __init__(
+        self, path: Union[str, pathlib.Path], max_size=10 * 2 ** 20, categories=0
+    ):
+        """Создается база в указанном каталоге (два файла: база и лок-файл).
+
+        Размер по умолчанию небольшой, обычно требуется больший. Кроме того при множестве обращений база
+        может временно вырастать до размеров, существенно превышающих объем хранимых данных, поэтому
+        максимальный размер должен выбираться с запасом.
+
+        При использовании более 0 категорий в основной базе создаются вложенные базы, для каждой из
+        которых в основной базе формируется специальный ключ с названием категории, который не должен
+        дублироваться с обычными ключами в основной базе. Если категорий 0, то будет использоваться одна
+        основная база для категории по умолчанию.
+
+        :param path:
+            Путь к каталогу с базой - если база отсутствует, то она будет создана, а путь полностью
+            проложен.
+        :param max_size:
+            Максимальный размер базы. По умолчанию 10МБ.
+        :param categories:
+            Количество вложенных баз для категорий.
+        """
+        self._env = lmdb.open(str(path), map_size=max_size, max_dbs=categories)
 
     def __enter__(self):
         return self

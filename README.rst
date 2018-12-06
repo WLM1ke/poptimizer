@@ -11,6 +11,7 @@ poptimizer
 
 Установка
 ---------
+В перспетиве будет поддержка pip.
 
 .. code-block:: Bash
 
@@ -18,4 +19,5 @@ poptimizer
 
 Документация
 ------------
+В перспективе будет размещена на странице
 https://wlm1ke.github.io/poptimizer/
