@@ -83,7 +83,9 @@ class DataStore(AbstractContextManager):
         with self._env.begin(buffers=True) as txn:
             db = self._category_db(category, txn)
             raw_value = txn.get(key.encode(), db=db)
-        return pickle.loads(raw_value)
+        if raw_value is not None:
+            return pickle.loads(raw_value)
+        return None
 
     def put(self, key: str, value: Any, category: Optional[str] = None):
         """Поместить данные в хранилище

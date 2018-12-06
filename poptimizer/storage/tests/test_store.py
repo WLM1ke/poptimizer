@@ -50,3 +50,8 @@ def test_get(path):
         db["c"] = 3
         assert db.stat()["entries"] == 4
         assert db.stat("first")["entries"] == 2
+
+
+def test_get_no_value(path):
+    with store.DataStore(path, categories=10) as db:
+        assert db["dd"] is None
