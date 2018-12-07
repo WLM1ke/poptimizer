@@ -1,4 +1,5 @@
 """Вспомогательные функции и класс для организации хранения и обновления данных."""
+import dataclasses
 import logging
 from typing import Any
 
@@ -19,27 +20,14 @@ END_OF_TRADING = dict(hour=19, minute=45, second=0, microsecond=0, nanosecond=0)
 LAST_HISTORY = "__last_history"
 
 
+@dataclasses.dataclass(frozen=True)
 class Datum:
-    """Класс с данными, который хранит и автоматически обновляет дату последнего изменения данных."""
+    """Класс с данными и датой создания."""
 
-    def __init__(self, value: Any):
-        self._value = value
-        self._last_update = pd.Timestamp.now(MOEX_TZ)
-
-    @property
-    def value(self):
-        """Данные."""
-        return self._value
-
-    @value.setter
-    def value(self, value: Any):
-        self._value = value
-        self._last_update = pd.Timestamp.now(MOEX_TZ)
-
-    @property
-    def timestamp(self):
-        """Время обновления в формате pd.Timestamp в часовом поясе MOEX."""
-        return self._last_update
+    value: Any
+    timestamp: pd.Timestamp = dataclasses.field(
+        default_factory=lambda: pd.Timestamp.now(MOEX_TZ)
+    )
 
 
 async def download_last_history():

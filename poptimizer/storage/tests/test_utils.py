@@ -1,3 +1,4 @@
+import dataclasses
 import pathlib
 
 import aiomoex
@@ -15,10 +16,10 @@ def test_data():
     time1 = pd.Timestamp.now(utils.MOEX_TZ)
     assert data.value == 42
     assert time0 <= data.timestamp <= time1
-    data.value = 24
-    time2 = pd.Timestamp.now(utils.MOEX_TZ)
-    assert data.value == 24
-    assert time1 <= data.timestamp <= time2
+    with pytest.raises(dataclasses.FrozenInstanceError) as error:
+        # noinspection PyDataclass
+        data.value = 24
+    assert "cannot assign to field 'value'" in str(error.value)
 
 
 @pytest.mark.asyncio
