@@ -84,7 +84,9 @@ class DataStore(AbstractContextManager):
         :return:
             Значение
         """
-        with self._env.begin(buffers=True) as txn:
+        # Нужна трансакция на запись при получении значения из несуществующей категории - буде создана
+        # база для этой категории
+        with self._env.begin(write=True, buffers=True) as txn:
             db = self._category_db(category, txn)
             raw_value = txn.get(key.encode(), db=db)
         if raw_value is not None:

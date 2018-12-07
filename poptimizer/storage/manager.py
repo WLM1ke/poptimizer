@@ -4,16 +4,16 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Union, Optional
 
+import aiomoex
 import numpy as np
 import pandas as pd
 
-from poptimizer import POptimizerError
-from poptimizer.config import DATA_PATH
+from poptimizer import POptimizerError, config
 from poptimizer.storage import store, utils
 from poptimizer.storage.store import MAX_SIZE, MAX_DBS
 
 
-class AbstractDataManager(ABC):
+class AbstractManager(ABC):
     """Организует создание, обновление и предоставление локальных данных."""
 
     # Создавать данные с нуля не сопоставляя с имеющейся версией
@@ -54,23 +54,24 @@ class AbstractDataManager(ABC):
 
     def load(self):
         """Загрузка локальных данных без обновления."""
-        with store.DataStore(DATA_PATH, MAX_SIZE, MAX_DBS) as db:
+        with store.DataStore(config.DATA_PATH, MAX_SIZE, MAX_DBS) as db:
             return {name: db[name, self.category] for name in self.names}
 
     async def _updater(self):
         """Запускает асинхронное обновление данных."""
-        aws = []
-        update_timestamp = await utils.update_timestamp()
-        self._last_history_date = update_timestamp.strftime("%Y-%m-%d")
-        for name, value in self.data:
-            if value is None:
-                aws.append(self.create(name))
-                if self.data[name].timestamp < update_timestamp:
+        async with aiomoex.ISSClientSession():
+            aws = []
+            update_timestamp = await utils.update_timestamp()
+            self._last_history_date = update_timestamp.strftime("%Y-%m-%d")
+            for name, value in self.data.items():
+                if value is None:
+                    aws.append(self.create(name))
+                elif value.timestamp < update_timestamp:
                     if self.CREATE_FROM_SCRATCH:
                         aws.append(self.create(name))
                     else:
                         aws.append(self.update(name))
-        await asyncio.gather(*aws)
+            await asyncio.gather(*aws)
 
     async def create(self, name: str):
         """Создает локальные данные с нуля или перезаписывает существующие.
@@ -81,6 +82,7 @@ class AbstractDataManager(ABC):
             Наименование данных.
         """
         logging.info(f"Создание локальных данных {self.category} -> {name}")
+        self.data[name] = None
         df = await self._download(name)
         self._check_and_save(name, df)
 
@@ -88,10 +90,10 @@ class AbstractDataManager(ABC):
         """Проверяет индекс данных, сохраняет их в локальное хранилище и данные класса."""
         self._validate_index(df)
         data = utils.Datum(df)
-        with store.DataStore(DATA_PATH, MAX_SIZE, MAX_DBS) as db:
+        with store.DataStore(config.DATA_PATH, MAX_SIZE, MAX_DBS) as db:
             db[name, self.category] = data
         logging.info(f"Данных обновлены {self.category} -> {name}")
-        self._data[name] = utils.Datum(df)
+        self._data[name] = data
 
     def _validate_index(self, df):
         """Проверяет индекс данных с учетом настроек."""
@@ -124,15 +126,16 @@ class AbstractDataManager(ABC):
         common_index = df_old.index.intersection(df_new.index)
         if not np.allclose(df_old.loc[common_index], df_new.loc[common_index]):
             raise POptimizerError(
-                f"Ошибка обновления данных - существующие данные не соответствуют новым:\n"
+                f"Существующие данные не соответствуют новым:\n"
                 f"Категория - {self.category}\n"
                 f"Название - {name}\n"
             )
 
     @abstractmethod
     async def _download(self, name: str):
-        """Загружает необходимые данные и при необходимости проводит их первичную обработку.
+        """Загружает необходимые данные до даты self._last_history_date.
 
-        По возможности для ускорения должна поддерживаться частичная загрузка данных.
+        Если self.data[name] = None, то должны загружаться все данные. В остальных случаях для ускорения
+        по возможности должна поддерживаться частичная загрузка с маленьким пересечением с уже
+        загруженными данными для проверки их стыковки.
         """
-        raise NotImplementedError
