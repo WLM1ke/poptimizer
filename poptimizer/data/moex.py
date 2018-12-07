@@ -2,7 +2,7 @@
 import pandas as pd
 
 
-def securities_info():
+def securities():
     pass
 
 
@@ -14,7 +14,7 @@ def lot_size(tickers: tuple):
     :return:
         Размеры лотов
     """
-    securities = securities_info()
+    securities = securities()
     return securities.loc[list[tickers], "LOTSIZE"]
 
 
