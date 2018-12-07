@@ -23,7 +23,7 @@ class AbstractDataManager(ABC):
     IS_MONOTONIC = True
 
     def __init__(self, names: tuple, category: Optional[str]):
-        """Для ускорения за счет асинхронного обновления данных можно передать кортеж с названиями
+        """Для ускорения за счет асинхронного обновления данных передается кортеж с названиями
         необходимых данных.
 
         :param names:
@@ -33,8 +33,9 @@ class AbstractDataManager(ABC):
         """
         self._names = names
         self._category = category
+        self._last_history_date = None
         self._data = self.load()
-        asyncio.run(self._check_update())
+        asyncio.run(self._updater())
 
     @property
     def names(self):
@@ -48,31 +49,28 @@ class AbstractDataManager(ABC):
 
     @property
     def data(self):
-        """Словарь с обновленными по расписанию данными."""
+        """Словарь с обновленными по расписанию данными в формате Datum."""
         return self._data
-
-    async def _check_update(self):
-        """Запускает асинхронное обновление данных"""
-        aws = []
-        for name, value in self.data:
-            if value is None:
-                aws.append(self.create(name))
-            else:
-                if await self._need_update(name):
-                    if self.CREATE_FROM_SCRATCH:
-                        aws.append(self.create(name))
-                    else:
-                        aws.append(self.update(name))
-        await asyncio.gather(*aws)
 
     def load(self):
         """Загрузка локальных данных без обновления."""
         with store.DataStore(DATA_PATH, MAX_SIZE, MAX_DBS) as db:
             return {name: db[name, self.category] for name in self.names}
 
-    async def _need_update(self, name):
-        """Проверка необходимости обновления данных"""
-        return self.data[name].timestamp < await utils.update_timestamp()
+    async def _updater(self):
+        """Запускает асинхронное обновление данных."""
+        aws = []
+        update_timestamp = await utils.update_timestamp()
+        self._last_history_date = update_timestamp.strftime("%Y-%m-%d")
+        for name, value in self.data:
+            if value is None:
+                aws.append(self.create(name))
+                if self.data[name].timestamp < update_timestamp:
+                    if self.CREATE_FROM_SCRATCH:
+                        aws.append(self.create(name))
+                    else:
+                        aws.append(self.update(name))
+        await asyncio.gather(*aws)
 
     async def create(self, name: str):
         """Создает локальные данные с нуля или перезаписывает существующие.
@@ -83,14 +81,16 @@ class AbstractDataManager(ABC):
             Наименование данных.
         """
         logging.info(f"Создание локальных данных {self.category} -> {name}")
-        df = await self._download_all(name)
-        self._check_and_save_datum(name, df)
+        df = await self._download(name)
+        self._check_and_save(name, df)
 
-    def _check_and_save_datum(self, name, df):
+    def _check_and_save(self, name, df):
         """Проверяет индекс данных, сохраняет их в локальное хранилище и данные класса."""
         self._validate_index(df)
         data = utils.Datum(df)
-        self._put_in_store(name, data)
+        with store.DataStore(DATA_PATH, MAX_SIZE, MAX_DBS) as db:
+            db[name, self.category] = data
+        logging.info(f"Данных обновлены {self.category} -> {name}")
         self._data[name] = utils.Datum(df)
 
     def _validate_index(self, df):
@@ -100,28 +100,19 @@ class AbstractDataManager(ABC):
         if self.IS_MONOTONIC and not df.index.is_monotonic_increasing:
             raise POptimizerError(f"Индекс не возрастает монотонно")
 
-    def _put_in_store(self, name: str, data: utils.Datum):
-        """Сохраняет данные в хранилище."""
-        with store.DataStore(DATA_PATH, MAX_SIZE, MAX_DBS) as db:
-            db[name, self.category] = data
-
     async def update(self, name: str):
         """Обновляет локальные данные.
 
-        При отсутствии реализации функции частичной загрузки данных будет осуществлена их полная
-        загрузка. Во время обновления проверяется совпадение новых данных с существующими,
-        а индекс всех данных при необходимости проверяется на уникальность и монотонность.
+        Во время обновления проверяется совпадение новых данных с существующими, а индекс всех данных при
+        необходимости проверяется на уникальность и монотонность.
         """
         logging.info(f"Обновление локальных данных {self.category} -> {name}")
         df_old = self.data[name].value
-        try:
-            df_new = await self._download_update(name)
-        except NotImplementedError:
-            df_new = await self._download_all(name)
+        df_new = await self._download(name)
         self._validate_new(name, df_old, df_new)
         old_elements = df_old.index.difference(df_new.index)
         df = df_old.loc[old_elements].append(df_new)
-        self._check_and_save_datum(name, df)
+        self._check_and_save(name, df)
 
     def _validate_new(
         self,
@@ -131,21 +122,7 @@ class AbstractDataManager(ABC):
     ):
         """Проверяет соответствие старых и новых данных"""
         common_index = df_old.index.intersection(df_new.index)
-        if isinstance(df_old, pd.Series):
-            condition = np.allclose(df_old.loc[common_index], df_new.loc[common_index])
-        else:
-            df_old_not_object = df_old.select_dtypes(exclude="object").loc[common_index]
-            df_new_not_object = df_new.select_dtypes(exclude="object").loc[common_index]
-            condition_not_object = np.allclose(
-                df_old_not_object, df_new_not_object, equal_nan=True
-            )
-
-            df_old_object = df_old.select_dtypes(include="object").loc[common_index]
-            df_new_object = df_new.select_dtypes(include="object").loc[common_index]
-            condition_object = df_old_object.equals(df_new_object)
-
-            condition = condition_not_object and condition_object
-        if not condition:
+        if not np.allclose(df_old.loc[common_index], df_new.loc[common_index]):
             raise POptimizerError(
                 f"Ошибка обновления данных - существующие данные не соответствуют новым:\n"
                 f"Категория - {self.category}\n"
@@ -153,15 +130,9 @@ class AbstractDataManager(ABC):
             )
 
     @abstractmethod
-    async def _download_all(self, name: str):
-        """Загружает все необходимые данные и при необходимости проводит их первичную обработку."""
-        raise NotImplementedError
+    async def _download(self, name: str):
+        """Загружает необходимые данные и при необходимости проводит их первичную обработку.
 
-    @abstractmethod
-    async def _download_update(self, name: str):
-        """Загружает данные с последнего значения включительно в существующих данных.
-
-        При отсутствии возможности частичной загрузки должна сохраняться реализация из абстрактного
-        класса, а данные будут загружены полностью.
+        По возможности для ускорения должна поддерживаться частичная загрузка данных.
         """
         raise NotImplementedError

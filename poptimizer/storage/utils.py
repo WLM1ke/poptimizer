@@ -1,4 +1,4 @@
-"""Класс с данными, который хранит и автоматически обновляет дату последнего изменения данных."""
+"""Вспомогательные функции и класс для организации хранения и обновления данных."""
 import logging
 from typing import Any
 
@@ -16,7 +16,7 @@ MOEX_TZ = "Europe/Moscow"
 END_OF_TRADING = dict(hour=19, minute=45, second=0, microsecond=0, nanosecond=0)
 
 # Ключ в хранилище с датой последней исторической котировкой на MOEX
-LAST_HISTORY = "last_history"
+LAST_HISTORY = "__last_history"
 
 
 class Datum:

@@ -114,12 +114,12 @@ class DataStore(AbstractContextManager):
         :return:
             Статистика в виде словаря:
 
-            * psize	- размер страницы базыSize of a database page in bytes.
-            * depth	- глубина B-деревьев.
+            * psize - размер страницы базыSize of a database page in bytes.
+            * depth - глубина B-деревьев.
             * branch_pages - количество внутренних страниц.
             * leaf_pages - количество листовых страниц.
             * overflow_pages - количество страниц с переполнением.
-            * entries	- количество сохраненных данных.
+            * entries - количество сохраненных данных.
 
         """
         with self._env.begin() as txn:
