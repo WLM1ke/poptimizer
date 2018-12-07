@@ -7,7 +7,7 @@ import setuptools
 
 name = "poptimizer"
 description = "Оптимизация долгосрочного портфеля акций"
-python_minimal = "3.6"
+python_minimal = "3.7"
 status = "Development Status :: 3 - Alpha"
 
 if sys.version_info < tuple(int(i) for i in python_minimal.split(".")):
@@ -42,7 +42,6 @@ setuptools.setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Office/Business :: Financial",

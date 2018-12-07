@@ -1,4 +1,4 @@
 """Оптимизация долгосрочного портфеля акций"""
-from .utils import *
+from .misc import *
 
 __version__ = "0.1.0"
