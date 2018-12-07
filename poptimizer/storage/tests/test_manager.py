@@ -23,7 +23,7 @@ class SimpleManager(manager.AbstractManager):
     UPDATE = pd.DataFrame(data={"col1": [2, 5], "col2": [15, 5]}, index=[1, 2])
 
     async def _download(self, name):
-        if self.data[name] is None:
+        if self._data[name] is None:
             return self.LOAD
         return self.UPDATE
 
@@ -31,7 +31,7 @@ class SimpleManager(manager.AbstractManager):
 def test_data_create():
     time0 = pd.Timestamp.now(MOEX_TZ)
     simple_manager = SimpleManager(("AKRN",), "category")
-    data = simple_manager.data
+    data = simple_manager._data
     assert isinstance(data, dict)
     assert len(data) == 1
     assert isinstance(data["AKRN"], utils.Datum)
@@ -46,7 +46,7 @@ def test_data_create():
 def test_data_load_with_out_update():
     time0 = pd.Timestamp.now(MOEX_TZ)
     simple_manager = SimpleManager(("AKRN",), "category")
-    data = simple_manager.data
+    data = simple_manager._data
     assert isinstance(data, dict)
     assert len(data) == 1
     assert isinstance(data["AKRN"], utils.Datum)
@@ -67,7 +67,7 @@ def test_fake_update(monkeypatch):
 
     time0 = pd.Timestamp.now(MOEX_TZ)
     simple_manager = SimpleManager(("AKRN",), "category")
-    data = simple_manager.data
+    data = simple_manager._data
     assert isinstance(data, dict)
     assert len(data) == 1
     assert isinstance(data["AKRN"], utils.Datum)
@@ -85,7 +85,7 @@ def test_data_create_from_scratch(monkeypatch):
 
     time0 = pd.Timestamp.now(MOEX_TZ)
     simple_manager = SimpleManager(("AKRN", "GAZP"), "category")
-    data = simple_manager.data
+    data = simple_manager._data
     assert isinstance(data, dict)
     assert len(data) == 2
     assert isinstance(data["AKRN"], utils.Datum)

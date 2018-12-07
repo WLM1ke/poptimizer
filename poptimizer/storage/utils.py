@@ -1,14 +1,12 @@
-"""Вспомогательные функции и класс для организации хранения и обновления данных."""
-import dataclasses
+"""Вспомогательные функции и класс для организации хранения."""
 import logging
+from dataclasses import dataclass, field
 from typing import Any
 
 import aiomoex
 import pandas as pd
 
-from poptimizer import config
 from poptimizer.storage import store
-from poptimizer.storage.store import MAX_SIZE, MAX_DBS
 
 # Часовой пояс MOEX
 MOEX_TZ = "Europe/Moscow"
@@ -20,14 +18,12 @@ END_OF_TRADING = dict(hour=19, minute=45, second=0, microsecond=0, nanosecond=0)
 LAST_HISTORY = "__last_history"
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class Datum:
     """Класс с данными и датой создания."""
 
     value: Any
-    timestamp: pd.Timestamp = dataclasses.field(
-        default_factory=lambda: pd.Timestamp.now(MOEX_TZ)
-    )
+    timestamp: pd.Timestamp = field(default_factory=lambda: pd.Timestamp.now(MOEX_TZ))
 
 
 async def download_last_history():
@@ -39,16 +35,15 @@ async def download_last_history():
     return date + pd.DateOffset(**END_OF_TRADING)
 
 
-async def update_timestamp():
-    """Момент времени после, которого не нужно обновлять исторические данные."""
+async def update_timestamp(db: store.DataStore):
+    """Момент времени после, которого не нужно обновлять исторические данные для хранилища."""
     now = pd.Timestamp.now(MOEX_TZ)
     # noinspection PyUnresolvedReferences
     end_of_trading = now.normalize() + pd.DateOffset(**END_OF_TRADING)
     if end_of_trading > now:
         end_of_trading += pd.DateOffset(days=-1)
-    with store.DataStore(config.DATA_PATH, MAX_SIZE, MAX_DBS) as db:
-        last_history = db[LAST_HISTORY]
-        if last_history is None or last_history.timestamp < end_of_trading:
-            last_history = Datum(await download_last_history())
-            db[LAST_HISTORY] = last_history
+    last_history = db[LAST_HISTORY]
+    if last_history is None or last_history.timestamp < end_of_trading:
+        last_history = Datum(await download_last_history())
+        db[LAST_HISTORY] = last_history
     return last_history.value

@@ -2,19 +2,23 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import Union, Optional
+from typing import Union, Optional, Tuple
 
-import aiomoex
 import numpy as np
 import pandas as pd
 
-from poptimizer import POptimizerError, config
-from poptimizer.storage import store, utils
-from poptimizer.storage.store import MAX_SIZE, MAX_DBS
+from poptimizer import POptimizerError
+from poptimizer.storage import utils
 
 
 class AbstractManager(ABC):
-    """Организует создание, обновление и предоставление локальных данных."""
+    """Организует создание, обновление и предоставление локальных данных.
+
+    Для работы должна быть открыта клиентская сессия.
+    """
+
+    ISS_SESSION = None
+    STORE = None
 
     # Создавать данные с нуля не сопоставляя с имеющейся версией
     CREATE_FROM_SCRATCH = False
@@ -22,7 +26,7 @@ class AbstractManager(ABC):
     IS_UNIQUE = True
     IS_MONOTONIC = True
 
-    def __init__(self, names: tuple, category: Optional[str]):
+    def __init__(self, names: Union[str, Tuple[str]], category: Optional[str] = None):
         """Для ускорения за счет асинхронного обновления данных передается кортеж с названиями
         необходимых данных.
 
@@ -31,11 +35,13 @@ class AbstractManager(ABC):
         :param category:
             Категория получаемых данных.
         """
-        self._names = names
+        if isinstance(names, str):
+            self._names = (names,)
+        else:
+            self._names = names
         self._category = category
         self._last_history_date = None
-        self._data = self.load()
-        asyncio.run(self._updater())
+        self._data = self._load()
 
     @property
     def names(self):
@@ -47,42 +53,37 @@ class AbstractManager(ABC):
         """Категория данных."""
         return self._category
 
-    @property
-    def data(self):
-        """Словарь с обновленными по расписанию данными в формате Datum."""
-        return self._data
-
-    def load(self):
+    def _load(self):
         """Загрузка локальных данных без обновления."""
-        with store.DataStore(config.DATA_PATH, MAX_SIZE, MAX_DBS) as db:
-            return {name: db[name, self.category] for name in self.names}
+        return {name: self.STORE[name, self.category] for name in self.names}
 
-    async def _updater(self):
+    async def get(self):
         """Запускает асинхронное обновление данных."""
-        async with aiomoex.ISSClientSession():
-            aws = []
-            update_timestamp = await utils.update_timestamp()
-            self._last_history_date = update_timestamp.strftime("%Y-%m-%d")
-            for name, value in self.data.items():
-                if value is None:
+        aws = []
+        update_timestamp = await utils.update_timestamp(self.STORE)
+        self._last_history_date = update_timestamp.strftime("%Y-%m-%d")
+        for name, value in self._data.items():
+            if value is None:
+                aws.append(self.create(name))
+            elif value.timestamp < update_timestamp:
+                if self.CREATE_FROM_SCRATCH:
                     aws.append(self.create(name))
-                elif value.timestamp < update_timestamp:
-                    if self.CREATE_FROM_SCRATCH:
-                        aws.append(self.create(name))
-                    else:
-                        aws.append(self.update(name))
+                else:
+                    aws.append(self.update(name))
             await asyncio.gather(*aws)
+        if len(self.names) == 1:
+            return self._data[self.names[0]].value
+        return [self._data[name].value for name in self.names]
 
     async def create(self, name: str):
         """Создает локальные данные с нуля или перезаписывает существующие.
 
         При необходимости индекс данных проверяется на уникальность и монотонность.
-
         :param name:
             Наименование данных.
         """
         logging.info(f"Создание локальных данных {self.category} -> {name}")
-        self.data[name] = None
+        self._data[name] = None
         df = await self._download(name)
         self._check_and_save(name, df)
 
@@ -90,8 +91,7 @@ class AbstractManager(ABC):
         """Проверяет индекс данных, сохраняет их в локальное хранилище и данные класса."""
         self._validate_index(df)
         data = utils.Datum(df)
-        with store.DataStore(config.DATA_PATH, MAX_SIZE, MAX_DBS) as db:
-            db[name, self.category] = data
+        self.STORE[name, self.category] = data
         logging.info(f"Данных обновлены {self.category} -> {name}")
         self._data[name] = data
 
@@ -109,7 +109,7 @@ class AbstractManager(ABC):
         необходимости проверяется на уникальность и монотонность.
         """
         logging.info(f"Обновление локальных данных {self.category} -> {name}")
-        df_old = self.data[name].value
+        df_old = self._data[name].value
         df_new = await self._download(name)
         self._validate_new(name, df_old, df_new)
         old_elements = df_old.index.difference(df_new.index)
@@ -134,8 +134,7 @@ class AbstractManager(ABC):
     @abstractmethod
     async def _download(self, name: str):
         """Загружает необходимые данные до даты self._last_history_date.
-
-        Если self.data[name] = None, то должны загружаться все данные. В остальных случаях для ускорения
+        Если self._data[name] = None, то должны загружаться все данные. В остальных случаях для ускорения
         по возможности должна поддерживаться частичная загрузка с маленьким пересечением с уже
         загруженными данными для проверки их стыковки.
         """

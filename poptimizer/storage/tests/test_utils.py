@@ -7,7 +7,7 @@ import pytest
 
 from poptimizer import config
 from poptimizer.storage import utils, store
-from poptimizer.storage.store import MAX_SIZE, MAX_DBS
+from poptimizer.storage.client import MAX_SIZE, MAX_DBS
 
 
 def test_data():
