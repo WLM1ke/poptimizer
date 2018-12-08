@@ -1,4 +1,5 @@
-"""Менеджеры данных с MOEX."""
+"""Менеджеры данных для котировок и перечня торгуемых бумаг с MOEX."""
+import asyncio
 import functools
 from typing import Tuple
 
@@ -6,6 +7,7 @@ import aiomoex
 import pandas as pd
 
 from poptimizer.storage.manager import AbstractManager
+from poptimizer.storage.utils import TICKER, REG_NUMBER, LOT_SIZE, DATE, CLOSE, VALUE
 
 # Данные об акциях хранятся в основной базе
 NAME_SECURITIES = "securities"
@@ -20,7 +22,12 @@ FUNC_DATE = functools.partial(pd.to_datetime, yearfirst=True, format="%Y-%m-%d")
 
 
 class Securities(AbstractManager):
-    """Информация о всех торгующихся акциях."""
+    """Информация о всех торгующихся акциях.
+
+    При появлении новой информации создается с нуля, так как перечень торгуемых акций может как
+    расширяться, так и сокращаться, а характеристики отдельных акций (например, размер лота) меняться
+    со временем
+    """
 
     CREATE_FROM_SCRATCH = True
 
@@ -30,9 +37,10 @@ class Securities(AbstractManager):
     async def _download(self, name: str):
         columns = ("SECID", "REGNUMBER", "LOTSIZE")
         data = await aiomoex.get_board_securities(columns=columns)
-        df = pd.DataFrame(data)
-        df = df.set_index("SECID")
-        df.loc[:, "LOTSIZE"] = df["LOTSIZE"].apply(FUNC_UNSIGNED)
+        df = pd.DataFrame(data)[list(columns)]
+        df.columns = [TICKER, REG_NUMBER, LOT_SIZE]
+        df = df.set_index(TICKER)
+        df.loc[:, LOT_SIZE] = df[LOT_SIZE].apply(FUNC_UNSIGNED)
         return df
 
 
@@ -47,7 +55,7 @@ class Quotes(AbstractManager):
         super().__init__(names, CATEGORY_QUOTES)
 
     async def _download(self, name: str):
-        """Загружает полностью или обновление по ценам закрытия и оборотам в рублях."""
+        """Загружает полностью или только обновление по ценам закрытия и оборотам в рублях."""
         if self._data[name] is None:
             return await self._download_all(name)
         return await self._download_update(name)
@@ -58,13 +66,14 @@ class Quotes(AbstractManager):
         aws = [self._download_one_ticker(ticker) for ticker in aliases]
         dfs = await asyncio.gather(*aws)
         df = pd.concat(dfs, axis=0)
-        return self._clean_df(df)
+        df = self._clean_df(df)
+        return df.sort_index()
 
     @staticmethod
     async def _find_aliases(ticker):
         """Ищет все тикеры с эквивалентным регистрационным номером."""
         securities = await Securities().get()
-        number = securities.at[ticker, "REGNUMBER"]
+        number = securities.at[ticker, REG_NUMBER]
         results = await aiomoex.find_securities(number)
         return [result["secid"] for result in results if result["regnumber"] == number]
 
@@ -78,11 +87,11 @@ class Quotes(AbstractManager):
         """Оставляет столбцы с ценами закрытия и объемами торгов, сортирует и приводит к корректному
         формату."""
         df = df.loc[:, ["begin", "close", "value"]]
-        df.loc[:, "begin"] = df["begin"].apply(FUNC_DATE)
-        df.loc[:, "close"] = df["close"].apply(FUNC_FLOAT)
-        df.loc[:, "value"] = df["value"].apply(FUNC_FLOAT)
-        df = df.set_index("begin")
-        return df.sort_index()
+        df.columns = [DATE, CLOSE, VALUE]
+        df.loc[:, DATE] = df[DATE].apply(FUNC_DATE)
+        df.loc[:, CLOSE] = df[CLOSE].apply(FUNC_FLOAT)
+        df.loc[:, VALUE] = df[VALUE].apply(FUNC_FLOAT)
+        return df.set_index(DATE)
 
     async def _download_update(self, name):
         """Загружает данные с последнего имеющегося значения до конца истории."""
@@ -92,15 +101,3 @@ class Quotes(AbstractManager):
         )
         df = pd.DataFrame(data)
         return self._clean_df(df)
-
-
-if __name__ == "__main__":
-    from poptimizer.storage.client import Client
-    import asyncio
-
-    async def main():
-        """qqq"""
-        async with Client() as client:
-            print(await client.quotes("UPRO").get())
-
-    asyncio.run(main())

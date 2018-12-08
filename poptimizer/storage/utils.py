@@ -17,6 +17,14 @@ END_OF_TRADING = dict(hour=19, minute=45, second=0, microsecond=0, nanosecond=0)
 # Ключ в хранилище с датой последней исторической котировкой на MOEX
 LAST_HISTORY = "last_history"
 
+# Метки столбцов данных
+DATE = "DATE"
+CLOSE = "CLOSE"
+VALUE = "VALUE"
+TICKER = "TICKER"
+REG_NUMBER = "REG_NUMBER"
+LOT_SIZE = "LOT_SIZE"
+
 
 @dataclass(frozen=True)
 class Datum:
