@@ -14,8 +14,8 @@ MAX_DBS = 2
 class Client(contextlib.AbstractAsyncContextManager):
     """Асинхронный клиент для доступа к данным.
 
-    Открывает соединение базой данных и интернетом, которые в последствии должны быть закрыты.
-    Для удобства реализует протокол асинхронного контекстного менеджера.
+    Открывает соединение базой данных и интернетом с использованием протокола асинхронного контекстного
+    менеджера.
 
     Атрибутами клиента являются менеджеры отдельных категорий данных. Так же можно обращаться к
     менеджерам напрямую внутри контекста, созданного клиентом.
@@ -24,10 +24,10 @@ class Client(contextlib.AbstractAsyncContextManager):
     def __init__(self):
         self._session = aiomoex.ISSClientSession()
         self._store = store.DataStore(config.DATA_PATH, MAX_SIZE, MAX_DBS)
-        manager.AbstractManager.ISS_SESSION = self._session
-        manager.AbstractManager.STORE = self._store
 
     async def __aenter__(self):
+        manager.AbstractManager.ISS_SESSION = self._session
+        manager.AbstractManager.STORE = self._store
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -39,4 +39,4 @@ class Client(contextlib.AbstractAsyncContextManager):
         data_types = {str(cls.__name__).lower(): cls for cls in sub_classes}
         if item in data_types:
             return data_types[item]
-        raise AttributeError
+        raise AttributeError(f"Отсутствует менеджер данных для '{item}'.")
