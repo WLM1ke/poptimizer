@@ -1,4 +1,4 @@
-"""Вспомогательные функции и класс для организации хранения."""
+"""Вспомогательные функции и класс для организации хранения данных."""
 import logging
 from dataclasses import dataclass, field
 from typing import Any
@@ -15,12 +15,12 @@ MOEX_TZ = "Europe/Moscow"
 END_OF_TRADING = dict(hour=19, minute=45, second=0, microsecond=0, nanosecond=0)
 
 # Ключ в хранилище с датой последней исторической котировкой на MOEX
-LAST_HISTORY = "__last_history"
+LAST_HISTORY = "last_history"
 
 
 @dataclass(frozen=True)
 class Datum:
-    """Класс с данными и датой создания."""
+    """Класс с данными и датой создания в часовом поясе MOEX."""
 
     value: Any
     timestamp: pd.Timestamp = field(default_factory=lambda: pd.Timestamp.now(MOEX_TZ))
@@ -30,7 +30,6 @@ async def download_last_history():
     """Последняя дата торгов, которая есть на MOEX ISS."""
     dates = await aiomoex.get_board_dates()
     date = pd.Timestamp(dates[0]["till"], tz=MOEX_TZ)
-    date += pd.DateOffset(**END_OF_TRADING)
     logging.info(f"Последняя дата с историей: {date}")
     return date + pd.DateOffset(**END_OF_TRADING)
 

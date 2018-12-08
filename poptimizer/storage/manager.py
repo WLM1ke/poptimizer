@@ -58,7 +58,7 @@ class AbstractManager(ABC):
         return {name: self.STORE[name, self.category] for name in self.names}
 
     async def get(self):
-        """Запускает асинхронное обновление данных."""
+        """Запускает асинхронное обновление данных и возвращает их."""
         update_timestamp = await utils.update_timestamp(self.STORE)
         self._last_history_date = update_timestamp.strftime("%Y-%m-%d")
         aws = []
@@ -79,15 +79,17 @@ class AbstractManager(ABC):
         """Создает локальные данные с нуля или перезаписывает существующие.
 
         При необходимости индекс данных проверяется на уникальность и монотонность.
+
         :param name:
             Наименование данных.
         """
         logging.info(f"Создание локальных данных {self.category} -> {name}")
+        # Данные удаляются, чтобы загрузчик загрузил их полностью, а не обновил
         self._data[name] = None
         df = await self._download(name)
-        self._check_and_save(name, df)
+        self._check_index_and_save(name, df)
 
-    def _check_and_save(self, name, df):
+    def _check_index_and_save(self, name, df):
         """Проверяет индекс данных, сохраняет их в локальное хранилище и данные класса."""
         self._validate_index(df)
         data = utils.Datum(df)
@@ -105,7 +107,7 @@ class AbstractManager(ABC):
     async def update(self, name: str):
         """Обновляет локальные данные.
 
-        Во время обновления проверяется совпадение новых данных с существующими, а индекс всех данных при
+        Во время обновления проверяется стыковку новых данных с существующими, а индекс всех данных при
         необходимости проверяется на уникальность и монотонность.
         """
         logging.info(f"Обновление локальных данных {self.category} -> {name}")
@@ -114,7 +116,7 @@ class AbstractManager(ABC):
         self._validate_new(name, df_old, df_new)
         old_elements = df_old.index.difference(df_new.index)
         df = df_old.loc[old_elements].append(df_new)
-        self._check_and_save(name, df)
+        self._check_index_and_save(name, df)
 
     def _validate_new(
         self,
@@ -133,8 +135,10 @@ class AbstractManager(ABC):
 
     @abstractmethod
     async def _download(self, name: str):
-        """Загружает необходимые данные до даты self._last_history_date.
+        """Загружает необходимые данные
+
         Если self._data[name] = None, то должны загружаться все данные. В остальных случаях для ускорения
         по возможности должна поддерживаться частичная загрузка с маленьким пересечением с уже
-        загруженными данными для проверки их стыковки.
+        загруженными данными для проверки их стыковки до даты self._last_history_date включительно, чтобы
+        избежать загрузки данных за половину текущего дня.
         """

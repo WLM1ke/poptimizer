@@ -31,8 +31,8 @@ class Client(contextlib.AbstractAsyncContextManager):
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self._session.close()
-        self._store.close()
+        await self._session.__aexit__(exc_type, exc_val, exc_tb)
+        self._store.__exit__(exc_type, exc_val, exc_tb)
 
     def __getattr__(self, item):
         sub_classes = manager.AbstractManager.__subclasses__()
