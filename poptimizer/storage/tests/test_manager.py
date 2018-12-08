@@ -1,9 +1,10 @@
+import aiomoex
 import pandas as pd
 import pytest
 
 import poptimizer
-from poptimizer import config
-from poptimizer.storage import manager, utils
+from poptimizer.storage import manager, store
+from poptimizer.storage.client import MAX_SIZE, MAX_DBS
 from poptimizer.storage.utils import MOEX_TZ
 
 
@@ -14,8 +15,13 @@ def make_temp_dir(tmpdir_factory):
 
 
 @pytest.fixture(autouse=True)
-def fake_data_path(monkeypatch, path):
-    monkeypatch.setattr(config, "DATA_PATH", path)
+@pytest.mark.asyncio
+async def fake_data_path(path):
+    async with aiomoex.ISSClientSession() as session:
+        with store.DataStore(path, MAX_SIZE, MAX_DBS) as db:
+            manager.AbstractManager.ISS_SESSION = session
+            manager.AbstractManager.STORE = db
+            yield
 
 
 class SimpleManager(manager.AbstractManager):
@@ -28,97 +34,96 @@ class SimpleManager(manager.AbstractManager):
         return self.UPDATE
 
 
-def test_data_create():
+@pytest.mark.asyncio
+async def test_data_create():
     time0 = pd.Timestamp.now(MOEX_TZ)
     simple_manager = SimpleManager(("AKRN",), "category")
-    data = simple_manager._data
-    assert isinstance(data, dict)
-    assert len(data) == 1
-    assert isinstance(data["AKRN"], utils.Datum)
-    assert data["AKRN"].value.equals(
-        pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]})
-    )
-    assert data["AKRN"].timestamp > time0
+    data = await simple_manager.get()
+    assert isinstance(data, pd.DataFrame)
+    assert data.equals(pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]}))
+    # noinspection PyProtectedMember
+    assert simple_manager._data["AKRN"].timestamp > time0
     assert simple_manager.names == ("AKRN",)
     assert simple_manager.category == "category"
 
 
-def test_data_load_with_out_update():
+@pytest.mark.asyncio
+async def test_data_load_with_out_update():
     time0 = pd.Timestamp.now(MOEX_TZ)
-    simple_manager = SimpleManager(("AKRN",), "category")
-    data = simple_manager._data
-    assert isinstance(data, dict)
-    assert len(data) == 1
-    assert isinstance(data["AKRN"], utils.Datum)
-    assert data["AKRN"].value.equals(
-        pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]})
-    )
-    assert data["AKRN"].timestamp < time0
+    simple_manager = SimpleManager("AKRN", "category")
+    data = await simple_manager.get()
+    assert isinstance(data, pd.DataFrame)
+    assert data.equals(pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]}))
+    # noinspection PyProtectedMember
+    assert simple_manager._data["AKRN"].timestamp < time0
     assert simple_manager.names == ("AKRN",)
     assert simple_manager.category == "category"
 
 
-async def fake_update_timestamp():
+@pytest.mark.asyncio
+async def fake_update_timestamp(_):
     return pd.Timestamp.now(MOEX_TZ) + pd.DateOffset(days=1)
 
 
-def test_fake_update(monkeypatch):
+@pytest.mark.asyncio
+async def test_fake_update(monkeypatch):
     monkeypatch.setattr(manager.utils, "update_timestamp", fake_update_timestamp)
 
     time0 = pd.Timestamp.now(MOEX_TZ)
     simple_manager = SimpleManager(("AKRN",), "category")
-    data = simple_manager._data
-    assert isinstance(data, dict)
-    assert len(data) == 1
-    assert isinstance(data["AKRN"], utils.Datum)
-    assert data["AKRN"].value.equals(
-        pd.DataFrame(data={"col1": [1, 2, 5], "col2": [10, 15, 5]})
-    )
-    assert data["AKRN"].timestamp > time0
+    data = await simple_manager.get()
+    assert isinstance(data, pd.DataFrame)
+    assert data.equals(pd.DataFrame(data={"col1": [1, 2, 5], "col2": [10, 15, 5]}))
+    # noinspection PyProtectedMember
+    assert simple_manager._data["AKRN"].timestamp > time0
     assert simple_manager.names == ("AKRN",)
     assert simple_manager.category == "category"
 
 
-def test_data_create_from_scratch(monkeypatch):
+@pytest.mark.asyncio
+async def test_data_create_from_scratch(monkeypatch):
     monkeypatch.setattr(manager.utils, "update_timestamp", fake_update_timestamp)
     monkeypatch.setattr(SimpleManager, "CREATE_FROM_SCRATCH", True)
 
     time0 = pd.Timestamp.now(MOEX_TZ)
+    # noinspection PyTypeChecker
     simple_manager = SimpleManager(("AKRN", "GAZP"), "category")
-    data = simple_manager._data
-    assert isinstance(data, dict)
+    data = await simple_manager.get()
+    assert isinstance(data, list)
     assert len(data) == 2
-    assert isinstance(data["AKRN"], utils.Datum)
-    assert data["AKRN"].value.equals(
-        pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]})
-    )
-    assert data["AKRN"].timestamp > time0
+    assert isinstance(data[0], pd.DataFrame)
+    assert data[0].equals(pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]}))
+    # noinspection PyProtectedMember
+    assert simple_manager._data["AKRN"].timestamp > time0
     assert simple_manager.names == ("AKRN", "GAZP")
     assert simple_manager.category == "category"
 
 
-def test_index_non_unique(monkeypatch):
+@pytest.mark.asyncio
+async def test_index_non_unique(monkeypatch):
     monkeypatch.setattr(SimpleManager, "LOAD", pd.DataFrame(index=[1, 1]))
 
     with pytest.raises(poptimizer.POptimizerError) as error:
-        SimpleManager(("RTKM",), "category")
+        await SimpleManager(("RTKM",), "category").get()
     assert str(error.value) == "Индекс не уникальный"
 
 
-def test_index_non_monotonic(monkeypatch):
+@pytest.mark.asyncio
+async def test_index_non_monotonic(monkeypatch):
     monkeypatch.setattr(SimpleManager, "LOAD", pd.DataFrame(index=[1, 2, 0]))
 
     with pytest.raises(poptimizer.POptimizerError) as error:
-        SimpleManager(("RTKM",), "category")
+        await SimpleManager(("RTKM",), "category").get()
     assert str(error.value) == "Индекс не возрастает монотонно"
 
 
-def test_data_do_not_stacks(monkeypatch):
+@pytest.mark.asyncio
+async def test_data_do_not_stacks(monkeypatch):
     bad_update = pd.DataFrame(data={"col1": [3, 5], "col2": [15, 5]}, index=[1, 2])
     monkeypatch.setattr(SimpleManager, "UPDATE", bad_update)
     monkeypatch.setattr(manager.utils, "update_timestamp", fake_update_timestamp)
 
     with pytest.raises(poptimizer.POptimizerError) as error:
-        SimpleManager(("GAZP",), "category")
+        await SimpleManager(("GAZP",), "category").get()
     error_text = "Существующие данные не соответствуют новым:"
     assert error_text in str(error.value)

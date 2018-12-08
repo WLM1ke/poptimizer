@@ -59,9 +59,9 @@ class AbstractManager(ABC):
 
     async def get(self):
         """Запускает асинхронное обновление данных."""
-        aws = []
         update_timestamp = await utils.update_timestamp(self.STORE)
         self._last_history_date = update_timestamp.strftime("%Y-%m-%d")
+        aws = []
         for name, value in self._data.items():
             if value is None:
                 aws.append(self.create(name))
@@ -70,7 +70,7 @@ class AbstractManager(ABC):
                     aws.append(self.create(name))
                 else:
                     aws.append(self.update(name))
-            await asyncio.gather(*aws)
+        await asyncio.gather(*aws)
         if len(self.names) == 1:
             return self._data[self.names[0]].value
         return [self._data[name].value for name in self.names]
