@@ -68,7 +68,8 @@ class DataStore(AbstractContextManager):
         """Возвращает базу данных для категории"""
         if category is None:
             return self._env.open_db(txn=txn, dupsort=False)
-        return self._env.open_db(category.encode(), txn=txn, dupsort=False)
+        db_name = f"__db_{category}"
+        return self._env.open_db(db_name.encode(), txn=txn, dupsort=False)
 
     def get(self, key: str, category: Optional[str] = None):
         """Получить данные из хранилища
