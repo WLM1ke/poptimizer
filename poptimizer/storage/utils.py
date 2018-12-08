@@ -31,7 +31,7 @@ async def download_last_history():
     dates = await aiomoex.get_board_dates()
     date = pd.Timestamp(dates[0]["till"], tz=MOEX_TZ)
     date += pd.DateOffset(**END_OF_TRADING)
-    logging.info(f"Загружена последняя дата с историей: {date}")
+    logging.info(f"Последняя дата с историей: {date}")
     return date + pd.DateOffset(**END_OF_TRADING)
 
 
