@@ -24,7 +24,7 @@ async def create_client():
 
 @pytest.mark.asyncio
 async def fake_update_timestamp(_):
-    return pd.Timestamp.now(MOEX_TZ) + pd.DateOffset(days=1)
+    return pd.Timestamp.now(MOEX_TZ) + pd.DateOffset(days=10)
 
 
 @pytest.mark.asyncio

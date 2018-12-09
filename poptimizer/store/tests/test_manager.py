@@ -5,6 +5,7 @@ import pytest
 import poptimizer
 from poptimizer.store import manager, lmbd
 from poptimizer.store.client import MAX_SIZE, MAX_DBS
+
 # noinspection PyProtectedMember
 from poptimizer.store.utils import MOEX_TZ
 
