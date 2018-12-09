@@ -9,7 +9,7 @@ import pandas as pd
 from poptimizer.store.manager import AbstractManager
 
 # noinspection PyProtectedMember
-from poptimizer.store.utils import TICKER, REG_NUMBER, LOT_SIZE, DATE, CLOSE, VALUE
+from poptimizer.store.utils import TICKER, REG_NUMBER, LOT_SIZE, DATE, CLOSE, TURNOVER
 
 # Данные об акциях хранятся в основной базе
 NAME_SECURITIES = "securities"
@@ -89,10 +89,10 @@ class Quotes(AbstractManager):
         """Оставляет столбцы с ценами закрытия и объемами торгов, сортирует и приводит к корректному
         формату."""
         df = df.loc[:, ["begin", "close", "value"]]
-        df.columns = [DATE, CLOSE, VALUE]
+        df.columns = [DATE, CLOSE, TURNOVER]
         df.loc[:, DATE] = df[DATE].apply(FUNC_DATE)
         df.loc[:, CLOSE] = df[CLOSE].apply(FUNC_FLOAT)
-        df.loc[:, VALUE] = df[VALUE].apply(FUNC_FLOAT)
+        df.loc[:, TURNOVER] = df[TURNOVER].apply(FUNC_FLOAT)
         return df.set_index(DATE)
 
     async def _download_update(self, name):

@@ -20,12 +20,12 @@ LAST_HISTORY = "last_history"
 # Метки столбцов данных
 DATE = "DATE"
 CLOSE = "CLOSE"
-VALUE = "VALUE"
+TURNOVER = "TURNOVER"
 TICKER = "TICKER"
 REG_NUMBER = "REG_NUMBER"
 LOT_SIZE = "LOT_SIZE"
 
-__all__ = ["CLOSE", "VALUE", "LOT_SIZE"]
+__all__ = ["CLOSE", "TURNOVER", "LOT_SIZE"]
 
 
 @dataclass(frozen=True)

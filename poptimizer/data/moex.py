@@ -6,7 +6,7 @@ import pandas as pd
 
 from poptimizer import store
 
-__all__ = ["lot_size", "prices", "values"]
+__all__ = ["lot_size", "prices", "turnovers"]
 
 
 async def securities(tickers: Optional[Tuple[str]] = None) -> pd.Series:
@@ -70,7 +70,7 @@ def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
     return df.fillna(method="ffill", axis=0)
 
 
-def values(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
+def turnovers(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
     """Дневные обороты для указанных тикеров до указанной даты включительно.
 
     Пропуски заполнены нулевыми значениями.
@@ -83,7 +83,7 @@ def values(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
         Обороты.
     """
     quotes_list = asyncio.run(quotes(tickers))
-    df = pd.concat([df[store.VALUE] for df in quotes_list], axis=1)
+    df = pd.concat([df[store.TURNOVER] for df in quotes_list], axis=1)
     df = df.loc[:last_date]
     df.columns = tickers
     return df.fillna(0, axis=0)

@@ -125,7 +125,7 @@ class Portfolio:
 
         Ликвидность в первом приближении убывает пропорционально квадрату оборота
         """
-        last_turnover = data.values(tuple(self.index[:-2]), self.date)
+        last_turnover = data.turnovers(tuple(self.index[:-2]), self.date)
         last_turnover = last_turnover.iloc[-TURNOVER_PERIOD:]
         last_turnover = last_turnover.median(axis=0)
         turnover_share_of_portfolio = last_turnover / self.value[PORTFOLIO]
