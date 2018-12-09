@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from poptimizer import POptimizerError
-from poptimizer.storage import utils
+from poptimizer.store import utils
 
 
 class AbstractManager(ABC):

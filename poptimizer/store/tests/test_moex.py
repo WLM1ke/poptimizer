@@ -1,8 +1,10 @@
 import pandas as pd
 import pytest
 
-from poptimizer.storage import client, moex, manager
-from poptimizer.storage.utils import (
+from poptimizer.store import client, moex, manager
+
+# noinspection PyProtectedMember
+from poptimizer.store.utils import (
     REG_NUMBER,
     LOT_SIZE,
     TICKER,
@@ -26,7 +28,7 @@ async def fake_update_timestamp(_):
 
 
 @pytest.mark.asyncio
-async def test_securities_info(monkeypatch):
+async def test_securities(monkeypatch):
     monkeypatch.setattr(manager.utils, "update_timestamp", fake_update_timestamp)
 
     df = await moex.Securities().get()

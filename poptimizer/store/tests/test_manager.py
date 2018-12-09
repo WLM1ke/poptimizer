@@ -3,9 +3,10 @@ import pandas as pd
 import pytest
 
 import poptimizer
-from poptimizer.storage import manager, store
-from poptimizer.storage.client import MAX_SIZE, MAX_DBS
-from poptimizer.storage.utils import MOEX_TZ
+from poptimizer.store import manager, lmbd
+from poptimizer.store.client import MAX_SIZE, MAX_DBS
+# noinspection PyProtectedMember
+from poptimizer.store.utils import MOEX_TZ
 
 
 @pytest.fixture(scope="module", name="path")
@@ -18,7 +19,7 @@ def make_temp_dir(tmpdir_factory):
 @pytest.mark.asyncio
 async def fake_data_path(path):
     async with aiomoex.ISSClientSession() as session:
-        with store.DataStore(path, MAX_SIZE, MAX_DBS) as db:
+        with lmbd.DataStore(path, MAX_SIZE, MAX_DBS) as db:
             manager.AbstractManager.ISS_SESSION = session
             manager.AbstractManager.STORE = db
             yield

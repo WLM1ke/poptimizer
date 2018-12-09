@@ -4,7 +4,7 @@ import contextlib
 import aiomoex
 
 from poptimizer import config
-from poptimizer.storage import manager, store
+from poptimizer.store import manager, lmbd, moex
 
 # Максимальный размер хранилища данных и количество вложенных баз
 MAX_SIZE = 10 * 2 ** 20
@@ -23,7 +23,7 @@ class Client(contextlib.AbstractAsyncContextManager):
 
     def __init__(self):
         self._session = aiomoex.ISSClientSession()
-        self._store = store.DataStore(config.DATA_PATH, MAX_SIZE, MAX_DBS)
+        self._store = lmbd.DataStore(config.DATA_PATH, MAX_SIZE, MAX_DBS)
 
     async def __aenter__(self):
         manager.AbstractManager.ISS_SESSION = self._session
@@ -34,9 +34,6 @@ class Client(contextlib.AbstractAsyncContextManager):
         await self._session.__aexit__(exc_type, exc_val, exc_tb)
         self._store.__exit__(exc_type, exc_val, exc_tb)
 
-    def __getattr__(self, item):
-        sub_classes = manager.AbstractManager.__subclasses__()
-        data_types = {str(cls.__name__).lower(): cls for cls in sub_classes}
-        if item in data_types:
-            return data_types[item]
-        raise AttributeError(f"Отсутствует менеджер данных для '{item}'.")
+    securities = moex.Securities
+
+    quotes = moex.Quotes

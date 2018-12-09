@@ -4,4 +4,5 @@
 Обновление осуществляется асинхронно, поэтому для ускорения целесообразно осуществлять сразу несколько
 запросов.
 """
-from poptimizer.storage.client import Client
+from poptimizer.store.client import Client
+from poptimizer.store.utils import *

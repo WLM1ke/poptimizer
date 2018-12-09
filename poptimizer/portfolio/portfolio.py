@@ -4,13 +4,12 @@ from typing import Dict, Optional
 import numpy as np
 import pandas as pd
 
-from poptimizer import POptimizerError, CASH, PORTFOLIO
+from poptimizer import POptimizerError, CASH, PORTFOLIO, data
 from poptimizer.config import TURNOVER_CUT_OFF, TURNOVER_PERIOD
-from poptimizer.data import moex
 
 
 class Portfolio:
-    """Основные количественные и стоймостные характеристики портфеля
+    """Основные количественные и стоимостные характеристики портфеля
 
     Характеристики предоставляются в виде pd.Series с индексом, содержащим все позиции в алфавитном
     порядке, потом CASH и PORTFOLIO
@@ -23,10 +22,10 @@ class Portfolio:
         positions: Dict[str, int],
         value: Optional[float] = None,
     ):
-        """При создании может быть очуществлена проверка совпадения расчтеной стоимости и введенной
+        """При создании может быть осуществлена проверка совпадения расчетной стоимости и введенной
 
         :param date:
-            Дата на которую расчитываются параметры портфеля
+            Дата на которую рассчитываются параметры портфеля
         :param cash:
             Количество наличных в портфеле
         :param positions:
@@ -83,7 +82,7 @@ class Portfolio:
 
         CASH и PORTFOLIO - 1
         """
-        lot_size = moex.lot_size(tuple(self.index[:-2]))
+        lot_size = data.lot_size(tuple(self.index[:-2]))
         return lot_size.reindex(self.index, fill_value=1)
 
     @property
@@ -100,7 +99,7 @@ class Portfolio:
 
         CASH - 1 и PORTFOLIO - расчетная стоимость
         """
-        price = moex.prices(self.date, tuple(self.index[:-2]))
+        price = data.prices(tuple(self.index[:-2]), self.date)
         price = price.loc[self.date]
         price[CASH] = 1
         price[PORTFOLIO] = (self.shares[:-1] * price).sum(axis=0)
@@ -126,7 +125,7 @@ class Portfolio:
 
         Ликвидность в первом приближении убывает пропорционально квадрату оборота
         """
-        last_turnover = moex.turnovers(self.date, tuple(self.index[:-2]))
+        last_turnover = data.values(tuple(self.index[:-2]), self.date)
         last_turnover = last_turnover.iloc[-TURNOVER_PERIOD:]
         last_turnover = last_turnover.median(axis=0)
         turnover_share_of_portfolio = last_turnover / self.value[PORTFOLIO]
@@ -140,4 +139,5 @@ if __name__ == "__main__":
     cash_ = 10
     date_ = pd.Timestamp("2018-12-03")
     port = Portfolio(date_, cash_, pos_)
+    # noinspection PyProtectedMember
     print(port._shares)

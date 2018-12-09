@@ -6,8 +6,10 @@ from typing import Tuple
 import aiomoex
 import pandas as pd
 
-from poptimizer.storage.manager import AbstractManager
-from poptimizer.storage.utils import TICKER, REG_NUMBER, LOT_SIZE, DATE, CLOSE, VALUE
+from poptimizer.store.manager import AbstractManager
+
+# noinspection PyProtectedMember
+from poptimizer.store.utils import TICKER, REG_NUMBER, LOT_SIZE, DATE, CLOSE, VALUE
 
 # Данные об акциях хранятся в основной базе
 NAME_SECURITIES = "securities"

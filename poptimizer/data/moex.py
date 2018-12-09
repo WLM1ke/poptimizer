@@ -1,40 +1,89 @@
-"""Основные функции агригации данных, свезанных с котировками"""
+"""Основные функции агрегации данных по котировкам акций."""
+import asyncio
+from typing import Tuple, Optional, List
+
 import pandas as pd
 
+from poptimizer import store
 
-def securities():
-    pass
+__all__ = ["lot_size", "prices", "values"]
 
 
-def lot_size(tickers: tuple):
-    """Размер лотов для указанных акций
+async def securities(tickers: Optional[Tuple[str]] = None) -> pd.Series:
+    """Информация о размере лотов для тикеров.
 
     :param tickers:
-        Перечень тикеров акций
+        Перечень тикеров, для которых нужна информация. При отсутствии информация будет предоставлена
+        для всех торгуемых бумаг.
     :return:
-        Размеры лотов
+        Информация о размере лотов.
     """
-    securities = securities()
-    return securities.loc[list[tickers], "LOTSIZE"]
+    async with store.Client() as client:
+        db = client.securities()
+        df = await db.get()
+    if tickers:
+        return df.loc[list(tickers), store.LOT_SIZE]
+    return df[store.LOT_SIZE]
 
 
-def prices(last_date: pd.Timestamp, tickers: tuple):
-    """Пустые места должны быть заполнены предыдущими значениям - наличие даты проверено
+def lot_size(tickers: Optional[Tuple[str]] = None) -> pd.Series:
+    """Информация о размере лотов для тикеров.
 
+    :param tickers:
+        Перечень тикеров, для которых нужна информация. При отсутствии информация будет предоставлена
+        для всех торгуемых бумаг.
+    :return:
+        Информация о размере лотов.
+    """
+    return asyncio.run(securities(tickers))
+
+
+async def quotes(tickers: Tuple[str]) -> List[pd.DataFrame]:
+    """Информация о котировках для заданных тикеров (цена закрытия и объем).
+
+    :param tickers:
+        Перечень тикеров, для которых нужна информация.
+    :return:
+        Список с котировками.
+    """
+    async with store.Client() as client:
+        db = client.quotes(tickers)
+        return await db.get()
+
+
+def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
+    """Дневные цены закрытия для указанных тикеров до указанной даты включительно.
+
+    Пропуски заполнены предыдущими значениями.
+
+    :param tickers:
+        Тикеры, для которых нужна информация.
     :param last_date:
-    :param tickers:
+        Последняя дата цен закрытия.
     :return:
+        Цены закрытия.
     """
-    pass  # TODO
-    return None
+    quotes_list = asyncio.run(quotes(tickers))
+    df = pd.concat([df[store.CLOSE] for df in quotes_list], axis=1)
+    df = df.loc[:last_date]
+    df.columns = tickers
+    return df.fillna(method="ffill", axis=0)
 
 
-def turnovers(last_date: pd.Timestamp, tickers: tuple):
-    """Пустые места должны быть заполнены предыдущими значениям - наличие даты проверено
+def values(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
+    """Дневные обороты для указанных тикеров до указанной даты включительно.
 
+    Пропуски заполнены нулевыми значениями.
+
+    :param tickers:
+        Тикеры, для которых нужна информация.
     :param last_date:
-    :param tickers:
+        Последняя дата оборотов.
     :return:
+        Обороты.
     """
-    pass  # TODO
-    return None
+    quotes_list = asyncio.run(quotes(tickers))
+    df = pd.concat([df[store.VALUE] for df in quotes_list], axis=1)
+    df = df.loc[:last_date]
+    df.columns = tickers
+    return df.fillna(0, axis=0)

@@ -6,7 +6,7 @@ from typing import Any
 import aiomoex
 import pandas as pd
 
-from poptimizer.storage import store
+from poptimizer.store import lmbd
 
 # Часовой пояс MOEX
 MOEX_TZ = "Europe/Moscow"
@@ -25,6 +25,8 @@ TICKER = "TICKER"
 REG_NUMBER = "REG_NUMBER"
 LOT_SIZE = "LOT_SIZE"
 
+__all__ = ["CLOSE", "VALUE", "LOT_SIZE"]
+
 
 @dataclass(frozen=True)
 class Datum:
@@ -38,11 +40,11 @@ async def download_last_history():
     """Последняя дата торгов, которая есть на MOEX ISS."""
     dates = await aiomoex.get_board_dates()
     date = pd.Timestamp(dates[0]["till"], tz=MOEX_TZ)
-    logging.info(f"Последняя дата с историей: {date}")
+    logging.info(f"Последняя дата с историей: {date.date()}")
     return date + pd.DateOffset(**END_OF_TRADING)
 
 
-async def update_timestamp(db: store.DataStore):
+async def update_timestamp(db: lmbd.DataStore):
     """Момент времени после, которого не нужно обновлять исторические данные для хранилища."""
     now = pd.Timestamp.now(MOEX_TZ)
     # noinspection PyUnresolvedReferences

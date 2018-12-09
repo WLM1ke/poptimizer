@@ -3,7 +3,7 @@ from contextlib import AbstractContextManager
 import lmdb
 import pytest
 
-from poptimizer.storage import store
+from poptimizer.store import lmbd
 
 
 @pytest.fixture(scope="module", name="path")
@@ -12,11 +12,11 @@ def make_temp_dir(tmpdir_factory):
 
 
 def test_context_manager():
-    assert issubclass(store.DataStore, AbstractContextManager)
+    assert issubclass(lmbd.DataStore, AbstractContextManager)
 
 
 def test_db_closed(path):
-    with store.DataStore(path, categories=10) as db:
+    with lmbd.DataStore(path, categories=10) as db:
         pass
     with pytest.raises(lmdb.Error) as error:
         db["a", "b"] = 1
@@ -24,7 +24,7 @@ def test_db_closed(path):
 
 
 def test_put(path):
-    with store.DataStore(path, categories=10) as db:
+    with lmbd.DataStore(path, categories=10) as db:
         db["aa"] = 1
         assert db.stat()["entries"] == 1
 
@@ -41,7 +41,7 @@ def test_put(path):
 
 
 def test_get(path):
-    with store.DataStore(path, categories=10) as db:
+    with lmbd.DataStore(path, categories=10) as db:
         assert db["aa"] == 1
         assert db["b"] == 2
         assert db["aa", "first"] == 3
@@ -53,5 +53,5 @@ def test_get(path):
 
 
 def test_get_no_value(path):
-    with store.DataStore(path, categories=10) as db:
+    with lmbd.DataStore(path, categories=10) as db:
         assert db["dd"] is None
