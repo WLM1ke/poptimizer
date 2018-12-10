@@ -4,8 +4,9 @@ from typing import Dict, Optional
 import numpy as np
 import pandas as pd
 
-from poptimizer import POptimizerError, data
+from poptimizer import data
 from poptimizer.config import TURNOVER_CUT_OFF, TURNOVER_PERIOD
+from poptimizer.misc import POptimizerError
 
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"

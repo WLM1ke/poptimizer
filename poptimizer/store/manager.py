@@ -7,7 +7,7 @@ from typing import Union, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from poptimizer import POptimizerError
+from poptimizer.misc import POptimizerError
 from poptimizer.store import utils
 
 
@@ -94,7 +94,7 @@ class AbstractManager(ABC):
         self._validate_index(df)
         data = utils.Datum(df)
         self.STORE[name, self.category] = data
-        logging.info(f"Данных обновлены {self.category} -> {name}")
+        logging.info(f"Данные обновлены {self.category} -> {name}")
         self._data[name] = data
 
     def _validate_index(self, df):
