@@ -53,8 +53,8 @@ class Quotes(AbstractManager):
     котировок для всех тикеров.
     """
 
-    def __init__(self, names: Tuple[str]):
-        super().__init__(names, CATEGORY_QUOTES)
+    def __init__(self, tickers: Tuple[str]):
+        super().__init__(tickers, CATEGORY_QUOTES)
 
     async def _download(self, name: str):
         """Загружает полностью или только обновление по ценам закрытия и оборотам в рублях."""

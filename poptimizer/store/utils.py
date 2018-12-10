@@ -25,8 +25,6 @@ TICKER = "TICKER"
 REG_NUMBER = "REG_NUMBER"
 LOT_SIZE = "LOT_SIZE"
 
-__all__ = ["CLOSE", "TURNOVER", "LOT_SIZE"]
-
 
 @dataclass(frozen=True)
 class Datum:
