@@ -2,8 +2,6 @@ import pandas as pd
 import pytest
 
 from poptimizer.store import client, moex, manager
-
-# noinspection PyProtectedMember
 from poptimizer.store.utils import (
     REG_NUMBER,
     LOT_SIZE,

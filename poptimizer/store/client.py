@@ -4,7 +4,7 @@ import contextlib
 import aiomoex
 
 from poptimizer import config
-from poptimizer.store import manager, lmbd, moex
+from poptimizer.store import manager, lmbd, moex, dividends
 
 # Максимальный размер хранилища данных и количество вложенных баз
 MAX_SIZE = 10 * 2 ** 20
@@ -37,3 +37,5 @@ class Client(contextlib.AbstractAsyncContextManager):
     securities = moex.Securities
 
     quotes = moex.Quotes
+
+    dividends = dividends.Dividends
