@@ -1,7 +1,9 @@
+import aiomoex
 import pandas as pd
 import pytest
 
-from poptimizer.store import client, moex, manager
+from poptimizer.store import client, moex, manager, lmbd
+from poptimizer.store.client import MAX_SIZE, MAX_DBS
 from poptimizer.store.utils import (
     REG_NUMBER,
     LOT_SIZE,
@@ -9,15 +11,23 @@ from poptimizer.store.utils import (
     CLOSE,
     TURNOVER,
     MOEX_TZ,
-    DATE,
 )
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(scope="module", name="path")
+def make_temp_dir(tmpdir_factory):
+    temp_dir = tmpdir_factory.mktemp("store_moex")
+    return temp_dir
+
+
+@pytest.fixture
 @pytest.mark.asyncio
-async def create_client():
-    async with client.Client():
-        yield
+async def fake_data_base(path):
+    async with aiomoex.ISSClientSession() as session:
+        with lmbd.DataStore(path, MAX_SIZE, MAX_DBS) as db:
+            manager.AbstractManager.ISS_SESSION = session
+            manager.AbstractManager.STORE = db
+            yield
 
 
 @pytest.mark.asyncio
@@ -25,6 +35,7 @@ async def fake_update_timestamp(_):
     return pd.Timestamp.now(MOEX_TZ) + pd.DateOffset(days=7)
 
 
+@pytest.mark.usefixtures("fake_data_base")
 @pytest.mark.asyncio
 async def test_securities(monkeypatch):
     monkeypatch.setattr(manager.utils, "update_timestamp", fake_update_timestamp)
@@ -54,20 +65,10 @@ async def test_securities(monkeypatch):
     assert df.loc["TTLK", LOT_SIZE] == 10000
 
 
-# noinspection PyProtectedMember
+@pytest.mark.usefixtures("fake_data_base")
 @pytest.mark.asyncio
-async def test_quotes_find_aliases():
-    assert set(await moex.Quotes._find_aliases("UPRO")) == {"UPRO", "EONR", "OGK4"}
-
-
-# noinspection PyTypeChecker
-@pytest.mark.asyncio
-async def test_quotes_fake_create(monkeypatch):
-    monkeypatch.setattr(manager.utils, "update_timestamp", fake_update_timestamp)
-
-    db = moex.Quotes("MSTT")
-    monkeypatch.setattr(db, "_data", {"MSTT": None})
-    df = await db.get()
+async def test_quotes_create():
+    df = await moex.Quotes(("MSTT",)).get()
 
     assert isinstance(df, pd.DataFrame)
     assert df.shape[0] > 1000
@@ -79,34 +80,49 @@ async def test_quotes_fake_create(monkeypatch):
     assert df.loc["2018-03-09", TURNOVER] == 439722
 
 
-# noinspection PyTypeChecker
+@pytest.mark.usefixtures("fake_data_base")
+@pytest.mark.asyncio
+async def test_quotes_start_of_download_update():
+    mng = moex.Quotes(("MSTT",))
+    await mng.get()
+    # noinspection PyProtectedMember
+    update = await mng._download_update("MSTT")
+    assert update.index[0] >= pd.Timestamp("2018-12-10")
+
+
+@pytest.mark.usefixtures("fake_data_base")
 @pytest.mark.asyncio
 async def test_quotes_fake_update(monkeypatch):
     monkeypatch.setattr(manager.utils, "update_timestamp", fake_update_timestamp)
 
-    df = await moex.Quotes("AKRN").get()
+    df = await moex.Quotes(("MSTT",)).get()
+
     assert isinstance(df, pd.DataFrame)
-    assert len(df) > 3000
-
-    assert df.index.name == DATE
-    assert all(df.columns == [CLOSE, TURNOVER])
-
-    assert df.index[0] == pd.Timestamp("2006-10-20")
-    assert df[CLOSE].iloc[0] == pytest.approx(834.93)
-    assert df[TURNOVER].iloc[0] == pytest.approx(13863.93)
-    assert df.index[-1] >= pd.Timestamp("2018-12-07")
+    assert df.shape[0] > 1000
+    assert df.index[0] == pd.to_datetime("2010-11-03")
+    assert df.loc["2013-03-27", CLOSE] == pytest.approx(136.3)
+    assert df.loc["2014-06-09", CLOSE] == pytest.approx(110.48)
+    assert df.loc["2018-09-07", CLOSE] == pytest.approx(92.0)
+    assert df.loc["2018-03-09", CLOSE] == 148.8
+    assert df.loc["2018-03-09", TURNOVER] == 439722
 
 
+@pytest.fixture()
 @pytest.mark.asyncio
-async def test_quotes_start_of_download_update():
-    mng = moex.Quotes("AKRN")
-    await mng.get()
-    # noinspection PyProtectedMember
-    update = await mng._download_update("AKRN")
-    assert update.index[0] >= pd.Timestamp("2018-12-10")
+async def create_client():
+    async with client.Client():
+        yield
+
+
+# noinspection PyProtectedMember
+@pytest.mark.usefixtures("create_client")
+@pytest.mark.asyncio
+async def test_quotes_find_aliases():
+    assert set(await moex.Quotes._find_aliases("UPRO")) == {"UPRO", "EONR", "OGK4"}
 
 
 # noinspection PyTypeChecker
+@pytest.mark.usefixtures("create_client")
 @pytest.mark.asyncio
 async def test_quotes_akrn():
     df = await moex.Quotes("AKRN").get()
@@ -122,6 +138,7 @@ async def test_quotes_akrn():
 
 
 # noinspection PyTypeChecker
+@pytest.mark.usefixtures("create_client")
 @pytest.mark.asyncio
 async def test_quotes_moex():
     df = await moex.Quotes("MOEX").get()
@@ -133,6 +150,7 @@ async def test_quotes_moex():
 
 
 # noinspection PyTypeChecker
+@pytest.mark.usefixtures("create_client")
 @pytest.mark.asyncio
 async def test_quotes_upro():
     df = await moex.Quotes("UPRO").get()
@@ -146,6 +164,7 @@ async def test_quotes_upro():
 
 
 # noinspection PyTypeChecker
+@pytest.mark.usefixtures("create_client")
 @pytest.mark.asyncio
 async def test_quotes_banep():
     df = await moex.Quotes("BANEP").get()
@@ -159,6 +178,7 @@ async def test_quotes_banep():
 
 
 # noinspection PyTypeChecker
+@pytest.mark.usefixtures("create_client")
 @pytest.mark.asyncio
 async def test_quotes_sberp():
     df = await moex.Quotes("SBERP").get()
@@ -170,6 +190,7 @@ async def test_quotes_sberp():
 
 
 # noinspection PyTypeChecker
+@pytest.mark.usefixtures("create_client")
 @pytest.mark.asyncio
 async def test_quotes_gmkn():
     df = await moex.Quotes("GMKN").get()
@@ -181,6 +202,7 @@ async def test_quotes_gmkn():
 
 
 # noinspection PyTypeChecker
+@pytest.mark.usefixtures("create_client")
 @pytest.mark.asyncio
 async def test_quotes_mstt():
     df = await moex.Quotes("MSTT").get()
@@ -195,6 +217,7 @@ async def test_quotes_mstt():
 
 
 # noinspection PyTypeChecker
+@pytest.mark.usefixtures("create_client")
 @pytest.mark.asyncio
 async def test_quotes_kbtk():
     df = await moex.Quotes("KBTK").get()
@@ -205,6 +228,7 @@ async def test_quotes_kbtk():
 
 
 # noinspection PyTypeChecker
+@pytest.mark.usefixtures("create_client")
 @pytest.mark.asyncio
 async def test_quotes_rtkmp():
     df = await moex.Quotes("RTKMP").get()
@@ -215,6 +239,7 @@ async def test_quotes_rtkmp():
 
 
 # noinspection PyTypeChecker
+@pytest.mark.usefixtures("create_client")
 @pytest.mark.asyncio
 async def test_quotes_lsngp():
     df = await moex.Quotes("LSNGP").get()
@@ -228,6 +253,7 @@ async def test_quotes_lsngp():
 
 
 # noinspection PyTypeChecker
+@pytest.mark.usefixtures("create_client")
 @pytest.mark.asyncio
 async def test_quotes_lsrg():
     df = await moex.Quotes("LSRG").get()
