@@ -36,11 +36,20 @@ class SimpleManager(manager.AbstractManager):
         return self.UPDATE
 
 
+# noinspection PyProtectedMember
 @pytest.mark.asyncio
 async def test_data_create():
     time0 = pd.Timestamp.now(MOEX_TZ)
     simple_manager = SimpleManager(("AKRN",), "category")
+
+    assert simple_manager._last_history_date is None
+
     data = await simple_manager.get()
+
+    assert isinstance(simple_manager._last_history_date, str)
+    assert len(simple_manager._last_history_date) == 10
+    assert simple_manager._last_history_date >= "2018-12-10"
+
     assert isinstance(data, pd.DataFrame)
     assert data.equals(pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]}))
     # noinspection PyProtectedMember
@@ -107,7 +116,7 @@ async def test_index_non_unique(monkeypatch):
 
     with pytest.raises(poptimizer.POptimizerError) as error:
         await SimpleManager(("RTKM",), "category").get()
-    assert str(error.value) == "Индекс не уникальный"
+    assert str(error.value) == "Индекс RTKM не уникальный"
 
 
 @pytest.mark.asyncio
@@ -116,7 +125,7 @@ async def test_index_non_monotonic(monkeypatch):
 
     with pytest.raises(poptimizer.POptimizerError) as error:
         await SimpleManager(("RTKM",), "category").get()
-    assert str(error.value) == "Индекс не возрастает монотонно"
+    assert str(error.value) == "Индекс RTKM не возрастает монотонно"
 
 
 @pytest.mark.asyncio

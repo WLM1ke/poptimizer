@@ -97,8 +97,8 @@ class Quotes(AbstractManager):
 
     async def _download_update(self, name):
         """Загружает данные с последнего имеющегося значения до конца истории."""
-        start = self._data[name].value.index[-1].date
-        data = await aiomoex.get_board_candles(
+        start = self._data[name].value.index[-1].date()
+        data = await aiomoex.get_market_candles(
             name, start=str(start), end=self._last_history_date
         )
         df = pd.DataFrame(data)

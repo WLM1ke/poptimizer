@@ -97,6 +97,15 @@ async def test_quotes_fake_update(monkeypatch):
     assert df.index[-1] >= pd.Timestamp("2018-12-07")
 
 
+@pytest.mark.asyncio
+async def test_quotes_start_of_download_update():
+    mng = moex.Quotes("AKRN")
+    await mng.get()
+    # noinspection PyProtectedMember
+    update = await mng._download_update("AKRN")
+    assert update.index[0] >= pd.Timestamp("2018-12-10")
+
+
 # noinspection PyTypeChecker
 @pytest.mark.asyncio
 async def test_quotes_akrn():

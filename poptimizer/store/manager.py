@@ -91,18 +91,18 @@ class AbstractManager(ABC):
 
     def _check_index_and_save(self, name, df):
         """Проверяет индекс данных, сохраняет их в локальное хранилище и данные класса."""
-        self._validate_index(df)
+        self._validate_index(name, df)
         data = utils.Datum(df)
         self.STORE[name, self.category] = data
         logging.info(f"Данные обновлены {self.category} -> {name}")
         self._data[name] = data
 
-    def _validate_index(self, df):
+    def _validate_index(self, name: str, df):
         """Проверяет индекс данных с учетом настроек."""
         if self.IS_UNIQUE and not df.index.is_unique:
-            raise POptimizerError(f"Индекс не уникальный")
+            raise POptimizerError(f"Индекс {name} не уникальный")
         if self.IS_MONOTONIC and not df.index.is_monotonic_increasing:
-            raise POptimizerError(f"Индекс не возрастает монотонно")
+            raise POptimizerError(f"Индекс {name} не возрастает монотонно")
 
     async def update(self, name: str):
         """Обновляет локальные данные.
