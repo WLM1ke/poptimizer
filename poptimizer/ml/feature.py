@@ -1,6 +1,6 @@
 """Абстрактный класс признака для машинного обучения."""
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Tuple
 
 import pandas as pd
 
@@ -8,12 +8,12 @@ import pandas as pd
 class AbstractFeature(ABC):
     """Создает признак для заданного набора тикеров с использованием статистики до заданной даты."""
 
-    def __init__(self, tickers: List[str], date: pd.Timestamp):
+    def __init__(self, tickers: Tuple[str], date: pd.Timestamp):
         self._tickers = tickers
         self._date = date
 
     @abstractmethod
-    def get_feature(self, *kwargs) -> pd.DataFrame:
+    def get(self, *kwargs) -> pd.DataFrame:
         """Создает признак для заданного значения параметров.
 
         У каждого признака могут быть свои параметры, а могут и отсутствовать.
@@ -25,7 +25,7 @@ class AbstractFeature(ABC):
 
     @staticmethod
     @abstractmethod
-    def is_categorical(self) -> bool:
+    def is_categorical() -> bool:
         """Должен возвращать True для категориальных признаков."""
 
     @abstractmethod

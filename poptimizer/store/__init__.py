@@ -5,4 +5,4 @@
 запросов.
 """
 from poptimizer.store.client import Client
-from poptimizer.store.utils import CLOSE, TURNOVER, LOT_SIZE
+from poptimizer.store.utils import CLOSE, TURNOVER, LOT_SIZE, TICKER
