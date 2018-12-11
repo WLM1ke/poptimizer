@@ -1,11 +1,22 @@
 """Абстрактный класс с метриками портфеля"""
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
 
 from poptimizer.config import T_SCORE
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO, Portfolio
+
+
+@dataclass(frozen=True)
+class Forecast:
+    """Класс с прогнозом"""
+
+    date: pd.Timestamp
+    tickers: list
+    mean: np.array
+    cov: np.array
 
 
 class AbstractMetrics(ABC):
@@ -27,13 +38,18 @@ class AbstractMetrics(ABC):
         self._forecast = self._forecast_func()
         self._months = months
 
-    @abstractmethod
-    def _forecast_func(self):
-        """Функция, возвращающая прогноз в годовом исчислении.
+    def __str__(self):
+        frames = [self.mean, self.std, self.beta, self.lower_bound, self.gradient]
+        df = pd.concat(frames, axis=1)
+        df.columns = ["MEAN", "STD", "BETA", "LOWER_BOUND", "GRADIENT"]
+        return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ" f"\n" f"\n{df}"
 
-        Прогноз должен включать доходность и ковариационную матрицу.
+    @abstractmethod
+    def _forecast_func(self) -> Forecast:
+        """Функция, возвращающая Forecast в годовом исчислении.
+
+        Прогноз должен включать доходность, ковариационную матрицу и исходный портфель.
         """
-        raise NotImplementedError
 
     @property
     def mean(self):
@@ -55,7 +71,8 @@ class AbstractMetrics(ABC):
         std = pd.Series(std, index=portfolio.index[:-2])
         std[CASH] = 0
         weight = portfolio.weight[:-2].values
-        std[PORTFOLIO] = (weight.reshape(1, -1) @ cov @ weight.reshape(-1, 1)) ** 0.5
+        portfolio_var = weight.reshape(1, -1) @ cov @ weight.reshape(-1, 1)
+        std[PORTFOLIO] = portfolio_var[0, 0] ** 0.5
         return std
 
     @property
@@ -65,7 +82,7 @@ class AbstractMetrics(ABC):
         cov = self._forecast.cov
         weight = portfolio.weight[:-2].values
         beta = cov @ weight.reshape(-1, 1) / (self.std[PORTFOLIO] ** 2)
-        beta = pd.Series(beta, index=portfolio.index[:-2])
+        beta = pd.Series(beta.flatten(), index=portfolio.index[:-2])
         beta[CASH] = 0
         beta[PORTFOLIO] = 1
         return beta
