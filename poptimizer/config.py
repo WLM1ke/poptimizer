@@ -17,6 +17,9 @@ DATA_PATH = pathlib.Path(__file__).parents[1] / "data"
 # Путь к директории с отчетам
 REPORTS_PATH = pathlib.Path(__file__).parents[1] / "reports"
 
+# Параметр для доверительных интервалов
+T_SCORE = 2.0
+
 # Максимальный объем одной торговой операции в долях портфеля
 MAX_TRADE = 0.01
 

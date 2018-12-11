@@ -8,6 +8,7 @@ aiohttp_theme
 
 pandas
 numpy
+openpyxl
 
 lmdb
 

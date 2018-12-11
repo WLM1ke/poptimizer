@@ -29,7 +29,7 @@ def test_portfolio(monkeypatch):
     assert np.allclose(port.price, [139.91, 0.1525, 17630, 1, 3_699_111])
     assert np.allclose(port.value, [954_186, 187_575, 2_556_350, 1000, 3_699_111])
     assert np.allclose(
-        port.weights,
+        port.weight,
         [
             0.257_950_085_844_95,
             0.050_708_129_601_95,

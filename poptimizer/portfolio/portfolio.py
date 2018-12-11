@@ -55,7 +55,7 @@ class Portfolio:
                 self.shares,
                 self.price,
                 self.value,
-                self.weights,
+                self.weight,
                 self.turnover_factor,
             ],
             axis="columns",
@@ -120,7 +120,7 @@ class Portfolio:
         return self.price * self.shares
 
     @property
-    def weights(self):
+    def weight(self):
         """Доли позиций.
 
         PORTFOLIO - 1.
