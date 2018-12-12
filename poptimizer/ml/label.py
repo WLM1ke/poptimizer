@@ -46,8 +46,8 @@ def make_labels(
     )
     index = returns.index[-1::-days]
     index = index[-1::-1]
-    mean = mean.reindex(index).stack()
-    std = std.reindex(index).stack()
+    mean = mean.reindex(index).shift(-1).stack()
+    std = std.reindex(index).shift(-1).stack()
     labels = pd.concat([mean, std], axis=1)
     labels.dropna(inplace=True)
     labels.columns = ["MEAN", "STD"]

@@ -17,15 +17,15 @@ def test_make_labels():
     assert isinstance(df, pd.DataFrame)
     assert isinstance(df.index, pd.MultiIndex)
 
-    assert df.index[0] == (pd.Timestamp("2003-09-25"), "SNGSP")
-    assert df.index[-1] == (pd.Timestamp("2018-12-11"), "MSTT")
+    assert df.index[0] == (pd.Timestamp("2003-08-27"), "SNGSP")
+    assert df.index[-1] == (pd.Timestamp("2018-11-12"), "MSTT")
 
     assert len(df) == 423
     assert df.shape[1] == 3
 
-    assert df.at[("2018-12-11", "SNGSP"), "MEAN"] == pytest.approx(0.0995856337763434)
-    assert df.at[("2018-06-15", "AKRN"), "MEAN"] == pytest.approx(0.114643927228733)
+    assert df.at[("2018-11-12", "SNGSP"), "MEAN"] == pytest.approx(0.0995856337763434)
+    assert df.at[("2018-05-17", "AKRN"), "MEAN"] == pytest.approx(0.114643927228733)
 
-    assert df.at[("2018-11-12", "MSTT"), "STD"] == pytest.approx(0.224696005113617)
+    assert df.at[("2018-10-11", "MSTT"), "STD"] == pytest.approx(0.224696005113617)
 
-    assert df.at[("2018-10-11", "AKRN"), LABELS] == pytest.approx(0.181224685163257)
+    assert df.at[("2018-09-12", "AKRN"), LABELS] == pytest.approx(0.181224685163257)
