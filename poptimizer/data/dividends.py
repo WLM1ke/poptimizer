@@ -14,7 +14,7 @@ from poptimizer.data import moex
 __all__ = ["log_total_returns"]
 
 
-async def dividends_list(tickers: Tuple[str]) -> List[pd.DataFrame]:
+async def dividends(tickers: Tuple[str]) -> List[pd.DataFrame]:
     """Информация о дивидендах для заданных тикеров.
 
     :param tickers:
@@ -27,7 +27,7 @@ async def dividends_list(tickers: Tuple[str]) -> List[pd.DataFrame]:
         return await db.get()
 
 
-def dividends(tickers: tuple) -> pd.DataFrame:
+def dividends_all(tickers: tuple) -> pd.DataFrame:
     """Дивиденды по заданным тикерам до указанной даты.
 
     Значения для дат, в которые нет дивидендов у данного тикера (есть у какого-то другого),
@@ -38,7 +38,7 @@ def dividends(tickers: tuple) -> pd.DataFrame:
     :return:
         Дивиденды.
     """
-    quotes_list = asyncio.run(dividends_list(tickers))
+    quotes_list = asyncio.run(dividends(tickers))
     df = pd.concat([df for df in quotes_list], axis=1)
     return df.fillna(0, axis=0)
 
@@ -54,7 +54,8 @@ def t2_shift(date: pd.Timestamp, index: pd.DatetimeIndex):
     if date <= index[-1]:
         position = index.get_loc(date, "ffill")
         return index[position - 1]
-    # Выходной заменяем бизнес днем
+    # Часть дивидендов приходится на выходной, поэтому нельзя просто сдвинуться на один бизнес день назад
+    # Сначала двигаемся на следующий бизнес день, а потом на два бизнес дня назад
     next_b_day = date + offsets.BDay()
     return next_b_day - 2 * offsets.BDay()
 
@@ -71,8 +72,14 @@ def log_total_returns(tickers: tuple, last_date: pd.Timestamp):
     """
     p1 = moex.prices(tickers, last_date)
     p0 = p1.shift(1)
-    div = dividends(tickers) * AFTER_TAX
+    div = dividends_all(tickers) * AFTER_TAX
     div.index = div.index.map(functools.partial(t2_shift, index=p1.index))
     div = div.loc[:last_date]
     returns = p1.add(div, fill_value=0) / p0
     return returns.iloc[1:].apply(np.log)
+
+
+if __name__ == "__main__":
+    tickers_ = ("GMKN", "RTKMP", "MTSS")
+    print(log_total_returns(tickers_, pd.Timestamp("2018-10-17")))
+    print(dividends_all(tickers_) * AFTER_TAX)
