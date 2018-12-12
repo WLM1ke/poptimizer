@@ -17,6 +17,9 @@ DATA_PATH = pathlib.Path(__file__).parents[1] / "data"
 # Путь к директории с отчетам
 REPORTS_PATH = pathlib.Path(__file__).parents[1] / "reports"
 
+# Множитель, для переходя к после налоговым значениям
+AFTER_TAX = 1 - 0.13
+
 # Параметр для доверительных интервалов
 T_SCORE = 2.0
 
