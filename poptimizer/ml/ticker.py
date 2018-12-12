@@ -9,12 +9,12 @@ from poptimizer.store import TICKER
 class Ticker(AbstractFeature):
     """Тикер для каждой даты из котировок."""
 
-    def get(self, *kwargs):
+    def get(self, *kwargs) -> pd.Series:
         """Для дат, в которые есть котировки указывается тикер."""
-        prices = data.log_total_returns(self._tickers, self._date)
-        prices = prices.stack()
-        tickers = prices.index.droplevel(0)
-        return pd.DataFrame(data=tickers, index=prices.index, columns=[TICKER])
+        returns = data.log_total_returns(self._tickers, self._date)
+        returns = returns.stack()
+        tickers = returns.index.droplevel(0)
+        return pd.Series(data=tickers, index=returns.index, name=TICKER)
 
     @staticmethod
     def is_categorical() -> bool:

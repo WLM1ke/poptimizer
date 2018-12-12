@@ -1,6 +1,6 @@
 """Абстрактный класс признака для машинного обучения."""
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Tuple, Union
 
 import pandas as pd
 
@@ -13,7 +13,7 @@ class AbstractFeature(ABC):
         self._date = date
 
     @abstractmethod
-    def get(self, *kwargs) -> pd.DataFrame:
+    def get(self, *kwargs) -> Union[pd.DataFrame, pd.Series]:
         """Создает признак для заданного значения параметров.
 
         У каждого признака могут быть свои параметры, а могут и отсутствовать.

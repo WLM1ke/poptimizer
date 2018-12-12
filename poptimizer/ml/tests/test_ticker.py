@@ -13,9 +13,9 @@ def test_ticker():
 
     df = feature.get()
 
-    assert isinstance(df, pd.DataFrame)
-    assert df.shape[1] == 1
+    assert isinstance(df, pd.Series)
+    assert df.name == TICKER
 
-    assert df.at[(pd.Timestamp("2006-12-27"), "GMKN"), TICKER] == "GMKN"
-    assert df.at[(pd.Timestamp("2018-12-05"), "UPRO"), TICKER] == "UPRO"
-    assert df.at[(pd.Timestamp("2018-12-07"), "MSTT"), TICKER] == "MSTT"
+    assert df[(pd.Timestamp("2006-12-27"), "GMKN")] == "GMKN"
+    assert df[(pd.Timestamp("2018-12-05"), "UPRO")] == "UPRO"
+    assert df[(pd.Timestamp("2018-12-07"), "MSTT")] == "MSTT"
