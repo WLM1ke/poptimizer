@@ -9,7 +9,7 @@ from poptimizer.store import TICKER
 class Ticker(AbstractFeature):
     """Тикер для каждой даты из котировок."""
 
-    def get(self):
+    def get(self, *kwargs):
         """Для дат, в которые есть котировки указывается тикер."""
         prices = data.prices(self._tickers, self._date)
         prices = prices.stack()
