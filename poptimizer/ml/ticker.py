@@ -11,7 +11,7 @@ class Ticker(AbstractFeature):
 
     def get(self, *kwargs):
         """Для дат, в которые есть котировки указывается тикер."""
-        prices = data.prices(self._tickers, self._date)
+        prices = data.log_total_returns(self._tickers, self._date)
         prices = prices.stack()
         tickers = prices.index.droplevel(0)
         return pd.DataFrame(data=tickers, index=prices.index, columns=[TICKER])
