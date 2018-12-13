@@ -11,7 +11,7 @@ from poptimizer import store
 from poptimizer.config import AFTER_TAX
 from poptimizer.data import moex
 
-__all__ = ["log_total_returns"]
+__all__ = ["log_total_returns", "dividends"]
 
 
 async def _dividends(tickers: Tuple[str]) -> List[pd.DataFrame]:
