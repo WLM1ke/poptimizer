@@ -14,7 +14,7 @@ from poptimizer.data import moex
 __all__ = ["log_total_returns"]
 
 
-async def dividends(tickers: Tuple[str]) -> List[pd.DataFrame]:
+async def _dividends(tickers: Tuple[str]) -> List[pd.DataFrame]:
     """Информация о дивидендах для заданных тикеров.
 
     :param tickers:
@@ -28,7 +28,7 @@ async def dividends(tickers: Tuple[str]) -> List[pd.DataFrame]:
 
 
 def dividends_all(tickers: tuple) -> pd.DataFrame:
-    """Дивиденды по заданным тикерам до указанной даты.
+    """Дивиденды по заданным тикерам после уплаты налогов.
 
     Значения для дат, в которые нет дивидендов у данного тикера (есть у какого-то другого),
     заполняются 0.
@@ -38,9 +38,25 @@ def dividends_all(tickers: tuple) -> pd.DataFrame:
     :return:
         Дивиденды.
     """
-    quotes_list = asyncio.run(dividends(tickers))
+    quotes_list = asyncio.run(_dividends(tickers))
     df = pd.concat([df for df in quotes_list], axis=1)
-    return df.fillna(0, axis=0)
+    return df.fillna(0, axis=0) * AFTER_TAX
+
+
+def dividends(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
+    """Дивиденды по заданным тикерам до указанной даты после уплаты налогов.
+
+    Значения для дат, в которые нет дивидендов у данного тикера (есть у какого-то другого),
+    заполняются 0.
+
+    :param tickers:
+        Тикеры, для которых нужна информация.
+    :param last_date:
+        Последняя дата.
+    :return:
+        Дивиденды.
+    """
+    return dividends_all(tickers).loc[:last_date]
 
 
 def t2_shift(date: pd.Timestamp, index: pd.DatetimeIndex):
@@ -60,7 +76,7 @@ def t2_shift(date: pd.Timestamp, index: pd.DatetimeIndex):
     return next_b_day - 2 * offsets.BDay()
 
 
-def log_total_returns(tickers: tuple, last_date: pd.Timestamp):
+def log_total_returns(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
     """Логарифмы дневных доходностей с учетом посленалоговых дивидендов.
 
     :param tickers:
@@ -72,14 +88,8 @@ def log_total_returns(tickers: tuple, last_date: pd.Timestamp):
     """
     p1 = moex.prices(tickers, last_date)
     p0 = p1.shift(1)
-    div = dividends_all(tickers) * AFTER_TAX
+    div = dividends_all(tickers)
     div.index = div.index.map(functools.partial(t2_shift, index=p1.index))
     div = div.loc[:last_date]
     returns = p1.add(div, fill_value=0) / p0
     return returns.iloc[1:].apply(np.log)
-
-
-if __name__ == "__main__":
-    tickers_ = ("GMKN", "RTKMP", "MTSS")
-    print(log_total_returns(tickers_, pd.Timestamp("2018-10-17")))
-    print(dividends_all(tickers_) * AFTER_TAX)

@@ -14,7 +14,7 @@ from poptimizer.store.utils import DATE
 CATEGORY_DIVIDENDS = "dividends"
 
 # База содержит данные с начала 2010 года
-DIVIDENDS_START = "2010-01-01"
+DIVIDENDS_START = pd.Timestamp("2010-01-01")
 
 SQLITE = str(DATA_PATH / "dividends.db")
 
@@ -40,7 +40,7 @@ class Dividends(AbstractManager):
             return pd.Series(name=name, index=pd.DatetimeIndex([], name=DATE))
         else:
             con.close()
-            df = df[df.index >= pd.Timestamp(DIVIDENDS_START)]
+            df = df[df.index >= DIVIDENDS_START]
             # Несколько выплат в одну дату объединяются
             df = df.groupby(DATE).sum()
             df.columns = [name]
