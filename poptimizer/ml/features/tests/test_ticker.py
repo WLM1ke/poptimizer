@@ -1,6 +1,6 @@
 import pandas as pd
 
-from poptimizer.ml import ticker
+from poptimizer.ml.features import ticker
 from poptimizer.store import TICKER
 
 

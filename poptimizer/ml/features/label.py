@@ -4,7 +4,7 @@ from typing import Tuple
 import pandas as pd
 
 from poptimizer import data
-from poptimizer.ml.feature import AbstractFeature
+from poptimizer.ml.features.feature import AbstractFeature
 
 YEAR_IN_TRADING_DAYS = 12 * 21
 

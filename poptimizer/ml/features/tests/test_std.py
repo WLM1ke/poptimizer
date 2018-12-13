@@ -1,8 +1,8 @@
 import pandas as pd
 import pytest
 
-from poptimizer.ml import std
-from poptimizer.ml.label import YEAR_IN_TRADING_DAYS
+from poptimizer.ml.features import std
+from poptimizer.ml.features.label import YEAR_IN_TRADING_DAYS
 
 
 def test_std():

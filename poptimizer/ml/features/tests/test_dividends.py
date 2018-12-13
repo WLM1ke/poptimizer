@@ -2,8 +2,8 @@ import pandas as pd
 import pytest
 
 from poptimizer.config import AFTER_TAX
-from poptimizer.ml import dividends
-from poptimizer.ml.dividends import YEAR_IN_DAYS
+from poptimizer.ml.features import dividends
+from poptimizer.ml.features.dividends import YEAR_IN_DAYS
 
 
 def test_dividends():

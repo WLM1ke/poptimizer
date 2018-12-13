@@ -3,7 +3,7 @@ from typing import Tuple
 
 import pandas as pd
 
-from poptimizer.ml.feature import AbstractFeature
+from poptimizer.ml.features.feature import AbstractFeature
 from poptimizer.store import TICKER
 
 
