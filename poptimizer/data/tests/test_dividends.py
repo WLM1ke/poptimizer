@@ -3,14 +3,14 @@ import pandas as pd
 import pytest
 
 from poptimizer.config import AFTER_TAX
-from poptimizer.data import dividends, moex
+from poptimizer.data import moex, log_total_returns
 
 # noinspection PyProtectedMember
-from poptimizer.data.dividends import t2_shift
+from poptimizer.data.dividends import t2_shift, dividends_all
 
 
 def test_dividends_all():
-    div = dividends.dividends_all(("CHMF", "GMKN"))
+    div = dividends_all(("CHMF", "GMKN"))
 
     assert isinstance(div, pd.DataFrame)
     assert div.shape[0] >= 41
@@ -19,15 +19,15 @@ def test_dividends_all():
     assert div.index[0] == pd.Timestamp("2010-05-21")
     assert div.index[-1] >= pd.Timestamp("2018-12-04")
 
-    assert div.loc["2018-06-19", "CHMF"] == pytest.approx(38.32 + 27.72)
-    assert div.loc["2017-12-05", "CHMF"] == pytest.approx(35.61)
-    assert div.loc["2010-11-12", "CHMF"] == pytest.approx(4.29)
-    assert div.loc["2011-05-22", "CHMF"] == pytest.approx(2.42 + 3.9)
+    assert div.loc["2018-06-19", "CHMF"] == pytest.approx((38.32 + 27.72) * AFTER_TAX)
+    assert div.loc["2017-12-05", "CHMF"] == pytest.approx(35.61 * AFTER_TAX)
+    assert div.loc["2010-11-12", "CHMF"] == pytest.approx(4.29 * AFTER_TAX)
+    assert div.loc["2011-05-22", "CHMF"] == pytest.approx((2.42 + 3.9) * AFTER_TAX)
 
-    assert div.loc["2018-07-17", "GMKN"] == pytest.approx(607.98)
-    assert div.loc["2017-10-19", "GMKN"] == pytest.approx(224.2)
-    assert div.loc["2010-05-21", "GMKN"] == pytest.approx(210)
-    assert div.loc["2011-05-16", "GMKN"] == pytest.approx(180)
+    assert div.loc["2018-07-17", "GMKN"] == pytest.approx(607.98 * AFTER_TAX)
+    assert div.loc["2017-10-19", "GMKN"] == pytest.approx(224.2 * AFTER_TAX)
+    assert div.loc["2010-05-21", "GMKN"] == pytest.approx(210 * AFTER_TAX)
+    assert div.loc["2011-05-16", "GMKN"] == pytest.approx(180 * AFTER_TAX)
 
     assert div.loc["2018-06-19", "GMKN"] == pytest.approx(0)
     assert div.loc["2018-07-17", "CHMF"] == pytest.approx(0)
@@ -47,9 +47,7 @@ def test_t2_shift():
 
 
 def test_log_total_returns():
-    data = dividends.log_total_returns(
-        ("GMKN", "RTKMP", "MTSS"), pd.Timestamp("2018-10-17")
-    )
+    data = log_total_returns(("GMKN", "RTKMP", "MTSS"), pd.Timestamp("2018-10-17"))
 
     assert isinstance(data, pd.DataFrame)
     assert list(data.columns) == ["GMKN", "RTKMP", "MTSS"]
