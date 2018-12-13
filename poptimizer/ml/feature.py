@@ -1,43 +1,42 @@
 """Абстрактный класс признака для машинного обучения."""
 from abc import ABC, abstractmethod
-from typing import Tuple, Union
+from typing import Tuple
 
 import pandas as pd
 
 
 class AbstractFeature(ABC):
-    """Создает признак для заданного набора тикеров с использованием статистики до заданной даты."""
+    """Создает признак для заданного набора тикеров с использованием статистики до определенной даты."""
 
-    def __init__(self, tickers: Tuple[str], date: pd.Timestamp):
+    def __init__(self, tickers: Tuple[str], last_date: pd.Timestamp):
+        """При конкретной реализации целесообразно так же сохранить данные, необходимые для генерации
+        значений на конкретные даты."""
         self._tickers = tickers
-        self._date = date
-
-    @abstractmethod
-    def get(self, *kwargs) -> Union[pd.DataFrame, pd.Series]:
-        """Создает признак для заданного значения параметров.
-
-        У каждого признака могут быть свои параметры, а могут и отсутствовать.
-        Признак должен быть pd.DataFrame с многоуровневым индексом:
-
-            * Первый уровень - дата
-            * Второй уровень - тикер
-        """
+        self._last_date = last_date
 
     @staticmethod
     @abstractmethod
     def is_categorical() -> bool:
         """Должен возвращать True для категориальных признаков."""
 
+    @classmethod
     @abstractmethod
-    def get_param_space(self) -> dict:
+    def get_params_space(cls) -> dict:
         """Вероятностное пространство параметров признака.
 
-        Словарь с описанием допустимых значений параметров метода get_feature в формате hyperopt.
+        Словарь с описанием допустимых значений параметров метода set_params в формате hyperopt.
         """
 
     @abstractmethod
-    def check_bounds(self, *kwargs):
+    def check_bounds(self, **kwargs):
         """Проверяет, насколько параметры близки к границам вероятностного пространства.
 
         При необходимости печатает рекомендации по его расширению.
+        """
+
+    @abstractmethod
+    def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
+        """Создает признак для заданных тикеров на указанную дату с учетом параметров.
+
+        Признак должен быть pd.Series с индексом из тикеров.
         """

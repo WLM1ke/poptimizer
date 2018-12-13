@@ -4,52 +4,39 @@ from typing import Tuple
 import pandas as pd
 
 from poptimizer import data
+from poptimizer.ml.feature import AbstractFeature
 
 YEAR_IN_TRADING_DAYS = 12 * 21
-LABELS = "LABELS"
 
 
-def make_labels(
-    tickers: Tuple[str],
-    date: pd.Timestamp,
-    days: int = 21,
-    normalize: int = YEAR_IN_TRADING_DAYS,
-) -> pd.DataFrame:
-    """Создает метки для машинного обучения - нормированный по СКО логарифм доходности.
+class Label(AbstractFeature):
+    """Доходность за несколько следующих дней в годовом выражении.
 
-    Доходность и СКО пересчитываются в годовое исчисление.
-
-    :param tickers:
-        Тикеры, для которых нужно создать метки.
-    :param date:
-        Дата, до которой нужно создать метки.
-    :param days:
-        За сколько дней считать доходность.
-    :param normalize:
-        За сколько дней считается СКО.
-    :return:
-        Данные:
-
-            * Пересчитанная на год доходность.
-            * Пересчитанное на год СКО.
-            * Метки - отношение доходности к СКО.
-
-        Многоуровневый индекс:
-
-            * Первый уровень - дата
-            * Второй уровень - тикер
+    В перспективе можно организовать поиск по количеству следующих дней.
     """
-    returns = data.log_total_returns(tickers, date)
-    mean = returns.rolling(days, min_periods=days).mean() * YEAR_IN_TRADING_DAYS
-    std = returns.rolling(normalize, min_periods=days).std() * (
-        YEAR_IN_TRADING_DAYS ** 0.5
-    )
-    index = returns.index[-1::-days]
-    index = index[-1::-1]
-    mean = mean.reindex(index).shift(-1).stack()
-    std = std.reindex(index).shift(-1).stack()
-    labels = pd.concat([mean, std], axis=1)
-    labels.dropna(inplace=True)
-    labels.columns = ["MEAN", "STD"]
-    labels[LABELS] = labels["MEAN"] / labels["STD"]
-    return labels
+
+    def __init__(self, tickers: Tuple[str], last_date: pd.Timestamp):
+        super().__init__(tickers, last_date)
+        self._returns = data.log_total_returns(tickers, last_date)
+
+    @staticmethod
+    def is_categorical() -> bool:
+        """Не категориальный признак."""
+        return False
+
+    @classmethod
+    def get_params_space(cls) -> dict:
+        """Фиксированный параметр - количество дней для расчета доходности."""
+        return dict(days=21)
+
+    def check_bounds(self, **kwargs):
+        """Параметры константные, поэтому в проверке нет необходимости."""
+
+    def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
+        """Средняя доходность за указанное количество следующих дней."""
+        returns = self._returns
+        loc = returns.index.get_loc(date)
+        days = kwargs["days"]
+        mean = returns.iloc[loc + 1 : loc + days + 1].mean(axis=0)
+        mean.name = "LABEL"
+        return mean * YEAR_IN_TRADING_DAYS

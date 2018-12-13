@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.ml import mean
+from poptimizer.ml.label import YEAR_IN_TRADING_DAYS
 
 
 def test_mean():
@@ -9,13 +10,16 @@ def test_mean():
     feature = mean.Mean(("VSMO", "BANEP", "ENRU"), pd.Timestamp("2018-12-07"))
 
     assert not feature.is_categorical()
-    assert feature.get_param_space() == dict()
+    assert feature.get_params_space() == dict(days=YEAR_IN_TRADING_DAYS)
 
-    df = feature.get(53)
-
+    df = feature.get(pd.Timestamp("2018-10-15"), days=53)
     assert isinstance(df, pd.Series)
     assert df.name == "MEAN"
+    assert df.size == 3
+    assert df["VSMO"] == pytest.approx(-0.010316797368955)
 
-    assert df[pd.Timestamp("2018-10-15"), "VSMO"] == pytest.approx(-0.010316797368955)
-    assert df[(pd.Timestamp("2018-10-29"), "BANEP")] == pytest.approx(0.413477629952859)
-    assert df[(pd.Timestamp("2018-10-02"), "ENRU")] == pytest.approx(-0.150704229512325)
+    df = feature.get(pd.Timestamp("2018-10-29"), days=53)
+    assert df["BANEP"] == pytest.approx(0.413477629952859)
+
+    df = feature.get(pd.Timestamp("2018-10-02"), days=53)
+    assert df["ENRU"] == pytest.approx(-0.150704229512325)

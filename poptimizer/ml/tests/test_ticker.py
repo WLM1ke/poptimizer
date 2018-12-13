@@ -9,13 +9,16 @@ def test_ticker():
     feature = ticker.Ticker(("UPRO", "GMKN", "MSTT"), pd.Timestamp("2018-12-11"))
 
     assert feature.is_categorical()
-    assert feature.get_param_space() == dict()
+    assert feature.get_params_space() == dict()
 
-    df = feature.get()
-
+    df = feature.get(pd.Timestamp("2006-12-27"))
     assert isinstance(df, pd.Series)
+    assert df.size == 3
     assert df.name == TICKER
+    assert df["GMKN"] == "GMKN"
 
-    assert df[(pd.Timestamp("2006-12-27"), "GMKN")] == "GMKN"
-    assert df[(pd.Timestamp("2018-12-05"), "UPRO")] == "UPRO"
-    assert df[(pd.Timestamp("2018-12-07"), "MSTT")] == "MSTT"
+    df = feature.get(pd.Timestamp("2018-12-05"))
+    assert df["UPRO"] == "UPRO"
+
+    df = feature.get(pd.Timestamp("2018-12-07"))
+    assert df["MSTT"] == "MSTT"

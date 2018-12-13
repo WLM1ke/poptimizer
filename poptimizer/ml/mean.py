@@ -1,4 +1,6 @@
 """Признак - доходность за последние торговые дни."""
+from typing import Tuple
+
 import pandas as pd
 
 from poptimizer import data
@@ -12,22 +14,28 @@ class Mean(AbstractFeature):
     В перспективе можно организовать поиск по количеству предыдущих дней.
     """
 
-    def get(self, days: int = YEAR_IN_TRADING_DAYS) -> pd.Series:
-        """Средняя доходность за указанное количество предыдущих дней."""
-        returns = data.log_total_returns(self._tickers, self._date)
-        mean = returns.rolling(days, min_periods=days).mean() * YEAR_IN_TRADING_DAYS
-        mean = mean.stack()
-        mean.name = "MEAN"
-        return mean
+    def __init__(self, tickers: Tuple[str], last_date: pd.Timestamp):
+        super().__init__(tickers, last_date)
+        self._returns = data.log_total_returns(tickers, last_date)
 
     @staticmethod
     def is_categorical() -> bool:
         """Не категориальный признак."""
         return False
 
-    def get_param_space(self) -> dict:
-        """Параметров нет - пустой словарь."""
-        return dict()
+    @classmethod
+    def get_params_space(cls) -> dict:
+        """Фиксированный параметр - количество дней для расчета среднего."""
+        return dict(days=YEAR_IN_TRADING_DAYS)
 
-    def check_bounds(self, *kwargs):
-        """Параметров нет, поэтому в проверке нет необходимости."""
+    def check_bounds(self, **kwargs):
+        """Параметры константные, поэтому в проверке нет необходимости."""
+
+    def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
+        """Средняя доходность за указанное количество предыдущих дней."""
+        returns = self._returns
+        loc = returns.index.get_loc(date)
+        days = kwargs["days"]
+        mean = returns.iloc[loc - days + 1 : loc + 1].mean(axis=0)
+        mean.name = "MEAN"
+        return mean * YEAR_IN_TRADING_DAYS

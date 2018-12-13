@@ -2,30 +2,19 @@ import pandas as pd
 import pytest
 
 from poptimizer.ml import label
-from poptimizer.ml.label import LABELS
 
 
 def test_make_labels():
     # noinspection PyTypeChecker
-    df = label.make_labels(
-        ("AKRN", "SNGSP", "MSTT"),
-        pd.Timestamp("2018-12-11"),
-        days=21,
-        normalize=12 * 21,
-    )
+    labels = label.Label(("AKRN", "SNGSP", "MSTT"), pd.Timestamp("2018-12-11"))
 
-    assert isinstance(df, pd.DataFrame)
-    assert isinstance(df.index, pd.MultiIndex)
+    assert not labels.is_categorical()
+    assert labels.get_params_space() == dict(days=21)
 
-    assert df.index[0] == (pd.Timestamp("2003-08-27"), "SNGSP")
-    assert df.index[-1] == (pd.Timestamp("2018-11-12"), "MSTT")
+    df = labels.get(pd.Timestamp("2018-11-12"), days=21)
+    assert isinstance(df, pd.Series)
+    assert df.size == 3
+    assert df.at["SNGSP"] == pytest.approx(0.0995856337763434)
 
-    assert len(df) == 423
-    assert df.shape[1] == 3
-
-    assert df.at[("2018-11-12", "SNGSP"), "MEAN"] == pytest.approx(0.0995856337763434)
-    assert df.at[("2018-05-17", "AKRN"), "MEAN"] == pytest.approx(0.114643927228733)
-
-    assert df.at[("2018-10-11", "MSTT"), "STD"] == pytest.approx(0.224696005113617)
-
-    assert df.at[("2018-09-12", "AKRN"), LABELS] == pytest.approx(0.181224685163257)
+    df = labels.get(pd.Timestamp("2018-05-17"), days=21)
+    assert df.at["AKRN"] == pytest.approx(0.114643927228733)
