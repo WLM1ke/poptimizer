@@ -18,10 +18,9 @@ def test_dividends():
     assert isinstance(df, pd.Series)
     assert df.size == 3
     assert df.isna().all()
+    assert df.name == "Dividends"
 
     df = div.get(pd.Timestamp("2010-01-26"), days=12)
-    print(df)
-
     assert not df.isna().all()
 
     df = div.get(pd.Timestamp("2018-06-25"), days=9)

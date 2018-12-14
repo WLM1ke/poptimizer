@@ -46,4 +46,4 @@ class Dividends(AbstractFeature):
             yields = dividends / last_prices
             yields.name = self.name
             return yields
-        return pd.Series(index=list(self._tickers))
+        return pd.Series(index=list(self._tickers), name=self.name)

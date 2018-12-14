@@ -71,31 +71,32 @@ class Examples:
         data = [
             feat.get(date, **value) for feat, (_, value) in zip(self._features, params)
         ]
-        df = pd.concat(data, axis=1)
-        df.iloc[:, 0] = df.iloc[:, 0] / df.iloc[:, 1]
+        data[0] /= data[1]
         return pd.concat(data, axis=1)
 
     def learn_pool(self, params):
         """Данные для создание catboost.Pool с обучающими примерами."""
         label = self._features[0]
         days = params[0][1]["days"]
-        index = label.index[-1 - days :: -days]
+        index = label.index
+        loc = index.get_loc(self._last_date)
+        index = index[loc - days :: -days]
         data = [self.get(date, params) for date in index]
-        df = pd.concat(data, axis=0)
+        df = pd.concat(data, axis=0, ignore_index=True)
         df.dropna(axis=0, inplace=True)
         return dict(
             data=df.iloc[:, 1:],
             label=df.iloc[:, 0],
             cat_features=self.categorical_features(),
-            feature_names=df.columns[1:],
+            feature_names=list(df.columns[1:]),
         )
 
-    def predict(self, params):
+    def predict_pool(self, params):
         """Данные для создание catboost.Pool с примерами для прогноза."""
         df = self.get(self._last_date, params)
         return dict(
             data=df.iloc[:, 1:],
             label=None,
             cat_features=self.categorical_features(),
-            feature_names=df.columns[1:],
+            feature_names=list(df.columns[1:]),
         )
