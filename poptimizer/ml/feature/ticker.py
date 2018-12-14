@@ -3,8 +3,7 @@ from typing import Tuple
 
 import pandas as pd
 
-from poptimizer.ml.features.feature import AbstractFeature
-from poptimizer.store import TICKER
+from poptimizer.ml.feature.feature import AbstractFeature
 
 
 class Ticker(AbstractFeature):
@@ -29,4 +28,4 @@ class Ticker(AbstractFeature):
     def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
         """Для дат, в которые есть котировки указывается тикер."""
         tickers = self._tickers
-        return pd.Series(data=tickers, index=tickers, name=TICKER)
+        return pd.Series(data=tickers, index=tickers, name=self.name)

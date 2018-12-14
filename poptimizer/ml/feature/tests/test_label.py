@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from poptimizer.ml.features import label
+from poptimizer.ml.feature import label
 
 
 def test_make_labels():

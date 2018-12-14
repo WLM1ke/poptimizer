@@ -1,17 +1,18 @@
-"""Признак - СКО за последние торговые дни."""
+"""Признак - доходность за последние торговые дни."""
 from typing import Tuple
 
 import pandas as pd
 
 from poptimizer import data
-from poptimizer.ml.features.feature import AbstractFeature
-from poptimizer.ml.features.label import YEAR_IN_TRADING_DAYS
+from poptimizer.ml.feature.feature import AbstractFeature
+from poptimizer.ml.feature.label import YEAR_IN_TRADING_DAYS
 
 
-class STD(AbstractFeature):
-    """СКО за несколько предыдущих дней в годовом выражении.
+class Mean(AbstractFeature):
+    """Доходность за несколько предыдущих торговых дней в годовом выражении.
 
     В перспективе можно организовать поиск по количеству предыдущих дней.
+    Кроме того еще и выбор количества периодов.
     """
 
     def __init__(self, tickers: Tuple[str], last_date: pd.Timestamp):
@@ -25,17 +26,17 @@ class STD(AbstractFeature):
 
     @classmethod
     def get_params_space(cls) -> dict:
-        """Фиксированный параметр - количество дней для расчета СКО."""
+        """Фиксированный параметр - количество дней для расчета среднего."""
         return dict(days=YEAR_IN_TRADING_DAYS)
 
     def check_bounds(self, **kwargs):
         """Параметры константные, поэтому в проверке нет необходимости."""
 
     def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
-        """СКО за указанное количество предыдущих дней."""
+        """Средняя доходность за указанное количество предыдущих дней."""
         returns = self._returns
         loc = returns.index.get_loc(date)
         days = kwargs["days"]
-        std = returns.iloc[loc - days + 1 : loc + 1].std(axis=0)
-        std.name = "STD"
-        return std * YEAR_IN_TRADING_DAYS ** 0.5
+        mean = returns.iloc[loc - days + 1 : loc + 1].mean(axis=0)
+        mean.name = self.name
+        return mean * YEAR_IN_TRADING_DAYS

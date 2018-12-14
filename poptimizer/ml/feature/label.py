@@ -4,7 +4,7 @@ from typing import Tuple
 import pandas as pd
 
 from poptimizer import data
-from poptimizer.ml.features.feature import AbstractFeature
+from poptimizer.ml.feature.feature import AbstractFeature
 
 YEAR_IN_TRADING_DAYS = 12 * 21
 
@@ -37,6 +37,11 @@ class Label(AbstractFeature):
         returns = self._returns
         loc = returns.index.get_loc(date)
         days = kwargs["days"]
-        mean = returns.iloc[loc + 1 : loc + days + 1].mean(axis=0)
-        mean.name = "LABEL"
+        mean = returns.iloc[loc + 1: loc + days + 1].mean(axis=0)
+        mean.name = self.name
         return mean * YEAR_IN_TRADING_DAYS
+
+    @property
+    def index(self):
+        """Индекс используемых данных"""
+        return self._returns.index

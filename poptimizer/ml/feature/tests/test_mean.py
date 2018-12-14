@@ -1,8 +1,8 @@
 import pandas as pd
 import pytest
 
-from poptimizer.ml.features import mean
-from poptimizer.ml.features.label import YEAR_IN_TRADING_DAYS
+from poptimizer.ml.feature import mean
+from poptimizer.ml.feature.label import YEAR_IN_TRADING_DAYS
 
 
 def test_mean():
@@ -14,7 +14,7 @@ def test_mean():
 
     df = feature.get(pd.Timestamp("2018-10-15"), days=53)
     assert isinstance(df, pd.Series)
-    assert df.name == "MEAN"
+    assert df.name == "Mean"
     assert df.size == 3
     assert df["VSMO"] == pytest.approx(-0.010316797368955)
 

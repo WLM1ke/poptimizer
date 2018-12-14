@@ -14,6 +14,11 @@ class AbstractFeature(ABC):
         self._tickers = tickers
         self._last_date = last_date
 
+    @property
+    def name(self):
+        """Наименование признака."""
+        return self.__class__.__name__
+
     @staticmethod
     @abstractmethod
     def is_categorical() -> bool:

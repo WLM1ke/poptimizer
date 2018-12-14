@@ -1,7 +1,6 @@
 import pandas as pd
 
-from poptimizer.ml.features import ticker
-from poptimizer.store import TICKER
+from poptimizer.ml.feature import ticker
 
 
 def test_ticker():
@@ -14,7 +13,7 @@ def test_ticker():
     df = feature.get(pd.Timestamp("2006-12-27"))
     assert isinstance(df, pd.Series)
     assert df.size == 3
-    assert df.name == TICKER
+    assert df.name == "Ticker"
     assert df["GMKN"] == "GMKN"
 
     df = feature.get(pd.Timestamp("2018-12-05"))
