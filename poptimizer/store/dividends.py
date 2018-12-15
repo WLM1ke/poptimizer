@@ -7,7 +7,6 @@ from pandas.io.sql import DatabaseError
 
 from poptimizer.config import DATA_PATH
 from poptimizer.store.manager import AbstractManager
-
 # Данные по дивидендам хранятся во вложенной базе
 from poptimizer.store.utils import DATE
 
@@ -24,7 +23,7 @@ class Dividends(AbstractManager):
 
     CREATE_FROM_SCRATCH = True
 
-    def __init__(self, tickers: Tuple[str]):
+    def __init__(self, tickers: Tuple[str, ...]):
         super().__init__(tickers, CATEGORY_DIVIDENDS)
 
     async def _download(self, name: str):

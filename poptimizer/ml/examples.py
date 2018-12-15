@@ -20,7 +20,7 @@ class Examples:
         feature.Dividends,
     ]
 
-    def __init__(self, tickers: Tuple[str], last_date: pd.Timestamp):
+    def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
         """Обучающие примеры состоят из признаков на основе данных для тикеров до указанной даты.
 
         :param tickers:

@@ -27,7 +27,6 @@ def test_lot_size_all():
 
 
 def test_lot_size_some():
-    # noinspection PyTypeChecker
     df = moex.lot_size(("RTKM", "SIBN", "MRSB"))
 
     assert isinstance(df, pd.Series)
@@ -39,7 +38,6 @@ def test_lot_size_some():
 
 
 def test_prices():
-    # noinspection PyTypeChecker
     df = moex.prices(("AKRN", "GMKN", "KBTK"), pd.Timestamp("2018-12-06"))
     assert isinstance(df, pd.DataFrame)
     assert len(df) > 3000
@@ -57,7 +55,6 @@ def test_prices():
 
 
 def test_turnovers():
-    # noinspection PyTypeChecker
     df = moex.turnovers(("PMSBP", "RTKM"), pd.Timestamp("2018-12-05"))
     assert isinstance(df, pd.DataFrame)
     assert len(df) > 3000

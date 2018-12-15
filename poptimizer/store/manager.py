@@ -26,7 +26,9 @@ class AbstractManager(ABC):
     IS_UNIQUE = True
     IS_MONOTONIC = True
 
-    def __init__(self, names: Union[str, Tuple[str]], category: Optional[str] = None):
+    def __init__(
+        self, names: Union[str, Tuple[str, ...]], category: Optional[str] = None
+    ):
         """Для ускорения за счет асинхронного обновления данных передается кортеж с названиями
         необходимых данных.
 

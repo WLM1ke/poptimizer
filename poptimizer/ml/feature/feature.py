@@ -8,7 +8,7 @@ import pandas as pd
 class AbstractFeature(ABC):
     """Создает признак для заданного набора тикеров с использованием статистики до определенной даты."""
 
-    def __init__(self, tickers: Tuple[str], last_date: pd.Timestamp):
+    def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
         """При конкретной реализации целесообразно так же сохранить данные, необходимые для генерации
         значений на конкретные даты."""
         self._tickers = tickers

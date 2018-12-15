@@ -16,7 +16,7 @@ class Dividends(AbstractFeature):
     Кроме того еще и выбор количества периодов.
     """
 
-    def __init__(self, tickers: Tuple[str], last_date: pd.Timestamp):
+    def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
         super().__init__(tickers, last_date)
         self._dividends = data.dividends(tickers, last_date)
         self._prices = data.prices(tickers, last_date)

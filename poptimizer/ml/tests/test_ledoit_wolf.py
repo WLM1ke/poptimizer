@@ -19,10 +19,10 @@ def test_ledoit_wolf():
         [1.54132176377468, 1.34594278490159, 9.36000000000000],
     ]
 
-    cov1, average_cor1, shrinkage1 = ledoit_wolf.ledoit_wolf(data)
+    cov1, average_cor1, shrinkage1 = ledoit_wolf.shrinkage(data)
     assert np.allclose(cov1, result)
 
-    cov2, average_cor2, shrinkage2 = ledoit_wolf.ledoit_wolf(np.vstack((data, data)))
+    cov2, average_cor2, shrinkage2 = ledoit_wolf.shrinkage(np.vstack((data, data)))
     assert np.allclose(np.diag(cov1), np.diag(cov2))
     assert np.allclose(average_cor1, average_cor2)
     assert shrinkage2 < shrinkage1

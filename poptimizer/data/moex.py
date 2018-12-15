@@ -9,7 +9,7 @@ from poptimizer import store
 __all__ = ["lot_size", "prices", "turnovers"]
 
 
-async def _securities(tickers: Optional[Tuple[str]] = None) -> pd.Series:
+async def _securities(tickers: Optional[Tuple[str, ...]] = None) -> pd.Series:
     """Информация о размере лотов для тикеров.
 
     :param tickers:
@@ -26,7 +26,7 @@ async def _securities(tickers: Optional[Tuple[str]] = None) -> pd.Series:
     return df[store.LOT_SIZE]
 
 
-def lot_size(tickers: Optional[Tuple[str]] = None) -> pd.Series:
+def lot_size(tickers: Optional[Tuple[str, ...]] = None) -> pd.Series:
     """Информация о размере лотов для тикеров.
 
     :param tickers:
@@ -38,7 +38,7 @@ def lot_size(tickers: Optional[Tuple[str]] = None) -> pd.Series:
     return asyncio.run(_securities(tickers))
 
 
-async def _quotes(tickers: Tuple[str]) -> List[pd.DataFrame]:
+async def _quotes(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
     """Информация о котировках для заданных тикеров (цена закрытия и объем).
 
     :param tickers:

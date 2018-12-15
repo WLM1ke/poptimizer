@@ -7,7 +7,6 @@ import aiomoex
 import pandas as pd
 
 from poptimizer.store.manager import AbstractManager
-
 # noinspection PyProtectedMember
 from poptimizer.store.utils import TICKER, REG_NUMBER, LOT_SIZE, DATE, CLOSE, TURNOVER
 
@@ -53,7 +52,7 @@ class Quotes(AbstractManager):
     котировок для всех тикеров.
     """
 
-    def __init__(self, tickers: Tuple[str]):
+    def __init__(self, tickers: Tuple[str, ...]):
         super().__init__(tickers, CATEGORY_QUOTES)
 
     async def _download(self, name: str):

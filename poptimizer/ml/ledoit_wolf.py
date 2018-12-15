@@ -4,7 +4,7 @@ from typing import Tuple
 import numpy as np
 
 
-def ledoit_wolf(returns: np.array) -> Tuple[np.array, float, float]:
+def shrinkage(returns: np.array) -> Tuple[np.array, float, float]:
     """Shrinks sample covariance matrix towards constant correlation unequal variance matrix.
 
     Ledoit & Wolf ("Honey, I shrunk the sample covariance matrix", Portfolio Management, 30(2004),
@@ -20,7 +20,7 @@ def ledoit_wolf(returns: np.array) -> Tuple[np.array, float, float]:
     Special thanks to Evgeny Pogrebnyak https://github.com/epogrebnyak
 
     :param returns:
-        t, n - returns of t observations on n shares
+        t, n - returns of t observations of n shares
     :return:
         Covariance matrix, sample average correlation, shrinkage.
     """
@@ -64,9 +64,9 @@ def ledoit_wolf(returns: np.array) -> Tuple[np.array, float, float]:
 
     # shrinkage constant
     kappa = (phi - rho) / gamma
-    shrinkage = max(0, min(1, kappa / t))
+    shrink = max(0, min(1, kappa / t))
 
     # estimator
-    sigma = shrinkage * prior + (1 - shrinkage) * sample_cov
+    sigma = shrink * prior + (1 - shrink) * sample_cov
 
-    return sigma, average_cor, shrinkage
+    return sigma, average_cor, shrink

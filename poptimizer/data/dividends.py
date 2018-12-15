@@ -15,7 +15,7 @@ from poptimizer.store import DATE
 __all__ = ["log_total_returns", "dividends"]
 
 
-async def _dividends(tickers: Tuple[str]) -> List[pd.DataFrame]:
+async def _dividends(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
     """Информация о дивидендах для заданных тикеров.
 
     :param tickers:

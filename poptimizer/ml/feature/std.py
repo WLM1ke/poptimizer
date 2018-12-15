@@ -14,7 +14,7 @@ class STD(AbstractFeature):
     В перспективе можно организовать поиск по количеству предыдущих дней.
     """
 
-    def __init__(self, tickers: Tuple[str], last_date: pd.Timestamp):
+    def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
         super().__init__(tickers, last_date)
         self._returns = data.log_total_returns(tickers, last_date)
 

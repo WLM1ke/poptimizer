@@ -16,7 +16,7 @@ class AbstractForecast(ABC):
     # Параметры ML-модели данных
     DATA, MODEL = (None, None)
 
-    def __init__(self, tickers: Tuple[str], date: pd.Timestamp):
+    def __init__(self, tickers: Tuple[str, ...], date: pd.Timestamp):
         self._tickers = tickers
         self._date = date
         self._examples = examples.Examples(tickers, date)
@@ -32,7 +32,8 @@ class AbstractForecast(ABC):
         days = self._examples.std_days(self.DATA)
         returns = data.log_total_returns(self._tickers, self._date)
         returns = returns.iloc[-days:,]
-        cov = ledoit_wolf.ledoit_lolf(returns)
+        cov = ledoit_wolf.shrinkage(returns.values)
         return cov * YEAR_IN_TRADING_DAYS
         # Тут должно умножаться на качество предсказания или
         # качество предсказания в квадрате
+        # и пересчет на степени свободы n / (n - 1)
