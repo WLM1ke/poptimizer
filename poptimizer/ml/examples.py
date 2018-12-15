@@ -85,7 +85,8 @@ class Examples:
         days = params[0][1]["days"]
         index = label.index
         loc = index.get_loc(self._last_date)
-        index = index[loc - days :: -days]
+        last_learn = loc - days
+        index = index[last_learn::-days]
         data = [self.get(date, params) for date in index]
         df = pd.concat(data, axis=0, ignore_index=True)
         df.dropna(axis=0, inplace=True)

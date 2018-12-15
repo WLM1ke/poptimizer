@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from poptimizer.ml.forecast import Forecast
 from poptimizer.portfolio import Portfolio
-from poptimizer.portfolio.metrics import AbstractMetrics
+from poptimizer.portfolio.metrics import AbstractMetrics, Forecast
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
 
 
