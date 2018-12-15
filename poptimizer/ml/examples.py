@@ -74,6 +74,11 @@ class Examples:
         data[0] /= data[1]
         return pd.concat(data, axis=1)
 
+    @staticmethod
+    def std_days(params):
+        """Количество дней, которое использовалось для расчета СКО для нормировки."""
+        return params[1][1]["days"]
+
     def learn_pool(self, params):
         """Данные для создание catboost.Pool с обучающими примерами."""
         label = self._features[0]

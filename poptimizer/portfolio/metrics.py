@@ -1,22 +1,12 @@
 """Абстрактный класс с метриками портфеля"""
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
 
 from poptimizer.config import T_SCORE
+from poptimizer.ml import Forecast
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO, Portfolio
-
-
-@dataclass(frozen=True)
-class Forecast:
-    """Класс с прогнозом"""
-
-    date: pd.Timestamp
-    tickers: list
-    mean: np.array
-    cov: np.array
 
 
 class AbstractMetrics(ABC):

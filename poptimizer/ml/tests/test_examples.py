@@ -67,6 +67,19 @@ def test_get(example):
     assert df.loc["CHMF", "Dividends"] == pytest.approx(44.39 * AFTER_TAX / 964.3)
 
 
+def test_std_days(example):
+    days = example.std_days(
+        (
+            (True, {"days": 4}),
+            (True, {"days": 22}),
+            (True, {}),
+            (True, {"days": 6}),
+            (False, {"days": 7}),
+        )
+    )
+    assert days == 22
+
+
 def test_learn_pool(example):
     params = (
         (True, {"days": 4}),
