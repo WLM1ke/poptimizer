@@ -20,7 +20,7 @@ def shrinkage(returns: np.array) -> Tuple[np.array, float, float]:
     Special thanks to Evgeny Pogrebnyak https://github.com/epogrebnyak
 
     :param returns:
-        t, n - returns of t observations of n shares
+        t, n - returns of t observations of n shares.
     :return:
         Covariance matrix, sample average correlation, shrinkage.
     """
@@ -48,11 +48,7 @@ def shrinkage(returns: np.array) -> Tuple[np.array, float, float]:
     phi = phi_mat.sum()
 
     # rho-hat
-    term1 = ((returns ** 3).transpose() @ returns) / t
-    term2 = var * sample_cov
-    term3 = sample_cov * var
-    term4 = var * sample_cov
-    theta_mat = term1 - term2 - term3 + term4
+    theta_mat = ((returns ** 3).transpose() @ returns) / t - var * sample_cov
     np.fill_diagonal(theta_mat, 0)
     rho = (
         np.diag(phi_mat).sum()

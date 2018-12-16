@@ -12,3 +12,4 @@ openpyxl
 lmdb
 aiomoex
 hyperopt
+catboost

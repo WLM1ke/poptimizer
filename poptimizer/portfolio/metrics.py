@@ -50,7 +50,6 @@ class AbstractMetrics(ABC):
 
         Прогноз должен включать доходность, ковариационную матрицу и исходный портфель.
         """
-        raise NotImplementedError
 
     @property
     def mean(self):

@@ -89,7 +89,7 @@ def test_learn_pool(example):
         (False, {"days": 7}),
     )
 
-    pool = example.learn_pool(params)
+    pool = example.learn_pool_params(params)
     assert isinstance(pool, dict)
     assert len(pool) == 4
 
@@ -129,7 +129,7 @@ def test_predict_pool(example):
         (False, {"days": 9}),
     )
 
-    pool = example.predict_pool(params)
+    pool = example.predict_pool_params(params)
     assert isinstance(pool, dict)
     assert len(pool) == 4
 

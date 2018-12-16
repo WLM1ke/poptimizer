@@ -20,17 +20,17 @@ class Examples:
         feature.Dividends,
     ]
 
-    def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
+    def __init__(self, tickers: Tuple[str, ...], date: pd.Timestamp):
         """Обучающие примеры состоят из признаков на основе данных для тикеров до указанной даты.
 
         :param tickers:
             Тикеры, для которых нужно составить обучающие примеры.
-        :param last_date:
+        :param date:
             Последняя дата, до которой можно использовать данные.
         """
         self._tickers = tickers
-        self._last_date = last_date
-        self._features = [cls(tickers, last_date) for cls in self.FEATURES]
+        self._date = date
+        self._features = [cls(tickers, date) for cls in self.FEATURES]
 
     def categorical_features(self):
         """Массив с указанием номеров признаков с категориальными данными."""
@@ -79,12 +79,12 @@ class Examples:
         """Количество дней, которое использовалось для расчета СКО для нормировки."""
         return params[1][1]["days"]
 
-    def learn_pool(self, params):
+    def learn_pool_params(self, params):
         """Данные для создание catboost.Pool с обучающими примерами."""
         label = self._features[0]
         days = params[0][1]["days"]
         index = label.index
-        loc = index.get_loc(self._last_date)
+        loc = index.get_loc(self._date)
         last_learn = loc - days
         index = index[last_learn::-days]
         data = [self.get(date, params) for date in index]
@@ -97,9 +97,9 @@ class Examples:
             feature_names=list(df.columns[1:]),
         )
 
-    def predict_pool(self, params):
+    def predict_pool_params(self, params):
         """Данные для создание catboost.Pool с примерами для прогноза."""
-        df = self.get(self._last_date, params)
+        df = self.get(self._date, params)
         return dict(
             data=df.iloc[:, 1:],
             label=None,

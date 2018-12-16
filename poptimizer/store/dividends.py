@@ -7,6 +7,7 @@ from pandas.io.sql import DatabaseError
 
 from poptimizer.config import DATA_PATH
 from poptimizer.store.manager import AbstractManager
+
 # Данные по дивидендам хранятся во вложенной базе
 from poptimizer.store.utils import DATE
 
