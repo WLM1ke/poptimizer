@@ -54,6 +54,12 @@ def test_prices():
     assert df.loc["2010-05-24", "KBTK"] == pytest.approx(180)
 
 
+def test_zero_prices():
+    df = moex.prices(("AKRN", "KAZTP"), pd.Timestamp("2018-12-14"))
+    assert df.loc["2012-03-12", "KAZTP"] == pytest.approx(46.011)
+    assert df.loc["2012-03-15", "KAZTP"] == pytest.approx(47.101)
+
+
 def test_turnovers():
     df = moex.turnovers(("PMSBP", "RTKM"), pd.Timestamp("2018-12-05"))
     assert isinstance(df, pd.DataFrame)

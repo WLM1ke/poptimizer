@@ -2,6 +2,7 @@
 import asyncio
 from typing import Tuple, Optional, List
 
+import numpy as np
 import pandas as pd
 
 from poptimizer import store
@@ -67,7 +68,7 @@ def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
     df = pd.concat([df[store.CLOSE] for df in quotes_list], axis=1)
     df = df.loc[:last_date]
     df.columns = tickers
-    return df.fillna(method="ffill", axis=0)
+    return df.replace(to_replace=[np.nan, 0], method="ffill")
 
 
 def turnovers(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
