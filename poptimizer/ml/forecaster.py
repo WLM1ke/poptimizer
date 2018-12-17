@@ -91,6 +91,8 @@ def make_forecast(
         Тикеры, для которых необходимо составить прогноз.
     :param date:
         Дата, на которую нужен прогноз.
+    :param params:
+        Параметры ML-модели для прогноза.
     :return:
         Прогнозная доходность, ковариация и дополнительная информация.
     """
@@ -98,7 +100,7 @@ def make_forecast(
     ml_std, r2, cv_params = cv_results(cases, params)
     clf = fit_clf(cv_params, cases)
     feature_importance = pd.Series(
-        clf.feature_importances_, cases.get_features_names(), name="Importances"
+        clf.feature_importances_, cases.get_features_names(), name="Importance"
     )
     mean = predict_mean(clf, cases, cv_params)
     cov, average_cor, shrinkage = ledoit_wolf_cov(
