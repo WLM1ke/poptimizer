@@ -31,9 +31,9 @@ PARAMS = (
 )
 
 
-def cv_results(cases: examples.Examples):
+def cv_results(cases: examples.Examples, params):
     """Получает необходимые результаты кросс-валидации."""
-    result = cv.cv_model(PARAMS, cases)
+    result = cv.cv_model(params, cases)
     return result["std"], result["r2"], result["params"]
 
 
@@ -47,13 +47,13 @@ def fit_clf(cv_params: tuple, cases: examples.Examples):
     return clf
 
 
-def predict_mean(clf, cases: examples.Examples, cv_params, tickers):
+def predict_mean(clf, cases: examples.Examples, cv_params):
     """Прогноз ожидаемой доходности."""
     predict_pool_params = cases.predict_pool_params(cv_params[0])
     predict_pool = catboost.Pool(**predict_pool_params)
-    raw_prediction = pd.Series(clf.predict(predict_pool), list(tickers))
+    raw_prediction = clf.predict(predict_pool)
     scaler = predict_pool_params["data"].iloc[:, 0]
-    return raw_prediction * scaler
+    return raw_prediction * scaler.values
 
 
 def validate_cov(cov, cases: examples.Examples, cv_params):
@@ -82,7 +82,9 @@ def ledoit_wolf_cov(cases: examples.Examples, cv_params, tickers, date, ml_std):
     return cov, average_cor, shrinkage
 
 
-def make_forecast(tickers: Tuple[str, ...], date: pd.Timestamp) -> Forecast:
+def make_forecast(
+    tickers: Tuple[str, ...], date: pd.Timestamp, params=PARAMS
+) -> Forecast:
     """Создает прогноз для набора тикеров на указанную дату.
 
     :param tickers:
@@ -93,10 +95,12 @@ def make_forecast(tickers: Tuple[str, ...], date: pd.Timestamp) -> Forecast:
         Прогнозная доходность, ковариация и дополнительная информация.
     """
     cases = examples.Examples(tickers, date)
-    ml_std, r2, cv_params = cv_results(cases)
+    ml_std, r2, cv_params = cv_results(cases, params)
     clf = fit_clf(cv_params, cases)
-    feature_importance = pd.Series(clf.feature_importances_, cases.get_features_names())
-    mean = predict_mean(clf, cases, cv_params, tickers)
+    feature_importance = pd.Series(
+        clf.feature_importances_, cases.get_features_names(), name="Importances"
+    )
+    mean = predict_mean(clf, cases, cv_params)
     cov, average_cor, shrinkage = ledoit_wolf_cov(
         cases, cv_params, tickers, date, ml_std
     )
