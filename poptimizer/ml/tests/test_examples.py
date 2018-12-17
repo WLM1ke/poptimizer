@@ -77,7 +77,7 @@ def test_std_days(example):
             (False, {"days": 7}),
         )
     )
-    assert days == 22
+    assert days == (4, 22)
 
 
 def test_learn_pool(example):

@@ -74,7 +74,7 @@ def ledoit_wolf_cov(cases: examples.Examples, cv_params, tickers, date, ml_std):
     """
     mean_days, scaler_days = cases.mean_std_days(cv_params[0])
     returns = data.log_total_returns(tickers, date)
-    returns = returns.iloc[-scaler_days:, ]
+    returns = returns.iloc[-scaler_days:,]
     cov, average_cor, shrinkage = ledoit_wolf.shrinkage(returns.values)
     cov *= YEAR_IN_TRADING_DAYS * scaler_days / (scaler_days - 1)
     validate_cov(cov, cases, cv_params)

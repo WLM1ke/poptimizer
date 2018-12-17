@@ -110,15 +110,3 @@ class Examples:
             cat_features=self.categorical_features(),
             feature_names=list(df.columns[1:]),
         )
-
-
-if __name__ == "__main__":
-    PARAMS = (
-        (True, {"days": 21}),
-        (True, {"days": 252}),
-        (True, {}),
-        (True, {"days": 252}),
-        (True, {"days": 252}),
-    )
-    cases = Examples(("KAZTP", "AKRN"), pd.Timestamp("2018-12-14"))
-    print(cases.learn_pool_params(PARAMS))

@@ -12,7 +12,16 @@ class SimpleMetrics(AbstractMetrics):
         mean = np.array([1.0, 2.0, 3.0])
         cov = np.array([[9.0, 3.0, 1.0], [3.0, 4.0, 0.5], [1.0, 0.5, 1.0]])
         portfolio = self._portfolio
-        return Forecast(portfolio.date, portfolio.index[:-2].tolist(), mean, cov)
+        return Forecast(
+            portfolio.date,
+            tuple(portfolio.index[:-2]),
+            mean,
+            cov,
+            pd.Series(),
+            0.0,
+            0.0,
+            0.0,
+        )
 
 
 @pytest.fixture(scope="module", name="metrics_and_index")
