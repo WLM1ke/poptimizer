@@ -16,10 +16,10 @@ def test_mean():
     assert isinstance(df, pd.Series)
     assert df.name == "Mean"
     assert df.size == 3
-    assert df["VSMO"] == pytest.approx(-0.010316797368955)
+    assert df["VSMO"] == pytest.approx(-0.010316797368955 / YEAR_IN_TRADING_DAYS)
 
     df = feature.get(pd.Timestamp("2018-10-29"), days=53)
-    assert df["BANEP"] == pytest.approx(0.413477629952859)
+    assert df["BANEP"] == pytest.approx(0.413477629952859 / YEAR_IN_TRADING_DAYS)
 
     df = feature.get(pd.Timestamp("2018-10-02"), days=53)
-    assert df["ENRU"] == pytest.approx(-0.150704229512325)
+    assert df["ENRU"] == pytest.approx(-0.150704229512325 / YEAR_IN_TRADING_DAYS)

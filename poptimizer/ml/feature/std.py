@@ -9,7 +9,7 @@ from poptimizer.ml.feature.label import YEAR_IN_TRADING_DAYS
 
 
 class STD(AbstractFeature):
-    """СКО за несколько предыдущих дней в годовом выражении.
+    """СКО за несколько предыдущих дней.
 
     В перспективе можно организовать поиск по количеству предыдущих дней.
     """
@@ -38,4 +38,4 @@ class STD(AbstractFeature):
         days = kwargs["days"]
         std = returns.iloc[loc - days + 1 : loc + 1].std(axis=0)
         std.name = self.name
-        return std * YEAR_IN_TRADING_DAYS ** 0.5
+        return std

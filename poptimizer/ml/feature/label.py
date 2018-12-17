@@ -10,7 +10,7 @@ YEAR_IN_TRADING_DAYS = 12 * 21
 
 
 class Label(AbstractFeature):
-    """Доходность за несколько следующих дней в годовом выражении.
+    """Средняя доходность за несколько следующих дней.
 
     В перспективе можно организовать поиск по количеству следующих дней.
     """
@@ -39,7 +39,7 @@ class Label(AbstractFeature):
         days = kwargs["days"]
         mean = returns.iloc[loc + 1 : loc + days + 1].mean(axis=0)
         mean.name = self.name
-        return mean * YEAR_IN_TRADING_DAYS
+        return mean
 
     @property
     def index(self):

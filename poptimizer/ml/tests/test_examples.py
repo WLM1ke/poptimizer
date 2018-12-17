@@ -57,13 +57,13 @@ def test_get(example):
     assert (df.columns == ["Label", "STD", "Ticker", "Mean", "Dividends"]).all()
     assert (df.index == ["AKRN", "CHMF", "BANEP"]).all()
     assert df.loc["AKRN", "Label"] == pytest.approx(
-        np.log(4590 / 4630) * YEAR_IN_TRADING_DAYS / 4 / 0.051967880396035164
+        np.log(4590 / 4630) * YEAR_IN_TRADING_DAYS ** 0.5 / 4 / 0.051967880396035164
     )
-    assert df.loc["CHMF", "STD"] == pytest.approx(0.17547200666439342)
+    assert df.loc["CHMF", "STD"] == pytest.approx(
+        0.17547200666439342 / YEAR_IN_TRADING_DAYS ** 0.5
+    )
     assert df.loc["BANEP", "Ticker"] == "BANEP"
-    assert df.loc["AKRN", "Mean"] == pytest.approx(
-        np.log(4630 / 4672) * YEAR_IN_TRADING_DAYS / 6
-    )
+    assert df.loc["AKRN", "Mean"] == pytest.approx(np.log(4630 / 4672) / 6)
     assert df.loc["CHMF", "Dividends"] == pytest.approx(44.39 * AFTER_TAX / 964.3)
 
 

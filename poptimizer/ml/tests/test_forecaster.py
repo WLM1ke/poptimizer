@@ -4,6 +4,7 @@ import pytest
 
 from poptimizer import POptimizerError
 from poptimizer.ml import forecaster, examples
+from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 from poptimizer.portfolio.metrics import Forecast
 
 PARAMS = (
@@ -44,7 +45,7 @@ def make_fit_clf(cases, cv_results):
 
 def test_cv_results(cv_results):
     ml_std, r2, cv_params = cv_results
-    assert ml_std == pytest.approx(3.2689512418161755)
+    assert ml_std == pytest.approx(3.2689512418161755 / YEAR_IN_TRADING_DAYS ** 0.5)
     assert r2 == pytest.approx(0.17408768222445936)
     assert "iterations" in cv_params[1]
 
@@ -59,9 +60,9 @@ def test_predict_mean(cases, cv_results, clf):
 
     assert isinstance(mean, np.ndarray)
     assert len(mean) == 3
-    assert mean[0] == pytest.approx(0.06149871693585873)
-    assert mean[1] == pytest.approx(-0.009076847544294444)
-    assert mean[2] == pytest.approx(-0.03566373524243131)
+    assert mean[0] == pytest.approx(0.06149871693585873 / YEAR_IN_TRADING_DAYS)
+    assert mean[1] == pytest.approx(-0.009076847544294444 / YEAR_IN_TRADING_DAYS)
+    assert mean[2] == pytest.approx(-0.03566373524243131 / YEAR_IN_TRADING_DAYS)
 
 
 def test_validate_cov(cases, cv_results):

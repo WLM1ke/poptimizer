@@ -3,6 +3,7 @@ import pytest
 
 from poptimizer import POptimizerError
 from poptimizer.ml import cv, examples
+from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 
 PARAMS = (
     (
@@ -32,7 +33,9 @@ def test_cv_model():
     assert len(result) == 5
     assert result["loss"] == pytest.approx(0.9593482060259035)
     assert result["status"] == "ok"
-    assert result["std"] == pytest.approx(3.251270743258923)
+    assert result["std"] == pytest.approx(
+        3.251270743258923 / YEAR_IN_TRADING_DAYS ** 0.5
+    )
     assert result["r2"] == pytest.approx(0.07965101959488052)
     data_params, model_params = result["params"]
     assert data_params == PARAMS[0]

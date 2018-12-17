@@ -9,7 +9,7 @@ from poptimizer.ml.feature.label import YEAR_IN_TRADING_DAYS
 
 
 class Mean(AbstractFeature):
-    """Доходность за несколько предыдущих торговых дней в годовом выражении.
+    """Средняя доходность за несколько предыдущих торговых дней.
 
     В перспективе можно организовать поиск по количеству предыдущих дней.
     Кроме того еще и выбор количества периодов.
@@ -39,4 +39,4 @@ class Mean(AbstractFeature):
         days = kwargs["days"]
         mean = returns.iloc[loc - days + 1 : loc + 1].mean(axis=0)
         mean.name = self.name
-        return mean * YEAR_IN_TRADING_DAYS
+        return mean

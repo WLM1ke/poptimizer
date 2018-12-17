@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from poptimizer.ml.feature import label
+from poptimizer.ml.feature import label, YEAR_IN_TRADING_DAYS
 
 
 def test_make_labels():
@@ -14,7 +14,7 @@ def test_make_labels():
     df = labels.get(pd.Timestamp("2018-11-12"), days=21)
     assert isinstance(df, pd.Series)
     assert df.size == 3
-    assert df.at["SNGSP"] == pytest.approx(0.0995856337763434)
+    assert df.at["SNGSP"] == pytest.approx(0.0995856337763434 / YEAR_IN_TRADING_DAYS)
 
     df = labels.get(pd.Timestamp("2018-05-17"), days=21)
-    assert df.at["AKRN"] == pytest.approx(0.114643927228733)
+    assert df.at["AKRN"] == pytest.approx(0.114643927228733 / YEAR_IN_TRADING_DAYS)

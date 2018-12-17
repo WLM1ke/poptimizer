@@ -16,10 +16,10 @@ def test_std():
     assert isinstance(df, pd.Series)
     assert df.name == "STD"
     assert df.size == 3
-    assert df["PIKK"] == pytest.approx(0.116674542313115)
+    assert df["PIKK"] == pytest.approx(0.116674542313115 / YEAR_IN_TRADING_DAYS ** 0.5)
 
     df = feature.get(pd.Timestamp("2018-10-26"), days=10)
-    assert df["RTKMP"] == pytest.approx(0.103606599752109)
+    assert df["RTKMP"] == pytest.approx(0.103606599752109 / YEAR_IN_TRADING_DAYS ** 0.5)
 
     df = feature.get(pd.Timestamp("2018-10-09"), days=10)
-    assert df["TATNP"] == pytest.approx(0.221371480598971)
+    assert df["TATNP"] == pytest.approx(0.221371480598971 / YEAR_IN_TRADING_DAYS ** 0.5)
