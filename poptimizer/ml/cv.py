@@ -42,7 +42,7 @@ def cv_model(params: tuple, examples: Examples) -> dict:
     pool_params = examples.learn_pool_params(data_params)
     labels_std = pool_params["label"].std()
     pool = catboost.Pool(**pool_params)
-    model_params = dict(**model_params, **TECH_PARAMS)
+    model_params = dict(**TECH_PARAMS, **model_params)
     scores = catboost.cv(pool=pool, params=model_params, fold_count=FOLDS_COUNT)
     if len(scores) == MAX_ITERATIONS:
         raise POptimizerError(f"Необходимо увеличить MAX_ITERATIONS = {MAX_ITERATIONS}")

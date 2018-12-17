@@ -32,6 +32,10 @@ class Examples:
         self._date = date
         self._features = [cls(tickers, date) for cls in self.FEATURES]
 
+    def get_features_names(self):
+        """Название признаков."""
+        return [feat.name for feat in self._features[1:]]
+
     def categorical_features(self):
         """Массив с указанием номеров признаков с категориальными данными."""
         return [n for n, feat in enumerate(self._features[1:]) if feat.is_categorical()]
@@ -75,9 +79,9 @@ class Examples:
         return pd.concat(data, axis=1)
 
     @staticmethod
-    def std_days(params):
+    def mean_std_days(params):
         """Количество дней, которое использовалось для расчета СКО для нормировки."""
-        return params[1][1]["days"]
+        return params[0][1]["days"], params[1][1]["days"]
 
     def learn_pool_params(self, params):
         """Данные для создание catboost.Pool с обучающими примерами."""
@@ -106,3 +110,15 @@ class Examples:
             cat_features=self.categorical_features(),
             feature_names=list(df.columns[1:]),
         )
+
+
+if __name__ == "__main__":
+    PARAMS = (
+        (True, {"days": 21}),
+        (True, {"days": 252}),
+        (True, {}),
+        (True, {"days": 252}),
+        (True, {"days": 252}),
+    )
+    cases = Examples(("KAZTP", "AKRN"), pd.Timestamp("2018-12-14"))
+    print(cases.learn_pool_params(PARAMS))

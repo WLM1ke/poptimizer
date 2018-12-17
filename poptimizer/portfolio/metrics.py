@@ -14,9 +14,13 @@ class Forecast:
     """Класс с прогнозом"""
 
     date: pd.Timestamp
-    tickers: list
+    tickers: tuple
     mean: np.array
     cov: np.array
+    feature_importance: pd.Series
+    r2: float
+    average_cor: float
+    shrinkage: float
 
 
 class AbstractMetrics(ABC):

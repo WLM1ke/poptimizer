@@ -68,7 +68,7 @@ def test_get(example):
 
 
 def test_std_days(example):
-    days = example.std_days(
+    days = example.mean_std_days(
         (
             (True, {"days": 4}),
             (True, {"days": 22}),

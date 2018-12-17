@@ -32,19 +32,14 @@ def shrinkage(returns: np.array) -> Tuple[np.array, float, float]:
     # sample average correlation
     var = np.diag(sample_cov).reshape(-1, 1)
     sqrt_var = var ** 0.5
-    average_cor = (
-        ((sample_cov / sqrt_var / sqrt_var.transpose()).sum() - n) / n / (n - 1)
-    )
-    prior = average_cor * sqrt_var * sqrt_var.transpose()
+    unit_cor_var = sqrt_var * sqrt_var.transpose()
+    average_cor = ((sample_cov / unit_cor_var).sum() - n) / n / (n - 1)
+    prior = average_cor * unit_cor_var
     np.fill_diagonal(prior, var)
 
     # pi-hat
     y = returns ** 2
-    phi_mat = (
-        (y.transpose() @ y) / t
-        - 2 * (returns.transpose() @ returns) * sample_cov / t
-        + sample_cov ** 2
-    )
+    phi_mat = (y.transpose() @ y) / t - sample_cov ** 2
     phi = phi_mat.sum()
 
     # rho-hat
