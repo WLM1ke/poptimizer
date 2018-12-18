@@ -46,7 +46,18 @@ class AbstractMetrics(ABC):
         frames = [self.mean, self.std, self.beta, self.lower_bound, self.gradient]
         df = pd.concat(frames, axis=1)
         df.columns = ["MEAN", "STD", "BETA", "LOWER_BOUND", "GRADIENT"]
-        return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ" f"\n" f"\n{df}"
+        return (
+            f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ"
+            f"\n"
+            f"\n{df}"
+            f"\n"
+            f"\nХАРАКТЕРИСТИКИ ПРОГНОЗА"
+            f"\nR2 - {self._forecast.r2:.1%}"
+            f"\nСредняя корреляция - {self._forecast.average_cor:.1%}"
+            f"\nСила сжатия - {self._forecast.shrinkage:.1%}"
+            f"\n"
+            f"\n{self._forecast.feature_importance.to_frame().T}"
+        )
 
     @abstractmethod
     def _forecast_func(self) -> Forecast:
