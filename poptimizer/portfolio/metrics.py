@@ -49,7 +49,7 @@ class AbstractMetrics(ABC):
         return (
             f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ"
             f"\n"
-            f"\nСКО градиента - {self.std_gradient:.2f}"
+            f"\nСКО градиента - {self.std_gradient:.2%}"
             f"\n"
             f"\n{df}"
             f"\n"
