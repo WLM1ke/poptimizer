@@ -5,7 +5,8 @@ import catboost
 import numpy as np
 import pandas as pd
 
-from poptimizer import data, POptimizerError
+from poptimizer import data
+from poptimizer.misc import POptimizerError
 from poptimizer.ml import examples, ledoit_wolf, cv
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 from poptimizer.portfolio.metrics import Forecast

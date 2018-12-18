@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from poptimizer import POptimizerError
+from poptimizer.misc import POptimizerError
 from poptimizer.portfolio import portfolio
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
 

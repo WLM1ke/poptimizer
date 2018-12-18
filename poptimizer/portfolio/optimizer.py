@@ -28,6 +28,11 @@ class Optimizer:
         self._metrics = returns.ReturnsMetrics(portfolio, months)
 
     def __str__(self):
+        recommendation = self._trade_recommendation()
+        df = self._main_stat()
+        return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n\n{recommendation}\n\n{df}"
+
+    def _trade_recommendation(self):
         portfolio = self.portfolio
         trade_size = portfolio.value[PORTFOLIO] * MAX_TRADE
         cash = portfolio.value[CASH]
@@ -41,28 +46,26 @@ class Optimizer:
         best_buy = self.best_buy
         buy_lots = cash / portfolio.price[best_buy] / portfolio.lot_size[best_buy]
         buy_lots = max(1, int(buy_lots / TRADES))
+        return (
+            f"\nЛУЧШАЯ СДЕЛКА"
+            f"\nt_score = {self.gradient_growth[self.best_buy] / self.metrics.std_gradient:.2f}"
+            f"\nПродать {best_sell} - {TRADES} сделок {sell_lots} лотов"
+            f"\nКупить  {best_buy} - {TRADES} сделок {buy_lots} лотов"
+        )
+
+    def _main_stat(self):
         metrics = self.metrics
         df = pd.concat(
             [
                 metrics.lower_bound,
                 metrics.gradient,
-                portfolio.turnover_factor,
+                self.portfolio.turnover_factor,
                 self.gradient_growth,
             ],
             axis=1,
         )
-        df.columns = ["LOWER_BOUND", "GRADIENT", "TURNOVER", "GRADIENT_GROWTH"]
-        df.sort_values("LOWER_BOUND", ascending=False, inplace=True)
-        return (
-            f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ"
-            f"\n"
-            f"\nЛУЧШАЯ СДЕЛКА"
-            f"\nt_score = {self.gradient_growth[self.best_buy] / metrics.std_gradient:.2f}"
-            f"\nПродать {best_sell} - {TRADES} сделок {sell_lots} лотов"
-            f"\nКупить  {best_buy} - {TRADES} сделок {buy_lots} лотов"
-            f"\n"
-            f"\n{df}"
-        )
+        df.columns = ["LOWER_BOUND", "GRADIENT", "TURNOVER", "GROWTH"]
+        return df.sort_values("LOWER_BOUND", ascending=False)
 
     @property
     def portfolio(self):

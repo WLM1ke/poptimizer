@@ -2,7 +2,7 @@
 import catboost
 import hyperopt
 
-from poptimizer import POptimizerError
+from poptimizer.misc import POptimizerError
 from poptimizer.ml.examples import Examples
 
 # Базовые настройки catboost
