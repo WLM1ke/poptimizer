@@ -49,6 +49,8 @@ class AbstractMetrics(ABC):
         return (
             f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ"
             f"\n"
+            f"\nСКО градиента - {self.std_gradient:.2f}"
+            f"\n"
             f"\n{df}"
             f"\n"
             f"\nХАРАКТЕРИСТИКИ ПРОГНОЗА"
@@ -139,3 +141,9 @@ class AbstractMetrics(ABC):
         # noinspection PyTypeChecker
         risk_gradient = self.std[PORTFOLIO] * (years ** 0.5) * (self.beta - 1)
         return mean_gradient - T_SCORE * risk_gradient
+
+    @property
+    def std_gradient(self):
+        """СКО для интервала времени расчета градиента."""
+        years = self._months / 12
+        return self.std[PORTFOLIO] * (years ** 0.5)

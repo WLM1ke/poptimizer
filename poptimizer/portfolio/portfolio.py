@@ -1,5 +1,5 @@
 """Реализация класса портфеля."""
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -21,7 +21,7 @@ class Portfolio:
 
     def __init__(
         self,
-        date: str,
+        date: Union[str, pd.Timestamp],
         cash: int,
         positions: Dict[str, int],
         value: Optional[float] = None,
