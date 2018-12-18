@@ -30,7 +30,7 @@ class Optimizer:
     def __str__(self):
         recommendation = self._trade_recommendation()
         df = self._main_stat()
-        return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n\n{recommendation}\n\n{df}"
+        return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n{recommendation}\n\n{df}"
 
     def _trade_recommendation(self):
         portfolio = self.portfolio
