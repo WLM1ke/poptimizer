@@ -7,7 +7,7 @@ import pandas as pd
 
 from poptimizer import store
 
-__all__ = ["lot_size", "prices", "turnovers"]
+__all__ = ["lot_size", "prices", "turnovers", "securities_with_reg_number"]
 
 
 async def _securities(tickers: Optional[Tuple[str, ...]] = None) -> pd.Series:
@@ -23,8 +23,14 @@ async def _securities(tickers: Optional[Tuple[str, ...]] = None) -> pd.Series:
         db = client.securities()
         df = await db.get()
     if tickers:
-        return df.loc[list(tickers), store.LOT_SIZE]
-    return df[store.LOT_SIZE]
+        return df.loc[list(tickers)]
+    return df
+
+
+def securities_with_reg_number() -> pd.Index:
+    """Все ценные акции с регистрационным номером."""
+    df = asyncio.run(_securities())
+    return df.dropna(axis=0).index
 
 
 def lot_size(tickers: Optional[Tuple[str, ...]] = None) -> pd.Series:
@@ -36,7 +42,8 @@ def lot_size(tickers: Optional[Tuple[str, ...]] = None) -> pd.Series:
     :return:
         Информация о размере лотов.
     """
-    return asyncio.run(_securities(tickers))
+    df = asyncio.run(_securities(tickers))
+    return df[store.LOT_SIZE]
 
 
 async def _quotes(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:

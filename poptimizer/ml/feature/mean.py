@@ -37,6 +37,6 @@ class Mean(AbstractFeature):
         returns = self._returns
         loc = returns.index.get_loc(date)
         days = kwargs["days"]
-        mean = returns.iloc[loc - days + 1 : loc + 1].mean(axis=0)
+        mean = returns.iloc[loc - days + 1 : loc + 1].mean(axis=0, skipna=False)
         mean.name = self.name
         return mean

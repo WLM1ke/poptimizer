@@ -6,30 +6,11 @@ import numpy as np
 import pandas as pd
 
 from poptimizer import data
+from poptimizer.config import ML_PARAMS
 from poptimizer.misc import POptimizerError
 from poptimizer.ml import examples, ledoit_wolf, cv
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 from poptimizer.portfolio.metrics import Forecast
-
-# Параметры данных и модели
-PARAMS = (
-    (
-        (True, {"days": 21}),
-        (True, {"days": 252}),
-        (True, {}),
-        (True, {"days": 252}),
-        (True, {"days": 252}),
-    ),
-    {
-        "bagging_temperature": 1,
-        "depth": 6,
-        "ignored_features": (),
-        "l2_leaf_reg": 3,
-        "learning_rate": 0.1,
-        "one_hot_max_size": 2,
-        "random_strength": 1,
-    },
-)
 
 
 def cv_results(cases: examples.Examples, params):
@@ -84,7 +65,7 @@ def ledoit_wolf_cov(cases: examples.Examples, cv_params, tickers, date, ml_std):
 
 
 def make_forecast(
-    tickers: Tuple[str, ...], date: pd.Timestamp, params=PARAMS
+    tickers: Tuple[str, ...], date: pd.Timestamp, params=ML_PARAMS
 ) -> Forecast:
     """Создает прогноз для набора тикеров на указанную дату.
 

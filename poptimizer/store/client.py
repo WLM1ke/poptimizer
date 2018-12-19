@@ -7,7 +7,7 @@ from poptimizer import config
 from poptimizer.store import manager, lmbd, moex, dividends
 
 # Максимальный размер хранилища данных и количество вложенных баз
-MAX_SIZE = 10 * 2 ** 20
+MAX_SIZE = 20 * 2 ** 20
 MAX_DBS = 2
 
 

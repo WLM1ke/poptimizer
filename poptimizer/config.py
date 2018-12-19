@@ -31,3 +31,23 @@ TURNOVER_PERIOD = 21
 
 # Минимальный оборот - преимущества акции снижаются при приближении медианного оборота к данному уровню
 TURNOVER_CUT_OFF = 2 * MAX_TRADE
+
+# Параметры данных и модели
+ML_PARAMS = (
+    (
+        (True, {"days": 21}),
+        (True, {"days": 252}),
+        (True, {}),
+        (True, {"days": 252}),
+        (True, {"days": 252}),
+    ),
+    {
+        "bagging_temperature": 1,
+        "depth": 6,
+        "ignored_features": (),
+        "l2_leaf_reg": 3,
+        "learning_rate": 0.1,
+        "one_hot_max_size": 2,
+        "random_strength": 1,
+    },
+)

@@ -88,18 +88,32 @@ class Quotes(AbstractManager):
     def _clean_df(df):
         """Оставляет столбцы с ценами закрытия и объемами торгов, сортирует и приводит к корректному
         формату."""
-        df = df.loc[:, ["begin", "close", "value"]]
+        if not df.empty:
+            df = df.loc[:, ["begin", "close", "value"]]
+        else:
+            df = df.reindex(columns=["begin", "close", "value"])
         df.columns = [DATE, CLOSE, TURNOVER]
         df.loc[:, DATE] = df[DATE].apply(FUNC_DATE)
         df.loc[:, CLOSE] = df[CLOSE].apply(FUNC_FLOAT)
         df.loc[:, TURNOVER] = df[TURNOVER].apply(FUNC_FLOAT)
+        df = df.set_index(DATE)
+        # Для старых котировок иногда бывали параллельны торги для нескольких тикеров одной бумаги
+        if df.index.is_unique:
+            return df
+        # Для таких случаев выбираем торги с большим оборотом
+        df.reset_index(inplace=True)
+        df = df.loc[df.groupby(DATE)[TURNOVER].idxmax()]
         return df.set_index(DATE)
 
     async def _download_update(self, name):
         """Загружает данные с последнего имеющегося значения до конца истории."""
-        start = self._data[name].value.index[-1].date()
+        old_df = self._data[name].value
+        if old_df.empty:
+            start = None
+        else:
+            start = str(old_df.index[-1].date())
         data = await aiomoex.get_market_candles(
-            name, start=str(start), end=self._last_history_date
+            name, start=start, end=self._last_history_date
         )
         df = pd.DataFrame(data)
         return self._clean_df(df)

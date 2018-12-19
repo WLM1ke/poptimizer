@@ -36,6 +36,6 @@ class STD(AbstractFeature):
         returns = self._returns
         loc = returns.index.get_loc(date)
         days = kwargs["days"]
-        std = returns.iloc[loc - days + 1 : loc + 1].std(axis=0)
+        std = returns.iloc[loc - days + 1 : loc + 1].std(axis=0, skipna=False)
         std.name = self.name
         return std
