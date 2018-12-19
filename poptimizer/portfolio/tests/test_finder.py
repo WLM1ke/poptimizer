@@ -1,7 +1,7 @@
 import pandas as pd
 
 from poptimizer import portfolio
-from poptimizer.finder.momentum import find_momentum
+from poptimizer.portfolio.finder import find_momentum
 
 
 def test_find_momentum(capsys):
