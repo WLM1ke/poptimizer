@@ -47,3 +47,12 @@ def test_find_dividends(capsys):
     assert df.shape == (5, 4)
     assert list(df.columns) == ["Dividends", "TURNOVER", "SCORE", "ADD"]
     assert list(df.index) == ["CHMF", "MTLRP", "LSNGP", "ENRU", "TATNP"]
+
+
+def test_find_zero_turnover_and_weight():
+    date = pd.Timestamp("2018-12-18")
+    positions = dict(KAZT=1, KAZTP=0, CHMF=20000, TATN=20000, KZOS=20000, LKOH=20000)
+    port = portfolio.Portfolio(date, 0, positions)
+    tickers = finder.find_zero_turnover_and_weight(port)
+    assert "KAZT" not in tickers
+    assert "KAZTP" in tickers

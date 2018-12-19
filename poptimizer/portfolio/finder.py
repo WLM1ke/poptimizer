@@ -107,3 +107,14 @@ def find_dividends(
     )
     print(text)
     return div
+
+
+def find_zero_turnover_and_weight(current_port: portfolio.Portfolio):
+    """Ищет бумаги с нулевым оборотом и весом - потенциальные цели для исключения."""
+    zero_weight = current_port.weight == 0
+    zero_turnover = current_port.turnover_factor == 0
+    zero = list(current_port.index[zero_weight & zero_turnover])
+    print("\nБУМАГИ С НУЛЕВЫМ ОБОРОТОМ И ВЕСОМ")
+    print()
+    print(*zero)
+    return zero
