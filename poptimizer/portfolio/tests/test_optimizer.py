@@ -9,26 +9,25 @@ from poptimizer.portfolio import optimizer
 def make_optimizer():
     date = pd.Timestamp("2018-12-17")
     positions = dict(
-        KZOS=0, MGNT=0, PIKK=4800, MSTT=80000, MTLRP=0, GMKN=800, CBOM=0, SNGSP=480000
+        KZOS=800, MGNT=0, PIKK=800, MSTT=0, MTLRP=0, GMKN=21, CBOM=0, SNGSP=13000
     )
     port = portfolio.Portfolio(date, 1000, positions)
     return optimizer.Optimizer(port, months=11)
 
 
 def test_best_sell(opt):
-    assert opt.best_sell == "MSTT"
+    assert opt.best_sell == "SNGSP"
 
 
 def test_gradient_growth(opt):
     grad = opt.metrics.gradient
     growth = opt.gradient_growth
-    assert grad["KZOS"] > grad["PIKK"]
-    assert growth["KZOS"] < grad["PIKK"]
-    assert growth["KZOS"] == pytest.approx(0.263321752852)
+    assert grad["KZOS"] > grad["CBOM"]
+    assert growth["KZOS"] == pytest.approx(0.300009)
 
 
 def test_best_buy(opt):
-    assert opt.best_buy == "PIKK"
+    assert opt.best_buy == "KZOS"
 
 
 def test_main_stat(opt):
@@ -45,8 +44,8 @@ def test_trade_recommendation(opt):
     # noinspection PyProtectedMember
     rec = opt._trade_recommendation()
     assert isinstance(rec, str)
-    assert "Продать MSTT" in rec
-    assert "Купить  PIKK" in rec
+    assert "Продать SNGSP" in rec
+    assert "Купить  KZOS" in rec
 
 
 def test_str(opt):

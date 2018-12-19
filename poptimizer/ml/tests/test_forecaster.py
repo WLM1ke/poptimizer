@@ -4,7 +4,6 @@ import pytest
 
 from poptimizer.misc import POptimizerError
 from poptimizer.ml import forecaster, examples
-from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 from poptimizer.portfolio.metrics import Forecast
 
 PARAMS = (
@@ -45,8 +44,8 @@ def make_fit_clf(cases, cv_results):
 
 def test_cv_results(cv_results):
     ml_std, r2, cv_params = cv_results
-    assert ml_std == pytest.approx(3.2689512418161755 / YEAR_IN_TRADING_DAYS ** 0.5)
-    assert r2 == pytest.approx(0.17408768222445936)
+    assert ml_std == pytest.approx(0.18553114126774026)
+    assert r2 == pytest.approx(0.07837529944800237)
     assert "iterations" in cv_params[1]
 
 
@@ -60,9 +59,9 @@ def test_predict_mean(cases, cv_results, clf):
 
     assert isinstance(mean, np.ndarray)
     assert len(mean) == 3
-    assert mean[0] == pytest.approx(0.06149871693585873 / YEAR_IN_TRADING_DAYS)
-    assert mean[1] == pytest.approx(-0.009076847544294444 / YEAR_IN_TRADING_DAYS)
-    assert mean[2] == pytest.approx(-0.03566373524243131 / YEAR_IN_TRADING_DAYS)
+    assert mean[0] == pytest.approx(0.0005367026624020926)
+    assert mean[1] == pytest.approx(0.00022968198331736343)
+    assert mean[2] == pytest.approx(0.0003721427488511284)
 
 
 def test_validate_cov(cases, cv_results):
@@ -96,13 +95,13 @@ def test_make_forecast():
     assert forecast.date == pd.Timestamp("2018-12-14")
     assert forecast.tickers == ("SNGSP", "VSMO", "DSKY")
     assert isinstance(forecast.mean, np.ndarray)
-    assert forecast.mean[1] == pytest.approx(-0.009076847544294444)
+    assert forecast.mean[1] == pytest.approx(0.05787985979597558)
     assert isinstance(forecast.cov, np.ndarray)
-    assert forecast.cov[2, 1] == pytest.approx(0.0012251231394680528)
+    assert forecast.cov[2, 1] == pytest.approx(0.000994482235801201)
     assert isinstance(forecast.feature_importance, pd.Series)
     assert np.allclose(
-        forecast.feature_importance, [35.60526857, 9.65125932, 24.77469142, 29.96878069]
+        forecast.feature_importance, [13.265165, 11.263902, 38.265461, 37.205472]
     )
-    assert forecast.r2 == pytest.approx(0.17408768222445936)
+    assert forecast.r2 == pytest.approx(0.07837529944800237)
     assert forecast.average_cor == pytest.approx(0.08777292794188181)
     assert forecast.shrinkage == pytest.approx(1)

@@ -30,7 +30,7 @@ MAX_TRADE = 0.01
 TURNOVER_PERIOD = 21
 
 # Минимальный оборот - преимущества акции снижаются при приближении медианного оборота к данному уровню
-TURNOVER_CUT_OFF = 2 * MAX_TRADE
+TURNOVER_CUT_OFF = 0.12 * MAX_TRADE
 
 # Параметры данных и модели
 ML_PARAMS = (
