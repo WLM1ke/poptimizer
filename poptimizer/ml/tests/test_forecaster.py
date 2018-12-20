@@ -36,7 +36,7 @@ def make_cv_results(cases):
     return forecaster.cv_results(cases, PARAMS)
 
 
-@pytest.fixture(scope="module", name="clf")
+@pytest.fixture(scope="module", name="clf_n_cases")
 def make_fit_clf(cases, cv_results):
     _, _, cv_params = cv_results
     return forecaster.fit_clf(cv_params, cases)
@@ -49,11 +49,14 @@ def test_cv_results(cv_results):
     assert "iterations" in cv_params[1]
 
 
-def test_fit_clf(clf):
+def test_fit_clf(clf_n_cases):
+    clf, n_cases = clf_n_cases
     assert clf.is_fitted()
+    assert n_cases == 208
 
 
-def test_predict_mean(cases, cv_results, clf):
+def test_predict_mean(cases, cv_results, clf_n_cases):
+    clf, _ = clf_n_cases
     _, _, cv_params = cv_results
     mean = forecaster.predict_mean(clf, cases, cv_params)
 

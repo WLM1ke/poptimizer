@@ -17,6 +17,7 @@ class Forecast:
     tickers: tuple
     mean: np.array
     cov: np.array
+    num_cases: int
     feature_importance: pd.Series
     r2: float
     average_cor: float
@@ -54,6 +55,7 @@ class AbstractMetrics(ABC):
             f"\n{df}"
             f"\n"
             f"\nХАРАКТЕРИСТИКИ ПРОГНОЗА"
+            f"\nКоличество обучающих примеров - {self._forecast.num_cases}"
             f"\nR2 - {self._forecast.r2:.1%}"
             f"\nСредняя корреляция - {self._forecast.average_cor:.1%}"
             f"\nСила сжатия - {self._forecast.shrinkage:.1%}"

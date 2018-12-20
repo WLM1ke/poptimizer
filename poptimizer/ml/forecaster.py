@@ -26,7 +26,7 @@ def fit_clf(cv_params: tuple, cases: examples.Examples):
     learn_pool = catboost.Pool(**learn_pool_params)
     clf = catboost.CatBoostRegressor(**model_params)
     clf.fit(learn_pool)
-    return clf
+    return clf, learn_pool.num_row()
 
 
 def predict_mean(clf, cases: examples.Examples, cv_params):
@@ -80,7 +80,7 @@ def make_forecast(
     """
     cases = examples.Examples(tickers, date)
     ml_std, r2, cv_params = cv_results(cases, params)
-    clf = fit_clf(cv_params, cases)
+    clf, num_cases = fit_clf(cv_params, cases)
     feature_importance = pd.Series(
         clf.feature_importances_, cases.get_features_names(), name="Importance"
     )
@@ -93,6 +93,7 @@ def make_forecast(
         tickers=tickers,
         mean=mean * YEAR_IN_TRADING_DAYS,
         cov=cov * YEAR_IN_TRADING_DAYS,
+        num_cases=num_cases,
         feature_importance=feature_importance,
         r2=r2,
         average_cor=average_cor,
