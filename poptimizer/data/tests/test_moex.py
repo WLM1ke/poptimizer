@@ -4,6 +4,15 @@ import pytest
 from poptimizer.data import moex
 
 
+def test_securities_with_reg_number():
+    result = moex.securities_with_reg_number()
+    assert isinstance(result, pd.Index)
+    assert result.size > 260
+    assert "AGRO" not in result
+    assert "YNDX" not in result
+    assert "BANEP" in result
+
+
 def test_lot_size_all():
     df = moex.lot_size()
 
