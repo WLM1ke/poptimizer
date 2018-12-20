@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 import poptimizer
+import poptimizer.config
 from poptimizer.store import manager, lmbd
 from poptimizer.store.client import MAX_SIZE, MAX_DBS
 
@@ -114,7 +115,7 @@ async def test_data_create_from_scratch(monkeypatch):
 async def test_index_non_unique(monkeypatch):
     monkeypatch.setattr(SimpleManager, "LOAD", pd.DataFrame(index=[1, 1]))
 
-    with pytest.raises(poptimizer.POptimizerError) as error:
+    with pytest.raises(poptimizer.config.POptimizerError) as error:
         await SimpleManager(("RTKM",), "category").get()
     assert str(error.value) == "Индекс RTKM не уникальный"
 
@@ -123,7 +124,7 @@ async def test_index_non_unique(monkeypatch):
 async def test_index_non_monotonic(monkeypatch):
     monkeypatch.setattr(SimpleManager, "LOAD", pd.DataFrame(index=[1, 2, 0]))
 
-    with pytest.raises(poptimizer.POptimizerError) as error:
+    with pytest.raises(poptimizer.config.POptimizerError) as error:
         await SimpleManager(("RTKM",), "category").get()
     assert str(error.value) == "Индекс RTKM не возрастает монотонно"
 
@@ -134,7 +135,7 @@ async def test_data_do_not_stacks(monkeypatch):
     monkeypatch.setattr(SimpleManager, "UPDATE", bad_update)
     monkeypatch.setattr(manager.utils, "update_timestamp", fake_update_timestamp)
 
-    with pytest.raises(poptimizer.POptimizerError) as error:
+    with pytest.raises(poptimizer.config.POptimizerError) as error:
         await SimpleManager(("GAZP",), "category").get()
     error_text = "Существующие данные не соответствуют новым:"
     assert error_text in str(error.value)

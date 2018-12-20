@@ -7,7 +7,7 @@ from typing import Union, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from poptimizer.misc import POptimizerError
+from poptimizer.config import POptimizerError
 from poptimizer.store import utils
 
 

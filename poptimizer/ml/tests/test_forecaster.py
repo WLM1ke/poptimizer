@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from poptimizer.misc import POptimizerError
+from poptimizer.config import POptimizerError
 from poptimizer.ml import forecaster, examples
 from poptimizer.portfolio.metrics import Forecast
 

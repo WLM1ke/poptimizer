@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer import config
-from poptimizer.misc import POptimizerError
+from poptimizer.config import POptimizerError
 from poptimizer.portfolio import portfolio
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
 

@@ -4,6 +4,11 @@ import pathlib
 
 import pandas as pd
 
+
+class POptimizerError(Exception):
+    """Базовое исключение."""
+
+
 # Конфигурация логгера
 logging.basicConfig(level=logging.INFO)
 
@@ -35,19 +40,19 @@ TURNOVER_CUT_OFF = 0.14 * MAX_TRADE
 # Параметры данных и модели
 ML_PARAMS = (
     (
-        (True, {"days": 21}),
+        (True, {"days": 30}),
         (True, {"days": 252}),
-        (True, {}),
+        (False, {}),
         (True, {"days": 252}),
         (True, {"days": 252}),
     ),
     {
-        "bagging_temperature": 1,
-        "depth": 6,
-        "ignored_features": (),
-        "l2_leaf_reg": 3,
-        "learning_rate": 0.1,
-        "one_hot_max_size": 2,
-        "random_strength": 1,
+        "bagging_temperature": 1.16573715129796,
+        "depth": 4,
+        "l2_leaf_reg": 2.993522023941868,
+        "learning_rate": 0.10024901894125209,
+        "one_hot_max_size": 100,
+        "random_strength": 0.9297802156425078,
+        "ignored_features": [1],
     },
 )

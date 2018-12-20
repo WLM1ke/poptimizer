@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from poptimizer import data, config
-from poptimizer.misc import POptimizerError
+from poptimizer.config import POptimizerError
 
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
@@ -134,11 +134,11 @@ class Portfolio:
         Ликвидность в первом приближении убывает пропорционально квадрату оборота.
         """
         last_turnover = data.turnovers(tuple(self.index[:-2]), self.date)
-        last_turnover = last_turnover.iloc[-config.TURNOVER_PERIOD:]
+        last_turnover = last_turnover.iloc[-config.TURNOVER_PERIOD :]
         median_turnover = last_turnover.median(axis=0)
         turnover_share_of_portfolio = median_turnover / self.value[PORTFOLIO]
         turnover_factor = (
-                1 - (config.TURNOVER_CUT_OFF / turnover_share_of_portfolio) ** 2
+            1 - (config.TURNOVER_CUT_OFF / turnover_share_of_portfolio) ** 2
         )
         turnover_factor[turnover_factor < 0] = 0
         return turnover_factor.reindex(self.index, fill_value=1)

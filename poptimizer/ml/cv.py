@@ -1,12 +1,18 @@
-"""Кросс-валидация ML-модели."""
+"""Кросс-валидация и оптимизация гиперпараметров ML-модели."""
+import functools
+
 import catboost
 import hyperopt
+import numpy as np
+from catboost import CatboostError
+from hyperopt import hp
 
-from poptimizer.misc import POptimizerError
+from poptimizer import config
+from poptimizer.config import POptimizerError
 from poptimizer.ml.examples import Examples
 
 # Базовые настройки catboost
-MAX_ITERATIONS = 100
+MAX_ITERATIONS = 200
 SEED = 284_704
 FOLDS_COUNT = 20
 TECH_PARAMS = dict(
@@ -16,6 +22,99 @@ TECH_PARAMS = dict(
     verbose=False,
     allow_writing_files=False,
 )
+
+# Настройки hyperopt
+MAX_SEARCHES = 100
+
+# Диапазоны поиска ключевых гиперпараметров относительно базового значения параметров
+# Рекомендации Яндекс - https://tech.yandex.com/catboost/doc/dg/concepts/parameter-tuning-docpage/
+
+# OneHot кодировка - учитывая количество акций в портфеле используется cat-кодировка или OneHot-кодировка
+ONE_HOT_SIZE = [2, 100]
+
+# Диапазон поиска скорости обучения
+LEARNING_RATE = [0.09, 0.11]
+
+# Диапазон поиска глубины деревьев
+DEPTH = [3, 6]
+DEPTH[1] += 1
+
+# Диапазон поиска параметра L2-регуляризации
+L2_LEAF_REG = [2.3e00, 3.3]
+
+# Диапазон поиска случайности разбиений
+RANDOM_STRENGTH = [7.7e-01, 1.3]
+
+# Диапазон поиска интенсивности бэггинга
+BAGGING_TEMPERATURE = [7.6e-01, 1.3]
+
+
+def log_space(space_name: str, interval):
+    """Создает логарифмическое вероятностное пространство"""
+    lower, upper = interval
+    lower, upper = np.log(lower), np.log(upper)
+    return hp.loguniform(space_name, lower, upper)
+
+
+def get_model_space():
+    """Создает вероятностное пространство для параметров регрессии."""
+    space = {
+        "one_hot_max_size": hp.choice("one_hot_max_size", ONE_HOT_SIZE),
+        "learning_rate": log_space("learning_rate", LEARNING_RATE),
+        "depth": hp.choice("depth", list(range(*DEPTH))),
+        "l2_leaf_reg": log_space("l2_leaf_reg", L2_LEAF_REG),
+        "random_strength": log_space("rand_strength", RANDOM_STRENGTH),
+        "bagging_temperature": log_space("bagging_temperature", BAGGING_TEMPERATURE),
+    }
+    return space
+
+
+def float_bounds_check(
+    name, value, interval, bound: float = 0.1, increase: float = 0.2
+):
+    """Анализирует близость к границам интервала и предлагает расширить."""
+    lower, upper = interval
+    if (value - lower) / (upper - lower) > 1 - bound:
+        print(
+            f"\nНеобходимо расширить {name} до [{lower}, {value * (1 + increase):0.1e}]"
+        )
+    elif (value - lower) / (upper - lower) < bound:
+        print(
+            f"\nНеобходимо расширить {name} до [{value / (1 + increase):0.1e}, {upper}]"
+        )
+
+
+def check_model_bounds(params: dict, bound: float = 0.1, increase: float = 0.2):
+    """Проверяет и дает рекомендации о расширении границ пространства поиска параметров.
+
+    Для целочисленных параметров - предупреждение выдается на границе диапазона и рекомендуется
+    расширить диапазон на 1.
+    Для реальных параметров - предупреждение выдается в 10% от границе и рекомендуется расширить границы
+    поиска на 10%, 20%.
+    """
+    names = ["learning_rate", "l2_leaf_reg", "random_strength", "bagging_temperature"]
+    intervals = [LEARNING_RATE, L2_LEAF_REG, RANDOM_STRENGTH, BAGGING_TEMPERATURE]
+    for name, interval in zip(names, intervals):
+        value = params[name]
+        float_bounds_check(name, value, interval, bound, increase)
+
+    if params["depth"] == DEPTH[0]:
+        print(f"\nНеобходимо расширить DEPTH до [{DEPTH[0] - 1}, {DEPTH[1] - 1}]")
+    if params["depth"] == DEPTH[1]:
+        print(f"\nНеобходимо расширить DEPTH до [{DEPTH[0]}, {DEPTH[1]}]")
+
+
+def make_model_params(data_params, model_params):
+    """Формирует параметры модели:
+
+    Вставляет корректные данные по отключенным признакам и добавляет общие технические параметры.
+    """
+    model_params["ignored_features"] = []
+    for num, feat in enumerate(data_params[1:]):
+        if feat[0] is False:
+            model_params["ignored_features"].append(num)
+    model_params = dict(**TECH_PARAMS, **model_params)
+    return model_params
 
 
 def cv_model(params: tuple, examples: Examples) -> dict:
@@ -42,17 +141,77 @@ def cv_model(params: tuple, examples: Examples) -> dict:
     pool_params = examples.learn_pool_params(data_params)
     labels_std = pool_params["label"].std()
     pool = catboost.Pool(**pool_params)
-    model_params = dict(**TECH_PARAMS, **model_params)
-    scores = catboost.cv(pool=pool, params=model_params, fold_count=FOLDS_COUNT)
-    if len(scores) == MAX_ITERATIONS:
-        raise POptimizerError(f"Необходимо увеличить MAX_ITERATIONS = {MAX_ITERATIONS}")
-    index = scores["test-RMSE-mean"].idxmin()
-    model_params["iterations"] = index + 1
-    cv_std = scores.loc[index, "test-RMSE-mean"]
-    return dict(
-        loss=cv_std / labels_std,
-        status=hyperopt.STATUS_OK,
-        std=cv_std,
-        r2=1 - (cv_std / labels_std) ** 2,
-        params=(data_params, model_params),
+    model_params = make_model_params(data_params, model_params)
+    try:
+        scores = catboost.cv(pool=pool, params=model_params, fold_count=FOLDS_COUNT)
+    except CatboostError:
+        return dict(
+            loss=None, status=hyperopt.STATUS_FAIL, std=None, r2=None, params=None
+        )
+    else:
+        if len(scores) == MAX_ITERATIONS:
+            raise POptimizerError(
+                f"Необходимо увеличить MAX_ITERATIONS = {MAX_ITERATIONS}"
+            )
+        index = scores["test-RMSE-mean"].idxmin()
+        model_params["iterations"] = index + 1
+        cv_std = scores.loc[index, "test-RMSE-mean"]
+        return dict(
+            loss=cv_std / labels_std,
+            status=hyperopt.STATUS_OK,
+            std=cv_std,
+            r2=1 - (cv_std / labels_std) ** 2,
+            params=(data_params, model_params),
+        )
+
+
+def optimize_hyper(examples: Examples) -> tuple:
+    """Ищет и  возвращает лучший набор гиперпараметров без количества итераций.
+
+    :param examples:
+        Класс генератора примеров для модели.
+    :return:
+        Оптимальные параметры модели.
+    """
+    objective = functools.partial(cv_model, examples=examples)
+    param_space = (examples.get_params_space(), get_model_space())
+    best = hyperopt.fmin(
+        objective,
+        space=param_space,
+        algo=hyperopt.tpe.suggest,
+        max_evals=MAX_SEARCHES,
+        rstate=np.random.RandomState(SEED),
     )
+    # Преобразование из внутреннего представление в исходное пространство
+    best_params = hyperopt.space_eval(param_space, best)
+    examples.check_bounds(best_params[0])
+    check_model_bounds(best_params[1])
+    return best_params
+
+
+def print_result(name, params, examples: Examples):
+    """Проводит кросс-валидацию, выводит ее основные метрики и возвращает R2."""
+    cv_results = cv_model(params, examples)
+    print(
+        f"\n{name}"
+        f"\nR2 - {cv_results['r2']:0.4%}"
+        f"\nКоличество итераций - {cv_results['params'][1]['iterations']}"
+        f"\n{cv_results['params']}"
+    )
+    return cv_results["r2"]
+
+
+def find_better_model(examples: Examples):
+    """Ищет оптимальную модель и сравнивает с базовой - результаты сравнения распечатываются."""
+    print("Идет поиск новой модели")
+    new_params = optimize_hyper(examples)
+    base_params = config.ML_PARAMS
+    base_name = "Базовая модель"
+    base_r2 = print_result(base_name, base_params, examples)
+    new_name = "Найденная модель"
+    new_r2 = print_result("Найденная модель", new_params, examples)
+
+    if base_r2 > new_r2:
+        print(f"\nЛУЧШАЯ МОДЕЛЬ - {base_name}" f"\n{base_params}")
+    else:
+        print(f"\nЛУЧШАЯ МОДЕЛЬ - {new_name}" f"\n{new_params}")

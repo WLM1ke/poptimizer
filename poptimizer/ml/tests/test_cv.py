@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from poptimizer.misc import POptimizerError
+from poptimizer.config import POptimizerError
 from poptimizer.ml import cv, examples
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 
