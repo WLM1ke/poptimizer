@@ -100,7 +100,8 @@ def find_zero_turnover_and_weight(current_port: portfolio.Portfolio):
 def find_low_gradient(opt: optimizer.Optimizer):
     """Находит бумаги с градиентом ниже лучшей продажи.
 
-    Исключаются бумаги, которые входят в состав лучших дивидендных и моментум.
+    Исключаются бумаги, которые входят в состав лучших дивидендных и моментум, чтобы постоянно не
+    включать, а потом исключать их.
     """
     sell_ticker = opt.best_sell
     gradient = opt.metrics.gradient
@@ -117,11 +118,11 @@ def add_tickers(current_port: portfolio.Portfolio):
     momentum = find_momentum(current_port)
     dividends = find_dividends(current_port)
     print(
-        f"\nПОИСК МОМЕНТУМ ТИКЕРОВ"
+        f"\nМОМЕНТУМ ТИКЕРЫ"
         f"\n\n"
         f"\n{momentum}"
         f"\n"
-        f"\nПОИСК ДИВИДЕНДНЫХ ТИКЕРОВ"
+        f"\nДИВИДЕНДНЫЕ ТИКЕРЫ"
         f"\n\n"
         f"\n{dividends}"
     )
