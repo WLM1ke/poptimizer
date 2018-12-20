@@ -5,8 +5,8 @@ import catboost
 import numpy as np
 import pandas as pd
 
-from poptimizer import data
-from poptimizer.config import ML_PARAMS, POptimizerError
+from poptimizer import data, config
+from poptimizer.config import POptimizerError
 from poptimizer.ml import examples, ledoit_wolf, cv
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 from poptimizer.portfolio.metrics import Forecast
@@ -64,7 +64,7 @@ def ledoit_wolf_cov(cases: examples.Examples, cv_params, tickers, date, ml_std):
 
 
 def make_forecast(
-    tickers: Tuple[str, ...], date: pd.Timestamp, params=ML_PARAMS
+    tickers: Tuple[str, ...], date: pd.Timestamp, params=None
 ) -> Forecast:
     """Создает прогноз для набора тикеров на указанную дату.
 
@@ -77,6 +77,7 @@ def make_forecast(
     :return:
         Прогнозная доходность, ковариация и дополнительная информация.
     """
+    params = params or config.ML_PARAMS
     cases = examples.Examples(tickers, date)
     ml_std, r2, cv_params = cv_results(cases, params)
     clf, num_cases = fit_clf(cv_params, cases)

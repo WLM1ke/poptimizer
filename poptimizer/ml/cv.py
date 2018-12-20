@@ -7,7 +7,7 @@ import numpy as np
 from catboost import CatboostError
 from hyperopt import hp
 
-from poptimizer import config
+from poptimizer import config, portfolio
 from poptimizer.config import POptimizerError
 from poptimizer.ml.examples import Examples
 
@@ -201,8 +201,9 @@ def print_result(name, params, examples: Examples):
     return cv_results["r2"]
 
 
-def find_better_model(examples: Examples):
+def find_better_model(port: portfolio.Portfolio):
     """Ищет оптимальную модель и сравнивает с базовой - результаты сравнения распечатываются."""
+    examples = Examples(tuple(port.index[:-2]), port.date)
     print("Идет поиск новой модели")
     new_params = optimize_hyper(examples)
     base_params = config.ML_PARAMS

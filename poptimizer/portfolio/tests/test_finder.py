@@ -5,8 +5,28 @@ from poptimizer import portfolio, config, optimizer
 from poptimizer.ml import feature
 from poptimizer.portfolio import finder
 
+ML_PARAMS = (
+    (
+        (True, {"days": 21}),
+        (True, {"days": 252}),
+        (True, {}),
+        (True, {"days": 252}),
+        (True, {"days": 252}),
+    ),
+    {
+        "bagging_temperature": 1,
+        "depth": 6,
+        "l2_leaf_reg": 3,
+        "learning_rate": 0.1,
+        "one_hot_max_size": 2,
+        "random_strength": 1,
+        "ignored_features": [],
+    },
+)
 
-def test_feature_days():
+
+def test_feature_days(monkeypatch):
+    monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     assert finder.feature_days(feature.Label) == 21
 
 
@@ -57,7 +77,8 @@ def test_find_zero_turnover_and_weight():
     assert "KAZTP" in tickers
 
 
-def test_find_low_gradient():
+def test_find_low_gradient(monkeypatch):
+    monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     date = pd.Timestamp("2018-12-19")
     positions = dict(
         AKRN=563,

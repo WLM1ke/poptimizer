@@ -1,8 +1,7 @@
 """Поиск претендентов на включение и исключение из портфеля."""
 import pandas as pd
 
-from poptimizer import ml, data, portfolio
-from poptimizer.config import ML_PARAMS
+from poptimizer import ml, data, portfolio, config
 from poptimizer.ml import feature
 from poptimizer.portfolio import optimizer
 from poptimizer.portfolio.portfolio import CASH, Portfolio
@@ -11,7 +10,7 @@ from poptimizer.portfolio.portfolio import CASH, Portfolio
 def feature_days(feat):
     """Поиск значения параметра количество дней для признака."""
     loc = ml.Examples.FEATURES.index(feat)
-    return ML_PARAMS[0][loc][1]["days"]
+    return config.ML_PARAMS[0][loc][1]["days"]
 
 
 def get_turnover(port, tickers):
