@@ -1,7 +1,10 @@
+import asyncio
+
 import pandas as pd
 import pytest
 
 from poptimizer.data import moex
+from poptimizer.store import CLOSE, TURNOVER
 
 
 def test_securities_with_reg_number():
@@ -44,6 +47,28 @@ def test_lot_size_some():
     assert df["RTKM"] == 10
     assert df["SIBN"] == 10
     assert df["MRSB"] == 10000
+
+
+def test_no_data():
+    # noinspection PyProtectedMember
+    quotes_list = asyncio.run(moex._quotes(("KSGR", "KMTZ", "TRFM")))
+    for df in quotes_list:
+        assert isinstance(df, pd.DataFrame)
+        assert df.empty
+        assert list(df.columns) == [CLOSE, TURNOVER]
+
+
+def test_multi_tickers():
+    """Некоторые бумаги со старой историей торговались одновременно под несколькими тикерами.
+
+    Дополнительная проверка, что у данных уникальный возрастающий индекс.
+    """
+    # noinspection PyProtectedMember
+    quotes_list = asyncio.run(moex._quotes(("PRMB", "OGKB")))
+    for df in quotes_list:
+        assert isinstance(df, pd.DataFrame)
+        assert df.index.is_unique
+        assert df.index.is_monotonic_increasing
 
 
 def test_prices():
