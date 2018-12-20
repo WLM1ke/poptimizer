@@ -17,6 +17,7 @@ class SimpleMetrics(AbstractMetrics):
             tuple(portfolio.index[:-2]),
             mean,
             cov,
+            10,
             pd.Series(),
             0.0,
             0.0,
