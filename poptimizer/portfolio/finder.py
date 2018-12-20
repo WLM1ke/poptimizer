@@ -5,7 +5,7 @@ from poptimizer import ml, data, portfolio
 from poptimizer.config import ML_PARAMS
 from poptimizer.ml import feature
 from poptimizer.portfolio import optimizer
-from poptimizer.portfolio.portfolio import CASH
+from poptimizer.portfolio.portfolio import CASH, Portfolio
 
 
 def feature_days(feat):
@@ -37,7 +37,7 @@ def mark_not_portfolio(df, column_name, choose, current_port):
     return df
 
 
-def find_momentum(current_port: portfolio.Portfolio, part: float = 0.1) -> pd.DataFrame:
+def find_momentum(current_port: Portfolio, part: float = 0.1) -> pd.DataFrame:
     """Поиск бумаг с устойчивым ростом и низкой волатильностью.
 
     Печатает, какие из входящих в лучшую часть бумаг не содержатся в текущем портфеле и могут быть
@@ -64,9 +64,7 @@ def find_momentum(current_port: portfolio.Portfolio, part: float = 0.1) -> pd.Da
     return mark_not_portfolio(df, "T_SCORE", choose, current_port)
 
 
-def find_dividends(
-    current_port: portfolio.Portfolio, part: float = 0.1
-) -> pd.DataFrame:
+def find_dividends(current_port: Portfolio, part: float = 0.1) -> pd.DataFrame:
     """Поиск бумаг с максимальными дивидендами.
 
     Печатает, какие из входящих в лучшую часть бумаг не содержатся в текущем портфеле и могут быть
@@ -90,7 +88,7 @@ def find_dividends(
     return mark_not_portfolio(div, "SCORE", choose, current_port)
 
 
-def find_zero_turnover_and_weight(current_port: portfolio.Portfolio):
+def find_zero_turnover_and_weight(current_port: Portfolio):
     """Ищет бумаги с нулевым оборотом и весом - потенциальные цели для исключения."""
     zero_weight = current_port.weight == 0
     zero_turnover = current_port.turnover_factor == 0
@@ -113,17 +111,17 @@ def find_low_gradient(opt: optimizer.Optimizer):
     )
 
 
-def add_tickers(current_port: portfolio.Portfolio):
+def add_tickers(current_port: Portfolio):
     """Претенденты для добавления."""
     momentum = find_momentum(current_port)
     dividends = find_dividends(current_port)
     print(
         f"\nМОМЕНТУМ ТИКЕРЫ"
-        f"\n\n"
+        f"\n"
         f"\n{momentum}"
         f"\n"
         f"\nДИВИДЕНДНЫЕ ТИКЕРЫ"
-        f"\n\n"
+        f"\n"
         f"\n{dividends}"
     )
 

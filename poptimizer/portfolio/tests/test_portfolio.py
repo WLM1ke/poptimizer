@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from poptimizer import config
 from poptimizer.misc import POptimizerError
 from poptimizer.portfolio import portfolio
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
@@ -15,8 +16,8 @@ PARAMS = dict(
 
 
 def test_portfolio(monkeypatch):
-    monkeypatch.setattr(portfolio, "TURNOVER_PERIOD", 7)
-    monkeypatch.setattr(portfolio, "TURNOVER_CUT_OFF", 0.6)
+    monkeypatch.setattr(config, "TURNOVER_PERIOD", 7)
+    monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.6)
 
     port = portfolio.Portfolio(**PARAMS)
 
