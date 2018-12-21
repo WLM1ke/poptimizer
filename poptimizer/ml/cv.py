@@ -74,11 +74,11 @@ def float_bounds_check(
 ):
     """Анализирует близость к границам интервала и предлагает расширить."""
     lower, upper = interval
-    if (value - lower) / (upper - lower) > 1 - bound:
+    if value * (1 + bound) > upper:
         print(
             f"\nНеобходимо расширить {name} до [{lower}, {value * (1 + increase):0.1e}]"
         )
-    elif (value - lower) / (upper - lower) < bound:
+    elif value / (1 + bound) < lower:
         print(
             f"\nНеобходимо расширить {name} до [{value / (1 + increase):0.1e}, {upper}]"
         )
