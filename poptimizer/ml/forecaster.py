@@ -94,6 +94,8 @@ def make_forecast(
         mean=mean * YEAR_IN_TRADING_DAYS,
         cov=cov * YEAR_IN_TRADING_DAYS,
         num_cases=num_cases,
+        trees=cv_params[1]["iterations"],
+        depth=cv_params[1]["depth"],
         feature_importance=feature_importance,
         r2=r2,
         average_cor=average_cor,

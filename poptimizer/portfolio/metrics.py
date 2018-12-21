@@ -18,10 +18,26 @@ class Forecast:
     mean: np.array
     cov: np.array
     num_cases: int
+    trees: int
+    depth: int
     feature_importance: pd.Series
     r2: float
     average_cor: float
     shrinkage: float
+
+    def __str__(self):
+        return (
+            f"\nХАРАКТЕРИСТИКИ ПРОГНОЗА"
+            f"\nКоличество обучающих примеров - {self.num_cases}"
+            f"\nОбучено решающих деревьев - {self.trees}"
+            f"\nГлубина деревьев - {self.depth}"
+            f"\nR2 - {self.r2:.1%}"
+            f"\nСредняя корреляция - {self.average_cor:.1%}"
+            f"\nСила сжатия - {self.shrinkage:.1%}"
+            f"\n"
+            f"\nВАЖНОСТЬ ИСПОЛЬЗОВАННЫХ ПРИЗНАКОВ"
+            f"\n{self.feature_importance.to_frame().T}"
+        )
 
 
 class AbstractMetrics(ABC):
@@ -48,19 +64,12 @@ class AbstractMetrics(ABC):
         df = pd.concat(frames, axis=1)
         df.columns = ["MEAN", "STD", "BETA", "LOWER_BOUND", "GRADIENT"]
         return (
-            f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ"
+            f"\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ"
             f"\n"
             f"\nСКО градиента - {self.std_gradient:.2%}"
             f"\n"
             f"\n{df}"
-            f"\n"
-            f"\nХАРАКТЕРИСТИКИ ПРОГНОЗА"
-            f"\nКоличество обучающих примеров - {self._forecast.num_cases}"
-            f"\nR2 - {self._forecast.r2:.1%}"
-            f"\nСредняя корреляция - {self._forecast.average_cor:.1%}"
-            f"\nСила сжатия - {self._forecast.shrinkage:.1%}"
-            f"\n"
-            f"\n{self._forecast.feature_importance.to_frame().T}"
+            f"\n{self._forecast}"
         )
 
     @abstractmethod
