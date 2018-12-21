@@ -30,17 +30,18 @@ def test_get_params_space(example):
 
 
 def test_check_bounds(example, capsys):
-    captured = capsys.readouterr()
     example.check_bounds(
         (
-            (True, {"days": 21}),
-            (True, {"days": 252}),
+            (True, {"days": -1}),
+            (False, {"days": -1}),
             (True, {}),
             (True, {"days": 252}),
             (False, {"days": 252}),
         )
     )
-    assert captured.out == ""
+    captured = capsys.readouterr()
+    assert "Необходимо расширить Label.RANGE" in captured.out
+    assert "Необходимо расширить STD.RANGE" in captured.out
 
 
 def test_get(example):
