@@ -2,7 +2,7 @@
 import pandas as pd
 
 from poptimizer.config import MAX_TRADE
-from poptimizer.portfolio import returns
+from poptimizer.portfolio import metrics
 from poptimizer.portfolio.portfolio import PORTFOLIO, CASH, Portfolio
 
 # На сколько сделок разбивается операция по покупке/продаже акций
@@ -25,7 +25,7 @@ class Optimizer:
             Период времени для расчета метрик.
         """
         self._portfolio = portfolio
-        self._metrics = returns.ReturnsMetrics(portfolio, months)
+        self._metrics = metrics.Metrics(portfolio, months)
 
     def __str__(self):
         recommendation = self._trade_recommendation()

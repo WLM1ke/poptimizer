@@ -70,4 +70,4 @@ def test_trade_recommendation(opt):
 
 def test_str(opt):
     text = str(opt)
-    assert "КЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ" in text
+    assert "ОПТИМИЗАЦИЯ ПОРТФЕЛЯ" in text

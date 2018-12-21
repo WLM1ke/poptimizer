@@ -1,10 +1,10 @@
 """Абстрактный класс с метриками портфеля"""
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
 
+from poptimizer import ml
 from poptimizer.config import T_SCORE
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO, Portfolio
 
@@ -40,7 +40,7 @@ class Forecast:
         )
 
 
-class AbstractMetrics(ABC):
+class Metrics:
     """Реализует основные метрики портфеля."""
 
     def __init__(self, portfolio: Portfolio, months: int = 12):
@@ -72,12 +72,11 @@ class AbstractMetrics(ABC):
             f"\n{self._forecast}"
         )
 
-    @abstractmethod
-    def _forecast_func(self) -> Forecast:
-        """Функция, возвращающая Forecast в годовом исчислении.
-
-        Прогноз должен включать доходность, ковариационную матрицу и исходный портфель.
-        """
+    def _forecast_func(self):
+        portfolio = self._portfolio
+        tickers = tuple(portfolio.index[:-2])
+        date = portfolio.date
+        return ml.make_forecast(tickers, date)
 
     @property
     def mean(self):

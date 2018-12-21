@@ -2,12 +2,32 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from poptimizer.portfolio import Portfolio
-from poptimizer.portfolio.metrics import AbstractMetrics, Forecast
+from poptimizer import config
+from poptimizer.portfolio import Portfolio, portfolio, metrics
+from poptimizer.portfolio.metrics import Metrics, Forecast
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
 
+ML_PARAMS = (
+    (
+        (True, {"days": 30}),
+        (True, {"days": 252}),
+        (False, {}),
+        (True, {"days": 252}),
+        (True, {"days": 252}),
+    ),
+    {
+        "bagging_temperature": 1.16573715129796,
+        "depth": 4,
+        "l2_leaf_reg": 2.993522023941868,
+        "learning_rate": 0.10024901894125209,
+        "one_hot_max_size": 100,
+        "random_strength": 0.9297802156425078,
+        "ignored_features": [1],
+    },
+)
 
-class SimpleMetrics(AbstractMetrics):
+
+class SimpleMetrics(Metrics):
     def _forecast_func(self):
         mean = np.array([1.0, 2.0, 3.0])
         cov = np.array([[9.0, 3.0, 1.0], [3.0, 4.0, 0.5], [1.0, 0.5, 1.0]])
@@ -98,3 +118,26 @@ def test_gradient(metrics_and_index):
 def test_str(metrics_and_index):
     metrics, _ = metrics_and_index
     assert "КЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ" in str(metrics)
+
+
+def test_std_gradient():
+    pos = dict(PRTK=100, RTKM=200, SIBN=300)
+    port = portfolio.Portfolio("2018-12-17", 1000, pos)
+    metrics3 = metrics.Metrics(port, months=3)
+    metrics12 = metrics.Metrics(port, months=12)
+    assert metrics12.std_gradient == pytest.approx(metrics12.std[PORTFOLIO])
+    assert metrics3.std_gradient == pytest.approx(metrics12.std[PORTFOLIO] / 2)
+    assert metrics3.std_gradient == pytest.approx(metrics3.std[PORTFOLIO] / 2)
+
+
+def test_forecast_func(monkeypatch):
+    monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
+    pos = dict(SIBN=300, PRTK=100, RTKM=200)
+    port = portfolio.Portfolio("2018-12-17", 1000, pos)
+    result = metrics.Metrics(port)
+    # noinspection PyProtectedMember
+    forecast = result._forecast_func()
+    assert isinstance(forecast, Forecast)
+    assert forecast.date == pd.Timestamp("2018-12-17")
+    assert forecast.tickers == ("PRTK", "RTKM", "SIBN")
+    assert forecast.shrinkage == pytest.approx(0.6972112123349591)
