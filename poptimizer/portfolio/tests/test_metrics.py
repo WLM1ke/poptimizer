@@ -18,6 +18,8 @@ class SimpleMetrics(AbstractMetrics):
             mean,
             cov,
             10,
+            20,
+            3,
             pd.Series(),
             0.0,
             0.0,

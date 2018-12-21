@@ -32,8 +32,8 @@ class Forecast:
             f"\nОбучено решающих деревьев - {self.trees}"
             f"\nГлубина деревьев - {self.depth}"
             f"\nR2 - {self.r2:.1%}"
-            f"\nСредняя корреляция - {self.average_cor:.1%}"
-            f"\nСила сжатия - {self.shrinkage:.1%}"
+            f"\nСредняя корреляция между акциями - {self.average_cor:.1%}"
+            f"\nСила сжатия ковариационной матрицы - {self.shrinkage:.1%}"
             f"\n"
             f"\nВАЖНОСТЬ ИСПОЛЬЗОВАННЫХ ПРИЗНАКОВ"
             f"\n{self.feature_importance.to_frame().T}"
@@ -64,7 +64,7 @@ class AbstractMetrics(ABC):
         df = pd.concat(frames, axis=1)
         df.columns = ["MEAN", "STD", "BETA", "LOWER_BOUND", "GRADIENT"]
         return (
-            f"\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ"
+            f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ"
             f"\n"
             f"\nСКО градиента - {self.std_gradient:.2%}"
             f"\n"
