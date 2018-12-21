@@ -1,12 +1,32 @@
 import pandas as pd
 import pytest
 
-from poptimizer import portfolio
+from poptimizer import portfolio, config
 from poptimizer.portfolio import optimizer
 
+ML_PARAMS = (
+    (
+        (True, {"days": 30}),
+        (True, {"days": 252}),
+        (False, {}),
+        (True, {"days": 252}),
+        (True, {"days": 252}),
+    ),
+    {
+        "bagging_temperature": 1.16573715129796,
+        "depth": 4,
+        "l2_leaf_reg": 2.993522023941868,
+        "learning_rate": 0.10024901894125209,
+        "one_hot_max_size": 100,
+        "random_strength": 0.9297802156425078,
+        "ignored_features": [1],
+    },
+)
 
-@pytest.fixture(scope="module", name="opt")
-def make_optimizer():
+
+@pytest.fixture(name="opt")
+def make_optimizer(monkeypatch):
+    monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     date = pd.Timestamp("2018-12-17")
     positions = dict(
         KZOS=800, MGNT=0, PIKK=800, MSTT=0, MTLRP=0, GMKN=21, CBOM=0, SNGSP=13000
