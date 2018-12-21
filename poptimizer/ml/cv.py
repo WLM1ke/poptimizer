@@ -33,20 +33,20 @@ MAX_SEARCHES = 100
 ONE_HOT_SIZE = [2, 100]
 
 # Диапазон поиска скорости обучения
-LEARNING_RATE = [0.09, 0.11]
+LEARNING_RATE = [6.4e-02, 0.1]
 
 # Диапазон поиска глубины деревьев
-DEPTH = [3, 6]
+DEPTH = [3, 7]
 DEPTH[1] += 1
 
 # Диапазон поиска параметра L2-регуляризации
-L2_LEAF_REG = [2.3e00, 3.3]
+L2_LEAF_REG = [1.3e00, 3.5]
 
 # Диапазон поиска случайности разбиений
-RANDOM_STRENGTH = [7.7e-01, 1.3]
+RANDOM_STRENGTH = [0.60, 1.3e00]
 
 # Диапазон поиска интенсивности бэггинга
-BAGGING_TEMPERATURE = [7.6e-01, 1.3]
+BAGGING_TEMPERATURE = [5.7e-01, 1.1]
 
 
 def log_space(space_name: str, interval):
@@ -100,7 +100,7 @@ def check_model_bounds(params: dict, bound: float = 0.1, increase: float = 0.2):
 
     if params["depth"] == DEPTH[0]:
         print(f"\nНеобходимо расширить DEPTH до [{DEPTH[0] - 1}, {DEPTH[1] - 1}]")
-    if params["depth"] == DEPTH[1]:
+    if params["depth"] == DEPTH[1] - 1:
         print(f"\nНеобходимо расширить DEPTH до [{DEPTH[0]}, {DEPTH[1]}]")
 
 
@@ -156,11 +156,12 @@ def cv_model(params: tuple, examples: Examples) -> dict:
         index = scores["test-RMSE-mean"].idxmin()
         model_params["iterations"] = index + 1
         cv_std = scores.loc[index, "test-RMSE-mean"]
+        r2 = 1 - (cv_std / labels_std) ** 2
         return dict(
-            loss=cv_std / labels_std,
+            loss=-r2,
             status=hyperopt.STATUS_OK,
             std=cv_std,
-            r2=1 - (cv_std / labels_std) ** 2,
+            r2=r2,
             params=(data_params, model_params),
         )
 
@@ -204,7 +205,7 @@ def print_result(name, params, examples: Examples):
 def find_better_model(port: portfolio.Portfolio):
     """Ищет оптимальную модель и сравнивает с базовой - результаты сравнения распечатываются."""
     examples = Examples(tuple(port.index[:-2]), port.date)
-    print("Идет поиск новой модели")
+    print("\nИдет поиск новой модели")
     new_params = optimize_hyper(examples)
     base_params = config.ML_PARAMS
     base_name = "Базовая модель"

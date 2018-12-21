@@ -10,14 +10,24 @@ from poptimizer.ml.feature.feature import AbstractFeature
 YEAR_IN_TRADING_DAYS = 12 * 21
 
 # Диапазон поиска количества дней
-RANGE = [21, 33]
+RANGE = [26, 54]
+
+
+def check_bounds(name, days, interval, bound: float = 0.1, increase: float = 0.2):
+    """Предложение по расширению интервала"""
+    lower, upper = interval
+    if days / (1 + bound) < lower:
+        print(
+            f"\nНеобходимо расширить {name} до [{days / (1 + increase):.0f}, {upper}]"
+        )
+    elif days * (1 + bound) > upper:
+        print(
+            f"\nНеобходимо расширить {name} до [{lower}, {days * (1 + increase):.0f}]"
+        )
 
 
 class Label(AbstractFeature):
-    """Средняя доходность за несколько следующих дней.
-
-    В перспективе можно организовать поиск по количеству следующих дней.
-    """
+    """Средняя доходность за несколько следующих дней."""
 
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
         super().__init__(tickers, last_date)
@@ -34,16 +44,9 @@ class Label(AbstractFeature):
         return {"days": hp.choice("label_days", list(range(*RANGE)))}
 
     def check_bounds(self, **kwargs):
-        """Параметры константные, поэтому в проверке нет необходимости."""
+        """Рекомендация по расширению интервала."""
         days = kwargs["days"]
-        if days / 1.1 < RANGE[0]:
-            print(
-                f"\nНеобходимо расширить {self.name}.RANGE до [{days / 1.1:.0f}, {RANGE[1]}]"
-            )
-        elif days * 1.1 > RANGE[1]:
-            print(
-                f"\nНеобходимо расширить {self.name}.RANGE до [{RANGE[0]}, {days * 1.1:.0f}]"
-            )
+        check_bounds(f"{self.name}.RANGE", days, RANGE)
 
     def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
         """Средняя доходность за указанное количество следующих дней."""

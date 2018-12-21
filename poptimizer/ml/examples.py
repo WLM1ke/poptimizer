@@ -60,9 +60,14 @@ class Examples:
     def check_bounds(self, params: tuple):
         """Осуществляет проверку близости параметров к границам вероятностного пространства.
 
-        Проверка осуществляется только для используемых признаков.
+        Проверка осуществляется меток, СКО и только для используемых признаков.
         """
-        for feat, (on_off, value) in zip(self._features, params):
+        it = iter(zip(self._features, params))
+        label, (_, value) = next(it)
+        label.check_bounds(**value)
+        std, (_, value) = next(it)
+        std.check_bounds(**value)
+        for feat, (on_off, value) in it:
             if on_off:
                 feat.check_bounds(**value)
 

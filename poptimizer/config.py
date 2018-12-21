@@ -40,19 +40,19 @@ TURNOVER_CUT_OFF = 0.14 * MAX_TRADE
 # Параметры данных и модели
 ML_PARAMS = (
     (
-        (True, {"days": 30}),
-        (True, {"days": 252}),
-        (False, {}),
+        (True, {"days": 49}),
+        (False, {"days": 235}),
+        (True, {}),
         (True, {"days": 252}),
         (True, {"days": 252}),
     ),
     {
-        "bagging_temperature": 1.16573715129796,
-        "depth": 4,
-        "l2_leaf_reg": 2.993522023941868,
-        "learning_rate": 0.10024901894125209,
-        "one_hot_max_size": 100,
-        "random_strength": 0.9297802156425078,
-        "ignored_features": [1],
+        "bagging_temperature": 0.9470005859129952,
+        "depth": 6,
+        "l2_leaf_reg": 1.575416708241907,
+        "learning_rate": 0.07665387279139092,
+        "one_hot_max_size": 2,
+        "random_strength": 1.0906550874162642,
+        "ignored_features": [0],
     },
 )
