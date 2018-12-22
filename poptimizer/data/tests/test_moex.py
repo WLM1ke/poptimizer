@@ -50,6 +50,10 @@ def test_lot_size_some():
 
 
 def test_no_data():
+    """Некоторые бумаги не имеют котировок.
+
+    Дополнительная проверка, что эта ситуация обрабатывается без ошибок.
+    """
     # noinspection PyProtectedMember
     quotes_list = asyncio.run(moex._quotes(("KSGR", "KMTZ", "TRFM")))
     for df in quotes_list:
