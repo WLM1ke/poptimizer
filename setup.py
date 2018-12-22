@@ -57,6 +57,7 @@ setuptools.setup(
         "openpyxl",
         "hyperopt",
         "catboost",
+        "xlrd",
     ],
     python_requires=f">={python_minimal}",
 )

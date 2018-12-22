@@ -1,0 +1,52 @@
+"""Менеджер данных по потребительской инфляции."""
+import pandas as pd
+
+from poptimizer.config import POptimizerError
+from poptimizer.store.manager import AbstractManager
+from poptimizer.store.utils import DATE
+
+# Данные по инфляции хранятся в основной базе
+NAME_CPI = "monthly_cpi"
+
+# Параметры загрузки валидации данных
+URL_CPI = "http://www.gks.ru/free_doc/new_site/prices/potr/I_ipc.xlsx"
+PARSING_PARAMETERS = dict(sheet_name="ИПЦ", header=3, skiprows=[4], skipfooter=3)
+NUM_OF_MONTH = 12
+FIRST_YEAR = 1991
+FIRST_MONTH = "январь"
+
+
+class CPI(AbstractManager):
+    """Месячные данные по потребительской инфляции."""
+
+    def __init__(self):
+        super().__init__(NAME_CPI)
+
+    async def _download(self, name: str):
+        """Загружает полностью данные по инфляции с сайта ФСГС."""
+        df = pd.read_excel(URL_CPI, **PARSING_PARAMETERS)
+        self._validate(df)
+        df = df.transpose().stack()
+        first_year = df.index[0][0]
+        df.index = pd.DatetimeIndex(
+            name=DATE,
+            freq="M",
+            start=pd.Timestamp(year=first_year, month=1, day=31),
+            periods=len(df),
+        )
+        df.name = "CPI"
+        # Данные должны быть не в процентах, а в долях
+        return df.div(100)
+
+    @staticmethod
+    def _validate(df: pd.DataFrame):
+        """Проверка заголовков таблицы"""
+        months, _ = df.shape
+        first_year = df.columns[0]
+        first_month = df.index[0]
+        if months != NUM_OF_MONTH:
+            raise POptimizerError("Таблица должна содержать 12 строк с месяцами")
+        if first_year != FIRST_YEAR:
+            raise POptimizerError("Первый год должен быть 1991")
+        if first_month != FIRST_MONTH:
+            raise POptimizerError("Первый месяц должен быть январь")

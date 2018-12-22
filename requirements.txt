@@ -9,6 +9,7 @@ aiohttp_theme
 pandas
 numpy
 openpyxl
+xlrd
 lmdb
 aiomoex
 hyperopt
