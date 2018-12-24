@@ -106,4 +106,4 @@ ENV/
 .coverage
 
 # Reports
-reports/
+/reports/
