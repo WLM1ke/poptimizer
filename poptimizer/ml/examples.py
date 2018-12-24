@@ -16,7 +16,7 @@ class Examples:
         feature.Label,
         feature.STD,
         feature.Ticker,
-        feature.Mean,
+        feature.Mom12m,
         feature.Dividends,
     ]
 

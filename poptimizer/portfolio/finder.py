@@ -50,9 +50,9 @@ def find_momentum(current_port: Portfolio, part: float = 0.1) -> pd.DataFrame:
         Сводная информация по лучшим акциям.
     """
     all_tickers = data.securities_with_reg_number()
-    mean_days = feature_days(feature.Mean)
+    mean_days = feature_days(feature.Mom12m)
     date = current_port.date
-    mean = feature.Mean(tuple(all_tickers), date).get(date, days=mean_days)
+    mean = feature.Mom12m(tuple(all_tickers), date).get(date, days=mean_days)
     mean *= mean_days
     std = feature.STD(tuple(all_tickers), date).get(date, days=mean_days)
     std *= mean_days ** 0.5
