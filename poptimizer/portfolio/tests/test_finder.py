@@ -41,14 +41,15 @@ def test_get_turnover(monkeypatch):
     assert df["KZOS"] == pytest.approx(0.986873)
 
 
-def test_find_momentum():
+def test_find_momentum(monkeypatch):
+    monkeypatch.setattr(finder, "feature_days", lambda x: 252)
     date = pd.Timestamp("2018-12-18")
     positions = dict(TATN=20000, KZOS=20000, LKOH=20000)
     port = portfolio.Portfolio(date, 0, positions)
     df = finder.find_momentum(port, 0.02)
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (5, 5)
-    assert list(df.columns) == ["Mean", "STD", "TURNOVER", "T_SCORE", "ADD"]
+    assert list(df.columns) == ["Mom12m", "STD", "TURNOVER", "T_SCORE", "ADD"]
     assert list(df.index) == ["TATN", "BANEP", "NVTK", "KZOS", "SIBN"]
     assert df.loc["TATN", "ADD"] == ""
     assert df.loc["KZOS", "ADD"] == ""

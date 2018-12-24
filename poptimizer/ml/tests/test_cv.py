@@ -238,23 +238,23 @@ def test_optimize_hyper(monkeypatch, capsys):
     result = cv.optimize_hyper(cases)
 
     captured = capsys.readouterr()
-    assert "Необходимо расширить learning_rate до [0.064, 1.2e-01]" in captured.out
+    assert "Необходимо расширить DEPTH до [3, 8]" in captured.out
 
     assert isinstance(result, tuple)
     assert result[0] == (
-        (True, {"days": 49}),
-        (True, {"days": 225}),
-        (True, {}),
-        (False, {"days": 252}),
-        (False, {"days": 252}),
+        (True, {"days": 26}),
+        (False, {"days": 194}),
+        (False, {}),
+        (False, {"days": 254}),
+        (True, {"days": 252}),
     )
     model_params = {
-        "bagging_temperature": 0.679_507_738_178_091_2,
-        "depth": 5,
-        "l2_leaf_reg": 2.747_943_058_931_087,
-        "learning_rate": 0.099_482_141_980_162_52,
+        "bagging_temperature": 0.915_881_138_287_072,
+        "depth": 7,
+        "l2_leaf_reg": 2.103_918_277_243_914,
+        "learning_rate": 0.073_293_407_878_046_4,
         "one_hot_max_size": 100,
-        "random_strength": 0.699_687_895_674_341_3,
+        "random_strength": 1.103_454_054_355_986_5,
     }
     for k, v in model_params.items():
         assert result[1][k] == pytest.approx(v)
