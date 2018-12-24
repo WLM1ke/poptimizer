@@ -34,7 +34,7 @@ class Mom12m(AbstractFeature):
 
     @classmethod
     def get_params_space(cls) -> dict:
-        """Фиксированный параметр - количество дней для расчета среднего."""
+        """Количество дней для расчета моментума."""
         return {"days": hp.choice("mom12m", list(range(*RANGE)))}
 
     def check_bounds(self, **kwargs):
