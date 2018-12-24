@@ -55,7 +55,7 @@ def test_get(example):
             (False, {"days": 7}),
         ),
     )
-    assert (df.columns == ["Label", "STD", "Ticker", "Mean", "Dividends"]).all()
+    assert (df.columns == ["Label", "STD", "Ticker", "Mom12m", "Dividends"]).all()
     assert (df.index == ["AKRN", "CHMF", "BANEP"]).all()
     assert df.loc["AKRN", "Label"] == pytest.approx(
         np.log(4590 / 4630) * YEAR_IN_TRADING_DAYS ** 0.5 / 4 / 0.051967880396035164
@@ -64,7 +64,7 @@ def test_get(example):
         0.17547200666439342 / YEAR_IN_TRADING_DAYS ** 0.5
     )
     assert df.loc["BANEP", "Ticker"] == "BANEP"
-    assert df.loc["AKRN", "Mean"] == pytest.approx(np.log(4630 / 4672) / 6)
+    assert df.loc["AKRN", "Mom12m"] == pytest.approx(np.log(4630 / 4672) / 6)
     assert df.loc["CHMF", "Dividends"] == pytest.approx(44.39 * AFTER_TAX / 964.3)
 
 
@@ -95,7 +95,7 @@ def test_learn_pool(example):
     assert len(pool) == 4
 
     assert isinstance(pool["data"], pd.DataFrame)
-    assert (pool["data"].columns == ["STD", "Ticker", "Mean", "Dividends"]).all()
+    assert (pool["data"].columns == ["STD", "Ticker", "Mom12m", "Dividends"]).all()
     assert np.allclose(
         pool["data"].iloc[:3, [0, 2, 3]].values,
         example.get(pd.Timestamp("2018-12-07"), params).iloc[:, [1, 3, 4]].values,
@@ -118,7 +118,7 @@ def test_learn_pool(example):
 
     assert pool["cat_features"] == [1]
 
-    assert pool["feature_names"] == ["STD", "Ticker", "Mean", "Dividends"]
+    assert pool["feature_names"] == ["STD", "Ticker", "Mom12m", "Dividends"]
 
 
 def test_predict_pool(example):
@@ -135,7 +135,7 @@ def test_predict_pool(example):
     assert len(pool) == 4
 
     assert isinstance(pool["data"], pd.DataFrame)
-    assert (pool["data"].columns == ["STD", "Ticker", "Mean", "Dividends"]).all()
+    assert (pool["data"].columns == ["STD", "Ticker", "Mom12m", "Dividends"]).all()
     assert np.allclose(
         pool["data"].iloc[:, [0, 2, 3]].values,
         example.get(pd.Timestamp("2018-12-13"), params).iloc[:, [1, 3, 4]].values,
@@ -145,4 +145,4 @@ def test_predict_pool(example):
 
     assert pool["cat_features"] == [1]
 
-    assert pool["feature_names"] == ["STD", "Ticker", "Mean", "Dividends"]
+    assert pool["feature_names"] == ["STD", "Ticker", "Mom12m", "Dividends"]
