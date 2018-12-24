@@ -2,17 +2,25 @@
 from typing import Tuple
 
 import pandas as pd
+from hyperopt import hp
 
 from poptimizer import data
+from poptimizer.ml.feature import label
 from poptimizer.ml.feature.feature import AbstractFeature
-from poptimizer.ml.feature.label import YEAR_IN_TRADING_DAYS
+
+# Диапазон поиска количества дней
+RANGE = [229, 310]
 
 
-class Mean(AbstractFeature):
-    """Средняя доходность за несколько предыдущих торговых дней.
+class Mom12m(AbstractFeature):
+    """Средняя доходность примерно за 12 предыдущих месяцев.
 
-    В перспективе можно организовать поиск по количеству предыдущих дней.
-    Кроме того еще и выбор количества периодов.
+    Аномальная доходность акции, продемонстрировавших максимальный рост за последние 12 месяцев
+    отмечается во множестве исследований. Данный эффект носит устойчивый характер и максимальную силу
+    обычно имеет для доходности за 9-16 предыдущих месяцев.
+
+    При оптимизации гиперпараметров выбирается оптимальное количество торговых дней для расчета
+    моментума.
     """
 
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
@@ -27,10 +35,12 @@ class Mean(AbstractFeature):
     @classmethod
     def get_params_space(cls) -> dict:
         """Фиксированный параметр - количество дней для расчета среднего."""
-        return dict(days=YEAR_IN_TRADING_DAYS)
+        return {"days": hp.choice("mom12m", list(range(*RANGE)))}
 
     def check_bounds(self, **kwargs):
-        """Параметры константные, поэтому в проверке нет необходимости."""
+        """Рекомендация по расширению интервала."""
+        days = kwargs["days"]
+        label.check_bounds(f"{self.name}.RANGE", days, RANGE)
 
     def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
         """Средняя доходность за указанное количество предыдущих дней."""
