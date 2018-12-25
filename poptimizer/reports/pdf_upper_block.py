@@ -46,7 +46,7 @@ def get_inflows(df: pd.DataFrame):
 
 def add_shares(table: pd.DataFrame):
     """Добавляет к таблице долю инвесторов в портфеле."""
-    share = table.div(table["Value"], axis="index")
+    share = table.div(table["Portfolio"], axis="index")
     share.index = ["%"] * len(share)
     return pd.concat([table, share])
 
