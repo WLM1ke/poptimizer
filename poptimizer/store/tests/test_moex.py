@@ -67,6 +67,28 @@ async def test_securities(monkeypatch):
 
 @pytest.mark.usefixtures("fake_data_base")
 @pytest.mark.asyncio
+async def test_index_create():
+    df = await moex.Index().get()
+    assert isinstance(df, pd.Series)
+    assert len(df) > 3750
+    assert df.index[0] == pd.Timestamp("2003-02-26")
+    assert df["2003-02-26"] == 335.67
+    assert df["2018-03-02"] == 3273.16
+    assert df["2018-12-24"] == 3492.91
+
+
+@pytest.mark.usefixtures("fake_data_base")
+@pytest.mark.asyncio
+async def test_index_download_update():
+    # noinspection PyProtectedMember
+    df = await moex.Index()._download_update("MCFTRR")
+    assert isinstance(df, pd.Series)
+    assert len(df) == 1
+    assert df.index[0] >= pd.Timestamp("2018-12-24")
+
+
+@pytest.mark.usefixtures("fake_data_base")
+@pytest.mark.asyncio
 async def test_quotes_create():
     df = await moex.Quotes(("MSTT",)).get()
 

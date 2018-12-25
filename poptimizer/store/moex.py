@@ -55,7 +55,7 @@ class Index(AbstractManager):
     Поддерживается частичная загрузка данных для обновления.
     """
 
-    REQUEST_PARAMS = dict(columns=("TRADEDATE", "CLOSE"), board="RTSI", engine="index")
+    REQUEST_PARAMS = dict(columns=("TRADEDATE", "CLOSE"), board="RTSI", market="index")
 
     def __init__(self):
         super().__init__(NAME_INDEX)
@@ -73,9 +73,12 @@ class Index(AbstractManager):
 
     @staticmethod
     def _clean_df(df):
-        df.set_index("TRADEDATE", inplace=True)
-        df.index.name = DATE
-        return df
+        df = df.reindex(columns=["TRADEDATE", "CLOSE"])
+        df.columns = [DATE, CLOSE]
+        df.loc[:, DATE] = df[DATE].apply(FUNC_DATE)
+        df.loc[:, CLOSE] = df[CLOSE].apply(FUNC_FLOAT)
+        df.set_index(DATE, inplace=True)
+        return df[CLOSE]
 
     async def _download_update(self, name):
         """Загрузка данных с последнего числа в имеющихся данных."""
