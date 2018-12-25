@@ -67,7 +67,7 @@ def make_header(canvas: Canvas, date):
 
 
 def make_section_delimiter(canvas: Canvas, height):
-    """Рисует линию разделителя между отделами"""
+    """Рисует горизонтальную линию разделителя между отделами."""
     canvas.setStrokeColor(LINE_COLOR)
     canvas.setLineWidth(LINE_WIDTH)
     canvas.line(left_margin(), height, left_margin() + blank_width(), height)
