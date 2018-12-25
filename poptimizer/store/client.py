@@ -38,6 +38,8 @@ class Client(contextlib.AbstractAsyncContextManager):
 
     quotes = moex.Quotes
 
+    index = moex.Index
+
     dividends = dividends.Dividends
 
     cpi = cpi.CPI

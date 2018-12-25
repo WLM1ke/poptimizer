@@ -46,6 +46,29 @@ def lot_size(tickers: Optional[Tuple[str, ...]] = None) -> pd.Series:
     return df[store.LOT_SIZE]
 
 
+async def _index() -> pd.DataFrame:
+    """Загрузка данных по индексу полной доходности с учетом российских налогов - MCFTRR.
+
+    :return:
+        История цен закрытия индекса.
+    """
+    async with store.Client() as client:
+        db = client.index()
+        return await db.get()
+
+
+def index(last_date: pd.Timestamp) -> pd.DataFrame:
+    """Загрузка данных по индексу полной доходности с учетом российских налогов - MCFTRR.
+
+    :param last_date:
+        Последняя дата котировок.
+    :return:
+        История цен закрытия индекса.
+    """
+    df = asyncio.run(_index())
+    return df[:last_date]
+
+
 async def _quotes(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
     """Информация о котировках для заданных тикеров (цена закрытия и объем).
 
