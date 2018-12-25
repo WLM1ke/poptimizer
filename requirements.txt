@@ -14,3 +14,5 @@ lmdb
 aiomoex
 hyperopt
 catboost
+matplotlib
+reportlab

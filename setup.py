@@ -58,6 +58,8 @@ setuptools.setup(
         "hyperopt",
         "catboost",
         "xlrd",
+        "matplotlib",
+        "reportlab",
     ],
     python_requires=f">={python_minimal}",
 )
