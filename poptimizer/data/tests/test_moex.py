@@ -49,6 +49,18 @@ def test_lot_size_some():
     assert df["MRSB"] == 10000
 
 
+def test_index():
+    df = moex.index(pd.Timestamp("2018-12-24"))
+    assert isinstance(df, pd.Series)
+    assert len(df) > 3750
+    assert df.index[0] == pd.Timestamp("2003-02-26")
+    assert df.index[-1] == pd.Timestamp("2018-12-24")
+    assert df["2003-02-26"] == 335.67
+    assert df["2018-03-02"] == 3273.16
+    assert df["2018-03-16"] == 3281.58
+    assert df["2018-12-24"] == 3492.91
+
+
 def test_no_data():
     """Некоторые бумаги не имеют котировок.
 
