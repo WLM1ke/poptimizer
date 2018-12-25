@@ -44,8 +44,8 @@ def make_fit_clf(cases, cv_results):
 
 def test_cv_results(cv_results):
     ml_std, r2, cv_params = cv_results
-    assert ml_std == pytest.approx(0.18553114126774026)
-    assert r2 == pytest.approx(0.07837529944800237)
+    assert ml_std == pytest.approx(0.18377877393031805)
+    assert r2 == pytest.approx(0.08242085969748303)
     assert "iterations" in cv_params[1]
 
 
@@ -62,9 +62,9 @@ def test_predict_mean(cases, cv_results, clf_n_cases):
 
     assert isinstance(mean, np.ndarray)
     assert len(mean) == 3
-    assert mean[0] == pytest.approx(0.0005367026624020926)
-    assert mean[1] == pytest.approx(0.00022968198331736343)
-    assert mean[2] == pytest.approx(0.0003721427488511284)
+    assert mean[0] == pytest.approx(0.0004924419093643773)
+    assert mean[1] == pytest.approx(0.00027158276622838416)
+    assert mean[2] == pytest.approx(0.00022278753502165055)
 
 
 def test_validate_cov(cases, cv_results):
@@ -85,8 +85,8 @@ def test_ledoit_wolf_cov(cases, cv_results):
     )
     assert isinstance(cov, np.ndarray)
     assert cov[0, 0] == pytest.approx(0.015626193162078562)
-    assert cov[2, 1] == pytest.approx(0.0004585881710322543)
-    assert average_cor == pytest.approx(0.08777292794188181)
+    assert cov[2, 1] == pytest.approx(0.0005221095750566297)
+    assert average_cor == pytest.approx(0.10588718234140086)
     assert shrinkage == pytest.approx(1.0)
 
 
@@ -98,13 +98,13 @@ def test_make_forecast():
     assert forecast.date == pd.Timestamp("2018-12-14")
     assert forecast.tickers == ("SNGSP", "VSMO", "DSKY")
     assert isinstance(forecast.mean, np.ndarray)
-    assert forecast.mean[1] == pytest.approx(0.05787985979597558)
+    assert forecast.mean[1] == pytest.approx(0.0684388570895528)
     assert isinstance(forecast.cov, np.ndarray)
-    assert forecast.cov[2, 1] == pytest.approx(0.000994482235801201)
+    assert forecast.cov[2, 1] == pytest.approx(0.0011109458910028857)
     assert isinstance(forecast.feature_importance, pd.Series)
     assert np.allclose(
-        forecast.feature_importance, [13.265165, 11.263902, 38.265461, 37.205472]
+        forecast.feature_importance, [25.749377, 12.777575, 28.876857, 32.596191]
     )
-    assert forecast.r2 == pytest.approx(0.07837529944800237)
-    assert forecast.average_cor == pytest.approx(0.08777292794188181)
+    assert forecast.r2 == pytest.approx(0.08242085969748303)
+    assert forecast.average_cor == pytest.approx(0.10588718234140086)
     assert forecast.shrinkage == pytest.approx(1)

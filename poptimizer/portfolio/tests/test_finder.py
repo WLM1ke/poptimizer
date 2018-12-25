@@ -64,7 +64,7 @@ def test_find_dividends():
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (5, 4)
     assert list(df.columns) == ["Dividends", "TURNOVER", "SCORE", "ADD"]
-    assert list(df.index) == ["CHMF", "MTLRP", "MRKV", "LSNGP", "ENRU"]
+    assert list(df.index) == ["CHMF", "MTLRP", "MRKV", "MRKP", "LSNGP"]
     assert df.loc["CHMF", "ADD"] == ""
     assert df.loc["MTLRP", "ADD"] == "ADD"
 
