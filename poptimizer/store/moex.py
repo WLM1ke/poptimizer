@@ -1,4 +1,4 @@
-"""Менеджеры данных для котировок и перечня торгуемых бумаг с MOEX."""
+"""Менеджеры данных для котировок, индекса и перечня торгуемых бумаг с MOEX."""
 import asyncio
 import functools
 from typing import Tuple
@@ -16,6 +16,9 @@ NAME_SECURITIES = "securities"
 
 # Данные по котировкам хранятся во вложенной базе
 CATEGORY_QUOTES = "quotes"
+
+# Данные об индексе хранятся в основной базе
+NAME_INDEX = "MCFTRR"
 
 # Функции для переобразования типов
 FUNC_UNSIGNED = functools.partial(pd.to_numeric, downcast="unsigned")
@@ -44,6 +47,43 @@ class Securities(AbstractManager):
         df = df.set_index(TICKER)
         df.loc[:, LOT_SIZE] = df[LOT_SIZE].apply(FUNC_UNSIGNED)
         return df
+
+
+class Index(AbstractManager):
+    """Котировки индекса полной доходности с учетом российских налогов - MCFTRR.
+
+    Поддерживается частичная загрузка данных для обновления.
+    """
+
+    REQUEST_PARAMS = dict(columns=("TRADEDATE", "CLOSE"), board="RTSI", engine="index")
+
+    def __init__(self):
+        super().__init__(NAME_INDEX)
+
+    async def _download(self, name: str):
+        if self._data[name] is None:
+            return await self._download_all(name)
+        return await self._download_update(name)
+
+    async def _download_all(self, name):
+        """Загрузка всех данных."""
+        data = await aiomoex.get_board_history(name, **self.REQUEST_PARAMS)
+        df = pd.DataFrame(data)
+        return self._clean_df(df)
+
+    @staticmethod
+    def _clean_df(df):
+        df.set_index("TRADEDATE", inplace=True)
+        df.index.name = DATE
+        return df
+
+    async def _download_update(self, name):
+        """Загрузка данных с последнего числа в имеющихся данных."""
+        old_df = self._data[name].value
+        start = str(old_df.index[-1].date())
+        data = await aiomoex.get_board_history(name, start=start, **self.REQUEST_PARAMS)
+        df = pd.DataFrame(data)
+        return self._clean_df(df)
 
 
 class Quotes(AbstractManager):
