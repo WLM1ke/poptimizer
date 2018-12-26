@@ -7,7 +7,7 @@ import pandas as pd
 
 from poptimizer import store
 
-__all__ = ["lot_size", "prices", "turnovers", "securities_with_reg_number"]
+__all__ = ["lot_size", "prices", "turnovers", "securities_with_reg_number", "index"]
 
 
 async def _securities(tickers: Optional[Tuple[str, ...]] = None) -> pd.Series:
