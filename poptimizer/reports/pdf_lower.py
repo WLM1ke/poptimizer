@@ -34,9 +34,9 @@ def drop_small_positions(portfolio: Portfolio):
     value = value.iloc[:-1]
     value = value[value > 0]
     sorted_value = value.sort_values(ascending=False)
-    if len(sorted_value) > MAX_TABLE_ROWS:
-        sorted_value = sorted_value.iloc[:MAX_TABLE_ROWS]
-        sorted_value[OTHER] = portfolio_value - sorted_value.sum()
+    max_rows = min(len(sorted_value), MAX_TABLE_ROWS)
+    sorted_value = sorted_value.iloc[:max_rows]
+    sorted_value[OTHER] = portfolio_value - sorted_value.sum()
     sorted_value[PORTFOLIO] = portfolio_value
     return sorted_value
 

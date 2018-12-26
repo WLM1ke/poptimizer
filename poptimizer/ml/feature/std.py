@@ -4,8 +4,8 @@ from typing import Tuple
 import pandas as pd
 from hyperopt import hp
 
+import poptimizer.ml.feature.feature
 from poptimizer import data
-from poptimizer.ml.feature import label
 from poptimizer.ml.feature.feature import AbstractFeature
 
 # Диапазон поиска количества дней
@@ -42,7 +42,7 @@ class STD(AbstractFeature):
     def check_bounds(self, **kwargs):
         """Рекомендация по расширению интервала."""
         days = kwargs["days"]
-        label.check_bounds(f"{self.name}.RANGE", days, RANGE)
+        poptimizer.ml.feature.feature.check_bounds(f"{self.name}.RANGE", days, RANGE)
 
     def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
         """СКО за указанное количество предыдущих дней."""

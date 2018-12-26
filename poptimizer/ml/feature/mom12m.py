@@ -5,8 +5,7 @@ import pandas as pd
 from hyperopt import hp
 
 from poptimizer import data
-from poptimizer.ml.feature import label
-from poptimizer.ml.feature.feature import AbstractFeature
+from poptimizer.ml.feature.feature import AbstractFeature, check_bounds
 
 # Диапазон поиска количества дней
 RANGE = [229, 310]
@@ -40,7 +39,7 @@ class Mom12m(AbstractFeature):
     def check_bounds(self, **kwargs):
         """Рекомендация по расширению интервала."""
         days = kwargs["days"]
-        label.check_bounds(f"{self.name}.RANGE", days, RANGE)
+        check_bounds(f"{self.name}.RANGE", days, RANGE)
 
     def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
         """Средняя доходность за указанное количество предыдущих дней."""

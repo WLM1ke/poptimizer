@@ -5,25 +5,12 @@ import pandas as pd
 from hyperopt import hp
 
 from poptimizer import data
-from poptimizer.ml.feature.feature import AbstractFeature
+from poptimizer.ml.feature.feature import AbstractFeature, check_bounds
 
 YEAR_IN_TRADING_DAYS = 12 * 21
 
 # Диапазон поиска количества дней
 RANGE = [26, 64]
-
-
-def check_bounds(name, days, interval, bound: float = 0.1, increase: float = 0.2):
-    """Предложение по расширению интервала"""
-    lower, upper = interval
-    if days / (1 + bound) < lower:
-        print(
-            f"\nНеобходимо расширить {name} до [{days / (1 + increase):.0f}, {upper}]"
-        )
-    elif days * (1 + bound) > upper:
-        print(
-            f"\nНеобходимо расширить {name} до [{lower}, {days * (1 + increase):.0f}]"
-        )
 
 
 class Label(AbstractFeature):

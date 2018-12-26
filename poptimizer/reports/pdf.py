@@ -31,7 +31,7 @@ def read_data(report_name: str):
 
 
 def update_data(
-        report_name: str, date: pd.Timestamp, value: float, inflows: dict, dividends: float
+    report_name: str, date: pd.Timestamp, value: float, inflows: dict, dividends: float
 ):
     """Обновляет файл с данными статистики изменения стоимости портфеля.
 

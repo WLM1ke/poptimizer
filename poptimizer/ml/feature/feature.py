@@ -5,6 +5,19 @@ from typing import Tuple
 import pandas as pd
 
 
+def check_bounds(name, days, interval, bound: float = 0.1, increase: float = 0.2):
+    """Предложение по расширению интервала"""
+    lower, upper = interval
+    if days / (1 + bound) < lower:
+        print(
+            f"\nНеобходимо расширить {name} до [{days / (1 + increase):.0f}, {upper}]"
+        )
+    elif days * (1 + bound) > upper:
+        print(
+            f"\nНеобходимо расширить {name} до [{lower}, {days * (1 + increase):.0f}]"
+        )
+
+
 class AbstractFeature(ABC):
     """Создает признак для заданного набора тикеров с использованием статистики до определенной даты."""
 

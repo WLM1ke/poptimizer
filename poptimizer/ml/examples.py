@@ -17,7 +17,7 @@ class Examples:
         feature.STD,
         feature.Ticker,
         feature.Mom12m,
-        feature.Dividends,
+        feature.DivYield,
     ]
 
     def __init__(self, tickers: Tuple[str, ...], date: pd.Timestamp):

@@ -77,9 +77,9 @@ def find_dividends(current_port: Portfolio, part: float = 0.1) -> pd.DataFrame:
         Сводная информация по лучшим акциям.
     """
     all_tickers = data.securities_with_reg_number()
-    div_days = feature_days(feature.Dividends)
+    div_days = feature_days(feature.DivYield)
     date = current_port.date
-    div = feature.Dividends(tuple(all_tickers), date).get(date, days=div_days)
+    div = feature.DivYield(tuple(all_tickers), date).get(date, days=div_days)
     div = div.to_frame()
     div["TURNOVER"] = get_turnover(current_port, all_tickers)
     div["SCORE"] = div.iloc[:, 0] * div.iloc[:, 1]

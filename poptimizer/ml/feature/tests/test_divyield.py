@@ -2,13 +2,13 @@ import pandas as pd
 import pytest
 
 from poptimizer.config import AFTER_TAX
-from poptimizer.ml.feature import dividends
+from poptimizer.ml.feature import divyield
 from poptimizer.ml.feature.label import YEAR_IN_TRADING_DAYS
 
 
 def test_dividends():
     # noinspection PyTypeChecker
-    div = dividends.Dividends(("PHOR", "TATN", "DSKY"), pd.Timestamp("2018-12-12"))
+    div = divyield.DivYield(("PHOR", "TATN", "DSKY"), pd.Timestamp("2018-12-12"))
 
     assert not div.is_categorical()
     assert div.get_params_space() == dict(days=YEAR_IN_TRADING_DAYS)

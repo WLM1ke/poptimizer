@@ -66,6 +66,15 @@ def test_update_data_bad_date():
     assert str(error.value) == "В этом месяце данные уже вносились в отчет"
 
 
+def test_update_data_bad_investor_name():
+    port = portfolio.Portfolio(date=DATE_NEW, cash=CASH, positions=POSITIONS)
+    with pytest.raises(POptimizerError) as error:
+        pdf.update_data(
+            "test", port.date, port.value[PORTFOLIO], dict(WLMike1=1000), 1234
+        )
+    assert str(error.value) == "Неверное имя инвестора - WLMike1"
+
+
 def test_report_files_path(report_path):
     pdf_path, xlsx_path = pdf.make_report_files_path("test", pd.Timestamp(DATE_OLD))
     assert pdf_path.parent.exists()
