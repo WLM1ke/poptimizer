@@ -14,7 +14,7 @@ from poptimizer.reports.pdf_style import (
     BlockPosition,
     BLOCK_HEADER_STYLE,
 )
-from poptimizer.reports.pdf_upper_block import get_investors_names
+from poptimizer.reports.pdf_upper import get_investors_names
 
 # Доля левой части блока - используется для таблицы
 # В правой расположена диаграмма

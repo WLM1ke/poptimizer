@@ -1,6 +1,7 @@
 import hyperopt
 import pandas as pd
 import pytest
+from hyperopt import hp
 from hyperopt.pyll import Apply
 
 from poptimizer.config import POptimizerError
@@ -233,28 +234,49 @@ def test_cv_all_features_false():
 
 
 def test_optimize_hyper(monkeypatch, capsys):
-    monkeypatch.setattr(cv, "MAX_SEARCHES", 10)
+    space = (
+        (
+            (True, {"days": hp.choice("label", list(range(21, 31)))}),
+            (True, {"days": 186}),
+            (False, {}),
+            (True, {"days": 279}),
+            (True, {"days": 252}),
+        ),
+        {
+            "bagging_temperature": 1,
+            "depth": 6,
+            "l2_leaf_reg": 3,
+            "learning_rate": 0.1,
+            "one_hot_max_size": 2,
+            "random_strength": 1,
+            "ignored_features": [],
+        },
+    )
     cases = examples.Examples(("LSNGP", "LKOH", "GMKN"), pd.Timestamp("2018-12-14"))
+    monkeypatch.setattr(cv, "MAX_SEARCHES", 10)
+    monkeypatch.setattr(cases, "get_params_space", lambda: space[0])
+    monkeypatch.setattr(cv, "get_model_space", lambda: space[1])
+
     result = cv.optimize_hyper(cases)
 
     captured = capsys.readouterr()
-    assert "Необходимо расширить DEPTH до [3, 8]" in captured.out
+    assert "Необходимо расширить" in captured.out
 
     assert isinstance(result, tuple)
     assert result[0] == (
-        (True, {"days": 26}),
-        (False, {"days": 194}),
+        (True, {"days": 30}),
+        (True, {"days": 186}),
         (False, {}),
-        (False, {"days": 254}),
+        (True, {"days": 279}),
         (True, {"days": 252}),
     )
     model_params = {
-        "bagging_temperature": 0.915_881_138_287_072,
-        "depth": 7,
-        "l2_leaf_reg": 2.103_918_277_243_914,
-        "learning_rate": 0.073_293_407_878_046_4,
-        "one_hot_max_size": 100,
-        "random_strength": 1.103_454_054_355_986_5,
+        "bagging_temperature": 1,
+        "depth": 6,
+        "l2_leaf_reg": 3,
+        "learning_rate": 0.1,
+        "one_hot_max_size": 2,
+        "random_strength": 1,
     }
     for k, v in model_params.items():
         assert result[1][k] == pytest.approx(v)
