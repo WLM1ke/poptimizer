@@ -12,7 +12,7 @@ from poptimizer.config import POptimizerError
 from poptimizer.ml.examples import Examples
 
 # Базовые настройки catboost
-MAX_ITERATIONS = 200
+MAX_ITERATIONS = 300
 SEED = 284_704
 FOLDS_COUNT = 20
 TECH_PARAMS = dict(
@@ -36,11 +36,11 @@ ONE_HOT_SIZE = [2, 100]
 LEARNING_RATE = [0.054, 1.1e-01]
 
 # Диапазон поиска глубины деревьев
-DEPTH = [3, 7]
+DEPTH = [2, 7]
 DEPTH[1] += 1
 
 # Диапазон поиска параметра L2-регуляризации
-L2_LEAF_REG = [1.1e00, 3.5]
+L2_LEAF_REG = [9.7e-01, 3.5]
 
 # Диапазон поиска случайности разбиений
 RANDOM_STRENGTH = [0.60, 1.3e00]

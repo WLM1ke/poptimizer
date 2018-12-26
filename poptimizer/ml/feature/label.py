@@ -10,7 +10,7 @@ from poptimizer.ml.feature.feature import AbstractFeature
 YEAR_IN_TRADING_DAYS = 12 * 21
 
 # Диапазон поиска количества дней
-RANGE = [26, 54]
+RANGE = [26, 64]
 
 
 def check_bounds(name, days, interval, bound: float = 0.1, increase: float = 0.2):
