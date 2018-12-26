@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from poptimizer.reports import pdf_upper_block
+from poptimizer.reports import pdf_upper
 
 
 @pytest.fixture(name="df")
@@ -18,7 +18,7 @@ def read_test_df():
 
 
 def test_get_last_values(df):
-    df = pdf_upper_block.get_last_values(df)
+    df = pdf_upper.get_last_values(df)
     assert isinstance(df, pd.DataFrame)
     assert list(df.columns) == ["WLMike", "Igor", "Portfolio"]
     assert list(df.index) == ["2018-01-19", "2018-02-19"]
@@ -27,13 +27,13 @@ def test_get_last_values(df):
 
 
 def test_get_investors_names(df):
-    df = pdf_upper_block.get_investors_names(df)
+    df = pdf_upper.get_investors_names(df)
     assert isinstance(df, pd.Index)
     assert list(df) == ["WLMike", "Igor"]
 
 
 def test_get_inflows(df):
-    df = pdf_upper_block.get_inflows(df)
+    df = pdf_upper.get_inflows(df)
     assert isinstance(df, pd.Series)
     assert list(df.index) == ["WLMike", "Igor", "Portfolio"]
     assert df["Portfolio"] == pytest.approx(1091.60460000001)
@@ -41,7 +41,7 @@ def test_get_inflows(df):
 
 
 def test_make_flow_df(df):
-    df = pdf_upper_block.make_flow_df(df)
+    df = pdf_upper.make_flow_df(df)
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (7, 3)
     assert df.loc["2018-01-19", "WLMike"] == pytest.approx(384887.052476377)
@@ -54,7 +54,7 @@ def test_make_flow_df(df):
 
 
 def test_make_list_of_lists_flow(df):
-    list_of_lists = pdf_upper_block.make_list_of_lists_flow(df)
+    list_of_lists = pdf_upper.make_list_of_lists_flow(df)
     assert len(list_of_lists) == 8
     assert list_of_lists[0] == ["", "WLMike", "Igor", "Portfolio"]
     assert list_of_lists[1] == ["2018-01-19", "384 887", "10 195", "395 082"]
@@ -67,14 +67,14 @@ def test_make_list_of_lists_flow(df):
 
 
 def test_make_12m_dividends_df(df):
-    df = pdf_upper_block.make_12m_dividends_df(df)
+    df = pdf_upper.make_12m_dividends_df(df)
     assert df.iloc[-1] == pytest.approx(28948.1439)
     assert df.iloc[-27] == pytest.approx(11919.4743)
     assert df.iloc[-29] == pytest.approx(11609.3758)
 
 
 def test_make_list_of_lists_dividends(df):
-    list_of_lists = pdf_upper_block.make_list_of_lists_dividends(df)
+    list_of_lists = pdf_upper.make_list_of_lists_dividends(df)
     assert len(list_of_lists) == 7
     assert list_of_lists[0] == ["Period", "Dividends"]
     assert list_of_lists[1] == ["2018-01-19 - 2018-02-19", "999"]

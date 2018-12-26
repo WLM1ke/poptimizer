@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from poptimizer.reports import pdf_middle_block
+from poptimizer.reports import pdf_middle
 
 
 @pytest.fixture(name="df")
@@ -18,7 +18,7 @@ def read_test_df():
 
 
 def test_portfolio_cum_return(df):
-    df = pdf_middle_block.portfolio_cum_return(df)
+    df = pdf_middle.portfolio_cum_return(df)
     assert df.shape == (61,)
     assert df[0] == 1
     assert df["18-12-2015"] == pytest.approx(1.8971256293939)
@@ -26,7 +26,7 @@ def test_portfolio_cum_return(df):
 
 
 def test_index_cum_return(df):
-    df = pdf_middle_block.index_cum_return(df)
+    df = pdf_middle.index_cum_return(df)
     assert df.shape == (61,)
     assert df[0] == 1
     assert df["18-12-2015"] == pytest.approx(1.44858482937086)
@@ -34,7 +34,7 @@ def test_index_cum_return(df):
 
 
 def test_make_list_of_lists_table(df):
-    list_of_lists = pdf_middle_block.make_list_of_lists_table(df)
+    list_of_lists = pdf_middle.make_list_of_lists_table(df)
     assert len(list_of_lists) == 7
     assert list_of_lists[0] == ["Period", "Portfolio", "MOEX"]
     assert list_of_lists[-1] == ["5Y", " 245.6%", " 106.4%"]
