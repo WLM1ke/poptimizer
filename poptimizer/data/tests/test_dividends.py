@@ -6,7 +6,7 @@ from poptimizer.config import AFTER_TAX
 from poptimizer.data import moex, log_total_returns
 
 # noinspection PyProtectedMember
-from poptimizer.data.dividends import t2_shift, dividends_all
+from poptimizer.data.div import t2_shift, dividends_all
 
 
 def test_dividends_all():

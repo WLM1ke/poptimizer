@@ -62,6 +62,7 @@ setuptools.setup(
         "reportlab",
         "bs4",
         "lxml",
+        "aiohttp",
     ],
     python_requires=f">={python_minimal}",
 )

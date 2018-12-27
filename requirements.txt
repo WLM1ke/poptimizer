@@ -18,3 +18,4 @@ catboost
 matplotlib
 reportlab
 bs4
+aiohttp

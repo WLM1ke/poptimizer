@@ -6,4 +6,12 @@
 """
 from poptimizer.store.client import Client
 from poptimizer.store.dividends import DIVIDENDS_START
-from poptimizer.store.utils import CLOSE, TURNOVER, LOT_SIZE, TICKER, DATE, REG_NUMBER
+from poptimizer.store.utils import (
+    CLOSE,
+    TURNOVER,
+    LOT_SIZE,
+    TICKER,
+    DATE,
+    REG_NUMBER,
+    DIVIDENDS,
+)
