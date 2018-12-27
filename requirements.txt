@@ -16,3 +16,4 @@ hyperopt
 catboost
 matplotlib
 reportlab
+bs4

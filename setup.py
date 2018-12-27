@@ -60,6 +60,7 @@ setuptools.setup(
         "xlrd",
         "matplotlib",
         "reportlab",
+        "bs4",
     ],
     python_requires=f">={python_minimal}",
 )
