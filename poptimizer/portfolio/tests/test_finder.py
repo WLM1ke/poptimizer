@@ -56,14 +56,15 @@ def test_find_momentum(monkeypatch):
     assert df.loc["BANEP", "ADD"] == "ADD"
 
 
-def test_find_dividends():
+def test_find_dividends(monkeypatch):
+    monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     date = pd.Timestamp("2018-12-18")
     positions = dict(CHMF=20000, TATN=20000, KZOS=20000, LKOH=20000)
     port = portfolio.Portfolio(date, 0, positions)
     df = finder.find_dividends(port, 0.02)
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (5, 4)
-    assert list(df.columns) == ["Dividends", "TURNOVER", "SCORE", "ADD"]
+    assert list(df.columns) == ["DivYield", "TURNOVER", "SCORE", "ADD"]
     assert list(df.index) == ["CHMF", "MTLRP", "MRKV", "MRKP", "LSNGP"]
     assert df.loc["CHMF", "ADD"] == ""
     assert df.loc["MTLRP", "ADD"] == "ADD"
