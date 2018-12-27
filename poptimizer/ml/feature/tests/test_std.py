@@ -7,7 +7,7 @@ from poptimizer.ml.feature.label import YEAR_IN_TRADING_DAYS
 
 
 @pytest.fixture(scope="module", name="feat")
-def test_srd_feature():
+def test_std_feature():
     # noinspection PyTypeChecker
     return std.STD(("PIKK", "RTKMP", "TATNP"), pd.Timestamp("2018-12-10"))
 
