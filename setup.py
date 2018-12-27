@@ -61,6 +61,7 @@ setuptools.setup(
         "matplotlib",
         "reportlab",
         "bs4",
+        "lxml",
     ],
     python_requires=f">={python_minimal}",
 )

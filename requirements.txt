@@ -10,6 +10,7 @@ pandas
 numpy
 openpyxl
 xlrd
+lxml
 lmdb
 aiomoex
 hyperopt

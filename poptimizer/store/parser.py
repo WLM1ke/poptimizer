@@ -106,7 +106,7 @@ class HTMLTableParser:
         row[col_pos] = value
 
     def make_df(
-        self, columns: List[DataColumn, ...], drop_header: int = 0, drop_footer: int = 0
+        self, columns: List[DataColumn], drop_header: int = 0, drop_footer: int = 0
     ) -> pd.DataFrame:
         """Преобразует таблицу в DataFrame.
 
