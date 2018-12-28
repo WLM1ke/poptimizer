@@ -8,7 +8,7 @@ from poptimizer import data
 from poptimizer.ml.feature.feature import AbstractFeature, check_bounds
 
 # Диапазон поиска количества дней
-RANGE = [229, 310]
+RANGE = [230, 338]
 
 
 class Mom12m(AbstractFeature):

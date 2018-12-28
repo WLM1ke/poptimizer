@@ -10,6 +10,8 @@ from poptimizer.config import AFTER_TAX
 from poptimizer.data import div
 from poptimizer.store import TICKER, DIVIDENDS
 
+__all__ = ["smart_lab_status"]
+
 
 async def _smart_lab() -> pd.DataFrame:
     """Информация о ближайших дивидендах на https://www.smart-lab.ru"""
@@ -18,13 +20,18 @@ async def _smart_lab() -> pd.DataFrame:
         return await db.get()
 
 
-def smart_lab(tickers: Tuple[str, ...]):
+def smart_lab() -> pd.DataFrame:
+    """Информация о ближайших дивидендах на https://www.smart-lab.ru"""
+    return asyncio.run(_smart_lab())
+
+
+def smart_lab_status(tickers: Tuple[str, ...]):
     """Печатает информацию об актуальности данных в локальной базе дивидендов.
 
     :param tickers:
         Тикеры, для которых нужно проверить актуальность данных.
     """
-    web = asyncio.run(_smart_lab())
+    web = smart_lab()
     local = div.dividends_all(tuple(web[TICKER].values)) / AFTER_TAX
     status = ([], [])
     for i in range(len(web)):
@@ -42,7 +49,3 @@ def smart_lab(tickers: Tuple[str, ...]):
     if status[1]:
         print("\nВ БАЗУ ДАННЫХ ДИВИДЕНДОВ МОЖНО ДОБАВИТЬ", "\n")
         print(", ".join(status[1]))
-
-
-if __name__ == "__main__":
-    smart_lab(("PHOR", "AKRN"))

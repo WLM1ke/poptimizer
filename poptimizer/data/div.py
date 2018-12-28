@@ -39,8 +39,8 @@ def dividends_all(tickers: tuple) -> pd.DataFrame:
     :return:
         Дивиденды.
     """
-    quotes_list = asyncio.run(_dividends(tickers))
-    df = pd.concat([df for df in quotes_list], axis=1)
+    div_list = asyncio.run(_dividends(tickers))
+    df = pd.concat([df for df in div_list], axis=1)
     return df.fillna(0, axis=0) * AFTER_TAX
 
 
