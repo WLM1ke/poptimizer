@@ -290,4 +290,16 @@ def test_find_better_model(monkeypatch, capsys):
     captured = capsys.readouterr()
     assert "Базовая модель" in captured.out
     assert "Найденная модель" in captured.out
-    assert "ЛУЧШАЯ МОДЕЛЬ" in captured.out
+    assert "ЛУЧШАЯ МОДЕЛЬ - Найденная модель" in captured.out
+
+
+def test_find_better_model_fake_base(monkeypatch, capsys):
+    monkeypatch.setattr(cv, "MAX_SEARCHES", 10)
+    monkeypatch.setattr(
+        cv, "print_result", lambda x, y, z: 1 if x == "Базовая модель" else 0
+    )
+    pos = dict(LSNGP=10, KZOS=20, GMKN=30)
+    port = portfolio.Portfolio(pd.Timestamp("2018-12-19"), 100, pos)
+    cv.find_better_model(port)
+    captured = capsys.readouterr()
+    assert "ЛУЧШАЯ МОДЕЛЬ - Базовая модель" in captured.out
