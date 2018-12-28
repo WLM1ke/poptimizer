@@ -129,6 +129,36 @@ async def test_quotes_fake_update(monkeypatch):
     assert df.loc["2018-03-09", TURNOVER] == 439722
 
 
+@pytest.mark.usefixtures("fake_data_base")
+@pytest.mark.asyncio
+async def test_no_data():
+    """Некоторые бумаги не имеют котировок."""
+    mgr = moex.Quotes(("KSGR", "KMTZ", "TRFM"))
+    for ticker in ("KSGR", "KMTZ", "TRFM"):
+        await mgr.create(ticker)
+        await mgr.update(ticker)
+    dfs = await mgr.get()
+    for df in dfs:
+        assert isinstance(df, pd.DataFrame)
+        assert df.empty
+        assert list(df.columns) == [CLOSE, TURNOVER]
+
+
+@pytest.mark.usefixtures("fake_data_base")
+@pytest.mark.asyncio
+async def test_not_unique():
+    """Некоторые бумаги со старой историей торговались одновременно под несколькими тикерами."""
+    mgr = moex.Quotes(("PRMB", "OGKB"))
+    for ticker in ("PRMB", "OGKB"):
+        await mgr.create(ticker)
+        await mgr.update(ticker)
+    dfs = await mgr.get()
+    for df in dfs:
+        assert isinstance(df, pd.DataFrame)
+        assert df.index.is_unique
+        assert df.index.is_monotonic_increasing
+
+
 @pytest.fixture()
 @pytest.mark.asyncio
 async def create_client():
@@ -285,33 +315,3 @@ async def test_quotes_lsrg():
     assert df.loc["2018-08-10", TURNOVER] == pytest.approx(8626464.5)
     assert df.loc["2018-09-06", CLOSE] == pytest.approx(660)
     assert df.loc["2018-08-28", TURNOVER] == 34666629.5
-
-
-@pytest.mark.usefixtures("create_client")
-@pytest.mark.asyncio
-async def test_no_data():
-    """Некоторые бумаги не имеют котировок."""
-    mgr = moex.Quotes(("KSGR", "KMTZ", "TRFM"))
-    for ticker in ("KSGR", "KMTZ", "TRFM"):
-        await mgr.create(ticker)
-        await mgr.update(ticker)
-    dfs = await mgr.get()
-    for df in dfs:
-        assert isinstance(df, pd.DataFrame)
-        assert df.empty
-        assert list(df.columns) == [CLOSE, TURNOVER]
-
-
-@pytest.mark.usefixtures("create_client")
-@pytest.mark.asyncio
-async def test_not_unique():
-    """Некоторые бумаги со старой историей торговались одновременно под несколькими тикерами."""
-    mgr = moex.Quotes(("PRMB", "OGKB"))
-    for ticker in ("PRMB", "OGKB"):
-        await mgr.create(ticker)
-        await mgr.update(ticker)
-    dfs = await mgr.get()
-    for df in dfs:
-        assert isinstance(df, pd.DataFrame)
-        assert df.index.is_unique
-        assert df.index.is_monotonic_increasing

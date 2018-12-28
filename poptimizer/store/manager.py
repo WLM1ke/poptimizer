@@ -133,6 +133,9 @@ class AbstractManager(ABC):
                 f"Существующие данные не соответствуют новым:\n"
                 f"Категория - {self.category}\n"
                 f"Название - {name}\n"
+                f"Дата последнего обновления - {self._data[name].timestamp}\n"
+                f"Старые значения:\n{df_old.loc[common_index]}\n"
+                f"Новые значения:\n{df_new.loc[common_index]}\n"
             )
 
     @abstractmethod
