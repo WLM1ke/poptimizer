@@ -76,10 +76,11 @@ def dividends_status(ticker: str):
     :param ticker:
         Тикер.
     """
-    result = asyncio.run(_gather_div_data(ticker))
-    _, main_df = result[0]
+    dfs = asyncio.run(_gather_div_data(ticker))
+    _, main_df = dfs[0]
 
-    for name, df in result[1:]:
+    result = []
+    for name, df in dfs[1:]:
         print(f"\nСРАВНЕНИЕ ОСНОВНЫХ ДАННЫХ С {name}\n")
         if name != "SmartLab":
             df = df[df.index >= pd.Timestamp(DIVIDENDS_START)]
@@ -92,3 +93,5 @@ def dividends_status(ticker: str):
             np.isclose(compare_df[ticker].values, compare_df[name].values), "STATUS"
         ] = ""
         print(compare_df)
+        result.append(compare_df)
+    return result

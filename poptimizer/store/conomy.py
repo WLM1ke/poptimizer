@@ -11,9 +11,6 @@ from poptimizer.store.utils import DATE
 # Данные  хранятся в отдельной базе
 CATEGORY_CONOMY = "conomy"
 
-# Время ожидания загрузки
-WAITING_TIME = 20
-
 # Параметры поиска страницы эмитента
 SEARCH_URL = "https://www.conomy.ru/search"
 SEARCH_FIELD = '//*[@id="issuer_search"]'
@@ -61,11 +58,16 @@ async def load_dividends_table(page):
 
 async def get_html(ticker: str):
     """Возвращает html-код страницы с данными по дивидендам с сайта https://www.conomy.ru/"""
-    browser = await pyppeteer.launch()
-    page = await browser.newPage()
-    await load_ticker_page(page, ticker)
-    await load_dividends_table(page)
-    return await page.content()
+
+    try:
+        browser = await pyppeteer.launch()
+        page = await browser.newPage()
+        await load_ticker_page(page, ticker)
+        await load_dividends_table(page)
+        html = await page.content()
+    finally:
+        await browser.close()
+    return html
 
 
 def is_common(ticker: str):

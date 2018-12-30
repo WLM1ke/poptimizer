@@ -8,15 +8,17 @@ aiohttp_theme
 
 pandas
 numpy
+hyperopt
+catboost
+matplotlib
+
 openpyxl
 xlrd
 lxml
 lmdb
-aiomoex
-hyperopt
-catboost
-matplotlib
 reportlab
+
+aiomoex
 bs4
 aiohttp
 pyppeteer

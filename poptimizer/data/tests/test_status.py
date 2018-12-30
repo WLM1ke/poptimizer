@@ -49,3 +49,23 @@ def test_smart_lab_no_status(monkeypatch, capsys):
     status.smart_lab_status(tuple(["PIKK", "CHMF"]))
     captured = capsys.readouterr()
     assert "" == captured.out
+
+
+def test_dividends_status(capsys):
+    result = status.dividends_status("ENRU")
+    captured = capsys.readouterr()
+
+    assert isinstance(result, list)
+    assert len(result) == 3
+
+    assert result[0].shape >= (4, 3)
+    assert result[0].iloc[0, 2] == ""
+    assert result[0].iloc[3, 2] == "ERROR"
+    assert "СРАВНЕНИЕ ОСНОВНЫХ ДАННЫХ С Dohod" in captured.out
+
+    assert result[1].shape >= (4, 3)
+    assert result[1].iloc[2, 2] == ""
+    assert result[1].iloc[1, 2] == "ERROR"
+    assert "СРАВНЕНИЕ ОСНОВНЫХ ДАННЫХ С Conomy" in captured.out
+
+    assert "СРАВНЕНИЕ ОСНОВНЫХ ДАННЫХ С SmartLab" in captured.out
