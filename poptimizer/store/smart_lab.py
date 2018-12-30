@@ -1,4 +1,4 @@
-"""менеджер данных по предстоящим дивидендам с https://www.smart-lab.ru"""
+"""Менеджер данных по предстоящим дивидендам с https://www.smart-lab.ru"""
 import aiohttp
 from aiohttp import ClientResponseError
 

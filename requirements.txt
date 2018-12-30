@@ -19,3 +19,4 @@ matplotlib
 reportlab
 bs4
 aiohttp
+pyppeteer

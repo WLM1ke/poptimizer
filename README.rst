@@ -23,7 +23,7 @@ poptimizer
 
 .. code-block:: Bash
 
-   $ pip install
+   $ pip install poptimizer
 
 Документация
 ------------

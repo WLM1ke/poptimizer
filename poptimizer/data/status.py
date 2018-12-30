@@ -8,7 +8,7 @@ import pandas as pd
 from poptimizer import store
 from poptimizer.config import AFTER_TAX
 from poptimizer.data import div
-from poptimizer.store import TICKER, DIVIDENDS
+from poptimizer.store import TICKER, DIVIDENDS, DIVIDENDS_START
 
 __all__ = ["smart_lab_status"]
 
@@ -49,3 +49,46 @@ def smart_lab_status(tickers: Tuple[str, ...]):
     if status[1]:
         print("\nВ БАЗУ ДАННЫХ ДИВИДЕНДОВ МОЖНО ДОБАВИТЬ", "\n")
         print(", ".join(status[1]))
+
+
+async def _gather_div_data(ticker: str):
+    """Информация о дивидендах из основной базы и альтернативных источников."""
+    async with store.Client() as client:
+        await client.dividends(ticker).update(ticker)
+        data_sources = [
+            client.dividends(ticker),
+            client.dohod(ticker),
+            client.conomy(ticker),
+            client.smart_lab(),
+        ]
+        names = [i.__class__.__name__ for i in data_sources]
+        aws = [i.get() for i in data_sources]
+        dfs = await asyncio.gather(*aws)
+        return list(zip(names, dfs))
+
+
+def dividends_status(ticker: str):
+    """Проверяет необходимость обновления данных для тикера.
+
+    Сравнивает основные данные по дивидендам с альтернативными источниками и распечатывает результаты
+    сравнения.
+
+    :param ticker:
+        Тикер.
+    """
+    result = asyncio.run(_gather_div_data(ticker))
+    _, main_df = result[0]
+
+    for name, df in result[1:]:
+        print(f"\nСРАВНЕНИЕ ОСНОВНЫХ ДАННЫХ С {name}\n")
+        if name != "SmartLab":
+            df = df[df.index >= pd.Timestamp(DIVIDENDS_START)]
+        else:
+            df = df[df[TICKER] == ticker][DIVIDENDS]
+        df.name = name
+        compare_df = pd.concat([main_df, df], axis="columns")
+        compare_df["STATUS"] = "ERROR"
+        compare_df.loc[
+            np.isclose(compare_df[ticker].values, compare_df[name].values), "STATUS"
+        ] = ""
+        print(compare_df)

@@ -63,6 +63,7 @@ setuptools.setup(
         "bs4",
         "lxml",
         "aiohttp",
+        "pyppeteer",
     ],
     python_requires=f">={python_minimal}",
 )
