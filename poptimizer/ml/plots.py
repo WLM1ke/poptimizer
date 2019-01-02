@@ -107,6 +107,44 @@ def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
     plt.show()
 
 
+def draw_cross_val_predict(tickers: Tuple[str, ...], date: pd.Timestamp):
+    """График прогнозируемого с помощью кросс-валидации значения против фактического значения."""
+    params = config.ML_PARAMS
+    cases = examples.Examples(tickers, date)
+    _, _, cv_params = forecaster.cv_results(cases, params)
+    data_params, model_params = cv_params
+    learn_pool_params = cases.learn_pool_params(data_params)
+    model_params["cat_features"] = cases.categorical_features()
+
+    predicted = model_selection.cross_val_predict(
+        catboost.CatBoostRegressor(**model_params),
+        learn_pool_params["data"],
+        learn_pool_params["label"],
+        cv=cv.FOLDS_COUNT,
+    )
+    x = (
+        learn_pool_params["label"]
+        * learn_pool_params["data"].iloc[:, 0]
+        * YEAR_IN_TRADING_DAYS
+    )
+    y = predicted * learn_pool_params["data"].iloc[:, 0] * YEAR_IN_TRADING_DAYS
+
+    fig, ax = plt.subplots(figsize=(PLOTS_SIZE, PLOTS_SIZE))
+    fig.tight_layout(pad=3, h_pad=5)
+    ax.scatter(x, y, edgecolors=(0, 0, 0))
+    ax.set_xlim(np.percentile(x, 5), np.percentile(x, 95))
+    ax.set_ylim(np.percentile(x, 5), np.percentile(x, 95))
+    ax.plot(
+        [np.percentile(x, 5), np.percentile(x, 95)],
+        [np.percentile(x, 5), np.percentile(x, 95)],
+        "k--",
+        lw=1,
+    )
+    ax.set_xlabel("Measured")
+    ax.set_ylabel("Cross-Validated Prediction")
+    plt.show()
+
+
 if __name__ == "__main__":
     POSITIONS = dict(
         AKRN=563,
@@ -159,4 +197,4 @@ if __name__ == "__main__":
         VTBR=0,
     )
     DATE = "2018-12-29"
-    partial_dependence_curve(sorted(POSITIONS), pd.Timestamp(DATE))
+    draw_cross_val_predict(tuple(sorted(POSITIONS)), pd.Timestamp(DATE))
