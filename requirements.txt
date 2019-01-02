@@ -11,12 +11,14 @@ numpy
 hyperopt
 catboost
 matplotlib
+sklearn
 
 openpyxl
 xlrd
 lxml
-lmdb
 reportlab
+
+lmdb
 
 aiomoex
 bs4
