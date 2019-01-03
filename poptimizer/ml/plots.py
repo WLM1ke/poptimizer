@@ -78,8 +78,8 @@ def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
     pool_params = cases.predict_pool_params(cv_params[0])
     pool_params["label"] = None
     n_plots = len(cases.FEATURES) - 1 - len(cases.categorical_features())
-    figsize = (PLOTS_SIZE * n_plots, PLOTS_SIZE)
-    fig, ax_list = plt.subplots(1, n_plots, figsize=figsize, sharey=True)
+    fig_size = (PLOTS_SIZE * n_plots, PLOTS_SIZE)
+    fig, ax_list = plt.subplots(1, n_plots, figsize=fig_size, sharey="all")
     fig.tight_layout(pad=3, h_pad=5)
     axs = iter(ax_list)
     for n, feature in enumerate(cases.FEATURES[1:]):
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         BANE=236 + 45,
         BANEP=1644 + 320,
         CBOM=25400,
-        CHMF=1770,
+        CHMF=1480,
         DSKY=0 + 2090,
         FEES=6_270_000,
         GMKN=45,
@@ -171,7 +171,7 @@ if __name__ == "__main__":
         PIKK=1740 + 10 + 90,
         PMSBP=28730 + 4180 + 3360,
         PRTK=8000 + 3600,
-        RASP=3070 + 0 + 630,
+        RASP=5190 + 0 + 630,
         RTKM=1080 + 30,
         RTKMP=65000 + 0 + 1700,
         SIBN=0 + 710,
@@ -195,6 +195,9 @@ if __name__ == "__main__":
         MRKU=0,
         DVEC=0,
         VTBR=0,
+        IRKT=0,
+        GCHE=0,
+        MRKY=0,
     )
-    DATE = "2018-12-29"
+    DATE = "2019-01-03"
     draw_cross_val_predict(tuple(sorted(POSITIONS)), pd.Timestamp(DATE))

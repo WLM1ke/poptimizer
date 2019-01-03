@@ -10,7 +10,7 @@ from poptimizer.config import AFTER_TAX
 from poptimizer.data import div
 from poptimizer.store import TICKER, DIVIDENDS, DIVIDENDS_START
 
-__all__ = ["smart_lab_status"]
+__all__ = ["smart_lab_status", "dividends_status"]
 
 
 async def _smart_lab() -> pd.DataFrame:
