@@ -82,16 +82,15 @@ def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
     fig, ax_list = plt.subplots(1, n_plots, figsize=fig_size, sharey="all")
     fig.tight_layout(pad=3, h_pad=5)
     axs = iter(ax_list)
+    results = []
     for n, feature in enumerate(cases.FEATURES[1:]):
         if feature.is_categorical():
             continue
         ax = next(axs)
         predict_pool_params = copy.deepcopy(pool_params)
         quantiles = predict_pool_params["data"].iloc[:, n].quantile(QUANTILE).values
-        x = []
         y = []
         for quantile in quantiles:
-            x.append(quantile)
             predict_pool_params["data"].iloc[:, n] = quantile
             predict_pool = catboost.Pool(**predict_pool_params)
             raw_prediction = clf.predict(predict_pool)
@@ -103,8 +102,10 @@ def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
             y.append(prediction.values.mean())
         ax.set_title(f"{feature.__name__}")
         ax.tick_params(labelleft=True)
-        ax.plot(x, y)
+        ax.plot(quantiles, y)
+        results.append((quantiles, y))
     plt.show()
+    return results
 
 
 def draw_cross_val_predict(tickers: Tuple[str, ...], date: pd.Timestamp):
@@ -115,7 +116,6 @@ def draw_cross_val_predict(tickers: Tuple[str, ...], date: pd.Timestamp):
     data_params, model_params = cv_params
     learn_pool_params = cases.learn_pool_params(data_params)
     model_params["cat_features"] = cases.categorical_features()
-
     predicted = model_selection.cross_val_predict(
         catboost.CatBoostRegressor(**model_params),
         learn_pool_params["data"],
@@ -128,7 +128,6 @@ def draw_cross_val_predict(tickers: Tuple[str, ...], date: pd.Timestamp):
         * YEAR_IN_TRADING_DAYS
     )
     y = predicted * learn_pool_params["data"].iloc[:, 0] * YEAR_IN_TRADING_DAYS
-
     fig, ax = plt.subplots(figsize=(PLOTS_SIZE, PLOTS_SIZE))
     fig.tight_layout(pad=3, h_pad=5)
     ax.scatter(x, y, edgecolors=(0, 0, 0))
@@ -143,61 +142,4 @@ def draw_cross_val_predict(tickers: Tuple[str, ...], date: pd.Timestamp):
     ax.set_xlabel("Measured")
     ax.set_ylabel("Cross-Validated Prediction")
     plt.show()
-
-
-if __name__ == "__main__":
-    POSITIONS = dict(
-        AKRN=563,
-        BANE=236 + 45,
-        BANEP=1644 + 320,
-        CBOM=25400,
-        CHMF=1480,
-        DSKY=0 + 2090,
-        FEES=6_270_000,
-        GMKN=45,
-        KZOS=5100 + 3400,
-        LKOH=270,
-        LSNGP=6600,
-        LSRG=1700 + 0 + 80,
-        MAGN=3500 + 1300,
-        MOEX=4190,
-        MSRS=128_000 + 117_000,
-        MSTT=820,
-        MTSS=4960,
-        NKNCP=8900,
-        NLMK=3180 + 4570,
-        NMTP=11000 + 11000,
-        PHOR=0 + 28,
-        PIKK=1740 + 10 + 90,
-        PMSBP=28730 + 4180 + 3360,
-        PRTK=8000 + 3600,
-        RASP=5190 + 0 + 630,
-        RTKM=1080 + 30,
-        RTKMP=65000 + 0 + 1700,
-        SIBN=0 + 710,
-        SNGSP=53200 + 0 + 9800,
-        TATN=150 + 420,
-        TATNP=3420 + 290 + 100,
-        TTLK=1_980_000,
-        UPRO=901_000 + 0 + 9000,
-        VSMO=161 + 3,
-        # Бумаги с нулевым весом
-        ENRU=0,
-        MTLRP=0,
-        ROSN=0,
-        NVTK=0,
-        AFLT=0,
-        ALRS=0,
-        MRKV=0,
-        MRKP=0,
-        KBTK=0,
-        NKHP=0,
-        MRKU=0,
-        DVEC=0,
-        VTBR=0,
-        IRKT=0,
-        GCHE=0,
-        MRKY=0,
-    )
-    DATE = "2019-01-03"
-    draw_cross_val_predict(tuple(sorted(POSITIONS)), pd.Timestamp(DATE))
+    return x, y
