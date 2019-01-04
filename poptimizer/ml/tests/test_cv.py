@@ -6,7 +6,7 @@ from hyperopt.pyll import Apply
 
 from poptimizer.config import POptimizerError
 from poptimizer.ml import cv, examples
-from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
+from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS, divyield
 from poptimizer.portfolio import portfolio
 
 PARAMS = (
@@ -284,6 +284,8 @@ def test_optimize_hyper(monkeypatch, capsys):
 
 def test_find_better_model(monkeypatch, capsys):
     monkeypatch.setattr(cv, "MAX_SEARCHES", 10)
+    monkeypatch.setattr(cv, "DEPTH", [2, 7])
+    monkeypatch.setattr(divyield, "RANGE", [280, 398])
     pos = dict(LSNGP=10, KZOS=20, GMKN=30)
     port = portfolio.Portfolio(pd.Timestamp("2018-12-19"), 100, pos)
     cv.find_better_model(port)

@@ -49,7 +49,7 @@ def test_partial_dependence_curve(monkeypatch):
 
 
 def test_draw_cross_val_predict():
-    x, y = plots.draw_cross_val_predict(TICKERS, DATE)
+    x, y = plots.cross_val_predict_plot(TICKERS, DATE)
     assert len(x) == len(y) == 116
     assert np.allclose(x[:3].values, [-0.13702667, 0.16367253, 0.16657164])
     assert np.allclose(y[-3:].values, [0.17200295, -0.02747856, 0.02692788])

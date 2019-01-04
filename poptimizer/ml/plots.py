@@ -12,6 +12,8 @@ from poptimizer import config
 from poptimizer.ml import examples, forecaster, cv
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 
+__all__ = ["learning_curve", "partial_dependence_curve", "cross_val_predict_plot"]
+
 # Размер графиков
 PLOTS_SIZE = 8
 
@@ -108,7 +110,7 @@ def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
     return results
 
 
-def draw_cross_val_predict(tickers: Tuple[str, ...], date: pd.Timestamp):
+def cross_val_predict_plot(tickers: Tuple[str, ...], date: pd.Timestamp):
     """График прогнозируемого с помощью кросс-валидации значения против фактического значения."""
     params = config.ML_PARAMS
     cases = examples.Examples(tickers, date)
