@@ -4,6 +4,7 @@ from typing import Tuple
 import pandas as pd
 from hyperopt import hp
 
+from poptimizer.config import POptimizerError
 from poptimizer.ml import feature
 
 ON_OFF = [True, False]
@@ -93,7 +94,12 @@ class Examples:
         label = self._features[0]
         days = params[0][1]["days"]
         index = label.index
-        loc = index.get_loc(self._date)
+        try:
+            loc = index.get_loc(self._date)
+        except KeyError:
+            raise POptimizerError(
+                f"Для даты {self._date.date()} отсутствуют исторические котировки"
+            )
         last_learn = loc - days
         index = index[last_learn::-days]
         data = [self.get(date, params) for date in index]

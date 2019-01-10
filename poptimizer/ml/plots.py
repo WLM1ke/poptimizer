@@ -21,7 +21,7 @@ PLOTS_SIZE = 8
 FRACTIONS = np.linspace(0.1, 1.0, 10)
 
 # Параметры кривых частичной зависимости
-QUANTILE = np.linspace(0.05, 0.95, 19)
+QUANTILE = np.linspace(0.01, 0.99, 99)
 
 
 def learning_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
