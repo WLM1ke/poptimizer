@@ -60,7 +60,14 @@ class Portfolio:
             axis="columns",
         )
         df.columns = ["LOT_SIZE", "SHARES", "PRICE", "VALUE", "WEIGHT", "VOLUME"]
-        return f"\nПОРТФЕЛЬ\n\nДата - {self._date.date()}\n\n{df}"
+        return (
+            f"\nПОРТФЕЛЬ"
+            f"\n"
+            f"\nДата - {self._date.date()}"
+            f"\nКоличество бумаг - {len(self.index) - 2}"
+            f"\n"
+            f"\n{df}"
+        )
 
     @property
     def date(self):
