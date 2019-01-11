@@ -18,6 +18,8 @@ FOLDS_COUNT = 20
 TECH_PARAMS = dict(
     iterations=MAX_ITERATIONS,
     random_state=SEED,
+    loss_function="MAE",
+    custom_metric="RMSE",
     od_type="Iter",
     verbose=False,
     allow_writing_files=False,
@@ -33,7 +35,7 @@ MAX_SEARCHES = 100
 ONE_HOT_SIZE = [2, 100]
 
 # Диапазон поиска скорости обучения
-LEARNING_RATE = [0.054, 1.1e-01]
+LEARNING_RATE = [0.054, 0.1]
 
 # Диапазон поиска глубины деревьев
 DEPTH = [1, 7]
