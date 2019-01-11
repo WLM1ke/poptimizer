@@ -46,7 +46,7 @@ L2_LEAF_REG = [0.97, 4.0e00]
 RANDOM_STRENGTH = [0.7, 1.5e00]
 
 # Диапазон поиска интенсивности бэггинга
-BAGGING_TEMPERATURE = [0.57, 1.2e00]
+BAGGING_TEMPERATURE = [5.2e-01, 1.1]
 
 
 def log_space(space_name: str, interval):

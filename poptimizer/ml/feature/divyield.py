@@ -8,7 +8,7 @@ from poptimizer import data
 from poptimizer.ml.feature.feature import AbstractFeature, check_bounds
 from poptimizer.store import DIVIDENDS_START
 
-RANGE = [238, 390]
+RANGE = [240, 444]
 
 
 class DivYield(AbstractFeature):

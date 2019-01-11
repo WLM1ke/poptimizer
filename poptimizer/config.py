@@ -41,18 +41,18 @@ TURNOVER_CUT_OFF = 0.16 * MAX_TRADE
 ML_PARAMS = (
     (
         (True, {"days": 58}),
-        (True, {"days": 195}),
+        (False, {"days": 272}),
         (False, {}),
-        (True, {"days": 282}),
-        (True, {"days": 332}),
+        (True, {"days": 230}),
+        (True, {"days": 370}),
     ),
     {
-        "bagging_temperature": 0.9388504407881838,
-        "depth": 5,
-        "l2_leaf_reg": 3.2947929042414654,
-        "learning_rate": 0.07663371920281654,
+        "bagging_temperature": 0.621508306759632,
+        "depth": 2,
+        "l2_leaf_reg": 1.1474017343050538,
+        "learning_rate": 0.08318304314039789,
         "one_hot_max_size": 100,
-        "random_strength": 0.9261064363697566,
-        "ignored_features": [1],
+        "random_strength": 1.0490786022120568,
+        "ignored_features": [0, 1],
     },
 )
