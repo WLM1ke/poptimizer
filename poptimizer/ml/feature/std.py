@@ -9,7 +9,7 @@ from poptimizer import data
 from poptimizer.ml.feature.feature import AbstractFeature
 
 # Диапазон поиска количества дней
-RANGE = [154, 276]
+RANGE = [134, 275]
 
 
 class STD(AbstractFeature):
