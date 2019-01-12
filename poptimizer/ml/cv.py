@@ -18,8 +18,8 @@ FOLDS_COUNT = 20
 TECH_PARAMS = dict(
     iterations=MAX_ITERATIONS,
     random_state=SEED,
-    loss_function="MAE",
-    custom_metric="RMSE",
+    # loss_function="MAE",
+    # custom_metric="RMSE",
     od_type="Iter",
     verbose=False,
     allow_writing_files=False,
@@ -35,7 +35,7 @@ MAX_SEARCHES = 100
 ONE_HOT_SIZE = [2, 100]
 
 # Диапазон поиска скорости обучения
-LEARNING_RATE = [0.054, 0.1]
+LEARNING_RATE = [3.6e-02, 0.06]
 
 # Диапазон поиска глубины деревьев
 DEPTH = [1, 7]
@@ -45,10 +45,10 @@ DEPTH[1] += 1
 L2_LEAF_REG = [0.97, 4.0e00]
 
 # Диапазон поиска случайности разбиений
-RANDOM_STRENGTH = [0.7, 1.5e00]
+RANDOM_STRENGTH = [0.62, 1.7e00]
 
 # Диапазон поиска интенсивности бэггинга
-BAGGING_TEMPERATURE = [5.2e-01, 1.1]
+BAGGING_TEMPERATURE = [0.53, 1.2e00]
 
 
 def log_space(space_name: str, interval):
