@@ -31,11 +31,11 @@ DATE_COLUMN = parser.DataColumn(
 
 COMMON_TICKER_LENGTH = 4
 COMMON_COLUMN = parser.DataColumn(
-    7, {1: "Размер дивидендов\nна одну акцию, руб.", 2: "АОИ"}, parser.div_parser
+    7, {1: "Размер дивидендов на \nодну акцию, руб.", 2: "АОИ"}, parser.div_parser
 )
 PREFERRED_TICKER_ENDING = "P"
 PREFERRED_COLUMN = parser.DataColumn(
-    8, {1: "Размер дивидендов\nна одну акцию, руб.", 2: "АПИ"}, parser.div_parser
+    8, {1: "Размер дивидендов на \nодну акцию, руб.", 2: "АПИ"}, parser.div_parser
 )
 
 

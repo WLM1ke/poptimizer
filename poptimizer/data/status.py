@@ -54,7 +54,7 @@ def smart_lab_status(tickers: Tuple[str, ...]):
 async def _gather_div_data(ticker: str):
     """Информация о дивидендах из основной базы и альтернативных источников."""
     async with store.Client() as client:
-        await client.dividends(ticker).update(ticker)
+        await client.dividends(ticker).create(ticker)
         data_sources = [
             client.dividends(ticker),
             client.dohod(ticker),
