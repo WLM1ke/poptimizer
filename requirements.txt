@@ -11,7 +11,7 @@ numpy
 hyperopt
 catboost
 matplotlib
-sklearn
+scikit-learn
 
 openpyxl
 xlrd

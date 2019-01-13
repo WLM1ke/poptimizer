@@ -64,7 +64,7 @@ setuptools.setup(
         "lxml",
         "aiohttp",
         "pyppeteer",
-        "sklearn",
+        "scikit-learn",
     ],
     python_requires=f">={python_minimal}",
 )
