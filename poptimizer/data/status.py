@@ -63,7 +63,7 @@ async def _gather_div_data(ticker: str):
         ]
         names = [i.__class__.__name__ for i in data_sources]
         aws = [i.get() for i in data_sources]
-        dfs = await asyncio.gather(*aws)
+        dfs = await asyncio.gather(*aws, return_exceptions=True)
         return list(zip(names, dfs))
 
 
@@ -82,6 +82,10 @@ def dividends_status(ticker: str):
     result = []
     for name, df in dfs[1:]:
         print(f"\nСРАВНЕНИЕ ОСНОВНЫХ ДАННЫХ С {name}\n")
+        if isinstance(df, Exception):
+            print(df)
+            result.append(df)
+            continue
         if name != "SmartLab":
             df = df[df.index >= pd.Timestamp(DIVIDENDS_START)]
         else:

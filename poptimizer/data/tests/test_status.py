@@ -69,3 +69,10 @@ def test_dividends_status(capsys):
     assert "СРАВНЕНИЕ ОСНОВНЫХ ДАННЫХ С Conomy" in captured.out
 
     assert "СРАВНЕНИЕ ОСНОВНЫХ ДАННЫХ С SmartLab" in captured.out
+
+
+def test_dividends_status_no_web_data():
+    result = status.dividends_status("MGTSP")
+
+    assert isinstance(result[0], Exception)
+    assert "На странице нет таблицы 2" == str(result[0])
