@@ -23,7 +23,7 @@ class DataColumn:
 
     # Номер столбца
     index: int
-    # Словарь с номером строки и ожидаемым значением для проверки
+    # Словарь с номером строки и ожидаемым значением для проверки - часть текста ячейки
     validation_dict: dict
     # Функция для преобразования текстового значения из html в нужный формат pd.DataFrame
     parser_func: Callable
@@ -130,7 +130,7 @@ class HTMLTableParser:
         table = self.parsed_table
         for column in columns:
             for row, value in column.validation_dict.items():
-                if table[row][column.index] != value:
+                if value not in table[row][column.index]:
                     raise POptimizerError(
                         f"Значение в таблице {table[row][column.index]!r} - должно быть {value!r}"
                     )
