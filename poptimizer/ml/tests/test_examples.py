@@ -40,8 +40,8 @@ def test_check_bounds(example, capsys):
         )
     )
     captured = capsys.readouterr()
-    assert "Необходимо расширить Label.RANGE" in captured.out
-    assert "Необходимо расширить STD.RANGE" in captured.out
+    assert "Необходимо расширить Label_RANGE" in captured.out
+    assert "Необходимо расширить STD_RANGE" in captured.out
 
 
 def test_get(example):
