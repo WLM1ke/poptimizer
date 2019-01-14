@@ -2,17 +2,13 @@
 from typing import Tuple
 
 import pandas as pd
-from hyperopt import hp
 
-import poptimizer.ml.feature.feature
 from poptimizer import data
-from poptimizer.ml.feature.feature import AbstractFeature
-
-# Диапазон поиска количества дней
-RANGE = [134, 275]
+from poptimizer.config import STD_RANGE
+from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsMixin
 
 
-class STD(AbstractFeature):
+class STD(DaysParamsMixin, AbstractFeature):
     """СКО за примерно 12 предыдущих месяцев.
 
     СКО выступает в двоякой роли. С одной стороны, доходности акций обладают явной
@@ -25,24 +21,11 @@ class STD(AbstractFeature):
     последние 8-12 месяцев. Оптимальный период выбирается при поиске гиперпараметров.
     """
 
+    RANGE = STD_RANGE
+
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
         super().__init__(tickers, last_date)
         self._returns = data.log_total_returns(tickers, last_date)
-
-    @staticmethod
-    def is_categorical() -> bool:
-        """Не категориальный признак."""
-        return False
-
-    @classmethod
-    def get_params_space(cls) -> dict:
-        """Значение дней в диапазоне."""
-        return {"days": hp.choice("std", list(range(*RANGE)))}
-
-    def check_bounds(self, **kwargs):
-        """Рекомендация по расширению интервала."""
-        days = kwargs["days"]
-        poptimizer.ml.feature.feature.check_bounds(f"{self.name}.RANGE", days, RANGE)
 
     def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
         """СКО за указанное количество предыдущих дней."""

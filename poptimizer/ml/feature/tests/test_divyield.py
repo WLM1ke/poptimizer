@@ -23,14 +23,14 @@ def test_get_params_space(feat):
 
 
 def test_check_bounds_middle(feat, capsys):
-    lower, upper = divyield.RANGE
+    lower, upper = divyield.DivYield.RANGE
     feat.check_bounds(days=(lower + upper) / 2)
     captured = capsys.readouterr()
     assert captured.out == ""
 
 
 def test_check_bounds_lower(feat, capsys):
-    lower, upper = divyield.RANGE
+    lower, upper = divyield.DivYield.RANGE
     feat.check_bounds(days=int(lower * 1.05))
     captured = capsys.readouterr()
     assert "Необходимо расширить" in captured.out
@@ -38,7 +38,7 @@ def test_check_bounds_lower(feat, capsys):
 
 
 def test_check_bounds_upper(feat, capsys):
-    lower, upper = divyield.RANGE
+    lower, upper = divyield.DivYield.RANGE
     feat.check_bounds(days=int(upper / 1.05))
     captured = capsys.readouterr()
     assert "Необходимо расширить" in captured.out

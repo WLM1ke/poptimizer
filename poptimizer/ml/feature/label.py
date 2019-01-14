@@ -2,18 +2,15 @@
 from typing import Tuple
 
 import pandas as pd
-from hyperopt import hp
 
 from poptimizer import data
-from poptimizer.ml.feature.feature import AbstractFeature, check_bounds
+from poptimizer.config import LABEL_RANGE
+from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsMixin
 
 YEAR_IN_TRADING_DAYS = 12 * 21
 
-# Диапазон поиска количества дней
-RANGE = [26, 64]
 
-
-class Label(AbstractFeature):
+class Label(DaysParamsMixin, AbstractFeature):
     """Метка для обучения - средняя доходность за несколько следующих дней.
 
 
@@ -28,24 +25,11 @@ class Label(AbstractFeature):
     месяца до нескольких месяцев. Оптимальный прогнозный период выбирается при поиске гиперпараметров.
     """
 
+    RANGE = LABEL_RANGE
+
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
         super().__init__(tickers, last_date)
         self._returns = data.log_total_returns(tickers, last_date)
-
-    @staticmethod
-    def is_categorical() -> bool:
-        """Не категориальный признак."""
-        return False
-
-    @classmethod
-    def get_params_space(cls) -> dict:
-        """Значение дней в диапазоне."""
-        return {"days": hp.choice("label_days", list(range(*RANGE)))}
-
-    def check_bounds(self, **kwargs):
-        """Рекомендация по расширению интервала."""
-        days = kwargs["days"]
-        check_bounds(f"{self.name}.RANGE", days, RANGE)
 
     def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
         """Средняя доходность за указанное количество следующих дней."""

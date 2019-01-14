@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Tuple
 
 import pandas as pd
+from hyperopt import hp
 
 
 def check_bounds(name, days, interval, bound: float = 0.1, increase: float = 0.2):
@@ -58,3 +59,25 @@ class AbstractFeature(ABC):
 
         Признак должен быть pd.Series с индексом из тикеров.
         """
+
+
+class DaysParamsMixin:
+    """Класс с реализацией параметра с количеством дней для признака."""
+
+    # Диапазон допустимого количества дней
+    RANGE = [None, None]
+
+    @staticmethod
+    def is_categorical() -> bool:
+        """Не категориальный признак."""
+        return False
+
+    @classmethod
+    def get_params_space(cls) -> dict:
+        """Значение дней в диапазоне."""
+        return {"days": hp.choice("label_days", list(range(*cls.RANGE)))}
+
+    def check_bounds(self, **kwargs):
+        """Рекомендация по расширению интервала."""
+        days = kwargs["days"]
+        check_bounds(f"{self.__class__.__name__}_RANGE", days, self.RANGE)

@@ -2,16 +2,13 @@
 from typing import Tuple
 
 import pandas as pd
-from hyperopt import hp
 
 from poptimizer import data
-from poptimizer.ml.feature.feature import AbstractFeature, check_bounds
-
-# Диапазон поиска количества дней
-RANGE = [240, 377]
+from poptimizer.config import MOM12M_RANGE
+from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsMixin
 
 
-class Mom12m(AbstractFeature):
+class Mom12m(DaysParamsMixin, AbstractFeature):
     """Средняя доходность примерно за 12 предыдущих месяцев.
 
     Аномальная доходность акции, продемонстрировавших максимальный рост за последние 12 месяцев
@@ -22,24 +19,11 @@ class Mom12m(AbstractFeature):
     моментума.
     """
 
+    RANGE = MOM12M_RANGE
+
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
         super().__init__(tickers, last_date)
         self._returns = data.log_total_returns(tickers, last_date)
-
-    @staticmethod
-    def is_categorical() -> bool:
-        """Не категориальный признак."""
-        return False
-
-    @classmethod
-    def get_params_space(cls) -> dict:
-        """Количество дней для расчета моментума."""
-        return {"days": hp.choice("mom12m", list(range(*RANGE)))}
-
-    def check_bounds(self, **kwargs):
-        """Рекомендация по расширению интервала."""
-        days = kwargs["days"]
-        check_bounds(f"{self.name}.RANGE", days, RANGE)
 
     def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
         """Средняя доходность за указанное количество предыдущих дней."""
