@@ -5,7 +5,7 @@ install:
   - pip install -r requirements.txt
   - pip install -U pytest
   - pip install codecov
-script:  # - pytest poptimizer -v --cov=poptimizer --cov-report=term-missing --setup-show
-  - pytest poptimizer/ml/tests/test_plots.py::test_learning_curve -v --cov=poptimizer --cov-report=term-missing --setup-show
+script:
+  - pytest poptimizer -v --cov=poptimizer --cov-report=term-missing --setup-show
 after_success:
   - codecov
