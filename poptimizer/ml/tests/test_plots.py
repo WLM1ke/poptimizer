@@ -37,8 +37,8 @@ def test_learning_curve(monkeypatch):
     monkeypatch.setattr(plots, "FRACTIONS", [0.1, 0.5, 1.0])
     train_sizes, train_scores, test_scores = plots.learning_curve(TICKERS, DATE)
     assert np.allclose([11, 55, 110], train_sizes)
-    assert np.allclose([0.71800467, 0.83144712, 0.8870297], train_scores)
-    assert np.allclose([0.9919804, 0.9883989, 1.01204766], test_scores)
+    assert np.allclose([0.77440018, 0.86681678, 0.8870834], train_scores)
+    assert np.allclose([1.04168629, 1.02808554, 1.02049696], test_scores)
 
 
 def test_partial_dependence_curve(monkeypatch):

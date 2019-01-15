@@ -43,7 +43,7 @@ def learning_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
         learn_pool_params["data"],
         learn_pool_params["label"],
         train_sizes=list(FRACTIONS),
-        cv=cv.FOLDS_COUNT,
+        cv=model_selection.KFold(cv.FOLDS_COUNT, shuffle=True, random_state=cv.SEED),
         scoring="neg_mean_squared_error",
         shuffle=True,
         random_state=cv.SEED,
