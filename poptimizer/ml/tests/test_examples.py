@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from hyperopt.pyll import Apply
 
-from poptimizer.config import AFTER_TAX
+from poptimizer.config import AFTER_TAX, POptimizerError
 from poptimizer.ml import examples
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 
@@ -12,6 +12,10 @@ from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 def create_examples():
     # noinspection PyTypeChecker
     yield examples.Examples(("AKRN", "CHMF", "BANEP"), pd.Timestamp("2018-12-13"))
+
+
+def test_get_features_names(example):
+    assert example.get_features_names() == ["STD", "Ticker", "Mom12m", "DivYield"]
 
 
 def test_categorical_features(example):
@@ -119,6 +123,20 @@ def test_learn_pool(example):
     assert pool["cat_features"] == [1]
 
     assert pool["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield"]
+
+
+def test_learn_pool_bad_date():
+    cases = examples.Examples(("AKRN", "CHMF", "BANEP"), pd.Timestamp("2019-01-13"))
+    params = (
+        (True, {"days": 4}),
+        (True, {"days": 5}),
+        (True, {}),
+        (True, {"days": 6}),
+        (False, {"days": 7}),
+    )
+    with pytest.raises(POptimizerError) as error:
+        cases.learn_pool_params(params)
+    assert str(error.value) == "Для даты 2019-01-13 отсутствуют исторические котировки"
 
 
 def test_predict_pool(example):
