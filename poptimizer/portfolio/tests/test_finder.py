@@ -42,6 +42,7 @@ def test_get_turnover(monkeypatch):
 
 
 def test_find_momentum(monkeypatch):
+    monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0022)
     monkeypatch.setattr(finder, "feature_days", lambda x: 252)
     date = pd.Timestamp("2018-12-18")
     positions = dict(TATN=20000, KZOS=20000, LKOH=20000)
@@ -57,6 +58,7 @@ def test_find_momentum(monkeypatch):
 
 
 def test_find_dividends(monkeypatch):
+    monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0022)
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     date = pd.Timestamp("2018-12-18")
     positions = dict(CHMF=20000, TATN=20000, KZOS=20000, LKOH=20000)
