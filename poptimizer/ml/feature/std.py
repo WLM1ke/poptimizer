@@ -1,7 +1,6 @@
 """Признак - СКО за последние торговые дни."""
-from typing import Tuple
-
 import pandas as pd
+from typing import Tuple
 
 from poptimizer import data
 from poptimizer.config import STD_RANGE
@@ -9,7 +8,7 @@ from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsMixin
 
 
 class STD(DaysParamsMixin, AbstractFeature):
-    """СКО за примерно 12 предыдущих месяцев.
+    """Accrual volatility - СКО за примерно 12 предыдущих месяцев.
 
     СКО выступает в двоякой роли. С одной стороны, доходности акций обладают явной
     гетероскедастичностью и варьируются от одной акции к другой, поэтому для получения меток данных  с

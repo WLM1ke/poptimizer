@@ -41,6 +41,7 @@ LABEL_RANGE = [26, 64]
 STD_RANGE = [134, 275]
 MOM12M_RANGE = [250, 524]
 DIVYIELD_RANGE = [240, 444]
+MOM1M_RANGE = [18, 24]
 
 ML_PARAMS = (
     (
@@ -49,6 +50,7 @@ ML_PARAMS = (
         (True, {}),
         (True, {"days": 437}),
         (True, {"days": 382}),
+        (False, {"days": 21}),
     ),
     {
         "bagging_temperature": 0.6694389644638299,

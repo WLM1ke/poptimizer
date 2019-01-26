@@ -1,24 +1,23 @@
-"""Признак - доходность за последний год."""
+"""Признак - доходность за последний месяц."""
 import pandas as pd
 from typing import Tuple
 
 from poptimizer import data
-from poptimizer.config import MOM12M_RANGE
+from poptimizer.config import MOM1M_RANGE
 from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsMixin
 
 
-class Mom12m(DaysParamsMixin, AbstractFeature):
-    """12-month momentum - средняя доходность примерно за 12 предыдущих месяцев.
+class Mom1m(DaysParamsMixin, AbstractFeature):
+    """1-month momentum - средняя доходность примерно за 1 предыдущий месяц.
 
-    Аномальная доходность акции, продемонстрировавших максимальный рост за последние 12 месяцев
-    отмечается во множестве исследований. Данный эффект носит устойчивый характер и максимальную силу
-    обычно имеет для доходности за 9-16 предыдущих месяцев.
+    Хотя в общем акции демонстрируют сохранение роста, если они росли в предыдущие периоды,
+    на горизонте в один-два месяца эта зависимость обычно нарушается - short term reversal.
 
     При оптимизации гиперпараметров выбирается оптимальное количество торговых дней для расчета
-    моментума.
+    краткосрочной реверсии.
     """
 
-    RANGE = MOM12M_RANGE
+    RANGE = MOM1M_RANGE
 
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
         super().__init__(tickers, last_date)

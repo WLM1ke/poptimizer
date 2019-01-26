@@ -1,7 +1,6 @@
 """Признак - дивиденды за последние периоды."""
-from typing import Tuple
-
 import pandas as pd
+from typing import Tuple
 
 from poptimizer import data
 from poptimizer.config import DIVYIELD_RANGE
@@ -10,7 +9,7 @@ from poptimizer.store import DIVIDENDS_START
 
 
 class DivYield(DaysParamsMixin, AbstractFeature):
-    """Дивидендная доходность примерно за 12 предыдущих месяцев.
+    """Dividend to price - дивидендная доходность примерно за 12 предыдущих месяцев.
 
     Акции с высокими дивидендами относительно цены во многих исследованиях показываются
     более высокую доходность - value anomaly. Большинство исследований отмечают более значительное

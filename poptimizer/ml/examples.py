@@ -1,8 +1,7 @@
 """Набор обучающих примеров."""
-from typing import Tuple
-
 import pandas as pd
 from hyperopt import hp
+from typing import Tuple
 
 from poptimizer.config import POptimizerError
 from poptimizer.ml import feature
@@ -19,6 +18,7 @@ class Examples:
         feature.Ticker,
         feature.Mom12m,
         feature.DivYield,
+        feature.Mom1m,
     ]
 
     def __init__(self, tickers: Tuple[str, ...], date: pd.Timestamp):

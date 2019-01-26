@@ -1,13 +1,15 @@
 """Признак - тикер."""
-from typing import Tuple
-
 import pandas as pd
+from typing import Tuple
 
 from poptimizer.ml.feature.feature import AbstractFeature
 
 
 class Ticker(AbstractFeature):
-    """Тикер для каждой даты из котировок."""
+    """Тикер для каждой даты из котировок.
+
+    Позволяет отразить специфические черты отдельных бумаг.
+    """
 
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
         super().__init__(tickers, last_date)
