@@ -37,28 +37,28 @@ TURNOVER_PERIOD = 21
 TURNOVER_CUT_OFF = 0.53 * MAX_TRADE
 
 # Параметры ML-модели
-LABEL_RANGE = [26, 64]
+LABEL_RANGE = [27, 74]
 STD_RANGE = [134, 275]
 MOM12M_RANGE = [250, 524]
 DIVYIELD_RANGE = [240, 444]
-MOM1M_RANGE = [18, 24]
+MOM1M_RANGE = [16, 21]
 
 ML_PARAMS = (
     (
-        (True, {"days": 51}),
-        (True, {"days": 243}),
+        (True, {"days": 62}),
+        (True, {"days": 157}),
         (True, {}),
-        (True, {"days": 437}),
-        (True, {"days": 382}),
-        (False, {"days": 21}),
+        (True, {"days": 375}),
+        (True, {"days": 362}),
+        (True, {"days": 19}),
     ),
     {
-        "bagging_temperature": 0.6694389644638299,
-        "depth": 6,
-        "l2_leaf_reg": 0.9849409721664748,
-        "learning_rate": 0.06450956340496615,
-        "one_hot_max_size": 2,
-        "random_strength": 1.494284431362221,
+        "bagging_temperature": 0.7273263327047061,
+        "depth": 7,
+        "l2_leaf_reg": 0.8206118720234131,
+        "learning_rate": 0.0519251093560293,
+        "one_hot_max_size": 100,
+        "random_strength": 0.8424283529004852,
         "ignored_features": [],
     },
 )

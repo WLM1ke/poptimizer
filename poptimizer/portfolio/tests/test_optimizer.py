@@ -11,6 +11,7 @@ ML_PARAMS = (
         (False, {}),
         (True, {"days": 252}),
         (True, {"days": 252}),
+        (False, {"days": 21}),
     ),
     {
         "bagging_temperature": 1.16573715129796,

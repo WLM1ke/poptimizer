@@ -13,6 +13,7 @@ PARAMS = (
         (True, {}),
         (True, {"days": 252}),
         (True, {"days": 252}),
+        (False, {"days": 21}),
     ),
     {
         "bagging_temperature": 1,
@@ -103,7 +104,7 @@ def test_make_forecast():
     assert forecast.cov[2, 1] == pytest.approx(0.0011109458910028857)
     assert isinstance(forecast.feature_importance, pd.Series)
     assert np.allclose(
-        forecast.feature_importance, [25.749377, 12.777575, 28.876857, 32.596191]
+        forecast.feature_importance, [25.749377, 12.777575, 28.876857, 32.596191, 0]
     )
     assert forecast.r2 == pytest.approx(0.08242085969748303)
     assert forecast.average_cor == pytest.approx(0.10588718234140086)

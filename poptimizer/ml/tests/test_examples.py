@@ -15,7 +15,13 @@ def create_examples():
 
 
 def test_get_features_names(example):
-    assert example.get_features_names() == ["STD", "Ticker", "Mom12m", "DivYield"]
+    assert example.get_features_names() == [
+        "STD",
+        "Ticker",
+        "Mom12m",
+        "DivYield",
+        "Mom1m",
+    ]
 
 
 def test_categorical_features(example):
@@ -25,7 +31,7 @@ def test_categorical_features(example):
 def test_get_params_space(example):
     space = example.get_params_space()
     assert isinstance(space, list)
-    assert len(space) == 5
+    assert len(space) == 6
     assert space[0][0] is True
     assert isinstance(space[0][1], dict)
     for on_off, params in space[1:]:

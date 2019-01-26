@@ -14,6 +14,7 @@ ML_PARAMS = (
         (False, {}),
         (True, {"days": 252}),
         (True, {"days": 252}),
+        (False, {"days": 21}),
     ),
     {
         "bagging_temperature": 1.16573715129796,
@@ -31,10 +32,10 @@ class SimpleMetrics(Metrics):
     def _forecast_func(self):
         mean = np.array([1.0, 2.0, 3.0])
         cov = np.array([[9.0, 3.0, 1.0], [3.0, 4.0, 0.5], [1.0, 0.5, 1.0]])
-        portfolio = self._portfolio
+        port = self._portfolio
         return Forecast(
-            portfolio.date,
-            tuple(portfolio.index[:-2]),
+            port.date,
+            tuple(port.index[:-2]),
             mean,
             cov,
             10,

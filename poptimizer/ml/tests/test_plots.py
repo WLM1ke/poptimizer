@@ -12,6 +12,7 @@ ML_PARAMS = (
         (False, {}),
         (True, {"days": 282}),
         (True, {"days": 332}),
+        (False, {"days": 21}),
     ),
     {
         "bagging_temperature": 0.9388504407881838,
@@ -44,7 +45,7 @@ def test_learning_curve(monkeypatch):
 def test_partial_dependence_curve(monkeypatch):
     monkeypatch.setattr(plots, "QUANTILE", [0.3, 0.7])
     result = plots.partial_dependence_curve(TICKERS, DATE)
-    assert len(result) == 3
+    assert len(result) == 4
     assert len(result[0]) == 2
 
 
