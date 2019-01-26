@@ -1,7 +1,6 @@
 """Кросс-валидация и оптимизация гиперпараметров ML-модели."""
-import functools
-
 import catboost
+import functools
 import hyperopt
 import numpy as np
 from catboost import CatboostError
@@ -40,10 +39,10 @@ DEPTH = [1, 7]
 DEPTH[1] += 1
 
 # Диапазон поиска параметра L2-регуляризации
-L2_LEAF_REG = [0.97, 4.0e00]
+L2_LEAF_REG = [8.2e-01, 4.0]
 
 # Диапазон поиска случайности разбиений
-RANDOM_STRENGTH = [6.3e-01, 1.5]
+RANDOM_STRENGTH = [0.63, 1.8e00]
 
 # Диапазон поиска интенсивности бэггинга
 BAGGING_TEMPERATURE = [0.58, 1.4e00]
