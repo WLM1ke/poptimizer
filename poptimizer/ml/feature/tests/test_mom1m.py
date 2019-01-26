@@ -1,15 +1,15 @@
+import numpy as np
 import pandas as pd
 import pytest
 from hyperopt.pyll import Apply
 
-from poptimizer.ml.feature import mom12m
-from poptimizer.ml.feature.label import YEAR_IN_TRADING_DAYS
+from poptimizer import config
+from poptimizer.ml.feature import mom1m
 
 
 @pytest.fixture(scope="module", name="feat")
-def test_mom12m_feature():
-    # noinspection PyTypeChecker
-    return mom12m.Mom12m(("VSMO", "BANEP", "ENRU"), pd.Timestamp("2018-12-07"))
+def test_mom1m_feature():
+    return mom1m.Mom1m(("GCHE", "LSRG", "PMSBP"), pd.Timestamp("2019-01-25"))
 
 
 def test_is_categorical(feat):
@@ -24,14 +24,14 @@ def test_get_params_space(feat):
 
 
 def test_check_bounds_middle(feat, capsys):
-    lower, upper = mom12m.Mom12m.RANGE
+    lower, upper = config.MOM1M_RANGE
     feat.check_bounds(days=(lower + upper) / 2)
     captured = capsys.readouterr()
     assert captured.out == ""
 
 
 def test_check_bounds_lower(feat, capsys):
-    lower, upper = mom12m.Mom12m.RANGE
+    lower, upper = config.MOM1M_RANGE
     feat.check_bounds(days=int(lower * 1.05))
     captured = capsys.readouterr()
     assert "Необходимо расширить" in captured.out
@@ -39,7 +39,7 @@ def test_check_bounds_lower(feat, capsys):
 
 
 def test_check_bounds_upper(feat, capsys):
-    lower, upper = mom12m.Mom12m.RANGE
+    lower, upper = config.MOM1M_RANGE
     feat.check_bounds(days=int(upper / 1.05))
     captured = capsys.readouterr()
     assert "Необходимо расширить" in captured.out
@@ -47,14 +47,14 @@ def test_check_bounds_upper(feat, capsys):
 
 
 def test_get(feat):
-    df = feat.get(pd.Timestamp("2018-10-15"), days=53)
+    df = feat.get(pd.Timestamp("2018-12-25"), days=7)
     assert isinstance(df, pd.Series)
-    assert df.name == "Mom12m"
+    assert df.name == "Mom1m"
     assert df.size == 3
-    assert df["VSMO"] == pytest.approx(-0.010316797368955 / YEAR_IN_TRADING_DAYS)
+    assert df["GCHE"] == pytest.approx(0.0)
 
-    df = feat.get(pd.Timestamp("2018-10-29"), days=53)
-    assert df["BANEP"] == pytest.approx(0.413477629952859 / YEAR_IN_TRADING_DAYS)
+    df = feat.get(pd.Timestamp("2018-12-25"), days=7)
+    assert df["LSRG"] == pytest.approx(np.log(598.4 / 636.4) / 7)
 
-    df = feat.get(pd.Timestamp("2018-10-02"), days=53)
-    assert df["ENRU"] == pytest.approx(-0.150704229512325 / YEAR_IN_TRADING_DAYS)
+    df = feat.get(pd.Timestamp("2018-12-25"), days=7)
+    assert df["PMSBP"] == pytest.approx(np.log(72.7 / 73.4) / 7)
