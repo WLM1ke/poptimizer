@@ -1,7 +1,8 @@
 """Основные настраиваемые параметры"""
 import logging
-import pandas as pd
 import pathlib
+
+import pandas as pd
 
 
 class POptimizerError(Exception):
@@ -46,19 +47,19 @@ MOM1M_RANGE = [16, 21]
 ML_PARAMS = (
     (
         (True, {"days": 62}),
-        (True, {"days": 157}),
-        (True, {}),
-        (True, {"days": 375}),
-        (True, {"days": 362}),
-        (True, {"days": 19}),
+        (True, {"days": 224}),
+        (False, {}),
+        (True, {"days": 354}),
+        (True, {"days": 338}),
+        (False, {"days": 17}),
     ),
     {
-        "bagging_temperature": 0.7273263327047061,
-        "depth": 7,
-        "l2_leaf_reg": 0.8206118720234131,
-        "learning_rate": 0.0519251093560293,
+        "bagging_temperature": 1.0507261727126722,
+        "depth": 1,
+        "l2_leaf_reg": 3.003154246930572,
+        "learning_rate": 0.07465451244262414,
         "one_hot_max_size": 100,
-        "random_strength": 0.8424283529004852,
-        "ignored_features": [],
+        "random_strength": 1.0831540755123423,
+        "ignored_features": [1, 4],
     },
 )

@@ -53,8 +53,7 @@ def test_get_model_space():
 
     assert isinstance(space["depth"], Apply)
     assert "switch" in str(space["depth"])
-    assert f"{{{cv.DEPTH[0]}}}" in str(space["depth"])
-    assert f"{{{cv.DEPTH[1] - 1}}}" in str(space["depth"])
+    assert f"{{{cv.MAX_DEPTH}}}" in str(space["depth"])
 
     assert isinstance(space["l2_leaf_reg"], Apply)
     assert "loguniform" in str(space["l2_leaf_reg"])
@@ -94,7 +93,7 @@ def test_check_model_bounds_middle(capsys):
         l2_leaf_reg=sum(cv.L2_LEAF_REG) / 2,
         random_strength=sum(cv.RANDOM_STRENGTH) / 2,
         bagging_temperature=sum(cv.BAGGING_TEMPERATURE) / 2,
-        depth=int(sum(cv.DEPTH) / 2),
+        depth=int(cv.MAX_DEPTH / 2),
     )
     cv.check_model_bounds(params)
     captured = capsys.readouterr()
@@ -107,7 +106,7 @@ def test_check_model_bounds_lower(capsys):
         l2_leaf_reg=min(cv.L2_LEAF_REG) * 1.05,
         random_strength=min(cv.RANDOM_STRENGTH) * 1.05,
         bagging_temperature=min(cv.BAGGING_TEMPERATURE) * 1.05,
-        depth=min(cv.DEPTH),
+        depth=0,
     )
     cv.check_model_bounds(params)
     captured = capsys.readouterr()
@@ -115,10 +114,6 @@ def test_check_model_bounds_lower(capsys):
     assert "l2_leaf_reg" in captured.out
     assert "random_strength" in captured.out
     assert "bagging_temperature" in captured.out
-
-    assert "DEPTH" in captured.out
-    assert str(min(cv.DEPTH) - 1) in captured.out
-    assert str(max(cv.DEPTH) - 1) in captured.out
 
 
 def test_check_model_bounds_upper(capsys):
@@ -127,7 +122,7 @@ def test_check_model_bounds_upper(capsys):
         l2_leaf_reg=max(cv.L2_LEAF_REG) / 1.05,
         random_strength=max(cv.RANDOM_STRENGTH) / 1.05,
         bagging_temperature=max(cv.BAGGING_TEMPERATURE) / 1.05,
-        depth=max(cv.DEPTH) - 1,
+        depth=cv.MAX_DEPTH,
     )
     cv.check_model_bounds(params)
     captured = capsys.readouterr()
@@ -136,9 +131,8 @@ def test_check_model_bounds_upper(capsys):
     assert "random_strength" in captured.out
     assert "bagging_temperature" in captured.out
 
-    assert "DEPTH" in captured.out
-    assert str(min(cv.DEPTH)) in captured.out
-    assert str(max(cv.DEPTH)) in captured.out
+    assert "MAX_DEPTH" in captured.out
+    assert str(cv.MAX_DEPTH + 1) in captured.out
 
 
 def test_make_model_params():

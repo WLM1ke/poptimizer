@@ -1,6 +1,7 @@
 """Кросс-валидация и оптимизация гиперпараметров ML-модели."""
-import catboost
 import functools
+
+import catboost
 import hyperopt
 import numpy as np
 from catboost import CatboostError
@@ -35,8 +36,7 @@ ONE_HOT_SIZE = [2, 100]
 LEARNING_RATE = [4.5e-02, 0.10]
 
 # Диапазон поиска глубины деревьев
-DEPTH = [1, 8]
-DEPTH[1] += 1
+MAX_DEPTH = 8
 
 # Диапазон поиска параметра L2-регуляризации
 L2_LEAF_REG = [6.8e-01, 4.0]
@@ -60,7 +60,7 @@ def get_model_space():
     space = {
         "one_hot_max_size": hp.choice("one_hot_max_size", ONE_HOT_SIZE),
         "learning_rate": log_space("learning_rate", LEARNING_RATE),
-        "depth": hp.choice("depth", list(range(*DEPTH))),
+        "depth": hp.choice("depth", list(range(1, MAX_DEPTH + 1))),
         "l2_leaf_reg": log_space("l2_leaf_reg", L2_LEAF_REG),
         "random_strength": log_space("rand_strength", RANDOM_STRENGTH),
         "bagging_temperature": log_space("bagging_temperature", BAGGING_TEMPERATURE),
@@ -97,10 +97,8 @@ def check_model_bounds(params: dict, bound: float = 0.1, increase: float = 0.2):
         value = params[name]
         float_bounds_check(name, value, interval, bound, increase)
 
-    if params["depth"] == DEPTH[0]:
-        print(f"\nНеобходимо расширить DEPTH до [{DEPTH[0] - 1}, {DEPTH[1] - 1}]")
-    if params["depth"] == DEPTH[1] - 1:
-        print(f"\nНеобходимо расширить DEPTH до [{DEPTH[0]}, {DEPTH[1]}]")
+    if params["depth"] == MAX_DEPTH:
+        print(f"\nНеобходимо увеличить MAX_DEPTH до {MAX_DEPTH + 1}")
 
 
 def make_model_params(data_params, model_params):

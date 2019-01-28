@@ -104,6 +104,7 @@ class Conomy(AbstractManager):
         df = table.make_df(columns, HEADER_SIZE)
         df.dropna(inplace=True)
         df.columns = [DATE, name]
+        df = df.groupby(DATE, as_index=False).sum()
         df.set_index(DATE, inplace=True)
         df.sort_index(inplace=True)
         return df[name]
