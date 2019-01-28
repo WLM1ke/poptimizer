@@ -5,7 +5,12 @@ from poptimizer.config import POptimizerError
 from poptimizer.store import client
 from poptimizer.store.cpi import CPI, NAME_CPI
 
-CHECK_POINTS = [("1991-01-31", 1.0620), ("2018-01-31", 1.0031), ("2018-11-30", 1.005)]
+CHECK_POINTS = [
+    ("1991-01-31", 1.0620),
+    ("2018-01-31", 1.0031),
+    ("2018-11-30", 1.005),
+    ("2018-12-31", 1.0084),
+]
 
 
 @pytest.fixture(autouse=True)
