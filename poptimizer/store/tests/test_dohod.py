@@ -28,9 +28,10 @@ async def test_dohod():
 async def test_dohod2():
     df = await dohod.Dohod(("GAZP",)).get()
     assert isinstance(df, pd.Series)
-    assert len(df) >= 17
-    assert df["2003-02-21"] == 0.4
+    assert len(df) >= 16
+    assert df["2004-05-07"] == 0.69
     assert df["2017-07-20"] == 8.04
+    assert df["2008-05-08"] == 2.66
 
 
 @pytest.mark.asyncio
