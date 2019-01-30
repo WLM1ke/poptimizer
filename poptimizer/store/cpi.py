@@ -30,7 +30,7 @@ class CPI(AbstractManager):
         self._validate(df)
         df = df.transpose().stack()
         first_year = df.index[0][0]
-        df.index = pd.DatetimeIndex(
+        df.index = pd.date_range(
             name=DATE,
             freq="M",
             start=pd.Timestamp(year=first_year, month=1, day=31),

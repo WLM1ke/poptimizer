@@ -1,7 +1,7 @@
 """Набор обучающих примеров."""
-import pandas as pd
-from hyperopt import hp
 from typing import Tuple
+
+import pandas as pd
 
 from poptimizer.config import POptimizerError
 from poptimizer.ml import feature
@@ -55,7 +55,9 @@ class Examples:
         label = next(it)
         space = [(True, label.get_params_space())]
         for feat in it:
-            space.append([hp.choice(feat.name, ON_OFF), feat.get_params_space()])
+            space.append(
+                [True, feat.get_params_space()]
+            )  # hp.choice(feat.name, ON_OFF)
         return space
 
     def check_bounds(self, params: tuple):
