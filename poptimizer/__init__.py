@@ -9,4 +9,4 @@ from poptimizer.ml import (
 from poptimizer.portfolio import *
 from poptimizer.reports import income, report
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
