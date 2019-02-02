@@ -16,5 +16,6 @@ poptimizer
    :maxdepth: 3
 
    getting_started
+   struct
    api
    change_log
