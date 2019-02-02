@@ -26,7 +26,7 @@ async def test_smart_lab():
 
 @pytest.mark.asyncio
 async def test_smart_lab_raise(monkeypatch):
-    monkeypatch.setattr(smart_lab, "URL", "https://smart-lab.ru/dividends1")
+    monkeypatch.setattr(smart_lab, "URL", "https://smart-lab.ru/dividends12")
     with pytest.raises(POptimizerError) as error:
         await smart_lab.SmartLab().get()
-    assert str(error.value) == "Данные https://smart-lab.ru/dividends1 не загружены"
+    assert str(error.value) == "Данные https://smart-lab.ru/dividends12 не загружены"
