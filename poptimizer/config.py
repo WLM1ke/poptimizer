@@ -46,20 +46,20 @@ MOM1M_RANGE = [16, 21]
 
 ML_PARAMS = (
     (
-        (True, {"days": 59}),
-        (True, {"days": 167}),
+        (True, {"days": 62}),
+        (True, {"days": 225}),
         (True, {}),
-        (True, {"days": 415}),
+        (True, {"days": 330}),
         (True, {"days": 396}),
         (True, {"days": 18}),
     ),
     {
-        "bagging_temperature": 0.7143996756987637,
-        "depth": 5,
-        "l2_leaf_reg": 1.1894455903641934,
-        "learning_rate": 0.06818366329711631,
-        "one_hot_max_size": 2,
-        "random_strength": 1.0729380158061215,
+        "bagging_temperature": 0.8401168021849872,
+        "depth": 7,
+        "l2_leaf_reg": 1.433660330544913,
+        "learning_rate": 0.08376204151234184,
+        "one_hot_max_size": 100,
+        "random_strength": 1.0614056607524265,
         "ignored_features": [],
     },
 )
