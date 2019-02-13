@@ -35,31 +35,31 @@ MAX_TRADE = 0.01
 TURNOVER_PERIOD = 21
 
 # Минимальный оборот - преимущества акции снижаются при приближении медианного оборота к данному уровню
-TURNOVER_CUT_OFF = 0.88 * MAX_TRADE
+TURNOVER_CUT_OFF = 1.1 * MAX_TRADE
 
 # Параметры ML-модели
-LABEL_RANGE = [27, 74]
-STD_RANGE = [134, 275]
+LABEL_RANGE = [28, 84]
+STD_RANGE = [115, 274]
 MOM12M_RANGE = [250, 524]
 DIVYIELD_RANGE = [240, 444]
-MOM1M_RANGE = [16, 21]
+MOM1M_RANGE = [13, 21]
 
 ML_PARAMS = (
     (
-        (True, {"days": 62}),
-        (True, {"days": 225}),
+        (True, {"days": 70}),
+        (True, {"days": 138}),
         (True, {}),
-        (True, {"days": 330}),
-        (True, {"days": 396}),
-        (True, {"days": 18}),
+        (True, {"days": 283}),
+        (True, {"days": 268}),
+        (True, {"days": 16}),
     ),
     {
-        "bagging_temperature": 0.8401168021849872,
-        "depth": 7,
-        "l2_leaf_reg": 1.433660330544913,
-        "learning_rate": 0.08376204151234184,
+        "bagging_temperature": 0.8358908717393394,
+        "depth": 3,
+        "l2_leaf_reg": 1.0970465153271944,
+        "learning_rate": 0.09516559094366801,
         "one_hot_max_size": 100,
-        "random_strength": 1.0614056607524265,
+        "random_strength": 0.7279054369802683,
         "ignored_features": [],
     },
 )

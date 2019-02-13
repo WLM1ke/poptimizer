@@ -33,7 +33,7 @@ MAX_SEARCHES = 100
 ONE_HOT_SIZE = [2, 100]
 
 # Диапазон поиска скорости обучения
-LEARNING_RATE = [4.5e-02, 0.10]
+LEARNING_RATE = [4.5e-02, 0.11]
 
 # Диапазон поиска глубины деревьев
 MAX_DEPTH = 8
