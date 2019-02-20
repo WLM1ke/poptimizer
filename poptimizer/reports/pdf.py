@@ -61,6 +61,8 @@ def update_data(
         df.loc[date, investor] = inflow
         total_inflow += inflow
 
+    df.loc[date, "Value"] = value
+
     portfolio_return = (value - total_inflow) / df.loc[last_date, "Value"]
     investors = pdf_upper.get_investors_names(df)
     value_labels = "Value_" + investors
@@ -68,8 +70,6 @@ def update_data(
     df.loc[date, value_labels] = pre_inflow_value.add(
         df.loc[date, investors].values, fill_value=0
     )
-
-    df.loc[date, "Value"] = value
 
     if dividends == 0:
         df.loc[date, "Dividends"] = np.nan

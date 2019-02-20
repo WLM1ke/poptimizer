@@ -55,7 +55,7 @@ def make_header(canvas: Canvas, date):
     canvas.drawString(
         left_margin(),
         bottom_margin() * 1.1 + blank_height(),
-        f"PORTFOLIO REPORT: {date}",
+        f"PORTFOLIO REPORT: {date.date()}",
     )
     canvas.setStrokeColor(PAGE_HEADER_COLOR)
     canvas.line(
