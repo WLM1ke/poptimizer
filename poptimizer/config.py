@@ -35,7 +35,7 @@ MAX_TRADE = 0.01
 TURNOVER_PERIOD = 21
 
 # Минимальный оборот - преимущества акции снижаются при приближении медианного оборота к данному уровню
-TURNOVER_CUT_OFF = 1.5 * MAX_TRADE
+TURNOVER_CUT_OFF = 3.3 * MAX_TRADE
 
 # Параметры ML-модели
 LABEL_RANGE = [30, 114]
@@ -43,6 +43,7 @@ STD_RANGE = [115, 274]
 MOM12M_RANGE = [260, 572]
 DIVYIELD_RANGE = [240, 444]
 MOM1M_RANGE = [11, 20]
+MIN1M_RANGE = [19, 24]
 
 ML_PARAMS = (
     (
@@ -52,6 +53,7 @@ ML_PARAMS = (
         (True, {"days": 477}),
         (True, {"days": 312}),
         (True, {"days": 13}),
+        (False, {"days": 21}),
     ),
     {
         "bagging_temperature": 0.5874582767026979,

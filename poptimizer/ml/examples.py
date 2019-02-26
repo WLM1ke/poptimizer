@@ -19,6 +19,7 @@ class Examples:
         feature.Mom12m,
         feature.DivYield,
         feature.Mom1m,
+        feature.Min1m,
     ]
 
     def __init__(self, tickers: Tuple[str, ...], date: pd.Timestamp):
