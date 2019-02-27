@@ -81,7 +81,7 @@ async def test_index_create():
 @pytest.mark.asyncio
 async def test_index_download_update():
     # noinspection PyProtectedMember
-    df = await moex.Index()._download_update("MCFTRR")
+    df = await moex.Index()._download("MCFTRR")
     assert isinstance(df, pd.Series)
     assert len(df) == 1
     assert df.index[0] >= pd.Timestamp("2018-12-24")
