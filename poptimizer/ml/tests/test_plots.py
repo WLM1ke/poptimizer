@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer import config
-from poptimizer.ml import plots
+from poptimizer.ml import plots, feature, examples
 
 ML_PARAMS = (
     (
@@ -24,6 +24,14 @@ ML_PARAMS = (
         "ignored_features": [1],
     },
 )
+FEATURES = [
+    feature.Label,
+    feature.STD,
+    feature.Ticker,
+    feature.Mom12m,
+    feature.DivYield,
+    feature.Mom1m,
+]
 TICKERS = ("BANEP", "DSKY", "LKOH", "MOEX", "NKNCP")
 DATE = pd.Timestamp("2019-01-03")
 
@@ -43,6 +51,7 @@ def test_learning_curve(monkeypatch):
 
 
 def test_partial_dependence_curve(monkeypatch):
+    monkeypatch.setattr(examples.Examples, "FEATURES", FEATURES)
     monkeypatch.setattr(plots, "QUANTILE", [0.3, 0.7])
     result = plots.partial_dependence_curve(TICKERS, DATE)
     assert len(result) == 4

@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from poptimizer import portfolio, config, optimizer
-from poptimizer.ml import feature
+from poptimizer.ml import feature, examples
 from poptimizer.portfolio import finder
 
 ML_PARAMS = (
@@ -24,6 +24,14 @@ ML_PARAMS = (
         "ignored_features": [],
     },
 )
+FEATURES = [
+    feature.Label,
+    feature.STD,
+    feature.Ticker,
+    feature.Mom12m,
+    feature.DivYield,
+    feature.Mom1m,
+]
 
 
 def test_feature_days(monkeypatch):
@@ -31,6 +39,7 @@ def test_feature_days(monkeypatch):
     assert finder.feature_days(feature.Label) == 21
 
 
+# noinspection PyUnresolvedReferences
 def test_get_turnover(monkeypatch):
     monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0012)
     date = pd.Timestamp("2018-12-18")
@@ -42,6 +51,7 @@ def test_get_turnover(monkeypatch):
     assert df["KZOS"] == pytest.approx(0.986873)
 
 
+# noinspection PyUnresolvedReferences
 def test_find_momentum(monkeypatch):
     monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0022)
     monkeypatch.setattr(finder, "feature_days", lambda x: 252)
@@ -58,6 +68,7 @@ def test_find_momentum(monkeypatch):
     assert df.loc["BANEP", "ADD"] == "ADD"
 
 
+# noinspection PyUnresolvedReferences
 def test_find_dividends(monkeypatch):
     monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0022)
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
@@ -73,6 +84,7 @@ def test_find_dividends(monkeypatch):
     assert df.loc["MTLRP", "ADD"] == "ADD"
 
 
+# noinspection PyUnresolvedReferences
 def test_find_zero_turnover_and_weight():
     date = pd.Timestamp("2018-12-18")
     positions = dict(KAZT=1, KAZTP=0, CHMF=20000, TATN=20000, KZOS=20000, LKOH=20000)
@@ -82,7 +94,9 @@ def test_find_zero_turnover_and_weight():
     assert "KAZTP" in tickers
 
 
+# noinspection PyUnresolvedReferences
 def test_find_low_gradient(monkeypatch):
+    monkeypatch.setattr(examples.Examples, "FEATURES", FEATURES)
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     date = pd.Timestamp("2018-12-19")
     positions = dict(
@@ -106,6 +120,7 @@ def test_find_low_gradient(monkeypatch):
 
 
 def test_add_tickers(capsys):
+    # noinspection PyUnresolvedReferences
     date = pd.Timestamp("2018-12-19")
     positions = dict(KAZT=1, KAZTP=0, CHMF=20000, TATN=20000, KZOS=20000, LKOH=20000)
     port = portfolio.Portfolio(date, 0, positions)
@@ -116,6 +131,7 @@ def test_add_tickers(capsys):
 
 
 def test_remove_tickers(capsys):
+    # noinspection PyUnresolvedReferences
     date = pd.Timestamp("2018-12-19")
     positions = dict(KAZT=1, KAZTP=0, CHMF=20000, TATN=20000, KZOS=20000, LKOH=20000)
     port = portfolio.Portfolio(date, 0, positions)

@@ -4,13 +4,23 @@ import pytest
 from hyperopt.pyll import Apply
 
 from poptimizer.config import AFTER_TAX, POptimizerError
-from poptimizer.ml import examples
+from poptimizer.ml import examples, feature
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 
+FEATURES = [
+    feature.Label,
+    feature.STD,
+    feature.Ticker,
+    feature.Mom12m,
+    feature.DivYield,
+    feature.Mom1m,
+]
 
-@pytest.fixture(scope="module", name="example")
-def create_examples():
-    # noinspection PyTypeChecker
+
+# noinspection PyUnresolvedReferences
+@pytest.fixture(name="example")
+def create_examples(monkeypatch):
+    monkeypatch.setattr(examples.Examples, "FEATURES", FEATURES)
     yield examples.Examples(("AKRN", "CHMF", "BANEP"), pd.Timestamp("2018-12-13"))
 
 

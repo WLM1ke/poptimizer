@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 
 from poptimizer import portfolio, config
+from poptimizer.ml import feature, examples
 from poptimizer.portfolio import optimizer
 
 ML_PARAMS = (
@@ -24,11 +25,22 @@ ML_PARAMS = (
     },
 )
 
+FEATURES = [
+    feature.Label,
+    feature.STD,
+    feature.Ticker,
+    feature.Mom12m,
+    feature.DivYield,
+    feature.Mom1m,
+]
+
 
 @pytest.fixture(name="opt")
 def make_optimizer(monkeypatch):
+    monkeypatch.setattr(examples.Examples, "FEATURES", FEATURES)
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0016)
+    # noinspection PyUnresolvedReferences
     date = pd.Timestamp("2018-12-17")
     positions = dict(
         KZOS=800, MGNT=0, PIKK=800, MSTT=0, MTLRP=0, GMKN=21, CBOM=0, SNGSP=13000

@@ -2,6 +2,7 @@
 from typing import Tuple
 
 import pandas as pd
+from hyperopt import hp
 
 from poptimizer.config import POptimizerError
 from poptimizer.ml import feature
@@ -57,7 +58,7 @@ class Examples:
         space = [(True, label.get_params_space())]
         for feat in it:
             space.append(
-                [True, feat.get_params_space()]
+                [hp.choice(feat.name, ON_OFF), feat.get_params_space()]
             )  # hp.choice(feat.name, ON_OFF)
         return space
 
