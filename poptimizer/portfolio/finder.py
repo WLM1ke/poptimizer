@@ -110,10 +110,10 @@ def find_low_gradient(opt: optimizer.Optimizer):
     )
 
 
-def add_tickers(current_port: Portfolio):
+def add_tickers(current_port: Portfolio, part: float = 0.1):
     """Претенденты для добавления."""
-    momentum = find_momentum(current_port)
-    dividends = find_dividends(current_port)
+    momentum = find_momentum(current_port, part)
+    dividends = find_dividends(current_port, part)
     print(
         f"\nМОМЕНТУМ ТИКЕРЫ"
         f"\n"
