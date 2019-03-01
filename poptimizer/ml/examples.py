@@ -2,7 +2,6 @@
 from typing import Tuple
 
 import pandas as pd
-from hyperopt import hp
 
 from poptimizer.config import POptimizerError
 from poptimizer.ml import feature
@@ -58,7 +57,7 @@ class Examples:
         space = [(True, label.get_params_space())]
         for feat in it:
             space.append(
-                [hp.choice(feat.name, ON_OFF), feat.get_params_space()]
+                [True, feat.get_params_space()]
             )  # hp.choice(feat.name, ON_OFF)
         return space
 
@@ -86,7 +85,8 @@ class Examples:
             feat.get(date, **value) for feat, (_, value) in zip(self._features, params)
         ]
         data[0] /= data[1]
-        return pd.concat(data, axis=1)
+        df = pd.concat(data, axis=1)
+        return df[df.iloc[:, 1] != 0]
 
     @staticmethod
     def mean_std_days(params):

@@ -75,7 +75,11 @@ class DaysParamsMixin:
     @classmethod
     def get_params_space(cls) -> dict:
         """Значение дней в диапазоне."""
-        return {"days": hp.choice(f"{cls.__name__}_DAYS", list(range(*cls.RANGE)))}
+        return {
+            "days": hp.choice(
+                f"{cls.__name__}_DAYS", list(range(cls.RANGE[0], cls.RANGE[1] + 1))
+            )
+        }
 
     def check_bounds(self, **kwargs):
         """Рекомендация по расширению интервала."""

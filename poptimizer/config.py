@@ -38,30 +38,30 @@ TURNOVER_PERIOD = 21
 TURNOVER_CUT_OFF = 4.8 * MAX_TRADE
 
 # Параметры ML-модели
-LABEL_RANGE = [30, 114]
-STD_RANGE = [30, 114]
-MOM12M_RANGE = [260, 572]
-DIVYIELD_RANGE = [250, 514]
-MOM1M_RANGE = [10, 20]
-MIN1M_RANGE = [16, 25]
+LABEL_RANGE = [21, 23]
+STD_RANGE = [19, 21]
+MOM12M_RANGE = [250, 252]
+DIVYIELD_RANGE = [252, 254]
+MOM1M_RANGE = [20, 22]
+MIN1M_RANGE = [21, 23]
 
 ML_PARAMS = (
     (
-        (True, {"days": 63}),
-        (True, {"days": 35}),
+        (True, {"days": 22}),
+        (True, {"days": 20}),
         (True, {}),
-        (True, {"days": 355}),
-        (True, {"days": 317}),
-        (False, {"days": 14}),
+        (True, {"days": 251}),
+        (True, {"days": 253}),
         (True, {"days": 21}),
+        (True, {"days": 22}),
     ),
     {
-        "bagging_temperature": 0.8838142096540308,
-        "depth": 9,
-        "l2_leaf_reg": 2.004507284599178,
-        "learning_rate": 0.07549295345285609,
-        "one_hot_max_size": 2,
-        "random_strength": 1.3947327436006047,
-        "ignored_features": [0, 2, 3],
+        "bagging_temperature": 1.041367726420619,
+        "depth": 5,
+        "l2_leaf_reg": 2.7644967782584273,
+        "learning_rate": 0.060435197338608936,
+        "one_hot_max_size": 100,
+        "random_strength": 1.3760922496758141,
+        "ignored_features": [],
     },
 )
