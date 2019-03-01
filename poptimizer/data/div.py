@@ -12,7 +12,7 @@ from poptimizer.config import AFTER_TAX
 from poptimizer.data import moex
 from poptimizer.store import DATE
 
-__all__ = ["log_total_returns", "dividends"]
+__all__ = ["log_total_returns", "dividends", "div_ex_date_prices"]
 
 
 async def _dividends(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
@@ -77,6 +77,20 @@ def t2_shift(date: pd.Timestamp, index: pd.DatetimeIndex):
     return next_b_day - 2 * offsets.BDay()
 
 
+def div_ex_date_prices(tickers: tuple, last_date: pd.Timestamp):
+    """Дивиденды на с привязкой к эксдивидендной дате и цены.
+
+    Дивиденды на эксдивидендную дату нужны для корректного расчета доходности. Также для многих
+    расчетов удобна привязка к торговым дням, а отсечки часто приходятся на выходные.
+    """
+    price = moex.prices(tickers, last_date)
+    div = dividends_all(tickers)
+    div.index = div.index.map(functools.partial(t2_shift, index=price.index))
+    # Может образоваться несколько дат, если часть дивидендов приходится на выходные
+    div = div.groupby(by=DATE).sum()
+    return div.reindex(index=price.index, fill_value=0), price
+
+
 def log_total_returns(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
     """Логарифмы дневных доходностей с учетом посленалоговых дивидендов.
 
@@ -87,12 +101,7 @@ def log_total_returns(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
     :return:
         Логарифмы полных дневных доходностей.
     """
-    p1 = moex.prices(tickers, last_date)
+    div, p1 = div_ex_date_prices(tickers, last_date)
     p0 = p1.shift(1)
-    div = dividends_all(tickers)
-    div.index = div.index.map(functools.partial(t2_shift, index=p1.index))
-    # Может образоваться несколько дат, если часть дивидендов приходится на выходные
-    div = div.groupby(by=DATE).sum()
-    div = div.loc[:last_date]
-    returns = p1.add(div, fill_value=0) / p0
+    returns = (p1 + div) / p0
     return returns.iloc[1:].apply(np.log)
