@@ -7,7 +7,7 @@ from poptimizer import data
 from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsMixin
 
 
-class MaxRet(DaysParamsMixin, AbstractFeature):
+class RetMax(DaysParamsMixin, AbstractFeature):
     """Maximum daily return - максимальная доходность примерно за 1 предыдущий месяц.
 
     Акции демонстрирующие резкий рост за последнее время похожи на лотерейные билеты - привлекают
@@ -16,7 +16,7 @@ class MaxRet(DaysParamsMixin, AbstractFeature):
     """
 
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp, params: dict):
-        super().__init__(tickers, last_date)
+        super().__init__(tickers, last_date, params)
         self._returns = data.log_total_returns(tickers, last_date)
 
     def get(self, params=None) -> pd.Series:
