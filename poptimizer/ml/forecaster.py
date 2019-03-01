@@ -7,18 +7,18 @@ import pandas as pd
 
 from poptimizer import data, config
 from poptimizer.config import POptimizerError
-from poptimizer.ml import examples, ledoit_wolf, cv
+from poptimizer.ml import examples_old, ledoit_wolf, cv
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 from poptimizer.portfolio.metrics import Forecast
 
 
-def cv_results(cases: examples.Examples, params):
+def cv_results(cases: examples_old.Examples, params):
     """Получает необходимые результаты кросс-валидации."""
     result = cv.cv_model(params, cases)
     return result["std"], result["r2"], result["params"]
 
 
-def fit_clf(cv_params: tuple, cases: examples.Examples):
+def fit_clf(cv_params: tuple, cases: examples_old.Examples):
     """Тренирует ML-модель на основе параметров с учетом количества итераций."""
     data_params, model_params = cv_params
     learn_pool_params = cases.learn_pool_params(data_params)
@@ -28,7 +28,7 @@ def fit_clf(cv_params: tuple, cases: examples.Examples):
     return clf, learn_pool.num_row()
 
 
-def predict_mean(clf, cases: examples.Examples, cv_params):
+def predict_mean(clf, cases: examples_old.Examples, cv_params):
     """Прогноз ожидаемой доходности."""
     predict_pool_params = cases.predict_pool_params(cv_params[0])
     predict_pool = catboost.Pool(**predict_pool_params)
@@ -37,7 +37,7 @@ def predict_mean(clf, cases: examples.Examples, cv_params):
     return raw_prediction * scaler.values
 
 
-def validate_cov(cov, cases: examples.Examples, cv_params):
+def validate_cov(cov, cases: examples_old.Examples, cv_params):
     """Проверяет совпадение ковариации с использовавшейся для нормирования."""
     predict_pool_params = cases.predict_pool_params(cv_params[0])
     scaler = predict_pool_params["data"].iloc[:, 0]
@@ -47,7 +47,7 @@ def validate_cov(cov, cases: examples.Examples, cv_params):
         )
 
 
-def ledoit_wolf_cov(cases: examples.Examples, cv_params, tickers, date, ml_std):
+def ledoit_wolf_cov(cases: examples_old.Examples, cv_params, tickers, date, ml_std):
     """Ковариационная матрица на основе Ledoit Wolf и вспомогательные данные.
 
     Оригинальная матрица корректируется в сторону не смещенной оценки на малой выборке и точность
@@ -78,7 +78,7 @@ def make_forecast(
         Прогнозная доходность, ковариация и дополнительная информация.
     """
     params = params or config.ML_PARAMS
-    cases = examples.Examples(tickers, date)
+    cases = examples_old.Examples(tickers, date)
     ml_std, r2, cv_params = cv_results(cases, params)
     clf, num_cases = fit_clf(cv_params, cases)
     feature_importance = pd.Series(

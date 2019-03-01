@@ -4,7 +4,7 @@ import pytest
 from hyperopt.pyll import Apply
 
 from poptimizer.config import AFTER_TAX, POptimizerError
-from poptimizer.ml import examples, feature
+from poptimizer.ml import examples_old, feature
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 
 FEATURES = [
@@ -20,8 +20,8 @@ FEATURES = [
 # noinspection PyUnresolvedReferences
 @pytest.fixture(name="example")
 def create_examples(monkeypatch):
-    monkeypatch.setattr(examples.Examples, "FEATURES", FEATURES)
-    yield examples.Examples(("AKRN", "CHMF", "BANEP"), pd.Timestamp("2018-12-13"))
+    monkeypatch.setattr(examples_old.Examples, "FEATURES", FEATURES)
+    yield examples_old.Examples(("AKRN", "CHMF", "BANEP"), pd.Timestamp("2018-12-13"))
 
 
 def test_get_features_names(example):
@@ -142,7 +142,7 @@ def test_learn_pool(example):
 
 
 def test_learn_pool_bad_date():
-    cases = examples.Examples(("AKRN", "CHMF", "BANEP"), pd.Timestamp("2019-01-13"))
+    cases = examples_old.Examples(("AKRN", "CHMF", "BANEP"), pd.Timestamp("2019-01-13"))
     params = (
         (True, {"days": 4}),
         (True, {"days": 5}),

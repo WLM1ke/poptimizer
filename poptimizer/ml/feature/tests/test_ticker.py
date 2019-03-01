@@ -1,11 +1,11 @@
 import pandas as pd
 
-from poptimizer.ml.feature import ticker
+from poptimizer.ml.feature import ticker_old
 
 
 def test_ticker():
     # noinspection PyTypeChecker
-    feature = ticker.Ticker(("UPRO", "GMKN", "MSTT"), pd.Timestamp("2018-12-11"))
+    feature = ticker_old.Ticker(("UPRO", "GMKN", "MSTT"), pd.Timestamp("2018-12-11"))
 
     assert feature.is_categorical()
     assert feature.get_params_space() == dict()

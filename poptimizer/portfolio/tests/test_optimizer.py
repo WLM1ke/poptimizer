@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from poptimizer import portfolio, config
-from poptimizer.ml import feature, examples
+from poptimizer.ml import feature, examples_old
 from poptimizer.portfolio import optimizer
 
 ML_PARAMS = (
@@ -37,7 +37,7 @@ FEATURES = [
 
 @pytest.fixture(name="opt")
 def make_optimizer(monkeypatch):
-    monkeypatch.setattr(examples.Examples, "FEATURES", FEATURES)
+    monkeypatch.setattr(examples_old.Examples, "FEATURES", FEATURES)
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0016)
     # noinspection PyUnresolvedReferences

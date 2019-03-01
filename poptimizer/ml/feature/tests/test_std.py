@@ -2,14 +2,14 @@ import pandas as pd
 import pytest
 from hyperopt.pyll import Apply
 
-from poptimizer.ml.feature import std
-from poptimizer.ml.feature.label import YEAR_IN_TRADING_DAYS
+from poptimizer.ml.feature import std_old
+from poptimizer.ml.feature.label_old import YEAR_IN_TRADING_DAYS
 
 
 @pytest.fixture(scope="module", name="feat")
 def test_std_feature():
     # noinspection PyTypeChecker
-    return std.STD(("PIKK", "RTKMP", "TATNP"), pd.Timestamp("2018-12-10"))
+    return std_old.STD(("PIKK", "RTKMP", "TATNP"), pd.Timestamp("2018-12-10"))
 
 
 def test_is_categorical(feat):
@@ -24,14 +24,14 @@ def test_get_params_space(feat):
 
 
 def test_check_bounds_middle(feat, capsys):
-    lower, upper = std.STD.RANGE
+    lower, upper = std_old.STD.RANGE
     feat.check_bounds(days=(lower + upper) / 2)
     captured = capsys.readouterr()
     assert captured.out == ""
 
 
 def test_check_bounds_lower(feat, capsys):
-    lower, upper = std.STD.RANGE
+    lower, upper = std_old.STD.RANGE
     feat.check_bounds(days=int(lower * 1.05))
     captured = capsys.readouterr()
     assert "Необходимо расширить" in captured.out
@@ -39,7 +39,7 @@ def test_check_bounds_lower(feat, capsys):
 
 
 def test_check_bounds_upper(feat, capsys):
-    lower, upper = std.STD.RANGE
+    lower, upper = std_old.STD.RANGE
     feat.check_bounds(days=int(upper / 1.05))
     captured = capsys.readouterr()
     assert "Необходимо расширить" in captured.out

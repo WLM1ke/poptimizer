@@ -2,13 +2,13 @@ import pandas as pd
 import pytest
 from hyperopt.pyll import Apply
 
-from poptimizer.ml.feature import label, YEAR_IN_TRADING_DAYS
+from poptimizer.ml.feature import label_old, YEAR_IN_TRADING_DAYS
 
 
 @pytest.fixture(scope="module", name="feat")
 def make_feature():
     # noinspection PyTypeChecker
-    return label.Label(("AKRN", "SNGSP", "MSTT"), pd.Timestamp("2018-12-11"))
+    return label_old.Label(("AKRN", "SNGSP", "MSTT"), pd.Timestamp("2018-12-11"))
 
 
 def test_is_categorical(feat):

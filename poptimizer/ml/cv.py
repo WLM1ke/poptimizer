@@ -9,7 +9,7 @@ from hyperopt import hp
 
 from poptimizer import config, portfolio
 from poptimizer.config import POptimizerError
-from poptimizer.ml.examples import Examples
+from poptimizer.ml.examples_old import Examples
 
 # Базовые настройки catboost
 MAX_ITERATIONS = 300

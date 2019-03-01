@@ -1,14 +1,14 @@
-"""Признак - дивиденды за последний год."""
+"""Признак - дивиденды за последние периоды."""
 from typing import Tuple
 
 import pandas as pd
 
 from poptimizer import data
-from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsMixin
+from poptimizer.config import DIVYIELD_RANGE
+from poptimizer.ml.feature.feature_old import AbstractFeature, DaysParamsMixin
 from poptimizer.store import DIVIDENDS_START
 
 
-# noinspection PyUnresolvedReferences
 class DivYield(DaysParamsMixin, AbstractFeature):
     """Dividend to price - дивидендная доходность примерно за 12 предыдущих месяцев.
 
@@ -25,14 +25,23 @@ class DivYield(DaysParamsMixin, AbstractFeature):
     расчета дивидендов выбирается во время поиска гиперпараметров.
     """
 
-    def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp, params: dict):
-        super().__init__(tickers, last_date, params)
-        self._dividends, self._prices = data.div_ex_date_prices(tickers, last_date)
+    RANGE = DIVYIELD_RANGE
 
-    def get(self, params=None) -> pd.Series:
+    def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
+        super().__init__(tickers, last_date)
+        self._dividends = data.dividends(tickers, last_date)
+        self._prices = data.prices(tickers, last_date)
+
+    def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
         """Дивидендная доходность за несколько предыдущих дней."""
-        params = params or self._params
-        days = params["days"]
-        div = self._dividends.rolling(days).sum().loc[DIVIDENDS_START:].iloc[days:]
-        div = div / self._prices
-        return div.stack()
+        prices = self._prices
+        loc = prices.index.get_loc(date)
+        days = kwargs["days"]
+        start = prices.index[loc - days + 1]
+        if start >= DIVIDENDS_START:
+            last_prices = prices.loc[date]
+            dividends = self._dividends.loc[start:date].sum(axis=0)
+            yields = dividends / last_prices
+            yields.name = self.name
+            return yields
+        return pd.Series(index=list(self._tickers), name=self.name)

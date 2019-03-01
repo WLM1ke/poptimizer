@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from poptimizer import portfolio, config, optimizer
-from poptimizer.ml import feature, examples
+from poptimizer.ml import feature, examples_old
 from poptimizer.portfolio import finder
 
 ML_PARAMS = (
@@ -96,7 +96,7 @@ def test_find_zero_turnover_and_weight():
 
 # noinspection PyUnresolvedReferences
 def test_find_low_gradient(monkeypatch):
-    monkeypatch.setattr(examples.Examples, "FEATURES", FEATURES)
+    monkeypatch.setattr(examples_old.Examples, "FEATURES", FEATURES)
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     date = pd.Timestamp("2018-12-19")
     positions = dict(

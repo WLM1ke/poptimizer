@@ -8,49 +8,31 @@ from poptimizer.ml import feature
 
 ON_OFF = [True, False]
 
-ML_PARAMS = (
-    (
-        (feature.Label, {"days": 22}),
-        (feature.STD, {"on_off": True, "days": 20}),
-        (feature.Ticker, {"on_off": True}),
-        (feature.Mom12m, {"on_off": True, "days": 251}),
-        (feature.DivYield, {"on_off": True, "days": 253}),
-        (feature.Mom1m, {"on_off": True, "days": 21}),
-        (feature.Min1m, {"on_off": True, "days": 22}),
-    ),
-    {
-        "bagging_temperature": 1.041_367_726_420_619,
-        "depth": 5,
-        "l2_leaf_reg": 2.764_496_778_258_427_3,
-        "learning_rate": 0.060_435_197_338_608_936,
-        "one_hot_max_size": 100,
-        "random_strength": 1.376_092_249_675_814_1,
-        "ignored_features": [],
-    },
-)
-
 
 class Examples:
-    """Позволяет сформировать набор обучающих примеров и меток к ним.
+    """Позволяет сформировать набор обучающих примеров и меток к ним."""
 
-    Разбить данные на обучающую и валидирующую выборку или получить полный набор данных.
-    """
+    FEATURES = [
+        feature.Label,
+        feature.STD,
+        feature.Ticker,
+        feature.Mom12m,
+        feature.DivYield,
+        feature.Mom1m,
+        feature.Min1m,
+    ]
 
-    def __init__(self, tickers: Tuple[str, ...], date: pd.Timestamp, params: tuple):
+    def __init__(self, tickers: Tuple[str, ...], date: pd.Timestamp):
         """Обучающие примеры состоят из признаков на основе данных для тикеров до указанной даты.
 
         :param tickers:
             Тикеры, для которых нужно составить обучающие примеры.
         :param date:
             Последняя дата, до которой можно использовать данные.
-        :param params:
-            Параметры ML-модели.
         """
         self._tickers = tickers
         self._date = date
-        self._features = [
-            cls(tickers, date, feat_params) for cls, feat_params in params[0]
-        ]
+        self._features = [cls(tickers, date) for cls in self.FEATURES]
 
     def get_features_names(self):
         """Название признаков."""
@@ -79,7 +61,21 @@ class Examples:
             )  # hp.choice(feat.name, ON_OFF)
         return space
 
-    def get(self, date: pd.Timestamp, params=None):
+    def check_bounds(self, params: tuple):
+        """Осуществляет проверку близости параметров к границам вероятностного пространства.
+
+        Проверка осуществляется меток, СКО и только для используемых признаков.
+        """
+        it = iter(zip(self._features, params))
+        label, (_, value) = next(it)
+        label.check_bounds(**value)
+        std, (_, value) = next(it)
+        std.check_bounds(**value)
+        for feat, (on_off, value) in it:
+            if on_off:
+                feat.check_bounds(**value)
+
+    def get(self, date: pd.Timestamp, params):
         """Получить обучающие примеры для одной даты.
 
         Значение признаков создается в том числе для не используемых признаков.

@@ -3,12 +3,12 @@ import pytest
 from hyperopt.pyll import Apply
 
 from poptimizer import config
-from poptimizer.ml.feature import min1m
+from poptimizer.ml.feature import min1m_old
 
 
 @pytest.fixture(scope="module", name="feat")
 def test_mim1m_feature():
-    return min1m.Min1m(("MRKY", "PRTK", "UPRO"), pd.Timestamp("2019-02-25"))
+    return min1m_old.Min1m(("MRKY", "PRTK", "UPRO"), pd.Timestamp("2019-02-25"))
 
 
 def test_is_categorical(feat):

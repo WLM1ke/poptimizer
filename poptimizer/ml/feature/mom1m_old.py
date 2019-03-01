@@ -4,7 +4,8 @@ from typing import Tuple
 import pandas as pd
 
 from poptimizer import data
-from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsMixin
+from poptimizer.config import MOM1M_RANGE
+from poptimizer.ml.feature.feature_old import AbstractFeature, DaysParamsMixin
 
 
 class Mom1m(DaysParamsMixin, AbstractFeature):
@@ -17,13 +18,17 @@ class Mom1m(DaysParamsMixin, AbstractFeature):
     краткосрочной реверсии.
     """
 
-    def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp, params: dict):
-        super().__init__(tickers, last_date, params)
+    RANGE = MOM1M_RANGE
+
+    def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp):
+        super().__init__(tickers, last_date)
         self._returns = data.log_total_returns(tickers, last_date)
 
-    def get(self, params=None) -> pd.Series:
+    def get(self, date: pd.Timestamp, **kwargs) -> pd.Series:
         """Средняя доходность за указанное количество предыдущих дней."""
-        params = params or self._params
-        days = params["days"]
-        mom1m = self._returns.rolling(days).mean()
-        return mom1m.stack()
+        returns = self._returns
+        loc = returns.index.get_loc(date)
+        days = kwargs["days"]
+        mean = returns.iloc[loc - days + 1 : loc + 1].mean(axis=0, skipna=False)
+        mean.name = self.name
+        return mean

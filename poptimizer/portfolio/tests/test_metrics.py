@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer import config
-from poptimizer.ml import feature, examples
+from poptimizer.ml import feature, examples_old
 from poptimizer.portfolio import Portfolio, portfolio, metrics
 from poptimizer.portfolio.metrics import Metrics, Forecast
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
@@ -141,7 +141,7 @@ def test_std_gradient():
 
 
 def test_forecast_func(monkeypatch):
-    monkeypatch.setattr(examples.Examples, "FEATURES", FEATURES)
+    monkeypatch.setattr(examples_old.Examples, "FEATURES", FEATURES)
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     pos = dict(SIBN=300, PRTK=100, RTKM=200)
     port = portfolio.Portfolio("2018-12-17", 1000, pos)

@@ -9,7 +9,7 @@ import pandas as pd
 from sklearn import model_selection
 
 from poptimizer import config
-from poptimizer.ml import examples, forecaster, cv
+from poptimizer.ml import examples_old, forecaster, cv
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 
 __all__ = ["learning_curve", "partial_dependence_curve", "cross_val_predict_plot"]
@@ -33,7 +33,7 @@ def learning_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
         Дата, на которую составляется ML-модель.
     """
     params = config.ML_PARAMS
-    cases = examples.Examples(tickers, date)
+    cases = examples_old.Examples(tickers, date)
     _, _, cv_params = forecaster.cv_results(cases, params)
     data_params, model_params = cv_params
     learn_pool_params = cases.learn_pool_params(data_params)
@@ -74,7 +74,7 @@ def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
         Дата, на которую составляется ML-модель.
     """
     params = config.ML_PARAMS
-    cases = examples.Examples(tickers, date)
+    cases = examples_old.Examples(tickers, date)
     _, _, cv_params = forecaster.cv_results(cases, params)
     clf, _ = forecaster.fit_clf(cv_params, cases)
     pool_params = cases.predict_pool_params(cv_params[0])
@@ -113,7 +113,7 @@ def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
 def cross_val_predict_plot(tickers: Tuple[str, ...], date: pd.Timestamp):
     """График прогнозируемого с помощью кросс-валидации значения против фактического значения."""
     params = config.ML_PARAMS
-    cases = examples.Examples(tickers, date)
+    cases = examples_old.Examples(tickers, date)
     _, _, cv_params = forecaster.cv_results(cases, params)
     data_params, model_params = cv_params
     learn_pool_params = cases.learn_pool_params(data_params)

@@ -5,8 +5,8 @@ from hyperopt import hp
 from hyperopt.pyll import Apply
 
 from poptimizer.config import POptimizerError
-from poptimizer.ml import cv, examples
-from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS, divyield
+from poptimizer.ml import cv, examples_old
+from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS, divyield_old
 from poptimizer.portfolio import portfolio
 
 PARAMS = (
@@ -171,7 +171,7 @@ def test_make_model_params():
 
 
 def test_cv_model():
-    data = examples.Examples(("LSNGP", "LKOH", "GMKN"), pd.Timestamp("2018-12-14"))
+    data = examples_old.Examples(("LSNGP", "LKOH", "GMKN"), pd.Timestamp("2018-12-14"))
     result = cv.cv_model(PARAMS, data)
 
     assert isinstance(result, dict)
@@ -195,14 +195,14 @@ def test_cv_model():
 
 def test_cv_model_raise_max_iter():
     PARAMS[1]["learning_rate"] = 0.001
-    data = examples.Examples(("LSNGP", "LKOH", "GMKN"), pd.Timestamp("2018-12-14"))
+    data = examples_old.Examples(("LSNGP", "LKOH", "GMKN"), pd.Timestamp("2018-12-14"))
     with pytest.raises(POptimizerError) as error:
         cv.cv_model(PARAMS, data)
     assert "Необходимо увеличить MAX_ITERATIONS =" in str(error.value)
 
 
 def test_cv_all_features_false():
-    data = examples.Examples(("LSNGP", "LKOH", "MSTT"), pd.Timestamp("2018-12-20"))
+    data = examples_old.Examples(("LSNGP", "LKOH", "MSTT"), pd.Timestamp("2018-12-20"))
     params = (
         (
             (True, {"days": 21}),
@@ -246,7 +246,7 @@ def test_optimize_hyper(monkeypatch, capsys):
             "ignored_features": [],
         },
     )
-    cases = examples.Examples(("LSNGP", "LKOH", "GMKN"), pd.Timestamp("2018-12-14"))
+    cases = examples_old.Examples(("LSNGP", "LKOH", "GMKN"), pd.Timestamp("2018-12-14"))
     monkeypatch.setattr(cv, "MAX_SEARCHES", 10)
     monkeypatch.setattr(cases, "get_params_space", lambda: space[0])
     monkeypatch.setattr(cv, "get_model_space", lambda: space[1])
@@ -279,7 +279,7 @@ def test_optimize_hyper(monkeypatch, capsys):
 def test_find_better_model(monkeypatch, capsys):
     monkeypatch.setattr(cv, "MAX_SEARCHES", 10)
     monkeypatch.setattr(cv, "MAX_DEPTH", 7)
-    monkeypatch.setattr(divyield.DivYield, "RANGE", [280, 398])
+    monkeypatch.setattr(divyield_old.DivYield, "RANGE", [280, 398])
     pos = dict(LSNGP=10, KZOS=20, GMKN=30)
     port = portfolio.Portfolio(pd.Timestamp("2018-12-19"), 100, pos)
     cv.find_better_model(port)

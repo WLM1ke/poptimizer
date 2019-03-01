@@ -5,7 +5,7 @@ import pandas as pd
 
 from poptimizer import data
 from poptimizer.config import MIN1M_RANGE
-from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsMixin
+from poptimizer.ml.feature.feature_old import AbstractFeature, DaysParamsMixin
 
 
 class Min1m(DaysParamsMixin, AbstractFeature):

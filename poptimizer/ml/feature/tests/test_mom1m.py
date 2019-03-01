@@ -4,12 +4,12 @@ import pytest
 from hyperopt.pyll import Apply
 
 from poptimizer import config
-from poptimizer.ml.feature import mom1m
+from poptimizer.ml.feature import mom1m_old
 
 
 @pytest.fixture(scope="module", name="feat")
 def test_mom1m_feature():
-    return mom1m.Mom1m(("GCHE", "LSRG", "PMSBP"), pd.Timestamp("2019-01-25"))
+    return mom1m_old.Mom1m(("GCHE", "LSRG", "PMSBP"), pd.Timestamp("2019-01-25"))
 
 
 def test_is_categorical(feat):

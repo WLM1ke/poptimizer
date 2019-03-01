@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.config import POptimizerError
-from poptimizer.ml import forecaster, examples, feature
+from poptimizer.ml import forecaster, examples_old, feature
 from poptimizer.portfolio.metrics import Forecast
 
 PARAMS = (
@@ -39,8 +39,8 @@ FEATURES = [
 # noinspection PyUnresolvedReferences
 @pytest.fixture(name="cases")
 def make_cases(monkeypatch):
-    monkeypatch.setattr(examples.Examples, "FEATURES", FEATURES)
-    return examples.Examples(("SNGSP", "VSMO", "DSKY"), pd.Timestamp("2018-12-14"))
+    monkeypatch.setattr(examples_old.Examples, "FEATURES", FEATURES)
+    return examples_old.Examples(("SNGSP", "VSMO", "DSKY"), pd.Timestamp("2018-12-14"))
 
 
 @pytest.fixture(name="cv_results")
@@ -104,7 +104,7 @@ def test_ledoit_wolf_cov(cases, cv_results):
 
 # noinspection PyUnresolvedReferences
 def test_make_forecast(monkeypatch):
-    monkeypatch.setattr(examples.Examples, "FEATURES", FEATURES)
+    monkeypatch.setattr(examples_old.Examples, "FEATURES", FEATURES)
     forecast = forecaster.make_forecast(
         ("SNGSP", "VSMO", "DSKY"), pd.Timestamp("2018-12-14"), PARAMS
     )

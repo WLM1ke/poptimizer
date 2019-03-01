@@ -3,12 +3,12 @@ import pytest
 from hyperopt.pyll import Apply
 
 from poptimizer.config import AFTER_TAX
-from poptimizer.ml.feature import divyield
+from poptimizer.ml.feature import divyield_old
 
 
 @pytest.fixture(scope="module", name="feat")
 def test_divyield_feature():
-    return divyield.DivYield(("PHOR", "TATN", "DSKY"), pd.Timestamp("2018-12-12"))
+    return divyield_old.DivYield(("PHOR", "TATN", "DSKY"), pd.Timestamp("2018-12-12"))
 
 
 def test_is_categorical(feat):
@@ -23,14 +23,14 @@ def test_get_params_space(feat):
 
 
 def test_check_bounds_middle(feat, capsys):
-    lower, upper = divyield.DivYield.RANGE
+    lower, upper = divyield_old.DivYield.RANGE
     feat.check_bounds(days=(lower + upper) / 2)
     captured = capsys.readouterr()
     assert captured.out == ""
 
 
 def test_check_bounds_lower(feat, capsys):
-    lower, upper = divyield.DivYield.RANGE
+    lower, upper = divyield_old.DivYield.RANGE
     feat.check_bounds(days=int(lower * 1.05))
     captured = capsys.readouterr()
     assert "Необходимо расширить" in captured.out
@@ -38,7 +38,7 @@ def test_check_bounds_lower(feat, capsys):
 
 
 def test_check_bounds_upper(feat, capsys):
-    lower, upper = divyield.DivYield.RANGE
+    lower, upper = divyield_old.DivYield.RANGE
     feat.check_bounds(days=int(upper / 1.05))
     captured = capsys.readouterr()
     assert "Необходимо расширить" in captured.out
