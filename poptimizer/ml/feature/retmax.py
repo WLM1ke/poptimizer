@@ -18,13 +18,13 @@ class RetMax(DaysParamsMixin, AbstractFeature):
     # noinspection PyUnresolvedReferences
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp, params: dict):
         super().__init__(tickers, last_date, params)
-        self._returns = data.log_total_returns(tickers, last_date)
 
     def get(self, params=None) -> pd.Series:
         """Максимальная доходность за указанное количество предыдущих дней."""
         params = params or self._params
         days = params["days"]
-        retmax = self._returns.rolling(days).max()
+        returns = data.log_total_returns(self._tickers, self._last_date)
+        retmax = returns.rolling(days).max()
         retmax = retmax.stack()
         retmax.name = self.name
         return retmax

@@ -8,7 +8,6 @@ from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsMixin
 from poptimizer.store import DIVIDENDS_START
 
 
-# noinspection PyUnresolvedReferences
 class DivYield(DaysParamsMixin, AbstractFeature):
     """Dividend to price - дивидендная доходность примерно за 12 предыдущих месяцев.
 
@@ -25,16 +24,17 @@ class DivYield(DaysParamsMixin, AbstractFeature):
     расчета дивидендов выбирается во время поиска гиперпараметров.
     """
 
+    # noinspection PyUnresolvedReferences
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp, params: dict):
         super().__init__(tickers, last_date, params)
-        self._dividends, self._prices = data.div_ex_date_prices(tickers, last_date)
 
     def get(self, params=None) -> pd.Series:
         """Дивидендная доходность за несколько предыдущих дней."""
         params = params or self._params
         days = params["days"]
-        div = self._dividends.rolling(days).sum().loc[DIVIDENDS_START:].iloc[days:]
-        div = div / self._prices
+        dividends, prices = data.div_ex_date_prices(self._tickers, self._last_date)
+        div = dividends.rolling(days).sum().loc[DIVIDENDS_START:].iloc[days:]
+        div = div / prices
         div = div.stack()
         div.name = self.name
         return div

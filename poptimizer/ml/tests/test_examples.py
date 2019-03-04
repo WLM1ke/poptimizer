@@ -1,37 +1,35 @@
 import numpy as np
 import pandas as pd
 import pytest
-from hyperopt.pyll import Apply
 
-from poptimizer.config import AFTER_TAX, POptimizerError
-from poptimizer.ml import examples_old, feature
+from poptimizer.config import AFTER_TAX
+from poptimizer.ml import examples
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
+from poptimizer.ml.feature.divyield import DivYield
+from poptimizer.ml.feature.label import Label
+from poptimizer.ml.feature.mom12 import Mom12m
+from poptimizer.ml.feature.std import STD
+from poptimizer.ml.feature.ticker import Ticker
 
-FEATURES = [
-    feature.Label,
-    feature.STD,
-    feature.Ticker,
-    feature.Mom12m,
-    feature.DivYield,
-    feature.Mom1m,
-]
+FEAT_PARAMS = (
+    (Label, {"days": 6}),
+    (STD, {"on_off": True, "days": 7}),
+    (Ticker, {"on_off": True}),
+    (Mom12m, {"on_off": True, "days": 3}),
+    (DivYield, {"on_off": True, "days": 9}),
+)
 
 
 # noinspection PyUnresolvedReferences
 @pytest.fixture(name="example")
-def create_examples(monkeypatch):
-    monkeypatch.setattr(examples_old.Examples, "FEATURES", FEATURES)
-    yield examples_old.Examples(("AKRN", "CHMF", "BANEP"), pd.Timestamp("2018-12-13"))
+def create_examples():
+    yield examples.Examples(
+        ("AKRN", "CHMF", "BANEP"), pd.Timestamp("2018-12-13"), FEAT_PARAMS
+    )
 
 
 def test_get_features_names(example):
-    assert example.get_features_names() == [
-        "STD",
-        "Ticker",
-        "Mom12m",
-        "DivYield",
-        "Mom1m",
-    ]
+    assert example.get_features_names() == ["STD", "Ticker", "Mom12m", "DivYield"]
 
 
 def test_categorical_features(example):
@@ -40,143 +38,92 @@ def test_categorical_features(example):
 
 def test_get_params_space(example):
     space = example.get_params_space()
+    print(space)
     assert isinstance(space, list)
-    assert len(space) == 6
-    assert space[0][0] is True
-    assert isinstance(space[0][1], dict)
-    for on_off, params in space[1:]:
-        isinstance(on_off, Apply)
+    assert len(space) == 5
+    for params in space:
         isinstance(params, dict)
 
 
-def test_check_bounds(example, capsys):
-    example.check_bounds(
-        (
-            (True, {"days": -1}),
-            (False, {"days": -1}),
-            (True, {}),
-            (True, {"days": 252}),
-            (False, {"days": 252}),
-        )
-    )
-    captured = capsys.readouterr()
-    assert "Необходимо расширить Label_RANGE" in captured.out
-    assert "Необходимо расширить STD_RANGE" in captured.out
+# noinspection PyUnresolvedReferences
+def test_get_all(example):
+    df = example.get_all(({"days": 4}, {"days": 5}, {}, {"days": 6}, {"days": 7}))
+    assert df.columns.to_list() == ["Label", "STD", "Ticker", "Mom12m", "DivYield"]
+    assert df.index.get_level_values(0).unique()[-1] == pd.Timestamp("2018-12-13")
+    assert df.index.get_level_values(1).unique().to_list() == ["CHMF", "AKRN", "BANEP"]
 
-
-def test_get(example):
-    df = example.get(
-        pd.Timestamp("2018-12-04"),
-        (
-            (True, {"days": 4}),
-            (True, {"days": 5}),
-            (True, {}),
-            (True, {"days": 6}),
-            (False, {"days": 7}),
-        ),
-    )
-    assert (df.columns == ["Label", "STD", "Ticker", "Mom12m", "DivYield"]).all()
-    assert (df.index == ["AKRN", "CHMF", "BANEP"]).all()
-    assert df.loc["AKRN", "Label"] == pytest.approx(
+    assert df.loc[(pd.Timestamp("2018-12-04"), "AKRN"), "Label"] == pytest.approx(
         np.log(4590 / 4630) * YEAR_IN_TRADING_DAYS ** 0.5 / 4 / 0.051967880396035164
     )
-    assert df.loc["CHMF", "STD"] == pytest.approx(
+    assert df.loc[(pd.Timestamp("2018-12-04"), "CHMF"), "STD"] == pytest.approx(
         0.17547200666439342 / YEAR_IN_TRADING_DAYS ** 0.5
     )
-    assert df.loc["BANEP", "Ticker"] == "BANEP"
-    assert df.loc["AKRN", "Mom12m"] == pytest.approx(np.log(4630 / 4672) / 6)
-    assert df.loc["CHMF", "DivYield"] == pytest.approx(44.39 * AFTER_TAX / 964.3)
-
-
-def test_std_days(example):
-    days = example.mean_std_days(
-        (
-            (True, {"days": 4}),
-            (True, {"days": 22}),
-            (True, {}),
-            (True, {"days": 6}),
-            (False, {"days": 7}),
-        )
+    assert df.loc[(pd.Timestamp("2018-12-04"), "BANEP"), "Ticker"] == "BANEP"
+    assert df.loc[(pd.Timestamp("2018-12-04"), "AKRN"), "Mom12m"] == pytest.approx(
+        np.log(4630 / 4672) / 6
     )
-    assert days == (4, 22)
-
-
-def test_learn_pool(example):
-    params = (
-        (True, {"days": 4}),
-        (True, {"days": 5}),
-        (True, {}),
-        (True, {"days": 6}),
-        (False, {"days": 7}),
+    assert df.loc[(pd.Timestamp("2018-12-04"), "CHMF"), "DivYield"] == pytest.approx(
+        44.39 * AFTER_TAX / 964.3
     )
 
-    pool = example.learn_pool_params(params)
-    assert isinstance(pool, dict)
-    assert len(pool) == 4
 
-    assert isinstance(pool["data"], pd.DataFrame)
-    assert (pool["data"].columns == ["STD", "Ticker", "Mom12m", "DivYield"]).all()
-    assert np.allclose(
-        pool["data"].iloc[:3, [0, 2, 3]].values,
-        example.get(pd.Timestamp("2018-12-07"), params).iloc[:, [1, 3, 4]].values,
-    )
-    assert np.allclose(
-        pool["data"].iloc[3:6, [0, 2, 3]].values,
-        example.get(pd.Timestamp("2018-12-03"), params).iloc[:, [1, 3, 4]].values,
+# noinspection PyUnresolvedReferences
+def test_train_val_pool_params(example):
+    train, val = example.train_val_pool_params(
+        ({"days": 4}, {"days": 5}, {}, {"days": 6}, {"days": 7})
     )
 
-    assert isinstance(pool["label"], pd.Series)
-    assert pool["label"].name == "Label"
-    assert np.allclose(
-        pool["label"].iloc[:3].values,
-        example.get(pd.Timestamp("2018-12-07"), params).iloc[:, 0].values,
-    )
-    assert np.allclose(
-        pool["label"].iloc[3:6].values,
-        example.get(pd.Timestamp("2018-12-03"), params).iloc[:, 0].values,
-    )
+    assert isinstance(train, dict)
+    assert len(train) == 4
+    assert isinstance(val, dict)
+    assert len(val) == 4
 
-    assert pool["cat_features"] == [1]
+    assert train["cat_features"] == [1]
+    assert val["cat_features"] == [1]
 
-    assert pool["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield"]
+    assert train["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield"]
+    assert val["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield"]
 
+    assert train["data"].index.get_level_values(0)[0] == pd.Timestamp("2010-01-20")
+    assert train["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-02-08")
 
-def test_learn_pool_bad_date():
-    cases = examples_old.Examples(("AKRN", "CHMF", "BANEP"), pd.Timestamp("2019-01-13"))
-    params = (
-        (True, {"days": 4}),
-        (True, {"days": 5}),
-        (True, {}),
-        (True, {"days": 6}),
-        (False, {"days": 7}),
-    )
-    with pytest.raises(POptimizerError) as error:
-        cases.learn_pool_params(params)
-    assert str(error.value) == "Для даты 2019-01-13 отсутствуют исторические котировки"
+    assert val["data"].index.get_level_values(0)[0] == pd.Timestamp("2018-02-14")
+    assert val["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-12-07")
+
+    df = example.get_all(({"days": 4}, {"days": 5}, {}, {"days": 6}, {"days": 7}))
+
+    assert df.iloc[:, 1:].loc[train["data"].index].equals(train["data"])
+    assert df.iloc[:, 0].loc[train["label"].index].equals(train["label"])
+
+    assert df.iloc[:, 1:].loc[val["data"].index].equals(val["data"])
+    assert df.iloc[:, 0].loc[val["label"].index].equals(val["label"])
 
 
-def test_predict_pool(example):
-    params = (
-        (True, {"days": 6}),
-        (True, {"days": 7}),
-        (True, {}),
-        (True, {"days": 3}),
-        (False, {"days": 9}),
-    )
+# noinspection PyUnresolvedReferences
+def test_train_predict_pool_params(example):
+    train, predict = example.train_predict_pool_params()
 
-    pool = example.predict_pool_params(params)
-    assert isinstance(pool, dict)
-    assert len(pool) == 4
+    assert isinstance(train, dict)
+    assert len(train) == 4
+    assert isinstance(predict, dict)
+    assert len(predict) == 4
 
-    assert isinstance(pool["data"], pd.DataFrame)
-    assert (pool["data"].columns == ["STD", "Ticker", "Mom12m", "DivYield"]).all()
-    assert np.allclose(
-        pool["data"].iloc[:, [0, 2, 3]].values,
-        example.get(pd.Timestamp("2018-12-13"), params).iloc[:, [1, 3, 4]].values,
-    )
+    assert train["cat_features"] == [1]
+    assert predict["cat_features"] == [1]
 
-    assert pool["label"] is None
+    assert train["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield"]
+    assert predict["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield"]
 
-    assert pool["cat_features"] == [1]
+    assert train["data"].index.get_level_values(0)[0] == pd.Timestamp("2010-01-22")
+    assert train["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-12-05")
 
-    assert pool["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield"]
+    assert predict["data"].index.get_level_values(0)[0] == pd.Timestamp("2018-12-13")
+    assert predict["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-12-13")
+
+    df = example.get_all(({"days": 6}, {"days": 7}, {}, {"days": 3}, {"days": 9}))
+
+    assert df.iloc[:, 1:].loc[train["data"].index].equals(train["data"])
+    assert df.iloc[:, 0].loc[train["label"].index].equals(train["label"])
+
+    assert df.iloc[:, 1:].loc[predict["data"].index].equals(predict["data"])
+    assert predict["label"] is None

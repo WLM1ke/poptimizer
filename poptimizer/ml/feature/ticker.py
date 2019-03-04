@@ -16,7 +16,6 @@ class Ticker(AbstractFeature):
     # noinspection PyUnresolvedReferences
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp, params: dict):
         super().__init__(tickers, last_date, params)
-        self._returns = data.log_total_returns(tickers, last_date)
 
     @staticmethod
     def is_categorical() -> bool:
@@ -30,7 +29,8 @@ class Ticker(AbstractFeature):
 
     def get(self, params=None) -> pd.Series:
         """Для дат, в которые есть котировки указывается тикер."""
-        tickers = self._returns.stack()
+        returns = data.log_total_returns(self._tickers, self._last_date)
+        tickers = returns.stack()
         tickers.loc[:] = tickers.index.get_level_values(1)
         tickers.name = self.name
         return tickers

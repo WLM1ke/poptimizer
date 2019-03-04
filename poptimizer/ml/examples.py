@@ -54,7 +54,7 @@ class Examples:
         """
         self._tickers = tickers
         self._date = date
-        self._params = params
+        self._params = [feat_params for cls, feat_params in params]
         self._features = [
             cls(tickers, date, feat_params) for cls, feat_params in params
         ]
@@ -78,22 +78,21 @@ class Examples:
         Метки нормируются по СКО.
         """
         data = [
-            feat.get(feat_params)
-            for feat, (_, feat_params) in zip(self._features, params)
+            feat.get(feat_params) for feat, feat_params in zip(self._features, params)
         ]
         data[0] /= data[1]
         data = pd.concat(data, axis=1)
         return data
 
-    def learn_val_pool_params(self, params=None):
-        """Данные для создание catboost.Pool с обучающими примерами."""
+    def train_val_pool_params(self, params=None):
+        """Данные для создание catboost.Pool с обучающими и валидационными примерами."""
         params = params or self._params
         df = self.get_all(params).dropna(axis=0)
         dates = df.index.get_level_values(0)
         val_start = dates[int(len(dates) * TRAIN_VAL_SPLIT)]
         df_val = df[dates >= val_start]
         params = params or self._params
-        label_days = params[0][1]["days"]
+        label_days = params[0]["days"]
         train_end = dates[dates < val_start].unique()[-label_days]
         df_train = df.loc[dates <= train_end]
         train_params = dict(
@@ -110,14 +109,22 @@ class Examples:
         )
         return train_params, val_params
 
-    def predict_pool_params(self):
+    def train_predict_pool_params(self):
         """Данные для создание catboost.Pool с примерами для прогноза."""
         df = self.get_all(self._params)
         dates = df.index.get_level_values(0)
-        df = df.loc[dates == self._date]
-        return dict(
-            data=df.iloc[:, 1:],
+        df_predict = df.loc[dates == self._date]
+        predict_params = dict(
+            data=df_predict.iloc[:, 1:],
             label=None,
             cat_features=self.categorical_features(),
             feature_names=list(df.columns[1:]),
         )
+        df = df.dropna(axis=0)
+        train_params = dict(
+            data=df.iloc[:, 1:],
+            label=df.iloc[:, 0],
+            cat_features=self.categorical_features(),
+            feature_names=list(df.columns[1:]),
+        )
+        return train_params, predict_params

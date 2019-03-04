@@ -20,13 +20,13 @@ class Mom1m(DaysParamsMixin, AbstractFeature):
     # noinspection PyUnresolvedReferences
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp, params: dict):
         super().__init__(tickers, last_date, params)
-        self._returns = data.log_total_returns(tickers, last_date)
 
     def get(self, params=None) -> pd.Series:
         """Средняя доходность за указанное количество предыдущих дней."""
         params = params or self._params
         days = params["days"]
-        mom1m = self._returns.rolling(days).mean()
+        returns = data.log_total_returns(self._tickers, self._last_date)
+        mom1m = returns.rolling(days).mean()
         mom1m = mom1m.stack()
         mom1m.name = self.name
         return mom1m
