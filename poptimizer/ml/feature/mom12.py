@@ -18,6 +18,7 @@ class Mom12m(DaysParamsMixin, AbstractFeature):
     моментума.
     """
 
+    # noinspection PyUnresolvedReferences
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp, params: dict):
         super().__init__(tickers, last_date, params)
         self._returns = data.log_total_returns(tickers, last_date)
@@ -27,4 +28,6 @@ class Mom12m(DaysParamsMixin, AbstractFeature):
         params = params or self._params
         days = params["days"]
         mom12m = self._returns.rolling(days).mean()
-        return mom12m.stack()
+        mom12m = mom12m.stack()
+        mom12m.name = self.name
+        return mom12m

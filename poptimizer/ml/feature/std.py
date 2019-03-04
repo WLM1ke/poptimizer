@@ -30,4 +30,6 @@ class STD(DaysParamsMixin, AbstractFeature):
         params = params or self._params
         days = params["days"]
         std = self._returns.rolling(days).std()
-        return std.stack()
+        std = std.stack()
+        std.name = self.name
+        return std

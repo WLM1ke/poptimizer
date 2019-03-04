@@ -17,6 +17,7 @@ class Mom1m(DaysParamsMixin, AbstractFeature):
     краткосрочной реверсии.
     """
 
+    # noinspection PyUnresolvedReferences
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp, params: dict):
         super().__init__(tickers, last_date, params)
         self._returns = data.log_total_returns(tickers, last_date)
@@ -26,4 +27,6 @@ class Mom1m(DaysParamsMixin, AbstractFeature):
         params = params or self._params
         days = params["days"]
         mom1m = self._returns.rolling(days).mean()
-        return mom1m.stack()
+        mom1m = mom1m.stack()
+        mom1m.name = self.name
+        return mom1m

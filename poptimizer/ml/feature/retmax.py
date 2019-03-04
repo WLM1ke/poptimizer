@@ -25,4 +25,6 @@ class RetMax(DaysParamsMixin, AbstractFeature):
         params = params or self._params
         days = params["days"]
         retmax = self._returns.rolling(days).max()
-        return retmax.stack()
+        retmax = retmax.stack()
+        retmax.name = self.name
+        return retmax

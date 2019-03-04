@@ -23,6 +23,7 @@ class Label(DaysParamsMixin, AbstractFeature):
     месяца до нескольких месяцев. Оптимальный прогнозный период выбирается при поиске гиперпараметров.
     """
 
+    # noinspection PyUnresolvedReferences
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp, params: dict):
         super().__init__(tickers, last_date, params)
         self._returns = data.log_total_returns(tickers, last_date)
@@ -32,4 +33,6 @@ class Label(DaysParamsMixin, AbstractFeature):
         params = params or self._params
         days = params["days"]
         label = self._returns.rolling(days).mean()
-        return label.shift(-days).stack()
+        label = label.shift(-days).stack()
+        label.name = self.name
+        return label

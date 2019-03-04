@@ -35,4 +35,6 @@ class DivYield(DaysParamsMixin, AbstractFeature):
         days = params["days"]
         div = self._dividends.rolling(days).sum().loc[DIVIDENDS_START:].iloc[days:]
         div = div / self._prices
-        return div.stack()
+        div = div.stack()
+        div.name = self.name
+        return div

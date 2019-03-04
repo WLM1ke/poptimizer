@@ -30,6 +30,7 @@ class Ticker(AbstractFeature):
 
     def get(self, params=None) -> pd.Series:
         """Для дат, в которые есть котировки указывается тикер."""
-        returns = self._returns.stack()
-        returns.loc[:] = returns.index.get_level_values(1)
-        return returns
+        tickers = self._returns.stack()
+        tickers.loc[:] = tickers.index.get_level_values(1)
+        tickers.name = self.name
+        return tickers
