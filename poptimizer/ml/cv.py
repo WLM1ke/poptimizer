@@ -4,22 +4,24 @@ import functools
 import catboost
 import hyperopt
 import numpy as np
-from catboost import CatboostError
 from hyperopt import hp
 
 from poptimizer import config, portfolio
 from poptimizer.config import POptimizerError
-from poptimizer.ml.examples_old import Examples
+from poptimizer.ml.examples import Examples
 
 # Базовые настройки catboost
 MAX_ITERATIONS = 300
 SEED = 284_704
 FOLDS_COUNT = 20
 TECH_PARAMS = dict(
+    loss_function="RMSE",
+    custom_metric="R2",
     iterations=MAX_ITERATIONS,
     random_state=SEED,
     od_type="Iter",
-    verbose=False,
+    od_wait=20,
+    verbose=1,
     allow_writing_files=False,
 )
 
@@ -107,15 +109,12 @@ def make_model_params(data_params, model_params):
     Вставляет корректные данные по отключенным признакам и добавляет общие технические параметры.
     """
     model_params["ignored_features"] = []
-    for num, feat in enumerate(data_params[1:]):
-        if feat[0] is False:
-            model_params["ignored_features"].append(num)
     model_params = dict(**TECH_PARAMS, **model_params)
     return model_params
 
 
-def cv_model(params: tuple, examples: Examples) -> dict:
-    """Осуществляет кросс-валидацию модели по RMSE, нормированному на СКО набора данных.
+def valid_model(params: tuple, examples: Examples) -> dict:
+    """Осуществляет валидацию модели по RMSE, нормированному на СКО набора данных.
 
     Осуществляется проверка, что не достигнут максимум итераций, возвращается RMSE, R2 и параметры модели
     с оптимальным количеством итераций в формате целевой функции hyperopt.
@@ -135,32 +134,27 @@ def cv_model(params: tuple, examples: Examples) -> dict:
         градиентного бустинга на кросс-валидации и общие настройки.
     """
     data_params, model_params = params
-    pool_params = examples.learn_pool_params(data_params)
-    labels_std = pool_params["label"].std()
-    pool = catboost.Pool(**pool_params)
+    train_pool_params, val_pool_params = examples.train_val_pool_params(
+        [feat_params for _, feat_params in data_params]
+    )
+    train_pool = catboost.Pool(**train_pool_params)
+    val_pool = catboost.Pool(**val_pool_params)
     model_params = make_model_params(data_params, model_params)
-    try:
-        scores = catboost.cv(pool=pool, params=model_params, fold_count=FOLDS_COUNT)
-    except CatboostError:
-        return dict(
-            loss=None, status=hyperopt.STATUS_FAIL, std=None, r2=None, params=None
-        )
-    else:
-        if len(scores) == MAX_ITERATIONS:
-            raise POptimizerError(
-                f"Необходимо увеличить MAX_ITERATIONS = {MAX_ITERATIONS}"
-            )
-        index = scores["test-RMSE-mean"].idxmin()
-        model_params["iterations"] = index + 1
-        cv_std = scores.loc[index, "test-RMSE-mean"]
-        r2 = 1 - (cv_std / labels_std) ** 2
-        return dict(
-            loss=-r2,
-            status=hyperopt.STATUS_OK,
-            std=cv_std,
-            r2=r2,
-            params=(data_params, model_params),
-        )
+    clf = catboost.CatBoostRegressor(**model_params)
+    clf.fit(train_pool, eval_set=val_pool)
+    if clf.tree_count_ == MAX_ITERATIONS:
+        raise POptimizerError(f"Необходимо увеличить MAX_ITERATIONS = {MAX_ITERATIONS}")
+    model_params["iterations"] = clf.tree_count_
+    scores = clf.get_best_score()["validation_0"]
+    std = scores["RMSE"]
+    r2 = scores["R2"]
+    return dict(
+        loss=-r2,
+        status=hyperopt.STATUS_OK,
+        std=std,
+        r2=r2,
+        params=(data_params, model_params),
+    )
 
 
 def optimize_hyper(examples: Examples) -> tuple:
@@ -171,7 +165,7 @@ def optimize_hyper(examples: Examples) -> tuple:
     :return:
         Оптимальные параметры модели.
     """
-    objective = functools.partial(cv_model, examples=examples)
+    objective = functools.partial(valid_model, examples=examples)
     param_space = (examples.get_params_space(), get_model_space())
     best = hyperopt.fmin(
         objective,
@@ -182,14 +176,13 @@ def optimize_hyper(examples: Examples) -> tuple:
     )
     # Преобразование из внутреннего представление в исходное пространство
     best_params = hyperopt.space_eval(param_space, best)
-    examples.check_bounds(best_params[0])
     check_model_bounds(best_params[1])
     return best_params
 
 
 def print_result(name, params, examples: Examples):
     """Проводит кросс-валидацию, выводит ее основные метрики и возвращает R2."""
-    cv_results = cv_model(params, examples)
+    cv_results = valid_model(params, examples)
     print(
         f"\n{name}"
         f"\nR2 - {cv_results['r2']:0.4%}"
@@ -214,3 +207,102 @@ def find_better_model(port: portfolio.Portfolio):
         print(f"\nЛУЧШАЯ МОДЕЛЬ - {base_name}" f"\n{base_params}")
     else:
         print(f"\nЛУЧШАЯ МОДЕЛЬ - {new_name}" f"\n{new_params}")
+
+
+if __name__ == "__main__":
+    POSITIONS = dict(
+        AKRN=563,
+        BANE=236 + 84,
+        BANEP=1592,
+        CBOM=91100 + 112_200,
+        DVEC=68000,
+        DSKY=90 + 2090,
+        FEES=6_270_000,
+        KZOS=10600 + 4000,
+        HYDR=34000,
+        IRKT=1600 + 3300,
+        LKOH=185,
+        LSNGP=6600,
+        LSRG=1700 + 0 + 80,
+        MRKS=310_000 + 20000,
+        MRKU=0 + 90000,
+        MRKY=840_000 + 3_880_000,
+        MSRS=128_000 + 117_000,
+        MTSS=2330,
+        NKNCP=17500 + 5800,
+        NLMK=2480,
+        NMTP=11000 + 11000,
+        PHOR=110 + 72,
+        PIKK=4090 + 1560 + 90,
+        PMSBP=28730 + 4180 + 3360,
+        PRTK=6500 + 3600,
+        RASP=14150 + 4330 + 630,
+        RTKM=1080 + 3040,
+        RTKMP=65000 + 0 + 1700,
+        SELGP=3200 + 400,
+        SNGSP=30200 + 0 + 9800,
+        TATN=150,
+        TATNP=3420 + 290 + 100,
+        TTLK=1_980_000,
+        UPRO=901_000 + 0 + 9000,
+        VSMO=161 + 3,
+        # Бумаги с нулевым весом
+        TANL=0,
+        MRKP=0,
+        MTLRP=0,
+        MOEX=0,
+        SIBN=0,
+        GMKN=0,
+        MAGN=0,
+        CHMF=0,
+        ENRU=0,
+        ROSN=0,
+        NVTK=0,
+        AFLT=0,
+        ALRS=0,
+        MRKV=0,
+        GAZP=0,
+        SBERP=0,
+        SBER=0,
+        PLZL=0,
+        MGNT=0,
+        SNGS=0,
+        RSTI=0,
+        TGKA=0,
+        OMZZP=0,
+        MFON=0,
+        MSST=0,
+        IRAO=0,
+    )
+    from poptimizer.ml.feature.divyield import DivYield
+    from poptimizer.ml.feature.label import Label
+    from poptimizer.ml.feature.mom12 import Mom12m
+    from poptimizer.ml.feature.mom1m import Mom1m
+    from poptimizer.ml.feature.retmax import RetMax
+    from poptimizer.ml.feature.std import STD
+    from poptimizer.ml.feature.ticker import Ticker
+
+    ML_PARAMS = (
+        (
+            (Label, {"days": 42}),
+            (STD, {"on_off": True, "days": 42}),
+            (Ticker, {"on_off": True}),
+            (Mom12m, {"on_off": True, "days": 252}),
+            (DivYield, {"on_off": True, "days": 252}),
+            (Mom1m, {"on_off": True, "days": 21}),
+            (RetMax, {"on_off": True, "days": 21}),
+        ),
+        {
+            "bagging_temperature": 1,
+            "depth": 6,
+            "l2_leaf_reg": 3,
+            "learning_rate": 0.03,
+            "one_hot_max_size": 2,
+            "random_strength": 1,
+            "ignored_features": [],
+        },
+    )
+    import pandas as pd
+
+    cases = Examples(tuple(POSITIONS), pd.Timestamp("2019-03-01"), ML_PARAMS[0])
+    print(valid_model(ML_PARAMS, cases))

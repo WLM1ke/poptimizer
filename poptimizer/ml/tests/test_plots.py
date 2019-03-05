@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer import config
-from poptimizer.ml import plots, feature, examples_old
+from poptimizer.ml import plots, feature_old, examples_old
 
 ML_PARAMS = (
     (
@@ -25,12 +25,12 @@ ML_PARAMS = (
     },
 )
 FEATURES = [
-    feature.Label,
-    feature.STD,
-    feature.Ticker,
-    feature.Mom12m,
-    feature.DivYield,
-    feature.Mom1m,
+    feature_old.Label,
+    feature_old.STD,
+    feature_old.Ticker,
+    feature_old.Mom12m,
+    feature_old.DivYield,
+    feature_old.Mom1m,
 ]
 TICKERS = ("BANEP", "DSKY", "LKOH", "MOEX", "NKNCP")
 DATE = pd.Timestamp("2019-01-03")

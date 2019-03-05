@@ -4,7 +4,7 @@ from typing import Tuple
 import pandas as pd
 
 from poptimizer.config import POptimizerError
-from poptimizer.ml import feature
+from poptimizer.ml import feature_old
 
 ON_OFF = [True, False]
 
@@ -13,13 +13,13 @@ class Examples:
     """Позволяет сформировать набор обучающих примеров и меток к ним."""
 
     FEATURES = [
-        feature.Label,
-        feature.STD,
-        feature.Ticker,
-        feature.Mom12m,
-        feature.DivYield,
-        feature.Mom1m,
-        feature.Min1m,
+        feature_old.Label,
+        feature_old.STD,
+        feature_old.Ticker,
+        feature_old.Mom12m,
+        feature_old.DivYield,
+        feature_old.Mom1m,
+        feature_old.Min1m,
     ]
 
     def __init__(self, tickers: Tuple[str, ...], date: pd.Timestamp):

@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from poptimizer import portfolio, config, optimizer
-from poptimizer.ml import feature, examples_old
+from poptimizer.ml import feature_old, examples_old
 from poptimizer.portfolio import finder
 
 ML_PARAMS = (
@@ -25,18 +25,18 @@ ML_PARAMS = (
     },
 )
 FEATURES = [
-    feature.Label,
-    feature.STD,
-    feature.Ticker,
-    feature.Mom12m,
-    feature.DivYield,
-    feature.Mom1m,
+    feature_old.Label,
+    feature_old.STD,
+    feature_old.Ticker,
+    feature_old.Mom12m,
+    feature_old.DivYield,
+    feature_old.Mom1m,
 ]
 
 
 def test_feature_days(monkeypatch):
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
-    assert finder.feature_days(feature.Label) == 21
+    assert finder.feature_days(feature_old.Label) == 21
 
 
 # noinspection PyUnresolvedReferences

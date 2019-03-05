@@ -6,6 +6,9 @@ import pandas as pd
 from poptimizer import data
 from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsMixin
 
+# Обрезка совсем маленьких значений, чтобы не было переполнения при нормировании меток
+LOW_STD = 0.001
+
 
 class STD(DaysParamsMixin, AbstractFeature):
     """СКО за примерно 1 предыдущий месяцев.
@@ -32,4 +35,4 @@ class STD(DaysParamsMixin, AbstractFeature):
         std = returns.rolling(days).std()
         std = std.stack()
         std.name = self.name
-        return std
+        return std[std > LOW_STD]

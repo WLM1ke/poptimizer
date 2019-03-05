@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.config import POptimizerError
-from poptimizer.ml import forecaster, examples_old, feature
+from poptimizer.ml import forecaster, examples_old, feature_old
 from poptimizer.portfolio.metrics import Forecast
 
 PARAMS = (
@@ -27,12 +27,12 @@ PARAMS = (
 )
 
 FEATURES = [
-    feature.Label,
-    feature.STD,
-    feature.Ticker,
-    feature.Mom12m,
-    feature.DivYield,
-    feature.Mom1m,
+    feature_old.Label,
+    feature_old.STD,
+    feature_old.Ticker,
+    feature_old.Mom12m,
+    feature_old.DivYield,
+    feature_old.Mom1m,
 ]
 
 

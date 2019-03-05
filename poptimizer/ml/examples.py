@@ -3,25 +3,19 @@ from typing import Tuple
 
 import pandas as pd
 
-from poptimizer.ml.feature.divyield import DivYield
-from poptimizer.ml.feature.label import Label
-from poptimizer.ml.feature.mom12 import Mom12m
-from poptimizer.ml.feature.mom1m import Mom1m
-from poptimizer.ml.feature.retmax import RetMax
-from poptimizer.ml.feature.std import STD
-from poptimizer.ml.feature.ticker import Ticker
+from poptimizer.ml import feature
 
 TRAIN_VAL_SPLIT = 0.9
 
 ML_PARAMS = (
     (
-        (Label, {"days": 21}),
-        (STD, {"on_off": True, "days": 20}),
-        (Ticker, {"on_off": True}),
-        (Mom12m, {"on_off": True, "days": 251}),
-        (DivYield, {"on_off": True, "days": 253}),
-        (Mom1m, {"on_off": True, "days": 21}),
-        (RetMax, {"on_off": True, "days": 22}),
+        ("Label", {"days": 21}),
+        ("STD", {"on_off": True, "days": 20}),
+        ("Ticker", {"on_off": True}),
+        ("Mom12m", {"on_off": True, "days": 251}),
+        ("DivYield", {"on_off": True, "days": 253}),
+        ("Mom1m", {"on_off": True, "days": 21}),
+        ("RetMax", {"on_off": True, "days": 22}),
     ),
     {
         "bagging_temperature": 1.041_367_726_420_619,
@@ -54,9 +48,10 @@ class Examples:
         """
         self._tickers = tickers
         self._date = date
-        self._params = [feat_params for cls, feat_params in params]
+        self._params = params
         self._features = [
-            cls(tickers, date, feat_params) for cls, feat_params in params
+            getattr(feature, cls_name)(tickers, date, feat_params)
+            for cls_name, feat_params in params
         ]
 
     def get_features_names(self):
@@ -78,7 +73,8 @@ class Examples:
         Метки нормируются по СКО.
         """
         data = [
-            feat.get(feat_params) for feat, feat_params in zip(self._features, params)
+            feat.get(feat_params)
+            for feat, (_, feat_params) in zip(self._features, params)
         ]
         data[0] /= data[1]
         data = pd.concat(data, axis=1)
@@ -91,8 +87,7 @@ class Examples:
         dates = df.index.get_level_values(0)
         val_start = dates[int(len(dates) * TRAIN_VAL_SPLIT)]
         df_val = df[dates >= val_start]
-        params = params or self._params
-        label_days = params[0]["days"]
+        label_days = params[0][1]["days"]
         train_end = dates[dates < val_start].unique()[-label_days]
         df_train = df.loc[dates <= train_end]
         train_params = dict(

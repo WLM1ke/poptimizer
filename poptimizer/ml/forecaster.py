@@ -7,14 +7,14 @@ import pandas as pd
 
 from poptimizer import data, config
 from poptimizer.config import POptimizerError
-from poptimizer.ml import examples_old, ledoit_wolf, cv
-from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
+from poptimizer.ml import examples_old, ledoit_wolf, cv_old
+from poptimizer.ml.feature_old import YEAR_IN_TRADING_DAYS
 from poptimizer.portfolio.metrics import Forecast
 
 
 def cv_results(cases: examples_old.Examples, params):
     """Получает необходимые результаты кросс-валидации."""
-    result = cv.cv_model(params, cases)
+    result = cv_old.cv_model(params, cases)
     return result["std"], result["r2"], result["params"]
 
 

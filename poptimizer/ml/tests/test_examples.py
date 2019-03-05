@@ -4,19 +4,14 @@ import pytest
 
 from poptimizer.config import AFTER_TAX
 from poptimizer.ml import examples
-from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
-from poptimizer.ml.feature.divyield import DivYield
-from poptimizer.ml.feature.label import Label
-from poptimizer.ml.feature.mom12 import Mom12m
-from poptimizer.ml.feature.std import STD
-from poptimizer.ml.feature.ticker import Ticker
+from poptimizer.ml.feature_old import YEAR_IN_TRADING_DAYS
 
 FEAT_PARAMS = (
-    (Label, {"days": 6}),
-    (STD, {"on_off": True, "days": 7}),
-    (Ticker, {"on_off": True}),
-    (Mom12m, {"on_off": True, "days": 3}),
-    (DivYield, {"on_off": True, "days": 9}),
+    ("Label", {"days": 6}),
+    ("STD", {"on_off": True, "days": 7}),
+    ("Ticker", {"on_off": True}),
+    ("Mom12m", {"on_off": True, "days": 3}),
+    ("DivYield", {"on_off": True, "days": 9}),
 )
 
 
@@ -47,7 +42,15 @@ def test_get_params_space(example):
 
 # noinspection PyUnresolvedReferences
 def test_get_all(example):
-    df = example.get_all(({"days": 4}, {"days": 5}, {}, {"days": 6}, {"days": 7}))
+    df = example.get_all(
+        (
+            ("Label", {"days": 4}),
+            ("STD", {"on_off": True, "days": 5}),
+            ("Ticker", {"on_off": True}),
+            ("Mom12m", {"on_off": True, "days": 6}),
+            ("DivYield", {"on_off": True, "days": 7}),
+        )
+    )
     assert df.columns.to_list() == ["Label", "STD", "Ticker", "Mom12m", "DivYield"]
     assert df.index.get_level_values(0).unique()[-1] == pd.Timestamp("2018-12-13")
     assert df.index.get_level_values(1).unique().to_list() == ["CHMF", "AKRN", "BANEP"]
@@ -70,7 +73,13 @@ def test_get_all(example):
 # noinspection PyUnresolvedReferences
 def test_train_val_pool_params(example):
     train, val = example.train_val_pool_params(
-        ({"days": 4}, {"days": 5}, {}, {"days": 6}, {"days": 7})
+        (
+            ("Label", {"days": 4}),
+            ("STD", {"on_off": True, "days": 5}),
+            ("Ticker", {"on_off": True}),
+            ("Mom12m", {"on_off": True, "days": 6}),
+            ("DivYield", {"on_off": True, "days": 7}),
+        )
     )
 
     assert isinstance(train, dict)
@@ -85,12 +94,20 @@ def test_train_val_pool_params(example):
     assert val["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield"]
 
     assert train["data"].index.get_level_values(0)[0] == pd.Timestamp("2010-01-20")
-    assert train["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-02-08")
+    assert train["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-02-09")
 
-    assert val["data"].index.get_level_values(0)[0] == pd.Timestamp("2018-02-14")
+    assert val["data"].index.get_level_values(0)[0] == pd.Timestamp("2018-02-15")
     assert val["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-12-07")
 
-    df = example.get_all(({"days": 4}, {"days": 5}, {}, {"days": 6}, {"days": 7}))
+    df = example.get_all(
+        (
+            ("Label", {"days": 4}),
+            ("STD", {"on_off": True, "days": 5}),
+            ("Ticker", {"on_off": True}),
+            ("Mom12m", {"on_off": True, "days": 6}),
+            ("DivYield", {"on_off": True, "days": 7}),
+        )
+    )
 
     assert df.iloc[:, 1:].loc[train["data"].index].equals(train["data"])
     assert df.iloc[:, 0].loc[train["label"].index].equals(train["label"])
@@ -120,7 +137,15 @@ def test_train_predict_pool_params(example):
     assert predict["data"].index.get_level_values(0)[0] == pd.Timestamp("2018-12-13")
     assert predict["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-12-13")
 
-    df = example.get_all(({"days": 6}, {"days": 7}, {}, {"days": 3}, {"days": 9}))
+    df = example.get_all(
+        (
+            ("Label", {"days": 6}),
+            ("STD", {"on_off": True, "days": 7}),
+            ("Ticker", {"on_off": True}),
+            ("Mom12m", {"on_off": True, "days": 3}),
+            ("DivYield", {"on_off": True, "days": 9}),
+        )
+    )
 
     assert df.iloc[:, 1:].loc[train["data"].index].equals(train["data"])
     assert df.iloc[:, 0].loc[train["label"].index].equals(train["label"])

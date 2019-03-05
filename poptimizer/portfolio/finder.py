@@ -2,7 +2,7 @@
 import pandas as pd
 
 from poptimizer import ml, data, portfolio, config
-from poptimizer.ml import feature
+from poptimizer.ml import feature_old
 from poptimizer.portfolio import optimizer
 from poptimizer.portfolio.portfolio import CASH, Portfolio
 
@@ -50,11 +50,11 @@ def find_momentum(current_port: Portfolio, part: float = 0.1) -> pd.DataFrame:
         Сводная информация по лучшим акциям.
     """
     all_tickers = data.securities_with_reg_number()
-    mean_days = feature_days(feature.Mom12m)
+    mean_days = feature_days(feature_old.Mom12m)
     date = current_port.date
-    mean = feature.Mom12m(tuple(all_tickers), date).get(date, days=mean_days)
+    mean = feature_old.Mom12m(tuple(all_tickers), date).get(date, days=mean_days)
     mean *= mean_days
-    std = feature.STD(tuple(all_tickers), date).get(date, days=mean_days)
+    std = feature_old.STD(tuple(all_tickers), date).get(date, days=mean_days)
     std *= mean_days ** 0.5
     df = pd.concat([mean, std], axis=1)
     df["TURNOVER"] = get_turnover(current_port, all_tickers)
@@ -77,9 +77,9 @@ def find_dividends(current_port: Portfolio, part: float = 0.1) -> pd.DataFrame:
         Сводная информация по лучшим акциям.
     """
     all_tickers = data.securities_with_reg_number()
-    div_days = feature_days(feature.DivYield)
+    div_days = feature_days(feature_old.DivYield)
     date = current_port.date
-    div = feature.DivYield(tuple(all_tickers), date).get(date, days=div_days)
+    div = feature_old.DivYield(tuple(all_tickers), date).get(date, days=div_days)
     div = div.to_frame()
     div["TURNOVER"] = get_turnover(current_port, all_tickers)
     div["SCORE"] = div.iloc[:, 0] * div.iloc[:, 1]

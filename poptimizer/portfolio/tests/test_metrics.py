@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer import config
-from poptimizer.ml import feature, examples_old
+from poptimizer.ml import feature_old, examples_old
 from poptimizer.portfolio import Portfolio, portfolio, metrics
 from poptimizer.portfolio.metrics import Metrics, Forecast
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
@@ -28,12 +28,12 @@ ML_PARAMS = (
     },
 )
 FEATURES = [
-    feature.Label,
-    feature.STD,
-    feature.Ticker,
-    feature.Mom12m,
-    feature.DivYield,
-    feature.Mom1m,
+    feature_old.Label,
+    feature_old.STD,
+    feature_old.Ticker,
+    feature_old.Mom12m,
+    feature_old.DivYield,
+    feature_old.Mom1m,
 ]
 
 

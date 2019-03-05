@@ -9,8 +9,8 @@ import pandas as pd
 from sklearn import model_selection
 
 from poptimizer import config
-from poptimizer.ml import examples_old, forecaster, cv
-from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
+from poptimizer.ml import examples_old, forecaster, cv_old
+from poptimizer.ml.feature_old import YEAR_IN_TRADING_DAYS
 
 __all__ = ["learning_curve", "partial_dependence_curve", "cross_val_predict_plot"]
 
@@ -43,10 +43,12 @@ def learning_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
         learn_pool_params["data"],
         learn_pool_params["label"],
         train_sizes=list(FRACTIONS),
-        cv=model_selection.KFold(cv.FOLDS_COUNT, shuffle=True, random_state=cv.SEED),
+        cv=model_selection.KFold(
+            cv_old.FOLDS_COUNT, shuffle=True, random_state=cv_old.SEED
+        ),
         scoring="neg_mean_squared_error",
         shuffle=True,
-        random_state=cv.SEED,
+        random_state=cv_old.SEED,
     )
     fig, ax = plt.subplots(figsize=(PLOTS_SIZE, PLOTS_SIZE))
     fig.tight_layout(pad=3, h_pad=5)
@@ -122,7 +124,7 @@ def cross_val_predict_plot(tickers: Tuple[str, ...], date: pd.Timestamp):
         catboost.CatBoostRegressor(**model_params),
         learn_pool_params["data"],
         learn_pool_params["label"],
-        cv=cv.FOLDS_COUNT,
+        cv=cv_old.FOLDS_COUNT,
     )
     x = (
         learn_pool_params["label"]
