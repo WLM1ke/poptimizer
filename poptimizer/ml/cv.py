@@ -6,8 +6,8 @@ import hyperopt
 import numpy as np
 from hyperopt import hp
 
-from poptimizer import config, portfolio
-from poptimizer.config import POptimizerError
+from poptimizer import portfolio
+from poptimizer.config import POptimizerError, ML_PARAMS
 from poptimizer.ml.examples import Examples
 
 # Базовые настройки catboost
@@ -20,8 +20,8 @@ TECH_PARAMS = dict(
     iterations=MAX_ITERATIONS,
     random_state=SEED,
     od_type="Iter",
-    od_wait=20,
-    verbose=1,
+    od_wait=MAX_ITERATIONS // 10,
+    verbose=False,
     allow_writing_files=False,
 )
 
@@ -35,16 +35,16 @@ MAX_SEARCHES = 100
 ONE_HOT_SIZE = [2, 100]
 
 # Диапазон поиска скорости обучения
-LEARNING_RATE = [4.5e-02, 0.13]
+LEARNING_RATE = [0.005, 0.015]
 
 # Диапазон поиска глубины деревьев
-MAX_DEPTH = 6
+MAX_DEPTH = 7
 
 # Диапазон поиска параметра L2-регуляризации
 L2_LEAF_REG = [6.8e-01, 4.0]
 
 # Диапазон поиска случайности разбиений
-RANDOM_STRENGTH = [5.5e-01, 1.8]
+RANDOM_STRENGTH = [4.8e-01, 1.8]
 
 # Диапазон поиска интенсивности бэггинга
 BAGGING_TEMPERATURE = [0.49, 1.6e00]
@@ -109,6 +109,9 @@ def make_model_params(data_params, model_params):
     Вставляет корректные данные по отключенным признакам и добавляет общие технические параметры.
     """
     model_params["ignored_features"] = []
+    for num, (_, feat_params) in enumerate(data_params[1:]):
+        if feat_params.get("ON_OFF", True) is False:
+            model_params["ignored_features"].append(num)
     model_params = dict(**TECH_PARAMS, **model_params)
     return model_params
 
@@ -134,9 +137,7 @@ def valid_model(params: tuple, examples: Examples) -> dict:
         градиентного бустинга на кросс-валидации и общие настройки.
     """
     data_params, model_params = params
-    train_pool_params, val_pool_params = examples.train_val_pool_params(
-        [feat_params for _, feat_params in data_params]
-    )
+    train_pool_params, val_pool_params = examples.train_val_pool_params(data_params)
     train_pool = catboost.Pool(**train_pool_params)
     val_pool = catboost.Pool(**val_pool_params)
     model_params = make_model_params(data_params, model_params)
@@ -173,6 +174,7 @@ def optimize_hyper(examples: Examples) -> tuple:
         algo=hyperopt.tpe.suggest,
         max_evals=MAX_SEARCHES,
         rstate=np.random.RandomState(SEED),
+        show_progressbar=False,
     )
     # Преобразование из внутреннего представление в исходное пространство
     best_params = hyperopt.space_eval(param_space, best)
@@ -192,12 +194,12 @@ def print_result(name, params, examples: Examples):
     return cv_results["r2"]
 
 
-def find_better_model(port: portfolio.Portfolio):
+def find_better_model(port: portfolio.Portfolio, params: tuple = ML_PARAMS):
     """Ищет оптимальную модель и сравнивает с базовой - результаты сравнения распечатываются."""
-    examples = Examples(tuple(port.index[:-2]), port.date)
+    examples = Examples(tuple(port.index[:-2]), port.date, params[0])
     print("\nИдет поиск новой модели")
     new_params = optimize_hyper(examples)
-    base_params = config.ML_PARAMS
+    base_params = ML_PARAMS
     base_name = "Базовая модель"
     base_r2 = print_result(base_name, base_params, examples)
     new_name = "Найденная модель"
@@ -207,102 +209,3 @@ def find_better_model(port: portfolio.Portfolio):
         print(f"\nЛУЧШАЯ МОДЕЛЬ - {base_name}" f"\n{base_params}")
     else:
         print(f"\nЛУЧШАЯ МОДЕЛЬ - {new_name}" f"\n{new_params}")
-
-
-if __name__ == "__main__":
-    POSITIONS = dict(
-        AKRN=563,
-        BANE=236 + 84,
-        BANEP=1592,
-        CBOM=91100 + 112_200,
-        DVEC=68000,
-        DSKY=90 + 2090,
-        FEES=6_270_000,
-        KZOS=10600 + 4000,
-        HYDR=34000,
-        IRKT=1600 + 3300,
-        LKOH=185,
-        LSNGP=6600,
-        LSRG=1700 + 0 + 80,
-        MRKS=310_000 + 20000,
-        MRKU=0 + 90000,
-        MRKY=840_000 + 3_880_000,
-        MSRS=128_000 + 117_000,
-        MTSS=2330,
-        NKNCP=17500 + 5800,
-        NLMK=2480,
-        NMTP=11000 + 11000,
-        PHOR=110 + 72,
-        PIKK=4090 + 1560 + 90,
-        PMSBP=28730 + 4180 + 3360,
-        PRTK=6500 + 3600,
-        RASP=14150 + 4330 + 630,
-        RTKM=1080 + 3040,
-        RTKMP=65000 + 0 + 1700,
-        SELGP=3200 + 400,
-        SNGSP=30200 + 0 + 9800,
-        TATN=150,
-        TATNP=3420 + 290 + 100,
-        TTLK=1_980_000,
-        UPRO=901_000 + 0 + 9000,
-        VSMO=161 + 3,
-        # Бумаги с нулевым весом
-        TANL=0,
-        MRKP=0,
-        MTLRP=0,
-        MOEX=0,
-        SIBN=0,
-        GMKN=0,
-        MAGN=0,
-        CHMF=0,
-        ENRU=0,
-        ROSN=0,
-        NVTK=0,
-        AFLT=0,
-        ALRS=0,
-        MRKV=0,
-        GAZP=0,
-        SBERP=0,
-        SBER=0,
-        PLZL=0,
-        MGNT=0,
-        SNGS=0,
-        RSTI=0,
-        TGKA=0,
-        OMZZP=0,
-        MFON=0,
-        MSST=0,
-        IRAO=0,
-    )
-    from poptimizer.ml.feature.divyield import DivYield
-    from poptimizer.ml.feature.label import Label
-    from poptimizer.ml.feature.mom12 import Mom12m
-    from poptimizer.ml.feature.mom1m import Mom1m
-    from poptimizer.ml.feature.retmax import RetMax
-    from poptimizer.ml.feature.std import STD
-    from poptimizer.ml.feature.ticker import Ticker
-
-    ML_PARAMS = (
-        (
-            (Label, {"days": 42}),
-            (STD, {"on_off": True, "days": 42}),
-            (Ticker, {"on_off": True}),
-            (Mom12m, {"on_off": True, "days": 252}),
-            (DivYield, {"on_off": True, "days": 252}),
-            (Mom1m, {"on_off": True, "days": 21}),
-            (RetMax, {"on_off": True, "days": 21}),
-        ),
-        {
-            "bagging_temperature": 1,
-            "depth": 6,
-            "l2_leaf_reg": 3,
-            "learning_rate": 0.03,
-            "one_hot_max_size": 2,
-            "random_strength": 1,
-            "ignored_features": [],
-        },
-    )
-    import pandas as pd
-
-    cases = Examples(tuple(POSITIONS), pd.Timestamp("2019-03-01"), ML_PARAMS[0])
-    print(valid_model(ML_PARAMS, cases))

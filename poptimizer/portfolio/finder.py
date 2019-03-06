@@ -2,7 +2,6 @@
 import pandas as pd
 
 from poptimizer import ml, data, portfolio, config
-from poptimizer.ml import feature_old
 from poptimizer.portfolio import optimizer
 from poptimizer.portfolio.portfolio import CASH, Portfolio
 

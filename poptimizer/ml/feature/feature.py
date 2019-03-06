@@ -53,4 +53,8 @@ class DaysParamsMixin:
     def get_params_space(self) -> dict:
         """Значение дней в диапазоне."""
         days = self._params["days"]
-        return {"days": hp.choice(f"{self.name}_DAYS", [days - 1, days, days + 1])}
+        return {
+            "days": hp.choice(
+                f"{self.name}_DAYS", list(range(int(days * 0.9), int(days * 1.1) + 2))
+            )
+        }

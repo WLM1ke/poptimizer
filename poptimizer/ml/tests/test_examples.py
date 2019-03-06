@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 import pytest
+from poptimizer.ml.feature_old import YEAR_IN_TRADING_DAYS
 
 from poptimizer.config import AFTER_TAX
 from poptimizer.ml import examples
-from poptimizer.ml.feature_old import YEAR_IN_TRADING_DAYS
 
 FEAT_PARAMS = (
     ("Label", {"days": 6}),
@@ -33,11 +33,11 @@ def test_categorical_features(example):
 
 def test_get_params_space(example):
     space = example.get_params_space()
-    print(space)
     assert isinstance(space, list)
     assert len(space) == 5
-    for params in space:
-        isinstance(params, dict)
+    for feat_name, feat_params in space:
+        assert isinstance(feat_name, str)
+        assert isinstance(feat_params, dict)
 
 
 # noinspection PyUnresolvedReferences

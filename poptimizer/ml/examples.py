@@ -7,27 +7,6 @@ from poptimizer.ml import feature
 
 TRAIN_VAL_SPLIT = 0.9
 
-ML_PARAMS = (
-    (
-        ("Label", {"days": 21}),
-        ("STD", {"on_off": True, "days": 20}),
-        ("Ticker", {"on_off": True}),
-        ("Mom12m", {"on_off": True, "days": 251}),
-        ("DivYield", {"on_off": True, "days": 253}),
-        ("Mom1m", {"on_off": True, "days": 21}),
-        ("RetMax", {"on_off": True, "days": 22}),
-    ),
-    {
-        "bagging_temperature": 1.041_367_726_420_619,
-        "depth": 5,
-        "l2_leaf_reg": 2.764_496_778_258_427_3,
-        "learning_rate": 0.060_435_197_338_608_936,
-        "one_hot_max_size": 100,
-        "random_strength": 1.376_092_249_675_814_1,
-        "ignored_features": [],
-    },
-)
-
 
 class Examples:
     """Позволяет сформировать набор обучающих примеров и меток к ним.
@@ -64,7 +43,7 @@ class Examples:
 
     def get_params_space(self):
         """Формирует общее вероятностное пространство модели."""
-        return [feat.get_params_space() for feat in self._features]
+        return [(feat.name, feat.get_params_space()) for feat in self._features]
 
     def get_all(self, params):
         """Получить все обучающие примеры.
