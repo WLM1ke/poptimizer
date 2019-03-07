@@ -11,7 +11,7 @@ from poptimizer.config import POptimizerError, ML_PARAMS
 from poptimizer.ml.examples import Examples
 
 # Базовые настройки catboost
-MAX_ITERATIONS = 300
+MAX_ITERATIONS = 1000
 SEED = 284_704
 FOLDS_COUNT = 20
 TECH_PARAMS = dict(
@@ -41,7 +41,7 @@ LEARNING_RATE = [0.005, 0.015]
 MAX_DEPTH = 7
 
 # Диапазон поиска параметра L2-регуляризации
-L2_LEAF_REG = [6.8e-01, 4.0]
+L2_LEAF_REG = [0.68, 4.4e00]
 
 # Диапазон поиска случайности разбиений
 RANDOM_STRENGTH = [4.8e-01, 1.8]

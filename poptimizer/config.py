@@ -14,6 +14,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Количество колонок в распечатках без переноса на несколько страниц
 pd.set_option("display.max_columns", 20)
+pd.set_option("display.max_rows", 70)
 pd.set_option("display.width", None)
 
 # Путь к директории с данными
@@ -35,26 +36,26 @@ MAX_TRADE = 0.01
 TURNOVER_PERIOD = 21
 
 # Минимальный оборот - преимущества акции снижаются при приближении медианного оборота к данному уровню
-TURNOVER_CUT_OFF = 4.8 * MAX_TRADE
+TURNOVER_CUT_OFF = 4.7 * MAX_TRADE
 
 # Параметры ML-модели
 ML_PARAMS = (
     (
-        ("Label", {"days": 23}),
-        ("STD", {"days": 20}),
+        ("Label", {"days": 22}),
+        ("STD", {"days": 23}),
         ("Ticker", {}),
-        ("Mom12m", {"days": 250}),
-        ("DivYield", {"days": 253}),
-        ("Mom1m", {"days": 20}),
-        ("RetMax", {"days": 22}),
+        ("Mom12m", {"days": 245}),
+        ("DivYield", {"days": 275}),
+        ("Mom1m", {"days": 23}),
+        ("RetMax", {"days": 18}),
     ),
     {
-        "bagging_temperature": 1,
+        "bagging_temperature": 0.5840511654727687,
         "depth": 6,
-        "l2_leaf_reg": 3,
-        "learning_rate": 0.01,
+        "l2_leaf_reg": 1.6751871326946743,
+        "learning_rate": 0.012260830377916065,
         "one_hot_max_size": 100,
-        "random_strength": 1,
+        "random_strength": 0.8185547547078572,
         "ignored_features": [],
     },
 )

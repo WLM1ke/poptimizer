@@ -1,15 +1,18 @@
 """Поиск претендентов на включение и исключение из портфеля."""
 import pandas as pd
 
-from poptimizer import ml, data, portfolio, config
+from poptimizer import data, portfolio, config
+from poptimizer.ml import feature
 from poptimizer.portfolio import optimizer
 from poptimizer.portfolio.portfolio import CASH, Portfolio
 
 
-def feature_days(feat):
+def feature_params(feat_name):
     """Поиск значения параметра количество дней для признака."""
-    loc = ml.Examples.FEATURES.index(feat)
-    return config.ML_PARAMS[0][loc][1]["days"]
+    feat_conf = config.ML_PARAMS[0]
+    for name, params in feat_conf:
+        if name == feat_name:
+            return params
 
 
 def get_turnover(port, tickers):
@@ -49,13 +52,17 @@ def find_momentum(current_port: Portfolio, part: float = 0.1) -> pd.DataFrame:
         Сводная информация по лучшим акциям.
     """
     all_tickers = data.securities_with_reg_number()
-    mean_days = feature_days(feature_old.Mom12m)
+    params = feature_params("Mom12m")
     date = current_port.date
-    mean = feature_old.Mom12m(tuple(all_tickers), date).get(date, days=mean_days)
-    mean *= mean_days
-    std = feature_old.STD(tuple(all_tickers), date).get(date, days=mean_days)
-    std *= mean_days ** 0.5
-    df = pd.concat([mean, std], axis=1)
+    mean = feature.Mom12m(tuple(all_tickers), date, params).get()
+    mean *= params["days"]
+    mean = mean.loc[mean.index.get_level_values(0) == date]
+    mean.index = mean.index.get_level_values(1)
+    std = feature.STD(tuple(all_tickers), date, params).get()
+    std *= params["days"] ** 0.5
+    std = std.loc[std.index.get_level_values(0) == date]
+    std.index = std.index.get_level_values(1)
+    df = pd.concat([mean, std], axis=1, sort=True)
     df["TURNOVER"] = get_turnover(current_port, all_tickers)
     df["T_SCORE"] = df.iloc[:, 0] / df.iloc[:, 1] * df.iloc[:, 2]
     choose = int(part * all_tickers.size)
@@ -76,9 +83,11 @@ def find_dividends(current_port: Portfolio, part: float = 0.1) -> pd.DataFrame:
         Сводная информация по лучшим акциям.
     """
     all_tickers = data.securities_with_reg_number()
-    div_days = feature_days(feature_old.DivYield)
+    params = feature_params("DivYield")
     date = current_port.date
-    div = feature_old.DivYield(tuple(all_tickers), date).get(date, days=div_days)
+    div = feature.DivYield(tuple(all_tickers), date, params).get()
+    div = div.loc[div.index.get_level_values(0) == date]
+    div.index = div.index.get_level_values(1)
     div = div.to_frame()
     div["TURNOVER"] = get_turnover(current_port, all_tickers)
     div["SCORE"] = div.iloc[:, 0] * div.iloc[:, 1]

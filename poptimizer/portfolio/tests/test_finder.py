@@ -36,7 +36,7 @@ FEATURES = [
 
 def test_feature_days(monkeypatch):
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
-    assert finder.feature_days(feature_old.Label) == 21
+    assert finder.feature_params(feature_old.Label) == 21
 
 
 # noinspection PyUnresolvedReferences
@@ -54,7 +54,7 @@ def test_get_turnover(monkeypatch):
 # noinspection PyUnresolvedReferences
 def test_find_momentum(monkeypatch):
     monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0022)
-    monkeypatch.setattr(finder, "feature_days", lambda x: 252)
+    monkeypatch.setattr(finder, "feature_params", lambda x: 252)
     date = pd.Timestamp("2018-12-18")
     positions = dict(TATN=20000, KZOS=20000, LKOH=20000)
     port = portfolio.Portfolio(date, 0, positions)
