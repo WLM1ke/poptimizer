@@ -42,20 +42,20 @@ TURNOVER_CUT_OFF = 4.7 * MAX_TRADE
 ML_PARAMS = (
     (
         ("Label", {"days": 22}),
-        ("STD", {"days": 23}),
+        ("STD", {"days": 18}),
         ("Ticker", {}),
-        ("Mom12m", {"days": 245}),
-        ("DivYield", {"days": 275}),
+        ("Mom12m", {"days": 243}),
+        ("DivYield", {"days": 273}),
         ("Mom1m", {"days": 23}),
-        ("RetMax", {"days": 18}),
+        ("RetMax", {"days": 24}),
     ),
     {
-        "bagging_temperature": 0.5840511654727687,
+        "bagging_temperature": 1.4665361186550832,
         "depth": 6,
-        "l2_leaf_reg": 1.6751871326946743,
-        "learning_rate": 0.012260830377916065,
+        "l2_leaf_reg": 1.8060653380483582,
+        "learning_rate": 0.005703296284968271,
         "one_hot_max_size": 100,
-        "random_strength": 0.8185547547078572,
+        "random_strength": 1.2357288368524728,
         "ignored_features": [],
     },
 )

@@ -64,9 +64,9 @@ def find_momentum(current_port: Portfolio, part: float = 0.1) -> pd.DataFrame:
     std.index = std.index.get_level_values(1)
     df = pd.concat([mean, std], axis=1, sort=True)
     df["TURNOVER"] = get_turnover(current_port, all_tickers)
-    df["T_SCORE"] = df.iloc[:, 0] / df.iloc[:, 1] * df.iloc[:, 2]
+    df["_DRAW_DOWN"] = df.iloc[:, 0] * df.iloc[:, 2] / df.iloc[:, 1] ** 2
     choose = int(part * all_tickers.size)
-    return mark_not_portfolio(df, "T_SCORE", choose, current_port)
+    return mark_not_portfolio(df, "_DRAW_DOWN", choose, current_port)
 
 
 def find_dividends(current_port: Portfolio, part: float = 0.1) -> pd.DataFrame:
