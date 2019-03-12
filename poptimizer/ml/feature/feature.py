@@ -5,6 +5,9 @@ from typing import Tuple
 import pandas as pd
 from hyperopt import hp
 
+# Относительная ширина относительно базового значения для вероятностного пространства
+SPACE_RANGE = 0.1
+
 
 class AbstractFeature(ABC):
     """Создает признак для заданного набора тикеров с использованием статистики до определенной даты."""
@@ -41,6 +44,11 @@ class AbstractFeature(ABC):
         """
 
 
+def choice_list(days, space_range=SPACE_RANGE):
+    """Список дней в окрестности указанного значения."""
+    return list(range(int(days * (1 - space_range)), int(days * (1 + space_range)) + 2))
+
+
 # noinspection PyUnresolvedReferences
 class DaysParamsMixin:
     """Класс с реализацией параметра с количеством дней для признака."""
@@ -54,7 +62,6 @@ class DaysParamsMixin:
         """Значение дней в диапазоне."""
         days = self._params["days"]
         return {
-            "days": hp.choice(
-                f"{self.name}_DAYS", list(range(int(days * 0.9), int(days * 1.1) + 2))
-            )
+            "on_off": True,
+            "days": hp.choice(f"{self.name}_DAYS", choice_list(days)),
         }

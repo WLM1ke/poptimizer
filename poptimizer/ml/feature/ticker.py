@@ -25,7 +25,7 @@ class Ticker(AbstractFeature):
     @classmethod
     def get_params_space(cls) -> dict:
         """Параметров нет - пустой словарь."""
-        return dict()
+        return {"on_off": True}
 
     def get(self, params=None) -> pd.Series:
         """Для дат, в которые есть котировки указывается тикер."""

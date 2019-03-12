@@ -15,7 +15,6 @@ class RetMax(DaysParamsMixin, AbstractFeature):
     имеют значимо более низкую доходность в последующие месяцы.
     """
 
-    # noinspection PyUnresolvedReferences
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp, params: dict):
         super().__init__(tickers, last_date, params)
 

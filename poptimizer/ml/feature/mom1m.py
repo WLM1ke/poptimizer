@@ -17,7 +17,6 @@ class Mom1m(DaysParamsMixin, AbstractFeature):
     краткосрочной реверсии.
     """
 
-    # noinspection PyUnresolvedReferences
     def __init__(self, tickers: Tuple[str, ...], last_date: pd.Timestamp, params: dict):
         super().__init__(tickers, last_date, params)
 

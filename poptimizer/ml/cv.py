@@ -110,7 +110,7 @@ def make_model_params(data_params, model_params):
     """
     model_params["ignored_features"] = []
     for num, (_, feat_params) in enumerate(data_params[1:]):
-        if feat_params.get("ON_OFF", True) is False:
+        if feat_params.get("on_off", True) is False:
             model_params["ignored_features"].append(num)
     model_params = dict(**TECH_PARAMS, **model_params)
     return model_params

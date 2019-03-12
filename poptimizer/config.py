@@ -30,7 +30,7 @@ AFTER_TAX = 1 - 0.13
 T_SCORE = 2.0
 
 # Максимальный объем одной торговой операции в долях портфеля
-MAX_TRADE = 0.01
+MAX_TRADE = 0.011
 
 # Период в торговых днях, за который медианный оборот торгов
 TURNOVER_PERIOD = 21
@@ -41,21 +41,21 @@ TURNOVER_CUT_OFF = 4.7 * MAX_TRADE
 # Параметры ML-модели
 ML_PARAMS = (
     (
-        ("Label", {"days": 22}),
-        ("STD", {"days": 18}),
+        ("Label", {"days": 24}),
+        ("STD", {"days": 20}),
         ("Ticker", {}),
-        ("Mom12m", {"days": 243}),
+        ("Mom12m", {"days": 237}),
         ("DivYield", {"days": 273}),
-        ("Mom1m", {"days": 23}),
-        ("RetMax", {"days": 24}),
+        ("Mom1m", {"days": 26}),
+        ("RetMax", {"days": 25}),
     ),
     {
-        "bagging_temperature": 1.4665361186550832,
+        "bagging_temperature": 1.0119313141226849,
         "depth": 6,
-        "l2_leaf_reg": 1.8060653380483582,
-        "learning_rate": 0.005703296284968271,
+        "l2_leaf_reg": 2.664570812697747,
+        "learning_rate": 0.011398942556206918,
         "one_hot_max_size": 100,
-        "random_strength": 1.2357288368524728,
+        "random_strength": 0.5599905025336634,
         "ignored_features": [],
     },
 )
