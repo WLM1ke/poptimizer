@@ -14,7 +14,6 @@ class Examples:
     Разбить данные на обучающую и валидирующую выборку или получить полный набор данных.
     """
 
-    # noinspection PyUnresolvedReferences
     def __init__(self, tickers: Tuple[str, ...], date: pd.Timestamp, params: tuple):
         """Обучающие примеры состоят из признаков на основе данных для тикеров до указанной даты.
 

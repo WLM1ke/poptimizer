@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 import pytest
-from poptimizer.ml.feature_old import YEAR_IN_TRADING_DAYS
 
 from poptimizer.config import AFTER_TAX
 from poptimizer.ml import examples
+from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 
 FEAT_PARAMS = (
     ("Label", {"days": 6}),
@@ -15,7 +15,6 @@ FEAT_PARAMS = (
 )
 
 
-# noinspection PyUnresolvedReferences
 @pytest.fixture(name="example")
 def create_examples():
     yield examples.Examples(
@@ -40,7 +39,6 @@ def test_get_params_space(example):
         assert isinstance(feat_params, dict)
 
 
-# noinspection PyUnresolvedReferences
 def test_get_all(example):
     df = example.get_all(
         (
@@ -70,7 +68,6 @@ def test_get_all(example):
     )
 
 
-# noinspection PyUnresolvedReferences
 def test_train_val_pool_params(example):
     train, val = example.train_val_pool_params(
         (
@@ -116,7 +113,6 @@ def test_train_val_pool_params(example):
     assert df.iloc[:, 0].loc[val["label"].index].equals(val["label"])
 
 
-# noinspection PyUnresolvedReferences
 def test_train_predict_pool_params(example):
     train, predict = example.train_predict_pool_params()
 
