@@ -4,7 +4,7 @@ from typing import Tuple
 import pandas as pd
 
 from poptimizer import data
-from poptimizer.ml.feature.feature import AbstractFeature
+from poptimizer.ml.feature.feature import AbstractFeature, ON_OFF
 
 
 class Ticker(AbstractFeature):
@@ -25,7 +25,7 @@ class Ticker(AbstractFeature):
     @classmethod
     def get_params_space(cls) -> dict:
         """Параметров нет - пустой словарь."""
-        return {"on_off": True}
+        return {ON_OFF: True}
 
     def get(self, params=None) -> pd.Series:
         """Для дат, в которые есть котировки указывается тикер."""

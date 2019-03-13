@@ -7,6 +7,7 @@ from hyperopt import hp
 
 # Относительная ширина относительно базового значения для вероятностного пространства
 SPACE_RANGE = 0.1
+ON_OFF = "on_off"
 
 
 class AbstractFeature(ABC):
@@ -61,7 +62,4 @@ class DaysParamsMixin:
     def get_params_space(self) -> dict:
         """Значение дней в диапазоне."""
         days = self._params["days"]
-        return {
-            "on_off": True,
-            "days": hp.choice(f"{self.name}_DAYS", choice_list(days)),
-        }
+        return {ON_OFF: True, "days": hp.choice(f"{self.name}_DAYS", choice_list(days))}

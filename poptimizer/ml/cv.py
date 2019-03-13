@@ -6,14 +6,14 @@ import hyperopt
 import numpy as np
 from hyperopt import hp
 
-from poptimizer import portfolio
 from poptimizer.config import POptimizerError, ML_PARAMS
 from poptimizer.ml.examples import Examples
+from poptimizer.ml.feature import ON_OFF
+from poptimizer.portfolio import Portfolio
 
 # Базовые настройки catboost
 MAX_ITERATIONS = 1000
 SEED = 284_704
-FOLDS_COUNT = 20
 TECH_PARAMS = dict(
     loss_function="RMSE",
     custom_metric="R2",
@@ -104,20 +104,20 @@ def check_model_bounds(params: dict, bound: float = 0.1, increase: float = 0.2):
 
 
 def make_model_params(data_params, model_params):
-    """Формирует параметры модели:
+    """Формирует параметры модели.
 
-    Вставляет корректные данные по отключенным признакам и добавляет общие технические параметры.
+    Добавляет общие технические параметры и вставляет корректные данные по отключенным признакам.
     """
-    model_params["ignored_features"] = []
+    result = dict(**TECH_PARAMS, **model_params)
+    result["ignored_features"] = []
     for num, (_, feat_params) in enumerate(data_params[1:]):
-        if feat_params.get("on_off", True) is False:
-            model_params["ignored_features"].append(num)
-    model_params = dict(**TECH_PARAMS, **model_params)
-    return model_params
+        if feat_params.get(ON_OFF, True) is False:
+            result["ignored_features"].append(num)
+    return result
 
 
 def valid_model(params: tuple, examples: Examples) -> dict:
-    """Осуществляет валидацию модели по RMSE, нормированному на СКО набора данных.
+    """Осуществляет валидацию модели по R2.
 
     Осуществляется проверка, что не достигнут максимум итераций, возвращается RMSE, R2 и параметры модели
     с оптимальным количеством итераций в формате целевой функции hyperopt.
@@ -194,7 +194,7 @@ def print_result(name, params, examples: Examples):
     return cv_results["r2"]
 
 
-def find_better_model(port: portfolio.Portfolio, params: tuple = ML_PARAMS):
+def find_better_model(port: Portfolio, params: tuple = ML_PARAMS):
     """Ищет оптимальную модель и сравнивает с базовой - результаты сравнения распечатываются."""
     examples = Examples(tuple(port.index[:-2]), port.date, params[0])
     print("\nИдет поиск новой модели")
