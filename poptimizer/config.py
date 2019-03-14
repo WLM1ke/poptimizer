@@ -39,8 +39,8 @@ TURNOVER_PERIOD = 21
 TURNOVER_CUT_OFF = 4.7 * MAX_TRADE
 
 # Параметры ML-модели
-ML_PARAMS = (
-    (
+ML_PARAMS = {
+    "data": (
         ("Label", {"days": 24}),
         ("STD", {"days": 20}),
         ("Ticker", {}),
@@ -49,7 +49,7 @@ ML_PARAMS = (
         ("Mom1m", {"days": 26}),
         ("RetMax", {"days": 25}),
     ),
-    {
+    "model": {
         "bagging_temperature": 1.0119313141226849,
         "depth": 6,
         "l2_leaf_reg": 2.664570812697747,
@@ -58,4 +58,4 @@ ML_PARAMS = (
         "random_strength": 0.5599905025336634,
         "ignored_features": [],
     },
-)
+}

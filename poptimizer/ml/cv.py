@@ -116,7 +116,7 @@ def make_model_params(data_params, model_params):
     return result
 
 
-def valid_model(params: tuple, examples: Examples) -> dict:
+def valid_model(params: dict, examples: Examples) -> dict:
     """Осуществляет валидацию модели по R2.
 
     Осуществляется проверка, что не достигнут максимум итераций, возвращается RMSE, R2 и параметры модели
@@ -136,7 +136,7 @@ def valid_model(params: tuple, examples: Examples) -> dict:
         * ключ 'params' - параметры модели и данных, в которые добавлено оптимальное количество итераций
         градиентного бустинга на кросс-валидации и общие настройки.
     """
-    data_params, model_params = params
+    data_params, model_params = params["data"], params["model"]
     train_pool_params, val_pool_params = examples.train_val_pool_params(data_params)
     train_pool = catboost.Pool(**train_pool_params)
     val_pool = catboost.Pool(**val_pool_params)
@@ -154,7 +154,8 @@ def valid_model(params: tuple, examples: Examples) -> dict:
         status=hyperopt.STATUS_OK,
         std=std,
         r2=r2,
-        params=(data_params, model_params),
+        data=data_params,
+        model=model_params,
     )
 
 
@@ -167,7 +168,7 @@ def optimize_hyper(examples: Examples) -> tuple:
         Оптимальные параметры модели.
     """
     objective = functools.partial(valid_model, examples=examples)
-    param_space = (examples.get_params_space(), get_model_space())
+    param_space = dict(data=examples.get_params_space(), model=get_model_space())
     best = hyperopt.fmin(
         objective,
         space=param_space,
@@ -178,7 +179,7 @@ def optimize_hyper(examples: Examples) -> tuple:
     )
     # Преобразование из внутреннего представление в исходное пространство
     best_params = hyperopt.space_eval(param_space, best)
-    check_model_bounds(best_params[1])
+    check_model_bounds(best_params["model"])
     return best_params
 
 
@@ -188,15 +189,16 @@ def print_result(name, params, examples: Examples):
     print(
         f"\n{name}"
         f"\nR2 - {cv_results['r2']:0.4%}"
-        f"\nКоличество итераций - {cv_results['params'][1]['iterations']}"
-        f"\n{cv_results['params']}"
+        f"\nКоличество итераций - {cv_results['model']['iterations']}"
+        f"\n{cv_results['data']}"
+        f"\n{cv_results['model']}"
     )
     return cv_results["r2"]
 
 
-def find_better_model(port: Portfolio, params: tuple = ML_PARAMS):
+def find_better_model(port: Portfolio, params: dict = ML_PARAMS):
     """Ищет оптимальную модель и сравнивает с базовой - результаты сравнения распечатываются."""
-    examples = Examples(tuple(port.index[:-2]), port.date, params[0])
+    examples = Examples(tuple(port.index[:-2]), port.date, params["data"])
     print("\nИдет поиск новой модели")
     new_params = optimize_hyper(examples)
     base_params = ML_PARAMS

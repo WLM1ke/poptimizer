@@ -31,7 +31,7 @@ def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
     params = config.ML_PARAMS
     cases = examples.Examples(tickers, date, params[0])
     _, _, cv_params = forecaster.cv_results(cases, params)
-    clf, _, _ = forecaster.fit_clf(cv_params, cases)
+    clf, _, _ = fit_clf(cv_params, cases)
     pool_params, _ = cases.train_predict_pool_params()
     pool_params["label"] = None
     n_plots = len(params[0]) - 1 - len(cases.categorical_features())
@@ -68,3 +68,13 @@ def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
         results.append((quantiles, y))
     plt.show()
     return results
+
+
+def fit_clf(valid_params: tuple, cases: examples.Examples):
+    """Тренирует ML-модель на основе параметров с учетом количества итераций."""
+    data_params, model_params = valid_params
+    train_params, predict_params = cases.train_predict_pool_params()
+    learn_pool = catboost.Pool(**train_params)
+    clf = catboost.CatBoostRegressor(**model_params)
+    clf.fit(learn_pool)
+    return clf, learn_pool.num_row(), predict_params

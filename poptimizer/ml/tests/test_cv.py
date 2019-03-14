@@ -7,15 +7,15 @@ from poptimizer.config import POptimizerError
 from poptimizer.ml import cv, examples
 from poptimizer.portfolio import portfolio
 
-PARAMS = (
-    (
+PARAMS = {
+    "data": (
         ("Label", {"days": 21}),
         ("STD", {"days": 252}),
         ("Ticker", {}),
         ("Mom12m", {"days": 252}),
         ("DivYield", {"days": 252}),
     ),
-    {
+    "model": {
         "bagging_temperature": 1,
         "depth": 6,
         "ignored_features": [],
@@ -24,7 +24,7 @@ PARAMS = (
         "one_hot_max_size": 2,
         "random_strength": 1,
     },
-)
+}
 
 
 def test_log_space():
@@ -174,25 +174,24 @@ def test_make_model_params():
 
 def test_valid_model():
     data = examples.Examples(
-        ("LSNGP", "LKOH", "GMKN"), pd.Timestamp("2018-12-14"), PARAMS[0]
+        ("LSNGP", "LKOH", "GMKN"), pd.Timestamp("2018-12-14"), PARAMS["data"]
     )
     result = cv.valid_model(PARAMS, data)
 
     assert isinstance(result, dict)
-    assert len(result) == 5
+    assert len(result) == 6
     assert result["loss"] == pytest.approx(0.014_495_100_438_051_8)
     assert result["status"] == "ok"
     assert result["std"] == pytest.approx(0.163_971_874_342_929_92)
     assert result["r2"] == pytest.approx(-0.014_495_100_438_051_8)
-    data_params, model_params = result["params"]
-    assert data_params == PARAMS[0]
-    for key, value in PARAMS[1].items():
-        assert model_params[key] == value
+    assert result["data"] == PARAMS["data"]
+    for key, value in PARAMS["model"].items():
+        assert result["model"][key] == value
     for key, value in cv.TECH_PARAMS.items():
         if key == "iterations":
-            assert model_params[key] < value
+            assert result["model"][key] < value
         else:
-            assert model_params[key] == value
+            assert result["model"][key] == value
 
 
 def test_cv_model_raise_max_iter(monkeypatch):
@@ -202,7 +201,7 @@ def test_cv_model_raise_max_iter(monkeypatch):
     monkeypatch.setattr(cv, "TECH_PARAMS", fake_tech_params)
     monkeypatch.setattr(cv, "MAX_ITERATIONS", fake_max_iter)
     data = examples.Examples(
-        ("LSNGP", "LKOH", "GMKN"), pd.Timestamp("2018-12-14"), PARAMS[0]
+        ("LSNGP", "LKOH", "GMKN"), pd.Timestamp("2018-12-14"), PARAMS["data"]
     )
     with pytest.raises(POptimizerError) as error:
         cv.valid_model(PARAMS, data)
@@ -210,15 +209,15 @@ def test_cv_model_raise_max_iter(monkeypatch):
 
 
 def test_optimize_hyper(monkeypatch, capsys):
-    space = (
-        (
+    space = {
+        "data": (
             ("Label", {"days": hp.choice("label", list(range(21, 31)))}),
             ("STD", {"days": 186}),
             ("Ticker", {"on_off": False}),
             ("Mom12m", {"days": 279}),
             ("DivYield", {"days": 252}),
         ),
-        {
+        "model": {
             "bagging_temperature": 1,
             "depth": 6,
             "l2_leaf_reg": 3,
@@ -227,22 +226,22 @@ def test_optimize_hyper(monkeypatch, capsys):
             "random_strength": 1,
             "ignored_features": [],
         },
-    )
+    }
     cases = examples.Examples(
-        ("LSNGP", "LKOH", "GMKN"), pd.Timestamp("2018-12-14"), PARAMS[0]
+        ("LSNGP", "LKOH", "GMKN"), pd.Timestamp("2018-12-14"), PARAMS["data"]
     )
     monkeypatch.setattr(cv, "MAX_SEARCHES", 10)
-    monkeypatch.setattr(cases, "get_params_space", lambda: space[0])
-    monkeypatch.setattr(cv, "get_model_space", lambda: space[1])
+    monkeypatch.setattr(cases, "get_params_space", lambda: space["data"])
+    monkeypatch.setattr(cv, "get_model_space", lambda: space["model"])
 
     result = cv.optimize_hyper(cases)
 
     captured = capsys.readouterr()
     assert "Необходимо расширить" in captured.out
 
-    assert isinstance(result, tuple)
+    assert isinstance(result, dict)
     assert len(result) == 2
-    assert result[0] == (
+    assert result["data"] == (
         ("Label", {"days": 29}),
         ("STD", {"days": 186}),
         ("Ticker", {"on_off": False}),
@@ -258,7 +257,7 @@ def test_optimize_hyper(monkeypatch, capsys):
         "random_strength": 1,
     }
     for k, v in model_params.items():
-        assert result[1][k] == pytest.approx(v)
+        assert result["model"][k] == pytest.approx(v)
 
 
 def test_find_better_model(monkeypatch, capsys):

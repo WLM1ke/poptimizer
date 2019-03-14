@@ -2,8 +2,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import poptimizer.ml.plots
 from poptimizer.config import POptimizerError
-from poptimizer.ml import forecaster_old, examples_old, feature_old
+from poptimizer.ml import forecaster, feature
 from poptimizer.portfolio.metrics import Forecast
 
 PARAMS = (
@@ -27,12 +28,12 @@ PARAMS = (
 )
 
 FEATURES = [
-    feature_old.Label,
-    feature_old.STD,
-    feature_old.Ticker,
-    feature_old.Mom12m,
-    feature_old.DivYield,
-    feature_old.Mom1m,
+    feature.Label,
+    feature.STD,
+    feature.Ticker,
+    feature.Mom12m,
+    feature.DivYield,
+    feature.Mom1m,
 ]
 
 
@@ -45,13 +46,13 @@ def make_cases(monkeypatch):
 
 @pytest.fixture(name="cv_results")
 def make_cv_results(cases):
-    return forecaster_old.cv_results(cases, PARAMS)
+    return forecaster.cv_results(cases, PARAMS)
 
 
 @pytest.fixture(name="clf_n_cases")
 def make_fit_clf(cases, cv_results):
     _, _, cv_params = cv_results
-    return forecaster_old.fit_clf(cv_params, cases)
+    return poptimizer.ml.plots.fit_clf(cv_params, cases)
 
 
 def test_cv_results(cv_results):
@@ -70,7 +71,7 @@ def test_fit_clf(clf_n_cases):
 def test_predict_mean(cases, cv_results, clf_n_cases):
     clf, _ = clf_n_cases
     _, _, cv_params = cv_results
-    mean = forecaster_old.predict_mean(clf, cases, cv_params)
+    mean = forecaster.predict_mean(clf, cases, cv_params)
 
     assert isinstance(mean, np.ndarray)
     assert len(mean) == 3
@@ -83,7 +84,7 @@ def test_validate_cov(cases, cv_results):
     _, _, cv_params = cv_results
     cov = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     with pytest.raises(POptimizerError) as error:
-        forecaster_old.validate_cov(cov, cases, cv_params)
+        forecaster.validate_cov(cov, cases, cv_params)
     assert (
         "Расчетная ковариация не совпадает с использовавшейся для нормирования"
         == str(error.value)
@@ -92,7 +93,7 @@ def test_validate_cov(cases, cv_results):
 
 def test_ledoit_wolf_cov(cases, cv_results):
     _, _, cv_params = cv_results
-    cov, average_cor, shrinkage = forecaster_old.ledoit_wolf_cov(
+    cov, average_cor, shrinkage = forecaster.ledoit_wolf_cov(
         cases, cv_params, ("SNGSP", "VSMO", "DSKY"), pd.Timestamp("2018-12-14"), 2
     )
     assert isinstance(cov, np.ndarray)
