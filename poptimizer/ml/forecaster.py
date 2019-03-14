@@ -25,20 +25,20 @@ def validate_cov(cov, predict_pool_params):
     scaler = predict_pool_params["data"].iloc[:, 0]
     if not np.allclose(np.diag(cov), scaler.values ** 2):
         raise POptimizerError(
-            "Расчетная ковариация не совпадает с использовавшейся для нормирования"
+            f"Расчетная ковариация не совпадает с использовавшейся для нормирования:"
+            f"\n{np.diag(cov)}"
+            f"\n{scaler.values ** 2}"
         )
 
 
-def ledoit_wolf_cov(predict_pool_params, valid_result, tickers, date):
+def ledoit_wolf_cov(tickers, date, predict_pool_params, valid_result):
     """Ковариационная матрица на основе Ledoit Wolf и вспомогательные данные.
 
     Оригинальная матрица корректируется в сторону не смещенной оценки на малой выборке и точность
     ML-прогноза.
     """
-    mean_days, scaler_days = (
-        valid_result["data"][0][1]["days"],
-        valid_result["data"][1][1]["days"],
-    )
+    mean_days = valid_result["data"][0][1]["days"]
+    scaler_days = valid_result["data"][1][1]["days"]
     returns = data.log_total_returns(tickers, date)
     returns = returns.iloc[-scaler_days:,]
     cov, average_cor, shrinkage = ledoit_wolf.shrinkage(returns.values)
@@ -63,21 +63,18 @@ def make_forecast(
         Прогнозная доходность, ковариация и дополнительная информация.
     """
     cases = examples.Examples(tickers, date, params["data"])
-
     valid_result = cv.valid_model(params, cases)
-
     train_params, predict_params = cases.train_predict_pool_params()
     learn_pool = catboost.Pool(**train_params)
     clf = catboost.CatBoostRegressor(**valid_result["model"])
     clf.fit(learn_pool)
-    num_cases = len(train_params)
-
+    num_cases = len(train_params["data"])
     feature_importance = pd.Series(
         clf.feature_importances_, cases.get_features_names(), name="Importance"
     )
     mean = predict_mean(clf, predict_params)
     cov, average_cor, shrinkage = ledoit_wolf_cov(
-        predict_params, valid_result, tickers, date
+        tickers, date, predict_params, valid_result
     )
     return Forecast(
         date=date,
