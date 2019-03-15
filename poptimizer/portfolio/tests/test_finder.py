@@ -2,19 +2,18 @@ import pandas as pd
 import pytest
 
 from poptimizer import portfolio, config, optimizer
-from poptimizer.ml import feature_old, examples_old
 from poptimizer.portfolio import finder
 
-ML_PARAMS = (
-    (
-        (True, {"days": 21}),
-        (True, {"days": 252}),
-        (True, {}),
-        (True, {"days": 252}),
-        (True, {"days": 252}),
-        (False, {"days": 21}),
+ML_PARAMS = {
+    "data": (
+        ("Label", {"days": 21}),
+        ("STD", {"days": 252}),
+        ("Ticker", {}),
+        ("Mom12m", {"days": 252}),
+        ("DivYield", {"days": 252}),
+        ("DivYield", {"on_off": False, "days": 21}),
     ),
-    {
+    "model": {
         "bagging_temperature": 1,
         "depth": 6,
         "l2_leaf_reg": 3,
@@ -23,23 +22,14 @@ ML_PARAMS = (
         "random_strength": 1,
         "ignored_features": [],
     },
-)
-FEATURES = [
-    feature_old.Label,
-    feature_old.STD,
-    feature_old.Ticker,
-    feature_old.Mom12m,
-    feature_old.DivYield,
-    feature_old.Mom1m,
-]
+}
 
 
-def test_feature_days(monkeypatch):
+def test_feature_params(monkeypatch):
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
-    assert finder.feature_params(feature_old.Label) == 21
+    assert finder.feature_params("Label") == {"days": 21}
 
 
-# noinspection PyUnresolvedReferences
 def test_get_turnover(monkeypatch):
     monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0012)
     date = pd.Timestamp("2018-12-18")
@@ -51,24 +41,22 @@ def test_get_turnover(monkeypatch):
     assert df["KZOS"] == pytest.approx(0.986873)
 
 
-# noinspection PyUnresolvedReferences
 def test_find_momentum(monkeypatch):
     monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0022)
-    monkeypatch.setattr(finder, "feature_params", lambda x: 252)
+    monkeypatch.setattr(finder, "feature_params", lambda x: {"days": 252})
     date = pd.Timestamp("2018-12-18")
     positions = dict(TATN=20000, KZOS=20000, LKOH=20000)
     port = portfolio.Portfolio(date, 0, positions)
     df = finder.find_momentum(port, 0.02)
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (5, 5)
-    assert list(df.columns) == ["Mom12m", "STD", "TURNOVER", "T_SCORE", "ADD"]
-    assert list(df.index) == ["TATN", "BANEP", "NVTK", "KZOS", "SIBN"]
-    assert df.loc["TATN", "ADD"] == ""
+    assert list(df.columns) == ["Mom12m", "STD", "TURNOVER", "_DRAW_DOWN", "ADD"]
+    assert list(df.index) == ["AKRN", "RTKMP", "BANEP", "KZOS", "CBOM"]
+    assert df.loc["AKRN", "ADD"] == "ADD"
     assert df.loc["KZOS", "ADD"] == ""
     assert df.loc["BANEP", "ADD"] == "ADD"
 
 
-# noinspection PyUnresolvedReferences
 def test_find_dividends(monkeypatch):
     monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0022)
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
@@ -84,7 +72,6 @@ def test_find_dividends(monkeypatch):
     assert df.loc["MTLRP", "ADD"] == "ADD"
 
 
-# noinspection PyUnresolvedReferences
 def test_find_zero_turnover_and_weight():
     date = pd.Timestamp("2018-12-18")
     positions = dict(KAZT=1, KAZTP=0, CHMF=20000, TATN=20000, KZOS=20000, LKOH=20000)
@@ -94,9 +81,7 @@ def test_find_zero_turnover_and_weight():
     assert "KAZTP" in tickers
 
 
-# noinspection PyUnresolvedReferences
 def test_find_low_gradient(monkeypatch):
-    monkeypatch.setattr(examples_old.Examples, "FEATURES", FEATURES)
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     date = pd.Timestamp("2018-12-19")
     positions = dict(
@@ -120,7 +105,6 @@ def test_find_low_gradient(monkeypatch):
 
 
 def test_add_tickers(capsys):
-    # noinspection PyUnresolvedReferences
     date = pd.Timestamp("2018-12-19")
     positions = dict(KAZT=1, KAZTP=0, CHMF=20000, TATN=20000, KZOS=20000, LKOH=20000)
     port = portfolio.Portfolio(date, 0, positions)
@@ -131,7 +115,6 @@ def test_add_tickers(capsys):
 
 
 def test_remove_tickers(capsys):
-    # noinspection PyUnresolvedReferences
     date = pd.Timestamp("2018-12-19")
     positions = dict(KAZT=1, KAZTP=0, CHMF=20000, TATN=20000, KZOS=20000, LKOH=20000)
     port = portfolio.Portfolio(date, 0, positions)

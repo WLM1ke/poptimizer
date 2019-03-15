@@ -2,19 +2,18 @@ import pandas as pd
 import pytest
 
 from poptimizer import portfolio, config
-from poptimizer.ml import feature_old, examples_old
 from poptimizer.portfolio import optimizer
 
-ML_PARAMS = (
-    (
-        (True, {"days": 30}),
-        (True, {"days": 252}),
-        (False, {}),
-        (True, {"days": 252}),
-        (True, {"days": 252}),
-        (False, {"days": 21}),
+ML_PARAMS = {
+    "data": (
+        ("Label", {"days": 30}),
+        ("STD", {"days": 252}),
+        ("Ticker", {"on_off": False}),
+        ("Mom12m", {"days": 252}),
+        ("DivYield", {"days": 252}),
+        ("Mom1m", {"on_off": False, "days": 21}),
     ),
-    {
+    "model": {
         "bagging_temperature": 1.16573715129796,
         "depth": 4,
         "l2_leaf_reg": 2.993522023941868,
@@ -23,24 +22,13 @@ ML_PARAMS = (
         "random_strength": 0.9297802156425078,
         "ignored_features": [1],
     },
-)
-
-FEATURES = [
-    feature_old.Label,
-    feature_old.STD,
-    feature_old.Ticker,
-    feature_old.Mom12m,
-    feature_old.DivYield,
-    feature_old.Mom1m,
-]
+}
 
 
 @pytest.fixture(name="opt")
 def make_optimizer(monkeypatch):
-    monkeypatch.setattr(examples_old.Examples, "FEATURES", FEATURES)
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0016)
-    # noinspection PyUnresolvedReferences
     date = pd.Timestamp("2018-12-17")
     positions = dict(
         KZOS=800, MGNT=0, PIKK=800, MSTT=0, MTLRP=0, GMKN=21, CBOM=0, SNGSP=13000
@@ -57,7 +45,7 @@ def test_gradient_growth(opt):
     grad = opt.metrics.gradient
     growth = opt.gradient_growth
     assert grad["KZOS"] > grad["CBOM"]
-    assert growth["KZOS"] == pytest.approx(0.28346960166035734)
+    assert growth["KZOS"] == pytest.approx(0.30868794294740187)
 
 
 def test_best_buy(opt):

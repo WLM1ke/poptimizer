@@ -3,21 +3,20 @@ import pandas as pd
 import pytest
 
 from poptimizer import config
-from poptimizer.ml import feature_old, examples_old
 from poptimizer.portfolio import Portfolio, portfolio, metrics
 from poptimizer.portfolio.metrics import Metrics, Forecast
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
 
-ML_PARAMS = (
-    (
-        (True, {"days": 30}),
-        (True, {"days": 252}),
-        (False, {}),
-        (True, {"days": 252}),
-        (True, {"days": 252}),
-        (False, {"days": 21}),
+ML_PARAMS = {
+    "data": (
+        ("Label", {"days": 30}),
+        ("STD", {"days": 252}),
+        ("Ticker", {}),
+        ("Mom12m", {"days": 252}),
+        ("DivYield", {"days": 252}),
+        ("Mom1m", {"on_off": False, "days": 21}),
     ),
-    {
+    "model": {
         "bagging_temperature": 1.16573715129796,
         "depth": 4,
         "l2_leaf_reg": 2.993522023941868,
@@ -26,15 +25,7 @@ ML_PARAMS = (
         "random_strength": 0.9297802156425078,
         "ignored_features": [1],
     },
-)
-FEATURES = [
-    feature_old.Label,
-    feature_old.STD,
-    feature_old.Ticker,
-    feature_old.Mom12m,
-    feature_old.DivYield,
-    feature_old.Mom1m,
-]
+}
 
 
 class SimpleMetrics(Metrics):
@@ -67,44 +58,44 @@ def create_metrics_and_index():
     return metrics, index
 
 
-# noinspection PyUnresolvedReferences
 def test_mean(metrics_and_index):
     metrics, index = metrics_and_index
     mean = metrics.mean
 
     assert isinstance(mean, pd.Series)
+    # noinspection PyUnresolvedReferences
     assert (mean.index == index).all()
     assert np.allclose(mean, [1, 2, 3, 0, 1.83287191547398])
 
 
-# noinspection PyUnresolvedReferences
 def test_std(metrics_and_index):
     metrics, index = metrics_and_index
     std = metrics.std
 
     assert isinstance(std, pd.Series)
+    # noinspection PyUnresolvedReferences
     assert (std.index == index).all()
     assert np.allclose(std, [3, 2, 1, 0, 1.4097985185379])
 
 
-# noinspection PyUnresolvedReferences
 def test_beta(metrics_and_index):
     metrics, index = metrics_and_index
     beta = metrics.beta
 
     assert isinstance(beta, pd.Series)
+    # noinspection PyUnresolvedReferences
     assert (beta.index == index).all()
     assert np.allclose(
         beta, [1.63223121498382, 1.31081912817928, 0.323000567807792, 0, 1]
     )
 
 
-# noinspection PyUnresolvedReferences
 def test_lower_bound(metrics_and_index):
     metrics, index = metrics_and_index
     lower_bound = metrics.lower_bound
 
     assert isinstance(lower_bound, pd.Series)
+    # noinspection PyUnresolvedReferences
     assert (lower_bound.index == index).all()
     assert np.allclose(
         lower_bound,
@@ -112,12 +103,12 @@ def test_lower_bound(metrics_and_index):
     )
 
 
-# noinspection PyUnresolvedReferences
 def test_gradient(metrics_and_index):
     metrics, index = metrics_and_index
     gradient = metrics.gradient
 
     assert isinstance(gradient, pd.Series)
+    # noinspection PyUnresolvedReferences
     assert (gradient.index == index).all()
     assert np.allclose(
         gradient,
@@ -141,7 +132,6 @@ def test_std_gradient():
 
 
 def test_forecast_func(monkeypatch):
-    monkeypatch.setattr(examples_old.Examples, "FEATURES", FEATURES)
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     pos = dict(SIBN=300, PRTK=100, RTKM=200)
     port = portfolio.Portfolio("2018-12-17", 1000, pos)
@@ -149,7 +139,6 @@ def test_forecast_func(monkeypatch):
     # noinspection PyProtectedMember
     forecast = result._forecast_func()
     assert isinstance(forecast, Forecast)
-    # noinspection PyUnresolvedReferences
     assert forecast.date == pd.Timestamp("2018-12-17")
     assert forecast.tickers == ("PRTK", "RTKM", "SIBN")
-    assert forecast.shrinkage == pytest.approx(0.6972112123349591)
+    assert forecast.shrinkage == pytest.approx(1)
