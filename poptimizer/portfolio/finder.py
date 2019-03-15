@@ -9,7 +9,7 @@ from poptimizer.portfolio.portfolio import CASH, Portfolio
 
 def feature_params(feat_name):
     """Поиск значения параметра количество дней для признака."""
-    feat_conf = config.ML_PARAMS[0]
+    feat_conf = config.ML_PARAMS["data"]
     for name, params in feat_conf:
         if name == feat_name:
             return params
