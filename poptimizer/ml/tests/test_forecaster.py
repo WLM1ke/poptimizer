@@ -88,7 +88,7 @@ def test_ledoit_wolf_cov(valid_result, train_predict_params):
 
 
 def test_make_forecast():
-    forecast = forecaster.make_forecast(
+    forecast = forecaster.get_forecast(
         ("DSKY", "SNGSP", "VSMO"), pd.Timestamp("2018-12-14"), PARAMS
     )
     assert isinstance(forecast, Forecast)

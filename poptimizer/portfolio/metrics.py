@@ -24,6 +24,7 @@ class Forecast:
     r2: float
     average_cor: float
     shrinkage: float
+    params: dict
 
     def __str__(self):
         return (
@@ -76,7 +77,7 @@ class Metrics:
         portfolio = self._portfolio
         tickers = tuple(portfolio.index[:-2])
         date = portfolio.date
-        return ml.make_forecast(tickers, date)
+        return ml.get_forecast(tickers, date)
 
     @property
     def mean(self):

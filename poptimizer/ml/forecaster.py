@@ -5,11 +5,13 @@ import catboost
 import numpy as np
 import pandas as pd
 
-from poptimizer import data
+from poptimizer import data, store
 from poptimizer.config import POptimizerError, ML_PARAMS
 from poptimizer.ml import examples, ledoit_wolf, cv
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 from poptimizer.portfolio import Forecast
+
+FORECAST_KEY = "forecast"
 
 
 def predict_mean(clf, predict_pool_params):
@@ -48,9 +50,19 @@ def ledoit_wolf_cov(tickers, date, predict_pool_params, valid_result):
     return cov, average_cor, shrinkage
 
 
-def make_forecast(
-    tickers: Tuple[str, ...], date: pd.Timestamp, params=ML_PARAMS
-) -> Forecast:
+def validate_cache(forecast_cache, tickers, date, params):
+    """Проверяет, что кэш создан для тех же параметров."""
+    if (
+        forecast_cache is not None
+        and tickers == forecast_cache.tickers
+        and date == forecast_cache.date
+        and params == forecast_cache.params
+    ):
+        return True
+    return False
+
+
+def make_forecast(tickers, date, params):
     """Создает прогноз для набора тикеров на указанную дату.
 
     :param tickers:
@@ -76,7 +88,7 @@ def make_forecast(
     cov, average_cor, shrinkage = ledoit_wolf_cov(
         tickers, date, predict_params, valid_result
     )
-    return Forecast(
+    forecast = Forecast(
         date=date,
         tickers=tickers,
         mean=mean * YEAR_IN_TRADING_DAYS,
@@ -88,4 +100,29 @@ def make_forecast(
         r2=valid_result["r2"],
         average_cor=average_cor,
         shrinkage=shrinkage,
+        params=params,
     )
+    return forecast
+
+
+def get_forecast(
+    tickers: Tuple[str, ...], date: pd.Timestamp, params=ML_PARAMS
+) -> Forecast:
+    """Создает или загружает закешированный прогноз для набора тикеров на указанную дату.
+
+    :param tickers:
+        Тикеры, для которых необходимо составить прогноз.
+    :param date:
+        Дата, на которую нужен прогноз.
+    :param params:
+        Параметры ML-модели для прогноза.
+    :return:
+        Прогнозная доходность, ковариация и дополнительная информация.
+    """
+    with store.open_store() as db:
+        forecast_cache = db[FORECAST_KEY]
+        if validate_cache(forecast_cache, tickers, date, params):
+            return forecast_cache
+        forecast = make_forecast(tickers, date, params)
+        db[FORECAST_KEY] = forecast
+        return forecast

@@ -20,6 +20,11 @@ MAX_SIZE = 20 * 2 ** 20
 MAX_DBS = 3
 
 
+def open_store():
+    """Открывает key-value хранилище."""
+    return lmbd.DataStore(config.DATA_PATH, MAX_SIZE, MAX_DBS)
+
+
 class Client(contextlib.AbstractAsyncContextManager):
     """Асинхронный клиент для доступа к данным.
 
@@ -32,7 +37,7 @@ class Client(contextlib.AbstractAsyncContextManager):
 
     def __init__(self):
         self._session = aiomoex.ISSClientSession()
-        self._store = lmbd.DataStore(config.DATA_PATH, MAX_SIZE, MAX_DBS)
+        self._store = open_store()
 
     async def __aenter__(self):
         manager.AbstractManager.ISS_SESSION = self._session
