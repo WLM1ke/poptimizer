@@ -1,3 +1,5 @@
+import copy
+
 import catboost
 import numpy as np
 import pandas as pd
@@ -26,6 +28,21 @@ PARAMS = {
         "random_strength": 1,
     },
 }
+
+FORECAST = Forecast(
+    pd.Timestamp("2019-03-16"),
+    ("RTKM", "UPRO", "DSKY"),
+    np.zeros((1,)),
+    np.zeros((1,)),
+    0,
+    0,
+    0,
+    pd.Series(),
+    0.0,
+    0.0,
+    0.0,
+    PARAMS,
+)
 
 
 @pytest.fixture(name="cases")
@@ -72,6 +89,26 @@ def test_validate_cov_error():
     )
 
 
+def test_validate_cache():
+    assert forecaster.validate_cache(
+        FORECAST, ("RTKM", "UPRO", "DSKY"), pd.Timestamp("2019-03-16"), PARAMS
+    )
+
+
+def test_non_validate_cache():
+    assert not forecaster.validate_cache(
+        FORECAST, ("RTKM", "UPRO", "DSKY", "FEES"), pd.Timestamp("2019-03-16"), PARAMS
+    )
+    assert not forecaster.validate_cache(
+        FORECAST, ("RTKM", "UPRO", "DSKY"), pd.Timestamp("2019-03-15"), PARAMS
+    )
+    new_params = copy.deepcopy(PARAMS)
+    new_params["model"]["learning_rate"] = 0.11
+    assert not forecaster.validate_cache(
+        FORECAST, ("RTKM", "UPRO", "DSKY"), pd.Timestamp("2019-03-16"), new_params
+    )
+
+
 def test_ledoit_wolf_cov(valid_result, train_predict_params):
     _, predict_params = train_predict_params
     cov, average_cor, shrinkage = forecaster.ledoit_wolf_cov(
@@ -87,7 +124,7 @@ def test_ledoit_wolf_cov(valid_result, train_predict_params):
     assert shrinkage == pytest.approx(1.0)
 
 
-def test_make_forecast():
+def test_get_forecast():
     forecast = forecaster.get_forecast(
         ("DSKY", "SNGSP", "VSMO"), pd.Timestamp("2018-12-14"), PARAMS
     )
