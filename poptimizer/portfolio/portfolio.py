@@ -1,4 +1,5 @@
 """Реализация класса портфеля."""
+import functools
 from typing import Dict, Optional, Union
 
 import numpy as np
@@ -104,6 +105,7 @@ class Portfolio:
         return self.shares / self.lot_size
 
     @property
+    @functools.lru_cache(maxsize=1)
     def price(self):
         """Цены позиций.
 
@@ -135,6 +137,7 @@ class Portfolio:
         return value / value[PORTFOLIO]
 
     @property
+    @functools.lru_cache(maxsize=1)
     def turnover_factor(self):
         """Понижающий коэффициент для акций с малым объемом оборотов.
 
