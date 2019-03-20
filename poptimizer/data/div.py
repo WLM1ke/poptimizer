@@ -12,7 +12,7 @@ from poptimizer.config import AFTER_TAX
 from poptimizer.data import moex
 from poptimizer.store import DATE
 
-__all__ = ["log_total_returns", "dividends", "div_ex_date_prices"]
+__all__ = ["log_total_returns", "div_ex_date_prices"]
 
 
 async def _dividends(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
@@ -42,22 +42,6 @@ def dividends_all(tickers: tuple) -> pd.DataFrame:
     div_list = asyncio.run(_dividends(tickers))
     df = pd.concat([df for df in div_list], axis=1)
     return df.fillna(0, axis=0) * AFTER_TAX
-
-
-def dividends(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
-    """Дивиденды по заданным тикерам до указанной даты после уплаты налогов.
-
-    Значения для дат, в которые нет дивидендов у данного тикера (есть у какого-то другого),
-    заполняются 0.
-
-    :param tickers:
-        Тикеры, для которых нужна информация.
-    :param last_date:
-        Последняя дата.
-    :return:
-        Дивиденды.
-    """
-    return dividends_all(tickers).loc[:last_date]
 
 
 def t2_shift(date: pd.Timestamp, index: pd.DatetimeIndex):
