@@ -100,8 +100,7 @@ def test_find_low_gradient(monkeypatch):
     port = portfolio.Portfolio(date, 0, positions)
     opt = optimizer.Optimizer(port, months=11)
     bad_tickers = finder.find_low_gradient(opt)
-    assert len(bad_tickers) == 1
-    assert "MGNT" in bad_tickers
+    assert len(bad_tickers) == 0
 
 
 def test_add_tickers(capsys):
