@@ -5,8 +5,7 @@ import catboost
 import numpy as np
 import pandas as pd
 
-from poptimizer import data, store
-from poptimizer.config import POptimizerError, ML_PARAMS
+from poptimizer import data, store, config
 from poptimizer.ml import examples, ledoit_wolf, cv
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 from poptimizer.portfolio import Forecast
@@ -26,7 +25,7 @@ def validate_cov(cov, predict_pool_params):
     """Проверяет совпадение ковариации с использовавшейся для нормирования."""
     scaler = predict_pool_params["data"].iloc[:, 0]
     if not np.allclose(np.diag(cov), scaler.values ** 2):
-        raise POptimizerError(
+        raise config.POptimizerError(
             f"Расчетная ковариация не совпадает с использовавшейся для нормирования:"
             f"\n{np.diag(cov)}"
             f"\n{scaler.values ** 2}"
@@ -105,9 +104,7 @@ def make_forecast(tickers, date, params):
     return forecast
 
 
-def get_forecast(
-    tickers: Tuple[str, ...], date: pd.Timestamp, params=ML_PARAMS
-) -> Forecast:
+def get_forecast(tickers: Tuple[str, ...], date: pd.Timestamp, params=None) -> Forecast:
     """Создает или загружает закешированный прогноз для набора тикеров на указанную дату.
 
     :param tickers:
@@ -119,6 +116,7 @@ def get_forecast(
     :return:
         Прогнозная доходность, ковариация и дополнительная информация.
     """
+    params = params or config.ML_PARAMS
     with store.open_store() as db:
         forecast_cache = db[FORECAST_KEY]
         if validate_cache(forecast_cache, tickers, date, params):
