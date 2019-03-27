@@ -11,7 +11,7 @@ ML_PARAMS = {
         ("Ticker", {}),
         ("Mom12m", {"days": 252}),
         ("DivYield", {"days": 252}),
-        ("DivYield", {"on_off": False, "days": 21}),
+        ("Mom1m", {"on_off": False, "days": 21}),
     ),
     "model": {
         "bagging_temperature": 1,
@@ -27,7 +27,7 @@ ML_PARAMS = {
 
 def test_feature_params(monkeypatch):
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
-    assert finder.feature_params("Label") == {"days": 21}
+    assert finder.feature_params("Mom1m") == {"on_off": False, "days": 21}
 
 
 def test_get_turnover(monkeypatch):

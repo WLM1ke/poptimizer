@@ -10,9 +10,8 @@ from poptimizer.portfolio.portfolio import CASH, Portfolio
 def feature_params(feat_name):
     """Поиск значения параметра количество дней для признака."""
     feat_conf = config.ML_PARAMS["data"]
-    for name, params in feat_conf:
-        if name == feat_name:
-            return params
+    (_, params), *_ = filter(lambda x: x[0] == feat_name, feat_conf)
+    return params
 
 
 def get_turnover(port, tickers):
@@ -113,9 +112,8 @@ def find_low_gradient(opt: optimizer.Optimizer):
     low_gradient = gradient.index[gradient < gradient[sell_ticker]]
     momentum = find_momentum(opt.portfolio).index
     dividends = find_dividends(opt.portfolio).index
-    return list(
-        filter(lambda x: x not in momentum and x not in dividends, low_gradient)
-    )
+    result = filter(lambda x: x not in momentum and x not in dividends, low_gradient)
+    return list(result)
 
 
 def add_tickers(current_port: Portfolio, part: float = 0.1):
