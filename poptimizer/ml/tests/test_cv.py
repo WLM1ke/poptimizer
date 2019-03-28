@@ -136,10 +136,10 @@ def test_check_model_bounds_upper(capsys):
 def test_make_model_params():
     data_params = (
         ("Label", {"days": 49}),
-        ("STD", {"on_off": False, "days": 235}),
+        ("STD", {"on_off": True, "days": 235}),
+        ("DivYield", {"days": 252, "periods": 2, "on_off": False}),
         ("Ticker", {}),
         ("Mom12m", {"on_off": False, "days": 252}),
-        ("DivYield", {"days": 252}),
     )
     model_params = {
         "bagging_temperature": 1,
@@ -160,7 +160,7 @@ def test_make_model_params():
     assert result["learning_rate"] == 4
     assert result["one_hot_max_size"] == 2
     assert result["random_strength"] == 5
-    assert result["ignored_features"] == [0, 2]
+    assert result["ignored_features"] == [1, 2, 4]
 
     assert result["loss_function"] == "RMSE"
     assert result["custom_metric"] == "R2"

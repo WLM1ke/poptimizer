@@ -110,9 +110,12 @@ def make_model_params(data_params, model_params):
     """
     result = dict(**TECH_PARAMS, **model_params)
     result["ignored_features"] = []
-    for num, (_, feat_params) in enumerate(data_params[1:]):
+    num = 0
+    for _, feat_params in data_params[1:]:
+        periods = feat_params.get("periods", 1)
         if feat_params.get(ON_OFF, True) is False:
-            result["ignored_features"].append(num)
+            result["ignored_features"].extend(list(range(num, num + periods)))
+        num += periods
     return result
 
 
