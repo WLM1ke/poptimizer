@@ -41,20 +41,20 @@ TURNOVER_CUT_OFF = 4.5 * MAX_TRADE
 # Параметры ML-модели
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 30, "on_off": True}),
+        ("Label", {"days": 34, "on_off": True}),
         ("STD", {"days": 18, "on_off": True}),
         ("Ticker", {"on_off": True}),
-        ("Mom12m", {"days": 240, "on_off": True}),
-        ("DivYield", {"days": 278, "on_off": True, "periods": 1}),
-        ("Mom1m", {"days": 24, "on_off": True}),
+        ("Mom12m", {"days": 251, "on_off": True}),
+        ("DivYield", {"days": 274, "on_off": True, "periods": 1}),
+        ("Mom1m", {"days": 27, "on_off": True}),
         ("RetMax", {"days": 30, "on_off": True}),
     ),
     "model": {
-        "bagging_temperature": 1.4442236395066252,
-        "depth": 7,
-        "l2_leaf_reg": 3.965071053664432,
-        "learning_rate": 0.01200925851468165,
-        "one_hot_max_size": 100,
-        "random_strength": 0.8619376437714823,
+        "bagging_temperature": 1.2983988940411975,
+        "depth": 8,
+        "l2_leaf_reg": 1.093434558274059,
+        "learning_rate": 0.009908535460123366,
+        "one_hot_max_size": 2,
+        "random_strength": 0.8694193827330321,
     },
 }
