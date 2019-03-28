@@ -1,6 +1,6 @@
 """Абстрактный класс признака для машинного обучения."""
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Tuple, List
 
 import pandas as pd
 from hyperopt import hp
@@ -25,10 +25,19 @@ class AbstractFeature(ABC):
         """Наименование признака."""
         return self.__class__.__name__
 
+    @property
+    def col_names(self):
+        """Наименование колонок признака."""
+        return [self.__class__.__name__]
+
     @staticmethod
     @abstractmethod
-    def is_categorical() -> bool:
-        """Должен возвращать True для категориальных признаков."""
+    def is_categorical(param) -> List[bool]:
+        """Должен возвращать [True] для категориальных признаков.
+
+        Если признак разбит на несколько, то количество элементов должно соответствовать количеству
+        подпризнаков.
+        """
 
     @abstractmethod
     def get_params_space(self) -> dict:
@@ -55,9 +64,9 @@ class DaysParamsMixin:
     """Класс с реализацией параметра с количеством дней для признака."""
 
     @staticmethod
-    def is_categorical() -> bool:
+    def is_categorical(_) -> List[bool]:
         """Не категориальный признак."""
-        return False
+        return [False]
 
     def get_params_space(self) -> dict:
         """Значение дней в диапазоне."""
@@ -79,10 +88,18 @@ def periods_choice_list(periods):
 class DaysPeriodsParamsMixin:
     """Класс с реализацией параметра с количеством дней для признака и количества периодов."""
 
+    # noinspection PyUnresolvedReferences
+    @property
+    def col_names(self):
+        """Наименование признака."""
+        periods = self._params["periods"]
+        return [f"{self.__class__.__name__}_{i}" for i in range(periods)]
+
     @staticmethod
-    def is_categorical() -> bool:
+    def is_categorical(params) -> List[bool]:
         """Не категориальный признак."""
-        return False
+        periods = params["periods"]
+        return [False] * periods
 
     # noinspection PyUnresolvedReferences
     def get_params_space(self) -> dict:

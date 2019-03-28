@@ -83,11 +83,11 @@ def find_dividends(current_port: Portfolio, part: float = 0.1) -> pd.DataFrame:
     """
     all_tickers = data.securities_with_reg_number()
     params = feature_params("DivYield")
+    params["periods"] = 1
     date = current_port.date
     div = feature.DivYield(tuple(all_tickers), date, params).get()
     div = div.loc[div.index.get_level_values(0) == date]
     div.index = div.index.get_level_values(1)
-    div = div.to_frame()
     div["TURNOVER"] = get_turnover(current_port, all_tickers)
     div["SCORE"] = div.iloc[:, 0] * div.iloc[:, 1]
     choose = int(part * all_tickers.size)

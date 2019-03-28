@@ -34,11 +34,18 @@ class Examples:
 
     def get_features_names(self):
         """Название признаков."""
-        return [feat.name for feat in self._features[1:]]
+        rez = []
+        for feat in self._features[1:]:
+            rez.extend(feat.col_names)
+        return rez
 
-    def categorical_features(self):
+    def categorical_features(self, params=None):
         """Массив с указанием номеров признаков с категориальными данными."""
-        return [n for n, feat in enumerate(self._features[1:]) if feat.is_categorical()]
+        params = params or self._params
+        cat_flag = []
+        for feat, (_, feat_param) in zip(self._features[1:], params[1:]):
+            cat_flag.extend(feat.is_categorical(feat_param))
+        return [n for n, flag in enumerate(cat_flag) if flag]
 
     def get_params_space(self):
         """Формирует общее вероятностное пространство модели."""
@@ -71,13 +78,13 @@ class Examples:
         train_params = dict(
             data=df_train.iloc[:, 1:],
             label=df_train.iloc[:, 0],
-            cat_features=self.categorical_features(),
+            cat_features=self.categorical_features(params),
             feature_names=list(df.columns[1:]),
         )
         val_params = dict(
             data=df_val.iloc[:, 1:],
             label=df_val.iloc[:, 0],
-            cat_features=self.categorical_features(),
+            cat_features=self.categorical_features(params),
             feature_names=list(df.columns[1:]),
         )
         return train_params, val_params

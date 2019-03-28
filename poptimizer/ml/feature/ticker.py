@@ -18,9 +18,9 @@ class Ticker(AbstractFeature):
         super().__init__(tickers, last_date, params)
 
     @staticmethod
-    def is_categorical() -> bool:
+    def is_categorical(params):
         """Категориальный признак."""
-        return True
+        return [True]
 
     @classmethod
     def get_params_space(cls) -> dict:
