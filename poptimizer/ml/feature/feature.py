@@ -45,7 +45,7 @@ class AbstractFeature(ABC):
         """
 
 
-def choice_list(days, space_range=SPACE_RANGE):
+def days_choice_list(days, space_range=SPACE_RANGE):
     """Список дней в окрестности указанного значения."""
     return list(range(int(days * (1 - space_range)), int(days * (1 + space_range)) + 2))
 
@@ -62,4 +62,35 @@ class DaysParamsMixin:
     def get_params_space(self) -> dict:
         """Значение дней в диапазоне."""
         days = self._params["days"]
-        return {ON_OFF: True, "days": hp.choice(f"{self.name}_DAYS", choice_list(days))}
+        return {
+            ON_OFF: True,
+            "days": hp.choice(f"{self.name}_DAYS", days_choice_list(days)),
+        }
+
+
+def periods_choice_list(periods):
+    """Значение периодов в диапазоне от текущего."""
+    """Список дней в окрестности указанного значения."""
+    min_periods = max(1, periods - 1)
+    max_periods = periods + 1
+    return list(range(min_periods, max_periods + 1))
+
+
+class DaysPeriodsParamsMixin:
+    """Класс с реализацией параметра с количеством дней для признака и количества периодов."""
+
+    @staticmethod
+    def is_categorical() -> bool:
+        """Не категориальный признак."""
+        return False
+
+    # noinspection PyUnresolvedReferences
+    def get_params_space(self) -> dict:
+        """Значение дней в диапазоне."""
+        days = self._params["days"]
+        periods = self._params["periods"]
+        return {
+            ON_OFF: True,
+            "days": hp.choice(f"{self.name}_DAYS", days_choice_list(days)),
+            "periods": hp.choice(f"{self.name}_PERIODS", periods_choice_list(periods)),
+        }

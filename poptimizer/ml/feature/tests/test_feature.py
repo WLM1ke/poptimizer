@@ -2,13 +2,13 @@ from poptimizer.ml.feature import feature
 
 
 def test_feature():
-    res = feature.choice_list(11)
+    res = feature.days_choice_list(11)
     assert isinstance(res, list)
     assert len(res) == 5
     assert res[0] == 9
     assert res[-1] == 13
 
-    res = feature.choice_list(5)
+    res = feature.days_choice_list(5)
     assert isinstance(res, list)
     assert len(res) == 3
     assert res[0] == 4
