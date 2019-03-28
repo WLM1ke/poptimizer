@@ -11,7 +11,7 @@ FEAT_PARAMS = (
     ("STD", {"on_off": True, "days": 7}),
     ("Ticker", {"on_off": True}),
     ("Mom12m", {"on_off": True, "days": 3}),
-    ("DivYield", {"on_off": True, "days": 9}),
+    ("DivYield", {"on_off": True, "days": 9, "periods": 1}),
 )
 
 
@@ -23,7 +23,7 @@ def create_examples():
 
 
 def test_get_features_names(example):
-    assert example.get_features_names() == ["STD", "Ticker", "Mom12m", "DivYield"]
+    assert example.get_features_names() == ["STD", "Ticker", "Mom12m", "DivYield_0"]
 
 
 def test_categorical_features(example):
@@ -46,10 +46,10 @@ def test_get_all(example):
             ("STD", {"on_off": True, "days": 5}),
             ("Ticker", {"on_off": True}),
             ("Mom12m", {"on_off": True, "days": 6}),
-            ("DivYield", {"on_off": True, "days": 7}),
+            ("DivYield", {"on_off": True, "days": 7, "periods": 1}),
         )
     )
-    assert df.columns.to_list() == ["Label", "STD", "Ticker", "Mom12m", "DivYield"]
+    assert df.columns.to_list() == ["Label", "STD", "Ticker", "Mom12m", "DivYield_0"]
     assert df.index.get_level_values(0).unique()[-1] == pd.Timestamp("2018-12-13")
     assert df.index.get_level_values(1).unique().to_list() == ["CHMF", "AKRN", "BANEP"]
 
@@ -63,7 +63,7 @@ def test_get_all(example):
     assert df.loc[(pd.Timestamp("2018-12-04"), "AKRN"), "Mom12m"] == pytest.approx(
         np.log(4630 / 4672) / 6
     )
-    assert df.loc[(pd.Timestamp("2018-12-04"), "CHMF"), "DivYield"] == pytest.approx(
+    assert df.loc[(pd.Timestamp("2018-12-04"), "CHMF"), "DivYield_0"] == pytest.approx(
         44.39 * AFTER_TAX / 964.3
     )
 
@@ -75,7 +75,7 @@ def test_train_val_pool_params(example):
             ("STD", {"on_off": True, "days": 5}),
             ("Ticker", {"on_off": True}),
             ("Mom12m", {"on_off": True, "days": 6}),
-            ("DivYield", {"on_off": True, "days": 7}),
+            ("DivYield", {"on_off": True, "days": 7, "periods": 1}),
         )
     )
 
@@ -87,8 +87,8 @@ def test_train_val_pool_params(example):
     assert train["cat_features"] == [1]
     assert val["cat_features"] == [1]
 
-    assert train["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield"]
-    assert val["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield"]
+    assert train["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield_0"]
+    assert val["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield_0"]
 
     assert train["data"].index.get_level_values(0)[0] == pd.Timestamp("2010-01-20")
     assert train["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-02-09")
@@ -102,7 +102,7 @@ def test_train_val_pool_params(example):
             ("STD", {"on_off": True, "days": 5}),
             ("Ticker", {"on_off": True}),
             ("Mom12m", {"on_off": True, "days": 6}),
-            ("DivYield", {"on_off": True, "days": 7}),
+            ("DivYield", {"on_off": True, "days": 7, "periods": 1}),
         )
     )
 
@@ -124,8 +124,8 @@ def test_train_predict_pool_params(example):
     assert train["cat_features"] == [1]
     assert predict["cat_features"] == [1]
 
-    assert train["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield"]
-    assert predict["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield"]
+    assert train["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield_0"]
+    assert predict["feature_names"] == ["STD", "Ticker", "Mom12m", "DivYield_0"]
 
     assert train["data"].index.get_level_values(0)[0] == pd.Timestamp("2010-01-22")
     assert train["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-12-05")
@@ -139,7 +139,7 @@ def test_train_predict_pool_params(example):
             ("STD", {"on_off": True, "days": 7}),
             ("Ticker", {"on_off": True}),
             ("Mom12m", {"on_off": True, "days": 3}),
-            ("DivYield", {"on_off": True, "days": 9}),
+            ("DivYield", {"on_off": True, "days": 9, "periods": 1}),
         )
     )
 

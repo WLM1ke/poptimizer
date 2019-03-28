@@ -14,7 +14,7 @@ def make_feature():
 
 
 def test_is_categorical(feat):
-    assert not feat.is_categorical()
+    assert feat.is_categorical("") == [False]
 
 
 def test_get_params_space(feat):

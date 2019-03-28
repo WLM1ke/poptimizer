@@ -10,7 +10,7 @@ ML_PARAMS = {
         ("STD", {"days": 252}),
         ("Ticker", {"on_off": False}),
         ("Mom12m", {"days": 252}),
-        ("DivYield", {"days": 252}),
+        ("DivYield", {"days": 252, "periods": 1}),
         ("Mom1m", {"on_off": False, "days": 21}),
     ),
     "model": {

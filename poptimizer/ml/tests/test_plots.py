@@ -13,7 +13,7 @@ ML_PARAMS = {
         ("STD", {"days": 195}),
         ("Ticker", {}),
         ("Mom12m", {"days": 282}),
-        ("DivYield", {"days": 332}),
+        ("DivYield", {"days": 332, "periods": 2}),
         ("Mom1m", {"days": 21}),
     ),
     "model": {
@@ -52,5 +52,5 @@ def patch_params_and_show(monkeypatch):
 def test_partial_dependence_curve(monkeypatch):
     monkeypatch.setattr(plots, "QUANTILE", [0.3, 0.7])
     result = plots.partial_dependence_curve(TICKERS, DATE)
-    assert len(result) == 4
+    assert len(result) == 5
     assert len(result[0]) == 2

@@ -8,7 +8,7 @@ def test_ticker():
         ("UPRO", "GMKN", "MSTT"), pd.Timestamp("2018-12-11"), dict()
     )
 
-    assert feature.is_categorical()
+    assert feature.is_categorical("") == [True]
     assert feature.get_params_space() == dict(on_off=True)
 
     df = feature.get()

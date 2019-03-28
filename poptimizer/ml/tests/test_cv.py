@@ -13,7 +13,7 @@ PARAMS = {
         ("STD", {"days": 252}),
         ("Ticker", {}),
         ("Mom12m", {"days": 252}),
-        ("DivYield", {"days": 252}),
+        ("DivYield", {"days": 252, "periods": 1}),
     ),
     "model": {
         "bagging_temperature": 1,
@@ -215,7 +215,7 @@ def test_optimize_hyper(monkeypatch, capsys):
             ("STD", {"days": 186}),
             ("Ticker", {"on_off": False}),
             ("Mom12m", {"days": 279}),
-            ("DivYield", {"days": 252}),
+            ("DivYield", {"days": 252, "periods": 1}),
         ),
         "model": {
             "bagging_temperature": 1,
@@ -246,7 +246,7 @@ def test_optimize_hyper(monkeypatch, capsys):
         ("STD", {"days": 186}),
         ("Ticker", {"on_off": False}),
         ("Mom12m", {"days": 279}),
-        ("DivYield", {"days": 252}),
+        ("DivYield", {"days": 252, "periods": 1}),
     )
     model_params = {
         "bagging_temperature": 1,
