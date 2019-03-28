@@ -58,10 +58,10 @@ def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
     params = config.ML_PARAMS
     cases = examples.Examples(tickers, date, params["data"])
     clf, train_pool_params = train_clf(cases, params)
-    n_plots = len(params["data"]) - 1 - len(cases.categorical_features())
+    n_plots = len(train_pool_params["data"].columns) - len(cases.categorical_features())
     axs = axs_iter(n_plots)
     results = []
-    for n, (name, _) in enumerate(params["data"][1:]):
+    for n, name in enumerate(train_pool_params["data"]):
         if n in cases.categorical_features():
             continue
         ax = next(axs)
