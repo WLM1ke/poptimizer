@@ -43,13 +43,19 @@ async def download_last_history():
     return date + pd.DateOffset(**END_OF_TRADING)
 
 
-async def update_timestamp(db: lmbd.DataStore):
-    """Момент времени после, которого не нужно обновлять исторические данные для хранилища."""
+def end_of_trading_day():
+    """Конец последнего торгового дня."""
     now = pd.Timestamp.now(MOEX_TZ)
     # noinspection PyUnresolvedReferences
     end_of_trading = now.normalize() + pd.DateOffset(**END_OF_TRADING)
     if end_of_trading > now:
         end_of_trading += pd.DateOffset(days=-1)
+    return end_of_trading
+
+
+async def update_timestamp(db: lmbd.DataStore):
+    """Момент времени после, которого не нужно обновлять исторические данные для хранилища."""
+    end_of_trading = end_of_trading_day()
     last_history = db[LAST_HISTORY]
     if last_history is None or last_history.timestamp < end_of_trading:
         last_history = Datum(await download_last_history())
