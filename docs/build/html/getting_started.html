@@ -1,18 +1,17 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ru">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Начало работы (todo) &#8212; Документация poptimizer 0.1.0</title>
+    <meta charset="utf-8" />
+    <title>Начало работы &#8212; документация poptimizer 0.2.0</title>
     <link rel="stylesheet" href="_static/aiohttp.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
     <script type="text/javascript" src="_static/translations.js"></script>
     <link rel="index" title="Алфавитный указатель" href="genindex.html" />
     <link rel="search" title="Поиск" href="search.html" />
@@ -35,16 +34,93 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="todo">
-<h1>Начало работы (todo)<a class="headerlink" href="#todo" title="Ссылка на этот заголовок">¶</a></h1>
-<div class="section" id="id1">
-<h2>Установка<a class="headerlink" href="#id1" title="Ссылка на этот заголовок">¶</a></h2>
+  <div class="section" id="id1">
+<h1>Начало работы<a class="headerlink" href="#id1" title="Ссылка на этот заголовок">¶</a></h1>
+<div class="section" id="id2">
+<h2>Установка<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">¶</a></h2>
 <div class="highlight-Bash notranslate"><div class="highlight"><pre><span></span>$ pip install poptimizer
 </pre></div>
 </div>
 </div>
-<div class="section" id="id2">
-<h2>Пример использования<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="section" id="id3">
+<h2>Пример использования<a class="headerlink" href="#id3" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Распечатка основных данных по портфелю и его оптимизации:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">poptimizer</span>
+
+<span class="n">CASH</span> <span class="o">=</span> <span class="mi">58652</span>
+<span class="n">POSITIONS</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">BANE</span><span class="o">=</span><span class="mi">236</span><span class="p">,</span>
+    <span class="n">LSNGP</span><span class="o">=</span><span class="mi">4300</span><span class="p">,</span>
+    <span class="n">PIKK</span><span class="o">=</span><span class="mi">4090</span><span class="p">,</span>
+    <span class="n">RASP</span><span class="o">=</span><span class="mi">13980</span><span class="p">,</span>
+    <span class="n">RTKMP</span><span class="o">=</span><span class="mi">65000</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">DATE</span> <span class="o">=</span> <span class="s2">&quot;2019-04-05&quot;</span>
+
+
+<span class="n">port</span> <span class="o">=</span> <span class="n">poptimizer</span><span class="o">.</span><span class="n">Portfolio</span><span class="p">(</span><span class="n">DATE</span><span class="p">,</span> <span class="n">CASH</span><span class="p">,</span> <span class="n">POSITIONS</span><span class="p">)</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">poptimizer</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">(</span><span class="n">port</span><span class="p">,</span> <span class="n">months</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">portfolio</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">metrics</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ПОРТФЕЛЬ</span>
+
+<span class="n">Дата</span> <span class="o">-</span> <span class="mi">2019</span><span class="o">-</span><span class="mi">04</span><span class="o">-</span><span class="mi">05</span>
+<span class="n">Количество</span> <span class="n">бумаг</span> <span class="o">-</span> <span class="mi">5</span>
+
+           <span class="n">LOT_SIZE</span>  <span class="n">SHARES</span>       <span class="n">PRICE</span>      <span class="n">VALUE</span>    <span class="n">WEIGHT</span>    <span class="n">VOLUME</span>
+<span class="n">BANE</span>              <span class="mi">1</span>     <span class="mi">236</span>     <span class="mf">1989.00</span>   <span class="mf">469404.0</span>  <span class="mf">0.057247</span>  <span class="mf">0.991187</span>
+<span class="n">LSNGP</span>           <span class="mi">100</span>    <span class="mi">4300</span>       <span class="mf">97.70</span>   <span class="mf">420110.0</span>  <span class="mf">0.051235</span>  <span class="mf">0.998407</span>
+<span class="n">PIKK</span>             <span class="mi">10</span>    <span class="mi">4090</span>      <span class="mf">360.10</span>  <span class="mf">1472809.0</span>  <span class="mf">0.179619</span>  <span class="mf">0.999777</span>
+<span class="n">RASP</span>             <span class="mi">10</span>   <span class="mi">13980</span>      <span class="mf">134.38</span>  <span class="mf">1878632.4</span>  <span class="mf">0.229112</span>  <span class="mf">0.999980</span>
+<span class="n">RTKMP</span>           <span class="mi">100</span>   <span class="mi">65000</span>       <span class="mf">60.00</span>  <span class="mf">3900000.0</span>  <span class="mf">0.475633</span>  <span class="mf">0.995326</span>
+<span class="n">CASH</span>              <span class="mi">1</span>   <span class="mi">58652</span>        <span class="mf">1.00</span>    <span class="mf">58652.0</span>  <span class="mf">0.007153</span>  <span class="mf">1.000000</span>
+<span class="n">PORTFOLIO</span>         <span class="mi">1</span>       <span class="mi">1</span>  <span class="mf">8199607.40</span>  <span class="mf">8199607.4</span>  <span class="mf">1.000000</span>  <span class="mf">1.000000</span>
+
+<span class="n">КЛЮЧЕВЫЕ</span> <span class="n">МЕТРИКИ</span> <span class="n">ПОРТФЕЛЯ</span>
+
+<span class="n">СКО</span> <span class="n">градиента</span> <span class="o">-</span> <span class="mf">8.23</span><span class="o">%</span>
+
+               <span class="n">MEAN</span>       <span class="n">STD</span>      <span class="n">BETA</span>  <span class="n">LOWER_BOUND</span>  <span class="n">GRADIENT</span>
+<span class="n">BANE</span>       <span class="mf">0.057399</span>  <span class="mf">0.105149</span>  <span class="mf">0.422632</span>    <span class="o">-</span><span class="mf">0.012147</span>  <span class="mf">0.066363</span>
+<span class="n">LSNGP</span>      <span class="mf">0.061400</span>  <span class="mf">0.217127</span>  <span class="mf">1.167176</span>    <span class="o">-</span><span class="mf">0.130666</span> <span class="o">-</span><span class="mf">0.052155</span>
+<span class="n">PIKK</span>       <span class="mf">0.022488</span>  <span class="mf">0.237663</span>  <span class="mf">0.991919</span>    <span class="o">-</span><span class="mf">0.140738</span> <span class="o">-</span><span class="mf">0.062227</span>
+<span class="n">RASP</span>       <span class="mf">0.098261</span>  <span class="mf">0.295528</span>  <span class="mf">2.751544</span>    <span class="o">-</span><span class="mf">0.354522</span> <span class="o">-</span><span class="mf">0.276011</span>
+<span class="n">RTKMP</span>      <span class="mf">0.111560</span>  <span class="mf">0.043688</span>  <span class="mf">0.225855</span>     <span class="mf">0.074394</span>  <span class="mf">0.152905</span>
+<span class="n">CASH</span>       <span class="mf">0.000000</span>  <span class="mf">0.000000</span>  <span class="mf">0.000000</span>     <span class="mf">0.000000</span>  <span class="mf">0.078511</span>
+<span class="n">PORTFOLIO</span>  <span class="mf">0.086045</span>  <span class="mf">0.082278</span>  <span class="mf">1.000000</span>    <span class="o">-</span><span class="mf">0.078511</span>  <span class="mf">0.000000</span>
+
+<span class="n">ХАРАКТЕРИСТИКИ</span> <span class="n">ПРОГНОЗА</span>
+<span class="n">Количество</span> <span class="n">обучающих</span> <span class="n">примеров</span> <span class="o">-</span> <span class="mi">9638</span>
+<span class="n">Обучено</span> <span class="n">решающих</span> <span class="n">деревьев</span> <span class="o">-</span> <span class="mi">66</span>
+<span class="n">Глубина</span> <span class="n">деревьев</span> <span class="o">-</span> <span class="mi">8</span>
+<span class="n">R2</span> <span class="o">-</span> <span class="mf">0.8</span><span class="o">%</span>
+<span class="n">Средняя</span> <span class="n">корреляция</span> <span class="n">между</span> <span class="n">акциями</span> <span class="o">-</span> <span class="mf">10.1</span><span class="o">%</span>
+<span class="n">Сила</span> <span class="n">сжатия</span> <span class="n">ковариационной</span> <span class="n">матрицы</span> <span class="o">-</span> <span class="mf">43.0</span><span class="o">%</span>
+
+<span class="n">ВАЖНОСТЬ</span> <span class="n">ИСПОЛЬЗОВАННЫХ</span> <span class="n">ПРИЗНАКОВ</span>
+                  <span class="n">STD</span>   <span class="n">Ticker</span>     <span class="n">Mom12m</span>  <span class="n">DivYield_0</span>     <span class="n">Mom1m</span>     <span class="n">RetMax</span>
+<span class="n">Importance</span>  <span class="mf">12.319005</span>  <span class="mf">1.39063</span>  <span class="mf">29.189222</span>   <span class="mf">21.611666</span>  <span class="mf">4.353386</span>  <span class="mf">31.136091</span>
+
+<span class="n">ОПТИМИЗАЦИЯ</span> <span class="n">ПОРТФЕЛЯ</span>
+
+<span class="n">ЛУЧШАЯ</span> <span class="n">СДЕЛКА</span>
+<span class="n">t_score</span> <span class="o">=</span> <span class="mf">5.19</span>
+<span class="n">Продать</span> <span class="n">RASP</span> <span class="o">-</span> <span class="mi">5</span> <span class="n">сделок</span> <span class="mi">7</span> <span class="n">лотов</span>
+<span class="n">Купить</span>  <span class="n">RTKMP</span> <span class="o">-</span> <span class="mi">5</span> <span class="n">сделок</span> <span class="mi">1</span> <span class="n">лотов</span>
+
+           <span class="n">LOWER_BOUND</span>  <span class="n">GRADIENT</span>  <span class="n">TURNOVER</span>    <span class="n">GROWTH</span>
+<span class="n">RTKMP</span>         <span class="mf">0.074394</span>  <span class="mf">0.152905</span>  <span class="mf">0.995326</span>  <span class="mf">0.426911</span>
+<span class="n">CASH</span>          <span class="mf">0.000000</span>  <span class="mf">0.078511</span>  <span class="mf">1.000000</span>  <span class="mf">0.354522</span>
+<span class="n">BANE</span>         <span class="o">-</span><span class="mf">0.012147</span>  <span class="mf">0.066363</span>  <span class="mf">0.991187</span>  <span class="mf">0.339357</span>
+<span class="n">PORTFOLIO</span>    <span class="o">-</span><span class="mf">0.078511</span>  <span class="mf">0.000000</span>  <span class="mf">1.000000</span>  <span class="mf">0.276011</span>
+<span class="n">LSNGP</span>        <span class="o">-</span><span class="mf">0.130666</span> <span class="o">-</span><span class="mf">0.052155</span>  <span class="mf">0.998407</span>  <span class="mf">0.223500</span>
+<span class="n">PIKK</span>         <span class="o">-</span><span class="mf">0.140738</span> <span class="o">-</span><span class="mf">0.062227</span>  <span class="mf">0.999777</span>  <span class="mf">0.213736</span>
+<span class="n">RASP</span>         <span class="o">-</span><span class="mf">0.354522</span> <span class="o">-</span><span class="mf">0.276011</span>  <span class="mf">0.999980</span>  <span class="mf">0.000000</span>
+</pre></div>
+</div>
 </div>
 </div>
 
@@ -101,9 +177,9 @@
 </ul>
 <h3>Навигация</h3>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Начало работы (todo)</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#id1">Установка</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id2">Пример использования</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Начало работы</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id2">Установка</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">Пример использования</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="struct.html">Основные структурные блоки и подходы</a><ul>
@@ -120,8 +196,9 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Описание API (todo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="change_log.html">Список изменений</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id2">0.2.0 (2019-02-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id3">0.1.0 (2018-12-29)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id2">0.3.0 (2019-04-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id3">0.2.0 (2019-02-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id4">0.1.0 (2018-12-29)</a></li>
 </ul>
 </li>
 </ul>
@@ -135,7 +212,7 @@
       &copy;2018, Mikhail Korotkov aka WLMike.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.0</a>
       
       |
       <a href="_sources/getting_started.rst.txt"

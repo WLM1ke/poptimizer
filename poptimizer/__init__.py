@@ -4,4 +4,4 @@ from poptimizer.ml import find_better_model, partial_dependence_curve
 from poptimizer.portfolio import *
 from poptimizer.reports import income, report
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
