@@ -12,7 +12,7 @@ from poptimizer.ml.feature import ON_OFF
 from poptimizer.portfolio import Portfolio
 
 # Базовые настройки catboost
-MAX_ITERATIONS = 1000
+MAX_ITERATIONS = 2000
 SEED = 284_704
 TECH_PARAMS = dict(
     loss_function="RMSE",
@@ -35,7 +35,7 @@ MAX_SEARCHES = 100
 ONE_HOT_SIZE = [2, 100]
 
 # Диапазон поиска скорости обучения
-LEARNING_RATE = [0.005, 0.015]
+LEARNING_RATE = [0.002, 0.007]
 
 # Диапазон поиска глубины деревьев
 MAX_DEPTH = 10
