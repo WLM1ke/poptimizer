@@ -11,7 +11,7 @@ from poptimizer.store.utils import DIVIDENDS, TICKER, DATE
 NAME_SMART_LAB = "smart-lab"
 
 URL = "https://smart-lab.ru/dividends/index/order_by_yield/desc/"
-TABLE_INDEX = 2
+TABLE_INDEX = 1
 HEADER_SIZE = 1
 FOOTER_SIZE = 1
 

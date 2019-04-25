@@ -32,7 +32,7 @@ def smart_lab_status(tickers: Tuple[str, ...]):
         Тикеры, для которых нужно проверить актуальность данных.
     """
     web = smart_lab()
-    local = div.dividends_all(tuple(web[TICKER].values)) / AFTER_TAX
+    local = div.dividends_all(tuple(set(web[TICKER].values))) / AFTER_TAX
     status = ([], [])
     for i in range(len(web)):
         date = web.index[i]
