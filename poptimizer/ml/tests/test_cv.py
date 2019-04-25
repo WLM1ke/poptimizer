@@ -182,7 +182,7 @@ def test_valid_model():
     assert len(result) == 6
     assert result["loss"] == pytest.approx(0.014_495_100_438_051_8)
     assert result["status"] == "ok"
-    assert result["std"] == pytest.approx(0.163_971_874_342_929_92)
+    assert result["std"] == pytest.approx(0.160839952004336)
     assert result["r2"] == pytest.approx(-0.014_495_100_438_051_8)
     assert result["data"] == PARAMS["data"]
     for key, value in PARAMS["model"].items():

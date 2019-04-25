@@ -32,6 +32,7 @@ def test_feature_params(monkeypatch):
 
 def test_get_turnover(monkeypatch):
     monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0012)
+    monkeypatch.setattr(config, "TURNOVER_PERIOD", 21)
     date = pd.Timestamp("2018-12-18")
     positions = dict(TATN=20000, KZOS=20000, LKOH=20000)
     port = portfolio.Portfolio(date, 0, positions)
@@ -100,7 +101,7 @@ def test_find_low_gradient(monkeypatch):
     port = portfolio.Portfolio(date, 0, positions)
     opt = optimizer.Optimizer(port, months=11)
     bad_tickers = finder.find_low_gradient(opt)
-    assert len(bad_tickers) == 0
+    assert len(bad_tickers) == 1
 
 
 def test_add_tickers(capsys):

@@ -45,7 +45,7 @@ def test_gradient_growth(opt):
     grad = opt.metrics.gradient
     growth = opt.gradient_growth
     assert grad["KZOS"] < grad["CBOM"]
-    assert growth["KZOS"] == pytest.approx(0.18801445672717304)
+    assert growth["KZOS"] == pytest.approx(0.1858893016250129)
 
 
 def test_best_buy(opt):

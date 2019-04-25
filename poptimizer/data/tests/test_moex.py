@@ -10,7 +10,7 @@ from poptimizer.store import CLOSE, TURNOVER
 def test_securities_with_reg_number():
     result = moex.securities_with_reg_number()
     assert isinstance(result, pd.Index)
-    assert result.size > 260
+    assert result.size > 259
     assert "AGRO" not in result
     assert "YNDX" not in result
     assert "BANEP" in result

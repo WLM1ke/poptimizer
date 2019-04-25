@@ -72,7 +72,7 @@ def test_dividends_status(capsys):
 
 
 def test_dividends_status_no_web_data():
-    result = status.dividends_status("MGTSP")
+    """Обработка тикеров, которых нет на dohod.ru"""
+    result = status.dividends_status("VRSB")
 
     assert isinstance(result[0], Exception)
-    assert "На странице нет таблицы 2" == str(result[0])
