@@ -48,6 +48,7 @@ ML_PARAMS = {
         ("DivYield", {"days": 286, "on_off": True, "periods": 1}),
         ("Mom1m", {"days": 31, "on_off": True}),
         ("RetMax", {"days": 32, "on_off": True}),
+        ("ChMom6m", {"days": 126, "on_off": False}),
     ),
     "model": {
         "bagging_temperature": 0.6502644319378341,

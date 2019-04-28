@@ -1,4 +1,5 @@
 """Признаки и метки для обучения."""
+from poptimizer.ml.feature.chmom import ChMom6m
 from poptimizer.ml.feature.divyield import DivYield
 from poptimizer.ml.feature.feature import ON_OFF
 from poptimizer.ml.feature.label import Label, YEAR_IN_TRADING_DAYS
