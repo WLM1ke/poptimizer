@@ -12,7 +12,7 @@ from poptimizer.ml.feature import ON_OFF
 from poptimizer.portfolio import Portfolio
 
 # Базовые настройки catboost
-MAX_ITERATIONS = 2000
+MAX_ITERATIONS = 3000
 SEED = 284_704
 TECH_PARAMS = dict(
     loss_function="RMSE",
