@@ -24,3 +24,4 @@ aiomoex
 bs4
 aiohttp
 pyppeteer
+certifi
