@@ -19,7 +19,7 @@ async def create_client(tmpdir_factory, monkeypatch):
 async def test_dohod():
     df = await dohod.Dohod(("VSMO",)).get()
     assert isinstance(df, pd.Series)
-    assert len(df) >= 21
+    assert len(df) >= 20
     assert df["2017-10-19"] == 762.68
     assert df["2004-03-29"] == 11
 

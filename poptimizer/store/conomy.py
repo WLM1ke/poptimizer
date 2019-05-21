@@ -1,4 +1,5 @@
 """Менеджер данных по дивидендам с https://www.conomy.ru/"""
+import asyncio
 from typing import Union, Tuple
 
 import pyppeteer
@@ -94,7 +95,13 @@ class Conomy(AbstractManager):
         super().__init__(ticker, CATEGORY_CONOMY)
 
     async def _download(self, name: str):
-        html = await get_html(name)
+        while True:
+            try:
+                html = await get_html(name)
+            except asyncio.TimeoutError:
+                continue
+            else:
+                break
         table = parser.HTMLTableParser(html, TABLE_INDEX)
         columns = [DATE_COLUMN]
         if is_common(name):
