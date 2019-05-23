@@ -44,7 +44,7 @@ ML_PARAMS = {
         ("Label", {"days": 44, "on_off": True}),
         ("STD", {"days": 26, "on_off": True}),
         ("Ticker", {"on_off": True}),
-        ("Mom12m", {"days": 255, "on_off": True}),
+        ("Mom12m", {"days": 255, "on_off": True, "periods": 1}),
         ("DivYield", {"days": 304, "on_off": True, "periods": 1}),
         ("Mom1m", {"days": 29, "on_off": True}),
         ("RetMax", {"days": 40, "on_off": True}),
