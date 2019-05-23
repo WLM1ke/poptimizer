@@ -52,6 +52,7 @@ def find_momentum(current_port: Portfolio, part: float = 0.1) -> pd.DataFrame:
     """
     all_tickers = data.securities_with_reg_number()
     params = feature_params("Mom12m")
+    params["periods"] = 1
     date = current_port.date
     mean = feature.Mom12m(tuple(all_tickers), date, params).get()
     mean *= params["days"]

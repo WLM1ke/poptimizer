@@ -12,7 +12,7 @@ PARAMS = {
         ("Label", {"days": 21}),
         ("STD", {"days": 252}),
         ("Ticker", {}),
-        ("Mom12m", {"days": 252}),
+        ("Mom12m", {"days": 252, "periods": 1}),
         ("DivYield", {"days": 252, "periods": 1}),
     ),
     "model": {
@@ -182,7 +182,7 @@ def test_valid_model():
     assert len(result) == 6
     assert result["loss"] == pytest.approx(0.014_495_100_438_051_8)
     assert result["status"] == "ok"
-    assert result["std"] == pytest.approx(0.160839952004336)
+    assert result["std"] == pytest.approx(0.160_839_952_004_336)
     assert result["r2"] == pytest.approx(-0.014_495_100_438_051_8)
     assert result["data"] == PARAMS["data"]
     for key, value in PARAMS["model"].items():
@@ -214,7 +214,7 @@ def test_optimize_hyper(monkeypatch, capsys):
             ("Label", {"days": hp.choice("label", list(range(21, 31)))}),
             ("STD", {"days": 186}),
             ("Ticker", {"on_off": False}),
-            ("Mom12m", {"days": 279}),
+            ("Mom12m", {"days": 279, "periods": 1}),
             ("DivYield", {"days": 252, "periods": 1}),
         ),
         "model": {
@@ -245,7 +245,7 @@ def test_optimize_hyper(monkeypatch, capsys):
         ("Label", {"days": 29}),
         ("STD", {"days": 186}),
         ("Ticker", {"on_off": False}),
-        ("Mom12m", {"days": 279}),
+        ("Mom12m", {"days": 279, "periods": 1}),
         ("DivYield", {"days": 252, "periods": 1}),
     )
     model_params = {

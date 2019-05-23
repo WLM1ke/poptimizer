@@ -9,7 +9,7 @@ ML_PARAMS = {
         ("Label", {"days": 21}),
         ("STD", {"days": 252}),
         ("Ticker", {}),
-        ("Mom12m", {"days": 252}),
+        ("Mom12m", {"days": 252, "periods": 1}),
         ("DivYield", {"days": 252}),
         ("Mom1m", {"on_off": False, "days": 21}),
     ),
@@ -45,14 +45,14 @@ def test_get_turnover(monkeypatch):
 def test_find_momentum(monkeypatch):
     monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0022)
     monkeypatch.setattr(config, "TURNOVER_PERIOD", 21 * 2)
-    monkeypatch.setattr(finder, "feature_params", lambda x: {"days": 252})
+    monkeypatch.setattr(finder, "feature_params", lambda x: {"days": 252, "periods": 1})
     date = pd.Timestamp("2018-12-18")
     positions = dict(TATN=20000, KZOS=20000, LKOH=20000)
     port = portfolio.Portfolio(date, 0, positions)
     df = finder.find_momentum(port, 0.02)
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (5, 5)
-    assert list(df.columns) == ["Mom12m", "STD", "TURNOVER", "_DRAW_DOWN", "ADD"]
+    assert list(df.columns) == ["Mom12m_0", "STD", "TURNOVER", "_DRAW_DOWN", "ADD"]
     assert list(df.index) == ["AKRN", "RTKMP", "BANEP", "KZOS", "CBOM"]
     assert df.loc["AKRN", "ADD"] == "ADD"
     assert df.loc["KZOS", "ADD"] == ""

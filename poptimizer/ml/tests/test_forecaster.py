@@ -14,7 +14,7 @@ PARAMS = {
         ("Label", {"days": 20}),
         ("STD", {"days": 150}),
         ("Ticker", {}),
-        ("Mom12m", {"days": 252}),
+        ("Mom12m", {"days": 252, "periods": 1}),
         ("DivYield", {"days": 252, "periods": 1}),
         ("Mom1m", {"days": 21}),
     ),

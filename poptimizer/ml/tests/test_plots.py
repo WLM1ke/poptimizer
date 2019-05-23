@@ -12,7 +12,7 @@ ML_PARAMS = {
         ("Label", {"days": 58}),
         ("STD", {"days": 195}),
         ("Ticker", {}),
-        ("Mom12m", {"days": 282}),
+        ("Mom12m", {"days": 282, "periods": 1}),
         ("DivYield", {"days": 332, "periods": 2}),
         ("Mom1m", {"days": 21}),
     ),
