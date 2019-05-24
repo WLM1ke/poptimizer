@@ -1,16 +1,8 @@
 """Поиск претендентов на включение и исключение из портфеля."""
 import pandas as pd
 
-from poptimizer import data, portfolio, config
-from poptimizer.portfolio import optimizer
+from poptimizer import data, portfolio
 from poptimizer.portfolio.portfolio import CASH, Portfolio
-
-
-def feature_params(feat_name):
-    """Поиск значения параметра количество дней для признака."""
-    feat_conf = config.ML_PARAMS["data"]
-    (_, params), *_ = filter(lambda x: x[0] == feat_name, feat_conf)
-    return params
 
 
 def get_turnover(port, tickers):
@@ -25,11 +17,9 @@ def get_turnover(port, tickers):
     return all_tickers_port.turnover_factor[:-2]
 
 
-def mark_not_portfolio(df, column_name, current_port, choose=None):
+def mark_not_portfolio(df, column_name, current_port):
     """Выбирает лучшие и помечает бумаги не в портфеле."""
     df = df.sort_values(column_name, ascending=False)
-    if choose:
-        df = df.head(choose)
     df["ADD"] = "ADD"
     for ticker in current_port.index:
         if ticker in df.index:
@@ -64,13 +54,13 @@ def find_zero_turnover_and_weight(current_port: Portfolio):
 
 def add_tickers(current_port: Portfolio):
     """Претенденты для добавления."""
-    print(f"\nМОМЕНТУМ ТИКЕРЫ\n\n{find_good_volume(current_port)}")
+    print(f"\nДОСТАТОЧНЫЙ ОБОРОТ\n\n{find_good_volume(current_port)}")
 
 
-def remove_tickers(opt: optimizer.Optimizer):
+def remove_tickers(current_port: Portfolio):
     """Претенденты на удаление."""
     print(
         f"\nБУМАГИ С НУЛЕВЫМ ОБОРОТОМ И ВЕСОМ"
         f"\n"
-        f"\n{find_zero_turnover_and_weight(opt.portfolio)}"
+        f"\n{find_zero_turnover_and_weight(current_port)}"
     )
