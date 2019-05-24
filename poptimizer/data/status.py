@@ -46,9 +46,6 @@ def smart_lab_status(tickers: Tuple[str, ...]):
     if status[0]:
         print("\nДАННЫЕ ПО ДИВИДЕНДАМ ТРЕБУЮТ ОБНОВЛЕНИЯ", "\n")
         print(", ".join(status[0]))
-    if status[1]:
-        print("\nВ БАЗУ ДАННЫХ ДИВИДЕНДОВ МОЖНО ДОБАВИТЬ", "\n")
-        print(", ".join(status[1]))
 
 
 async def _gather_div_data(ticker: str):
