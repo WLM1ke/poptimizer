@@ -72,9 +72,9 @@ def test_predict_mean(valid_result, train_predict_params):
 
     assert isinstance(mean, np.ndarray)
     assert len(mean) == 3
-    assert mean[0] == pytest.approx(4.948287205631086e-05)
-    assert mean[1] == pytest.approx(0.00015361990669145262)
-    assert mean[2] == pytest.approx(8.62635383137634e-05)
+    assert mean[0] == pytest.approx(4.915716070365714e-05)
+    assert mean[1] == pytest.approx(0.0001311378960684683)
+    assert mean[2] == pytest.approx(7.154825947943444e-05)
 
 
 def test_validate_cov_error():
@@ -132,13 +132,12 @@ def test_get_forecast():
     assert forecast.date == pd.Timestamp("2018-12-14")
     assert forecast.tickers == ("DSKY", "SNGSP", "VSMO")
     assert isinstance(forecast.mean, np.ndarray)
-    assert forecast.mean[1] == pytest.approx(0.00015361990669145262 * 252)
+    assert forecast.mean[1] == pytest.approx(0.03304674980925401)
     assert isinstance(forecast.cov, np.ndarray)
     assert forecast.cov[2, 1] == pytest.approx(4.420817979066077e-06 * 252)
     assert isinstance(forecast.feature_importance, pd.Series)
     assert np.allclose(
-        forecast.feature_importance,
-        [14.72167037, 0, 26.00908387, 39.39355093, 19.87569483],
+        forecast.feature_importance, [30.246084, 0, 25.961227, 31.210623, 12.582066]
     )
     assert forecast.r2 == pytest.approx(0.0006692668991337136)
     assert forecast.average_cor == pytest.approx(0.10588718234140086)

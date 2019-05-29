@@ -44,12 +44,12 @@ def test_best_sell(opt):
 def test_gradient_growth(opt):
     grad = opt.metrics.gradient
     growth = opt.gradient_growth
-    assert grad["KZOS"] < grad["CBOM"]
-    assert growth["KZOS"] == pytest.approx(0.1858893016250129)
+    assert grad["KZOS"] > grad["CBOM"]
+    assert growth["KZOS"] == pytest.approx(0.21645407300792682)
 
 
 def test_best_buy(opt):
-    assert opt.best_buy == "CBOM"
+    assert opt.best_buy == "KZOS"
 
 
 def test_main_stat(opt):
@@ -58,7 +58,7 @@ def test_main_stat(opt):
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (10, 4)
     assert (df.columns == ["LOWER_BOUND", "GRADIENT", "TURNOVER", "GROWTH"]).all()
-    assert df.index[0] == "CBOM"
+    assert df.index[0] == "KZOS"
     assert df.index[-1] == "MGNT"
 
 
@@ -67,7 +67,7 @@ def test_trade_recommendation(opt):
     rec = opt._trade_recommendation()
     assert isinstance(rec, str)
     assert "Продать SNGSP" in rec
-    assert "Купить  CBOM" in rec
+    assert "Купить  KZOS" in rec
 
 
 def test_str(opt):

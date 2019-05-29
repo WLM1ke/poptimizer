@@ -149,7 +149,7 @@ def valid_model(params: dict, examples: Examples) -> dict:
     if clf.tree_count_ == MAX_ITERATIONS:
         raise POptimizerError(f"Необходимо увеличить MAX_ITERATIONS = {MAX_ITERATIONS}")
     model_params["iterations"] = clf.tree_count_
-    scores = clf.get_best_score()["validation_0"]
+    scores = clf.get_best_score()["validation"]
     std = scores["RMSE"]
     r2 = scores["R2"]
     return dict(

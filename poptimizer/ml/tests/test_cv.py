@@ -196,7 +196,7 @@ def test_valid_model():
 
 def test_cv_model_raise_max_iter(monkeypatch):
     fake_tech_params = dict(**cv.TECH_PARAMS)
-    fake_max_iter = 3
+    fake_max_iter = 2
     fake_tech_params["iterations"] = fake_max_iter
     monkeypatch.setattr(cv, "TECH_PARAMS", fake_tech_params)
     monkeypatch.setattr(cv, "MAX_ITERATIONS", fake_max_iter)

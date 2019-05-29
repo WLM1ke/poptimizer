@@ -41,10 +41,3 @@ async def test_no_html():
     assert "Данные https://www.dohod.ru/ik/analytics/dividend/test не загружены" == str(
         error.value
     )
-
-
-@pytest.mark.asyncio
-async def test_no_dividends_table_in_html():
-    with pytest.raises(POptimizerError) as error:
-        await dohod.Dohod(("MSRS",)).get()
-    assert "На странице нет таблицы 2" == str(error.value)
