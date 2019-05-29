@@ -1,3 +1,5 @@
+import asyncio
+
 import pandas as pd
 import pyppeteer
 import pytest
@@ -18,8 +20,8 @@ async def create_client(tmpdir_factory, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_load_ticker_page():
+    browser = await pyppeteer.launch()
     try:
-        browser = await pyppeteer.launch()
         page = await browser.newPage()
         await conomy.load_ticker_page(page, "FEES")
         await page.waitForXPath(conomy.DIVIDENDS_MENU)
@@ -30,8 +32,8 @@ async def test_load_ticker_page():
 
 @pytest.mark.asyncio
 async def test_load_dividends_table():
+    browser = await pyppeteer.launch()
     try:
-        browser = await pyppeteer.launch()
         page = await browser.newPage()
         await page.goto("https://www.conomy.ru/emitent/lenenergo")
         await conomy.load_dividends_table(page)
@@ -57,6 +59,30 @@ def test_is_common():
 @pytest.mark.asyncio
 async def test_conomy_common():
     df = await conomy.Conomy(("SBER",)).get()
+    assert isinstance(df, pd.Series)
+    assert df.size >= 9
+    assert df.index[0] == pd.Timestamp("2010-04-16")
+    assert df["2011-04-15"] == 0.92
+
+
+class FakeGetHtml:
+    def __init__(self, value):
+        self.first_call = True
+        self.value = value
+
+    async def __call__(self, name):
+        if self.first_call:
+            self.first_call = False
+            raise asyncio.TimeoutError
+        return self.value
+
+
+@pytest.mark.asyncio
+async def test_conomy_reload(monkeypatch):
+    manager = conomy.Conomy(("SBER",))
+    value = await conomy.get_html("SBER")
+    monkeypatch.setattr(conomy, "get_html", FakeGetHtml(value))
+    df = await manager.get()
     assert isinstance(df, pd.Series)
     assert df.size >= 9
     assert df.index[0] == pd.Timestamp("2010-04-16")
