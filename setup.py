@@ -65,6 +65,7 @@ setuptools.setup(
         "aiohttp",
         "pyppeteer",
         "scikit-learn",
+        "certifi",
     ],
     python_requires=f">={python_minimal}",
 )
