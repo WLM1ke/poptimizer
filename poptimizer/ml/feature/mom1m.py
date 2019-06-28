@@ -4,10 +4,10 @@ from typing import Tuple
 import pandas as pd
 
 from poptimizer import data
-from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsMixin
+from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsOffMixin
 
 
-class Mom1m(DaysParamsMixin, AbstractFeature):
+class Mom1m(DaysParamsOffMixin, AbstractFeature):
     """1-month momentum - средняя доходность примерно за 1 предыдущий месяц.
 
     Хотя в общем акции демонстрируют сохранение роста, если они росли в предыдущие периоды,

@@ -30,7 +30,7 @@ AFTER_TAX = 1 - 0.13
 T_SCORE = 2.0
 
 # Максимальный объем одной торговой операции в долях портфеля
-MAX_TRADE = 0.013
+MAX_TRADE = 0.012
 
 # Период в торговых днях, за который медианный оборот торгов
 TURNOVER_PERIOD = 21 * 4
@@ -41,21 +41,21 @@ TURNOVER_CUT_OFF = 3.9 * MAX_TRADE
 # Параметры ML-модели
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 48, "on_off": True}),
-        ("STD", {"days": 21, "on_off": True}),
+        ("Label", {"days": 50, "on_off": True}),
+        ("STD", {"days": 23, "on_off": True}),
         ("Ticker", {"on_off": True}),
-        ("Mom12m", {"days": 260, "on_off": True, "periods": 2}),
-        ("DivYield", {"days": 357, "on_off": True, "periods": 1}),
-        ("Mom1m", {"days": 28, "on_off": True}),
-        ("RetMax", {"days": 40, "on_off": True}),
-        ("ChMom6m", {"days": 99, "on_off": True}),
+        ("Mom12m", {"days": 259, "on_off": True, "periods": 2}),
+        ("DivYield", {"days": 386, "on_off": True, "periods": 1}),
+        ("Mom1m", {"days": 28, "on_off": False}),
+        ("RetMax", {"days": 42, "on_off": True}),
+        ("ChMom6m", {"days": 107, "on_off": True}),
     ),
     "model": {
-        "bagging_temperature": 0.9327704353805922,
+        "bagging_temperature": 0.5549061439687702,
         "depth": 10,
-        "l2_leaf_reg": 0.8814532059165652,
-        "learning_rate": 0.0023003374942519583,
+        "l2_leaf_reg": 3.556206010583423,
+        "learning_rate": 0.005016624020302364,
         "one_hot_max_size": 100,
-        "random_strength": 0.5261883849565594,
+        "random_strength": 0.5815581028215139,
     },
 }

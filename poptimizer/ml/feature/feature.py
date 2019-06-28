@@ -111,3 +111,21 @@ class DaysPeriodsParamsMixin:
             "days": hp.choice(f"{self.name}_DAYS", days_choice_list(days)),
             "periods": hp.choice(f"{self.name}_PERIODS", periods_choice_list(periods)),
         }
+
+
+# noinspection PyUnresolvedReferences
+class DaysParamsOffMixin:
+    """Класс с реализацией параметра с количеством дней для признака и возможность отключения."""
+
+    @staticmethod
+    def is_categorical(_) -> List[bool]:
+        """Не категориальный признак."""
+        return [False]
+
+    def get_params_space(self) -> dict:
+        """Значение дней в диапазоне и включение/отключение признака."""
+        days = self._params["days"]
+        return {
+            ON_OFF: hp.choice(f"{self.name}_ON_OFF", [True, False]),
+            "days": hp.choice(f"{self.name}_DAYS", days_choice_list(days)),
+        }

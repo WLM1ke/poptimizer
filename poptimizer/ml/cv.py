@@ -119,7 +119,7 @@ def make_model_params(data_params, model_params):
     return result
 
 
-def valid_model(params: dict, examples: Examples) -> dict:
+def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     """Осуществляет валидацию модели по R2.
 
     Осуществляется проверка, что не достигнут максимум итераций, возвращается RMSE, R2 и параметры модели
@@ -129,6 +129,8 @@ def valid_model(params: dict, examples: Examples) -> dict:
         Словарь с параметрами модели и данных.
     :param examples:
         Класс создания обучающих примеров.
+    :param verbose:
+        Распечатывать ли параметры.
     :return:
         Словарь с результатом в формате hyperopt:
 
@@ -139,6 +141,8 @@ def valid_model(params: dict, examples: Examples) -> dict:
         * ключ 'params' - параметры модели и данных, в которые добавлено оптимальное количество итераций
         градиентного бустинга на кросс-валидации и общие настройки.
     """
+    if verbose:
+        print(f"\n{params}")
     data_params, model_params = params["data"], params["model"]
     train_pool_params, val_pool_params = examples.train_val_pool_params(data_params)
     train_pool = catboost.Pool(**train_pool_params)
@@ -152,6 +156,8 @@ def valid_model(params: dict, examples: Examples) -> dict:
     scores = clf.get_best_score()["validation"]
     std = scores["RMSE"]
     r2 = scores["R2"]
+    if verbose:
+        print(r2)
     return dict(
         loss=-r2,
         status=hyperopt.STATUS_OK,
@@ -170,7 +176,7 @@ def optimize_hyper(examples: Examples) -> tuple:
     :return:
         Оптимальные параметры модели.
     """
-    objective = functools.partial(valid_model, examples=examples)
+    objective = functools.partial(valid_model, examples=examples, verbose=True)
     param_space = dict(data=examples.get_params_space(), model=get_model_space())
     best = hyperopt.fmin(
         objective,
