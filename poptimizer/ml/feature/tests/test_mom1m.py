@@ -21,7 +21,7 @@ def test_get_params_space(feat):
     space = feat.get_params_space()
     assert isinstance(space, dict)
     assert len(space) == 2
-    assert space["on_off"] is True
+    assert isinstance(space["on_off"], Apply)
     assert isinstance(space["days"], Apply)
 
 
