@@ -36,26 +36,26 @@ MAX_TRADE = 0.012
 TURNOVER_PERIOD = 21 * 4
 
 # Минимальный оборот - преимущества акции снижаются при приближении медианного оборота к данному уровню
-TURNOVER_CUT_OFF = 3.9 * MAX_TRADE
+TURNOVER_CUT_OFF = 3.8 * MAX_TRADE
 
 # Параметры ML-модели
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 50, "on_off": True}),
-        ("STD", {"days": 23, "on_off": True}),
+        ("Label", {"days": 49, "on_off": True}),
+        ("STD", {"days": 25, "on_off": True}),
         ("Ticker", {"on_off": True}),
-        ("Mom12m", {"days": 259, "on_off": True, "periods": 2}),
-        ("DivYield", {"days": 386, "on_off": True, "periods": 1}),
-        ("Mom1m", {"days": 28, "on_off": False}),
-        ("RetMax", {"days": 42, "on_off": True}),
-        ("ChMom6m", {"days": 107, "on_off": True}),
+        ("Mom12m", {"days": 279, "on_off": True, "periods": 1}),
+        ("DivYield", {"days": 375, "on_off": True, "periods": 1}),
+        ("Mom1m", {"days": 30, "on_off": True}),
+        ("RetMax", {"days": 41, "on_off": True}),
+        ("ChMom6m", {"days": 99, "on_off": True}),
     ),
     "model": {
-        "bagging_temperature": 0.5549061439687702,
-        "depth": 10,
-        "l2_leaf_reg": 3.556206010583423,
-        "learning_rate": 0.005016624020302364,
-        "one_hot_max_size": 100,
-        "random_strength": 0.5815581028215139,
+        "bagging_temperature": 0.4805813687189044,
+        "depth": 11,
+        "l2_leaf_reg": 2.404382937096517,
+        "learning_rate": 0.00562334246873086,
+        "one_hot_max_size": 2,
+        "random_strength": 1.1258759135845093,
     },
 }
