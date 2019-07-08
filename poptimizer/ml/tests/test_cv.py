@@ -274,6 +274,7 @@ def test_find_better_model(monkeypatch, capsys):
 
 def test_find_better_model_fake_base(monkeypatch, capsys):
     monkeypatch.setattr(cv, "MAX_SEARCHES", 10)
+    monkeypatch.setattr(cv, "MAX_DEPTH", 11)
     monkeypatch.setattr(
         cv, "print_result", lambda x, y, z: 1 if x == "Базовая модель" else 0
     )
