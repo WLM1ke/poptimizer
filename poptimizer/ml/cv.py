@@ -44,7 +44,7 @@ MAX_DEPTH = 13
 L2_LEAF_REG = [5.9e-01, 4.4]
 
 # Диапазон поиска случайности разбиений
-RANDOM_STRENGTH = [4.4e-01, 2.1]
+RANDOM_STRENGTH = [0.44, 2.4e00]
 
 # Диапазон поиска интенсивности бэггинга
 BAGGING_TEMPERATURE = [4.1e-01, 1.8]
