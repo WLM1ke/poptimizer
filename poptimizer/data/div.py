@@ -40,7 +40,11 @@ def dividends_all(tickers: tuple) -> pd.DataFrame:
         Дивиденды.
     """
     div_list = asyncio.run(_dividends(tickers))
-    df = pd.concat([df for df in div_list], axis=1)
+    if isinstance(div_list, list):
+        # TODO: может всегда лист должен возвращаться
+        df = pd.concat([df for df in div_list], axis=1)
+    else:
+        df = div_list.to_frame()
     return df.fillna(0, axis=0) * AFTER_TAX
 
 
