@@ -180,10 +180,10 @@ def test_valid_model():
 
     assert isinstance(result, dict)
     assert len(result) == 6
-    assert result["loss"] == pytest.approx(0.014_495_100_438_051_8)
+    assert result["loss"] == pytest.approx(0.084_422_946_647_900_07)
     assert result["status"] == "ok"
     assert result["std"] == pytest.approx(0.160_839_952_004_336)
-    assert result["r2"] == pytest.approx(-0.014_495_100_438_051_8)
+    assert result["r2"] == pytest.approx(-0.084_422_946_647_900_07)
     assert result["data"] == PARAMS["data"]
     for key, value in PARAMS["model"].items():
         assert result["model"][key] == value
@@ -242,7 +242,7 @@ def test_optimize_hyper(monkeypatch, capsys):
     assert isinstance(result, dict)
     assert len(result) == 2
     assert result["data"] == (
-        ("Label", {"days": 29}),
+        ("Label", {"days": 25}),
         ("STD", {"days": 186}),
         ("Ticker", {"on_off": False}),
         ("Mom12m", {"days": 279, "periods": 1}),
@@ -261,7 +261,7 @@ def test_optimize_hyper(monkeypatch, capsys):
 
 
 def test_find_better_model(monkeypatch, capsys):
-    monkeypatch.setattr(cv, "MAX_SEARCHES", 10)
+    monkeypatch.setattr(cv, "MAX_SEARCHES", 2)
     monkeypatch.setattr(cv, "MAX_DEPTH", 7)
     pos = dict(LSNGP=10, KZOS=20, GMKN=30)
     port = portfolio.Portfolio(pd.Timestamp("2018-12-19"), 100, pos)
@@ -273,8 +273,8 @@ def test_find_better_model(monkeypatch, capsys):
 
 
 def test_find_better_model_fake_base(monkeypatch, capsys):
-    monkeypatch.setattr(cv, "MAX_SEARCHES", 10)
-    monkeypatch.setattr(cv, "MAX_DEPTH", 11)
+    monkeypatch.setattr(cv, "MAX_SEARCHES", 2)
+    monkeypatch.setattr(cv, "MAX_DEPTH", 7)
     monkeypatch.setattr(
         cv, "print_result", lambda x, y, z: 1 if x == "Базовая модель" else 0
     )
