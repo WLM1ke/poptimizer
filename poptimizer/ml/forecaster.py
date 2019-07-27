@@ -97,6 +97,7 @@ def make_forecast(tickers, date, params):
         depth=valid_result["model"]["depth"],
         feature_importance=feature_importance,
         r2=valid_result["r2"],
+        r=valid_result["r"],
         average_cor=average_cor,
         shrinkage=shrinkage,
         params=params,

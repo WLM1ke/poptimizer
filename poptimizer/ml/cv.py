@@ -1,10 +1,12 @@
 """Кросс-валидация и оптимизация гиперпараметров ML-модели."""
 import functools
+import logging
 
 import catboost
 import hyperopt
 import numpy as np
 from hyperopt import hp
+from sklearn import metrics
 
 from poptimizer.config import POptimizerError, ML_PARAMS
 from poptimizer.ml.examples import Examples
@@ -16,7 +18,6 @@ MAX_ITERATIONS = 10000
 SEED = 284_704
 TECH_PARAMS = dict(
     loss_function="RMSE",
-    custom_metric="R2",
     iterations=MAX_ITERATIONS,
     random_state=SEED,
     od_type="Iter",
@@ -137,12 +138,13 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
         * ключ 'loss' - нормированная RMSE на кросс-валидации (для hyperopt),
         * ключ 'status' - успешного прохождения (для hyperopt),
         * ключ 'std' - RMSE на кросс-валидации,
-        * ключ 'r2' - 1- нормированная RMSE на кросс-валидации в квадрате,
+        * ключ 'r2' - r2 на кросс-валидации,
+        * ключ 'ev' - explained variance на кросс-валидации,
         * ключ 'params' - параметры модели и данных, в которые добавлено оптимальное количество итераций
         градиентного бустинга на кросс-валидации и общие настройки.
     """
     if verbose:
-        print(f"\n{params}")
+        logging.info(f"Параметры модели:\n{params}")
     data_params, model_params = params["data"], params["model"]
     train_pool_params, val_pool_params = examples.train_val_pool_params(data_params)
     train_pool = catboost.Pool(**train_pool_params)
@@ -155,14 +157,16 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     model_params["iterations"] = clf.tree_count_
     scores = clf.get_best_score()["validation"]
     std = scores["RMSE"]
-    r2 = scores["R2"]
+    r2 = metrics.r2_score(val_pool_params["label"], clf.predict(val_pool))
+    r = np.corrcoef(val_pool_params["label"], clf.predict(val_pool))[0, 1]
     if verbose:
-        print(r2)
+        logging.info(f"R: {r}\n")
     return dict(
-        loss=-r2,
+        loss=-r,
         status=hyperopt.STATUS_OK,
         std=std,
         r2=r2,
+        r=r,
         data=data_params,
         model=model_params,
     )
@@ -193,16 +197,16 @@ def optimize_hyper(examples: Examples) -> tuple:
 
 
 def print_result(name, params, examples: Examples):
-    """Проводит кросс-валидацию, выводит ее основные метрики и возвращает R2."""
+    """Проводит кросс-валидацию, выводит ее основные метрики и возвращает R."""
     cv_results = valid_model(params, examples)
     print(
         f"\n{name}"
-        f"\nR2 - {cv_results['r2']:0.4%}"
+        f"\nR - {cv_results['r']:0.4%}"
         f"\nКоличество итераций - {cv_results['model']['iterations']}"
         f"\n{cv_results['data']}"
         f"\n{cv_results['model']}"
     )
-    return cv_results["r2"]
+    return cv_results["r"]
 
 
 def find_better_model(port: Portfolio, params: dict = ML_PARAMS):
