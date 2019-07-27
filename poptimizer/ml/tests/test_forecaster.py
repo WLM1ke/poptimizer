@@ -41,6 +41,7 @@ FORECAST = Forecast(
     0.0,
     0.0,
     0.0,
+    0.0,
     PARAMS,
 )
 
