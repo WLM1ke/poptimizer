@@ -31,7 +31,7 @@ def test_get_investor_data():
 
 
 def test_constant_prices_data():
-    df = simple.constant_prices_data("test", "Igor", pd.Timestamp("2017-04-19"))
+    df = simple.constant_prices_data("test", "Igor", 12)
     assert df.shape == (13, 3)
     assert df.loc["2018-01-19", "Inflow"] == pytest.approx(-6351.166136)
     assert df.loc["2017-07-19", "Value"] == pytest.approx(12875.75482)
@@ -44,7 +44,7 @@ def test_rescale_and_format():
 
 
 def test_income_report(capsys):
-    simple.income("test", "WLMike", pd.Timestamp("2017-04-19"))
+    simple.income("test", "WLMike", 12)
     captured_string = capsys.readouterr().out
     assert "WLMike" in captured_string
     assert "1Y: Дивиденды =    28 000, Доход =    85 000" in captured_string

@@ -28,12 +28,10 @@ def get_investor_data(file_name: str, investor_name: str):
     return df
 
 
-def constant_prices_data(
-    report_name: str, investor_name: str, start_date: pd.Timestamp
-):
+def constant_prices_data(report_name: str, investor_name: str, months: int):
     """Переводит данные в постоянные цены."""
     df = get_investor_data(report_name, investor_name)
-    df = df.loc[start_date:]
+    df = df.iloc[-months - 1 :]
     cpi = data.monthly_cpi(df.index[-1])
     cpi = cpi[-len(df) :]
     cpi = cpi.cumprod()
@@ -49,7 +47,7 @@ def rescale_and_format(x, divider):
     return f"{round(x / divider, -3):,.0f}".replace(",", " ").rjust(9)
 
 
-def income(report_name: str, investor_name: str, start_date: pd.Timestamp):
+def income(report_name: str, investor_name: str, months: int):
     """Распечатывает дивиденды и доход с начальной даты в среднем за год, месяц и неделю.
 
     Данные пересчитываются в постоянные цена на основе CPI для сопоставимости на длительных
@@ -59,16 +57,16 @@ def income(report_name: str, investor_name: str, start_date: pd.Timestamp):
         Наименование файла с отчетом, из которого берутся исторические данные.
     :param investor_name:
         Имя инвестора, для которого осуществляется расчет.
-    :param start_date:
-        Начальная дата, с которой анализируется статистика.
+    :param months:
+        Количество месяцев, за которые анализируется статистика.
     """
-    df = constant_prices_data(report_name, investor_name, start_date)
+    df = constant_prices_data(report_name, investor_name, months)
     dividends = df["Dividends"].iloc[1:].sum()
     income = df["Value"].iloc[-1] - df["Value"].iloc[0] - df["Inflow"].iloc[1:].sum()
     months = len(df) - 1
     periods = dict(Y=months / 12, M=months, W=(months / 12) * 365.25 / 7)
     print(
-        f"\n{investor_name} с {start_date.date()} в среднем (с коррекцией на инфляцию):"
+        f"\n{investor_name} в среднем (с коррекцией на инфляцию) за {months} месяцев:"
     )
     for period, divider in periods.items():
         print(
