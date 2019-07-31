@@ -10,7 +10,7 @@ from poptimizer.portfolio import portfolio
 PARAMS = {
     "data": (
         ("Label", {"days": 21, "div_share": 0.0}),
-        ("STD", {"days": 252}),
+        ("Scaler", {"days": 252}),
         ("Ticker", {}),
         ("Mom12m", {"days": 252, "periods": 1}),
         ("DivYield", {"days": 252, "periods": 1}),
@@ -136,7 +136,7 @@ def test_check_model_bounds_upper(capsys):
 def test_make_model_params():
     data_params = (
         ("Label", {"days": 49}),
-        ("STD", {"on_off": True, "days": 235}),
+        ("Scaler", {"on_off": True, "days": 235}),
         ("DivYield", {"days": 252, "periods": 2, "on_off": False}),
         ("Ticker", {}),
         ("Mom12m", {"on_off": False, "days": 252}),
@@ -215,7 +215,7 @@ def test_optimize_hyper(monkeypatch, capsys):
                 "Label",
                 {"div_share": 0.0, "days": hp.choice("label", list(range(21, 31)))},
             ),
-            ("STD", {"days": 186}),
+            ("Scaler", {"days": 186}),
             ("Ticker", {"on_off": False}),
             ("Mom12m", {"days": 279, "periods": 1}),
             ("DivYield", {"days": 252, "periods": 1}),
@@ -246,7 +246,7 @@ def test_optimize_hyper(monkeypatch, capsys):
     assert len(result) == 2
     assert result["data"] == (
         ("Label", {"days": 29, "div_share": 0.0}),
-        ("STD", {"days": 186}),
+        ("Scaler", {"days": 186}),
         ("Ticker", {"on_off": False}),
         ("Mom12m", {"days": 279, "periods": 1}),
         ("DivYield", {"days": 252, "periods": 1}),

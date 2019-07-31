@@ -10,7 +10,7 @@ from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
 ML_PARAMS = {
     "data": (
         ("Label", {"days": 30, "div_share": 0.0}),
-        ("STD", {"days": 252}),
+        ("Scaler", {"days": 252}),
         ("Ticker", {}),
         ("Mom12m", {"days": 252, "periods": 1}),
         ("DivYield", {"days": 252, "periods": 1}),

@@ -8,7 +8,9 @@ from poptimizer.ml.feature.label import YEAR_IN_TRADING_DAYS
 
 @pytest.fixture(scope="module", name="feat")
 def test_std_feature():
-    return std.STD(("PIKK", "RTKMP", "TATNP"), pd.Timestamp("2018-12-10"), {"days": 10})
+    return std.Scaler(
+        ("PIKK", "RTKMP", "TATNP"), pd.Timestamp("2018-12-10"), {"days": 10}
+    )
 
 
 def test_is_categorical(feat):

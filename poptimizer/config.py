@@ -42,13 +42,14 @@ TURNOVER_CUT_OFF = 3.6 * MAX_TRADE
 ML_PARAMS = {
     "data": (
         ("Label", {"days": 61, "div_share": 0.1, "on_off": True}),
-        ("STD", {"days": 44, "on_off": True}),
+        ("Scaler", {"days": 44, "on_off": True}),
         ("Ticker", {"on_off": True}),
         ("Mom12m", {"days": 234, "on_off": True, "periods": 1}),
         ("DivYield", {"days": 345, "on_off": True, "periods": 1}),
         ("Mom1m", {"days": 28, "on_off": False}),
         ("RetMax", {"days": 56, "on_off": True}),
         ("ChMom6m", {"days": 81, "on_off": True}),
+        ("STD", {"days": 21, "on_off": False}),
     ),
     "model": {
         "bagging_temperature": 0.8781174975146424,
