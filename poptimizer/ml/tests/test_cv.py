@@ -9,7 +9,7 @@ from poptimizer.portfolio import portfolio
 
 PARAMS = {
     "data": (
-        ("Label", {"days": 21}),
+        ("Label", {"days": 21, "div_share": 0.0}),
         ("STD", {"days": 252}),
         ("Ticker", {}),
         ("Mom12m", {"days": 252, "periods": 1}),
@@ -211,7 +211,10 @@ def test_cv_model_raise_max_iter(monkeypatch):
 def test_optimize_hyper(monkeypatch, capsys):
     space = {
         "data": (
-            ("Label", {"days": hp.choice("label", list(range(21, 31)))}),
+            (
+                "Label",
+                {"div_share": 0.0, "days": hp.choice("label", list(range(21, 31)))},
+            ),
             ("STD", {"days": 186}),
             ("Ticker", {"on_off": False}),
             ("Mom12m", {"days": 279, "periods": 1}),
@@ -242,7 +245,7 @@ def test_optimize_hyper(monkeypatch, capsys):
     assert isinstance(result, dict)
     assert len(result) == 2
     assert result["data"] == (
-        ("Label", {"days": 29}),
+        ("Label", {"days": 29, "div_share": 0.0}),
         ("STD", {"days": 186}),
         ("Ticker", {"on_off": False}),
         ("Mom12m", {"days": 279, "periods": 1}),

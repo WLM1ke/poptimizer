@@ -11,7 +11,7 @@ from poptimizer.portfolio.metrics import Forecast
 
 PARAMS = {
     "data": (
-        ("Label", {"days": 20}),
+        ("Label", {"days": 20, "div_share": 0.0}),
         ("STD", {"days": 150}),
         ("Ticker", {}),
         ("Mom12m", {"days": 252, "periods": 1}),

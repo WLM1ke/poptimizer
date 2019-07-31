@@ -7,7 +7,7 @@ from poptimizer.ml import examples
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 
 FEAT_PARAMS = (
-    ("Label", {"days": 6}),
+    ("Label", {"days": 6, "div_share": 0.0}),
     ("STD", {"on_off": True, "days": 7}),
     ("Ticker", {"on_off": True}),
     ("Mom12m", {"on_off": True, "days": 3, "periods": 1}),
@@ -42,7 +42,7 @@ def test_get_params_space(example):
 def test_get_all(example):
     df = example.get_all(
         (
-            ("Label", {"days": 4}),
+            ("Label", {"days": 4, "div_share": 0.0}),
             ("STD", {"on_off": True, "days": 5}),
             ("Ticker", {"on_off": True}),
             ("Mom12m", {"on_off": True, "days": 6, "periods": 1}),
@@ -71,7 +71,7 @@ def test_get_all(example):
 def test_train_val_pool_params(example):
     train, val = example.train_val_pool_params(
         (
-            ("Label", {"days": 4}),
+            ("Label", {"days": 4, "div_share": 0.0}),
             ("STD", {"on_off": True, "days": 5}),
             ("Ticker", {"on_off": True}),
             ("Mom12m", {"on_off": True, "days": 6, "periods": 1}),
@@ -98,7 +98,7 @@ def test_train_val_pool_params(example):
 
     df = example.get_all(
         (
-            ("Label", {"days": 4}),
+            ("Label", {"days": 4, "div_share": 0.0}),
             ("STD", {"on_off": True, "days": 5}),
             ("Ticker", {"on_off": True}),
             ("Mom12m", {"on_off": True, "days": 6, "periods": 1}),
@@ -135,7 +135,7 @@ def test_train_predict_pool_params(example):
 
     df = example.get_all(
         (
-            ("Label", {"days": 6}),
+            ("Label", {"days": 6, "div_share": 0.0}),
             ("STD", {"on_off": True, "days": 7}),
             ("Ticker", {"on_off": True}),
             ("Mom12m", {"on_off": True, "days": 3, "periods": 1}),

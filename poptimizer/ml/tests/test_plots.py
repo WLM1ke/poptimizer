@@ -9,7 +9,7 @@ from poptimizer.ml import plots
 
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 58}),
+        ("Label", {"days": 58, "div_share": 0.0}),
         ("STD", {"days": 195}),
         ("Ticker", {}),
         ("Mom12m", {"days": 282, "periods": 1}),
