@@ -41,22 +41,22 @@ TURNOVER_CUT_OFF = 3.6 * MAX_TRADE
 # Параметры ML-модели
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 61, "div_share": 0.1, "on_off": True}),
-        ("Scaler", {"days": 44, "on_off": True}),
+        ("Label", {"days": 54, "div_share": 0.1, "on_off": True}),
+        ("Scaler", {"days": 58, "on_off": True}),
         ("Ticker", {"on_off": True}),
-        ("Mom12m", {"days": 234, "on_off": True, "periods": 1}),
-        ("DivYield", {"days": 345, "on_off": True, "periods": 1}),
+        ("Mom12m", {"days": 246, "on_off": True, "periods": 1}),
+        ("DivYield", {"days": 361, "on_off": True, "periods": 1}),
         ("Mom1m", {"days": 28, "on_off": False}),
-        ("RetMax", {"days": 56, "on_off": True}),
-        ("ChMom6m", {"days": 81, "on_off": True}),
-        ("STD", {"days": 21, "on_off": False}),
+        ("RetMax", {"days": 58, "on_off": True}),
+        ("ChMom6m", {"days": 89, "on_off": True}),
+        ("STD", {"days": 23, "on_off": True}),
     ),
     "model": {
-        "bagging_temperature": 0.8781174975146424,
+        "bagging_temperature": 0.4600858269292512,
         "depth": 10,
-        "l2_leaf_reg": 3.515350536008831,
-        "learning_rate": 0.0022148662986490974,
+        "l2_leaf_reg": 2.1799527113509614,
+        "learning_rate": 0.0028543493035865144,
         "one_hot_max_size": 100,
-        "random_strength": 0.4680819510519724,
+        "random_strength": 1.3203841742274252,
     },
 }
