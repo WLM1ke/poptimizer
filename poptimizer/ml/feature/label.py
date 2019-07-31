@@ -44,11 +44,10 @@ class Label(DaysParamsMixin, AbstractFeature):
         returns = returns.rolling(days).mean()
         returns = returns.shift(-days)
 
-        div, p1 = data.div_ex_date_prices(self._tickers, self._last_date)
-        p0 = p1.shift(1)
+        div, price = data.div_ex_date_prices(self._tickers, self._last_date)
         div = div.rolling(days).mean()
         div = div.shift(-days)
-        div = div / p0
+        div = div / price
 
         label = returns * (1 - div_share) + div * div_share
         label = label.stack()
