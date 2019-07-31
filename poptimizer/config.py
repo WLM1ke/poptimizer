@@ -41,7 +41,7 @@ TURNOVER_CUT_OFF = 3.6 * MAX_TRADE
 # Параметры ML-модели
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 64, "on_off": True}),
+        ("Label", {"days": 64, "div_share": 0.0, "on_off": True}),
         ("STD", {"days": 39, "on_off": True}),
         ("Ticker", {"on_off": True}),
         ("Mom12m", {"days": 242, "on_off": True, "periods": 1}),
