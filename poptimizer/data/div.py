@@ -41,7 +41,6 @@ def dividends_all(tickers: tuple) -> pd.DataFrame:
     """
     div_list = asyncio.run(_dividends(tickers))
     if isinstance(div_list, list):
-        # TODO: может всегда лист должен возвращаться
         df = pd.concat([df for df in div_list], axis=1)
     else:
         df = div_list.to_frame()

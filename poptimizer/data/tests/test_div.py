@@ -33,6 +33,22 @@ def test_dividends_all():
     assert div.loc["2018-07-17", "CHMF"] == pytest.approx(0)
 
 
+def test_dividends_all_one_ticker():
+    div = dividends_all(("CHMF",))
+
+    assert isinstance(div, pd.DataFrame)
+    assert div.shape[0] >= 28
+    assert list(div.columns) == ["CHMF"]
+
+    assert div.index[0] == pd.Timestamp("2010-11-12")
+    assert div.index[-1] >= pd.Timestamp("2019-09-17")
+
+    assert div.loc["2018-06-19", "CHMF"] == pytest.approx((38.32 + 27.72) * AFTER_TAX)
+    assert div.loc["2017-12-05", "CHMF"] == pytest.approx(35.61 * AFTER_TAX)
+    assert div.loc["2010-11-12", "CHMF"] == pytest.approx(4.29 * AFTER_TAX)
+    assert div.loc["2011-05-22", "CHMF"] == pytest.approx((2.42 + 3.9) * AFTER_TAX)
+
+
 def test_t2_shift():
     index = moex.prices(("NLMK", "GMKN"), pd.Timestamp("2018-10-08")).index
     assert pd.Timestamp("2018-05-14") == t2_shift(pd.Timestamp("2018-05-15"), index)
