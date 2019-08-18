@@ -18,10 +18,11 @@ MAX_ITERATIONS = 10000
 SEED = 284_704
 TECH_PARAMS = dict(
     loss_function="RMSE",
+    eval_metric="RMSE:use_weights=True",
     iterations=MAX_ITERATIONS,
     random_state=SEED,
     od_type="Iter",
-    od_wait=MAX_ITERATIONS // 10,
+    od_wait=int(MAX_ITERATIONS ** 0.5),
     verbose=False,
     allow_writing_files=False,
 )
@@ -58,7 +59,7 @@ def log_space(space_name: str, interval):
     return hp.loguniform(space_name, lower, upper)
 
 
-def get_model_space():
+def get_model_space() -> dict:
     """Создает вероятностное пространство для параметров регрессии."""
     space = {
         "one_hot_max_size": hp.choice("one_hot_max_size", ONE_HOT_SIZE),
@@ -104,7 +105,7 @@ def check_model_bounds(params: dict, bound: float = 0.1, increase: float = 0.2):
         print(f"\nНеобходимо увеличить MAX_DEPTH до {MAX_DEPTH + 1}")
 
 
-def make_model_params(data_params, model_params):
+def make_model_params(data_params: tuple, model_params: dict) -> dict:
     """Формирует параметры модели.
 
     Добавляет общие технические параметры и вставляет корректные данные по отключенным признакам.
@@ -123,28 +124,30 @@ def make_model_params(data_params, model_params):
 def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     """Осуществляет валидацию модели по R2.
 
-    Осуществляется проверка, что не достигнут максимум итераций, возвращается RMSE, R2 и параметры модели
-    с оптимальным количеством итераций в формате целевой функции hyperopt.
+    Осуществляется проверка, что не достигнут максимум итераций. Возвращается нормированное на СКО RMSE прогноза,
+    R2-score, R и параметры данных и модели с оптимальным количеством итераций в формате целевой функции hyperopt.
 
     :param params:
         Словарь с параметрами модели и данных.
     :param examples:
         Класс создания обучающих примеров.
     :param verbose:
-        Распечатывать ли параметры.
+        Логировать ли параметры - используется при оптимизации гиперпараметров.
     :return:
         Словарь с результатом в формате hyperopt:
 
         * ключ 'loss' - нормированная RMSE на кросс-валидации (для hyperopt),
         * ключ 'status' - успешного прохождения (для hyperopt),
-        * ключ 'std' - RMSE на кросс-валидации,
-        * ключ 'r2' - r2 на кросс-валидации,
-        * ключ 'ev' - explained variance на кросс-валидации,
-        * ключ 'params' - параметры модели и данных, в которые добавлено оптимальное количество итераций
+        * ключ 'std' - RMSE нормированный на СКО на кросс-валидации,
+        * ключ 'r2' - R2-score на кросс-валидации,
+        * ключ 'r' - R на кросс-валидации,
+        * ключ 'params' - параметры данных.
+        * ключ 'model' - параметры модели, в которые добавлено оптимальное количество итераций
         градиентного бустинга на кросс-валидации и общие настройки.
     """
     if verbose:
         logging.info(f"Параметры модели:\n{params}")
+
     data_params, model_params = params["data"], params["model"]
     train_pool_params, val_pool_params = examples.train_val_pool_params(data_params)
     train_pool = catboost.Pool(**train_pool_params)
@@ -152,13 +155,19 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     model_params = make_model_params(data_params, model_params)
     clf = catboost.CatBoostRegressor(**model_params)
     clf.fit(train_pool, eval_set=val_pool)
+
     if clf.tree_count_ == MAX_ITERATIONS:
         raise POptimizerError(f"Необходимо увеличить MAX_ITERATIONS = {MAX_ITERATIONS}")
     model_params["iterations"] = clf.tree_count_
+
+    # RMSE нормируется на сумму весов, которые равны обратной величине квадрата СКО.
+    # Для получения среднего отношения ошибки к СКО необходимо домножить на сумму весов и поделить на их количество.
     scores = clf.get_best_score()["validation"]
-    std = scores["RMSE"]
+    std = scores["RMSE"] * val_pool_params["weight"].mean() ** 0.5
+
     r2 = metrics.r2_score(val_pool_params["label"], clf.predict(val_pool))
     r = np.corrcoef(val_pool_params["label"], clf.predict(val_pool))[0, 1]
+
     if verbose:
         logging.info(f"R: {r}\n")
     return dict(
