@@ -1,6 +1,6 @@
 """Различные графики для анализа ML-модели."""
 import copy
-from typing import Tuple
+from typing import Tuple, Iterator
 
 import catboost
 import matplotlib.pyplot as plt
@@ -20,7 +20,9 @@ PLOTS_SIZE = 6
 QUANTILE = np.linspace(0.01, 0.99, 99)
 
 
-def train_clf(cases, params):
+def train_clf(
+    cases: examples.Examples, params: dict
+) -> Tuple[catboost.CatBoostRegressor, dict]:
     """Тренирует модель, возвращает ее и примеры для обучения."""
     valid_params = cv.valid_model(params, cases)
     model_params = valid_params["model"]
@@ -32,7 +34,7 @@ def train_clf(cases, params):
     return clf, train_pool_params
 
 
-def axs_iter(n_plots: int):
+def axs_iter(n_plots: int) -> Iterator:
     """Создает прямоугольный набор из графиков вытянутый по горизонтали близкий к квадрату.
 
     Возвращает итератор осей.
@@ -47,7 +49,7 @@ def axs_iter(n_plots: int):
     return iter(ax_list.flatten())
 
 
-def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
+def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp) -> list:
     """Рисует кривые частичной зависимости для численных параметров.
 
     :param tickers:
@@ -72,9 +74,7 @@ def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp):
             pool_params["data"].iloc[:, n] = quantile
             predict_pool = catboost.Pool(**pool_params)
             raw_prediction = clf.predict(predict_pool)
-            prediction = (
-                raw_prediction * pool_params["data"].iloc[:, 0] * YEAR_IN_TRADING_DAYS
-            )
+            prediction = raw_prediction * YEAR_IN_TRADING_DAYS
             y.append(prediction.values.mean())
         ax.set_title(f"{name}")
         ax.tick_params(labelleft=True)

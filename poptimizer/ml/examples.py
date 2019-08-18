@@ -1,6 +1,5 @@
 """Набор обучающих примеров."""
-from typing import Optional
-from typing import Tuple
+from typing import Optional, Tuple
 
 import pandas as pd
 
@@ -64,7 +63,9 @@ class Examples:
         data = pd.concat(data, axis=1)
         return data
 
-    def train_val_pool_params(self, params: Optional[tuple] = None) -> Tuple[dict, dict]:
+    def train_val_pool_params(
+        self, params: Optional[tuple] = None
+    ) -> Tuple[dict, dict]:
         """Данные для создание catboost.Pool с обучающими и валидационными примерами.
 
         Вес у данных обратно пропорционален квадрату СКО - что эквивалентно максимизации функции правдоподобия для

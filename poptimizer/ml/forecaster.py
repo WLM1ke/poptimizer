@@ -43,7 +43,7 @@ def ledoit_wolf_cov(
     mean_days = valid_result["data"][0][1]["days"]
     scaler_days = valid_result["data"][1][1]["days"]
     returns = data.log_total_returns(tickers, date)
-    returns = returns.iloc[-scaler_days:, ]
+    returns = returns.iloc[-scaler_days:,]
     cov, average_cor, shrinkage = ledoit_wolf.shrinkage(returns.values)
     cov *= scaler_days / (scaler_days - 1)
     validate_cov(cov, predict_pool_params)
@@ -53,7 +53,9 @@ def ledoit_wolf_cov(
     return cov, average_cor, shrinkage
 
 
-def validate_cache(forecast_cache: Forecast, tickers: tuple, date: pd.DataFrame, params: dict) -> bool:
+def validate_cache(
+    forecast_cache: Forecast, tickers: tuple, date: pd.DataFrame, params: dict
+) -> bool:
     """Проверяет, что кэш создан для тех же параметров."""
     if (
         forecast_cache is not None
