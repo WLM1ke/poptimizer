@@ -75,7 +75,7 @@ def partial_dependence_curve(tickers: Tuple[str, ...], date: pd.Timestamp) -> li
             predict_pool = catboost.Pool(**pool_params)
             raw_prediction = clf.predict(predict_pool)
             prediction = raw_prediction * YEAR_IN_TRADING_DAYS
-            y.append(prediction.values.mean())
+            y.append(prediction.mean())
         ax.set_title(f"{name}")
         ax.tick_params(labelleft=True)
         ax.plot(quantiles, y)
