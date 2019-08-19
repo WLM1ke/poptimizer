@@ -73,9 +73,9 @@ def test_predict_mean(valid_result, train_predict_params):
 
     assert isinstance(mean, np.ndarray)
     assert len(mean) == 3
-    assert mean[0] == pytest.approx(4.915716070365714e-05)
-    assert mean[1] == pytest.approx(0.0001311378960684683)
-    assert mean[2] == pytest.approx(7.154825947943444e-05)
+    assert mean[0] == pytest.approx(-1.4376534802345881e-05)
+    assert mean[1] == pytest.approx(0.0003464025142164949)
+    assert mean[2] == pytest.approx(0.0002559856000038596)
 
 
 def test_validate_cov_error():
@@ -119,8 +119,8 @@ def test_ledoit_wolf_cov(valid_result, train_predict_params):
         valid_result,
     )
     assert isinstance(cov, np.ndarray)
-    assert cov[0, 0] == pytest.approx(3.5788148522246385e-05)
-    assert cov[2, 1] == pytest.approx(4.420817979066077e-06)
+    assert cov[0, 0] == pytest.approx(3.5267300700917894e-05)
+    assert cov[2, 1] == pytest.approx(4.356478986747012e-06)
     assert average_cor == pytest.approx(0.10588718234140086)
     assert shrinkage == pytest.approx(1.0)
 
@@ -133,13 +133,13 @@ def test_get_forecast():
     assert forecast.date == pd.Timestamp("2018-12-14")
     assert forecast.tickers == ("DSKY", "SNGSP", "VSMO")
     assert isinstance(forecast.mean, np.ndarray)
-    assert forecast.mean[1] == pytest.approx(0.03304674980925401)
+    assert forecast.mean[1] == pytest.approx(0.08729343358255671)
     assert isinstance(forecast.cov, np.ndarray)
-    assert forecast.cov[2, 1] == pytest.approx(4.420817979066077e-06 * 252)
+    assert forecast.cov[2, 1] == pytest.approx(4.356478986747012e-06 * 252)
     assert isinstance(forecast.feature_importance, pd.Series)
     assert np.allclose(
-        forecast.feature_importance, [30.246084, 0, 25.961227, 31.210623, 12.582066]
+        forecast.feature_importance, [34.045451, 17.702374, 0, 27.332635, 20.919540]
     )
-    assert forecast.r2 == pytest.approx(-0.010391444734998201)
+    assert forecast.r2 == pytest.approx(0.021094964980118203)
     assert forecast.average_cor == pytest.approx(0.10588718234140086)
     assert forecast.shrinkage == pytest.approx(1)

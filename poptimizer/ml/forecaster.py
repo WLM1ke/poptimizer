@@ -47,14 +47,14 @@ def ledoit_wolf_cov(
     cov, average_cor, shrinkage = ledoit_wolf.shrinkage(returns.values)
     cov *= scaler_days / (scaler_days - 1)
     validate_cov(cov, predict_pool_params)
-    # Ковариация увеличивается пропорционально отношению квадрата ошибки к СКО
-    # Так как ковариация считалась для среднего за mean_days увеличивается для получения дневной ковариации
+    # Ковариация увеличивается пропорционально отношению квадрата ошибки к СКО. Так как ковариация
+    # считалась для среднего за mean_days увеличивается для получения дневной ковариации.
     cov *= valid_result["std"] ** 2 * mean_days
     return cov, average_cor, shrinkage
 
 
 def validate_cache(
-    forecast_cache: Forecast, tickers: tuple, date: pd.DataFrame, params: dict
+    forecast_cache: Forecast, tickers: tuple, date: pd.Timestamp, params: dict
 ) -> bool:
     """Проверяет, что кэш создан для тех же параметров."""
     if (
