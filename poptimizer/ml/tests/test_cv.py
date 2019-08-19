@@ -178,11 +178,11 @@ def test_valid_model():
 
     assert isinstance(result, dict)
     assert len(result) == 7
-    assert result["loss"] == pytest.approx(0.154_821_832_235_424_67)
+    assert result["loss"] == pytest.approx(0.133_282_026_146_379_88)
     assert result["status"] == "ok"
     assert result["std"] == pytest.approx(0.160_266_474_862_264_9)
-    assert result["r2"] == pytest.approx(-0.078_911_761_099_668_8)
-    assert result["r"] == pytest.approx(-0.154_821_832_235_424_67)
+    assert result["r2"] == pytest.approx(-0.078_899_677_891_041_35)
+    assert result["r"] == pytest.approx(-0.133_282_026_146_379_88)
     assert result["data"] == PARAMS["data"]
     for key, value in PARAMS["model"].items():
         assert result["model"][key] == value
