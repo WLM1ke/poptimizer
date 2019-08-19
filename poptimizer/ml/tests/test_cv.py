@@ -152,8 +152,7 @@ def test_make_model_params():
     }
     result = cv.make_model_params(data_params, model_params)
     assert isinstance(result, dict)
-    print(result)
-    assert len(result) == 14
+    assert len(result) == 15
     assert result["bagging_temperature"] == 1
     assert result["depth"] == 6
     assert result["l2_leaf_reg"] == 3
@@ -166,7 +165,7 @@ def test_make_model_params():
     assert result["iterations"] == cv.MAX_ITERATIONS
     assert result["random_state"] == cv.SEED
     assert result["od_type"] == "Iter"
-    assert result["od_wait"] == cv.MAX_ITERATIONS // 10
+    assert result["od_wait"] == int(cv.MAX_ITERATIONS ** 0.5)
     assert result["verbose"] is False
     assert result["allow_writing_files"] is False
 
@@ -179,11 +178,11 @@ def test_valid_model():
 
     assert isinstance(result, dict)
     assert len(result) == 7
-    assert result["loss"] == pytest.approx(-0.068_386_196_385_743_28)
+    assert result["loss"] == pytest.approx(0.154_821_832_235_424_67)
     assert result["status"] == "ok"
-    assert result["std"] == pytest.approx(0.160_839_952_004_336)
-    assert result["r2"] == pytest.approx(-0.084_422_946_647_900_07)
-    assert result["r"] == pytest.approx(0.068_386_196_385_743_28)
+    assert result["std"] == pytest.approx(0.160_266_474_862_264_9)
+    assert result["r2"] == pytest.approx(-0.078_911_761_099_668_8)
+    assert result["r"] == pytest.approx(-0.154_821_832_235_424_67)
     assert result["data"] == PARAMS["data"]
     for key, value in PARAMS["model"].items():
         assert result["model"][key] == value
@@ -245,7 +244,7 @@ def test_optimize_hyper(monkeypatch, capsys):
     assert isinstance(result, dict)
     assert len(result) == 2
     assert result["data"] == (
-        ("Label", {"days": 29, "div_share": 0.0}),
+        ("Label", {"days": 25, "div_share": 0.0}),
         ("Scaler", {"days": 186}),
         ("Ticker", {"on_off": False}),
         ("Mom12m", {"days": 279, "periods": 1}),
