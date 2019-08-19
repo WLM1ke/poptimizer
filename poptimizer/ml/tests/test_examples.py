@@ -65,7 +65,7 @@ def test_get_all(example):
     assert df.index.get_level_values(1).unique().to_list() == ["CHMF", "AKRN", "BANEP"]
 
     assert df.loc[(pd.Timestamp("2018-12-04"), "AKRN"), "Label"] == pytest.approx(
-        np.log(4590 / 4630) * YEAR_IN_TRADING_DAYS ** 0.5 / 4 / 0.051967880396035164
+        np.log(4590 / 4630) / 4
     )
     assert df.loc[(pd.Timestamp("2018-12-04"), "CHMF"), "Scaler"] == pytest.approx(
         0.17547200666439342 / YEAR_IN_TRADING_DAYS ** 0.5
@@ -91,9 +91,9 @@ def test_train_val_pool_params(example):
     )
 
     assert isinstance(train, dict)
-    assert len(train) == 4
+    assert len(train) == 5
     assert isinstance(val, dict)
-    assert len(val) == 4
+    assert len(val) == 5
 
     assert train["cat_features"] == [1]
     assert val["cat_features"] == [1]
@@ -119,18 +119,22 @@ def test_train_val_pool_params(example):
 
     assert df.iloc[:, 1:].loc[train["data"].index].equals(train["data"])
     assert df.iloc[:, 0].loc[train["label"].index].equals(train["label"])
+    assert np.allclose(
+        1 / df.iloc[:, 1].loc[train["weight"].index] ** 2, train["weight"]
+    )
 
     assert df.iloc[:, 1:].loc[val["data"].index].equals(val["data"])
     assert df.iloc[:, 0].loc[val["label"].index].equals(val["label"])
+    assert np.allclose(1 / df.iloc[:, 1].loc[val["weight"].index] ** 2, val["weight"])
 
 
 def test_train_predict_pool_params(example):
     train, predict = example.train_predict_pool_params()
 
     assert isinstance(train, dict)
-    assert len(train) == 4
+    assert len(train) == 5
     assert isinstance(predict, dict)
-    assert len(predict) == 4
+    assert len(predict) == 5
 
     assert train["cat_features"] == [1]
     assert predict["cat_features"] == [1]
@@ -156,6 +160,12 @@ def test_train_predict_pool_params(example):
 
     assert df.iloc[:, 1:].loc[train["data"].index].equals(train["data"])
     assert df.iloc[:, 0].loc[train["label"].index].equals(train["label"])
+    assert np.allclose(
+        1 / df.iloc[:, 1].loc[train["weight"].index] ** 2, train["weight"]
+    )
 
     assert df.iloc[:, 1:].loc[predict["data"].index].equals(predict["data"])
     assert predict["label"] is None
+    assert np.allclose(
+        1 / df.iloc[:, 1].loc[predict["weight"].index] ** 2, predict["weight"]
+    )
