@@ -40,16 +40,16 @@ ONE_HOT_SIZE = [2, 100]
 LEARNING_RATE = [1.8e-03, 0.0077]
 
 # Диапазон поиска глубины деревьев
-MAX_DEPTH = 13
+MAX_DEPTH = 15
 
 # Диапазон поиска параметра L2-регуляризации
 L2_LEAF_REG = [5.4e-01, 4.4]
 
 # Диапазон поиска случайности разбиений
-RANDOM_STRENGTH = [0.44, 2.4e00]
+RANDOM_STRENGTH = [0.44, 2.8e00]
 
 # Диапазон поиска интенсивности бэггинга
-BAGGING_TEMPERATURE = [4.1e-01, 1.8]
+BAGGING_TEMPERATURE = [0.41, 2.0e00]
 
 
 def log_space(space_name: str, interval):
