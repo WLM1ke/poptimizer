@@ -1,8 +1,9 @@
 """Расчет дивидендов и дохода начиная с определенной даты в пересчете на неделю, месяц и год."""
 import pandas as pd
+from sklearn import linear_model
 
-from poptimizer import data
-from poptimizer.reports import pdf
+from poptimizer import data, config
+from poptimizer.reports import pdf, pdf_middle
 
 
 def get_investor_data(file_name: str, investor_name: str) -> pd.DataFrame:
@@ -64,3 +65,67 @@ def income(report_name: str, investor_name: str, months: int):
             f"Дивиденды = {rescale_and_format(dividends, divider)},",
             f"Доход = {rescale_and_format(incomes, divider)}",
         )
+
+
+def monthly_returns(report_name: str, months: int) -> pd.DataFrame:
+    """Необходимое количество месяцев для анализа."""
+    df = pdf_middle.portfolio_cum_return(pdf.read_data(report_name).iloc[-months - 1 :])
+    df = pd.concat([df, pdf_middle.index_cum_return(df)], axis=1).pct_change().dropna()
+    df.columns = ["Portfolio", "MOEX"]
+    return df
+
+
+def stats(report_name: str, months: int):
+    """Отчет ос статистических свойствах портфеля в сравнении с рынком.
+
+    :param report_name:
+        Наименование файла с отчетом, из которого берутся исторические данные.
+
+    :param months:
+        Количество месяцев, за которые анализируется статистика.
+    """
+    df = monthly_returns(report_name, months)
+    results = dict()
+    results["Return"] = df.mean() * 12
+    results["STD"] = df.std() * 12
+
+    results[""] = ["", ""]
+    results["Sharp"] = results["Return"] / results["STD"]
+    results["Lower Bound Raw"] = (
+        results["Return"] / 12 * months
+        - config.T_SCORE * results["STD"] / 12 * months ** 0.5
+    )
+    results["Lower Bound Yearly"] = (
+        results["Return"] - config.T_SCORE * results["STD"] / months ** 0.5
+    )
+    results[" "] = ["", ""]
+    clf = linear_model.LinearRegression().fit(df.iloc[:, 1:], df)
+    results["Alfa"] = pd.Series(clf.intercept_ * 12, index=["Portfolio", "MOEX"])
+    results["Beta"] = pd.Series(clf.coef_.flatten(), index=["Portfolio", "MOEX"])
+    # noinspection PyTypeChecker
+    results["R2"] = (df.corr() ** 2).loc["MOEX"]
+    results["R2"].name = "R2"
+
+    results["  "] = ["", ""]
+    feat = df.iloc[:, 1]
+    feat = pd.concat([feat, feat.apply(lambda x: x if x > 0 else 0)], axis=1)
+    clf = linear_model.LinearRegression().fit(feat, df)
+    results["Alfa+/-"] = pd.Series(clf.intercept_ * 12, index=["Portfolio", "MOEX"])
+    results["Beta+"] = pd.Series(clf.coef_.sum(axis=1), index=["Portfolio", "MOEX"])
+    results["Beta-"] = pd.Series(clf.coef_[:, 0], index=["Portfolio", "MOEX"])
+
+    print(f"\n{pd.DataFrame(results).T}")
+
+
+def history(report_name: str, investor_name: str, months: int):
+    """Распечатывает историческую статистику за определенное число месяцев дял инвестора и портфеля.
+
+    :param report_name:
+        Наименование файла с отчетом, из которого берутся исторические данные.
+    :param investor_name:
+        Имя инвестора, для которого осуществляется расчет.
+    :param months:
+        Количество месяцев, за которые анализируется статистика.
+    """
+    income(report_name, investor_name, months)
+    stats(report_name, months)
