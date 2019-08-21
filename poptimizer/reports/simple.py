@@ -114,7 +114,8 @@ def stats(report_name: str, months: int):
     results["Beta+"] = pd.Series(clf.coef_.sum(axis=1), index=["Portfolio", "MOEX"])
     results["Beta-"] = pd.Series(clf.coef_[:, 0], index=["Portfolio", "MOEX"])
 
-    print(f"\n{pd.DataFrame(results).T}")
+    results = pd.DataFrame(results).T
+    print(f"\n{results}")
 
 
 def history(report_name: str, investor_name: str, months: int):

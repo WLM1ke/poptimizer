@@ -49,3 +49,10 @@ def test_income_report(capsys):
     assert "1Y: Дивиденды =    28 000, Доход =    85 000" in captured_string
     assert "1M: Дивиденды =     2 000, Доход =     7 000" in captured_string
     assert "1W: Дивиденды =     1 000, Доход =     2 000" in captured_string
+
+
+def test_history(capsys):
+    simple.history("test", "WLMike", 12)
+    captured_string = capsys.readouterr().out
+    assert "WLMike" in captured_string
+    assert "Beta" in captured_string
