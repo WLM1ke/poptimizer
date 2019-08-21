@@ -1,25 +1,13 @@
 """Расчет дивидендов и дохода начиная с определенной даты в пересчете на неделю, месяц и год."""
 import pandas as pd
 
-from poptimizer import config, data
-
-SHEET_NAME = "Data"
-
-
-def read_data(file_name: str):
-    """Читает исходные данные по стоимости портфеля из файла."""
-    return pd.read_excel(
-        config.REPORTS_PATH / f"{file_name}.xlsx",
-        sheet_name=SHEET_NAME,
-        header=0,
-        index_col=0,
-        converters={"Date": pd.to_datetime},
-    )
+from poptimizer import data
+from poptimizer.reports import pdf
 
 
-def get_investor_data(file_name: str, investor_name: str):
+def get_investor_data(file_name: str, investor_name: str) -> pd.DataFrame:
     """Формирует DataFrame с вкладами, стоимостью активов и дивидендами инвестора."""
-    df = read_data(file_name)
+    df = pdf.read_data(file_name)
     value_column = "Value_" + investor_name
     investor_share = df[value_column] / df["Value"]
     df["Dividends"] = df["Dividends"] * investor_share
@@ -28,7 +16,9 @@ def get_investor_data(file_name: str, investor_name: str):
     return df
 
 
-def constant_prices_data(report_name: str, investor_name: str, months: int):
+def constant_prices_data(
+    report_name: str, investor_name: str, months: int
+) -> pd.DataFrame:
     """Переводит данные в постоянные цены."""
     df = get_investor_data(report_name, investor_name)
     df = df.iloc[-months - 1 :]
@@ -39,7 +29,7 @@ def constant_prices_data(report_name: str, investor_name: str, months: int):
     return df.mul(cpi.values, axis="index")
 
 
-def rescale_and_format(x, divider):
+def rescale_and_format(x: float, divider: float) -> str:
     """Текстовое представление данных.
 
     Умножает на множитель и форматирует с округлением до тысяч, разделением разрядов и
@@ -62,7 +52,7 @@ def income(report_name: str, investor_name: str, months: int):
     """
     df = constant_prices_data(report_name, investor_name, months)
     dividends = df["Dividends"].iloc[1:].sum()
-    income = df["Value"].iloc[-1] - df["Value"].iloc[0] - df["Inflow"].iloc[1:].sum()
+    incomes = df["Value"].iloc[-1] - df["Value"].iloc[0] - df["Inflow"].iloc[1:].sum()
     months = len(df) - 1
     periods = dict(Y=months / 12, M=months, W=(months / 12) * 365.25 / 7)
     print(
@@ -72,5 +62,5 @@ def income(report_name: str, investor_name: str, months: int):
         print(
             f"1{period}:",
             f"Дивиденды = {rescale_and_format(dividends, divider)},",
-            f"Доход = {rescale_and_format(income, divider)}",
+            f"Доход = {rescale_and_format(incomes, divider)}",
         )

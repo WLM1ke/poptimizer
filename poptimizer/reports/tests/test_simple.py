@@ -4,20 +4,19 @@ from shutil import copyfile
 import pandas as pd
 import pytest
 
-from poptimizer import config
-from poptimizer.reports import simple
+from poptimizer.reports import simple, pdf
 
 
 @pytest.fixture(scope="module", name="report_path")
-def make_fake_report_data(tmpdir_factory):
-    temp_dir = tmpdir_factory.mktemp("income_report")
-    copyfile(Path(__file__).parent / "data" / "test.xlsx", temp_dir / "test.xlsx")
-    return temp_dir
+def make_fake_path(tmpdir_factory):
+    return Path(tmpdir_factory.mktemp("test_pdf"))
 
 
 @pytest.fixture(autouse=True)
 def fake_report_path(report_path, monkeypatch):
-    monkeypatch.setattr(config, "REPORTS_PATH", report_path)
+    copyfile(Path(__file__).parent / "data" / "test.xlsx", report_path / "test.xlsx")
+    monkeypatch.setattr(pdf, "REPORTS_PATH", report_path)
+    monkeypatch.setattr(pdf, "PDF_PATH", report_path / "pdf")
     yield
 
 
