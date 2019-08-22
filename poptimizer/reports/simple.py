@@ -87,16 +87,13 @@ def stats(report_name: str, months: int):
     df = monthly_returns(report_name, months)
     results = dict()
     results["Return"] = df.mean() * 12
-    results["STD"] = df.std() * 12
+    results["STD"] = df.std() * 12 ** 0.5
 
     results[""] = ["", ""]
     results["Sharp"] = results["Return"] / results["STD"]
     results["Lower Bound Raw"] = (
         results["Return"] / 12 * months
         - config.T_SCORE * results["STD"] / 12 * months ** 0.5
-    )
-    results["Lower Bound Yearly"] = (
-        results["Return"] - config.T_SCORE * results["STD"] / months ** 0.5
     )
     results[" "] = ["", ""]
     clf = linear_model.LinearRegression().fit(df.iloc[:, 1:], df)
