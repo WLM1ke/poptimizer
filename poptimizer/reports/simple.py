@@ -1,4 +1,5 @@
 """Расчет дивидендов и дохода начиная с определенной даты в пересчете на неделю, месяц и год."""
+import numpy as np
 import pandas as pd
 from sklearn import linear_model
 
@@ -110,6 +111,13 @@ def stats(report_name: str, months: int):
     results["Alfa+/-"] = pd.Series(clf.intercept_ * 12, index=["Portfolio", "MOEX"])
     results["Beta+"] = pd.Series(clf.coef_.sum(axis=1), index=["Portfolio", "MOEX"])
     results["Beta-"] = pd.Series(clf.coef_[:, 0], index=["Portfolio", "MOEX"])
+
+    results["   "] = ["", ""]
+    clf = linear_model.LinearRegression().fit(np.log1p(df.iloc[:, 1:]), np.log1p(df))
+    results["Alfa_ln"] = pd.Series(
+        (np.exp(clf.intercept_) - 1) * 12, index=["Portfolio", "MOEX"]
+    )
+    results["Gamma"] = pd.Series(clf.coef_.sum(axis=1), index=["Portfolio", "MOEX"])
 
     results = pd.DataFrame(results).T
     print(f"\n{results}")
