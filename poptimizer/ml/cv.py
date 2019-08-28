@@ -34,7 +34,7 @@ MAX_SEARCHES = 100
 # Рекомендации Яндекс - https://tech.yandex.com/catboost/doc/dg/concepts/parameter-tuning-docpage/
 
 # OneHot кодировка - учитывая количество акций в портфеле используется cat-кодировка или OneHot-кодировка
-ONE_HOT_SIZE = [2, 100]
+ONE_HOT_SIZE = [2, 1000]
 
 # Диапазон поиска скорости обучения
 LEARNING_RATE = [1.8e-03, 0.0077]
@@ -46,7 +46,7 @@ MAX_DEPTH = 15
 L2_LEAF_REG = [5.4e-01, 4.4]
 
 # Диапазон поиска случайности разбиений
-RANDOM_STRENGTH = [0.44, 2.8e00]
+RANDOM_STRENGTH = [3.9e-01, 2.8]
 
 # Диапазон поиска интенсивности бэггинга
 BAGGING_TEMPERATURE = [0.41, 2.0e00]

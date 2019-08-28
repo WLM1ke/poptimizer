@@ -36,27 +36,27 @@ MAX_TRADE = 0.01
 TURNOVER_PERIOD = 21 * 4
 
 # Минимальный оборот - преимущества акции снижаются при приближении медианного оборота к данному уровню
-TURNOVER_CUT_OFF = 3.6 * MAX_TRADE
+TURNOVER_CUT_OFF = 3.5 * MAX_TRADE
 
 # Параметры ML-модели
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 48, "div_share": 0.2, "on_off": True}),
-        ("Scaler", {"days": 172, "on_off": True}),
+        ("Label", {"days": 45, "div_share": 0.2, "on_off": True}),
+        ("Scaler", {"days": 226, "on_off": True}),
         ("Ticker", {"on_off": True}),
-        ("Mom12m", {"days": 193, "on_off": True, "periods": 2}),
-        ("DivYield", {"days": 286, "on_off": True, "periods": 1}),
-        ("Mom1m", {"days": 36, "on_off": True}),
-        ("RetMax", {"days": 55, "on_off": True}),
-        ("ChMom6m", {"days": 114, "on_off": True}),
-        ("STD", {"days": 30, "on_off": True}),
+        ("Mom12m", {"days": 180, "on_off": True, "periods": 2}),
+        ("DivYield", {"days": 293, "on_off": True, "periods": 1}),
+        ("Mom1m", {"days": 40, "on_off": False}),
+        ("RetMax", {"days": 54, "on_off": True}),
+        ("ChMom6m", {"days": 116, "on_off": True}),
+        ("STD", {"days": 28, "on_off": True}),
     ),
     "model": {
-        "bagging_temperature": 0.9801195955541774,
-        "depth": 14,
-        "l2_leaf_reg": 0.7789375837420156,
-        "learning_rate": 0.006286740211143627,
+        "bagging_temperature": 0.7454028153237059,
+        "depth": 13,
+        "l2_leaf_reg": 1.5334889818863198,
+        "learning_rate": 0.006856219177323222,
         "one_hot_max_size": 2,
-        "random_strength": 2.367771523257484,
+        "random_strength": 0.47064589449064304,
     },
 }
