@@ -48,7 +48,7 @@ class Portfolio:
                 f"не равна расчетной {self.value[PORTFOLIO]}"
             )
 
-    def __str__(self):
+    def __str__(self) -> str:
         df = pd.concat(
             [
                 self.lot_size,
@@ -71,24 +71,24 @@ class Portfolio:
         )
 
     @property
-    def date(self):
+    def date(self) -> pd.Timestamp:
         """Отчетная дата портфеля."""
         return self._date
 
     @property
-    def index(self):
+    def index(self) -> pd.Index:
         """Общий индекс всех характеристик портфеля - перечень позиций, включая CASH и PORTFOLIO."""
         return self.shares.index
 
     @property
-    def shares(self):
+    def shares(self) -> pd.Series:
         """Количество акций в портфеле.
 
         CASH - в рублях и PORTFOLIO - 1."""
         return self._shares
 
     @property
-    def lot_size(self):
+    def lot_size(self) -> pd.Series:
         """Размер лотов.
 
         CASH и PORTFOLIO - 1.
@@ -97,7 +97,7 @@ class Portfolio:
         return lot_size.reindex(self.index, fill_value=1)
 
     @property
-    def lots(self):
+    def lots(self) -> pd.Series:
         """Количество лотов.
 
         CASH - в рублях и PORTFOLIO - 1.
@@ -106,7 +106,7 @@ class Portfolio:
 
     @property
     @functools.lru_cache(maxsize=1)
-    def price(self):
+    def price(self) -> pd.Series:
         """Цены позиций.
 
         CASH - 1 и PORTFOLIO - расчетная стоимость.
@@ -123,12 +123,12 @@ class Portfolio:
         return price
 
     @property
-    def value(self):
+    def value(self) -> pd.Series:
         """Стоимость позиций."""
         return self.price * self.shares
 
     @property
-    def weight(self):
+    def weight(self) -> pd.Series:
         """Доли позиций.
 
         PORTFOLIO - 1.
@@ -138,7 +138,7 @@ class Portfolio:
 
     @property
     @functools.lru_cache(maxsize=1)
-    def turnover_factor(self):
+    def turnover_factor(self) -> pd.Series:
         """Понижающий коэффициент для акций с малым объемом оборотов.
 
         Ликвидность в первом приближении убывает пропорционально квадрату оборота.
