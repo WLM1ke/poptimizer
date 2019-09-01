@@ -1,6 +1,7 @@
 import pandas as pd
+from hyperopt.pyll import Apply
 
-from poptimizer.ml.feature import day_of_year
+from poptimizer.ml.feature import day_of_year, ON_OFF
 
 
 def test_day_of_year():
@@ -9,7 +10,10 @@ def test_day_of_year():
     )
 
     assert feature.is_categorical("") == [True]
-    assert feature.get_params_space() == dict(on_off=True)
+    space = feature.get_params_space()
+    assert isinstance(space, dict)
+    assert len(space) == 1
+    assert isinstance(space[ON_OFF], Apply)
 
     df = feature.get()
     assert isinstance(df, pd.Series)

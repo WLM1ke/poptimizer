@@ -2,6 +2,7 @@
 from typing import Tuple, List
 
 import pandas as pd
+from hyperopt import hp
 
 from poptimizer import data
 from poptimizer.ml.feature.feature import AbstractFeature, ON_OFF
@@ -22,10 +23,9 @@ class DayOfYear(AbstractFeature):
         """Категориальный признак."""
         return [True]
 
-    @classmethod
-    def get_params_space(cls) -> dict:
-        """Параметров нет - пустой словарь."""
-        return {ON_OFF: True}
+    def get_params_space(self) -> dict:
+        """Специальных параметров нет, но поддерживается возможность отключения."""
+        return {ON_OFF: hp.choice(f"{self.name}_ON_OFF", [True, False])}
 
     def get(self, params=None) -> pd.Series:
         """Для дат, в которые есть котировки указывается номер года."""
