@@ -9,7 +9,7 @@ def test_day_of_year():
         ("GMKN", "NMTP", "SIBN"), pd.Timestamp("2019-08-30"), dict()
     )
 
-    assert feature.is_categorical("") == [True]
+    assert feature.is_categorical("") == [False]
     space = feature.get_params_space()
     assert isinstance(space, dict)
     assert len(space) == 1

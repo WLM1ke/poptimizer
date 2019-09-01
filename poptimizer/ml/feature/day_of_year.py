@@ -21,7 +21,7 @@ class DayOfYear(AbstractFeature):
     @staticmethod
     def is_categorical(params) -> List[bool]:
         """Категориальный признак."""
-        return [True]
+        return [False]
 
     def get_params_space(self) -> dict:
         """Специальных параметров нет, но поддерживается возможность отключения."""
