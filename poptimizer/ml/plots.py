@@ -14,7 +14,7 @@ from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 __all__ = ["partial_dependence_curve"]
 
 # Размер графиков
-PLOTS_SIZE = 6
+PLOTS_SIZE = 5
 
 # Параметры кривых частичной зависимости
 QUANTILE = np.linspace(0.01, 0.99, 99)
