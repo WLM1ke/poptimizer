@@ -103,6 +103,7 @@ def make_forecast(tickers: tuple, date: pd.Timestamp, params: dict) -> Forecast:
         depth=valid_result["model"]["depth"],
         feature_importance=feature_importance,
         r2=valid_result["r2"],
+        ev=valid_result["ev"],
         r=valid_result["r"],
         average_cor=average_cor,
         shrinkage=shrinkage,

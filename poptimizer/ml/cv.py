@@ -168,6 +168,9 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     std = scores["RMSE"] * val_pool_params["weight"].mean() ** 0.5
 
     r2 = metrics.r2_score(val_pool_params["label"], clf.predict(val_pool))
+    ev = metrics.explained_variance_score(
+        val_pool_params["label"], clf.predict(val_pool)
+    )
     r = np.corrcoef(val_pool_params["label"], clf.predict(val_pool))[0, 1]
 
     if verbose:
@@ -177,6 +180,7 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
         status=hyperopt.STATUS_OK,
         std=std,
         r2=r2,
+        ev=ev,
         r=r,
         data=data_params,
         model=model_params,

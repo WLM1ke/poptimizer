@@ -22,6 +22,7 @@ class Forecast:
     depth: int
     feature_importance: pd.Series
     r2: float
+    ev: float
     r: float
     average_cor: float
     shrinkage: float
@@ -33,8 +34,9 @@ class Forecast:
             f"\nКоличество обучающих примеров - {self.num_cases}"
             f"\nОбучено решающих деревьев - {self.trees}"
             f"\nГлубина деревьев - {self.depth}"
-            f"\nR2-score - {self.r2:.1%}"
-            f"\nR - {self.r:.1%}"
+            f"\nR2-score - {self.r2:.2%}"
+            f"\nEV - {self.ev:.2%}"
+            f"\nR - {self.r:.2%}"
             f"\nСредняя корреляция между акциями - {self.average_cor:.1%}"
             f"\nСила сжатия ковариационной матрицы - {self.shrinkage:.1%}"
             f"\n"

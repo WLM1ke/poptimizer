@@ -46,6 +46,7 @@ class SimpleMetrics(Metrics):
             0.0,
             0.0,
             0.0,
+            0.0,
             ML_PARAMS,
         )
 

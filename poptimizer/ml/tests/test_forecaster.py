@@ -42,6 +42,7 @@ FORECAST = Forecast(
     0.0,
     0.0,
     0.0,
+    0.0,
     PARAMS,
 )
 
@@ -141,5 +142,7 @@ def test_get_forecast():
         forecast.feature_importance, [34.045451, 17.702374, 0, 27.332635, 20.919540]
     )
     assert forecast.r2 == pytest.approx(0.012993243117914277)
+    assert forecast.ev == pytest.approx(0.02395852601293391)
+    assert forecast.r == pytest.approx(0.22027194739202474)
     assert forecast.average_cor == pytest.approx(0.10588718234140086)
     assert forecast.shrinkage == pytest.approx(1)

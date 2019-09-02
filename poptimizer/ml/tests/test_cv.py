@@ -38,13 +38,14 @@ def test_log_space():
 
 def test_get_model_space():
     space = cv.get_model_space()
+    print(space)
     assert isinstance(space, dict)
     assert len(space) == 6
 
     assert isinstance(space["one_hot_max_size"], Apply)
     assert "switch" in str(space["one_hot_max_size"])
     assert "Literal{2}" in str(space["one_hot_max_size"])
-    assert "Literal{100}" in str(space["one_hot_max_size"])
+    assert "Literal{1000}" in str(space["one_hot_max_size"])
 
     assert isinstance(space["learning_rate"], Apply)
     assert "loguniform" in str(space["learning_rate"])
@@ -177,11 +178,12 @@ def test_valid_model():
     result = cv.valid_model(PARAMS, data)
 
     assert isinstance(result, dict)
-    assert len(result) == 7
+    assert len(result) == 8
     assert result["loss"] == pytest.approx(0.133_282_026_146_379_88)
     assert result["status"] == "ok"
     assert result["std"] == pytest.approx(0.160_266_474_862_264_9)
     assert result["r2"] == pytest.approx(-0.078_899_677_891_041_35)
+    assert result["ev"] == pytest.approx(-0.031_389_543_057_242_62)
     assert result["r"] == pytest.approx(-0.133_282_026_146_379_88)
     assert result["data"] == PARAMS["data"]
     for key, value in PARAMS["model"].items():
