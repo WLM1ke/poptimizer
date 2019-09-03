@@ -66,6 +66,8 @@ setuptools.setup(
         "pyppeteer",
         "scikit-learn",
         "certifi",
+        "requests",
+        "pymongo",
     ],
     python_requires=f">={python_minimal}",
 )

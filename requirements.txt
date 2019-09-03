@@ -19,9 +19,11 @@ lxml
 reportlab
 
 lmdb
+pymongo
 
 aiomoex
 bs4
 aiohttp
+requests
 pyppeteer
 certifi
