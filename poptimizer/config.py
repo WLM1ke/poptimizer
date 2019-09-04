@@ -1,10 +1,8 @@
 """Основные настраиваемые параметры"""
 import logging
 import pathlib
-import subprocess
 
 import pandas as pd
-import pymongo
 
 
 class POptimizerError(Exception):
@@ -26,18 +24,8 @@ DATA_PATH = pathlib.Path(__file__).parents[1] / "data"
 REPORTS_PATH = pathlib.Path(__file__).parents[1] / "reports"
 
 # Конфигурация MongoDB
-command = [
-    "mongod",
-    "--logpath",
-    str(pathlib.Path(__file__).parents[1] / "logs" / "mongodb.log"),
-    "--quiet",
-    "--dbpath",
-    str(pathlib.Path(__file__).parents[1] / "db"),
-    "--bind_ip",
-    "127.0.0.1",
-]
-subprocess.Popen(command, stdout=subprocess.DEVNULL)
-mongo = pymongo.MongoClient("localhost", 27017, tz_aware=True)
+MONGO_PATH = pathlib.Path(__file__).parents[1] / "db"
+MONGO_LOG_PATH = pathlib.Path(__file__).parents[1] / "logs" / "mongodb.log"
 
 # Множитель, для переходя к после налоговым значениям
 AFTER_TAX = 1 - 0.13
