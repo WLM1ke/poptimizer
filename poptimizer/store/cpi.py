@@ -1,12 +1,17 @@
 """Менеджер данных по потребительской инфляции."""
+from typing import Any, Optional
+
 import pandas as pd
 
 from poptimizer.config import POptimizerError
-from poptimizer.store.manager import AbstractManager
+from poptimizer.store.manager_new import AbstractManager
 from poptimizer.store.utils import DATE
 
-# Данные по инфляции хранятся в основной базе
-NAME_CPI = "monthly_cpi"
+# Наименование базы для макроэкономических данных
+MACRO = "macro"
+
+# Наименование данных по инфляции
+CPI = "CPI"
 
 # Параметры загрузки валидации данных
 URL_CPI = "http://www.gks.ru/free_doc/new_site/prices/potr/I_ipc.xlsx"
@@ -18,14 +23,16 @@ FIRST_YEAR = 1991
 FIRST_MONTH = "январь"
 
 
-class CPI(AbstractManager):
+class Macro(AbstractManager):
     """Месячные данные по потребительской инфляции."""
 
-    def __init__(self):
-        super().__init__(NAME_CPI)
+    def __init__(self) -> None:
+        super().__init__(collection=MACRO, validate_last=False)
 
-    async def _download(self, name: str):
+    def _download(self, item: str, last_index: Optional[Any]):
         """Загружает полностью данные по инфляции с сайта ФСГС."""
+        if item != CPI:
+            POptimizerError(f"Отсутствуют данные {self._collection.full_name}.{item}")
         df = pd.read_excel(URL_CPI, **PARSING_PARAMETERS)
         self._validate(df)
         df = df.transpose().stack()
@@ -36,9 +43,10 @@ class CPI(AbstractManager):
             start=pd.Timestamp(year=first_year, month=1, day=31),
             periods=len(df),
         )
-        df.name = "CPI"
+        df.name = CPI
         # Данные должны быть не в процентах, а в долях
-        return df.div(100)
+        df = df.div(100)
+        return df.reset_index().to_dict("records")
 
     @staticmethod
     def _validate(df: pd.DataFrame):

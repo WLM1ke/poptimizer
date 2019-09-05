@@ -5,6 +5,7 @@
 запросов.
 """
 from poptimizer.store.client import Client, open_store
+from poptimizer.store.cpi import Macro, CPI
 from poptimizer.store.dividends import DIVIDENDS_START
 from poptimizer.store.utils import (
     CLOSE,

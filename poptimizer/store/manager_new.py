@@ -14,7 +14,7 @@ import requests
 
 from poptimizer import config
 from poptimizer.config import POptimizerError
-from poptimizer.store import DATE
+from poptimizer.store.utils import DATE
 
 # Запуск сервера MongoDB
 COMMAND = [
@@ -42,12 +42,18 @@ MOEX_TZ = "Europe/Moscow"
 END_OF_TRADING = dict(hour=19, minute=45, second=0, microsecond=0, nanosecond=0)
 
 
+async def get_board_dates() -> list:
+    """Удалить."""
+    async with aiomoex.ISSClientSession():
+        return await aiomoex.get_board_dates()
+
+
 def download_last_history() -> datetime:
     """Последняя дата торгов, которая есть на MOEX ISS."""
-    dates = asyncio.run(aiomoex.get_board_dates())
+    dates = asyncio.run(get_board_dates())
     date = pd.Timestamp(dates[0]["till"], tz=MOEX_TZ)
     logging.info(f"Последняя дата с историей: {date.date()}")
-    return date.replace(**END_OF_TRADING)
+    return date.replace(**END_OF_TRADING).astimezone(None)
 
 
 def end_of_trading_day() -> datetime:
@@ -127,7 +133,7 @@ class AbstractManager(ABC):
         doc = self._collection.find_one({"_id": item})
         if doc is None:
             doc = self.create(item)
-        elif doc.timestamp < timestamp:
+        elif doc["timestamp"] < timestamp:
             if self._create_from_scratch:
                 doc = self.create(item)
             else:
@@ -147,7 +153,7 @@ class AbstractManager(ABC):
                 f"Индекс {self._collection.full_name}.{item} не возрастает"
             )
 
-    def create(self, item: str) -> Dict[str:Any]:
+    def create(self, item: str) -> Dict[str, Any]:
         """Создает локальные данные с нуля или перезаписывает существующие.
 
         :param item:
@@ -156,12 +162,11 @@ class AbstractManager(ABC):
         logging.info(f"Создание данных {self._collection.full_name}.{item}")
         data = self._download(item, None)
         doc = dict(_id=item, data=data, timestamp=datetime.utcnow())
-        result = self._collection.replace_one({"_id": item}, doc, upsert=True)
-        print(result)  # TODO: убрать
+        self._collection.replace_one({"_id": item}, doc, upsert=True)
         logging.info(f"Данные обновлены {self._collection.full_name}.{item}")
         return doc
 
-    def update(self, doc: Dict[str:Any]) -> Dict[str:Any]:
+    def update(self, doc: Dict[str, Any]) -> Dict[str, Any]:
         """Обновляет локальные данные.
 
         Во время обновления проверяется стыковку новых данных с существующими.
@@ -178,13 +183,12 @@ class AbstractManager(ABC):
             )
         else:
             doc = dict(_id=item, data=data_new, timestamp=datetime.utcnow())
-        result = self._collection.replace_one({"_id": item}, doc)
-        print(result)  # TODO: убрать
+        self._collection.replace_one({"_id": item}, doc)
         logging.info(f"Данные обновлены {self._collection.full_name}.{item}")
         return doc
 
     def _validate_new(
-        self, item: str, data: List[Dict[str:Any]], data_new: List[Dict[str:Any]]
+            self, item: str, data: List[Dict[str, Any]], data_new: List[Dict[str, Any]]
     ):
         """Проверяет соответствие старых и новых данных."""
         if self._validate_last:
@@ -198,10 +202,13 @@ class AbstractManager(ABC):
             )
         for old, new in zip(data, data_new):
             for col in new:
-                not_float_not_eq = (not isinstance(old[col], float)) and (
-                    old[col] != new[col]
+                not_float_not_eq = (
+                        not isinstance(old[col], float) and old[col] != new[col]
                 )
-                if not_float_not_eq or not np.allclose(old[col], new[col]):
+                float_not_eq = isinstance(old[col], float) and not np.allclose(
+                    old[col], new[col]
+                )
+                if not_float_not_eq or float_not_eq:
                     raise POptimizerError(
                         f"Данные {self._collection.full_name}.{item} не соответствуют обновлению:"
                         f"Старые значения:\n{old}\n"
@@ -209,7 +216,7 @@ class AbstractManager(ABC):
                     )
 
     @abstractmethod
-    def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str:Any]]:
+    def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
         """Загружает необходимые данные из внешних источников.
 
         :param item:
@@ -218,17 +225,17 @@ class AbstractManager(ABC):
             Если None, то скачиваются все данные. Если присутствует последние значение индекса,
             то для ускорения данные загружаются начиная с этого значения для инкрементального обновления.
         :return:
-            Список словарей в формате DataFrame.to_dict(orient="records").
+            Список словарей в формате DataFrame.to_dict("records").
         """
 
 
 def data_formatter(
-    data: List[Dict[str:Any]], formatters: Dict[str:Callable]
-) -> List[Dict[str:Any]]:
+        data: List[Dict[str, Any]], formatters: Dict[str, Callable]
+) -> List[Dict[str, Any]]:
     """Форматирует данные с учетом установок.
 
     :param data:
-        Список словарей в формате DataFrame.to_dict(orient="records").
+        Список словарей в формате DataFrame.to_dict("records").
     :param formatters:
         Словарь с функциями форматирования.
     :return:

@@ -3,7 +3,7 @@ import pytest
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import client
-from poptimizer.store.cpi import CPI, NAME_CPI
+from poptimizer.store.cpi import CPI, MACRO
 
 CHECK_POINTS = [
     ("1991-01-31", 1.0620),
@@ -23,7 +23,7 @@ async def create_client(tmpdir_factory):
 @pytest.mark.parametrize("date, value", CHECK_POINTS)
 @pytest.mark.asyncio
 async def test_cpi(date, value):
-    await CPI().update(NAME_CPI)
+    await CPI().update(MACRO)
     df = await CPI().get()
     assert isinstance(df, pd.Series)
     assert df[pd.Timestamp(date)] == value
