@@ -1,7 +1,6 @@
 """Абстрактный менеджер данных - предоставляет локальные данные и следит за их обновлением."""
 import asyncio
 import logging
-import subprocess
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Callable
@@ -12,25 +11,9 @@ import pandas as pd
 import pymongo
 import requests
 
-from poptimizer import config
 from poptimizer.config import POptimizerError
+from poptimizer.store import mongo
 from poptimizer.store.utils import DATE
-
-# Запуск сервера MongoDB
-COMMAND = [
-    "mongod",
-    "--logpath",
-    config.MONGO_LOG_PATH,
-    "--quiet",
-    "--dbpath",
-    config.MONGO_PATH,
-    "--bind_ip",
-    "localhost",
-]
-subprocess.Popen(COMMAND, stdout=subprocess.DEVNULL)
-
-SESSION = requests.Session()
-MONGO = pymongo.MongoClient("localhost", 27017, tz_aware=False)
 
 # Название базы для хранения данных
 DB = "data"
@@ -67,7 +50,7 @@ def end_of_trading_day() -> datetime:
 
 def update_timestamp() -> datetime:
     """"Момент времени UTC после, которого не нужно обновлять данные."""
-    utils_collection = MONGO[DB]["utils"]
+    utils_collection = mongo.CLIENT[DB]["utils"]
     last_history = utils_collection.find_one({"_id": "last_date"})
     end_of_trading = end_of_trading_day()
     if last_history is None or last_history["timestamp"] < end_of_trading:
@@ -83,13 +66,13 @@ class AbstractManager(ABC):
         self,
         collection: str,
         db: str = DB,
-        client: pymongo.MongoClient = MONGO,
+        client: pymongo.MongoClient = mongo.CLIENT,
         create_from_scratch: bool = False,
         validate_last: bool = True,
         index: str = DATE,
         unique_index: bool = True,
         ascending_index: bool = True,
-        session: requests.Session = SESSION,
+        session: requests.Session = mongo.SESSION,
     ):
         """Данные хранятся в MongoDB и извлекаются в виде DataFrame.
 
@@ -188,7 +171,7 @@ class AbstractManager(ABC):
         return doc
 
     def _validate_new(
-            self, item: str, data: List[Dict[str, Any]], data_new: List[Dict[str, Any]]
+        self, item: str, data: List[Dict[str, Any]], data_new: List[Dict[str, Any]]
     ):
         """Проверяет соответствие старых и новых данных."""
         if self._validate_last:
@@ -203,7 +186,7 @@ class AbstractManager(ABC):
         for old, new in zip(data, data_new):
             for col in new:
                 not_float_not_eq = (
-                        not isinstance(old[col], float) and old[col] != new[col]
+                    not isinstance(old[col], float) and old[col] != new[col]
                 )
                 float_not_eq = isinstance(old[col], float) and not np.allclose(
                     old[col], new[col]
@@ -230,7 +213,7 @@ class AbstractManager(ABC):
 
 
 def data_formatter(
-        data: List[Dict[str, Any]], formatters: Dict[str, Callable]
+    data: List[Dict[str, Any]], formatters: Dict[str, Callable]
 ) -> List[Dict[str, Any]]:
     """Форматирует данные с учетом установок.
 
