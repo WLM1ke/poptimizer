@@ -34,7 +34,9 @@ def start_mongo() -> None:
 def open_sessions() -> Tuple[pymongo.MongoClient, requests.Session]:
     """Открытие клиентского соединения с MongoDB и интернетом."""
     logging.info(f"Подключается клиент MongoDB")
-    client = pymongo.MongoClient("localhost", 27017, tz_aware=False)
+    client = pymongo.MongoClient(
+        "localhost", 27017, tz_aware=False, serverSelectionTimeoutMS=1000
+    )
 
     logging.info(f"Открывается сессия для обновления данных по интернет")
     session = requests.Session()
