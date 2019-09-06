@@ -1,5 +1,4 @@
 """Данные индексу потребительских цен."""
-
 import pandas as pd
 
 from poptimizer import store

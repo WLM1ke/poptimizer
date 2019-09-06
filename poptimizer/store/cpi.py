@@ -4,7 +4,7 @@ from typing import Any, Optional
 import pandas as pd
 
 from poptimizer.config import POptimizerError
-from poptimizer.store.manager_new import AbstractManager, MISC
+from poptimizer.store.manager_new import AbstractManager, MISC, DB
 from poptimizer.store.utils import DATE
 
 # Наименование данных по инфляции
@@ -21,15 +21,21 @@ FIRST_MONTH = "январь"
 
 
 class Macro(AbstractManager):
-    """Месячные данные по потребительской инфляции."""
+    """Месячные данные по потребительской инфляции.
 
-    def __init__(self) -> None:
-        super().__init__(collection=MISC, validate_last=False)
+    По умолчанию данные записываются в основную базу, но для целей тестированию может быть указана
+    другая база.
+    """
+
+    def __init__(self, db=DB) -> None:
+        super().__init__(db=db, collection=MISC, validate_last=False)
 
     def _download(self, item: str, last_index: Optional[Any]):
         """Загружает полностью данные по инфляции с сайта ФСГС."""
         if item != CPI:
-            POptimizerError(f"Отсутствуют данные {self._collection.full_name}.{item}")
+            raise POptimizerError(
+                f"Отсутствуют данные {self._collection.full_name}.{item}"
+            )
         df = pd.read_excel(URL_CPI, **PARSING_PARAMETERS)
         self._validate(df)
         df = df.transpose().stack()

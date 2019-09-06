@@ -45,16 +45,16 @@ def open_sessions() -> Tuple[pymongo.MongoClient, requests.Session]:
 @atexit.register
 def clean_up() -> None:
     """Отключение сервера и закрытие соединений."""
-    admin = CLIENT["admin"]
+    admin = DB_CLIENT["admin"]
     try:
         admin.command("shutdown")
     except AutoReconnect:
         logging.info(f"Локальный сервер MongoDB остановлен")
-    CLIENT.close()
+    DB_CLIENT.close()
     logging.info(f"Подключение клиента MongoDB закрыто")
-    SESSION.close()
+    HTTP_SESSION.close()
     logging.info(f"Сессия для обновления данных по интернет закрыта")
 
 
 start_mongo()
-CLIENT, SESSION = open_sessions()
+DB_CLIENT, HTTP_SESSION = open_sessions()
