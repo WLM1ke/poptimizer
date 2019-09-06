@@ -14,8 +14,8 @@ from pymongo.errors import AutoReconnect
 from poptimizer import config
 
 
-def start_db() -> Tuple[pymongo.MongoClient, requests.Session]:
-    """Запуск сервера и клиента MongoDB и соединения с интернетом."""
+def start_mongo() -> None:
+    """Запуск сервера MongoDB."""
     mongo_server = [
         "mongod",
         "--logpath",
@@ -30,6 +30,9 @@ def start_db() -> Tuple[pymongo.MongoClient, requests.Session]:
     logging.info(f"Запускается локальный сервер MongoDB")
     subprocess.Popen(mongo_server, stdout=subprocess.DEVNULL)
 
+
+def open_sessions() -> Tuple[pymongo.MongoClient, requests.Session]:
+    """Открытие клиентского соединения с MongoDB и интернетом."""
     logging.info(f"Подключается клиент MongoDB")
     client = pymongo.MongoClient("localhost", 27017, tz_aware=False)
 
@@ -53,4 +56,5 @@ def clean_up() -> None:
     logging.info(f"Сессия для обновления данных по интернет закрыта")
 
 
-CLIENT, SESSION = start_db()
+start_mongo()
+CLIENT, SESSION = open_sessions()
