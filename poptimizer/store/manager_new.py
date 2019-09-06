@@ -15,8 +15,10 @@ from poptimizer.config import POptimizerError
 from poptimizer.store import mongo
 from poptimizer.store.utils import DATE
 
-# Название базы для хранения данных
+# Основная база
 DB = "data"
+# Коллекция для хранения вспомогательной информации и единичных данных
+MISC = "misc"
 
 # Часовой пояс MOEX
 MOEX_TZ = "Europe/Moscow"
@@ -50,7 +52,7 @@ def end_of_trading_day() -> datetime:
 
 def update_timestamp() -> datetime:
     """"Момент времени UTC после, которого не нужно обновлять данные."""
-    utils_collection = mongo.CLIENT[DB]["utils"]
+    utils_collection = mongo.CLIENT[DB][MISC]
     last_history = utils_collection.find_one({"_id": "last_date"})
     end_of_trading = end_of_trading_day()
     if last_history is None or last_history["timestamp"] < end_of_trading:

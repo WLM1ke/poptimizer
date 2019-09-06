@@ -4,11 +4,8 @@ from typing import Any, Optional
 import pandas as pd
 
 from poptimizer.config import POptimizerError
-from poptimizer.store.manager_new import AbstractManager
+from poptimizer.store.manager_new import AbstractManager, MISC
 from poptimizer.store.utils import DATE
-
-# Наименование базы для макроэкономических данных
-MACRO = "macro"
 
 # Наименование данных по инфляции
 CPI = "CPI"
@@ -27,7 +24,7 @@ class Macro(AbstractManager):
     """Месячные данные по потребительской инфляции."""
 
     def __init__(self) -> None:
-        super().__init__(collection=MACRO, validate_last=False)
+        super().__init__(collection=MISC, validate_last=False)
 
     def _download(self, item: str, last_index: Optional[Any]):
         """Загружает полностью данные по инфляции с сайта ФСГС."""
