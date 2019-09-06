@@ -51,7 +51,6 @@ coverage.xml
 
 # Django stuff:
 *.log
-/logs/
 local_settings.py
 
 # Flask stuff:
@@ -108,3 +107,7 @@ ENV/
 
 # Reports
 /reports/
+
+# MongoDB
+/db/diagnostic.data/
+/db/journal/

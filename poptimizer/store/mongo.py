@@ -16,16 +16,7 @@ from poptimizer import config
 
 def start_mongo() -> None:
     """Запуск сервера MongoDB."""
-    mongo_server = [
-        "mongod",
-        "--logpath",
-        config.MONGO_LOG_PATH,
-        "--quiet",
-        "--dbpath",
-        config.MONGO_PATH,
-        "--bind_ip",
-        "localhost",
-    ]
+    mongo_server = ["mongod", "--dbpath", config.MONGO_PATH, "--bind_ip", "localhost"]
 
     logging.info(f"Запускается локальный сервер MongoDB")
     subprocess.Popen(mongo_server, stdout=subprocess.DEVNULL)

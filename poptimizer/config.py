@@ -25,7 +25,6 @@ REPORTS_PATH = pathlib.Path(__file__).parents[1] / "reports"
 
 # Конфигурация MongoDB
 MONGO_PATH = pathlib.Path(__file__).parents[1] / "db"
-MONGO_LOG_PATH = pathlib.Path(__file__).parents[1] / "logs" / "mongodb.log"
 
 # Множитель, для переходя к после налоговым значениям
 AFTER_TAX = 1 - 0.13
