@@ -3,9 +3,9 @@
 Остановка производится автоматически после завершения программы.
 """
 import atexit
+import functools
 import logging
 import subprocess
-from typing import Tuple
 
 import pymongo
 import requests
@@ -14,34 +14,37 @@ from pymongo.errors import AutoReconnect
 from poptimizer import config
 
 
-def start_mongo() -> None:
+def start_mongo_server() -> subprocess.Popen:
     """Запуск сервера MongoDB."""
-    mongo_server = ["mongod", "--dbpath", config.MONGO_PATH, "--bind_ip", "localhost"]
-
     logging.info(f"Запускается локальный сервер MongoDB")
-    subprocess.Popen(mongo_server, stdout=subprocess.DEVNULL)
+    mongo_server = ["mongod", "--dbpath", config.MONGO_PATH, "--bind_ip", "localhost"]
+    return subprocess.Popen(mongo_server, stdout=subprocess.DEVNULL)
 
 
-def open_sessions() -> Tuple[pymongo.MongoClient, requests.Session]:
-    """Открытие клиентского соединения с MongoDB и интернетом."""
+def start_mongo_client() -> pymongo.MongoClient:
+    """Открытие клиентского соединения с MongoDB."""
     logging.info(f"Подключается клиент MongoDB")
     client = pymongo.MongoClient(
         "localhost", 27017, tz_aware=False, serverSelectionTimeoutMS=1000
     )
+    return client
 
+
+def start_http_session() -> requests.Session:
+    """Открытие клиентского соединение с  интернетом."""
     logging.info(f"Открывается сессия для обновления данных по интернет")
     session = requests.Session()
+    return session
 
-    return client, session
 
-
-@atexit.register
-def clean_up() -> None:
+def clean_up(process: subprocess.Popen) -> None:
     """Отключение сервера и закрытие соединений."""
     admin = DB_CLIENT["admin"]
     try:
         admin.command("shutdown")
     except AutoReconnect:
+        pass
+    if process.wait() == 0:
         logging.info(f"Локальный сервер MongoDB остановлен")
     DB_CLIENT.close()
     logging.info(f"Подключение клиента MongoDB закрыто")
@@ -49,5 +52,7 @@ def clean_up() -> None:
     logging.info(f"Сессия для обновления данных по интернет закрыта")
 
 
-start_mongo()
-DB_CLIENT, HTTP_SESSION = open_sessions()
+MONGO_PROCESS = start_mongo_server()
+DB_CLIENT = start_mongo_client()
+HTTP_SESSION = start_http_session()
+atexit.register(functools.partial(clean_up, MONGO_PROCESS))
