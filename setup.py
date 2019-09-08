@@ -68,6 +68,7 @@ setuptools.setup(
         "certifi",
         "requests",
         "pymongo",
+        "psutil",
     ],
     python_requires=f">={python_minimal}",
 )

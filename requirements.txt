@@ -27,3 +27,5 @@ aiohttp
 requests
 pyppeteer
 certifi
+
+psutil
