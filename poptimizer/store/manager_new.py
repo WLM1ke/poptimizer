@@ -119,13 +119,12 @@ class AbstractManager(ABC):
         self._ascending_index = ascending_index
         self._session = session
 
-    def __getitem__(self, item: str):
+    def __getitem__(self, item: str) -> pd.DataFrame:
         """Получение соответствующего элемента из базы."""
-        last_data_timestamp = self.LAST_DATA_TIMESTAMP
         doc = self._collection.find_one({"_id": item})
         if doc is None:
             doc = self.create(item)
-        elif doc["timestamp"] < last_data_timestamp:
+        elif doc["timestamp"] < self.LAST_DATA_TIMESTAMP:
             if self._create_from_scratch:
                 doc = self.create(item)
             else:
@@ -146,11 +145,7 @@ class AbstractManager(ABC):
             )
 
     def create(self, item: str) -> Dict[str, Any]:
-        """Создает локальные данные с нуля или перезаписывает существующие.
-
-        :param item:
-            Наименование данных.
-        """
+        """Создает локальные данные с нуля или перезаписывает существующие."""
         logging.info(f"Создание данных {self._collection.full_name}.{item}")
         data = self._download(item, None)
         doc = dict(_id=item, data=data, timestamp=datetime.utcnow())
@@ -170,12 +165,9 @@ class AbstractManager(ABC):
         data_new = self._download(item, last_index)
         self._validate_new(item, data, data_new)
         if self._validate_last:
-            doc = dict(
-                _id=item, data=data.extend(data_new[1:]), timestamp=datetime.utcnow()
-            )
-        else:
-            doc = dict(_id=item, data=data_new, timestamp=datetime.utcnow())
-        self._collection.replace_one({"_id": item}, doc)
+            data_new = data.extend(data_new[1:])
+        doc = dict(data=data_new, timestamp=datetime.utcnow())
+        self._collection.update_one({"_id": item}, {"$set": doc})
         logging.info(f"Данные обновлены {self._collection.full_name}.{item}")
         return doc
 
@@ -186,14 +178,14 @@ class AbstractManager(ABC):
         if self._validate_last:
             data = data[-1:]
             data_new = data_new[:1]
-        if len(data) != len(data_new):
+        if len(data) > len(data_new):
             raise POptimizerError(
-                f"Данные {self._collection.full_name}.{item} не соответствуют обновлению по длине:"
-                f"Старая:\n{len(data)}\n"
-                f"Новая:\n{len(data_new)}\n"
+                f"Новые данные {self._collection.full_name}.{item} короче старых:"
+                f"Старые:\n{len(data)}\n"
+                f"Новые:\n{len(data_new)}\n"
             )
         for old, new in zip(data, data_new):
-            for col in new:
+            for col in old:
                 not_float_not_eq = (
                     not isinstance(old[col], float) and old[col] != new[col]
                 )
