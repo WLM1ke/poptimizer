@@ -2,16 +2,19 @@ import aiomoex
 import pandas as pd
 import pytest
 
-from poptimizer.store import client, moex, manager, lmbd
-from poptimizer.store.client import MAX_SIZE, MAX_DBS
-from poptimizer.store.utils import (
-    REG_NUMBER,
-    LOT_SIZE,
-    TICKER,
+from poptimizer.store import (
+    client,
+    moex,
+    manager,
+    lmbd,
     CLOSE,
     TURNOVER,
-    MOEX_TZ,
+    TICKER,
+    REG_NUMBER,
+    LOT_SIZE,
 )
+from poptimizer.store.client import MAX_SIZE, MAX_DBS
+from poptimizer.store.utils import MOEX_TZ
 
 
 @pytest.fixture(scope="module", name="path")
@@ -38,7 +41,7 @@ async def fake_update_timestamp(_):
 @pytest.mark.usefixtures("fake_data_base")
 @pytest.mark.asyncio
 async def test_securities(monkeypatch):
-    monkeypatch.setattr(manager.utils, "update_timestamp", fake_update_timestamp)
+    monkeypatch.setattr(manager.utils, "get_last_history_date", fake_update_timestamp)
 
     df = await moex.Securities().get()
     assert len(df.index) > 200
@@ -115,7 +118,7 @@ async def test_quotes_start_of_download_update():
 @pytest.mark.usefixtures("fake_data_base")
 @pytest.mark.asyncio
 async def test_quotes_fake_update(monkeypatch):
-    monkeypatch.setattr(manager.utils, "update_timestamp", fake_update_timestamp)
+    monkeypatch.setattr(manager.utils, "get_last_history_date", fake_update_timestamp)
 
     df = await moex.Quotes(("MSTT",)).get()
 

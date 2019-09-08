@@ -7,7 +7,7 @@ from pandas.io.sql import DatabaseError
 
 from poptimizer.config import DATA_PATH
 from poptimizer.store.manager import AbstractManager
-from poptimizer.store.utils import DATE
+from poptimizer.store.utils_new import DATE
 
 # Данные по дивидендам хранятся во вложенной базе
 CATEGORY_DIVIDENDS = "dividends"

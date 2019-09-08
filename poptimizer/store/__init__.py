@@ -7,13 +7,12 @@
 from poptimizer.store.client import Client, open_store
 from poptimizer.store.cpi import Macro, CPI
 from poptimizer.store.dividends import DIVIDENDS_START
-from poptimizer.store.mongo import start_mongo_server
-from poptimizer.store.utils import (
+from poptimizer.store.utils_new import (
+    DATE,
     CLOSE,
     TURNOVER,
-    LOT_SIZE,
     TICKER,
-    DATE,
     REG_NUMBER,
+    LOT_SIZE,
     DIVIDENDS,
 )

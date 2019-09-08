@@ -5,6 +5,8 @@ from typing import Tuple, Optional, List
 import numpy as np
 import pandas as pd
 
+import poptimizer.store.manager_new
+import poptimizer.store.utils_new
 from poptimizer import store
 
 __all__ = ["lot_size", "prices", "turnovers", "securities_with_reg_number", "index"]
@@ -43,7 +45,7 @@ def lot_size(tickers: Optional[Tuple[str, ...]] = None) -> pd.Series:
         Информация о размере лотов.
     """
     df = asyncio.run(_securities(tickers))
-    return df[store.LOT_SIZE]
+    return df[poptimizer.store.utils_new.LOT_SIZE]
 
 
 async def _index() -> pd.DataFrame:
@@ -95,7 +97,7 @@ def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
         Цены закрытия.
     """
     quotes_list = asyncio.run(_quotes(tickers))
-    df = pd.concat([df[store.CLOSE] for df in quotes_list], axis=1)
+    df = pd.concat([df[poptimizer.store.utils_new.CLOSE] for df in quotes_list], axis=1)
     df = df.loc[:last_date]
     df.columns = tickers
     return df.replace(to_replace=[np.nan, 0], method="ffill")
@@ -114,7 +116,9 @@ def turnovers(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
         Обороты.
     """
     quotes_list = asyncio.run(_quotes(tickers))
-    df = pd.concat([df[store.TURNOVER] for df in quotes_list], axis=1)
+    df = pd.concat(
+        [df[poptimizer.store.utils_new.TURNOVER] for df in quotes_list], axis=1
+    )
     df = df.loc[:last_date]
     df.columns = tickers
     return df.fillna(0, axis=0)

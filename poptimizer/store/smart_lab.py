@@ -5,7 +5,7 @@ from aiohttp import ClientResponseError
 from poptimizer.config import POptimizerError
 from poptimizer.store import parser
 from poptimizer.store.manager import AbstractManager
-from poptimizer.store.utils import DIVIDENDS, TICKER, DATE
+from poptimizer.store.utils_new import DATE, TICKER, DIVIDENDS
 
 # Данные об ожидаемым дивидендам хранятся в основной базе
 NAME_SMART_LAB = "smart-lab"

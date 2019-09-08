@@ -9,7 +9,14 @@ import pandas as pd
 from poptimizer.store.manager import AbstractManager
 
 # noinspection PyProtectedMember
-from poptimizer.store.utils import TICKER, REG_NUMBER, LOT_SIZE, DATE, CLOSE, TURNOVER
+from poptimizer.store.utils_new import (
+    DATE,
+    CLOSE,
+    TURNOVER,
+    TICKER,
+    REG_NUMBER,
+    LOT_SIZE,
+)
 
 # Данные об акциях хранятся в основной базе
 NAME_SECURITIES = "securities"

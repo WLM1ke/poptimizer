@@ -1,11 +1,9 @@
 """Абстрактный менеджер данных - предоставляет локальные данные и следит за их обновлением."""
-import asyncio
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Callable
 
-import aiomoex
 import numpy as np
 import pandas as pd
 import pymongo
@@ -13,63 +11,14 @@ import requests
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import mongo
-from poptimizer.store.utils import DATE
-
-# Основная база
-DB = "data"
-# Коллекция для хранения вспомогательной информации и единичных данных
-MISC = "misc"
-
-# Часовой пояс MOEX
-MOEX_TZ = "Europe/Moscow"
-
-# Торги заканчиваются в 19.00, но данные публикуются 19.45
-END_OF_TRADING = dict(hour=19, minute=45, second=0, microsecond=0, nanosecond=0)
-
-
-async def get_board_dates() -> List[Dict[str, str]]:
-    """Удалить."""
-    async with aiomoex.ISSClientSession():
-        return await aiomoex.get_board_dates(
-            board="TQBR", market="shares", engine="stock"
-        )
-
-
-def get_last_history(data: List[Dict[str, str]]) -> datetime:
-    """Последняя дата торгов, которая есть на MOEX ISS."""
-    date = pd.Timestamp(data[0]["till"], tz=MOEX_TZ)
-    logging.info(f"Последняя дата с историей: {date.date()}")
-    return date.replace(**END_OF_TRADING).astimezone(None)
-
-
-def end_of_trading_day() -> datetime:
-    """Конец последнего торгового дня в UTC."""
-    now = pd.Timestamp.now(MOEX_TZ)
-    end_of_trading = now.replace(**END_OF_TRADING)
-    if end_of_trading > now:
-        end_of_trading += pd.DateOffset(days=-1)
-    return end_of_trading.astimezone(None)
-
-
-def update_timestamp() -> datetime:
-    """"Момент времени UTC после, которого не нужно обновлять данные."""
-    utils_collection = mongo.MONGO_CLIENT[DB][MISC]
-    last_history = utils_collection.find_one({"_id": "last_date"})
-    end_of_trading = end_of_trading_day()
-    if last_history is None or last_history["timestamp"] < end_of_trading:
-        data = asyncio.run(get_board_dates())
-        last_history = dict(
-            _id="last_date", data=data, timestamp=get_last_history(data)
-        )
-        utils_collection.replace_one({"_id": "last_date"}, last_history, upsert=True)
-    return last_history["timestamp"]
+from poptimizer.store.utils_new import DATE, DB, get_last_history_date
 
 
 class AbstractManager(ABC):
     """Организует создание, обновление и предоставление локальных данных."""
 
     # Момент времени после которого нужно обновление данных
-    LAST_DATA_TIMESTAMP = update_timestamp()
+    LAST_HISTORY_DATE = get_last_history_date()
 
     def __init__(
         self,
@@ -84,14 +33,12 @@ class AbstractManager(ABC):
         session: requests.Session = mongo.HTTP_SESSION,
     ):
         """Данные хранятся в MongoDB и извлекаются в виде DataFrame.
-
         Сохраняемые данные представляются в виде следующего документа:
         {
             _id: str
             data: DataFrame.to_dict("records"),
             timestamp: datetime.datetime
         }
-
         :param collection:
             Коллекция в которой хранятся данные.
         :param db:
@@ -124,7 +71,7 @@ class AbstractManager(ABC):
         doc = self._collection.find_one({"_id": item})
         if doc is None:
             doc = self.create(item)
-        elif doc["timestamp"] < self.LAST_DATA_TIMESTAMP:
+        elif doc["timestamp"] < self.LAST_HISTORY_DATE:
             if self._create_from_scratch:
                 doc = self.create(item)
             else:
@@ -155,7 +102,6 @@ class AbstractManager(ABC):
 
     def update(self, doc: Dict[str, Any]) -> Dict[str, Any]:
         """Обновляет локальные данные.
-
         Во время обновления проверяется стыковку новых данных с существующими.
         """
         item = doc["_id"]
@@ -165,7 +111,7 @@ class AbstractManager(ABC):
         data_new = self._download(item, last_index)
         self._validate_new(item, data, data_new)
         if self._validate_last:
-            data_new = data.extend(data_new[1:])
+            data_new = data + data_new[1:]
         doc = dict(data=data_new, timestamp=datetime.utcnow())
         self._collection.update_one({"_id": item}, {"$set": doc})
         logging.info(f"Данные обновлены {self._collection.full_name}.{item}")
@@ -202,7 +148,6 @@ class AbstractManager(ABC):
     @abstractmethod
     def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
         """Загружает необходимые данные из внешних источников.
-
         :param item:
             Наименования данных.
         :param last_index:
@@ -217,7 +162,6 @@ def data_formatter(
     data: List[Dict[str, Any]], formatters: Dict[str, Callable]
 ) -> List[Dict[str, Any]]:
     """Форматирует данные с учетом установок.
-
     :param data:
         Список словарей в формате DataFrame.to_dict("records").
     :param formatters:

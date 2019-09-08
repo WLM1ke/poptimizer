@@ -19,7 +19,7 @@ def start_mongo_client() -> pymongo.MongoClient:
     """Открытие клиентского соединения с MongoDB."""
     logging.info("Создается клиент MongoDB")
     client = pymongo.MongoClient(
-        "localhost", 27017, tz_aware=False, serverSelectionTimeoutMS=1000
+        "localhost", 27017, tz_aware=False, serverSelectionTimeoutMS=2000
     )
     return client
 

@@ -7,7 +7,7 @@ import pyppeteer
 from poptimizer.config import POptimizerError
 from poptimizer.store import parser
 from poptimizer.store.manager import AbstractManager
-from poptimizer.store.utils import DATE
+from poptimizer.store.utils_new import DATE
 
 # Данные  хранятся в отдельной базе
 CATEGORY_CONOMY = "conomy"
