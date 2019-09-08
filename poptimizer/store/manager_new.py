@@ -68,6 +68,9 @@ def update_timestamp() -> datetime:
 class AbstractManager(ABC):
     """Организует создание, обновление и предоставление локальных данных."""
 
+    # Момент времени после которого нужно обновление данных
+    LAST_DATA_TIMESTAMP = update_timestamp()
+
     def __init__(
         self,
         collection: str,
@@ -85,7 +88,7 @@ class AbstractManager(ABC):
         Сохраняемые данные представляются в виде следующего документа:
         {
             _id: str
-            data: DataFrame.to_dict(orient="records"),
+            data: DataFrame.to_dict("records"),
             timestamp: datetime.datetime
         }
 
@@ -118,11 +121,11 @@ class AbstractManager(ABC):
 
     def __getitem__(self, item: str):
         """Получение соответствующего элемента из базы."""
-        timestamp = update_timestamp()
+        last_data_timestamp = self.LAST_DATA_TIMESTAMP
         doc = self._collection.find_one({"_id": item})
         if doc is None:
             doc = self.create(item)
-        elif doc["timestamp"] < timestamp:
+        elif doc["timestamp"] < last_data_timestamp:
             if self._create_from_scratch:
                 doc = self.create(item)
             else:
