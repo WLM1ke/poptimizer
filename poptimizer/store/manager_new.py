@@ -27,16 +27,17 @@ MOEX_TZ = "Europe/Moscow"
 END_OF_TRADING = dict(hour=19, minute=45, second=0, microsecond=0, nanosecond=0)
 
 
-async def get_board_dates() -> list:
+async def get_board_dates() -> List[Dict[str, str]]:
     """Удалить."""
     async with aiomoex.ISSClientSession():
-        return await aiomoex.get_board_dates()
+        return await aiomoex.get_board_dates(
+            board="TQBR", market="shares", engine="stock"
+        )
 
 
-def download_last_history() -> datetime:
+def get_last_history(data: List[Dict[str, str]]) -> datetime:
     """Последняя дата торгов, которая есть на MOEX ISS."""
-    dates = asyncio.run(get_board_dates())
-    date = pd.Timestamp(dates[0]["till"], tz=MOEX_TZ)
+    date = pd.Timestamp(data[0]["till"], tz=MOEX_TZ)
     logging.info(f"Последняя дата с историей: {date.date()}")
     return date.replace(**END_OF_TRADING).astimezone(None)
 
@@ -56,7 +57,10 @@ def update_timestamp() -> datetime:
     last_history = utils_collection.find_one({"_id": "last_date"})
     end_of_trading = end_of_trading_day()
     if last_history is None or last_history["timestamp"] < end_of_trading:
-        last_history = dict(_id="last_date", timestamp=download_last_history())
+        data = asyncio.run(get_board_dates())
+        last_history = dict(
+            _id="last_date", data=data, timestamp=get_last_history(data)
+        )
         utils_collection.replace_one({"_id": "last_date"}, last_history, upsert=True)
     return last_history["timestamp"]
 
