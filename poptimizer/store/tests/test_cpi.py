@@ -4,7 +4,7 @@ import pytest
 from poptimizer.config import POptimizerError
 from poptimizer.store import cpi
 from poptimizer.store.cpi import CPI
-from poptimizer.store.mongo import DB_CLIENT
+from poptimizer.store.mongo import MONGO_CLIENT
 
 CHECK_POINTS = [
     ("1991-01-31", 1.0620),
@@ -16,9 +16,9 @@ CHECK_POINTS = [
 
 @pytest.fixture("module", autouse=True, name="manager")
 def manager_in_clean_test_db():
-    DB_CLIENT.drop_database("test")
+    MONGO_CLIENT.drop_database("test")
     yield cpi.Macro(db="test")
-    DB_CLIENT.drop_database("test")
+    MONGO_CLIENT.drop_database("test")
 
 
 def test_not_cpi_error(manager):

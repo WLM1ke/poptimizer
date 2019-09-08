@@ -18,7 +18,7 @@ def test_start_mongo_client():
 
 
 def test_no_start_mongo_server(caplog):
-    client = mongo.DB_CLIENT
+    client = mongo.MONGO_CLIENT
     mongo_pid = mongo.MONGO_PROCESS.pid
     with caplog.at_level(logging.INFO):
         process = mongo.start_mongo_server(client)
@@ -28,17 +28,16 @@ def test_no_start_mongo_server(caplog):
 
 @pytest.fixture("function")
 def shutdown_mongo_server():
-    client = mongo.DB_CLIENT
+    client = mongo.MONGO_CLIENT
     try:
-        admin = client["admin"]
-        admin.command("shutdown")
+        client["admin"].command("shutdown")
     except AutoReconnect:
         pass
 
 
 @pytest.mark.usefixtures("shutdown_mongo_server")
 def test_start_mongo_server(caplog):
-    client = mongo.DB_CLIENT
+    client = mongo.MONGO_CLIENT
     with pytest.raises(ServerSelectionTimeoutError) as error:
         client["admin"].command("serverStatus")
     assert error.type == ServerSelectionTimeoutError
@@ -58,7 +57,7 @@ def test_start_http_session():
 
 def test_clean_up(caplog):
     assert mongo.MONGO_PROCESS.is_running()
-    assert mongo.DB_CLIENT.nodes == frozenset({("localhost", 27017)})
+    assert mongo.MONGO_CLIENT.nodes == frozenset({("localhost", 27017)})
 
     with caplog.at_level(logging.INFO):
         mongo.clean_up(mongo.MONGO_PROCESS)
@@ -67,6 +66,6 @@ def test_clean_up(caplog):
     assert not mongo.MONGO_PROCESS.is_running()
 
     assert "Подключение клиента MongoDB закрыто" in caplog.text
-    assert mongo.DB_CLIENT.nodes == frozenset()
+    assert mongo.MONGO_CLIENT.nodes == frozenset()
 
     assert "Сессия для обновления данных по интернет закрыта" in caplog.text

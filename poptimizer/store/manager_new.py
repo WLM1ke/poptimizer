@@ -52,7 +52,7 @@ def end_of_trading_day() -> datetime:
 
 def update_timestamp() -> datetime:
     """"Момент времени UTC после, которого не нужно обновлять данные."""
-    utils_collection = mongo.DB_CLIENT[DB][MISC]
+    utils_collection = mongo.MONGO_CLIENT[DB][MISC]
     last_history = utils_collection.find_one({"_id": "last_date"})
     end_of_trading = end_of_trading_day()
     if last_history is None or last_history["timestamp"] < end_of_trading:
@@ -68,7 +68,7 @@ class AbstractManager(ABC):
         self,
         collection: str,
         db: str = DB,
-        client: pymongo.MongoClient = mongo.DB_CLIENT,
+        client: pymongo.MongoClient = mongo.MONGO_CLIENT,
         create_from_scratch: bool = False,
         validate_last: bool = True,
         index: str = DATE,
