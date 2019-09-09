@@ -41,7 +41,7 @@ def now_and_end_of_trading_day() -> Tuple[datetime, datetime]:
 
 
 async def get_board_dates() -> List[Dict[str, str]]:
-    """Удалить."""
+    """TODO: заменить и добавить тесты."""
     async with aiomoex.ISSClientSession():
         return await aiomoex.get_board_dates(
             board="TQBR", market="shares", engine="stock"
@@ -49,19 +49,19 @@ async def get_board_dates() -> List[Dict[str, str]]:
 
 
 def last_history_from_doc(doc: Dict[str, Any]) -> datetime:
-    """Последняя дата торгов, которая есть на MOEX ISS."""
+    """Момент времени UTC публикации данных о последних торгах, которая есть на MOEX ISS."""
     date = pd.Timestamp(doc["data"][0]["till"], tz=MOEX_TZ)
     return date.replace(**END_OF_TRADING).astimezone(None)
 
 
-def get_last_history_date() -> datetime:
+def get_last_history_date(db: str = DB, collection: str = MISC) -> datetime:
     """"Момент времени UTC после, которого не нужно обновлять данные."""
-    utils_collection = mongo.MONGO_CLIENT[DB][MISC]
-    doc = utils_collection.find_one({"_id": "last_date"})
+    misc_collection = mongo.MONGO_CLIENT[db][collection]
+    doc = misc_collection.find_one({"_id": "last_date"})
     now, end_of_trading = now_and_end_of_trading_day()
     if doc is None or doc["timestamp"] < end_of_trading:
         data = asyncio.run(get_board_dates())
         doc = dict(_id="last_date", data=data, timestamp=now)
-        utils_collection.replace_one({"_id": "last_date"}, doc, upsert=True)
+        misc_collection.replace_one({"_id": "last_date"}, doc, upsert=True)
         logging.info(f"Последняя дата с историей: {last_history_from_doc(doc).date()}")
     return last_history_from_doc(doc)

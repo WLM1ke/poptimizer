@@ -1,67 +1,67 @@
-import dataclasses
-import pathlib
+import asyncio
 
-import aiomoex
 import pandas as pd
 import pytest
 
-from poptimizer import config
-from poptimizer.store import utils, lmbd
-from poptimizer.store.client import MAX_SIZE, MAX_DBS
+from poptimizer.store import utils_new, mongo
 
 
-def test_data():
-    time0 = pd.Timestamp.now(utils.MOEX_TZ)
-    data = utils.Datum(42)
-    time1 = pd.Timestamp.now(utils.MOEX_TZ)
-    assert data.value == 42
-    assert time0 <= data.timestamp <= time1
-    with pytest.raises(dataclasses.FrozenInstanceError) as error:
-        # noinspection PyDataclass
-        data.value = 24
-    assert "cannot assign to field 'value'" in str(error.value)
+@pytest.fixture("module", autouse=True)
+def drop_test_db():
+    mongo.MONGO_CLIENT.drop_database("test")
+    yield
+    mongo.MONGO_CLIENT.drop_database("test")
 
 
-@pytest.mark.asyncio
-async def test_download_last_history():
-    async with aiomoex.ISSClientSession():
-        date = await utils.download_last_history()
-    assert isinstance(date, pd.Timestamp)
-    assert date.hour == 19
-    assert date.minute == 45
-    assert date.second == 0
-    assert date.microsecond == 0
-    assert date.nanosecond == 0
-    now = pd.Timestamp.now("Europe/Moscow")
-    assert date < pd.Timestamp.now("Europe/Moscow")
-    # noinspection PyUnresolvedReferences
-    assert date.tz == now.tz
+def test_now_and_end_of_trading_day_previous(monkeypatch):
+    monkeypatch.setattr(
+        utils_new.pd.Timestamp,
+        "now",
+        lambda x: pd.Timestamp(
+            year=2019, month=5, day=4, hour=19, minute=44, tz=utils_new.MOEX_TZ
+        ),
+    )
+    now, end_of_trading = utils_new.now_and_end_of_trading_day()
+
+    assert now.tzinfo is None
+    assert end_of_trading.tzinfo is None
+
+    assert now == pd.Timestamp(year=2019, month=5, day=4, hour=16, minute=44)
+    assert end_of_trading == pd.Timestamp(year=2019, month=5, day=3, hour=16, minute=45)
 
 
-@pytest.fixture(scope="module", name="path")
-def make_temp_dir(tmpdir_factory):
-    return pathlib.Path(tmpdir_factory.mktemp("utils"))
+def test_now_and_end_of_trading_day_this_day(monkeypatch):
+    monkeypatch.setattr(
+        utils_new.pd.Timestamp,
+        "now",
+        lambda x: pd.Timestamp(
+            year=2019, month=5, day=4, hour=19, minute=46, tz=utils_new.MOEX_TZ
+        ),
+    )
+    now, end_of_trading = utils_new.now_and_end_of_trading_day()
+
+    assert now.tzinfo is None
+    assert end_of_trading.tzinfo is None
+
+    assert now == pd.Timestamp(year=2019, month=5, day=4, hour=16, minute=46)
+    assert end_of_trading == pd.Timestamp(year=2019, month=5, day=4, hour=16, minute=45)
 
 
-@pytest.mark.asyncio
-async def test_update_timestamp(path, monkeypatch):
-    monkeypatch.setattr(config, "DATA_PATH", path)
-    async with aiomoex.ISSClientSession():
-        with lmbd.DataStore(path, MAX_SIZE, MAX_DBS) as db:
-            date = await utils.update_timestamp(db)
-            date_web = await utils.download_last_history()
-            date_store = db[utils.LAST_HISTORY].value
-    assert date == date_web == date_store
+def test_last_history_from_doc():
+    date = utils_new.last_history_from_doc({"data": [{"till": "2019-09-10"}]})
+    assert date.tzinfo is None
+    assert date == pd.Timestamp(year=2019, month=9, day=10, hour=16, minute=45)
 
 
-@pytest.mark.asyncio
-async def test_update_timestamp_after_end_of_trading_day(path, monkeypatch):
-    monkeypatch.setattr(config, "DATA_PATH", path)
-    fake_end_of_trading = dict(hour=0, minute=0, second=0, microsecond=0, nanosecond=0)
-    async with aiomoex.ISSClientSession():
-        with lmbd.DataStore(path, MAX_SIZE, MAX_DBS) as db:
-            date_web = await utils.download_last_history()
-            monkeypatch.setattr(utils, "END_OF_TRADING", fake_end_of_trading)
-            date = await utils.update_timestamp(db)
-            date_store = db[utils.LAST_HISTORY].value
-    assert date == date_web == date_store
+def test_get_last_history_date(monkeypatch):
+    collection = mongo.MONGO_CLIENT["test"]["qqq"]
+    monkeypatch.setattr(asyncio, "run", lambda x: [{"till": "2019-09-10"}])
+
+    time0 = pd.Timestamp.now(utils_new.MOEX_TZ).astimezone(None)
+    assert collection.find_one({"_id": "last_date"}) is None
+
+    date = utils_new.get_last_history_date(db="test", collection="qqq")
+
+    assert date == pd.Timestamp(year=2019, month=9, day=10, hour=16, minute=45)
+
+    assert collection.find_one({"_id": "last_date"})["timestamp"] > time0

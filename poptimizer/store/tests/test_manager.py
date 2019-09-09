@@ -3,13 +3,12 @@ from datetime import date
 import pandas as pd
 import pytest
 
-import poptimizer.store.utils_new
 from poptimizer.config import POptimizerError
-from poptimizer.store import manager_new, DATE
+from poptimizer.store import utils_new, manager_new, DATE
 from poptimizer.store.mongo import MONGO_CLIENT
 
 
-@pytest.fixture("module", autouse=True, name="manager")
+@pytest.fixture("module", autouse=True)
 def drop_test_db():
     MONGO_CLIENT.drop_database("test")
     yield
@@ -39,7 +38,7 @@ def test_create():
     # noinspection PyProtectedMember
     collection = manager._collection
 
-    time0 = pd.Timestamp.now(poptimizer.store.utils_new.MOEX_TZ).astimezone(None)
+    time0 = pd.Timestamp.now(utils_new.MOEX_TZ).astimezone(None)
     assert collection.find_one({"_id": "AKRN"}) is None
 
     data = manager["AKRN"]
@@ -55,7 +54,7 @@ def test_no_update():
     # noinspection PyProtectedMember
     collection = manager._collection
 
-    time0 = pd.Timestamp.now(poptimizer.store.utils_new.MOEX_TZ).astimezone(None)
+    time0 = pd.Timestamp.now(utils_new.MOEX_TZ).astimezone(None)
     assert collection.find_one({"_id": "AKRN"})["timestamp"] < time0
 
     data = manager["AKRN"]
@@ -68,7 +67,7 @@ def test_no_update():
 
 @pytest.fixture(scope="module")
 def next_week_date():
-    timestamp = pd.Timestamp.now(poptimizer.store.utils_new.MOEX_TZ)
+    timestamp = pd.Timestamp.now(utils_new.MOEX_TZ)
     timestamp += pd.DateOffset(days=7)
     timestamp = timestamp.astimezone(None)
     return timestamp
@@ -80,7 +79,7 @@ def test_update(monkeypatch, next_week_date):
     collection = manager._collection
     monkeypatch.setattr(manager, "LAST_HISTORY_DATE", next_week_date)
 
-    time0 = pd.Timestamp.now(poptimizer.store.utils_new.MOEX_TZ).astimezone(None)
+    time0 = pd.Timestamp.now(utils_new.MOEX_TZ).astimezone(None)
     assert collection.find_one({"_id": "AKRN"})["timestamp"] < time0
 
     data = manager["AKRN"]
@@ -97,7 +96,7 @@ def test_data_create_from_scratch(monkeypatch, next_week_date):
     collection = manager._collection
     monkeypatch.setattr(manager, "LAST_HISTORY_DATE", next_week_date)
 
-    time0 = pd.Timestamp.now(poptimizer.store.utils_new.MOEX_TZ).astimezone(None)
+    time0 = pd.Timestamp.now(utils_new.MOEX_TZ).astimezone(None)
     assert collection.find_one({"_id": "AKRN"})["timestamp"] < time0
 
     data = manager["AKRN"]
@@ -166,7 +165,7 @@ def test_validate_all(monkeypatch, next_week_date):
     # noinspection PyProtectedMember
     collection = manager._collection
 
-    time0 = pd.Timestamp.now(poptimizer.store.utils_new.MOEX_TZ).astimezone(None)
+    time0 = pd.Timestamp.now(utils_new.MOEX_TZ).astimezone(None)
     assert collection.find_one({"_id": "AKRN"})["timestamp"] < time0
 
     data = manager["AKRN"]
