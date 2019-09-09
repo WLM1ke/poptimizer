@@ -22,11 +22,11 @@ class AbstractManager(ABC):
     def __init__(
         self,
         collection: str,
-            db: str = utils_new.DB,
+        db: str = utils_new.DB,
         client: pymongo.MongoClient = mongo.MONGO_CLIENT,
         create_from_scratch: bool = False,
         validate_last: bool = True,
-            index: str = utils_new.DATE,
+        index: str = utils_new.DATE,
         unique_index: bool = True,
         ascending_index: bool = True,
         session: requests.Session = mongo.HTTP_SESSION,
@@ -126,9 +126,8 @@ class AbstractManager(ABC):
             data_new = data_new[:1]
         elif len(data) > len(data_new):
             raise POptimizerError(
-                f"Новые данные {self._collection.full_name}.{item} короче старых:"
-                f"Старые:\n{len(data)}\n"
-                f"Новые:\n{len(data_new)}\n"
+                f"Новые {len(data_new)} короче старых {len(data)} данных "
+                f"{self._collection.full_name}.{item}"
             )
         for old, new in zip(data, data_new):
             for col in old:
@@ -140,9 +139,8 @@ class AbstractManager(ABC):
                 )
                 if not_float_not_eq or float_not_eq:
                     raise POptimizerError(
-                        f"Данные {self._collection.full_name}.{item} не соответствуют обновлению:"
-                        f"Старые значения:\n{old}\n"
-                        f"Новые значения:\n{new}\n"
+                        f"Новые {new} не соответствуют старым {old} данным "
+                        f"{self._collection.full_name}.{item}"
                     )
 
     @abstractmethod
@@ -170,6 +168,6 @@ def data_formatter(
        Отформатированный список словарей в формате.
     """
     for row in data:
-        for col, formatter in formatters:
+        for col, formatter in formatters.items():
             row[col] = formatter(row[col])
     return data
