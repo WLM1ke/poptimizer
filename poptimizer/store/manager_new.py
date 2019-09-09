@@ -10,24 +10,23 @@ import pymongo
 import requests
 
 from poptimizer.config import POptimizerError
-from poptimizer.store import mongo
-from poptimizer.store.utils_new import DATE, DB, get_last_history_date
+from poptimizer.store import mongo, utils_new
 
 
 class AbstractManager(ABC):
     """Организует создание, обновление и предоставление локальных данных."""
 
     # Момент времени после которого нужно обновление данных
-    LAST_HISTORY_DATE = get_last_history_date()
+    LAST_HISTORY_DATE = utils_new.get_last_history_date()
 
     def __init__(
         self,
         collection: str,
-        db: str = DB,
+            db: str = utils_new.DB,
         client: pymongo.MongoClient = mongo.MONGO_CLIENT,
         create_from_scratch: bool = False,
         validate_last: bool = True,
-        index: str = DATE,
+            index: str = utils_new.DATE,
         unique_index: bool = True,
         ascending_index: bool = True,
         session: requests.Session = mongo.HTTP_SESSION,
@@ -102,6 +101,7 @@ class AbstractManager(ABC):
 
     def update(self, doc: Dict[str, Any]) -> Dict[str, Any]:
         """Обновляет локальные данные.
+
         Во время обновления проверяется стыковку новых данных с существующими.
         """
         item = doc["_id"]
@@ -124,7 +124,7 @@ class AbstractManager(ABC):
         if self._validate_last:
             data = data[-1:]
             data_new = data_new[:1]
-        if len(data) > len(data_new):
+        elif len(data) > len(data_new):
             raise POptimizerError(
                 f"Новые данные {self._collection.full_name}.{item} короче старых:"
                 f"Старые:\n{len(data)}\n"

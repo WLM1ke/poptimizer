@@ -4,8 +4,8 @@ from typing import Any, Optional
 import pandas as pd
 
 from poptimizer.config import POptimizerError
+from poptimizer.store import utils_new
 from poptimizer.store.manager_new import AbstractManager
-from poptimizer.store.utils_new import MISC, DB, DATE
 
 # Наименование данных по инфляции
 CPI = "CPI"
@@ -27,8 +27,8 @@ class Macro(AbstractManager):
     другая база.
     """
 
-    def __init__(self, db=DB) -> None:
-        super().__init__(db=db, collection=MISC, validate_last=False)
+    def __init__(self, db=utils_new.DB) -> None:
+        super().__init__(db=db, collection=utils_new.MISC, validate_last=False)
 
     def _download(self, item: str, last_index: Optional[Any]):
         """Загружает полностью данные по инфляции с сайта ФСГС."""
@@ -41,7 +41,7 @@ class Macro(AbstractManager):
         df = df.transpose().stack()
         first_year = df.index[0][0]
         df.index = pd.date_range(
-            name=DATE,
+            name=utils_new.DATE,
             freq="M",
             start=pd.Timestamp(year=first_year, month=1, day=31),
             periods=len(df),
