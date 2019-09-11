@@ -14,7 +14,7 @@ def test_start_mongo_client():
         assert isinstance(client, pymongo.MongoClient)
         assert client.address == ("localhost", 27017)
         assert client.codec_options.tz_aware is False
-        assert client.server_selection_timeout == 1.0
+        assert client.server_selection_timeout == 3.0
 
 
 def test_no_start_mongo_server(caplog):

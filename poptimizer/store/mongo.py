@@ -19,7 +19,7 @@ def start_mongo_client() -> pymongo.MongoClient:
     """Открытие клиентского соединения с MongoDB."""
     logging.info("Создается клиент MongoDB")
     client = pymongo.MongoClient(
-        "localhost", 27017, tz_aware=False, serverSelectionTimeoutMS=2000
+        "localhost", 27017, tz_aware=False, serverSelectionTimeoutMS=3000
     )
     return client
 
@@ -34,6 +34,7 @@ def start_mongo_server(mongo_client: pymongo.MongoClient) -> psutil.Process:
             "mongod",
             "--dbpath",
             config.MONGO_PATH,
+            "--directoryperdb",
             "--bind_ip",
             "localhost",
         ]
