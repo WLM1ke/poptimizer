@@ -1,4 +1,5 @@
 """Менеджеры данных для котировок, индекса и перечня торгуемых бумаг с MOEX."""
+from concurrent import futures
 from datetime import datetime
 from typing import Optional, Any, List, Dict
 
@@ -13,6 +14,9 @@ SECURITIES = "securities"
 
 # Наименование данных по индексу
 INDEX = "MCFTRR"
+
+# Наименование коллекции с котировками
+QUOTES = "quotes"
 
 
 class Securities(AbstractManager):
@@ -69,5 +73,77 @@ class Index(AbstractManager):
         formatters = dict(
             TRADEDATE=lambda x: (utils_new.DATE, datetime.strptime(x, "%Y-%m-%d")),
             CLOSE=lambda x: (utils_new.CLOSE, x),
+        )
+        return manager_new.data_formatter(data, formatters)
+
+
+class Quotes(AbstractManager):
+    """Информация о котировках.
+
+    Если у акции менялся тикер, но сохранялся регистрационный номер, то собирается полная история
+    котировок для всех тикеров в режиме TQBR.
+    """
+
+    def __init__(self, db=utils_new.DB) -> None:
+        super().__init__(collection=QUOTES, db=db)
+
+    def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
+        """Загружает полностью или только обновление по ценам закрытия и оборотам в рублях."""
+        if last_index is None:
+            aliases = self._find_aliases(item)
+        else:
+            aliases = [item]
+        if len(aliases) == 1:
+            data = apimoex.get_board_candles(
+                self._session, item, start=last_index, end=self.LAST_HISTORY_DATE
+            )
+        else:
+            data = self._download_many(aliases)
+        return self._formatter(data)
+
+    def _find_aliases(self, ticker: str) -> List[str]:
+        """Ищет все тикеры с эквивалентным регистрационным номером в режиме TQBR."""
+        securities = Securities(self._collection.database.name)[SECURITIES]
+        number = securities.at[ticker, utils_new.REG_NUMBER]
+        results = apimoex.find_securities(
+            self._session, number, columns=("secid", "regnumber", "primary_boardid")
+        )
+        return [
+            row["secid"]
+            for row in results
+            if row["regnumber"] == number and row["primary_boardid"] == "TQBR"
+        ]
+
+    def _download_many(self, aliases: List[str]) -> List[Dict[str, Any]]:
+        with futures.ThreadPoolExecutor(max_workers=len(aliases)) as executor:
+            rez = [
+                executor.submit(
+                    apimoex.get_board_candles,
+                    self._session,
+                    ticker,
+                    end=self.LAST_HISTORY_DATE,
+                )
+                for ticker in aliases
+            ]
+            data = []
+            for future in rez:
+                data.extend(future.result())
+        data.sort(key=lambda x: x["begin"])
+        return data
+
+    @staticmethod
+    def _formatter(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        formatters = dict(
+            open=lambda x: (utils_new.OPEN, x),
+            close=lambda x: (utils_new.CLOSE, x),
+            high=lambda x: (utils_new.HIGH, x),
+            low=lambda x: (utils_new.LOW, x),
+            value=lambda x: (utils_new.TURNOVER, x),
+            volume=lambda x: (utils_new.AMOUNT, x),
+            begin=lambda x: (utils_new.DATE, datetime.strptime(x, "%Y-%m-%d %H:%M:%S")),
+            end=lambda x: (
+                utils_new.DATE_END,
+                datetime.strptime(x, "%Y-%m-%d %H:%M:%S"),
+            ),
         )
         return manager_new.data_formatter(data, formatters)

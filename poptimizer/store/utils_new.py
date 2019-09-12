@@ -10,8 +10,13 @@ from poptimizer.store import mongo
 
 # Метки столбцов данных
 DATE = "DATE"
+DATE_END = "DATE_END"
+OPEN = "OPEN"
 CLOSE = "CLOSE"
+HIGH = "HIGH"
+LOW = "LOW"
 TURNOVER = "TURNOVER"
+AMOUNT = "AMOUNT"
 TICKER = "TICKER"
 REG_NUMBER = "REG_NUMBER"
 LOT_SIZE = "LOT_SIZE"
