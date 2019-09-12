@@ -1,10 +1,9 @@
 """Вспомогательные функции для хранения данных."""
-import asyncio
 import logging
 from datetime import datetime
-from typing import Tuple, List, Dict, Any
+from typing import Tuple, Dict, Any
 
-import aiomoex
+import apimoex
 import pandas as pd
 
 from poptimizer.store import mongo
@@ -40,14 +39,6 @@ def now_and_end_of_trading_day() -> Tuple[datetime, datetime]:
     return now.astimezone(None), end_of_trading.astimezone(None)
 
 
-async def get_board_dates() -> List[Dict[str, str]]:
-    """TODO: заменить и добавить тесты."""
-    async with aiomoex.ISSClientSession():
-        return await aiomoex.get_board_dates(
-            board="TQBR", market="shares", engine="stock"
-        )
-
-
 def last_history_from_doc(doc: Dict[str, Any]) -> datetime:
     """Момент времени UTC публикации данных о последних торгах, которая есть на MOEX ISS."""
     date = pd.Timestamp(doc["data"][0]["till"], tz=MOEX_TZ)
@@ -60,7 +51,9 @@ def get_last_history_date(db: str = DB, collection: str = MISC) -> datetime:
     doc = misc_collection.find_one({"_id": "last_date"})
     now, end_of_trading = now_and_end_of_trading_day()
     if doc is None or doc["timestamp"] < end_of_trading:
-        data = asyncio.run(get_board_dates())
+        data = apimoex.get_board_dates(
+            mongo.HTTP_SESSION, board="TQBR", market="shares", engine="stock"
+        )
         doc = dict(_id="last_date", data=data, timestamp=now)
         misc_collection.replace_one({"_id": "last_date"}, doc, upsert=True)
         logging.info(f"Последняя дата с историей: {last_history_from_doc(doc).date()}")

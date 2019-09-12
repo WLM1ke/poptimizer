@@ -69,6 +69,7 @@ setuptools.setup(
         "requests",
         "pymongo",
         "psutil",
+        "apimoex",
     ],
     python_requires=f">={python_minimal}",
 )

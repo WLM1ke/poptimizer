@@ -1,5 +1,4 @@
-import asyncio
-
+import apimoex
 import pandas as pd
 import pytest
 
@@ -55,7 +54,11 @@ def test_last_history_from_doc():
 
 def test_get_last_history_date(monkeypatch):
     collection = mongo.MONGO_CLIENT["test"]["qqq"]
-    monkeypatch.setattr(asyncio, "run", lambda x: [{"till": "2019-09-10"}])
+    monkeypatch.setattr(
+        apimoex,
+        "get_board_dates",
+        lambda x, board, market, engine: [{"till": "2019-09-10"}],
+    )
 
     time0 = pd.Timestamp.now(utils_new.MOEX_TZ).astimezone(None)
     assert collection.find_one({"_id": "last_date"}) is None

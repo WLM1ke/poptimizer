@@ -22,6 +22,7 @@ lmdb
 pymongo
 
 aiomoex
+apimoex
 bs4
 aiohttp
 requests
