@@ -8,30 +8,15 @@ import pandas as pd
 import poptimizer.store.manager_new
 import poptimizer.store.utils_new
 from poptimizer import store
+from poptimizer.store import moex_new, utils_new
 
 __all__ = ["lot_size", "prices", "turnovers", "securities_with_reg_number", "index"]
 
 
-async def _securities(tickers: Optional[Tuple[str, ...]] = None) -> pd.Series:
-    """Информация о размере лотов для тикеров.
-
-    :param tickers:
-        Перечень тикеров, для которых нужна информация. При отсутствии информация будет предоставлена
-        для всех торгуемых бумаг.
-    :return:
-        Информация о размере лотов.
-    """
-    async with store.Client() as client:
-        db = client.securities()
-        df = await db.get()
-    if tickers:
-        return df.loc[list(tickers)]
-    return df
-
-
 def securities_with_reg_number() -> pd.Index:
     """Все ценные акции с регистрационным номером."""
-    df = asyncio.run(_securities())
+    manager = moex_new.Securities()
+    df = manager[moex_new.SECURITIES]
     return df.dropna(axis=0).index
 
 
@@ -44,8 +29,11 @@ def lot_size(tickers: Optional[Tuple[str, ...]] = None) -> pd.Series:
     :return:
         Информация о размере лотов.
     """
-    df = asyncio.run(_securities(tickers))
-    return df[poptimizer.store.utils_new.LOT_SIZE]
+    manager = moex_new.Securities()
+    df = manager[moex_new.SECURITIES]
+    if tickers:
+        df = df.loc[list(tickers)]
+    return df[utils_new.LOT_SIZE]
 
 
 async def _index() -> pd.DataFrame:

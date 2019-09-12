@@ -178,6 +178,9 @@ def test_validate_all(monkeypatch, next_week_date):
 
 def test_data_formatter():
     data = [{DATE: "2011-02-12", "col1": 1}, {DATE: "2019-09-09", "col1": 2}]
-    formatter = {DATE: date.fromisoformat}
-    result = [{DATE: date(2011, 2, 12), "col1": 1}, {DATE: date(2019, 9, 9), "col1": 2}]
+    formatter = {
+        DATE: lambda x: (DATE, date.fromisoformat(x)),
+        "col1": lambda x: ("col2", x),
+    }
+    result = [{DATE: date(2011, 2, 12), "col2": 1}, {DATE: date(2019, 9, 9), "col2": 2}]
     assert manager_new.data_formatter(data, formatter) == result

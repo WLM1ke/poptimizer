@@ -2,7 +2,7 @@
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Callable
+from typing import Optional, List, Dict, Any, Callable, Tuple
 
 import numpy as np
 import pandas as pd
@@ -157,7 +157,7 @@ class AbstractManager(ABC):
 
 
 def data_formatter(
-    data: List[Dict[str, Any]], formatters: Dict[str, Callable]
+    data: List[Dict[str, Any]], formatters: Dict[str, Callable[[Any], Tuple[str, Any]]]
 ) -> List[Dict[str, Any]]:
     """Форматирует данные с учетом установок.
     :param data:
@@ -169,5 +169,6 @@ def data_formatter(
     """
     for row in data:
         for col, formatter in formatters.items():
-            row[col] = formatter(row[col])
+            new_col, value = formatter(row.pop(col))
+            row[new_col] = value
     return data
