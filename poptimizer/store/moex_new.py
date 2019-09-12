@@ -1,4 +1,5 @@
 """Менеджеры данных для котировок, индекса и перечня торгуемых бумаг с MOEX."""
+from datetime import datetime
 from typing import Optional, Any, List, Dict
 
 import apimoex
@@ -9,6 +10,9 @@ from poptimizer.store.manager_new import AbstractManager
 
 # Наименование данных по акциям
 SECURITIES = "securities"
+
+# Наименование данных по индексу
+INDEX = "MCFTRR"
 
 
 class Securities(AbstractManager):
@@ -39,5 +43,31 @@ class Securities(AbstractManager):
             SECID=lambda x: (utils_new.TICKER, x),
             REGNUMBER=lambda x: (utils_new.REG_NUMBER, x),
             LOTSIZE=lambda x: (utils_new.LOT_SIZE, x),
+        )
+        return manager_new.data_formatter(data, formatters)
+
+
+class Index(AbstractManager):
+    """Котировки индекса полной доходности с учетом российских налогов - MCFTRR."""
+
+    REQUEST_PARAMS = dict(
+        security=INDEX, columns=("TRADEDATE", "CLOSE"), board="RTSI", market="index"
+    )
+
+    def __init__(self, db=utils_new.DB) -> None:
+        super().__init__(collection=utils_new.MISC, db=db)
+
+    def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
+        """Поддерживается частичная загрузка данных для обновления."""
+        if item != INDEX:
+            raise POptimizerError(
+                f"Отсутствуют данные {self._collection.full_name}.{item}"
+            )
+        data = apimoex.get_board_history(
+            self._session, start=last_index, **self.REQUEST_PARAMS
+        )
+        formatters = dict(
+            TRADEDATE=lambda x: (utils_new.DATE, datetime.strptime(x, "%Y-%m-%d")),
+            CLOSE=lambda x: (utils_new.CLOSE, x),
         )
         return manager_new.data_formatter(data, formatters)

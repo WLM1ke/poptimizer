@@ -36,17 +36,6 @@ def lot_size(tickers: Optional[Tuple[str, ...]] = None) -> pd.Series:
     return df[utils_new.LOT_SIZE]
 
 
-async def _index() -> pd.DataFrame:
-    """Загрузка данных по индексу полной доходности с учетом российских налогов - MCFTRR.
-
-    :return:
-        История цен закрытия индекса.
-    """
-    async with store.Client() as client:
-        db = client.index()
-        return await db.get()
-
-
 def index(last_date: pd.Timestamp) -> pd.DataFrame:
     """Загрузка данных по индексу полной доходности с учетом российских налогов - MCFTRR.
 
@@ -55,8 +44,9 @@ def index(last_date: pd.Timestamp) -> pd.DataFrame:
     :return:
         История цен закрытия индекса.
     """
-    df = asyncio.run(_index())
-    return df[:last_date]
+    manager = moex_new.Index()
+    df = manager[moex_new.INDEX]
+    return df.loc[:last_date, utils_new.CLOSE]
 
 
 async def _quotes(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
