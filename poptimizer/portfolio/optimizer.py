@@ -22,7 +22,7 @@ class Optimizer:
     def __init__(
         self,
         portfolio: Portfolio,
-        months: float = config.ML_PARAMS["data"][0]["days"] / DAYS_IN_MONTH,
+        months: float = config.ML_PARAMS["data"][0][1]["days"] / DAYS_IN_MONTH,
     ):
         """Портфель оптимизируется с учетом метрик для определенного периода времени.
 
