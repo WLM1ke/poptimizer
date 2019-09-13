@@ -12,8 +12,8 @@ from poptimizer.store.utils_new import DATE
 # Данные по дивидендам хранятся во вложенной базе
 CATEGORY_DIVIDENDS = "dividends"
 
-# База содержит данные с начала 2010 года
-DIVIDENDS_START = pd.Timestamp("2010-01-01")
+# База содержит данные с начала 2010 года, но постепенно срок будет сдвигаться к началу режима TQBR
+DIVIDENDS_START = pd.Timestamp("2010-02-01")
 
 SQLITE = str(DATA_PATH / "dividends.db")
 
