@@ -101,9 +101,6 @@ def check_model_bounds(params: dict, bound: float = 0.1, increase: float = 0.2):
         value = params[name]
         float_bounds_check(name, value, interval, bound, increase)
 
-    if params["depth"] == MAX_DEPTH:
-        print(f"\nНеобходимо увеличить MAX_DEPTH до {MAX_DEPTH + 1}")
-
 
 def make_model_params(data_params: tuple, model_params: dict) -> dict:
     """Формирует параметры модели.
