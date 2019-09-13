@@ -68,7 +68,7 @@ class Index(AbstractManager):
                 f"Отсутствуют данные {self._collection.full_name}.{item}"
             )
         data = apimoex.get_board_history(
-            self._session, start=last_index, **self.REQUEST_PARAMS
+            self._session, start=last_index.date(), **self.REQUEST_PARAMS
         )
         formatters = dict(
             TRADEDATE=lambda x: (utils_new.DATE, datetime.strptime(x, "%Y-%m-%d")),
@@ -95,7 +95,10 @@ class Quotes(AbstractManager):
             aliases = [item]
         if len(aliases) == 1:
             data = apimoex.get_board_candles(
-                self._session, item, start=last_index, end=self.LAST_HISTORY_DATE
+                self._session,
+                item,
+                start=last_index.date(),
+                end=self.LAST_HISTORY_DATE.date(),
             )
         else:
             data = self._download_many(aliases)
@@ -121,7 +124,7 @@ class Quotes(AbstractManager):
                     apimoex.get_board_candles,
                     self._session,
                     ticker,
-                    end=self.LAST_HISTORY_DATE,
+                    end=self.LAST_HISTORY_DATE.date(),
                 )
                 for ticker in aliases
             ]
