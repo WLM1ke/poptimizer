@@ -11,7 +11,7 @@ from poptimizer.portfolio.portfolio import CASH, PORTFOLIO, Portfolio
 
 @dataclass(frozen=True)
 class Forecast:
-    """Класс с прогнозом"""
+    """Класс с прогнозом."""
 
     date: pd.Timestamp
     tickers: tuple
@@ -28,7 +28,7 @@ class Forecast:
     shrinkage: float
     params: dict
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"\nХАРАКТЕРИСТИКИ ПРОГНОЗА"
             f"\nКоличество обучающих примеров - {self.num_cases}"
@@ -48,7 +48,7 @@ class Forecast:
 class Metrics:
     """Реализует основные метрики портфеля."""
 
-    def __init__(self, portfolio: Portfolio, months: int = 12):
+    def __init__(self, portfolio: Portfolio, months: float = 12):
         """Использует прогноз для построения основных метрик позиций портфеля.
 
         К основным метрикам относятся: доходность, СКО и бета. На основе их рассчитывается нижняя
@@ -64,7 +64,7 @@ class Metrics:
         self._forecast = self._forecast_func()
         self._months = months
 
-    def __str__(self):
+    def __str__(self) -> str:
         frames = [self.mean, self.std, self.beta, self.lower_bound, self.gradient]
         df = pd.concat(frames, axis=1)
         df.columns = ["MEAN", "STD", "BETA", "LOWER_BOUND", "GRADIENT"]
@@ -77,14 +77,14 @@ class Metrics:
             f"\n{self._forecast}"
         )
 
-    def _forecast_func(self):
+    def _forecast_func(self) -> Forecast:
         portfolio = self._portfolio
         tickers = tuple(portfolio.index[:-2])
         date = portfolio.date
         return ml.get_forecast(tickers, date)
 
     @property
-    def mean(self):
+    def mean(self) -> pd.Series:
         """Матожидание доходности по всем позициям портфеля."""
         portfolio = self._portfolio
         mean = self._forecast.mean
@@ -95,7 +95,7 @@ class Metrics:
         return mean
 
     @property
-    def std(self):
+    def std(self) -> pd.Series:
         """СКО дивидендной доходности по всем позициям портфеля."""
         portfolio = self._portfolio
         cov = self._forecast.cov
@@ -108,7 +108,7 @@ class Metrics:
         return std
 
     @property
-    def beta(self):
+    def beta(self) -> pd.Series:
         """Беты относительно доходности портфеля."""
         portfolio = self._portfolio
         cov = self._forecast.cov
@@ -119,9 +119,8 @@ class Metrics:
         beta[PORTFOLIO] = 1
         return beta
 
-    # noinspection PyTypeChecker
     @property
-    def lower_bound(self):
+    def lower_bound(self) -> pd.Series:
         """Рассчитывает вклад в нижнюю границу доверительного интервала для доходности.
 
 
@@ -132,13 +131,15 @@ class Metrics:
         портфелю в целом.
         """
         years = self._months / 12
+        # noinspection PyTypeChecker
         mean = self.mean * years
+        # noinspection PyTypeChecker
         risk = self.std[PORTFOLIO] * (years ** 0.5) * self.beta
         lower_bound = mean - T_SCORE * risk
         return lower_bound
 
     @property
-    def gradient(self):
+    def gradient(self) -> pd.Series:
         """Рассчитывает производную нижней границы по доле актива в портфеле.
 
         В общем случае равна (m - mp) - t * sp * (b - 1), m и mp - доходность актива и портфеля,
@@ -158,7 +159,7 @@ class Metrics:
         return mean_gradient - T_SCORE * risk_gradient
 
     @property
-    def std_gradient(self):
+    def std_gradient(self) -> pd.Series:
         """СКО для интервала времени расчета градиента."""
         years = self._months / 12
         return self.std[PORTFOLIO] * (years ** 0.5)

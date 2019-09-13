@@ -1,9 +1,12 @@
 """Оптимизатор портфеля."""
 import pandas as pd
 
+from poptimizer import config
 from poptimizer.config import MAX_TRADE
 from poptimizer.portfolio import metrics
 from poptimizer.portfolio.portfolio import PORTFOLIO, CASH, Portfolio
+
+DAYS_IN_MONTH = 21
 
 # На сколько сделок разбивается операция по покупке/продаже акций
 TRADES = 5
@@ -16,8 +19,14 @@ class Optimizer:
     Возможное улучшение сравнивается с СКО градиента.
     """
 
-    def __init__(self, portfolio: Portfolio, months: int):
+    def __init__(
+        self,
+        portfolio: Portfolio,
+        months: float = config.ML_PARAMS["data"][0]["days"] / DAYS_IN_MONTH,
+    ):
         """Портфель оптимизируется с учетом метрик для определенного периода времени.
+
+        По умолчанию период оптимизации равен периоду прогнозирования доходности.
 
         :param portfolio:
             Оптимизируемый портфель.
@@ -27,12 +36,12 @@ class Optimizer:
         self._portfolio = portfolio
         self._metrics = metrics.Metrics(portfolio, months)
 
-    def __str__(self):
+    def __str__(self) -> str:
         recommendation = self._trade_recommendation()
         df = self._main_stat()
         return f"\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ\n{recommendation}\n\n{df}"
 
-    def _trade_recommendation(self):
+    def _trade_recommendation(self) -> str:
         portfolio = self.portfolio
         trade_size = portfolio.value[PORTFOLIO] * MAX_TRADE
         cash = portfolio.value[CASH]
@@ -53,12 +62,12 @@ class Optimizer:
             f"\nКупить  {best_buy} - {TRADES} сделок {buy_lots} лотов"
         )
 
-    def _main_stat(self):
-        metrics = self.metrics
+    def _main_stat(self) -> str:
+        metrics_ = self.metrics
         df = pd.concat(
             [
-                metrics.lower_bound,
-                metrics.gradient,
+                metrics_.lower_bound,
+                metrics_.gradient,
                 self.portfolio.turnover_factor,
                 self.gradient_growth,
             ],
@@ -68,29 +77,31 @@ class Optimizer:
         return df.sort_values("LOWER_BOUND", ascending=False)
 
     @property
-    def portfolio(self):
+    def portfolio(self) -> Portfolio:
         """Оптимизируемый портфель."""
         return self._portfolio
 
     @property
-    def metrics(self):
+    def metrics(self) -> metrics.Metrics:
         """Метрика, используемая для оптимизации."""
         return self._metrics
 
     @property
-    def best_sell(self):
+    def best_sell(self) -> str:
         """Бумага с не нулевым объемом и минимальным градиентом."""
+        # noinspection PyTypeChecker
         non_zero_holdings = self.portfolio.shares > 0
         return self.metrics.gradient[non_zero_holdings].idxmin()
 
     @property
-    def gradient_growth(self):
+    def gradient_growth(self) -> pd.Series:
         """Возможный прирост градиента с поправкой на объем."""
         gradient = self.metrics.gradient
         min_gradient = gradient[self.best_sell]
         return (gradient - min_gradient) * self.portfolio.turnover_factor
 
+    # noinspection PyTypeChecker
     @property
-    def best_buy(self):
+    def best_buy(self) -> str:
         """Бумага с максимальным ростом градиента с поправкой на оборот."""
         return self.gradient_growth.idxmax()
