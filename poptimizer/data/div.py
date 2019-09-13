@@ -10,7 +10,7 @@ from pandas.tseries import offsets
 from poptimizer import store
 from poptimizer.config import AFTER_TAX
 from poptimizer.data import moex
-from poptimizer.store import DATE
+from poptimizer.store import DATE, DIVIDENDS_START
 
 __all__ = ["log_total_returns", "div_ex_date_prices"]
 
@@ -75,7 +75,10 @@ def div_ex_date_prices(tickers: tuple, last_date: pd.Timestamp):
     div.index = div.index.map(functools.partial(t2_shift, index=price.index))
     # Может образоваться несколько дат, если часть дивидендов приходится на выходные
     div = div.groupby(by=DATE).sum()
-    return div.reindex(index=price.index, fill_value=0), price
+    return (
+        div.reindex(index=price.index, fill_value=0).loc[DIVIDENDS_START:],
+        price.loc[DIVIDENDS_START:],
+    )
 
 
 def log_total_returns(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:

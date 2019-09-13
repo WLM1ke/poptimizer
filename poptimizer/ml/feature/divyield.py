@@ -5,7 +5,6 @@ import pandas as pd
 
 from poptimizer import data
 from poptimizer.ml.feature.feature import AbstractFeature, DaysPeriodsParamsMixin
-from poptimizer.store import DIVIDENDS_START
 
 
 class DivYield(DaysPeriodsParamsMixin, AbstractFeature):
@@ -36,7 +35,7 @@ class DivYield(DaysPeriodsParamsMixin, AbstractFeature):
         periods = params["periods"]
         days = params["days"] // periods
         dividends, prices = data.div_ex_date_prices(self._tickers, self._last_date)
-        div = dividends.rolling(days).sum().loc[DIVIDENDS_START:].iloc[days:]
+        div = dividends.rolling(days).sum()
         div_periods = []
         for i in range(periods):
             div_i = div.shift(i * days) / prices
