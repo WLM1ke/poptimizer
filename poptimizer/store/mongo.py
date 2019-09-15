@@ -11,8 +11,13 @@ import psutil
 import pymongo
 import requests
 from pymongo.errors import AutoReconnect, ServerSelectionTimeoutError
+from requests import adapters
 
 from poptimizer import config
+
+# Максимальный пул соединений по HTTPS и повторных загрузок
+HTTPS_MAX_POOL_SIZE = 20
+MAX_RETRIES = 3
 
 
 def start_mongo_client() -> pymongo.MongoClient:
@@ -48,6 +53,10 @@ def start_http_session() -> requests.Session:
     """Открытие клиентского соединение с  интернетом."""
     logging.info("Открывается сессия для обновления данных по интернет")
     session = requests.Session()
+    adapter = adapters.HTTPAdapter(
+        pool_maxsize=HTTPS_MAX_POOL_SIZE, max_retries=MAX_RETRIES, pool_block=True
+    )
+    session.mount("https://", adapter)
     return session
 
 

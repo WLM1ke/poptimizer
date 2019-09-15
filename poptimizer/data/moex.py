@@ -1,4 +1,5 @@
 """Основные функции агрегации данных по котировкам акций."""
+from concurrent import futures
 from typing import Tuple, Optional, List
 
 import numpy as np
@@ -55,7 +56,11 @@ def quotes(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
         Список с котировками.
     """
     manager = store.Quotes()
-    return [manager[ticker] for ticker in tickers]
+    with futures.ThreadPoolExecutor() as executor:
+        future_tickers = [
+            executor.submit(lambda x: manager[x], ticker) for ticker in tickers
+        ]
+    return [future.result() for future in future_tickers]
 
 
 def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
