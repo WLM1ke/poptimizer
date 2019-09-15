@@ -1,22 +1,19 @@
 """Основные функции агрегации данных по котировкам акций."""
-import asyncio
 from typing import Tuple, Optional, List
 
 import numpy as np
 import pandas as pd
 
-import poptimizer.store.manager_new
-import poptimizer.store.utils_new
 from poptimizer import store
-from poptimizer.store import moex_new, utils_new
+from poptimizer.store import SECURITIES, LOT_SIZE, INDEX, CLOSE, TURNOVER
 
 __all__ = ["lot_size", "prices", "turnovers", "securities_with_reg_number", "index"]
 
 
 def securities_with_reg_number() -> pd.Index:
     """Все ценные акции с регистрационным номером."""
-    manager = moex_new.Securities()
-    df = manager[moex_new.SECURITIES]
+    manager = store.Securities()
+    df = manager[SECURITIES]
     return df.dropna(axis=0).index
 
 
@@ -29,11 +26,11 @@ def lot_size(tickers: Optional[Tuple[str, ...]] = None) -> pd.Series:
     :return:
         Информация о размере лотов.
     """
-    manager = moex_new.Securities()
-    df = manager[moex_new.SECURITIES]
+    manager = store.Securities()
+    df = manager[SECURITIES]
     if tickers:
         df = df.loc[list(tickers)]
-    return df[utils_new.LOT_SIZE]
+    return df[LOT_SIZE]
 
 
 def index(last_date: pd.Timestamp) -> pd.DataFrame:
@@ -44,22 +41,21 @@ def index(last_date: pd.Timestamp) -> pd.DataFrame:
     :return:
         История цен закрытия индекса.
     """
-    manager = moex_new.Index()
-    df = manager[moex_new.INDEX]
-    return df.loc[:last_date, utils_new.CLOSE]
+    manager = store.Index()
+    df = manager[INDEX]
+    return df.loc[:last_date, CLOSE]
 
 
-async def _quotes(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
-    """Информация о котировках для заданных тикеров (цена закрытия и объем).
+def quotes(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
+    """Информация о котировках для заданных тикеров.
 
     :param tickers:
         Перечень тикеров, для которых нужна информация.
     :return:
         Список с котировками.
     """
-    async with store.Client() as client:
-        db = client.quotes(tickers)
-        return await db.get()
+    manager = store.Quotes()
+    return [manager[ticker] for ticker in tickers]
 
 
 def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
@@ -74,8 +70,8 @@ def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
     :return:
         Цены закрытия.
     """
-    quotes_list = asyncio.run(_quotes(tickers))
-    df = pd.concat([df[poptimizer.store.utils_new.CLOSE] for df in quotes_list], axis=1)
+    quotes_list = quotes(tickers)
+    df = pd.concat([df[CLOSE] for df in quotes_list], axis=1)
     df = df.loc[:last_date]
     df.columns = tickers
     return df.replace(to_replace=[np.nan, 0], method="ffill")
@@ -93,10 +89,8 @@ def turnovers(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
     :return:
         Обороты.
     """
-    quotes_list = asyncio.run(_quotes(tickers))
-    df = pd.concat(
-        [df[poptimizer.store.utils_new.TURNOVER] for df in quotes_list], axis=1
-    )
+    quotes_list = quotes(tickers)
+    df = pd.concat([df[TURNOVER] for df in quotes_list], axis=1)
     df = df.loc[:last_date]
     df.columns = tickers
     return df.fillna(0, axis=0)

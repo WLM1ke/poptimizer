@@ -1,5 +1,3 @@
-import asyncio
-
 import pandas as pd
 import pytest
 
@@ -66,12 +64,10 @@ def test_no_data():
 
     Дополнительная проверка, что эта ситуация обрабатывается без ошибок.
     """
-    # noinspection PyProtectedMember
-    quotes_list = asyncio.run(moex._quotes(("KSGR", "KMTZ", "TRFM")))
+    quotes_list = moex.quotes(("KSGR", "KMTZ", "TRFM"))
     for df in quotes_list:
         assert isinstance(df, pd.DataFrame)
         assert df.empty
-        assert list(df.columns) == [CLOSE, TURNOVER]
 
 
 def test_multi_tickers():
@@ -79,8 +75,7 @@ def test_multi_tickers():
 
     Дополнительная проверка, что у данных уникальный возрастающий индекс.
     """
-    # noinspection PyProtectedMember
-    quotes_list = asyncio.run(moex._quotes(("PRMB", "OGKB")))
+    quotes_list = moex.quotes(("PRMB", "OGKB"))
     for df in quotes_list:
         assert isinstance(df, pd.DataFrame)
         assert df.index.is_unique
@@ -122,3 +117,114 @@ def test_turnovers():
 
     assert df.loc["2003-10-09", "RTKM"] == pytest.approx(1485834851.93)
     assert df.loc["2018-12-05", "RTKM"] == pytest.approx(117397440.3)
+
+
+def test_quotes_akrn():
+    df = moex.quotes(("AKRN",))[0]
+
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) > 3000
+    assert df.index[0] == pd.Timestamp("2006-10-20")
+    assert df[CLOSE].iloc[0] == pytest.approx(834.93)
+    assert df[TURNOVER].iloc[0] == pytest.approx(13863.93)
+    assert df.index[-1] >= pd.Timestamp("2018-12-07")
+    assert df.loc["2014-06-10", TURNOVER] == pytest.approx(20317035.8)
+    assert df.loc["2018-09-10", CLOSE] == pytest.approx(4528)
+
+
+def test_quotes_moex():
+    df = moex.quotes(("MOEX",))[0]
+
+    assert df.shape[0] > 1300
+    assert df.index[0] == pd.Timestamp("2013-02-15")
+    assert df.loc["2018-03-05", CLOSE] == pytest.approx(117)
+    assert df.loc["2018-03-05", TURNOVER] == pytest.approx(533142058.2)
+
+
+def test_quotes_upro():
+    df = moex.quotes(("UPRO",))[0]
+
+    assert df.shape[0] > 2500
+    assert df.index[0] == pd.to_datetime("2007-05-24")
+    assert df.loc["2007-05-25", CLOSE] == pytest.approx(2.65)
+    assert df.loc["2007-05-28", TURNOVER] == pytest.approx(997822.7)
+    assert df.loc["2018-09-07", CLOSE] == pytest.approx(2.633)
+    assert df.loc["2018-09-10", TURNOVER] == pytest.approx(24565585)
+
+
+def test_quotes_banep():
+    df = moex.quotes(("BANEP",))[0]
+
+    assert df.index[0] == pd.to_datetime("2011-11-18")
+    assert df.loc["2014-06-10", CLOSE] == pytest.approx(1833.0)
+    assert df.loc["2014-06-11", TURNOVER] == pytest.approx(42394025.2)
+    assert df.shape[0] > 1000
+    assert df.loc["2018-09-07", CLOSE] == pytest.approx(1721.5)
+    assert df.loc["2018-09-10", TURNOVER] == pytest.approx(60677908)
+
+
+def test_quotes_sberp():
+    df = moex.quotes(("SBERP",))[0]
+
+    assert df.shape[0] > 1000
+    assert df.index[0] == pd.to_datetime("2007-07-20")
+    assert df.loc["2013-03-26", CLOSE] == pytest.approx(72.20)
+    assert df.loc["2018-09-10", CLOSE] == pytest.approx(148.36)
+
+
+def test_quotes_gmkn():
+    df = moex.quotes(("GMKN",))[0]
+
+    assert df.shape[0] > 1000
+    assert df.index[0] == pd.to_datetime("2006-12-26")
+    assert df.loc["2014-06-09", TURNOVER] == pytest.approx(1496171686)
+    assert df.loc["2018-09-07", CLOSE] == pytest.approx(11200)
+
+
+def test_quotes_mstt():
+    df = moex.quotes(("MSTT",))[0]
+
+    assert df.shape[0] > 1000
+    assert df.index[0] == pd.to_datetime("2010-11-03")
+    assert df.loc["2013-03-27", CLOSE] == pytest.approx(136.3)
+    assert df.loc["2014-06-09", CLOSE] == pytest.approx(110.48)
+    assert df.loc["2018-09-07", CLOSE] == pytest.approx(92.0)
+    assert df.loc["2018-03-09", CLOSE] == 148.8
+    assert df.loc["2018-03-09", TURNOVER] == 439722
+
+
+def test_quotes_kbtk():
+    df = moex.quotes(("KBTK",))[0]
+
+    assert "2018-03-09" not in df.index
+    assert df.loc["2018-03-12", CLOSE] == pytest.approx(145)
+    assert df.loc["2018-04-04", TURNOVER] == pytest.approx(11095465)
+
+
+def test_quotes_rtkmp():
+    df = moex.quotes(("RTKMP",))[0]
+
+    assert df.loc["2018-03-13", TURNOVER] == pytest.approx(24716781)
+    assert df.loc["2018-03-13", CLOSE] == pytest.approx(62)
+    assert df.loc["2018-04-11", CLOSE] == pytest.approx(60.3)
+
+
+def test_quotes_lsngp():
+    df = moex.quotes(("LSNGP",))[0]
+
+    assert df.index[0] == pd.Timestamp("2005-08-03")
+    assert df.loc["2014-06-09", CLOSE] == pytest.approx(14.7)
+    assert df.loc["2014-10-28", TURNOVER] == 1132835
+    assert df.loc["2018-09-07", CLOSE] == pytest.approx(86.5)
+    assert df.loc["2018-05-31", TURNOVER] == 24798580
+    assert df.loc["2018-12-07", CLOSE] == pytest.approx(95.82)
+
+
+def test_quotes_lsrg():
+    df = moex.quotes(("LSRG",))[0]
+
+    assert df.index[0] == pd.Timestamp("2007-11-30")
+    assert df.loc["2018-08-07", CLOSE] == pytest.approx(777)
+    assert df.loc["2018-08-10", TURNOVER] == pytest.approx(8626464.5)
+    assert df.loc["2018-09-06", CLOSE] == pytest.approx(660)
+    assert df.loc["2018-08-28", TURNOVER] == 34666629.5

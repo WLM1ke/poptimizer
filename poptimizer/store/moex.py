@@ -1,36 +1,35 @@
 """Менеджеры данных для котировок, индекса и перечня торгуемых бумаг с MOEX."""
-import asyncio
-import functools
-from typing import Tuple
+from concurrent import futures
+from datetime import datetime
+from typing import Optional, Any, List, Dict
 
-import aiomoex
-import pandas as pd
+import apimoex
 
-from poptimizer.store.manager import AbstractManager
-
-# noinspection PyProtectedMember
+from poptimizer.config import POptimizerError
+from poptimizer.store import manager_new
+from poptimizer.store.manager_new import AbstractManager
 from poptimizer.store.utils_new import (
-    DATE,
-    CLOSE,
-    TURNOVER,
+    DB,
+    MISC,
     TICKER,
     REG_NUMBER,
     LOT_SIZE,
+    DATE,
+    OPEN,
+    CLOSE,
+    HIGH,
+    LOW,
+    TURNOVER,
 )
 
-# Данные об акциях хранятся в основной базе
-NAME_SECURITIES = "securities"
+# Наименование данных по акциям в коллекции misc
+SECURITIES = "securities"
 
-# Данные по котировкам хранятся во вложенной базе
-CATEGORY_QUOTES = "quotes"
+# Наименование данных по индексу в коллекции misc
+INDEX = "MCFTRR"
 
-# Данные об индексе хранятся в основной базе
-NAME_INDEX = "MCFTRR"
-
-# Функции для переобразования типов
-FUNC_UNSIGNED = functools.partial(pd.to_numeric, downcast="unsigned")
-FUNC_FLOAT = functools.partial(pd.to_numeric, downcast="float")
-FUNC_DATE = functools.partial(pd.to_datetime, yearfirst=True, format="%Y-%m-%d")
+# Наименование коллекции с котировками
+QUOTES = "quotes"
 
 
 class Securities(AbstractManager):
@@ -41,59 +40,52 @@ class Securities(AbstractManager):
     со временем.
     """
 
-    CREATE_FROM_SCRATCH = True
+    def __init__(self, db=DB) -> None:
+        super().__init__(collection=MISC, db=db, create_from_scratch=True, index=TICKER)
 
-    def __init__(self):
-        super().__init__(NAME_SECURITIES)
-
-    async def _download(self, name: str):
+    def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
+        """Загружает полностью данные о всех торгующихся акциях."""
+        if item != SECURITIES:
+            raise POptimizerError(
+                f"Отсутствуют данные {self._collection.full_name}.{item}"
+            )
         columns = ("SECID", "REGNUMBER", "LOTSIZE")
-        data = await aiomoex.get_board_securities(columns=columns)
-        df = pd.DataFrame(data)[list(columns)]
-        df.columns = [TICKER, REG_NUMBER, LOT_SIZE]
-        df = df.set_index(TICKER)
-        df.loc[:, LOT_SIZE] = df[LOT_SIZE].apply(FUNC_UNSIGNED)
-        return df
+        data = apimoex.get_board_securities(self._session, columns=columns)
+        formatters = dict(
+            SECID=lambda x: (TICKER, x),
+            REGNUMBER=lambda x: (REG_NUMBER, x),
+            LOTSIZE=lambda x: (LOT_SIZE, x),
+        )
+        return manager_new.data_formatter(data, formatters)
 
 
 class Index(AbstractManager):
-    """Котировки индекса полной доходности с учетом российских налогов - MCFTRR.
+    """Котировки индекса полной доходности с учетом российских налогов - MCFTRR."""
 
-    Поддерживается частичная загрузка данных для обновления.
-    """
+    def __init__(self, db=DB) -> None:
+        super().__init__(collection=MISC, db=db)
 
-    REQUEST_PARAMS = dict(columns=("TRADEDATE", "CLOSE"), board="RTSI", market="index")
-
-    def __init__(self):
-        super().__init__(NAME_INDEX)
-
-    async def _download(self, name: str):
-        if self._data[name] is None:
-            return await self._download_all(name)
-        return await self._download_update(name)
-
-    async def _download_all(self, name):
-        """Загрузка всех данных."""
-        data = await aiomoex.get_board_history(name, **self.REQUEST_PARAMS)
-        df = pd.DataFrame(data)
-        return self._clean_df(df)
-
-    @staticmethod
-    def _clean_df(df):
-        df = df.reindex(columns=["TRADEDATE", "CLOSE"])
-        df.columns = [DATE, CLOSE]
-        df.loc[:, DATE] = df[DATE].apply(FUNC_DATE)
-        df.loc[:, CLOSE] = df[CLOSE].apply(FUNC_FLOAT)
-        df.set_index(DATE, inplace=True)
-        return df[CLOSE]
-
-    async def _download_update(self, name):
-        """Загрузка данных с последнего числа в имеющихся данных."""
-        old_df = self._data[name].value
-        start = str(old_df.index[-1].date())
-        data = await aiomoex.get_board_history(name, start=start, **self.REQUEST_PARAMS)
-        df = pd.DataFrame(data)
-        return self._clean_df(df)
+    def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
+        """Поддерживается частичная загрузка данных для обновления."""
+        if item != INDEX:
+            raise POptimizerError(
+                f"Отсутствуют данные {self._collection.full_name}.{item}"
+            )
+        if last_index is not None:
+            last_index = last_index.date()
+        data = apimoex.get_board_history(
+            self._session,
+            start=last_index,
+            security=INDEX,
+            columns=("TRADEDATE", "CLOSE"),
+            board="RTSI",
+            market="index",
+        )
+        formatters = dict(
+            TRADEDATE=lambda x: (DATE, datetime.strptime(x, "%Y-%m-%d")),
+            CLOSE=lambda x: (CLOSE, x),
+        )
+        return manager_new.data_formatter(data, formatters)
 
 
 class Quotes(AbstractManager):
@@ -103,67 +95,70 @@ class Quotes(AbstractManager):
     котировок для всех тикеров.
     """
 
-    def __init__(self, tickers: Tuple[str, ...]):
-        super().__init__(tickers, CATEGORY_QUOTES)
+    def __init__(self, db=DB) -> None:
+        super().__init__(collection=QUOTES, db=db)
 
-    async def _download(self, name: str):
-        """Загружает полностью или только обновление по ценам закрытия и оборотам в рублях."""
-        if self._data[name] is None:
-            return await self._download_all(name)
-        return await self._download_update(name)
+    def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
+        """Загружает полностью или только обновление по ценам HLOC и оборотам в рублях."""
+        if last_index is None:
+            aliases = self._find_aliases(item)
+            data = self._download_many(aliases)
+        else:
+            data = apimoex.get_market_candles(
+                self._session,
+                item,
+                start=last_index.date(),
+                end=self.LAST_HISTORY_DATE.date(),
+            )
+        return self._formatter(data)
 
-    async def _download_all(self, name):
-        """Загружает данные с учетом всех старых тикеров и изменения режима торгов."""
-        aliases = await self._find_aliases(name)
-        aws = [self._download_one_ticker(ticker) for ticker in aliases]
-        dfs = await asyncio.gather(*aws)
-        df = pd.concat(dfs, axis=0)
-        df = self._clean_df(df)
-        return df.sort_index()
-
-    @staticmethod
-    async def _find_aliases(ticker):
+    def _find_aliases(self, ticker: str) -> List[str]:
         """Ищет все тикеры с эквивалентным регистрационным номером."""
-        securities = await Securities().get()
+        securities = Securities(self._collection.database.name)[SECURITIES]
         number = securities.at[ticker, REG_NUMBER]
-        results = await aiomoex.find_securities(number)
-        return [result["secid"] for result in results if result["regnumber"] == number]
+        results = apimoex.find_securities(self._session, number)
+        return [row["secid"] for row in results if row["regnumber"] == number]
 
-    async def _download_one_ticker(self, ticker):
-        """Загружает котировки для одного тикера во всех режимах торгов."""
-        data = await aiomoex.get_market_candles(ticker, end=self._last_history_date)
-        return pd.DataFrame(data)
+    def _download_many(self, aliases: List[str]) -> List[Dict[str, Any]]:
+        with futures.ThreadPoolExecutor(max_workers=len(aliases)) as executor:
+            rez = [
+                executor.submit(
+                    apimoex.get_market_candles,
+                    self._session,
+                    ticker,
+                    end=self.LAST_HISTORY_DATE.date(),
+                )
+                for ticker in aliases
+            ]
+            data = []
+            for future in rez:
+                data.extend(future.result())
+        return self._clean_up(data)
 
     @staticmethod
-    def _clean_df(df):
-        """Оставляет столбцы с ценами закрытия и объемами торгов, сортирует и приводит к корректному
-        формату."""
-        if not df.empty:
-            df = df.loc[:, ["begin", "close", "value"]]
-        else:
-            df = df.reindex(columns=["begin", "close", "value"])
-        df.columns = [DATE, CLOSE, TURNOVER]
-        df.loc[:, DATE] = df[DATE].apply(FUNC_DATE)
-        df.loc[:, CLOSE] = df[CLOSE].apply(FUNC_FLOAT)
-        df.loc[:, TURNOVER] = df[TURNOVER].apply(FUNC_FLOAT)
-        df = df.set_index(DATE)
-        # Для старых котировок иногда бывали параллельны торги для нескольких тикеров одной бумаги
-        if df.index.is_unique:
-            return df
-        # Для таких случаев выбираем торги с большим оборотом
-        df.reset_index(inplace=True)
-        df = df.loc[df.groupby(DATE)[TURNOVER].idxmax()]
-        return df.set_index(DATE)
+    def _clean_up(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Преобразование данных для бумаг, которые торговались под разными тикерами и в разных режимах.
 
-    async def _download_update(self, name):
-        """Загружает данные с последнего имеющегося значения до конца истории."""
-        old_df = self._data[name].value
-        if old_df.empty:
-            start = None
-        else:
-            start = str(old_df.index[-1].date())
-        data = await aiomoex.get_market_candles(
-            name, start=start, end=self._last_history_date
+        Если торги шли в нескольких режимах, то данные могут быть не упорядочены.
+
+        Иногда бывали параллельно торги для нескольких тикеров одной бумаги. Для таких случаев выбираем
+        торги с большим оборотом.
+        """
+        data.sort(key=lambda x: (x["begin"], -x["value"]))
+        data_clean = []
+        for row in data:
+            if not data_clean or data_clean[-1]["begin"] != row["begin"]:
+                data_clean.append(row)
+        return data_clean
+
+    @staticmethod
+    def _formatter(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        formatters = dict(
+            begin=lambda x: (DATE, datetime.strptime(x, "%Y-%m-%d %H:%M:%S")),
+            open=lambda x: (OPEN, x),
+            close=lambda x: (CLOSE, x),
+            high=lambda x: (HIGH, x),
+            low=lambda x: (LOW, x),
+            value=lambda x: (TURNOVER, x),
         )
-        df = pd.DataFrame(data)
-        return self._clean_df(df)
+        return manager_new.data_formatter(data, formatters)

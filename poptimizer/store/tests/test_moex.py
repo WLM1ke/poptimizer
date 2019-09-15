@@ -2,8 +2,8 @@ import pandas as pd
 import pytest
 
 from poptimizer.config import POptimizerError
-from poptimizer.store import moex_new
-from poptimizer.store.moex_new import SECURITIES, INDEX
+from poptimizer.store import moex
+from poptimizer.store.moex import SECURITIES, INDEX
 from poptimizer.store.mongo import MONGO_CLIENT
 from poptimizer.store.utils_new import REG_NUMBER, LOT_SIZE, TICKER, CLOSE, TURNOVER
 
@@ -16,7 +16,7 @@ def manager_in_clean_test_db():
 
 
 def test_securities():
-    mng = moex_new.Securities(db="test")
+    mng = moex.Securities(db="test")
     df = mng[SECURITIES]
     assert len(df.index) > 250
     assert all(df.columns == [REG_NUMBER, LOT_SIZE])
@@ -43,7 +43,7 @@ def test_securities():
 
 
 def test_securities_wrong_id():
-    mng = moex_new.Securities(db="test")
+    mng = moex.Securities(db="test")
     with pytest.raises(POptimizerError) as error:
         # noinspection PyStatementEffect
         mng["QQQ"]
@@ -51,7 +51,7 @@ def test_securities_wrong_id():
 
 
 def test_index():
-    mng = moex_new.Index(db="test")
+    mng = moex.Index(db="test")
     df = mng[INDEX]
     assert isinstance(df, pd.DataFrame)
     assert len(df) > 3750
@@ -63,7 +63,7 @@ def test_index():
 
 
 def test_index_wrong_id():
-    mng = moex_new.Index(db="test")
+    mng = moex.Index(db="test")
     with pytest.raises(POptimizerError) as error:
         # noinspection PyStatementEffect
         mng["QQQ"]
@@ -71,7 +71,7 @@ def test_index_wrong_id():
 
 
 def test_index_download_update():
-    mng = moex_new.Index(db="test")
+    mng = moex.Index(db="test")
     # noinspection PyProtectedMember
     data = mng._download(INDEX, pd.Timestamp("2019-09-13"))
     assert isinstance(data, list)
@@ -80,7 +80,7 @@ def test_index_download_update():
 
 
 def test_quotes_create():
-    mng = moex_new.Quotes(db="test")
+    mng = moex.Quotes(db="test")
     df = mng["MSTT"]
 
     assert isinstance(df, pd.DataFrame)
@@ -94,7 +94,7 @@ def test_quotes_create():
 
 
 def test_quotes_download_update():
-    mng = moex_new.Quotes(db="test")
+    mng = moex.Quotes(db="test")
     # noinspection PyProtectedMember
     data = mng._download("MSTT", last_index=pd.Timestamp("2019-09-13"))
     assert len(data)
@@ -103,14 +103,14 @@ def test_quotes_download_update():
 
 
 def test_quotes_find_aliases():
-    mng = moex_new.Quotes(db="test")
+    mng = moex.Quotes(db="test")
     # noinspection PyProtectedMember
     assert set(mng._find_aliases("UPRO")) == {"UPRO", "EONR", "OGK4"}
 
 
 def test_quotes_no_data():
     """Некоторые бумаги не имеют котировок."""
-    mng = moex_new.Quotes(db="test")
+    mng = moex.Quotes(db="test")
     for ticker in ("KSGR", "KMTZ", "TRFM"):
         df = mng[ticker]
         assert isinstance(df, pd.DataFrame)
@@ -119,7 +119,7 @@ def test_quotes_no_data():
 
 def test_not_unique():
     """Некоторые бумаги со старой историей торговались одновременно под несколькими тикерами."""
-    mng = moex_new.Quotes(db="test")
+    mng = moex.Quotes(db="test")
     for ticker in ("PRMB", "OGKB"):
         df = mng[ticker]
         assert isinstance(df, pd.DataFrame)
