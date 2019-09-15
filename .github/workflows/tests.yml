@@ -24,7 +24,7 @@ jobs:
         brew install mongodb-community@4.2
     - name: Test with pytest
       run: |
-        pytest tests -v --cov=poptimizer --cov-report=term-missing --cov-report=xml --setup-show
+        pytest poptimizer -v --cov=poptimizer --cov-report=term-missing --cov-report=xml --setup-show
     - name: Upload coverage to Codecov
       run: |
         pip install codecov
