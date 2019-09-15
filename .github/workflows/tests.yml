@@ -18,6 +18,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+    - mane: Install Chromium
+      run:
+        pyppeteer-install
     - name: Install MongoDB
       run: |
         brew tap mongodb/brew
