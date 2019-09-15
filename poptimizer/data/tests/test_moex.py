@@ -83,10 +83,10 @@ def test_multi_tickers():
 
 
 def test_prices():
-    df = moex.prices(("AKRN", "GMKN", "KBTK"), pd.Timestamp("2018-12-06"))
+    df = moex.prices(("AKRN", "GMKN", "GTSS", "KBTK"), pd.Timestamp("2018-12-06"))
     assert isinstance(df, pd.DataFrame)
     assert len(df) > 3000
-    assert df.shape[1] == 3
+    assert df.shape[1] == 4
     assert df.index[-1] == pd.Timestamp("2018-12-06")
 
     assert df.loc["2006-10-20", "AKRN"] == pytest.approx(834.93)
@@ -98,6 +98,10 @@ def test_prices():
     assert df.loc["2018-03-12", "KBTK"] == pytest.approx(145)
     assert df.loc["2010-05-24", "KBTK"] == pytest.approx(180)
 
+    df = df["GTSS"]
+    df.dropna(axis=0, inplace=True)
+    assert df.empty
+
 
 def test_zero_prices():
     df = moex.prices(("AKRN", "KAZTP"), pd.Timestamp("2018-12-14"))
@@ -106,10 +110,10 @@ def test_zero_prices():
 
 
 def test_turnovers():
-    df = moex.turnovers(("PMSBP", "RTKM"), pd.Timestamp("2018-12-05"))
+    df = moex.turnovers(("PMSBP", "GTSS", "RTKM"), pd.Timestamp("2018-12-05"))
     assert isinstance(df, pd.DataFrame)
     assert len(df) > 3000
-    assert df.shape[1] == 2
+    assert df.shape[1] == 3
     assert df.index[-1] == pd.Timestamp("2018-12-05")
 
     assert df.loc["2003-10-08", "PMSBP"] == pytest.approx(0)
@@ -117,6 +121,8 @@ def test_turnovers():
 
     assert df.loc["2003-10-09", "RTKM"] == pytest.approx(1485834851.93)
     assert df.loc["2018-12-05", "RTKM"] == pytest.approx(117397440.3)
+
+    assert (df["GTSS"] == 0).all()
 
 
 def test_quotes_akrn():

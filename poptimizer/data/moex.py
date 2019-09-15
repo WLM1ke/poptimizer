@@ -76,7 +76,13 @@ def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
         Цены закрытия.
     """
     quotes_list = quotes(tickers)
-    df = pd.concat([df[CLOSE] for df in quotes_list], axis=1)
+    df = pd.concat(
+        [
+            df[CLOSE] if not df.empty else pd.DataFrame(columns=[CLOSE])
+            for df in quotes_list
+        ],
+        axis=1,
+    )
     df = df.loc[:last_date]
     df.columns = tickers
     return df.replace(to_replace=[np.nan, 0], method="ffill")
@@ -95,7 +101,13 @@ def turnovers(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
         Обороты.
     """
     quotes_list = quotes(tickers)
-    df = pd.concat([df[TURNOVER] for df in quotes_list], axis=1)
+    df = pd.concat(
+        [
+            df[TURNOVER] if not df.empty else pd.DataFrame(columns=[TURNOVER])
+            for df in quotes_list
+        ],
+        axis=1,
+    )
     df = df.loc[:last_date]
     df.columns = tickers
     return df.fillna(0, axis=0)
