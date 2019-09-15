@@ -9,6 +9,12 @@ _start_year = 2018
 _description = "Оптимизация долгосрочного портфеля акций"
 _badges = [
     {
+        "image": "https://github.com/WLM1ke/poptimizer/workflows/tests/badge.svg",
+        "target": "https://github.com/WLM1ke/poptimizer/actions",
+        "height": "20",
+        "alt": "Code coverage status",
+    },
+    {
         "image": "https://codecov.io/gh/WLM1ke/poptimizer/branch/master/graph/badge.svg",
         "target": "https://codecov.io/gh/WLM1ke/poptimizer",
         "height": "20",
@@ -65,7 +71,7 @@ html_theme_options = {
     "github_button": False,
     "github_type": "",
     "github_banner": True,
-    "travis_button": True,
+    "travis_button": False,
     "badges": _badges,
     "sidebar_collapse": False,
 }
