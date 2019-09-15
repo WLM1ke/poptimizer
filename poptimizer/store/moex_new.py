@@ -6,13 +6,26 @@ from typing import Optional, Any, List, Dict
 import apimoex
 
 from poptimizer.config import POptimizerError
-from poptimizer.store import utils_new, manager_new
+from poptimizer.store import manager_new
 from poptimizer.store.manager_new import AbstractManager
+from poptimizer.store.utils_new import (
+    DB,
+    MISC,
+    TICKER,
+    REG_NUMBER,
+    LOT_SIZE,
+    DATE,
+    OPEN,
+    CLOSE,
+    HIGH,
+    LOW,
+    TURNOVER,
+)
 
-# Наименование данных по акциям
+# Наименование данных по акциям в коллекции misc
 SECURITIES = "securities"
 
-# Наименование данных по индексу
+# Наименование данных по индексу в коллекции misc
 INDEX = "MCFTRR"
 
 # Наименование коллекции с котировками
@@ -27,13 +40,8 @@ class Securities(AbstractManager):
     со временем.
     """
 
-    def __init__(self, db=utils_new.DB) -> None:
-        super().__init__(
-            collection=utils_new.MISC,
-            db=db,
-            create_from_scratch=True,
-            index=utils_new.TICKER,
-        )
+    def __init__(self, db=DB) -> None:
+        super().__init__(collection=MISC, db=db, create_from_scratch=True, index=TICKER)
 
     def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
         """Загружает полностью данные о всех торгующихся акциях."""
@@ -44,9 +52,9 @@ class Securities(AbstractManager):
         columns = ("SECID", "REGNUMBER", "LOTSIZE")
         data = apimoex.get_board_securities(self._session, columns=columns)
         formatters = dict(
-            SECID=lambda x: (utils_new.TICKER, x),
-            REGNUMBER=lambda x: (utils_new.REG_NUMBER, x),
-            LOTSIZE=lambda x: (utils_new.LOT_SIZE, x),
+            SECID=lambda x: (TICKER, x),
+            REGNUMBER=lambda x: (REG_NUMBER, x),
+            LOTSIZE=lambda x: (LOT_SIZE, x),
         )
         return manager_new.data_formatter(data, formatters)
 
@@ -54,12 +62,8 @@ class Securities(AbstractManager):
 class Index(AbstractManager):
     """Котировки индекса полной доходности с учетом российских налогов - MCFTRR."""
 
-    REQUEST_PARAMS = dict(
-        security=INDEX, columns=("TRADEDATE", "CLOSE"), board="RTSI", market="index"
-    )
-
-    def __init__(self, db=utils_new.DB) -> None:
-        super().__init__(collection=utils_new.MISC, db=db)
+    def __init__(self, db=DB) -> None:
+        super().__init__(collection=MISC, db=db)
 
     def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
         """Поддерживается частичная загрузка данных для обновления."""
@@ -67,12 +71,19 @@ class Index(AbstractManager):
             raise POptimizerError(
                 f"Отсутствуют данные {self._collection.full_name}.{item}"
             )
+        if last_index is not None:
+            last_index = last_index.date()
         data = apimoex.get_board_history(
-            self._session, start=last_index.date(), **self.REQUEST_PARAMS
+            self._session,
+            start=last_index,
+            security=INDEX,
+            columns=("TRADEDATE", "CLOSE"),
+            board="RTSI",
+            market="index",
         )
         formatters = dict(
-            TRADEDATE=lambda x: (utils_new.DATE, datetime.strptime(x, "%Y-%m-%d")),
-            CLOSE=lambda x: (utils_new.CLOSE, x),
+            TRADEDATE=lambda x: (DATE, datetime.strptime(x, "%Y-%m-%d")),
+            CLOSE=lambda x: (CLOSE, x),
         )
         return manager_new.data_formatter(data, formatters)
 
@@ -81,47 +92,38 @@ class Quotes(AbstractManager):
     """Информация о котировках.
 
     Если у акции менялся тикер, но сохранялся регистрационный номер, то собирается полная история
-    котировок для всех тикеров в режиме TQBR.
+    котировок для всех тикеров.
     """
 
-    def __init__(self, db=utils_new.DB) -> None:
+    def __init__(self, db=DB) -> None:
         super().__init__(collection=QUOTES, db=db)
 
     def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
-        """Загружает полностью или только обновление по ценам закрытия и оборотам в рублях."""
+        """Загружает полностью или только обновление по ценам HLOC и оборотам в рублях."""
         if last_index is None:
             aliases = self._find_aliases(item)
+            data = self._download_many(aliases)
         else:
-            aliases = [item]
-        if len(aliases) == 1:
-            data = apimoex.get_board_candles(
+            data = apimoex.get_market_candles(
                 self._session,
                 item,
                 start=last_index.date(),
                 end=self.LAST_HISTORY_DATE.date(),
             )
-        else:
-            data = self._download_many(aliases)
         return self._formatter(data)
 
     def _find_aliases(self, ticker: str) -> List[str]:
-        """Ищет все тикеры с эквивалентным регистрационным номером в режиме TQBR."""
+        """Ищет все тикеры с эквивалентным регистрационным номером."""
         securities = Securities(self._collection.database.name)[SECURITIES]
-        number = securities.at[ticker, utils_new.REG_NUMBER]
-        results = apimoex.find_securities(
-            self._session, number, columns=("secid", "regnumber", "primary_boardid")
-        )
-        return [
-            row["secid"]
-            for row in results
-            if row["regnumber"] == number and row["primary_boardid"] == "TQBR"
-        ]
+        number = securities.at[ticker, REG_NUMBER]
+        results = apimoex.find_securities(self._session, number)
+        return [row["secid"] for row in results if row["regnumber"] == number]
 
     def _download_many(self, aliases: List[str]) -> List[Dict[str, Any]]:
         with futures.ThreadPoolExecutor(max_workers=len(aliases)) as executor:
             rez = [
                 executor.submit(
-                    apimoex.get_board_candles,
+                    apimoex.get_market_candles,
                     self._session,
                     ticker,
                     end=self.LAST_HISTORY_DATE.date(),
@@ -131,22 +133,32 @@ class Quotes(AbstractManager):
             data = []
             for future in rez:
                 data.extend(future.result())
-        data.sort(key=lambda x: x["begin"])
-        return data
+        return self._clean_up(data)
+
+    @staticmethod
+    def _clean_up(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Преобразование данных для бумаг, которые торговались под разными тикерами и в разных режимах.
+
+        Если торги шли в нескольких режимах, то данные могут быть не упорядочены.
+
+        Иногда бывали параллельно торги для нескольких тикеров одной бумаги. Для таких случаев выбираем
+        торги с большим оборотом.
+        """
+        data.sort(key=lambda x: (x["begin"], -x["value"]))
+        data_clean = []
+        for row in data:
+            if not data_clean or data_clean[-1]["begin"] != row["begin"]:
+                data_clean.append(row)
+        return data_clean
 
     @staticmethod
     def _formatter(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         formatters = dict(
-            open=lambda x: (utils_new.OPEN, x),
-            close=lambda x: (utils_new.CLOSE, x),
-            high=lambda x: (utils_new.HIGH, x),
-            low=lambda x: (utils_new.LOW, x),
-            value=lambda x: (utils_new.TURNOVER, x),
-            volume=lambda x: (utils_new.AMOUNT, x),
-            begin=lambda x: (utils_new.DATE, datetime.strptime(x, "%Y-%m-%d %H:%M:%S")),
-            end=lambda x: (
-                utils_new.DATE_END,
-                datetime.strptime(x, "%Y-%m-%d %H:%M:%S"),
-            ),
+            begin=lambda x: (DATE, datetime.strptime(x, "%Y-%m-%d %H:%M:%S")),
+            open=lambda x: (OPEN, x),
+            close=lambda x: (CLOSE, x),
+            high=lambda x: (HIGH, x),
+            low=lambda x: (LOW, x),
+            value=lambda x: (TURNOVER, x),
         )
         return manager_new.data_formatter(data, formatters)

@@ -75,9 +75,11 @@ class AbstractManager(ABC):
                 doc = self.create(item)
             else:
                 doc = self.update(doc)
-        df = pd.DataFrame(doc["data"]).set_index(self._index)
-        self._validate_index(item, df)
-        return df
+        if doc["data"]:
+            df = pd.DataFrame(doc["data"]).set_index(self._index)
+            self._validate_index(item, df)
+            return df
+        return pd.DataFrame()
 
     def _validate_index(self, item: str, df: pd.DataFrame):
         """Проверяет индекс данных с учетом настроек."""
