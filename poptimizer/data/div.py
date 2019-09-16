@@ -1,7 +1,6 @@
 """Агрегация данных по дивидендам."""
-import asyncio
 import functools
-from typing import Tuple, List
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -15,19 +14,6 @@ from poptimizer.store import DATE
 __all__ = ["log_total_returns", "div_ex_date_prices"]
 
 
-async def _dividends(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
-    """Информация о дивидендах для заданных тикеров.
-
-    :param tickers:
-        Перечень тикеров, для которых нужна информация.
-    :return:
-        Список с дивидендами.
-    """
-    async with store.Client() as client:
-        db = client.dividends(tickers)
-        return await db.get()
-
-
 def dividends_all(tickers: tuple) -> pd.DataFrame:
     """Дивиденды по заданным тикерам после уплаты налогов.
 
@@ -39,11 +25,9 @@ def dividends_all(tickers: tuple) -> pd.DataFrame:
     :return:
         Дивиденды.
     """
-    div_list = asyncio.run(_dividends(tickers))
-    if isinstance(div_list, list):
-        df = pd.concat([df for df in div_list], axis=1)
-    else:
-        df = div_list.to_frame()
+    manager = store.Dividends()
+    df = pd.concat([manager[ticker] for ticker in tickers], axis=1)
+    df.columns = tickers
     return df.fillna(0, axis=0) * AFTER_TAX
 
 

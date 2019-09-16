@@ -1,14 +1,14 @@
 import pandas as pd
 import pytest
 
-from poptimizer.store import dividends_new
+from poptimizer.store import dividends
 from poptimizer.store.mongo import MONGO_CLIENT
 
 
 @pytest.fixture("module", name="manager")
 def manager_in_clean_test_db():
     MONGO_CLIENT.drop_database("test")
-    yield dividends_new.Dividends(db="test")
+    yield dividends.Dividends(db="test")
     MONGO_CLIENT.drop_database("test")
 
 

@@ -1,44 +1,44 @@
 """Менеджер данных для дивидендов."""
-import sqlite3
-from typing import Tuple
+from typing import Optional, Any, List, Dict
 
-import pandas as pd
-from pandas.io.sql import DatabaseError
+import pymongo
 
-from poptimizer.config import DATA_PATH, STATS_START
-from poptimizer.store.manager import AbstractManager
-from poptimizer.store.utils_new import DATE
+from poptimizer.store import manager_new
+from poptimizer.store.manager_new import AbstractManager
+from poptimizer.store.utils_new import DATE, DB
 
-# Данные по дивидендам хранятся во вложенной базе
-CATEGORY_DIVIDENDS = "dividends"
+# База и коллекция с источником данных по дивидендам
+SOURCE_DB = "source"
 
-
-SQLITE = str(DATA_PATH / "dividends.db")
+# Наименование коллекции в источнике и основной базе
+COLLECTION = "dividends"
 
 
 class Dividends(AbstractManager):
-    """Дивиденды и время закрытия реестра для акций."""
+    """Дивиденды и время закрытия реестра для акций.
+
+    Данные создаются с нуля, так как могут быть ретроспективные исправления ошибок.
+    """
 
     CREATE_FROM_SCRATCH = True
 
-    def __init__(self, tickers: Tuple[str, ...]):
-        super().__init__(tickers, CATEGORY_DIVIDENDS)
+    def __init__(self, db=DB) -> None:
+        super().__init__(collection=COLLECTION, db=db, create_from_scratch=True)
 
-    async def _download(self, name: str):
+    def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
         """Загружает полностью данные по дивидендам.
 
-        Загрузка осуществляется из обновляемой в ручную SQLite базы данных по дивидендам."""
-        con = sqlite3.connect(SQLITE)
-        query = f"SELECT DATE, DIVIDENDS FROM {name}"
-        try:
-            df = pd.read_sql_query(query, con, index_col=DATE, parse_dates=[DATE])
-        except DatabaseError:
-            con.close()
-            return pd.Series(name=name, index=pd.DatetimeIndex([], name=DATE))
-        else:
-            con.close()
-            df = df[df.index >= STATS_START]
-            # Несколько выплат в одну дату объединяются
-            df = df.groupby(DATE).sum()
-            df.columns = [name]
-            return df[name]
+        Загрузка осуществляется из обновляемой в ручную MongoDB базы данных по дивидендам."""
+        source = self._collection.database.client[SOURCE_DB][COLLECTION]
+        data = list(
+            source.aggregate(
+                [
+                    {"$match": {"ticker": item}},
+                    {"$project": {"_id": False, "date": True, "dividends": True}},
+                    {"$group": {"_id": "$date", item: {"$sum": "$dividends"}}},
+                    {"$sort": {"_id": pymongo.ASCENDING}},
+                ]
+            )
+        )
+        formatter = dict(_id=lambda x: (DATE, x))
+        return manager_new.data_formatter(data, formatter)
