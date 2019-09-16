@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 
 from poptimizer import store
-from poptimizer.config import AFTER_TAX
+from poptimizer.config import AFTER_TAX, STATS_START
 from poptimizer.data import div
-from poptimizer.store import TICKER, DIVIDENDS, DIVIDENDS_START
+from poptimizer.store import TICKER, DIVIDENDS
 
 __all__ = ["smart_lab_status", "dividends_status"]
 
@@ -84,7 +84,7 @@ def dividends_status(ticker: str):
             result.append(df)
             continue
         if name != "SmartLab":
-            df = df[df.index >= pd.Timestamp(DIVIDENDS_START)]
+            df = df[df.index >= pd.Timestamp(STATS_START)]
         else:
             df = df[df[TICKER] == ticker][DIVIDENDS]
         df.name = name

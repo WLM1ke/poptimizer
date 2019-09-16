@@ -5,15 +5,13 @@ from typing import Tuple
 import pandas as pd
 from pandas.io.sql import DatabaseError
 
-from poptimizer.config import DATA_PATH
+from poptimizer.config import DATA_PATH, STATS_START
 from poptimizer.store.manager import AbstractManager
 from poptimizer.store.utils_new import DATE
 
 # Данные по дивидендам хранятся во вложенной базе
 CATEGORY_DIVIDENDS = "dividends"
 
-# База содержит данные с начала 2010 года, но постепенно срок будет сдвигаться к началу режима TQBR
-DIVIDENDS_START = pd.Timestamp("2010-02-01")
 
 SQLITE = str(DATA_PATH / "dividends.db")
 
@@ -39,7 +37,7 @@ class Dividends(AbstractManager):
             return pd.Series(name=name, index=pd.DatetimeIndex([], name=DATE))
         else:
             con.close()
-            df = df[df.index >= DIVIDENDS_START]
+            df = df[df.index >= STATS_START]
             # Несколько выплат в одну дату объединяются
             df = df.groupby(DATE).sum()
             df.columns = [name]
