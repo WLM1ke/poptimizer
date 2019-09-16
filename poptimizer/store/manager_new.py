@@ -108,7 +108,10 @@ class AbstractManager(ABC):
         """
         item = doc["_id"]
         data = doc["data"]
-        last_index = data[-1][self._index]
+        if data:
+            last_index = data[-1][self._index]
+        else:
+            last_index = None
         logging.info(f"Обновление данных {self._collection.full_name}.{item}")
         data_new = self._download(item, last_index)
         self._validate_new(item, data, data_new)
