@@ -4,6 +4,7 @@ from hyperopt import hp
 from hyperopt.pyll import Apply
 
 from poptimizer.config import POptimizerError
+from poptimizer.data import div
 from poptimizer.ml import cv, examples
 from poptimizer.portfolio import portfolio
 
@@ -25,6 +26,12 @@ PARAMS = {
         "random_strength": 1,
     },
 }
+
+
+@pytest.fixture(scope="function", autouse=True)
+def set_stats_start(monkeypatch):
+    monkeypatch.setattr(div, "STATS_START", pd.Timestamp("2010-01-01"))
+    yield
 
 
 def test_log_space():
@@ -130,9 +137,6 @@ def test_check_model_bounds_upper(capsys):
     assert "random_strength" in captured.out
     assert "bagging_temperature" in captured.out
 
-    assert "MAX_DEPTH" in captured.out
-    assert str(cv.MAX_DEPTH + 1) in captured.out
-
 
 def test_make_model_params():
     data_params = (
@@ -179,12 +183,12 @@ def test_valid_model():
 
     assert isinstance(result, dict)
     assert len(result) == 8
-    assert result["loss"] == pytest.approx(0.133_282_026_146_379_88)
+    assert result["loss"] == pytest.approx(-0.153_658_153_446_524_8)
     assert result["status"] == "ok"
-    assert result["std"] == pytest.approx(0.160_266_474_862_264_9)
-    assert result["r2"] == pytest.approx(-0.078_899_677_891_041_35)
-    assert result["ev"] == pytest.approx(-0.031_389_543_057_242_62)
-    assert result["r"] == pytest.approx(-0.133_282_026_146_379_88)
+    assert result["std"] == pytest.approx(0.156_756_053_523_192_94)
+    assert result["r2"] == pytest.approx(-0.033_365_936_520_078_02)
+    assert result["ev"] == pytest.approx(0.022_508_165_032_627_98)
+    assert result["r"] == pytest.approx(0.153_658_153_446_524_8)
     assert result["data"] == PARAMS["data"]
     for key, value in PARAMS["model"].items():
         assert result["model"][key] == value
@@ -267,23 +271,23 @@ def test_optimize_hyper(monkeypatch, capsys):
 def test_find_better_model(monkeypatch, capsys):
     monkeypatch.setattr(cv, "MAX_SEARCHES", 2)
     monkeypatch.setattr(cv, "MAX_DEPTH", 7)
-    pos = dict(LSNGP=10, KZOS=20, GMKN=30)
+    pos = dict(LSNGP=10, KZOS=20, GMKN=30, LKOH=10)
     port = portfolio.Portfolio(pd.Timestamp("2018-12-19"), 100, pos)
     cv.find_better_model(port, PARAMS)
     captured = capsys.readouterr()
     assert "Базовая модель" in captured.out
     assert "Найденная модель" in captured.out
-    assert "ЛУЧШАЯ МОДЕЛЬ - Базовая модель" in captured.out
+    assert "ЛУЧШАЯ МОДЕЛЬ - Найденная модель" in captured.out
 
 
 def test_find_better_model_fake_base(monkeypatch, capsys):
     monkeypatch.setattr(cv, "MAX_SEARCHES", 2)
     monkeypatch.setattr(cv, "MAX_DEPTH", 7)
     monkeypatch.setattr(
-        cv, "print_result", lambda x, y, z: 1 if x == "Найденная модель" else 0
+        cv, "print_result", lambda x, y, z: 1 if x == "Базовая модель" else 0
     )
     pos = dict(LSNGP=10, KZOS=20, GMKN=30)
     port = portfolio.Portfolio(pd.Timestamp("2018-12-19"), 100, pos)
     cv.find_better_model(port)
     captured = capsys.readouterr()
-    assert "ЛУЧШАЯ МОДЕЛЬ - Найденная модель" in captured.out
+    assert "ЛУЧШАЯ МОДЕЛЬ - Базовая модель" in captured.out
