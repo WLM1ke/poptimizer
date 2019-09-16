@@ -1,5 +1,5 @@
 """Признак - тикер."""
-from typing import Tuple
+from typing import Tuple, List
 
 import pandas as pd
 
@@ -18,7 +18,7 @@ class Ticker(AbstractFeature):
         super().__init__(tickers, last_date, params)
 
     @staticmethod
-    def is_categorical(params):
+    def is_categorical(params) -> List[bool]:
         """Категориальный признак."""
         return [True]
 
