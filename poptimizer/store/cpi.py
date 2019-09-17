@@ -1,11 +1,12 @@
 """Менеджер данных по потребительской инфляции."""
-from typing import Any, Optional
+from typing import Any, Optional, List, Dict
 
 import pandas as pd
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import utils_new
 from poptimizer.store.manager_new import AbstractManager
+from poptimizer.store.utils_new import DB, MISC
 
 # Наименование данных по инфляции
 CPI = "CPI"
@@ -27,10 +28,10 @@ class Macro(AbstractManager):
     другая база.
     """
 
-    def __init__(self, db=utils_new.DB) -> None:
-        super().__init__(db=db, collection=utils_new.MISC, validate_last=False)
+    def __init__(self, db=DB) -> None:
+        super().__init__(db=db, collection=MISC, validate_last=False)
 
-    def _download(self, item: str, last_index: Optional[Any]):
+    def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
         """Загружает полностью данные по инфляции с сайта ФСГС."""
         if item != CPI:
             raise POptimizerError(

@@ -1,7 +1,7 @@
 """Парсер html-таблиц."""
 import re
 from dataclasses import dataclass
-from typing import Callable, List
+from typing import Callable, List, Iterator, Dict, Any
 
 import bs4
 import pandas as pd
@@ -16,17 +16,18 @@ DATE_PATTERN = r"\d{2}\.\d{2}\.\d{4}"
 class DataColumn:
     """Описание столбца с данными.
 
-    Используется для выбора определенных столбцов из html-таблицы для построения DataFrame, проверки
-    ожидаемых значений (обычно в заголовках и нижней части таблицы) и преобразования из строчных значений
-    в нужный формат.
+    Используется для выбора определенных столбцов из html-таблицы, проверки ожидаемых значений (обычно в
+    заголовках и нижней части таблицы) и преобразования из строк в нужный формат.
     """
 
+    # Наименование столбца
+    name: str
     # Номер столбца
     index: int
     # Словарь с номером строки и ожидаемым значением для проверки - часть текста ячейки
     validation_dict: dict
     # Функция для преобразования текстового значения из html в нужный формат pd.DataFrame
-    parser_func: Callable
+    parser_func: Callable[[str], Any]
 
 
 def date_parser(data: str):
@@ -62,7 +63,7 @@ class HTMLTableParser:
         self._parsed_table = []
 
     @property
-    def parsed_table(self):
+    def parsed_table(self) -> List[List[str]]:
         """html-таблица в виде списка списков ячеек."""
         if self._parsed_table:
             return self._parsed_table
@@ -79,7 +80,7 @@ class HTMLTableParser:
             col_pos = 0
         return self._parsed_table
 
-    def _find_empty_cell(self, row_pos, col_pos):
+    def _find_empty_cell(self, row_pos: int, col_pos: int) -> int:
         """Ищет первую незаполненную ячейку в ряду и возвращает ее координату."""
         parse_table = self._parsed_table
         if row_pos >= len(parse_table):
@@ -89,13 +90,15 @@ class HTMLTableParser:
             col_pos += 1
         return col_pos
 
-    def _insert_cells(self, value, row, col, row_span, col_span):
+    def _insert_cells(
+        self, value: str, row: int, col: int, row_span: int, col_span: int
+    ) -> None:
         """Заполняет таблицу значениями с учетом rowspan и colspan ячейки."""
         for row_pos in range(row, row + row_span):
             for col_pos in range(col, col + col_span):
                 self._insert_cell(value, row_pos, col_pos)
 
-    def _insert_cell(self, value, row_pos, col_pos):
+    def _insert_cell(self, value: str, row_pos: int, col_pos: int) -> None:
         """Заполняет значение, при необходимости расширяя таблицу."""
         parse_table = self._parsed_table
         while row_pos >= len(parse_table):
@@ -105,27 +108,26 @@ class HTMLTableParser:
             row.append(None)
         row[col_pos] = value
 
-    def make_df(
+    def get_formatted_data(
         self, columns: List[DataColumn], drop_header: int = 0, drop_footer: int = 0
-    ) -> pd.DataFrame:
+    ) -> List[Dict[str, Any]]:
         """Преобразует таблицу в DataFrame.
 
         Выбирает, проверяет и преобразует данные на основе описания колонок.
 
         :param columns:
-            Список колонок, которые нужно проверить и оставить в DataFrame.
+            Список колонок, которые нужно проверить и оставить.
         :param drop_header:
-            Сколько строк сверху нужно отбросить из таблицы при формировании DataFrame.
+            Сколько строк сверху нужно отбросить из таблицы при формировании.
         :param drop_footer:
-            Сколько строк снизу нужно отбросить из таблицы при формировании DataFrame.
+            Сколько строк снизу нужно отбросить из таблицы при формировании.
         :return:
             Данные преобразованные в соответствии с описание.
         """
         self._validate_columns(columns)
-        parsed_rows = self._yield_rows(columns, drop_header, drop_footer)
-        return pd.DataFrame(parsed_rows)
+        return list(self._yield_rows(columns, drop_header, drop_footer))
 
-    def _validate_columns(self, columns):
+    def _validate_columns(self, columns: List[DataColumn]) -> None:
         """Проверка значений в колонках."""
         table = self.parsed_table
         for column in columns:
@@ -135,13 +137,17 @@ class HTMLTableParser:
                         f"Значение в таблице {table[row][column.index]!r} - должно быть {value!r}"
                     )
 
-    def _yield_rows(self, columns, drop_header, drop_footer):
+    def _yield_rows(
+        self, columns: List[DataColumn], drop_header: int, drop_footer: int
+    ) -> Iterator[Dict[str, Any]]:
         """Генерирует строки с избранными колонками со значениями после парсинга."""
         table = self._crop_table(drop_header, drop_footer)
         for row in table:
-            yield [column.parser_func(row[column.index]) for column in columns]
+            yield {
+                column.name: column.parser_func(row[column.index]) for column in columns
+            }
 
-    def _crop_table(self, drop_header, drop_footer):
+    def _crop_table(self, drop_header: int, drop_footer: int) -> List[List[str]]:
         """Отбрасывает строки в начале и конце таблицы."""
         table = self.parsed_table
         drop_footer = len(table) - drop_footer
