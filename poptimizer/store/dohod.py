@@ -40,14 +40,15 @@ class Dohod(AbstractManager):
         div_col = parser.DataColumn(item, 2, {0: "Дивиденд (руб.)"}, parser.div_parser)
         columns = [date_col, div_col]
         data = table.get_formatted_data(columns, HEADER_SIZE)
-        return self._sort_and_group(item, data)
+        return sort_and_group(item, data)
 
-    @staticmethod
-    def _sort_and_group(item: str, data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        rez = []
-        for row in sorted(data, key=lambda x: x[DATE]):
-            if not rez or row[DATE] != rez[-1][DATE]:
-                rez.append(row)
-            else:
-                rez[-1][item] += row[item]
-        return rez
+
+def sort_and_group(item: str, data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Сортирует по возрастанию и суммирует значения для одной даты."""
+    rez = []
+    for row in sorted(data, key=lambda x: x[DATE]):
+        if not rez or row[DATE] != rez[-1][DATE]:
+            rez.append(row)
+        else:
+            rez[-1][item] += row[item]
+    return rez
