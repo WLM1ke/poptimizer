@@ -4,18 +4,9 @@ import pandas as pd
 import pyppeteer
 import pytest
 
-from poptimizer import config
 from poptimizer.config import POptimizerError
-from poptimizer.store import client, conomy
-
-
-@pytest.fixture(autouse=True)
-@pytest.mark.asyncio
-async def create_client(tmpdir_factory, monkeypatch):
-    temp_dir = tmpdir_factory.mktemp("conomy")
-    monkeypatch.setattr(config, "DATA_PATH", temp_dir)
-    async with client.Client():
-        yield
+from poptimizer.store import conomy
+from poptimizer.store.mongo import MONGO_CLIENT
 
 
 @pytest.mark.asyncio
@@ -56,42 +47,52 @@ def test_is_common():
     assert str(error.value) == "Некорректный тикер TANGO"
 
 
-@pytest.mark.asyncio
-async def test_conomy_common():
-    df = await conomy.Conomy(("SBER",)).get()
-    assert isinstance(df, pd.Series)
+@pytest.fixture(name="manager")
+def manager_in_clean_test_db():
+    MONGO_CLIENT.drop_database("test")
+    yield conomy.Conomy(db="test")
+    MONGO_CLIENT.drop_database("test")
+
+
+def test_conomy_common(manager):
+    df = manager["SBER"]
+    assert isinstance(df, pd.DataFrame)
+    assert list(df.columns) == ["SBER"]
+    df = df["SBER"]
     assert df.size >= 9
     assert df.index[0] == pd.Timestamp("2010-04-16")
     assert df["2011-04-15"] == 0.92
 
 
-class FakeGetHtml:
-    def __init__(self, value):
-        self.first_call = True
-        self.value = value
+def test_conomy_preferred(manager):
+    df = manager["SBERP"]
+    assert isinstance(df, pd.DataFrame)
+    assert list(df.columns) == ["SBERP"]
+    df = df["SBERP"]
+    assert isinstance(df, pd.Series)
+    assert df.size >= 9
+    assert df.index[0] == pd.Timestamp("2010-04-16")
+    assert df["2012-04-12"] == 2.59
 
-    async def __call__(self, name):
-        if self.first_call:
-            self.first_call = False
+
+class FakeRun:
+    def __init__(self, item):
+        self._first = True
+        self._value = asyncio.run(conomy.get_html(item))
+
+    def __call__(self, *args, **kwargs):
+        if self._first:
+            self._first = False
             raise asyncio.TimeoutError
-        return self.value
+        return self._value
 
 
-@pytest.mark.asyncio
-async def test_conomy_reload(monkeypatch):
-    manager = conomy.Conomy(("SBER",))
-    value = await conomy.get_html("SBER")
-    monkeypatch.setattr(conomy, "get_html", FakeGetHtml(value))
-    df = await manager.get()
-    assert isinstance(df, pd.Series)
-    assert df.size >= 9
-    assert df.index[0] == pd.Timestamp("2010-04-16")
-    assert df["2011-04-15"] == 0.92
-
-
-@pytest.mark.asyncio
-async def test_conomy_preferred():
-    df = await conomy.Conomy(("SBERP",)).get()
+def test_conomy_reload(manager, monkeypatch):
+    monkeypatch.setattr(conomy.asyncio, "run", FakeRun("SBERP"))
+    df = manager["SBERP"]
+    assert isinstance(df, pd.DataFrame)
+    assert list(df.columns) == ["SBERP"]
+    df = df["SBERP"]
     assert isinstance(df, pd.Series)
     assert df.size >= 9
     assert df.index[0] == pd.Timestamp("2010-04-16")
