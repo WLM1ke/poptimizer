@@ -111,7 +111,3 @@ class Conomy(AbstractManager):
         data = table.get_formatted_data(columns, HEADER_SIZE)
         data = [row for row in data if row[DATE] is not None]
         return dohod.sort_and_group(item, data)
-
-
-if __name__ == "__main__":
-    input()

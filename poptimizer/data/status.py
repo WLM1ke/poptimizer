@@ -1,6 +1,5 @@
 """Проверка статуса актуальности данных по дивидендам."""
-import asyncio
-from typing import Tuple
+from typing import Tuple, List
 
 import numpy as np
 import pandas as pd
@@ -42,20 +41,23 @@ def smart_lab_status(tickers: Tuple[str, ...]):
         print(", ".join(status[0]))
 
 
-async def _gather_div_data(ticker: str):
+def _get_div_data(ticker: str) -> List[Tuple[str, pd.DataFrame]]:
     """Информация о дивидендах из основной базы и альтернативных источников."""
-    async with store.Client() as client:
-        await client.dividends(ticker).create(ticker)
-        data_sources = [
-            client.dividends(ticker),
-            client.dohod(ticker),
-            client.conomy(ticker),
-            client.smart_lab(),
-        ]
-        names = [i.__class__.__name__ for i in data_sources]
-        aws = [i.get() for i in data_sources]
-        dfs = await asyncio.gather(*aws, return_exceptions=True)
-        return list(zip(names, dfs))
+    data_sources = [
+        (store.Dividends(), ticker),
+        (store.Dohod(), ticker),
+        (store.Conomy(), ticker),
+        (store.SmartLab(), SMART_LAB),
+    ]
+    rez = []
+    for mng, item in data_sources:
+        name = mng.__class__.__name__
+        try:
+            df = mng[item]
+        except Exception as error:
+            df = error
+        rez.append((name, df))
+    return rez
 
 
 def dividends_status(ticker: str):
@@ -67,8 +69,9 @@ def dividends_status(ticker: str):
     :param ticker:
         Тикер.
     """
-    dfs = asyncio.run(_gather_div_data(ticker))
+    dfs = _get_div_data(ticker)
     _, main_df = dfs[0]
+    main_df = main_df.loc[main_df.index >= pd.Timestamp(STATS_START), ticker]
 
     result = []
     for name, df in dfs[1:]:
@@ -78,7 +81,7 @@ def dividends_status(ticker: str):
             result.append(df)
             continue
         if name != "SmartLab":
-            df = df[df.index >= pd.Timestamp(STATS_START)]
+            df = df.loc[df.index >= pd.Timestamp(STATS_START), ticker]
         else:
             df = df[df[TICKER] == ticker][DIVIDENDS]
         df.name = name
