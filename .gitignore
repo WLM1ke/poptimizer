@@ -102,12 +102,9 @@ ENV/
 # PyTest
 **.pytest_cache/
 
-# Coverage.py
-.coverage
-
 # Reports
 /reports/
 
 # MongoDB
-/db/diagnostic.data/
-/db/journal/
+/db/
+!/db/source/
