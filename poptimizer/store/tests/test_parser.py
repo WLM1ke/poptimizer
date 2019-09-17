@@ -96,39 +96,52 @@ def test_fast_second_parse():
     assert table.parsed_table == RESULT1
 
 
-def test_make_df():
+def test_get_formatted_data():
     table = parser.HTMLTableParser(HTML, 1)
-    columns = [parser.DataColumn(i, {}, lambda x: x) for i in range(5)]
+    columns = [parser.DataColumn(f"col_{i}", i, {}, lambda x: x) for i in range(5)]
     df = pd.DataFrame(RESULT1)
-    assert df.equals(table.make_df(columns))
+    df.columns = [f"col_{i}" for i in range(5)]
+    rez = df.to_dict("records")
+    assert rez == table.get_formatted_data(columns)
 
 
-def test_make_df_with_parsed_data():
-    table = parser.HTMLTableParser(HTML, 1)
-    columns = [parser.DataColumn(i, {}, parser.div_parser) for i in range(5)]
-    df = pd.DataFrame(DF_DATA)
-    assert df.equals(table.make_df(columns))
-
-
-def test_make_df_drop():
-    table = parser.HTMLTableParser(HTML, 1)
-    columns = [parser.DataColumn(i, {}, parser.div_parser) for i in range(5)]
-    df = pd.DataFrame(DF_DATA[1:2])
-    assert df.equals(table.make_df(columns, 1, 1))
-
-
-def test_make_df_validate():
+def test_get_formatted_data_with_parsed_data():
     table = parser.HTMLTableParser(HTML, 1)
     columns = [
-        parser.DataColumn(i, {0: RESULT1[0][i]}, parser.div_parser) for i in range(5)
+        parser.DataColumn(f"col_{i}", i, {}, parser.div_parser) for i in range(5)
+    ]
+    df = pd.DataFrame(DF_DATA)
+    df.columns = [f"col_{i}" for i in range(5)]
+    rez = df.to_dict("records")
+    assert rez == table.get_formatted_data(columns)
+
+
+def test_get_formatted_data_drop():
+    table = parser.HTMLTableParser(HTML, 1)
+    columns = [
+        parser.DataColumn(f"col_{i}", i, {}, parser.div_parser) for i in range(5)
+    ]
+    df = pd.DataFrame(DF_DATA[1:2])
+    df.columns = [f"col_{i}" for i in range(5)]
+    rez = df.to_dict("records")
+    assert rez == table.get_formatted_data(columns, 1, 1)
+
+
+def test_get_formatted_data_validate():
+    table = parser.HTMLTableParser(HTML, 1)
+    columns = [
+        parser.DataColumn(f"col_{i}", i, {0: RESULT1[0][i]}, parser.div_parser)
+        for i in range(5)
     ]
     df = pd.DataFrame(DF_DATA[1:])
-    assert df.equals(table.make_df(columns, 1))
+    df.columns = [f"col_{i}" for i in range(5)]
+    rez = df.to_dict("records")
+    assert rez == table.get_formatted_data(columns, 1)
 
 
-def test_make_df_fail_validate():
+def test_get_formatted_data_fail_validate():
     table = parser.HTMLTableParser(HTML, 1)
-    columns = [parser.DataColumn(1, {0: "2.2", 1: "test"}, lambda x: x)]
+    columns = [parser.DataColumn("col", 1, {0: "2.2", 1: "test"}, lambda x: x)]
     with pytest.raises(POptimizerError) as error:
-        table.make_df(columns)
+        table.get_formatted_data(columns)
         assert error.value == 'Значение в таблице "5.55 (сов)" - должно быть "test"'
