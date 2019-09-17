@@ -8,21 +8,15 @@ import pandas as pd
 from poptimizer import store
 from poptimizer.config import AFTER_TAX, STATS_START
 from poptimizer.data import div
-from poptimizer.store import TICKER, DIVIDENDS
+from poptimizer.store import TICKER, DIVIDENDS, SMART_LAB
 
 __all__ = ["smart_lab_status", "dividends_status"]
 
 
-async def _smart_lab() -> pd.DataFrame:
-    """Информация о ближайших дивидендах на https://www.smart-lab.ru"""
-    async with store.Client() as client:
-        db = client.smart_lab()
-        return await db.get()
-
-
 def smart_lab() -> pd.DataFrame:
     """Информация о ближайших дивидендах на https://www.smart-lab.ru"""
-    return asyncio.run(_smart_lab())
+    manager = store.SmartLab()
+    return manager[SMART_LAB]
 
 
 def smart_lab_status(tickers: Tuple[str, ...]):
