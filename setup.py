@@ -50,10 +50,8 @@ setuptools.setup(
     project_urls={"Source": f"https://github.com/WLM1ke/{name}"},
     packages=setuptools.find_packages(exclude=["*.tests"]),
     install_requires=[
-        "aiomoex",
         "pandas",
         "numpy",
-        "lmdb",
         "openpyxl",
         "hyperopt",
         "catboost",
@@ -62,7 +60,6 @@ setuptools.setup(
         "reportlab",
         "bs4",
         "lxml",
-        "aiohttp",
         "pyppeteer",
         "scikit-learn",
         "certifi",

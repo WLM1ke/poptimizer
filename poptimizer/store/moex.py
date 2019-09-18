@@ -6,9 +6,9 @@ from typing import Optional, Any, List, Dict
 import apimoex
 
 from poptimizer.config import POptimizerError
-from poptimizer.store import manager_new
-from poptimizer.store.manager_new import AbstractManager
-from poptimizer.store.utils_new import (
+from poptimizer.store import manager
+from poptimizer.store.manager import AbstractManager
+from poptimizer.store.utils import (
     DB,
     MISC,
     TICKER,
@@ -56,7 +56,7 @@ class Securities(AbstractManager):
             REGNUMBER=lambda x: (REG_NUMBER, x),
             LOTSIZE=lambda x: (LOT_SIZE, x),
         )
-        return manager_new.data_formatter(data, formatters)
+        return manager.data_formatter(data, formatters)
 
 
 class Index(AbstractManager):
@@ -85,7 +85,7 @@ class Index(AbstractManager):
             TRADEDATE=lambda x: (DATE, datetime.strptime(x, "%Y-%m-%d")),
             CLOSE=lambda x: (CLOSE, x),
         )
-        return manager_new.data_formatter(data, formatters)
+        return manager.data_formatter(data, formatters)
 
 
 class Quotes(AbstractManager):
@@ -161,4 +161,4 @@ class Quotes(AbstractManager):
             low=lambda x: (LOW, x),
             value=lambda x: (TURNOVER, x),
         )
-        return manager_new.data_formatter(data, formatters)
+        return manager.data_formatter(data, formatters)

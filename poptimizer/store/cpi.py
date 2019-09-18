@@ -4,9 +4,9 @@ from typing import Any, Optional, List, Dict
 import pandas as pd
 
 from poptimizer.config import POptimizerError
-from poptimizer.store import utils_new
-from poptimizer.store.manager_new import AbstractManager
-from poptimizer.store.utils_new import DB, MISC
+from poptimizer.store import utils
+from poptimizer.store.manager import AbstractManager
+from poptimizer.store.utils import DB, MISC
 
 # Наименование данных по инфляции
 CPI = "CPI"
@@ -42,7 +42,7 @@ class Macro(AbstractManager):
         df = df.transpose().stack()
         first_year = df.index[0][0]
         df.index = pd.date_range(
-            name=utils_new.DATE,
+            name=utils.DATE,
             freq="M",
             start=pd.Timestamp(year=first_year, month=1, day=31),
             periods=len(df),

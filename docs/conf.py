@@ -47,7 +47,7 @@ with open(_version_path) as file:
 version = "{major}.{minor}".format(**_version_info)
 release = "{major}.{minor}.{patch}".format(**_version_info)
 
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.githubpages", "sphinxcontrib.asyncio"]
+extensions = ["sphinx.ext.autodoc", "sphinx.ext.githubpages"]
 autodoc_member_order = "bysource"
 templates_path = ["templates"]
 html_static_path = ["static"]

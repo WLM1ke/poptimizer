@@ -7,8 +7,8 @@ from pyppeteer.page import Page
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import parser, dohod
-from poptimizer.store.manager_new import AbstractManager
-from poptimizer.store.utils_new import DATE, DB
+from poptimizer.store.manager import AbstractManager
+from poptimizer.store.utils import DATE, DB
 
 # Наименование коллекции с данными
 CONOMY = "conomy"

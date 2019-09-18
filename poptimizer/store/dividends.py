@@ -3,9 +3,9 @@ from typing import Optional, Any, List, Dict
 
 import pymongo
 
-from poptimizer.store import manager_new
-from poptimizer.store.manager_new import AbstractManager
-from poptimizer.store.utils_new import DATE, DB
+from poptimizer.store import manager
+from poptimizer.store.manager import AbstractManager
+from poptimizer.store.utils import DATE, DB
 
 # База и коллекция с источником данных по дивидендам
 SOURCE_DB = "source"
@@ -41,4 +41,4 @@ class Dividends(AbstractManager):
             )
         )
         formatter = dict(_id=lambda x: (DATE, x))
-        return manager_new.data_formatter(data, formatter)
+        return manager.data_formatter(data, formatter)

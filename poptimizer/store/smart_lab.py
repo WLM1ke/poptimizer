@@ -5,8 +5,8 @@ import requests
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import parser
-from poptimizer.store.manager_new import AbstractManager
-from poptimizer.store.utils_new import DATE, TICKER, DIVIDENDS, DB, MISC
+from poptimizer.store.manager import AbstractManager
+from poptimizer.store.utils import DATE, TICKER, DIVIDENDS, DB, MISC
 
 # Наименование данных в коллекции MISC
 SMART_LAB = "smart-lab"

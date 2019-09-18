@@ -5,7 +5,7 @@ from poptimizer.config import POptimizerError
 from poptimizer.store import moex
 from poptimizer.store.moex import SECURITIES, INDEX
 from poptimizer.store.mongo import MONGO_CLIENT
-from poptimizer.store.utils_new import REG_NUMBER, LOT_SIZE, TICKER, CLOSE, TURNOVER
+from poptimizer.store.utils import REG_NUMBER, LOT_SIZE, TICKER, CLOSE, TURNOVER
 
 
 @pytest.fixture("module", autouse=True)

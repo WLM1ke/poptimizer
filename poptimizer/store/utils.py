@@ -1,12 +1,24 @@
-"""Вспомогательные функции и класс для организации хранения данных."""
+"""Вспомогательные функции для хранения данных."""
 import logging
-from dataclasses import dataclass, field
-from typing import Any
+from datetime import datetime
+from typing import Tuple, Dict, Any
 
-import aiomoex
+import apimoex
 import pandas as pd
 
-from poptimizer.store import lmbd
+from poptimizer.store import mongo
+
+# Метки столбцов данных
+DATE = "DATE"
+OPEN = "OPEN"
+CLOSE = "CLOSE"
+HIGH = "HIGH"
+LOW = "LOW"
+TURNOVER = "TURNOVER"
+TICKER = "TICKER"
+REG_NUMBER = "REG_NUMBER"
+LOT_SIZE = "LOT_SIZE"
+DIVIDENDS = "DIVIDENDS"
 
 # Часовой пояс MOEX
 MOEX_TZ = "Europe/Moscow"
@@ -14,41 +26,38 @@ MOEX_TZ = "Europe/Moscow"
 # Торги заканчиваются в 19.00, но данные публикуются 19.45
 END_OF_TRADING = dict(hour=19, minute=45, second=0, microsecond=0, nanosecond=0)
 
-# Ключ в хранилище с датой последней исторической котировкой на MOEX
-LAST_HISTORY = "last_history"
+# Основная база
+DB = "data"
+
+# Коллекция для хранения вспомогательной информации и единичных данных
+MISC = "misc"
 
 
-@dataclass(frozen=True)
-class Datum:
-    """Класс с данными и датой создания в часовом поясе MOEX."""
-
-    value: Any
-    timestamp: pd.Timestamp = field(default_factory=lambda: pd.Timestamp.now(MOEX_TZ))
-
-
-async def download_last_history():
-    """Последняя дата торгов, которая есть на MOEX ISS."""
-    dates = await aiomoex.get_board_dates()
-    date = pd.Timestamp(dates[0]["till"], tz=MOEX_TZ)
-    logging.info(f"Последняя дата с историей: {date.date()}")
-    return date + pd.DateOffset(**END_OF_TRADING)
-
-
-def end_of_trading_day():
-    """Конец последнего торгового дня."""
+def now_and_end_of_trading_day() -> Tuple[datetime, datetime]:
+    """Конец последнего торгового дня в UTC."""
     now = pd.Timestamp.now(MOEX_TZ)
-    # noinspection PyUnresolvedReferences
-    end_of_trading = now.normalize() + pd.DateOffset(**END_OF_TRADING)
+    end_of_trading = now.replace(**END_OF_TRADING)
     if end_of_trading > now:
         end_of_trading += pd.DateOffset(days=-1)
-    return end_of_trading
+    return now.astimezone(None), end_of_trading.astimezone(None)
 
 
-async def update_timestamp(db: lmbd.DataStore):
-    """Момент времени после, которого не нужно обновлять исторические данные для хранилища."""
-    end_of_trading = end_of_trading_day()
-    last_history = db[LAST_HISTORY]
-    if last_history is None or last_history.timestamp < end_of_trading:
-        last_history = Datum(await download_last_history())
-        db[LAST_HISTORY] = last_history
-    return last_history.value
+def last_history_from_doc(doc: Dict[str, Any]) -> datetime:
+    """Момент времени UTC публикации данных о последних торгах, которая есть на MOEX ISS."""
+    date = pd.Timestamp(doc["data"][0]["till"], tz=MOEX_TZ)
+    return date.replace(**END_OF_TRADING).astimezone(None)
+
+
+def get_last_history_date(db: str = DB, collection: str = MISC) -> datetime:
+    """"Момент времени UTC после, которого не нужно обновлять данные."""
+    misc_collection = mongo.MONGO_CLIENT[db][collection]
+    doc = misc_collection.find_one({"_id": "last_date"})
+    now, end_of_trading = now_and_end_of_trading_day()
+    if doc is None or doc["timestamp"] < end_of_trading:
+        data = apimoex.get_board_dates(
+            mongo.HTTP_SESSION, board="TQBR", market="shares", engine="stock"
+        )
+        doc = dict(_id="last_date", data=data, timestamp=now)
+        misc_collection.replace_one({"_id": "last_date"}, doc, upsert=True)
+        logging.info(f"Последняя дата с историей: {last_history_from_doc(doc).date()}")
+    return last_history_from_doc(doc)

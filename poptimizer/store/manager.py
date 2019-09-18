@@ -1,149 +1,179 @@
 """Абстрактный менеджер данных - предоставляет локальные данные и следит за их обновлением."""
-import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import Union, Optional, Tuple
+from datetime import datetime
+from typing import Optional, List, Dict, Any, Callable, Tuple
 
 import numpy as np
 import pandas as pd
+import pymongo
+import requests
 
 from poptimizer.config import POptimizerError
-from poptimizer.store import utils
+from poptimizer.store import mongo, utils
 
 
 class AbstractManager(ABC):
-    """Организует создание, обновление и предоставление локальных данных.
+    """Организует создание, обновление и предоставление локальных данных."""
 
-    Для работы должна быть открыта клиентская сессия.
-    """
-
-    ISS_SESSION = None
-    STORE = None
-
-    # Создавать данные с нуля не сопоставляя с имеющейся версией
-    CREATE_FROM_SCRATCH = False
-    # Требования к индексу у данных
-    IS_UNIQUE = True
-    IS_MONOTONIC = True
+    # Момент времени после которого нужно обновление данных
+    LAST_HISTORY_DATE = utils.get_last_history_date()
 
     def __init__(
-        self, names: Union[str, Tuple[str, ...]], category: Optional[str] = None
-    ):
-        """Для ускорения за счет асинхронного обновления данных передается кортеж с названиями
-        необходимых данных.
-
-        :param names:
-            Наименования получаемых данных.
-        :param category:
-            Категория получаемых данных.
-        """
-        if isinstance(names, str):
-            self._names = (names,)
-        else:
-            self._names = names
-        self._category = category
-        self._last_history_date = None
-        self._data = self._load()
-
-    @property
-    def names(self):
-        """Кортеж с наименованием данных"""
-        return self._names
-
-    @property
-    def category(self):
-        """Категория данных."""
-        return self._category
-
-    def _load(self):
-        """Загрузка локальных данных без обновления."""
-        return {name: self.STORE[name, self.category] for name in self.names}
-
-    async def get(self):
-        """Запускает асинхронное обновление данных и возвращает их."""
-        update_timestamp = await utils.update_timestamp(self.STORE)
-        self._last_history_date = update_timestamp.strftime("%Y-%m-%d")
-        aws = []
-        for name, value in self._data.items():
-            if value is None:
-                aws.append(self.create(name))
-            elif value.timestamp < update_timestamp:
-                if self.CREATE_FROM_SCRATCH:
-                    aws.append(self.create(name))
-                else:
-                    aws.append(self.update(name))
-        await asyncio.gather(*aws)
-        if len(self.names) == 1:
-            return self._data[self.names[0]].value
-        return [self._data[name].value for name in self.names]
-
-    async def create(self, name: str):
-        """Создает локальные данные с нуля или перезаписывает существующие.
-
-        При необходимости индекс данных проверяется на уникальность и монотонность.
-
-        :param name:
-            Наименование данных.
-        """
-        logging.info(f"Создание локальных данных {self.category} -> {name}")
-        # Данные удаляются, чтобы загрузчик загрузил их полностью, а не обновил
-        self._data[name] = None
-        df = await self._download(name)
-        self._check_index_and_save(name, df)
-
-    def _check_index_and_save(self, name, df):
-        """Проверяет индекс данных, сохраняет их в локальное хранилище и данные класса."""
-        self._validate_index(name, df)
-        data = utils.Datum(df)
-        self.STORE[name, self.category] = data
-        logging.info(f"Данные обновлены {self.category} -> {name}")
-        self._data[name] = data
-
-    def _validate_index(self, name: str, df):
-        """Проверяет индекс данных с учетом настроек."""
-        if self.IS_UNIQUE and not df.index.is_unique:
-            raise POptimizerError(f"Индекс {name} не уникальный")
-        if self.IS_MONOTONIC and not df.index.is_monotonic_increasing:
-            raise POptimizerError(f"Индекс {name} не возрастает монотонно")
-
-    async def update(self, name: str):
-        """Обновляет локальные данные.
-
-        Во время обновления проверяется стыковку новых данных с существующими, а индекс всех данных при
-        необходимости проверяется на уникальность и монотонность.
-        """
-        logging.info(f"Обновление локальных данных {self.category} -> {name}")
-        df_old = self._data[name].value
-        df_new = await self._download(name)
-        self._validate_new(name, df_old, df_new)
-        old_elements = df_old.index.difference(df_new.index)
-        df = df_old.loc[old_elements].append(df_new)
-        self._check_index_and_save(name, df)
-
-    def _validate_new(
         self,
-        name: str,
-        df_old: Union[pd.DataFrame, pd.Series],
-        df_new: Union[pd.DataFrame, pd.Series],
+        collection: str,
+        db: str = utils.DB,
+        client: pymongo.MongoClient = mongo.MONGO_CLIENT,
+        create_from_scratch: bool = False,
+        validate_last: bool = True,
+        index: str = utils.DATE,
+        unique_index: bool = True,
+        ascending_index: bool = True,
+        session: requests.Session = mongo.HTTP_SESSION,
     ):
-        """Проверяет соответствие старых и новых данных"""
-        common_index = df_old.index.intersection(df_new.index)
-        if not np.allclose(df_old.loc[common_index], df_new.loc[common_index]):
+        """Данные хранятся в MongoDB и извлекаются в виде DataFrame.
+        Сохраняемые данные представляются в виде следующего документа:
+        {
+            _id: str
+            data: DataFrame.to_dict("records"),
+            timestamp: datetime.datetime
+        }
+        :param collection:
+            Коллекция в которой хранятся данные.
+        :param db:
+            База данных в которой хранятся данные.
+        :param client:
+            Подключенный клиент MongoDB.
+        :param create_from_scratch:
+            Нужно ли удалять данные при каждом обновлении.
+        :param validate_last:
+            Нужно ли при обновлении проверять только последнее значение или все значения.
+        :param index:
+            Наименование колонки для индекса.
+        :param unique_index:
+            Нужно ли тестировать индекс данных на уникальность.
+        :param ascending_index:
+            Нужно ли тестировать индекс данных на возрастание.
+        :param session:
+            Сессия для обновления данных по интернет.
+        """
+        self._collection = client[db][collection]
+        self._index = index
+        self._create_from_scratch = create_from_scratch
+        self._validate_last = validate_last
+        self._unique_index = unique_index
+        self._ascending_index = ascending_index
+        self._session = session
+
+    def __getitem__(self, item: str) -> pd.DataFrame:
+        """Получение соответствующего элемента из базы."""
+        doc = self._collection.find_one({"_id": item})
+        if doc is None:
+            doc = self.create(item)
+        elif doc["timestamp"] < self.LAST_HISTORY_DATE:
+            if self._create_from_scratch:
+                doc = self.create(item)
+            else:
+                doc = self.update(doc)
+        if doc["data"]:
+            df = pd.DataFrame(doc["data"]).set_index(self._index)
+            self._validate_index(item, df)
+            return df
+        return pd.DataFrame()
+
+    def _validate_index(self, item: str, df: pd.DataFrame):
+        """Проверяет индекс данных с учетом настроек."""
+        if self._unique_index and not df.index.is_unique:
             raise POptimizerError(
-                f"Существующие данные не соответствуют новым:\n"
-                f"Категория - {self.category}\n"
-                f"Название - {name}\n"
-                f"Дата последнего обновления - {self._data[name].timestamp}\n"
-                f"Старые значения:\n{df_old.loc[common_index]}\n"
-                f"Новые значения:\n{df_new.loc[common_index]}\n"
+                f"Индекс {self._collection.full_name}.{item} не уникальный"
+            )
+        if self._ascending_index and not df.index.is_monotonic_increasing:
+            raise POptimizerError(
+                f"Индекс {self._collection.full_name}.{item} не возрастает"
             )
 
-    @abstractmethod
-    async def _download(self, name: str):
-        """Загружает необходимые данные
+    def create(self, item: str) -> Dict[str, Any]:
+        """Создает локальные данные с нуля или перезаписывает существующие."""
+        logging.info(f"Создание данных {self._collection.full_name}.{item}")
+        data = self._download(item, None)
+        doc = dict(_id=item, data=data, timestamp=datetime.utcnow())
+        self._collection.replace_one({"_id": item}, doc, upsert=True)
+        logging.info(f"Данные обновлены {self._collection.full_name}.{item}")
+        return doc
 
-        Если self._data[name] = None, то должны загружаться все данные. В остальных случаях для ускорения
-        по возможности должна поддерживаться частичная загрузка с маленьким пересечением с уже
-        загруженными данными для проверки их стыковки до даты self._last_history_date включительно, чтобы
-        избежать загрузки данных за половину текущего дня.
+    def update(self, doc: Dict[str, Any]) -> Dict[str, Any]:
+        """Обновляет локальные данные.
+
+        Во время обновления проверяется стыковку новых данных с существующими.
         """
+        item = doc["_id"]
+        data = doc["data"]
+        if data:
+            last_index = data[-1][self._index]
+        else:
+            last_index = None
+        logging.info(f"Обновление данных {self._collection.full_name}.{item}")
+        data_new = self._download(item, last_index)
+        self._validate_new(item, data, data_new)
+        if self._validate_last:
+            data_new = data + data_new[1:]
+        doc = dict(data=data_new, timestamp=datetime.utcnow())
+        self._collection.update_one({"_id": item}, {"$set": doc})
+        logging.info(f"Данные обновлены {self._collection.full_name}.{item}")
+        return doc
+
+    def _validate_new(
+        self, item: str, data: List[Dict[str, Any]], data_new: List[Dict[str, Any]]
+    ):
+        """Проверяет соответствие старых и новых данных."""
+        if self._validate_last:
+            data = data[-1:]
+            data_new = data_new[:1]
+        elif len(data) > len(data_new):
+            raise POptimizerError(
+                f"Новые {len(data_new)} короче старых {len(data)} данных "
+                f"{self._collection.full_name}.{item}"
+            )
+        for old, new in zip(data, data_new):
+            for col in old:
+                not_float_not_eq = (
+                    not isinstance(old[col], float) and old[col] != new[col]
+                )
+                float_not_eq = isinstance(old[col], float) and not np.allclose(
+                    old[col], new[col]
+                )
+                if not_float_not_eq or float_not_eq:
+                    raise POptimizerError(
+                        f"Новые {new} не соответствуют старым {old} данным "
+                        f"{self._collection.full_name}.{item}"
+                    )
+
+    @abstractmethod
+    def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
+        """Загружает необходимые данные из внешних источников.
+        :param item:
+            Наименования данных.
+        :param last_index:
+            Если None, то скачиваются все данные. Если присутствует последние значение индекса,
+            то для ускорения данные загружаются начиная с этого значения для инкрементального обновления.
+        :return:
+            Список словарей в формате DataFrame.to_dict("records").
+        """
+
+
+def data_formatter(
+    data: List[Dict[str, Any]], formatters: Dict[str, Callable[[Any], Tuple[str, Any]]]
+) -> List[Dict[str, Any]]:
+    """Форматирует данные с учетом установок.
+    :param data:
+        Список словарей в формате DataFrame.to_dict("records").
+    :param formatters:
+        Словарь с функциями форматирования.
+    :return:
+       Отформатированный список словарей в формате.
+    """
+    for row in data:
+        for col, formatter in formatters.items():
+            new_col, value = formatter(row.pop(col))
+            row[new_col] = value
+    return data

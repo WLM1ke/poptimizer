@@ -5,8 +5,8 @@ import requests
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import parser
-from poptimizer.store.manager_new import AbstractManager
-from poptimizer.store.utils_new import DATE, DB
+from poptimizer.store.manager import AbstractManager
+from poptimizer.store.utils import DATE, DB
 
 # Наименование коллекции с данными
 DOHOD = "dohod"

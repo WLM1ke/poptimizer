@@ -17,13 +17,10 @@ pd.set_option("display.max_columns", 20)
 pd.set_option("display.max_rows", 80)
 pd.set_option("display.width", None)
 
-# Путь к директории с данными
-DATA_PATH = pathlib.Path(__file__).parents[1] / "data"
-
 # Путь к директории с отчетам
 REPORTS_PATH = pathlib.Path(__file__).parents[1] / "reports"
 
-# Конфигурация MongoDB
+# Путь к MongoDB
 MONGO_PATH = pathlib.Path(__file__).parents[1] / "db"
 
 # Множитель, для переходя к после налоговым значениям

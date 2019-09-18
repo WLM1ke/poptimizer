@@ -3,7 +3,6 @@ pytest-cov
 pytest-asyncio
 
 sphinx
-sphinxcontrib-asyncio
 aiohttp_theme
 
 pandas
@@ -18,13 +17,10 @@ xlrd
 lxml
 reportlab
 
-lmdb
 pymongo
 
-aiomoex
 apimoex
 bs4
-aiohttp
 requests
 pyppeteer
 certifi
