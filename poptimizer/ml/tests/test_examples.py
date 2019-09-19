@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.config import AFTER_TAX
+from poptimizer.data import div
 from poptimizer.ml import examples
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 
@@ -13,6 +14,12 @@ FEAT_PARAMS = (
     ("Mom12m", {"on_off": True, "days": 3, "periods": 1}),
     ("DivYield", {"on_off": True, "days": 9, "periods": 1}),
 )
+
+
+@pytest.fixture(scope="function", autouse=True)
+def set_stats_start(monkeypatch):
+    monkeypatch.setattr(div, "STATS_START", pd.Timestamp("2010-02-01"))
+    yield
 
 
 @pytest.fixture(name="example")
@@ -62,7 +69,7 @@ def test_get_all(example):
         "DivYield_0",
     ]
     assert df.index.get_level_values(0).unique()[-1] == pd.Timestamp("2018-12-13")
-    assert df.index.get_level_values(1).unique().to_list() == ["CHMF", "AKRN", "BANEP"]
+    assert set(df.index.get_level_values(1).unique()) == {"CHMF", "AKRN", "BANEP"}
 
     assert df.loc[(pd.Timestamp("2018-12-04"), "AKRN"), "Label"] == pytest.approx(
         np.log(4590 / 4630) / 4
@@ -101,10 +108,10 @@ def test_train_val_pool_params(example):
     assert train["feature_names"] == ["Scaler", "Ticker", "Mom12m_0", "DivYield_0"]
     assert val["feature_names"] == ["Scaler", "Ticker", "Mom12m_0", "DivYield_0"]
 
-    assert train["data"].index.get_level_values(0)[0] == pd.Timestamp("2010-01-20")
-    assert train["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-02-09")
+    assert train["data"].index.get_level_values(0)[0] == pd.Timestamp("2010-02-09")
+    assert train["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-02-12")
 
-    assert val["data"].index.get_level_values(0)[0] == pd.Timestamp("2018-02-15")
+    assert val["data"].index.get_level_values(0)[0] == pd.Timestamp("2018-02-16")
     assert val["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-12-07")
 
     df = example.get_all(
@@ -142,7 +149,7 @@ def test_train_predict_pool_params(example):
     assert train["feature_names"] == ["Scaler", "Ticker", "Mom12m_0", "DivYield_0"]
     assert predict["feature_names"] == ["Scaler", "Ticker", "Mom12m_0", "DivYield_0"]
 
-    assert train["data"].index.get_level_values(0)[0] == pd.Timestamp("2010-01-22")
+    assert train["data"].index.get_level_values(0)[0] == pd.Timestamp("2010-02-11")
     assert train["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-12-05")
 
     assert predict["data"].index.get_level_values(0)[0] == pd.Timestamp("2018-12-13")
