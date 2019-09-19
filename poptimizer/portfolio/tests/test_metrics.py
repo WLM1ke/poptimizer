@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer import config
+from poptimizer.data import div
 from poptimizer.portfolio import Portfolio, portfolio, metrics
 from poptimizer.portfolio.metrics import Metrics, Forecast
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
@@ -26,6 +27,12 @@ ML_PARAMS = {
         "ignored_features": [1],
     },
 }
+
+
+@pytest.fixture(scope="function", autouse=True)
+def set_stats_start(monkeypatch):
+    monkeypatch.setattr(div, "STATS_START", pd.Timestamp("2010-01-01"))
+    yield
 
 
 class SimpleMetrics(Metrics):
