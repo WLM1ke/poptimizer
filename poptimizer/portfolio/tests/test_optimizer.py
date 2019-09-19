@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 
 from poptimizer import portfolio, config
+from poptimizer.data import div
 from poptimizer.portfolio import optimizer
 
 ML_PARAMS = {
@@ -27,6 +28,7 @@ ML_PARAMS = {
 
 @pytest.fixture(name="opt")
 def make_optimizer(monkeypatch):
+    monkeypatch.setattr(div, "STATS_START", pd.Timestamp("2010-02-01"))
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0016)
     date = pd.Timestamp("2018-12-17")
@@ -38,14 +40,14 @@ def make_optimizer(monkeypatch):
 
 
 def test_best_sell(opt):
-    assert opt.best_sell == "SNGSP"
+    assert opt.best_sell == "GMKN"
 
 
 def test_gradient_growth(opt):
     grad = opt.metrics.gradient
     growth = opt.gradient_growth
     assert grad["KZOS"] > grad["CBOM"]
-    assert growth["KZOS"] == pytest.approx(0.22572298264730334)
+    assert growth["KZOS"] == pytest.approx(0.24443833652894453)
 
 
 def test_best_buy(opt):
@@ -66,7 +68,7 @@ def test_trade_recommendation(opt):
     # noinspection PyProtectedMember
     rec = opt._trade_recommendation()
     assert isinstance(rec, str)
-    assert "Продать SNGSP" in rec
+    assert "Продать GMKN" in rec
     assert "Купить  KZOS" in rec
 
 
