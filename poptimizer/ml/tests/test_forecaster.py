@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.config import POptimizerError
+from poptimizer.data import div
 from poptimizer.ml import forecaster, examples, cv
 from poptimizer.portfolio.metrics import Forecast
 
@@ -45,6 +46,12 @@ FORECAST = Forecast(
     0.0,
     PARAMS,
 )
+
+
+@pytest.fixture(scope="function", autouse=True)
+def set_stats_start(monkeypatch):
+    monkeypatch.setattr(div, "STATS_START", pd.Timestamp("2010-02-01"))
+    yield
 
 
 @pytest.fixture(name="cases")
