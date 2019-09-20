@@ -106,5 +106,4 @@ ENV/
 /reports/
 
 # MongoDB
-/db/diagnostic.data/
-/db/journal/
+/db/
