@@ -5,7 +5,7 @@ import requests
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import parser, DB
-from poptimizer.store.db import MISC
+from poptimizer.store.database import MISC
 from poptimizer.store.manager import AbstractManager
 from poptimizer.store.utils import DATE, TICKER, DIVIDENDS
 

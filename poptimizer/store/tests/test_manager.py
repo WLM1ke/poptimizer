@@ -34,14 +34,14 @@ class SimpleManager(manager.AbstractManager):
 
 
 def test_create():
-    manager = SimpleManager()
+    mng = SimpleManager()
     # noinspection PyProtectedMember
-    collection = manager._collection
+    collection = mng._mongo.collection
 
     time0 = pd.Timestamp.now(utils.MOEX_TZ).astimezone(None)
     assert collection.find_one({"_id": "AKRN"}) is None
 
-    data = manager["AKRN"]
+    data = mng["AKRN"]
     assert isinstance(data, pd.DataFrame)
     assert data.equals(
         pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]}, index=[1, 2])
@@ -50,14 +50,14 @@ def test_create():
 
 
 def test_no_update():
-    manager = SimpleManager()
+    mng = SimpleManager()
     # noinspection PyProtectedMember
-    collection = manager._collection
+    collection = mng._mongo.collection
 
     time0 = pd.Timestamp.now(utils.MOEX_TZ).astimezone(None)
     assert collection.find_one({"_id": "AKRN"})["timestamp"] < time0
 
-    data = manager["AKRN"]
+    data = mng["AKRN"]
     assert isinstance(data, pd.DataFrame)
     assert data.equals(
         pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]}, index=[1, 2])
@@ -74,15 +74,15 @@ def next_week_date():
 
 
 def test_update(monkeypatch, next_week_date):
-    manager = SimpleManager()
+    mng = SimpleManager()
     # noinspection PyProtectedMember
-    collection = manager._collection
-    monkeypatch.setattr(manager, "LAST_HISTORY_DATE", next_week_date)
+    collection = mng._mongo.collection
+    monkeypatch.setattr(mng, "LAST_HISTORY_DATE", next_week_date)
 
     time0 = pd.Timestamp.now(utils.MOEX_TZ).astimezone(None)
     assert collection.find_one({"_id": "AKRN"})["timestamp"] < time0
 
-    data = manager["AKRN"]
+    data = mng["AKRN"]
     assert isinstance(data, pd.DataFrame)
     assert data.equals(
         pd.DataFrame(data={"col1": [1, 2, 5], "col2": [10, 15, 5]}, index=[1, 2, 4])
@@ -91,15 +91,15 @@ def test_update(monkeypatch, next_week_date):
 
 
 def test_data_create_from_scratch(monkeypatch, next_week_date):
-    manager = SimpleManager(create_from_scratch=True)
+    mng = SimpleManager(create_from_scratch=True)
     # noinspection PyProtectedMember
-    collection = manager._collection
-    monkeypatch.setattr(manager, "LAST_HISTORY_DATE", next_week_date)
+    collection = mng._mongo.collection
+    monkeypatch.setattr(mng, "LAST_HISTORY_DATE", next_week_date)
 
     time0 = pd.Timestamp.now(utils.MOEX_TZ).astimezone(None)
     assert collection.find_one({"_id": "AKRN"})["timestamp"] < time0
 
-    data = manager["AKRN"]
+    data = mng["AKRN"]
     assert isinstance(data, pd.DataFrame)
     assert data.equals(
         pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]}, index=[1, 2])
@@ -108,44 +108,44 @@ def test_data_create_from_scratch(monkeypatch, next_week_date):
 
 
 def test_index_non_unique(monkeypatch):
-    manager = SimpleManager()
-    monkeypatch.setattr(manager, "LOAD", [{DATE: 1, "col1": 1}, {DATE: 1, "col1": 2}])
+    mng = SimpleManager()
+    monkeypatch.setattr(mng, "LOAD", [{DATE: 1, "col1": 1}, {DATE: 1, "col1": 2}])
 
     with pytest.raises(POptimizerError) as error:
         # noinspection PyStatementEffect
-        manager["RTKM"]
+        mng["RTKM"]
     assert str(error.value) == "Индекс test.simple.RTKM не уникальный"
 
 
 def test_index_non_increasing(monkeypatch):
-    manager = SimpleManager()
-    monkeypatch.setattr(manager, "LOAD", [{DATE: 2, "col1": 1}, {DATE: 1, "col1": 2}])
+    mng = SimpleManager()
+    monkeypatch.setattr(mng, "LOAD", [{DATE: 2, "col1": 1}, {DATE: 1, "col1": 2}])
 
     with pytest.raises(POptimizerError) as error:
         # noinspection PyStatementEffect
-        manager["GAZP"]
+        mng["GAZP"]
     assert str(error.value) == "Индекс test.simple.GAZP не возрастает"
 
 
 def test_validate_all_too_short(monkeypatch, next_week_date):
-    manager = SimpleManager(validate_last=False)
-    monkeypatch.setattr(manager, "LAST_HISTORY_DATE", next_week_date)
-    monkeypatch.setattr(manager, "LOAD", [{DATE: 1, "col1": 2}])
+    mng = SimpleManager(validate_last=False)
+    monkeypatch.setattr(mng, "LAST_HISTORY_DATE", next_week_date)
+    monkeypatch.setattr(mng, "LOAD", [{DATE: 1, "col1": 2}])
 
     with pytest.raises(POptimizerError) as error:
         # noinspection PyStatementEffect
-        manager["AKRN"]
+        mng["AKRN"]
     assert str(error.value) == "Новые 1 короче старых 2 данных test.simple.AKRN"
 
 
 def test_data_not_stacks(monkeypatch, next_week_date):
-    manager = SimpleManager()
-    monkeypatch.setattr(manager, "LAST_HISTORY_DATE", next_week_date)
-    monkeypatch.setattr(manager, "UPDATE", [{DATE: 4, "col1": 5, "col2": 5}])
+    mng = SimpleManager()
+    monkeypatch.setattr(mng, "LAST_HISTORY_DATE", next_week_date)
+    monkeypatch.setattr(mng, "UPDATE", [{DATE: 4, "col1": 5, "col2": 5}])
 
     with pytest.raises(POptimizerError) as error:
         # noinspection PyStatementEffect
-        manager["AKRN"]
+        mng["AKRN"]
     assert (
         str(error.value)
         == "Новые {'DATE': 4, 'col1': 5, 'col2': 5} не соответствуют старым "
@@ -154,21 +154,21 @@ def test_data_not_stacks(monkeypatch, next_week_date):
 
 
 def test_validate_all(monkeypatch, next_week_date):
-    manager = SimpleManager(validate_last=False)
-    monkeypatch.setattr(manager, "LAST_HISTORY_DATE", next_week_date)
+    mng = SimpleManager(validate_last=False)
+    monkeypatch.setattr(mng, "LAST_HISTORY_DATE", next_week_date)
     fake_load = [
         {DATE: 1, "col1": 1, "col2": 10},
         {DATE: 2, "col1": 2, "col2": 15},
         {DATE: 7, "col1": 9, "col2": 11},
     ]
-    monkeypatch.setattr(manager, "LOAD", fake_load)
+    monkeypatch.setattr(mng, "LOAD", fake_load)
     # noinspection PyProtectedMember
-    collection = manager._collection
+    collection = mng._mongo.collection
 
     time0 = pd.Timestamp.now(utils.MOEX_TZ).astimezone(None)
     assert collection.find_one({"_id": "AKRN"})["timestamp"] < time0
 
-    data = manager["AKRN"]
+    data = mng["AKRN"]
     assert isinstance(data, pd.DataFrame)
     assert data.equals(
         pd.DataFrame(data={"col1": [1, 2, 9], "col2": [10, 15, 11]}, index=[1, 2, 7])

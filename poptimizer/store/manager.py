@@ -10,8 +10,8 @@ import pymongo
 import requests
 
 from poptimizer.config import POptimizerError
-from poptimizer.store import mongo, utils
-from poptimizer.store.db import DB
+from poptimizer.store import mongo, utils, database
+from poptimizer.store.database import DB
 
 
 class AbstractManager(ABC):
@@ -58,7 +58,7 @@ class AbstractManager(ABC):
         :param session:
             Сессия для обновления данных по интернет.
         """
-        self._collection = client[db][collection]
+        self._mongo = database.MongoDB(collection, db, client)
         self._index = index
         self._create_from_scratch = create_from_scratch
         self._validate_last = validate_last
@@ -68,14 +68,14 @@ class AbstractManager(ABC):
 
     def __getitem__(self, item: str) -> pd.DataFrame:
         """Получение соответствующего элемента из базы."""
-        doc = self._collection.find_one({"_id": item})
+        doc = self._mongo[item]
         if doc is None:
             doc = self.create(item)
         elif doc["timestamp"] < self.LAST_HISTORY_DATE:
             if self._create_from_scratch:
                 doc = self.create(item)
             else:
-                doc = self.update(doc)
+                doc = self.update(item, doc)
         if doc["data"]:
             df = pd.DataFrame(doc["data"]).set_index(self._index)
             self._validate_index(item, df)
@@ -86,41 +86,40 @@ class AbstractManager(ABC):
         """Проверяет индекс данных с учетом настроек."""
         if self._unique_index and not df.index.is_unique:
             raise POptimizerError(
-                f"Индекс {self._collection.full_name}.{item} не уникальный"
+                f"Индекс {self._mongo.collection.full_name}.{item} не уникальный"
             )
         if self._ascending_index and not df.index.is_monotonic_increasing:
             raise POptimizerError(
-                f"Индекс {self._collection.full_name}.{item} не возрастает"
+                f"Индекс {self._mongo.collection.full_name}.{item} не возрастает"
             )
 
     def create(self, item: str) -> Dict[str, Any]:
         """Создает локальные данные с нуля или перезаписывает существующие."""
-        logging.info(f"Создание данных {self._collection.full_name}.{item}")
+        logging.info(f"Создание данных {self._mongo.collection.full_name}.{item}")
         data = self._download(item, None)
-        doc = dict(_id=item, data=data, timestamp=datetime.utcnow())
-        self._collection.replace_one({"_id": item}, doc, upsert=True)
-        logging.info(f"Данные обновлены {self._collection.full_name}.{item}")
+        doc = dict(data=data, timestamp=datetime.utcnow())
+        self._mongo[item] = doc
+        logging.info(f"Данные обновлены {self._mongo.collection.full_name}.{item}")
         return doc
 
-    def update(self, doc: Dict[str, Any]) -> Dict[str, Any]:
+    def update(self, item: str, doc: Dict[str, Any]) -> Dict[str, Any]:
         """Обновляет локальные данные.
 
         Во время обновления проверяется стыковку новых данных с существующими.
         """
-        item = doc["_id"]
         data = doc["data"]
         if data:
             last_index = data[-1][self._index]
         else:
             last_index = None
-        logging.info(f"Обновление данных {self._collection.full_name}.{item}")
+        logging.info(f"Обновление данных {self._mongo.collection.full_name}.{item}")
         data_new = self._download(item, last_index)
         self._validate_new(item, data, data_new)
         if self._validate_last:
             data_new = data + data_new[1:]
         doc = dict(data=data_new, timestamp=datetime.utcnow())
-        self._collection.update_one({"_id": item}, {"$set": doc})
-        logging.info(f"Данные обновлены {self._collection.full_name}.{item}")
+        self._mongo[item] = doc
+        logging.info(f"Данные обновлены {self._mongo.collection.full_name}.{item}")
         return doc
 
     def _validate_new(
@@ -133,7 +132,7 @@ class AbstractManager(ABC):
         elif len(data) > len(data_new):
             raise POptimizerError(
                 f"Новые {len(data_new)} короче старых {len(data)} данных "
-                f"{self._collection.full_name}.{item}"
+                f"{self._mongo.collection.full_name}.{item}"
             )
         for old, new in zip(data, data_new):
             for col in old:
@@ -146,7 +145,7 @@ class AbstractManager(ABC):
                 if not_float_not_eq or float_not_eq:
                     raise POptimizerError(
                         f"Новые {new} не соответствуют старым {old} данным "
-                        f"{self._collection.full_name}.{item}"
+                        f"{self._mongo.collection.full_name}.{item}"
                     )
 
     @abstractmethod

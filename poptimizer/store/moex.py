@@ -7,7 +7,7 @@ import apimoex
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import manager, DB
-from poptimizer.store.db import MISC
+from poptimizer.store.database import MISC
 from poptimizer.store.manager import AbstractManager
 from poptimizer.store.utils import (
     TICKER,

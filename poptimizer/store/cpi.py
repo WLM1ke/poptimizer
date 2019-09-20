@@ -5,7 +5,7 @@ import pandas as pd
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import utils
-from poptimizer.store.db import DB, MISC
+from poptimizer.store.database import DB, MISC
 from poptimizer.store.manager import AbstractManager
 
 # Наименование данных по инфляции

@@ -5,7 +5,7 @@ import requests
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import parser
-from poptimizer.store.db import DB
+from poptimizer.store.database import DB
 from poptimizer.store.manager import AbstractManager
 from poptimizer.store.utils import DATE
 
