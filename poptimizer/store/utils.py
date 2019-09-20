@@ -6,7 +6,7 @@ from typing import Tuple, Dict, Any
 import apimoex
 import pandas as pd
 
-from poptimizer.store import mongo
+from poptimizer.store import mongo, database
 from poptimizer.store.database import DB, MISC
 
 # Метки столбцов данных
@@ -45,14 +45,14 @@ def last_history_from_doc(doc: Dict[str, Any]) -> datetime:
 
 def get_last_history_date(db: str = DB, collection: str = MISC) -> datetime:
     """"Момент времени UTC после, которого не нужно обновлять данные."""
-    misc_collection = mongo.MONGO_CLIENT[db][collection]
-    doc = misc_collection.find_one({"_id": "last_date"})
+    mongodb = database.MongoDB(collection, db)
+    doc = mongodb["last_date"]
     now, end_of_trading = now_and_end_of_trading_day()
     if doc is None or doc["timestamp"] < end_of_trading:
         data = apimoex.get_board_dates(
             mongo.HTTP_SESSION, board="TQBR", market="shares", engine="stock"
         )
-        doc = dict(_id="last_date", data=data, timestamp=now)
-        misc_collection.replace_one({"_id": "last_date"}, doc, upsert=True)
+        doc = dict(data=data, timestamp=now)
+        mongodb["last_date"] = doc
         logging.info(f"Последняя дата с историей: {last_history_from_doc(doc).date()}")
     return last_history_from_doc(doc)
