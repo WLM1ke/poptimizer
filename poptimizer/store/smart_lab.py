@@ -4,8 +4,8 @@ from typing import Optional, Any, List, Dict
 import requests
 
 from poptimizer.config import POptimizerError
-from poptimizer.store import parser, DB
-from poptimizer.store.database import MISC
+from poptimizer.store import parser
+from poptimizer.store.database import DB, MISC
 from poptimizer.store.manager import AbstractManager
 from poptimizer.store.utils import DATE, TICKER, DIVIDENDS
 
@@ -54,7 +54,7 @@ class SmartLab(AbstractManager):
     def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
         if item != SMART_LAB:
             raise POptimizerError(
-                f"Отсутствуют данные {self._collection.full_name}.{item}"
+                f"Отсутствуют данные {self._mongo.collection.full_name}.{item}"
             )
         with self._session.get(URL) as respond:
             try:

@@ -4,11 +4,10 @@
 """
 from poptimizer.store.conomy import Conomy
 from poptimizer.store.cpi import Macro, CPI
-from poptimizer.store.database import MISC, DB
+from poptimizer.store.database import MongoDB
 from poptimizer.store.dividends import Dividends
 from poptimizer.store.dohod import Dohod
 from poptimizer.store.moex import Securities, Index, Quotes, SECURITIES, INDEX
-from poptimizer.store.mongo import MONGO_CLIENT
 from poptimizer.store.smart_lab import SmartLab, SMART_LAB
 from poptimizer.store.utils import (
     DATE,

@@ -1,19 +1,16 @@
 """Составляет ML-прогноз."""
-import pickle
 from typing import Tuple
 
 import catboost
 import numpy as np
 import pandas as pd
 
-from poptimizer import data, config
+from poptimizer import data, config, store
 from poptimizer.ml import examples, ledoit_wolf, cv
 from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 from poptimizer.portfolio import Forecast
-from poptimizer.store import MONGO_CLIENT, MISC, DB
 
-# Коллекция и ключ для хранений кеша прогноза
-COLLECTION = MONGO_CLIENT[DB][MISC]
+# Ключ для хранений кеша прогноза
 FORECAST = "forecast"
 
 
@@ -128,13 +125,11 @@ def get_forecast(tickers: Tuple[str, ...], date: pd.Timestamp, params=None) -> F
     :return:
         Прогнозная доходность, ковариация и дополнительная информация.
     """
+    mongodb = store.MongoDB()
+    forecast_cache = mongodb[FORECAST]
     params = params or config.ML_PARAMS
-    forecast_cache = COLLECTION.find_one({"_id": FORECAST})
-    if forecast_cache:
-        forecast_cache = pickle.loads(forecast_cache["data"])
     if validate_cache(forecast_cache, tickers, date, params):
         return forecast_cache
     forecast = make_forecast(tickers, date, params)
-    doc = dict(_id=FORECAST, data=pickle.dumps(forecast))
-    COLLECTION.replace_one({"_id": FORECAST}, doc, upsert=True)
+    mongodb[FORECAST] = forecast
     return forecast

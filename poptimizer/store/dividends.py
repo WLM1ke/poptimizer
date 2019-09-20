@@ -3,7 +3,8 @@ from typing import Optional, Any, List, Dict
 
 import pymongo
 
-from poptimizer.store import manager, DB
+from poptimizer.store import manager
+from poptimizer.store.database import DB
 from poptimizer.store.manager import AbstractManager
 from poptimizer.store.utils import DATE
 
@@ -29,7 +30,7 @@ class Dividends(AbstractManager):
         """Загружает полностью данные по дивидендам.
 
         Загрузка осуществляется из обновляемой в ручную MongoDB базы данных по дивидендам."""
-        source = self._collection.database.client[SOURCE_DB][COLLECTION]
+        source = self._mongo.client[SOURCE_DB][COLLECTION]
         data = list(
             source.aggregate(
                 [

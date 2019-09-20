@@ -6,8 +6,8 @@ from typing import Optional, Any, List, Dict
 import apimoex
 
 from poptimizer.config import POptimizerError
-from poptimizer.store import manager, DB
-from poptimizer.store.database import MISC
+from poptimizer.store import manager
+from poptimizer.store.database import DB, MISC
 from poptimizer.store.manager import AbstractManager
 from poptimizer.store.utils import (
     TICKER,
@@ -46,7 +46,7 @@ class Securities(AbstractManager):
         """Загружает полностью данные о всех торгующихся акциях."""
         if item != SECURITIES:
             raise POptimizerError(
-                f"Отсутствуют данные {self._collection.full_name}.{item}"
+                f"Отсутствуют данные {self._mongo.collection.full_name}.{item}"
             )
         columns = ("SECID", "REGNUMBER", "LOTSIZE")
         data = apimoex.get_board_securities(self._session, columns=columns)
@@ -68,7 +68,7 @@ class Index(AbstractManager):
         """Поддерживается частичная загрузка данных для обновления."""
         if item != INDEX:
             raise POptimizerError(
-                f"Отсутствуют данные {self._collection.full_name}.{item}"
+                f"Отсутствуют данные {self._mongo.collection.full_name}.{item}"
             )
         if last_index is not None:
             last_index = last_index.date()
@@ -113,7 +113,7 @@ class Quotes(AbstractManager):
 
     def _find_aliases(self, ticker: str) -> List[str]:
         """Ищет все тикеры с эквивалентным регистрационным номером."""
-        securities = Securities(self._collection.database.name)[SECURITIES]
+        securities = Securities(self._mongo.database.name)[SECURITIES]
         number = securities.at[ticker, REG_NUMBER]
         results = apimoex.find_securities(self._session, number)
         return [row["secid"] for row in results if row["regnumber"] == number]
