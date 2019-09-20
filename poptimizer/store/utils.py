@@ -7,6 +7,7 @@ import apimoex
 import pandas as pd
 
 from poptimizer.store import mongo
+from poptimizer.store.db import MISC
 
 # Метки столбцов данных
 DATE = "DATE"
@@ -28,9 +29,6 @@ END_OF_TRADING = dict(hour=19, minute=45, second=0, microsecond=0, nanosecond=0)
 
 # Основная база
 DB = "data"
-
-# Коллекция для хранения вспомогательной информации и единичных данных
-MISC = "misc"
 
 
 def now_and_end_of_trading_day() -> Tuple[datetime, datetime]:
