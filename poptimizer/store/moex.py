@@ -6,11 +6,10 @@ from typing import Optional, Any, List, Dict
 import apimoex
 
 from poptimizer.config import POptimizerError
-from poptimizer.store import manager
+from poptimizer.store import manager, DB
 from poptimizer.store.db import MISC
 from poptimizer.store.manager import AbstractManager
 from poptimizer.store.utils import (
-    DB,
     TICKER,
     REG_NUMBER,
     LOT_SIZE,

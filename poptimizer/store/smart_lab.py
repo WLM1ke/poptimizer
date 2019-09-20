@@ -4,10 +4,10 @@ from typing import Optional, Any, List, Dict
 import requests
 
 from poptimizer.config import POptimizerError
-from poptimizer.store import parser
+from poptimizer.store import parser, DB
 from poptimizer.store.db import MISC
 from poptimizer.store.manager import AbstractManager
-from poptimizer.store.utils import DATE, TICKER, DIVIDENDS, DB
+from poptimizer.store.utils import DATE, TICKER, DIVIDENDS
 
 # Наименование данных в коллекции MISC
 SMART_LAB = "smart-lab"

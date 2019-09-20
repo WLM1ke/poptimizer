@@ -5,9 +5,8 @@ import pandas as pd
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import utils
-from poptimizer.store.db import MISC
+from poptimizer.store.db import DB, MISC
 from poptimizer.store.manager import AbstractManager
-from poptimizer.store.utils import DB
 
 # Наименование данных по инфляции
 CPI = "CPI"

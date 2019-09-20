@@ -1,11 +1,15 @@
 """Интерфейс для записи и получения данных из  Mongo DB."""
 import pickle
-from typing import Dict, Any
+from typing import Any
 
-import pymongo
-from pymongo.errors import InvalidDocument
+from pymongo import MongoClient
+from pymongo.collection import Collection
+from pymongo.database import Database
 
 from poptimizer.store import mongo
+
+# База данных по умолчанию
+DB = "data"
 
 # Коллекция для хранения вспомогательной информации и единичных данных
 MISC = "misc"
@@ -14,7 +18,7 @@ MISC = "misc"
 PICKLE = "pickle"
 
 
-class DB:
+class MongoDB:
     """Интерфейс для записи и получения данных из  Mongo DB.
 
     При получении данных может быть указана коллекция. По умолчанию запись будет производиться в
@@ -24,24 +28,44 @@ class DB:
     преобразуются в бинарный формат с помощью pickle.
     """
 
-    def __init(
-        self, collection: str = MISC, client: pymongo.MongoClient = mongo.MONGO_CLIENT
+    def __init__(
+        self,
+        collection: str = MISC,
+        db: str = DB,
+        client: MongoClient = mongo.MONGO_CLIENT,
     ):
-        self._collection = client[collection]
+        self._collection = client[db][collection]
 
     def __getitem__(self, item: str):
         doc = self._collection.find_one({"_id": item})
+        if doc is None:
+            return doc
         del doc["_id"]
         if PICKLE in doc:
             doc = pickle.loads(doc[PICKLE])
         return doc
 
-    def __setitem__(self, key: str, value: Dict[str, Any]):
+    def __setitem__(self, key: str, value: Any):
         try:
             self._collection.replace_one({"_id": key}, value, upsert=True)
-        except InvalidDocument:
+        except TypeError:
             value = {PICKLE: pickle.dumps(value)}
             self._collection.replace_one({"_id": key}, value, upsert=True)
 
     def __delitem__(self, key: str):
         self._collection.delete_one({"_id": key})
+
+    @property
+    def client(self) -> MongoClient:
+        """Клиент MongoDB."""
+        return self._collection.database.client
+
+    @property
+    def db(self) -> Database:
+        """База данных."""
+        return self._collection.database
+
+    @property
+    def collection(self) -> Collection:
+        """Коллекция для хранения данных."""
+        return self._collection

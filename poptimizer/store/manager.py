@@ -11,6 +11,7 @@ import requests
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import mongo, utils
+from poptimizer.store.db import DB
 
 
 class AbstractManager(ABC):
@@ -22,7 +23,7 @@ class AbstractManager(ABC):
     def __init__(
         self,
         collection: str,
-        db: str = utils.DB,
+        db: str = DB,
         client: pymongo.MongoClient = mongo.MONGO_CLIENT,
         create_from_scratch: bool = False,
         validate_last: bool = True,
