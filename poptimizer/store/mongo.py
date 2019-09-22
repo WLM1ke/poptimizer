@@ -49,10 +49,23 @@ def start_mongo_server() -> psutil.Process:
     return psutil.Popen(mongo_server, stdout=subprocess.DEVNULL)
 
 
+def restore_dump(client: pymongo.MongoClient) -> None:
+    """Осуществляет восстановление данных по дивидендам."""
+    if SOURCE_DB not in client.list_database_names():
+        logging.info(f"Начато восстановление данных с дивидендами")
+        mongo_restore = ["mongorestore", config.MONGO_DUMP]
+        process = psutil.Popen(mongo_restore)
+        status = process.wait()
+        logging.info(
+            f"Восстановление данных с дивидендами завершен со статусом {status}"
+        )
+
+
 def start_mongo_client() -> pymongo.MongoClient:
     """Открытие клиентского соединения с MongoDB."""
     logging.info("Создается клиент MongoDB")
     client = pymongo.MongoClient("localhost", 27017, tz_aware=False)
+    restore_dump(client)
     return client
 
 
@@ -72,16 +85,9 @@ def dump_dividends_db() -> None:
     n_docs = MONGO_CLIENT[SOURCE_DB][COLLECTION].count_documents({})
     div_count = MONGO_CLIENT[DB][MISC].find_one({"_id": DIV_COUNT})
     if div_count is None or n_docs != div_count["data"]:
-        logging.info("Backup данных с дивидендами {n_docs}")
-        mongo_dump = [
-            "mongodump",
-            "--out",
-            config.MONGO_DUMP,
-            "--db",
-            SOURCE_DB,
-            "--quiet",
-        ]
-        process = psutil.Popen(mongo_dump, stdout=subprocess.DEVNULL)
+        logging.info(f"Backup данных с дивидендами {n_docs} документов")
+        mongo_dump = ["mongodump", "--out", config.MONGO_DUMP, "--db", SOURCE_DB]
+        process = psutil.Popen(mongo_dump)
         status = process.wait()
         MONGO_CLIENT[DB][MISC].replace_one(
             {"_id": DIV_COUNT}, {"data": n_docs}, upsert=True
