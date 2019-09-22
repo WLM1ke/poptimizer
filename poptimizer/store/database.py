@@ -55,6 +55,9 @@ class MongoDB:
     def __delitem__(self, key: str):
         self._collection.delete_one({"_id": key})
 
+    def __len__(self) -> int:
+        return self._collection.count_documents({})
+
     @property
     def client(self) -> MongoClient:
         """Клиент MongoDB."""
