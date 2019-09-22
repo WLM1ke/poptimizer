@@ -1,0 +1,31 @@
+{
+  "options": {},
+  "indexes": [
+    {
+      "v": {
+        "$numberInt": "2"
+      },
+      "key": {
+        "_id": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "_id_",
+      "ns": "source.dividends"
+    },
+    {
+      "v": {
+        "$numberInt": "2"
+      },
+      "key": {
+        "ticker": {
+          "$numberInt": "1"
+        }
+      },
+      "name": "ticker",
+      "ns": "source.dividends",
+      "background": false
+    }
+  ],
+  "uuid": "2d496e96ee424c9187035b28932c1402"
+}

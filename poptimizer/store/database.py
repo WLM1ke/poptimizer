@@ -7,12 +7,7 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 
 from poptimizer.store import mongo
-
-# База данных по умолчанию
-DB = "data"
-
-# Коллекция для хранения вспомогательной информации и единичных данных
-MISC = "misc"
+from poptimizer.store.mongo import DB, MISC
 
 # Ключ для сохранения данных в формате pickle
 PICKLE = "pickle"

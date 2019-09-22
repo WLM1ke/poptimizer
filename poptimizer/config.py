@@ -20,8 +20,9 @@ pd.set_option("display.width", None)
 # Путь к директории с отчетам
 REPORTS_PATH = pathlib.Path(__file__).parents[1] / "reports"
 
-# Путь к MongoDB
+# Путь к MongoDB и dump с данными по дивидендам
 MONGO_PATH = pathlib.Path(__file__).parents[1] / "db"
+MONGO_DUMP = pathlib.Path(__file__).parents[1] / "dump"
 
 # Множитель, для переходя к после налоговым значениям
 AFTER_TAX = 1 - 0.13

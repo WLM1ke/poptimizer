@@ -5,8 +5,8 @@ import pandas as pd
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import utils
-from poptimizer.store.database import DB, MISC
 from poptimizer.store.manager import AbstractManager
+from poptimizer.store.mongo import DB, MISC
 
 # Наименование данных по инфляции
 CPI = "CPI"
@@ -35,7 +35,7 @@ class Macro(AbstractManager):
         """Загружает полностью данные по инфляции с сайта ФСГС."""
         if item != CPI:
             raise POptimizerError(
-                f"Отсутствуют данные {self._collection.full_name}.{item}"
+                f"Отсутствуют данные {self._mongo.collection.full_name}.{item}"
             )
         df = pd.read_excel(URL_CPI, **PARSING_PARAMETERS)
         self._validate(df)

@@ -11,7 +11,7 @@ import requests
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import mongo, utils, database
-from poptimizer.store.database import DB
+from poptimizer.store.mongo import DB
 
 
 class AbstractManager(ABC):

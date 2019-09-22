@@ -19,6 +19,17 @@ from poptimizer import config
 HTTPS_MAX_POOL_SIZE = 20
 MAX_RETRIES = 3
 
+# База данных и коллекция по умолчанию
+DB = "data"
+MISC = "misc"
+
+# Ключ в базе, где хранится количество данных по дивидендам
+DIV_COUNT = "div_count"
+
+# База и коллекция с источником данных по дивидендам
+SOURCE_DB = "source"
+COLLECTION = "dividends"
+
 
 def start_mongo_server() -> psutil.Process:
     """Запуск сервера MongoDB."""
@@ -56,8 +67,32 @@ def start_http_session() -> requests.Session:
     return session
 
 
+def dump_dividends_db() -> None:
+    """Осуществляет резервное копирование базы данных с дивидендами."""
+    n_docs = MONGO_CLIENT[SOURCE_DB][COLLECTION].count_documents({})
+    div_count = MONGO_CLIENT[DB][MISC].find_one({"_id": DIV_COUNT})
+    if div_count is None or n_docs != div_count["data"]:
+        logging.info("Backup данных с дивидендами {n_docs}")
+        mongo_dump = [
+            "mongodump",
+            "--out",
+            config.MONGO_DUMP,
+            "--db",
+            SOURCE_DB,
+            "--quiet",
+        ]
+        process = psutil.Popen(mongo_dump, stdout=subprocess.DEVNULL)
+        status = process.wait()
+        MONGO_CLIENT[DB][MISC].replace_one(
+            {"_id": DIV_COUNT}, {"data": n_docs}, upsert=True
+        )
+        logging.info(f"Backup данных с дивидендами завершен со статусом {status}")
+
+
 def clean_up(mongo_process: psutil.Process) -> None:
     """Отключение сервера и закрытие соединений."""
+    dump_dividends_db()
+
     MONGO_CLIENT.close()
     logging.info("Подключение клиента MongoDB закрыто")
 

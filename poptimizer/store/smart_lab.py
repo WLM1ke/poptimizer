@@ -5,8 +5,8 @@ import requests
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import parser
-from poptimizer.store.database import DB, MISC
 from poptimizer.store.manager import AbstractManager
+from poptimizer.store.mongo import DB, MISC
 from poptimizer.store.utils import DATE, TICKER, DIVIDENDS
 
 # Наименование данных в коллекции MISC

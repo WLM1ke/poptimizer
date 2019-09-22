@@ -4,15 +4,9 @@ from typing import Optional, Any, List, Dict
 import pymongo
 
 from poptimizer.store import manager
-from poptimizer.store.database import DB
 from poptimizer.store.manager import AbstractManager
+from poptimizer.store.mongo import SOURCE_DB, COLLECTION, DB
 from poptimizer.store.utils import DATE
-
-# База и коллекция с источником данных по дивидендам
-SOURCE_DB = "source"
-
-# Наименование коллекции в источнике и основной базе
-COLLECTION = "dividends"
 
 
 class Dividends(AbstractManager):

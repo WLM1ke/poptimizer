@@ -7,7 +7,7 @@ import apimoex
 import pandas as pd
 
 from poptimizer.store import mongo, database
-from poptimizer.store.database import DB, MISC
+from poptimizer.store.mongo import DB, MISC
 
 # Метки столбцов данных
 DATE = "DATE"

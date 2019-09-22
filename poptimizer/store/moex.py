@@ -7,8 +7,8 @@ import apimoex
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import manager
-from poptimizer.store.database import DB, MISC
 from poptimizer.store.manager import AbstractManager
+from poptimizer.store.mongo import DB, MISC
 from poptimizer.store.utils import (
     TICKER,
     REG_NUMBER,
