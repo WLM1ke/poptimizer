@@ -38,6 +38,8 @@ def start_mongo_server() -> psutil.Process:
             logging.info("Локальный сервер MongoDB уже работает")
             return process
     logging.info("Запускается локальный сервер MongoDB")
+    if not config.MONGO_PATH.exists():
+        config.MONGO_PATH.mkdir(parents=True)
     mongo_server = [
         "mongod",
         "--dbpath",
