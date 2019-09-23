@@ -16,7 +16,7 @@ poptimizer
 
    $ pip install poptimizer
 
-Для начала работы требуется также установить `MongoDB <https://docs.mongodb.com/manual/installation/>`_.
+Для начала работы требуется также установить `MongoDB <https://docs.mongodb.com/manual/installation/>`_
 
 Опционально можно скачать Chromium - в ином случае его загрузка будет осуществлена автоматически
 при первой необходимости, что может замедлить исполнение
