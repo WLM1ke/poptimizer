@@ -113,7 +113,7 @@ class Quotes(AbstractManager):
 
     def _find_aliases(self, ticker: str) -> List[str]:
         """Ищет все тикеры с эквивалентным регистрационным номером."""
-        securities = Securities(self._mongo.database.name)[SECURITIES]
+        securities = Securities(self._mongo.db.name)[SECURITIES]
         number = securities.at[ticker, REG_NUMBER]
         results = apimoex.find_securities(self._session, number)
         return [row["secid"] for row in results if row["regnumber"] == number]
