@@ -30,6 +30,16 @@ DIV_COUNT = "div_count"
 SOURCE_DB = "source"
 COLLECTION = "dividends"
 
+# Ссылки на данные по дивидендам в интернете
+DIV_DATA_URL = {
+    "dividends.bson": (
+        "https://github.com/WLM1ke/poptimizer/blob/master/dump/source/dividends.bson?raw=true"
+    ),
+    "dividends.metadata.json": (
+        "https://github.com/WLM1ke/poptimizer/blob/master/dump/source/dividends.metadata.json?raw=true"
+    ),
+}
+
 
 def start_mongo_server() -> psutil.Process:
     """Запуск сервера MongoDB."""
@@ -52,6 +62,15 @@ def start_mongo_server() -> psutil.Process:
 
 def restore_dump(client: pymongo.MongoClient) -> None:
     """Осуществляет восстановление данных по дивидендам."""
+    if not config.MONGO_DUMP.exists():
+        logging.info(f"Файлы с данными о дивидендах отсутствуют - начинается загрузка")
+        path = config.MONGO_DUMP / SOURCE_DB
+        path.mkdir(parents=True)
+        for name, url in DIV_DATA_URL.items():
+            with HTTP_SESSION.get(url, stream=True) as respond:
+                with open(path / name, "wb") as fin:
+                    fin.write(respond.content)
+        logging.info(f"Файлы с данными о дивидендах загружены")
     if SOURCE_DB not in client.list_database_names():
         logging.info(f"Начато восстановление данных с дивидендами")
         mongo_restore = ["mongorestore", config.MONGO_DUMP]
@@ -111,7 +130,7 @@ def clean_up(mongo_process: psutil.Process) -> None:
     logging.info("Сессия для обновления данных по интернет закрыта")
 
 
+HTTP_SESSION = start_http_session()
 MONGO_PROCESS = start_mongo_server()
 MONGO_CLIENT = start_mongo_client()
-HTTP_SESSION = start_http_session()
 atexit.register(functools.partial(clean_up, MONGO_PROCESS))
