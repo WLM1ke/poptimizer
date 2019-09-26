@@ -16,8 +16,7 @@ PARAMS = dict(
 
 
 def test_portfolio(monkeypatch):
-    monkeypatch.setattr(config, "TURNOVER_PERIOD", 7)
-    monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.6)
+    monkeypatch.setattr(config, "TURNOVER_FACTOR", 7)
 
     port = portfolio.Portfolio(**PARAMS)
 
@@ -39,7 +38,7 @@ def test_portfolio(monkeypatch):
             1,
         ],
     )
-    assert np.allclose(port.turnover_factor, [1, 0, 0.693_130_358_498_49, 1, 1])
+    assert np.allclose(port.turnover_factor, [1, 0, 0.982_604, 1, 1])
 
 
 def test_portfolio_wrong_value():
