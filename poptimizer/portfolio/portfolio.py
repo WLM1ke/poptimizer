@@ -144,11 +144,10 @@ class Portfolio:
         Ликвидность в первом приближении убывает пропорционально квадрату оборота.
         """
         last_turnover = data.turnovers(tuple(self.index[:-2]), self.date)
-        last_turnover = last_turnover.iloc[-config.TURNOVER_PERIOD :]
+        turn_over_factor = config.TURNOVER_FACTOR
+        last_turnover = last_turnover.iloc[-turn_over_factor:]
         median_turnover = last_turnover.median(axis=0)
         turnover_share_of_portfolio = median_turnover / self.value[PORTFOLIO]
-        turnover_factor = (
-            1 - (config.TURNOVER_CUT_OFF / turnover_share_of_portfolio) ** 2
-        )
+        turnover_factor = 1 - (1 / turnover_share_of_portfolio / turn_over_factor) ** 2
         turnover_factor[turnover_factor < 0] = 0
         return turnover_factor.reindex(self.index, fill_value=1)
