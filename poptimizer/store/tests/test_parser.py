@@ -139,7 +139,7 @@ def test_get_formatted_data_validate():
     assert rez == table.get_formatted_data(columns, 1)
 
 
-def test_get_formatted_data_fail_validate():
+def test_get_formatted_data_raise_validate():
     table = parser.HTMLTableParser(HTML, 1)
     columns = [parser.DataColumn("col", 1, {0: "2.2", 1: "test"}, lambda x: x)]
     with pytest.raises(POptimizerError) as error:
