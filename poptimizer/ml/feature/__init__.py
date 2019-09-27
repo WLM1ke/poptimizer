@@ -9,3 +9,4 @@ from poptimizer.ml.feature.mom1m import Mom1m
 from poptimizer.ml.feature.retmax import RetMax
 from poptimizer.ml.feature.std import Scaler, STD
 from poptimizer.ml.feature.ticker import Ticker
+from poptimizer.ml.feature.volume import TurnOver
