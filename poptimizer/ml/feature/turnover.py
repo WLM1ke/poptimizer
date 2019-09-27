@@ -30,10 +30,10 @@ class TurnOver(DaysParamsMixin, AbstractFeature):
         params = params or self._params
         days = params["days"]
         turnover = data.turnovers(self._tickers, self._last_date)
-        turnover = turnover.rolling(days).mean()
+        turnover = turnover.rolling(days).mean() + 1
         if params["normalize"]:
             turnover = turnover.div(turnover.mean(axis=1), axis=0)
-        turnover = turnover.apply(np.log1p)
+        turnover = turnover.apply(np.log)
         turnover = turnover.stack()
         turnover.name = self.name
         return turnover
