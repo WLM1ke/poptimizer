@@ -6,15 +6,14 @@ from poptimizer.portfolio import finder
 
 
 def test_get_turnover(monkeypatch):
-    monkeypatch.setattr(config, "TURNOVER_CUT_OFF", 0.0012)
-    monkeypatch.setattr(config, "TURNOVER_PERIOD", 21)
+    monkeypatch.setattr(config, "TURNOVER_FACTOR", 200)
     date = pd.Timestamp("2018-12-18")
     positions = dict(TATN=20000, KZOS=20000, LKOH=20000)
     port = portfolio.Portfolio(date, 0, positions)
     df = finder.get_turnover(port, ("KZOS", "AKRN"))
     assert isinstance(df, pd.Series)
     assert df.size == 4
-    assert df["KZOS"] == pytest.approx(0.986873)
+    assert df["KZOS"] == pytest.approx(0.5476826158633951)
 
 
 def test_find_good_volume():
