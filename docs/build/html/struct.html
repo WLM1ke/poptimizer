@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ru">
   <head>
     <meta charset="utf-8" />
-    <title>Основные структурные блоки и подходы &#8212; документация poptimizer 0.5.0</title>
+    <title>Основные структурные блоки и подходы &#8212; документация poptimizer 0.6.0</title>
     <link rel="stylesheet" href="_static/aiohttp.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -44,17 +44,17 @@
 <li><p>Дивиденды</p></li>
 <li><p>Индекс потребительских цен</p></li>
 </ul>
-<p>Данные из всех источников сохраняются в локальной базе на основе <a class="reference external" href="https://en.wikipedia.org/wiki/Lightning_Memory-Mapped_Database">Lightning Memory-Mapped Database</a>.</p>
+<p>Данные из всех источников сохраняются в локальной базе MongoDB.</p>
 <div class="section" id="id3">
 <h3>Котировки<a class="headerlink" href="#id3" title="Ссылка на этот заголовок">¶</a></h3>
 <p>Котировки и вспомогательная биржевая информация загружаются напрямую с <a class="reference external" href="https://www.moex.com/a2193">MOEX Informational &amp;
-Statistical Server</a> с использованием асинхронных вызовов, что позволяет
+Statistical Server</a> с использованием потоков, что позволяет
 быстро скачать историю котировок по всем обращающимся на MOEX акциям и в последствии
 инкрементально обновлять ее каждый торговый день после публикации финальных данных о торгах в 19:45.</p>
 </div>
 <div class="section" id="id4">
 <h3>Дивиденды<a class="headerlink" href="#id4" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Данные по дивидендам загружаются из поддерживаемой в ручную базы данных на основе SQLite, которая
+<p>Данные по дивидендам загружаются из поддерживаемой в ручную базы данных на основе MongoDB, которая
 содержит информацию из ежеквартальных отчетов эмитентов о выплаченных дивидендах с 2010 года. Для
 облегчения ручного обновления реализован ряд функция сверки с публичными источниками данных на сайтах:</p>
 <ul class="simple">
@@ -93,14 +93,16 @@ Statistical Server</a> с использованием асинхронных в
 </div>
 <div class="section" id="id8">
 <h2>Прогнозирование доходности<a class="headerlink" href="#id8" title="Ссылка на этот заголовок">¶</a></h2>
-<p>Прогнозирование доходности осуществляется с помощью библиотеки градиентного бустинга <a class="reference external" href="https://catboost.ai">Catboost</a>.
-В качестве целевой переменной используется нормированная по локальной волатильности доходность для
-компенсации разности волатильности отдельных акций и гетероскедастичности.
-В качестве объясняющих факторов используется известные в академической литературе рыночные аномалии - за
-основу взяты результаты из работы <a class="reference external" href="http://dachxiu.chicagobooth.edu/download/ML.pdf">Empirical Asset Pricing via Machine Learning</a>.
+<p>Прогнозирование доходности осуществляется с помощью библиотеки градиентного бустинга <a class="reference external" href="https://catboost.ai">Catboost</a>.</p>
+<p>В качестве целевой переменной используется доходность за установленное в настройках количество дней.
+Так же существует возможность оптимизации дивидендной доходности или любой взвешенной величины между
+общей и дивидендной доходностью.</p>
+<p>Для компенсации разной волатильности отдельных акций и гетероскедастичности используются веса
+обучающих примеров обратно пропорциональные локальной дисперсии конкретной акции.</p>
+<p>В качестве объясняющих факторов используется известные в академической литературе рыночные аномалии - за
+основу взят перечень признаков из работы <a class="reference external" href="http://dachxiu.chicagobooth.edu/download/ML.pdf">Empirical Asset Pricing via Machine Learning</a>.
 Параметры расчета объясняющих факторов выбираются с помощью байесовской оптимизации с использованием
-библиотеки <a class="reference external" href="https://github.com/hyperopt/hyperopt">hyperopt</a>. Так же существует возможность
-оптимизации дивидендной доходности или любой взвешенной величины между общей и дивидендной доходностью.</p>
+библиотеки <a class="reference external" href="https://github.com/hyperopt/hyperopt">hyperopt</a>.</p>
 </div>
 <div class="section" id="id9">
 <h2>Оптимизация портфеля<a class="headerlink" href="#id9" title="Ссылка на этот заголовок">¶</a></h2>
@@ -174,11 +176,12 @@ Statistical Server</a> с использованием асинхронных в
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Описание API (todo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="change_log.html">Список изменений</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id2">0.5.0 (2019-08-11)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id3">0.4.0 (2019-07-10)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id4">0.3.0 (2019-04-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id5">0.2.0 (2019-02-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id6">0.1.0 (2018-12-29)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id2">0.6.0 (2019-09-29)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id3">0.5.0 (2019-08-11)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id4">0.4.0 (2019-07-10)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id5">0.3.0 (2019-04-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id6">0.2.0 (2019-02-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id7">0.1.0 (2018-12-29)</a></li>
 </ul>
 </li>
 </ul>

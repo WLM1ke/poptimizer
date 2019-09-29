@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ru">
   <head>
     <meta charset="utf-8" />
-    <title>poptimizer &#8212; документация poptimizer 0.5.0</title>
+    <title>poptimizer &#8212; документация poptimizer 0.6.0</title>
     <link rel="stylesheet" href="_static/aiohttp.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -41,15 +41,15 @@
 <li><p>Возможность анализа всех акций, обращающихся на MOEX</p></li>
 <li><p>База данных по дивидендам с 2010г по десяткам наиболее ликвидных акций</p></li>
 <li><p>Использование робастной оптимизации вместо классического mean-variance анализа</p></li>
-<li><p>Устойчивые оценки ковариационной матрицы для большого числа акций в портфеле с помощью асимптотически оптимального сжатия Ledoit-Wolf к матрице с малым количеством оцениваемых параметров - с разной дисперсией и одинаковой корреляцией</p></li>
-<li><p>Использование машинного обучения для предсказания доходности на основе известных в академической литературе рыночных аномалий</p></li>
+<li><p>Устойчивые оценки ковариационной матрицы для большого числа акций в портфеле с помощью сжатия Ledoit-Wolf</p></li>
+<li><p>Использование градиентного бустинга для предсказания доходности на основе известных в академической литературе рыночных аномалий</p></li>
 </ul>
 </div>
 <div class="section" id="id2">
 <h2>Направления дальнейшего развития<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">¶</a></h2>
 <ul class="simple">
+<li><p>Переход от предсказания на основе составленных в ручную признаков и градиентного бустинга к использованию сырых данных и нейроных сетей</p></li>
 <li><p>Переход на предсказание вероятностной плотности доходности вместо предсказания доходности и использования исторических данных по квадратичному отклонению</p></li>
-<li><p>Использование нейроных сетей на «сырых» данных вместо в специальных объясняющих признаков и градиентного бустинга</p></li>
 </ul>
 </div>
 <div class="section" id="id3">
@@ -75,11 +75,12 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Описание API (todo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="change_log.html">Список изменений</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id2">0.5.0 (2019-08-11)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id3">0.4.0 (2019-07-10)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id4">0.3.0 (2019-04-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id5">0.2.0 (2019-02-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id6">0.1.0 (2018-12-29)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id2">0.6.0 (2019-09-29)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id3">0.5.0 (2019-08-11)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id4">0.4.0 (2019-07-10)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id5">0.3.0 (2019-04-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id6">0.2.0 (2019-02-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id7">0.1.0 (2018-12-29)</a></li>
 </ul>
 </li>
 </ul>
@@ -154,11 +155,12 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Описание API (todo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="change_log.html">Список изменений</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id2">0.5.0 (2019-08-11)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id3">0.4.0 (2019-07-10)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id4">0.3.0 (2019-04-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id5">0.2.0 (2019-02-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id6">0.1.0 (2018-12-29)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id2">0.6.0 (2019-09-29)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id3">0.5.0 (2019-08-11)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id4">0.4.0 (2019-07-10)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id5">0.3.0 (2019-04-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id6">0.2.0 (2019-02-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id7">0.1.0 (2018-12-29)</a></li>
 </ul>
 </li>
 </ul>
