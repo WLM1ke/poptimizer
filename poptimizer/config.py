@@ -40,7 +40,7 @@ TURNOVER_FACTOR = 32
 STATS_START = pd.Timestamp("2010-06-01")
 
 # Максимальный объем одной торговой операции в долях портфеля
-MAX_TRADE = 1 / 99
+MAX_TRADE = 1 / 100
 
 # Параметры ML-модели
 ML_PARAMS = {

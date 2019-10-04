@@ -5,8 +5,8 @@ from typing import Dict, Optional, Union
 import numpy as np
 import pandas as pd
 
-from poptimizer import data, config
-from poptimizer.config import POptimizerError
+from poptimizer import data
+from poptimizer.config import POptimizerError, MAX_TRADE
 
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
@@ -139,15 +139,12 @@ class Portfolio:
     @property
     @functools.lru_cache(maxsize=1)
     def turnover_factor(self) -> pd.Series:
-        """Понижающий коэффициент для акций с малым объемом оборотов.
-
-        Ликвидность в первом приближении убывает пропорционально квадрату оборота.
-        """
+        """Понижающий коэффициент для акций с малым объемом оборотов относительно открытой позиции."""
         last_turnover = data.turnovers(tuple(self.index[:-2]), self.date)
-        turn_over_factor = config.TURNOVER_FACTOR
-        last_turnover = last_turnover.iloc[-turn_over_factor:]
-        median_turnover = last_turnover.median(axis=0)
-        turnover_share_of_portfolio = median_turnover / self.value[PORTFOLIO]
-        turnover_factor = 1 - (1 / turnover_share_of_portfolio / turn_over_factor) ** 2
-        turnover_factor[turnover_factor < 0] = 0
-        return turnover_factor.reindex(self.index, fill_value=1)
+        last_turnover = last_turnover.iloc[-int(1 / MAX_TRADE) :]
+        last_turnover = last_turnover.median(axis=0)
+        result = (self.value / last_turnover).reindex(self.index)
+        result = result.fillna(result.max())
+        result = 1 - result / result.max()
+        result[[CASH, PORTFOLIO]] = [1, 1]
+        return result
