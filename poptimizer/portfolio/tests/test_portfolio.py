@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from poptimizer import config
 from poptimizer.config import POptimizerError
 from poptimizer.portfolio import portfolio
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
@@ -15,10 +14,13 @@ PARAMS = dict(
 )
 
 
-def test_portfolio(monkeypatch):
-    monkeypatch.setattr(config, "TURNOVER_FACTOR", 7)
+@pytest.fixture(scope="module", name="port")
+def make_portfolio():
+    return portfolio.Portfolio(**PARAMS)
 
-    port = portfolio.Portfolio(**PARAMS)
+
+def test_portfolio(monkeypatch, port):
+    monkeypatch.setattr(portfolio, "MAX_TRADE", 7)
 
     assert "Дата - 2018-03-19" in str(port)
     assert port.date == pd.Timestamp("2018-03-19")
@@ -38,7 +40,7 @@ def test_portfolio(monkeypatch):
             1,
         ],
     )
-    assert np.allclose(port.turnover_factor, [1, 0, 0.982_604, 1, 1])
+    assert np.allclose(port.turnover_factor, [0.999_915, 0, 0.591_099, 1, 1])
 
 
 def test_portfolio_wrong_value():
@@ -53,3 +55,11 @@ def test_portfolio_wrong_date():
     with pytest.raises(POptimizerError) as error:
         portfolio.Portfolio(**PARAMS)
     assert "Для даты 2018-12-09 отсутствуют исторические котировки" == str(error.value)
+
+
+def test_portfolio_add_tickers(monkeypatch, port, capsys):
+    monkeypatch.setattr(portfolio, "MAX_TRADE", 7)
+    port.add_tickers()
+    captured = capsys.readouterr()
+    assert "ДЛЯ ДОБАВЛЕНИЯ" in captured.out
+    assert "SBER" in captured.out
