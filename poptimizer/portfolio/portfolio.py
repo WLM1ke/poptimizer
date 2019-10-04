@@ -140,11 +140,26 @@ class Portfolio:
     @functools.lru_cache(maxsize=1)
     def turnover_factor(self) -> pd.Series:
         """Понижающий коэффициент для акций с малым объемом оборотов относительно открытой позиции."""
-        last_turnover = data.turnovers(tuple(self.index[:-2]), self.date)
-        last_turnover = last_turnover.iloc[-int(1 / MAX_TRADE) :]
-        last_turnover = last_turnover.median(axis=0)
+        last_turnover = self._median_turnover(tuple(self.index[:-2]))
         result = (self.value / last_turnover).reindex(self.index)
-        result = result.fillna(result.max())
         result = 1 - result / result.max()
         result[[CASH, PORTFOLIO]] = [1, 1]
         return result
+
+    def _median_turnover(self, tickers) -> pd.Series:
+        """Медианный оборот за несколько последних дней."""
+        last_turnover = data.turnovers(tickers, self.date)
+        last_turnover = last_turnover.iloc[-int(1 / MAX_TRADE) :]
+        last_turnover = last_turnover.median(axis=0)
+        return last_turnover
+
+    def add_tickers(self) -> None:
+        """Претенденты для добавления."""
+        all_tickers = data.securities_with_reg_number()
+        last_turnover = self._median_turnover(tuple(all_tickers))
+        # noinspection PyTypeChecker
+        last_turnover = last_turnover[last_turnover > 0]
+        index = last_turnover.index.difference(self.index)
+        last_turnover = last_turnover.reindex(index)
+        last_turnover = last_turnover.sort_values(ascending=False).astype("int")
+        print(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{last_turnover}")
