@@ -30,7 +30,7 @@ ML_PARAMS = {
 def make_optimizer(monkeypatch):
     monkeypatch.setattr(div, "STATS_START", pd.Timestamp("2010-02-01"))
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
-    monkeypatch.setattr(config, "TURNOVER_FACTOR", 625)
+    monkeypatch.setattr(config, "MAX_TRADE", 0.01)
     date = pd.Timestamp("2018-12-17")
     positions = dict(
         KZOS=800, MGNT=0, PIKK=800, MSTT=0, MTLRP=0, GMKN=21, CBOM=0, SNGSP=13000
@@ -47,11 +47,11 @@ def test_gradient_growth(opt):
     grad = opt.metrics.gradient
     growth = opt.gradient_growth
     assert grad["KZOS"] > grad["CBOM"]
-    assert growth["KZOS"] == pytest.approx(0.2444375837271922)
+    assert growth["KZOS"] == pytest.approx(0.0)
 
 
 def test_best_buy(opt):
-    assert opt.best_buy == "KZOS"
+    assert opt.best_buy == "CBOM"
 
 
 def test_main_stat(opt):
@@ -69,7 +69,7 @@ def test_trade_recommendation(opt):
     rec = opt._trade_recommendation()
     assert isinstance(rec, str)
     assert "Продать GMKN" in rec
-    assert "Купить  KZOS" in rec
+    assert "Купить  CBOM" in rec
 
 
 def test_str(opt):
