@@ -13,7 +13,7 @@ from poptimizer.store.utils import DATE, TICKER, DIVIDENDS
 SMART_LAB = "smart-lab"
 
 # Параметры парсинга сайта
-URL = "https://smart-lab.ru/dividends/index/order_by_t2_date/asc/"
+URL = "https://smart-lab.ru/dividends/index/order_by_cut_off_date/asc/"
 TABLE_INDEX = 1
 HEADER_SIZE = 1
 FOOTER_SIZE = 1
