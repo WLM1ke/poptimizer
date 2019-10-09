@@ -32,7 +32,7 @@ T_SCORE = 2.0
 
 # База дивидендов содержит данные с начала 2010 года
 # Постепенно срок будет сдвигаться к началу режима TQBR для корректного учета сдвига T+2
-STATS_START = pd.Timestamp("2010-07-01")
+STATS_START = pd.Timestamp("2010-08-01")
 
 # Максимальный объем одной торговой операции в долях портфеля
 MAX_TRADE = 1 / 100
@@ -40,24 +40,24 @@ MAX_TRADE = 1 / 100
 # Параметры ML-модели
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 142, "div_share": 0.3, "on_off": True}),
-        ("Scaler", {"days": 209, "on_off": True}),
+        ("Label", {"days": 186, "div_share": 0.3, "on_off": True}),
+        ("Scaler", {"days": 202, "on_off": True}),
         ("Ticker", {"on_off": True}),
-        ("Mom12m", {"days": 201, "on_off": True, "periods": 1}),
+        ("Mom12m", {"days": 220, "on_off": True, "periods": 2}),
         ("DivYield", {"days": 277, "on_off": True, "periods": 1}),
-        ("Mom1m", {"days": 28, "on_off": False}),
-        ("RetMax", {"days": 43, "on_off": True}),
-        ("ChMom6m", {"days": 100, "on_off": True}),
-        ("STD", {"days": 27, "on_off": True}),
+        ("Mom1m", {"days": 28, "on_off": True}),
+        ("RetMax", {"days": 39, "on_off": True}),
+        ("ChMom6m", {"days": 102, "on_off": True}),
+        ("STD", {"days": 25, "on_off": True}),
         ("DayOfYear", {"on_off": False}),
-        ("TurnOver", {"days": 230, "normalize": True, "on_off": True}),
+        ("TurnOver", {"days": 222, "normalize": False, "on_off": True}),
     ),
     "model": {
-        "bagging_temperature": 0.5999796112662071,
-        "depth": 12,
-        "l2_leaf_reg": 2.1599907061478696,
-        "learning_rate": 0.00532201493155293,
+        "bagging_temperature": 1.2614843708092294,
+        "depth": 14,
+        "l2_leaf_reg": 0.7465179410708735,
+        "learning_rate": 0.004275185907955533,
         "one_hot_max_size": 1000,
-        "random_strength": 1.3084110230689294,
+        "random_strength": 0.6499691382400153,
     },
 }
