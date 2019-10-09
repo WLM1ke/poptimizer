@@ -14,7 +14,7 @@ CPI = "CPI"
 # Параметры загрузки валидации данных
 URL_CPI = "http://www.gks.ru/free_doc/new_site/prices/potr/I_ipc.xlsx"
 PARSING_PARAMETERS = dict(
-    sheet_name="ИПЦ", header=3, skiprows=[4], skipfooter=3, index_col=0
+    sheet_name="ИПЦ", header=4, skiprows=[5], skipfooter=3, index_col=0
 )
 NUM_OF_MONTH = 12
 FIRST_YEAR = 1991
