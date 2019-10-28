@@ -91,6 +91,8 @@ class Optimizer:
         """Бумага с не нулевым объемом и минимальным градиентом."""
         # noinspection PyTypeChecker
         non_zero_holdings = self.portfolio.shares > 0
+        # noinspection PyUnresolvedReferences
+        non_zero_holdings.loc[[CASH, PORTFOLIO]] = False
         return self.metrics.gradient[non_zero_holdings].idxmin()
 
     @property
