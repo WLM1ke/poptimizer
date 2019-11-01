@@ -39,3 +39,30 @@ def test_get_normalize(feat):
     assert df[(pd.Timestamp("2019-09-26"), "KZOS")] == pytest.approx(-4.68356826666262)
     assert df[(pd.Timestamp("2019-09-26"), "LSNGP")] == pytest.approx(-2.80320394254991)
     assert df[(pd.Timestamp("2019-09-26"), "NVTK")] == pytest.approx(1.07504968970922)
+
+
+@pytest.fixture(scope="module", name="var")
+def test_var_feature():
+    return turnover.TurnOverVar(
+        ("LSNGP", "MGTSP", "PLZL"), pd.Timestamp("2019-10-31"), {"days": 4}
+    )
+
+
+def test_is_categorical_var(var):
+    assert var.is_categorical("") == [False]
+
+
+def test_get_params_space_var(var):
+    space = var.get_params_space()
+    assert isinstance(space, dict)
+    assert len(space) == 2
+    assert space["on_off"] is True
+    assert isinstance(space["days"], Apply)
+
+
+def test_get_var(var):
+    df = var.get({"days": 4, "normalize": False})
+    assert isinstance(df, pd.Series)
+    assert df[(pd.Timestamp("2019-10-25"), "LSNGP")] == pytest.approx(0.209651032823892)
+    assert df[(pd.Timestamp("2019-10-24"), "MGTSP")] == pytest.approx(0.241766516648416)
+    assert df[(pd.Timestamp("2019-10-23"), "PLZL")] == pytest.approx(0.263376076528282)
