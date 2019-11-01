@@ -37,3 +37,24 @@ class TurnOver(DaysParamsMixin, AbstractFeature):
         turnover = turnover.stack()
         turnover.name = self.name
         return turnover
+
+
+class TurnOverVar(DaysParamsMixin, AbstractFeature):
+    """Dollar trading volume variation - отношение СКО к среднему обороту примерно за 12 месяцев.
+
+    Во многих исследованиях отмечается, что бумаги с изменчивым объемом торгов менее привлекательны
+    для инвестора и требуют дополнительной доходности.
+    """
+
+    def get(self, params=None) -> pd.Series:
+        """Логарифм среднего оборота за последние несколько дней.
+
+        Результат может быть нормирован на общий оборот анализируемых бумаг.
+        """
+        params = params or self._params
+        days = params["days"]
+        turnover = data.turnovers(self._tickers, self._last_date)
+        turnover = turnover.rolling(days).std() / turnover.rolling(days).mean()
+        turnover = turnover.stack()
+        turnover.name = self.name
+        return turnover
