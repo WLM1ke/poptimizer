@@ -20,7 +20,7 @@ def test_dohod(manager):
     df = df["VSMO"]
     assert len(df) >= 20
     assert df["2017-10-19"] == 762.68
-    assert df["2004-03-29"] == 11
+    assert df["2010-05-21"] == 1.5
 
 
 def test_dohod2(manager):
@@ -28,9 +28,9 @@ def test_dohod2(manager):
     assert isinstance(df, pd.DataFrame)
     assert list(df.columns) == ["GAZP"]
     df = df["GAZP"]
-    assert len(df) >= 16
-    assert df["2004-05-07"] == 0.69
+    assert len(df) >= 15
     assert df["2017-07-20"] == 8.04
+    assert df["2010-05-07"] == 2.39
     assert df["2008-05-08"] == 2.66
 
 
@@ -39,7 +39,7 @@ def test_dohod3(manager):
     assert isinstance(df, pd.DataFrame)
     assert list(df.columns) == ["CHMF"]
     df = df["CHMF"]
-    assert len(df) >= 47
+    assert len(df) >= 44
     assert df["2018-06-19"] == 38.32 + 27.72
     assert df["2016-07-05"] == 8.25 + 20.27
     assert df["2019-06-18"] == 35.43
