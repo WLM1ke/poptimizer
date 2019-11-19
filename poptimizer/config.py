@@ -40,7 +40,7 @@ MAX_TRADE = 1 / 100
 # Параметры ML-модели
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 314, "div_share": 0.4, "on_off": True}),
+        ("Label", {"days": 314, "div_share": 0.5, "on_off": True}),
         ("Scaler", {"days": 240, "on_off": True}),
         ("Ticker", {"on_off": True}),
         ("Mom12m", {"days": 277, "on_off": True, "periods": 4}),
