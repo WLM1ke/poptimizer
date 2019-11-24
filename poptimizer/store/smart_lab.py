@@ -48,7 +48,11 @@ class SmartLab(AbstractManager):
 
     def __init__(self, db=DB) -> None:
         super().__init__(
-            collection=MISC, db=db, create_from_scratch=True, unique_index=False
+            collection=MISC,
+            db=db,
+            create_from_scratch=True,
+            unique_index=False,
+            ascending_index=False,
         )
 
     def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
