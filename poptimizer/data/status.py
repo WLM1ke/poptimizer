@@ -43,6 +43,7 @@ def smart_lab_status(tickers: Tuple[str, ...]):
 
 def _get_div_data(ticker: str) -> List[Tuple[str, pd.DataFrame]]:
     """Информация о дивидендах из основной базы и альтернативных источников."""
+    store.Dividends().create(ticker)
     data_sources = [
         (store.Dividends(), ticker),
         (store.Dohod(), ticker),
