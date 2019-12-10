@@ -125,3 +125,11 @@ def test_not_unique():
         assert isinstance(df, pd.DataFrame)
         assert df.index.is_unique
         assert df.index.is_monotonic_increasing
+
+
+def test_no_reg_number():
+    mng = moex.Quotes(db="test")
+    with pytest.raises(POptimizerError) as error:
+        # noinspection PyStatementEffect
+        mng["YNDX"]
+    assert "YNDX - акция без регистрационного номера" == str(error.value)

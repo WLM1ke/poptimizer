@@ -115,6 +115,8 @@ class Quotes(AbstractManager):
         """Ищет все тикеры с эквивалентным регистрационным номером."""
         securities = Securities(self._mongo.db.name)[SECURITIES]
         number = securities.at[ticker, REG_NUMBER]
+        if number is None:
+            raise POptimizerError(f"{ticker} - акция без регистрационного номера")
         results = apimoex.find_securities(self._session, number)
         return [row["secid"] for row in results if row["regnumber"] == number]
 

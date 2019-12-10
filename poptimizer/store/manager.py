@@ -144,8 +144,8 @@ class AbstractManager(ABC):
                 )
                 if not_float_not_eq or float_not_eq:
                     raise POptimizerError(
-                        f"Новые {new} не соответствуют старым {old} данным "
                         f"{self._mongo.collection.full_name}.{item}"
+                        f"Новые {new} не соответствуют старым {old} данным "
                     )
 
     @abstractmethod
