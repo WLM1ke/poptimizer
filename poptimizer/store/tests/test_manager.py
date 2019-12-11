@@ -135,7 +135,7 @@ def test_validate_all_too_short(monkeypatch, next_week_date):
     with pytest.raises(POptimizerError) as error:
         # noinspection PyStatementEffect
         mng["AKRN"]
-    assert str(error.value) == "Новые 1 короче старых 2 данных test.simple.AKRN"
+    assert str(error.value) == "test.simple.AKRN: Новые 1 короче старых 2 данных"
 
 
 def test_data_not_stacks(monkeypatch, next_week_date):
@@ -148,8 +148,8 @@ def test_data_not_stacks(monkeypatch, next_week_date):
         mng["AKRN"]
     assert (
         str(error.value)
-        == "Новые {'DATE': 4, 'col1': 5, 'col2': 5} не соответствуют старым "
-        "{'DATE': 2, 'col1': 2, 'col2': 15} данным test.simple.AKRN"
+        == "test.simple.AKRN: Новые {'DATE': 4, 'col1': 5, 'col2': 5} не соответствуют старым "
+        "{'DATE': 2, 'col1': 2, 'col2': 15} данным"
     )
 
 

@@ -131,8 +131,8 @@ class AbstractManager(ABC):
             data_new = data_new[:1]
         elif len(data) > len(data_new):
             raise POptimizerError(
-                f"Новые {len(data_new)} короче старых {len(data)} данных "
-                f"{self._mongo.collection.full_name}.{item}"
+                f"{self._mongo.collection.full_name}.{item}: "
+                f"Новые {len(data_new)} короче старых {len(data)} данных"
             )
         for old, new in zip(data, data_new):
             for col in old:
@@ -144,8 +144,8 @@ class AbstractManager(ABC):
                 )
                 if not_float_not_eq or float_not_eq:
                     raise POptimizerError(
-                        f"{self._mongo.collection.full_name}.{item}"
-                        f"Новые {new} не соответствуют старым {old} данным "
+                        f"{self._mongo.collection.full_name}.{item}: "
+                        f"Новые {new} не соответствуют старым {old} данным"
                     )
 
     @abstractmethod
