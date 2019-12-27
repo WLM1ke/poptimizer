@@ -31,7 +31,7 @@ def dividends_all(tickers: tuple) -> pd.DataFrame:
         df = manager[ticker]
         dfs.append(df)
     df = pd.concat(dfs, axis=1)
-    df.columns = tickers
+    df = df.reindex(columns=tickers)
     return df.fillna(0, axis=0) * AFTER_TAX
 
 
