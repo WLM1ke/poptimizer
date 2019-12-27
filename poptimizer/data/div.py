@@ -29,8 +29,6 @@ def dividends_all(tickers: tuple) -> pd.DataFrame:
     dfs = []
     for ticker in tickers:
         df = manager[ticker]
-        if df.empty:
-            df = pd.DataFrame(columns=[""], index=pd.Index([], name=DATE))
         dfs.append(df)
     df = pd.concat(dfs, axis=1)
     df.columns = tickers
