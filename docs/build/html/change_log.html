@@ -36,50 +36,59 @@
   <div class="section" id="id1">
 <h1>Список изменений<a class="headerlink" href="#id1" title="Ссылка на этот заголовок">¶</a></h1>
 <div class="section" id="id2">
-<h2>0.6.0 (2019-09-29)<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">¶</a></h2>
+<h2>0.7.0 (2020-01-05)<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">¶</a></h2>
+<ul class="simple">
+<li><p>Добавлен признак изменчивости ликвидности</p></li>
+<li><p>Объединен параметр оборачиваемости и объема торгов</p></li>
+<li><p>Осуществлен переход на Python 3.8</p></li>
+<li><p>Исправление - явное падение при попытке работы с акциями без регистрационного номера</p></li>
+</ul>
+</div>
+<div class="section" id="id3">
+<h2>0.6.0 (2019-09-29)<a class="headerlink" href="#id3" title="Ссылка на этот заголовок">¶</a></h2>
 <ul class="simple">
 <li><p>Добавлен признак ликвидности акции</p></li>
 <li><p>Добавлен признак день в году с возможностью отключения</p></li>
 <li><p>Осуществлен переход с прогнозирования доходности, нормированной по волатильности, к прямому прогнозированию доходности</p></li>
 <li><p>Осуществлен переход с хранения данных в SQLite + LMDB на MongoDB</p></li>
-<li><p>Осуществлен переход с asyncio на синхронный код и с точечным использованием потоков для ускорения загрузки</p></li>
+<li><p>Осуществлен переход с asyncio на синхронный код с точечным использованием потоков для ускорения загрузки</p></li>
 <li><p>Объединен период прогнозирования и оптимизации</p></li>
 <li><p>Ограничение на ликвидность задается одним параметром, а не двумя</p></li>
 </ul>
 </div>
-<div class="section" id="id3">
-<h2>0.5.0 (2019-08-11)<a class="headerlink" href="#id3" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="section" id="id4">
+<h2>0.5.0 (2019-08-11)<a class="headerlink" href="#id4" title="Ссылка на этот заголовок">¶</a></h2>
 <ul class="simple">
 <li><p>Добавлен признак краткосрочного СКО</p></li>
 <li><p>Добавлена возможность оптимизации взвешенной величины между общей и дивидендной доходностью</p></li>
 <li><p>Исправление схемы оптимизации гиперпараметров из-за ошибки в catboost в расчете R2</p></li>
 </ul>
 </div>
-<div class="section" id="id4">
-<h2>0.4.0 (2019-07-10)<a class="headerlink" href="#id4" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="section" id="id5">
+<h2>0.4.0 (2019-07-10)<a class="headerlink" href="#id5" title="Ссылка на этот заголовок">¶</a></h2>
 <ul class="simple">
 <li><p>Добавлен признак изменения доходности за последние 6 месяцев</p></li>
 <li><p>Добавлена возможность оптимизации необходимости использования отдельных признаков</p></li>
 </ul>
 </div>
-<div class="section" id="id5">
-<h2>0.3.0 (2019-04-02)<a class="headerlink" href="#id5" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="section" id="id6">
+<h2>0.3.0 (2019-04-02)<a class="headerlink" href="#id6" title="Ссылка на этот заголовок">¶</a></h2>
 <ul class="simple">
 <li><p>Добавлен признак максимальная доходность за последний месяц</p></li>
 <li><p>Добавлена возможность разбиения признаков на несколько периодов</p></li>
 <li><p>Новая схема валидации - количество обучающих примеров повышено с ~1000 до ~100000</p></li>
 </ul>
 </div>
-<div class="section" id="id6">
-<h2>0.2.0 (2019-02-02)<a class="headerlink" href="#id6" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="section" id="id7">
+<h2>0.2.0 (2019-02-02)<a class="headerlink" href="#id7" title="Ссылка на этот заголовок">¶</a></h2>
 <ul class="simple">
 <li><p>Добавлены графики кривой обучения, частичных зависимостей и предсказания с кросс-валидацией</p></li>
 <li><p>Проверка локальной базы данных по дивидендам в сравнении с web-источниками</p></li>
 <li><p>Добавлена часть документации</p></li>
 </ul>
 </div>
-<div class="section" id="id7">
-<h2>0.1.0 (2018-12-29)<a class="headerlink" href="#id7" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="section" id="id8">
+<h2>0.1.0 (2018-12-29)<a class="headerlink" href="#id8" title="Ссылка на этот заголовок">¶</a></h2>
 <ul class="simple">
 <li><p>Первоначальная версия</p></li>
 </ul>
@@ -153,12 +162,13 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Описание API (todo)</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Список изменений</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#id2">0.6.0 (2019-09-29)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id3">0.5.0 (2019-08-11)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id4">0.4.0 (2019-07-10)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id5">0.3.0 (2019-04-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id6">0.2.0 (2019-02-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id7">0.1.0 (2018-12-29)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">0.7.0 (2020-01-05)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">0.6.0 (2019-09-29)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">0.5.0 (2019-08-11)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id5">0.4.0 (2019-07-10)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id6">0.3.0 (2019-04-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id7">0.2.0 (2019-02-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id8">0.1.0 (2018-12-29)</a></li>
 </ul>
 </li>
 </ul>
@@ -172,7 +182,7 @@
       &copy;2018, Mikhail Korotkov aka WLMike.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.2</a>
       
       |
       <a href="_sources/change_log.rst.txt"

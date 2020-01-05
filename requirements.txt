@@ -2,6 +2,9 @@ pytest
 pytest-cov
 pytest-asyncio
 
+setuptools
+wheel
+twine
 sphinx
 aiohttp_theme
 

@@ -56,7 +56,7 @@ Statistical Server</a> с использованием потоков, что п
 <h3>Дивиденды<a class="headerlink" href="#id4" title="Ссылка на этот заголовок">¶</a></h3>
 <p>Данные по дивидендам загружаются из поддерживаемой в ручную базы данных на основе MongoDB, которая
 содержит информацию из ежеквартальных отчетов эмитентов о выплаченных дивидендах с 2010 года. Для
-облегчения ручного обновления реализован ряд функция сверки с публичными источниками данных на сайтах:</p>
+облегчения ручного обновления реализован ряд функций сверки с публичными источниками данных на сайтах:</p>
 <ul class="simple">
 <li><p><a class="reference external" href="https://smart-lab.ru">https://smart-lab.ru</a></p></li>
 <li><p><a class="reference external" href="https://www.dohod.ru">https://www.dohod.ru</a></p></li>
@@ -65,7 +65,7 @@ Statistical Server</a> с использованием потоков, что п
 </div>
 <div class="section" id="id5">
 <h3>Индекс потребительских цен<a class="headerlink" href="#id5" title="Ссылка на этот заголовок">¶</a></h3>
-<p>Для построения ряда отчетов с корректировкой на рост цен используются данные по потребительской
+<p>Для построения отчетов с корректировкой на рост цен используются данные по потребительской
 инфляции с сайта <a class="reference external" href="http://www.gks.ru">ФСГС</a>.</p>
 </div>
 </div>
@@ -106,6 +106,17 @@ Statistical Server</a> с использованием потоков, что п
 </div>
 <div class="section" id="id9">
 <h2>Оптимизация портфеля<a class="headerlink" href="#id9" title="Ссылка на этот заголовок">¶</a></h2>
+<p>При оптимизации портфеля используется не классический mean-variance подход, а максимизация нижней
+нижней границы доверительного интервала доходности, что обеспечивает устойчивость за счет
+большего штрафа для менее достоверно оцененных доходностей активов.</p>
+<p>Кроме того используется инкрементальное улучшение портфеля в наиболее статистически значимом
+направление (в смысле долей активов в портфеле), а не разовый переход к оптимальному портфелю. В
+большинстве случаев в районе оптимума для незначительных улучшений параметров портфеля требуется
+значительные изменения долей, входящих в него активов. Учитывая, что доходности активов могут быть
+оценены лишь приблизительно, такие изменения портфеля обычно статистически не значимы, но порождают
+существенные транзакционные издержки. Изменение долей в направление наибольшей производной метрики
+портфеля по доле актива, позволяет с минимальными транзакционными издержками приблизится в область
+портфелей, статистически неотличимых от оптимального.</p>
 </div>
 </div>
 
@@ -176,12 +187,13 @@ Statistical Server</a> с использованием потоков, что п
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Описание API (todo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="change_log.html">Список изменений</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id2">0.6.0 (2019-09-29)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id3">0.5.0 (2019-08-11)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id4">0.4.0 (2019-07-10)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id5">0.3.0 (2019-04-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id6">0.2.0 (2019-02-02)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="change_log.html#id7">0.1.0 (2018-12-29)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id2">0.7.0 (2020-01-05)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id3">0.6.0 (2019-09-29)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id4">0.5.0 (2019-08-11)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id5">0.4.0 (2019-07-10)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id6">0.3.0 (2019-04-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id7">0.2.0 (2019-02-02)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="change_log.html#id8">0.1.0 (2018-12-29)</a></li>
 </ul>
 </li>
 </ul>
@@ -195,7 +207,7 @@ Statistical Server</a> с использованием потоков, что п
       &copy;2018, Mikhail Korotkov aka WLMike.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.2</a>
       
       |
       <a href="_sources/struct.rst.txt"

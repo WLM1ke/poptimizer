@@ -717,3 +717,7 @@ table.docutils.citation, table.docutils.citation td, table.docutils.citation th 
   -webkit-box-shadow: none;
   box-shadow: none;
 }
+
+div.code-block-caption {
+    padding: 2px 5px 10px;
+}
