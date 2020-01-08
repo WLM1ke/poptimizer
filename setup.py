@@ -55,6 +55,7 @@ setuptools.setup(
         "openpyxl",
         "hyperopt",
         "catboost",
+        "torch",
         "xlrd",
         "matplotlib",
         "reportlab",

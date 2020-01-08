@@ -11,9 +11,10 @@ aiohttp_theme
 pandas
 numpy
 hyperopt
-catboost
 matplotlib
 scikit-learn
+catboost
+torch
 
 openpyxl
 xlrd
