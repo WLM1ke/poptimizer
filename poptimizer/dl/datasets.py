@@ -7,6 +7,7 @@ from torch.utils import data as dataset
 
 # Параметры формирования примеров для обучения сетей
 from poptimizer import data
+from poptimizer.ml.feature.std import LOW_STD
 
 DL_PARAMS = {"history_days": 264, "forecast_days": 341, "div_share": 0.6}
 
@@ -19,6 +20,8 @@ class OneTickerDataset(dataset.Dataset):
     периода.
     Доходность в течении нескольких дней после окончания исторического периода. Может быть
     произвольной пропорцией между дивидендной или полной доходностью.
+    Вес обучающих примеров обратный квадрату СКО доходности - для имитации метода максимального
+    правдоподобия. Низкое СКО обрезается, для избежания деления на 0.
 
     Каждая составляющая помещается в словарь в виде torch.Tensor.
     """
@@ -41,18 +44,33 @@ class OneTickerDataset(dataset.Dataset):
     def __getitem__(self, item):
         norm = self.price.iloc[item]
         history_days = self.params["history_days"]
-        price = self.price.iloc[item + 1, item + history_days] / norm
-        div = self.div.iloc[item + 1, item + history_days].comsum() / norm
-        rez = dict(price=torch.tensor(price), div=torch.tensor(div))
+
+        price = self.price.iloc[item + 1, item + history_days]
+        div = self.div.iloc[item + 1, item + history_days]
+        price0 = price.shift(1)
+        returns = (price + div) / price0
+        returns = returns.iloc[1:]
+        std = max(returns.std(), LOW_STD)
+
+        weight = 1 / std ** 2
+        price = price / norm
+        div = div.comsum() / norm
+
+        rez = dict(
+            price=torch.tensor(price),
+            div=torch.tensor(div),
+            weight=torch.tensor(weight),
+        )
+
         if self.dataset_end != self.price.index[-1]:
             last_history_price = self.price.iloc[item + history_days - 1]
             forecast_days = self.params["forecast_days"]
             last_forecast_price = self.price.iloc[
                 item + history_days - 1 + forecast_days
-            ]
+                ]
             all_div = self.div.iloc[
-                item + history_days : item + history_days + forecast_days
-            ].sum()
+                      item + history_days: item + history_days + forecast_days
+                      ].sum()
             label = (
                 (last_forecast_price - last_history_price)
                 * (1 - self.params["div_share"])
