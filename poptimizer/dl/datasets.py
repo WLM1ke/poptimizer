@@ -1,26 +1,79 @@
 """Формирование примеров для обучения в формате PyTorch."""
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict
 
 import pandas as pd
 import torch
 from torch.utils import data as dataset
 
-# Параметры формирования примеров для обучения сетей
 from poptimizer import data
 from poptimizer.ml.feature.std import LOW_STD
 
+# Параметры формирования примеров для обучения сетей
 DL_PARAMS = {"history_days": 264, "forecast_days": 341, "div_share": 0.6}
+
+
+def price_feature(price: pd.Series, item: int, params: dict) -> torch.Tensor:
+    """Динамика изменения цены нормированная на первоначальную цену."""
+    history_days = params["history_days"]
+    price = price.iloc[item + 1 : item + history_days] / price.iloc[item] - 1
+    return torch.tensor(price)
+
+
+def div_feature(
+    price: pd.Series, div: pd.Series, item: int, params: dict
+) -> torch.Tensor:
+    """Динамика накопленных дивидендов нормированная на первоначальную цену."""
+    history_days = params["history_days"]
+    div = div.iloc[item + 1 : item + history_days].cumsum()
+    div = div / price.iloc[item]
+    return torch.tensor(div)
+
+
+def weight_feature(
+    price: pd.Series, div: pd.Series, item: int, params: dict
+) -> torch.Tensor:
+    """Обратная величина СКО полной доходности обрезанная для низких значений."""
+    history_days = params["history_days"]
+    price = price.iloc[item : item + history_days]
+    div = div.iloc[item + 1 : item + history_days]
+    price0 = price.shift(1)
+    returns = (price + div) / price0
+    returns = returns.iloc[1:]
+    std = max(returns.std(), LOW_STD)
+    weight = 1 / std ** 2
+    return torch.tensor(weight)
+
+
+def label_feature(
+    price: pd.Series, div: pd.Series, item: int, params: dict
+) -> torch.Tensor:
+    """Линейная комбинация полной и дивидендной доходности после окончания периода."""
+    history_days = params["history_days"]
+    last_history_price = price.iloc[item + history_days - 1]
+    forecast_days = params["forecast_days"]
+    last_forecast_price = price.iloc[item + history_days - 1 + forecast_days]
+    all_div = div.iloc[item + history_days : item + history_days + forecast_days]
+    all_div = all_div.sum()
+    label = (last_forecast_price - last_history_price) * (1 - params["div_share"])
+    label = label + all_div
+    label = label / last_history_price
+    return torch.tensor(label)
 
 
 class OneTickerDataset(dataset.Dataset):
     """Готовит обучающие примеры для одного тикера.
 
-    Прирост цены акции в течении периода нормированный на цену акции в начале периода.
-    Дивиденды рассчитываются нарастающим итогом в течении периода и нормируются на цену акции в начале
+    Признаки:
+    - Прирост цены акции в течении периода нормированный на цену акции в начале периода.
+    - Дивиденды рассчитываются нарастающим итогом в течении периода и нормируются на цену акции в начале
     периода.
-    Доходность в течении нескольких дней после окончания исторического периода. Может быть
+
+    Метки:
+    - Доходность в течении нескольких дней после окончания исторического периода. Может быть
     произвольной пропорцией между дивидендной или полной доходностью.
-    Вес обучающих примеров обратный квадрату СКО доходности - для имитации метода максимального
+
+    Вес обучающих примеров:
+    - Обратный квадрату СКО доходности - для имитации метода максимального
     правдоподобия. Низкое СКО обрезается, для избежания деления на 0.
 
     Каждая составляющая помещается в словарь в виде torch.Tensor.
@@ -41,45 +94,22 @@ class OneTickerDataset(dataset.Dataset):
         self.params = params
         self.dataset_end = dataset_end or price.index[-1]
 
-    def __getitem__(self, item):
-        norm = self.price.iloc[item]
-        history_days = self.params["history_days"]
-
-        price = self.price.iloc[item : item + history_days]
-        div = self.div.iloc[item + 1 : item + history_days]
-        price0 = price.shift(1)
-        returns = (price + div) / price0
-        returns = returns.iloc[1:]
-        std = max(returns.std(), LOW_STD)
-
-        weight = 1 / std ** 2
-        price = price.iloc[1:] / norm - 1
-        div = div.cumsum() / norm
+    def __getitem__(self, item) -> Dict[str, torch.Tensor]:
+        price = self.price
+        div = self.div
+        params = self.params
 
         rez = dict(
-            price=torch.tensor(price),
-            div=torch.tensor(div),
-            weight=torch.tensor(weight),
+            price=price_feature(price, item, params),
+            div=div_feature(price, div, item, params),
+            weight=weight_feature(price, div, item, params),
         )
 
-        if self.dataset_end != self.price.index[-1]:
-            last_history_price = self.price.iloc[item + history_days - 1]
-            forecast_days = self.params["forecast_days"]
-            last_forecast_price = self.price.iloc[
-                item + history_days - 1 + forecast_days
-            ]
-            all_div = self.div.iloc[
-                item + history_days : item + history_days + forecast_days
-            ].sum()
-            label = (
-                (last_forecast_price - last_history_price)
-                * (1 - self.params["div_share"])
-                + all_div
-            ) / last_history_price
-            rez["label"] = torch.tensor(label)
+        if self.dataset_end != price.index[-1]:
+            rez["label"] = label_feature(price, div, item, params)
         return rez
 
-    def __len__(self):
+    def __len__(self) -> int:
         return (
             self.price.index.get_loc(self.dataset_end) + 2 - self.params["history_days"]
         )
