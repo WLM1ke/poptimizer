@@ -113,6 +113,19 @@ def test_get_dataset_label_values(dataset):
     assert value["label"] == torch.tensor(-0.0127504553734062 * 0.4)
     value = dataset[1750 - 4]
     assert value["label"] == torch.tensor(-0.0415684593957576 * 0.4)
+
+    # Учет дивидендов
+    value = dataset[1750 - 4 + 2041]
+    assert value["label"] == torch.tensor(0.0136523836023001)
+    value = dataset[1750 - 4 + 2042]
+    assert value["label"] == torch.tensor(0.0330818551367331)
+    value = dataset[1750 - 4 + 2043]
+    assert value["label"] == torch.tensor(0.0271714155666819)
+    value = dataset[1750 - 4 + 2044]
+    assert value["label"] == torch.tensor(0.017549596412556)
+    value = dataset[1750 - 4 + 2045]
+    assert value["label"] == torch.tensor(0.00727611940298508)
+
     value = dataset[len(dataset) - 1]
     assert value["label"] == torch.tensor(0.00139860139860137 * 0.4)
 
