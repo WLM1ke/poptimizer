@@ -35,7 +35,7 @@ class OneTickerDataset(dataset.Dataset):
         dataset_end: Optional[pd.Timestamp],
     ):
         price = price[ticker]
-        start = price.first_valid_index
+        start = price.first_valid_index()
         self.price = price[start:]
         self.div = div.loc[start:, ticker]
         self.params = params
@@ -45,16 +45,16 @@ class OneTickerDataset(dataset.Dataset):
         norm = self.price.iloc[item]
         history_days = self.params["history_days"]
 
-        price = self.price.iloc[item + 1, item + history_days]
-        div = self.div.iloc[item + 1, item + history_days]
+        price = self.price.iloc[item : item + history_days]
+        div = self.div.iloc[item + 1 : item + history_days]
         price0 = price.shift(1)
         returns = (price + div) / price0
         returns = returns.iloc[1:]
         std = max(returns.std(), LOW_STD)
 
         weight = 1 / std ** 2
-        price = price / norm
-        div = div.comsum() / norm
+        price = price.iloc[1:] / norm - 1
+        div = div.cumsum() / norm
 
         rez = dict(
             price=torch.tensor(price),
@@ -67,10 +67,10 @@ class OneTickerDataset(dataset.Dataset):
             forecast_days = self.params["forecast_days"]
             last_forecast_price = self.price.iloc[
                 item + history_days - 1 + forecast_days
-                ]
+            ]
             all_div = self.div.iloc[
-                      item + history_days: item + history_days + forecast_days
-                      ].sum()
+                item + history_days : item + history_days + forecast_days
+            ].sum()
             label = (
                 (last_forecast_price - last_history_price)
                 * (1 - self.params["div_share"])
@@ -81,7 +81,7 @@ class OneTickerDataset(dataset.Dataset):
 
     def __len__(self):
         return (
-            self.price.index.get_loc[self.dataset_end] + 2 - self.params["history_days"]
+            self.price.index.get_loc(self.dataset_end) + 2 - self.params["history_days"]
         )
 
 
@@ -113,5 +113,8 @@ def get_dataset(
     div = div.loc[dataset_start:]
     price = price.loc[dataset_start:]
     return dataset.ConcatDataset(
-        OneTickerDataset(ticker, price, div, params, dataset_end) for ticker in tickers
+        [
+            OneTickerDataset(ticker, price, div, params, dataset_end)
+            for ticker in tickers
+        ]
     )
