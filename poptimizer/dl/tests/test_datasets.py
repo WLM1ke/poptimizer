@@ -3,43 +3,34 @@ import pytest
 import torch
 from torch.utils.data import Dataset
 
+import poptimizer
 from poptimizer.dl import datasets
 
-END_PARAMS = (
-    pd.Timestamp("2019-01-10"),
-    {"history_days": 5, "forecast_days": 3, "div_share": 0.6},
+DIV, PRICE = poptimizer.data.div_ex_date_prices(
+    ("KRKNP", "CHMF", "MRKC"), pd.Timestamp("2019-01-10")
 )
+DATA_PARAMS = (PRICE, DIV, {"history_days": 5, "forecast_days": 3, "div_share": 0.6})
 TEST_DATA = [
     dict(
-        params=(("KRKNP", "CHMF", "MRKC"), *END_PARAMS),
+        params=DATA_PARAMS,
         len=1783 + 2124 * 2 - 4 * 3,
         keys=3,
         shapes=((4,), (4,), torch.Size([])),
     ),
     dict(
-        params=(("KRKNP", "CHMF", "MRKC"), *END_PARAMS, pd.Timestamp("2018-10-31")),
+        params=(*DATA_PARAMS, pd.Timestamp("2018-10-31")),
         len=144 - 4 * 3,
         keys=3,
         shapes=((4,), (4,), torch.Size([])),
     ),
     dict(
-        params=(
-            ("KRKNP", "CHMF", "MRKC"),
-            *END_PARAMS,
-            None,
-            pd.Timestamp("2018-11-21"),
-        ),
+        params=(*DATA_PARAMS, None, pd.Timestamp("2018-11-21")),
         len=1783 + 2124 * 2 - 4 * 3 - 99,
         keys=4,
         shapes=((4,), (4,), torch.Size([]), torch.Size([])),
     ),
     dict(
-        params=(
-            ("KRKNP", "CHMF", "MRKC"),
-            *END_PARAMS,
-            pd.Timestamp("2018-10-31"),
-            pd.Timestamp("2018-11-21"),
-        ),
+        params=(*DATA_PARAMS, pd.Timestamp("2018-10-31"), pd.Timestamp("2018-11-21")),
         len=45 - 4 * 3,
         keys=4,
         shapes=((4,), (4,), torch.Size([]), torch.Size([])),

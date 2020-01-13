@@ -1,15 +1,11 @@
 """Формирование примеров для обучения в формате PyTorch."""
-from typing import Tuple, Optional, Dict
+from typing import Optional, Dict
 
 import pandas as pd
 import torch
-from torch.utils import data as dataset
+from torch.utils import data
 
-from poptimizer import data
 from poptimizer.ml.feature.std import LOW_STD
-
-# Параметры формирования примеров для обучения сетей
-DL_PARAMS = {"history_days": 264, "forecast_days": 341, "div_share": 0.6}
 
 
 def price_feature(price: pd.Series, item: int, params: dict) -> torch.Tensor:
@@ -60,7 +56,7 @@ def label_feature(
     return torch.tensor(label)
 
 
-class OneTickerDataset(dataset.Dataset):
+class OneTickerDataset(data.Dataset):
     """Готовит обучающие примеры для одного тикера.
 
     Признаки:
@@ -81,16 +77,14 @@ class OneTickerDataset(dataset.Dataset):
 
     def __init__(
         self,
-        ticker: str,
-        price: pd.DataFrame,
-        div: pd.DataFrame,
+        price: pd.Series,
+        div: pd.Series,
         params: dict,
         dataset_end: Optional[pd.Timestamp],
     ):
-        price = price[ticker]
         start = price.first_valid_index()
         self.price = price[start:]
-        self.div = div.loc[start:, ticker]
+        self.div = div[start:]
         self.params = params
         self.dataset_end = dataset_end or price.index[-1]
 
@@ -116,18 +110,18 @@ class OneTickerDataset(dataset.Dataset):
 
 
 def get_dataset(
-    tickers: Tuple[str, ...],
-    last_date: pd.Timestamp,
+    price: pd.DataFrame,
+    div: pd.DataFrame,
     params: dict,
     dataset_start: Optional[pd.Timestamp] = None,
     dataset_end: Optional[pd.Timestamp] = None,
-) -> dataset.Dataset:
+) -> data.Dataset:
     """Сформировать набор обучающих примеров для заданных тикеров.
 
-    :param tickers:
-        Набор тикеров.
-    :param last_date:
-        Последний день статистики.
+    :param price:
+        Данные по ценам акций.
+    :param div:
+        Данные по дивидендам акций.
     :param params:
         Параметры формирования обучающих примеров.
     :param dataset_start:
@@ -139,12 +133,12 @@ def get_dataset(
     :return:
         Искомый набор примеров для сети.
     """
-    div, price = data.div_ex_date_prices(tickers, last_date)
     div = div.loc[dataset_start:]
     price = price.loc[dataset_start:]
-    return dataset.ConcatDataset(
+    tickers = price.columns
+    return data.ConcatDataset(
         [
-            OneTickerDataset(ticker, price, div, params, dataset_end)
+            OneTickerDataset(price[ticker], div[ticker], params, dataset_end)
             for ticker in tickers
         ]
     )
