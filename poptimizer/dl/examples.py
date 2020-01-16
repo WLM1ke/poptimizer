@@ -4,11 +4,11 @@ from typing import Tuple, Optional
 import pandas as pd
 from torch.utils.data import Dataset
 
-# Параметры формирования примеров для обучения сетей
 from poptimizer import data
 from poptimizer.dl import datasets
 from poptimizer.ml.examples import TRAIN_VAL_SPLIT
 
+# Параметры формирования примеров для обучения сетей
 DL_PARAMS = {"history_days": 264, "forecast_days": 341, "div_share": 0.6}
 
 
@@ -35,7 +35,7 @@ class Examples:
         self._params = params
 
     def train_val_dataset(
-        self, params: Optional[tuple] = None
+        self, params: Optional[dict] = None
     ) -> Tuple[Dataset, Dataset]:
         """Данные для обучения и валидации модели.
 
@@ -51,8 +51,8 @@ class Examples:
 
         history_days = params["history_days"]
         forecast_days = params["forecast_days"]
-        dates = price.index[:-history_days]
-        val_start = int(len(dates) * TRAIN_VAL_SPLIT)
+        dates = price.index[:-forecast_days]
+        val_start = history_days + int((len(dates) - history_days) * TRAIN_VAL_SPLIT)
         return (
             datasets.get_dataset(
                 price,
@@ -61,9 +61,7 @@ class Examples:
                 None,
                 dates[val_start + history_days - 1 - forecast_days],
             ),
-            datasets.get_dataset(
-                price, div, params, dates[val_start], dates[-1 - forecast_days]
-            ),
+            datasets.get_dataset(price, div, params, dates[val_start], dates[-1]),
         )
 
     def train_predict_dataset(self) -> Tuple[Dataset, Dataset]:
