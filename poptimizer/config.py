@@ -3,11 +3,15 @@ import logging
 import pathlib
 
 import pandas as pd
+import torch
 
 
 class POptimizerError(Exception):
     """Базовое исключение."""
 
+
+# Воспроизводиломость https://pytorch.org/docs/stable/notes/randomness.html
+torch.manual_seed(0)
 
 # Конфигурация логгера
 logging.basicConfig(level=logging.INFO)
