@@ -1,6 +1,8 @@
 import logging
+import subprocess
 import time
 
+import psutil
 import pymongo
 import requests
 
@@ -12,18 +14,18 @@ def test_clean_up(caplog):
     assert mongo.MONGO_CLIENT.nodes == frozenset({("localhost", 27017)})
 
     with caplog.at_level(logging.INFO):
-        mongo.clean_up(mongo.MONGO_PROCESS)
+        mongo.clean_up(mongo.MONGO_CLIENT, mongo.HTTP_SESSION)
 
     assert "Подключение клиента MongoDB закрыто" in caplog.text
     assert mongo.MONGO_CLIENT.nodes == frozenset()
-
-    assert "Локальный сервер MongoDB остановлен со статусом 0" in caplog.text
-    assert not mongo.MONGO_PROCESS.is_running()
 
     assert "Сессия для обновления данных по интернет закрыта" in caplog.text
 
 
 def test_start_mongo_server(caplog):
+    stop_server = ["mongo", "--eval", "db.getSiblingDB('admin').shutdownServer()"]
+    process = psutil.Popen(stop_server, stdout=subprocess.DEVNULL)
+    process.wait()
     assert not mongo.MONGO_PROCESS.is_running()
 
     with caplog.at_level(logging.INFO):
@@ -43,7 +45,7 @@ def test_no_start_mongo_server(caplog):
 
 
 def test_start_mongo_client():
-    mongo.MONGO_CLIENT = mongo.start_mongo_client()
+    mongo.MONGO_CLIENT = mongo.start_mongo_client(mongo.HTTP_SESSION)
     assert isinstance(mongo.MONGO_CLIENT, pymongo.MongoClient)
     assert mongo.MONGO_CLIENT.address == ("localhost", 27017)
     assert mongo.MONGO_CLIENT.codec_options.tz_aware is False

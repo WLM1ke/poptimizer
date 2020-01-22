@@ -121,19 +121,21 @@ def clean_up(client: pymongo.MongoClient, http_session: requests.Session) -> Non
     logging.info("Сессия для обновления данных по интернет закрыта")
 
 
-def start_and_setup_clean_up() -> Tuple[pymongo.MongoClient, requests.Session]:
+def start_and_setup_clean_up() -> Tuple[
+    psutil.Process, pymongo.MongoClient, requests.Session
+]:
     """Запуск сервера и клиента MongoDB и соединения с интернетом.
 
     Регистрация процедуры отключения клиента и закрытия соединения.
     Сервер не отключается.
     """
-    start_mongo_server()
+    server = start_mongo_server()
     http_session = start_http_session()
     client = start_mongo_client(http_session)
     atexit.register(
         functools.partial(clean_up, client=client, http_session=http_session)
     )
-    return client, http_session
+    return server, client, http_session
 
 
-MONGO_CLIENT, HTTP_SESSION = start_and_setup_clean_up()
+MONGO_PROCESS, MONGO_CLIENT, HTTP_SESSION = start_and_setup_clean_up()
