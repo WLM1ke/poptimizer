@@ -3,9 +3,9 @@ import pytest
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import moex
-from poptimizer.store.moex import SECURITIES, INDEX
+from poptimizer.store.moex import SECURITIES, INDEX, LISTING
 from poptimizer.store.mongo import MONGO_CLIENT
-from poptimizer.store.utils import REG_NUMBER, LOT_SIZE, TICKER, CLOSE, TURNOVER
+from poptimizer.store.utils import REG_NUMBER, LOT_SIZE, TICKER, CLOSE, TURNOVER, DATE
 
 
 @pytest.fixture("module", autouse=True)
@@ -48,6 +48,24 @@ def test_securities_wrong_id():
         # noinspection PyStatementEffect
         mng["QQQ"]
     assert "Отсутствуют данные test.misc.QQQ" == str(error.value)
+
+
+def test_securities_listing():
+    mng = moex.SecuritiesListing(db="test")
+    df = mng[LISTING]
+    assert len(df) > 2000
+    assert df.loc["POLY", REG_NUMBER] is None
+    assert df.loc["POLY", DATE] is None
+    assert df.loc["IRAO", REG_NUMBER] == "1-04-33498-E"
+    assert pd.Timestamp(df.loc["IRAO", DATE]) == pd.Timestamp("2014-12-23")
+
+
+def test_securities_listing_wrong_id():
+    mng = moex.SecuritiesListing(db="test")
+    with pytest.raises(POptimizerError) as error:
+        # noinspection PyStatementEffect
+        mng["PPP"]
+    assert "Отсутствуют данные test.misc.PPP" == str(error.value)
 
 
 def test_index():
@@ -102,10 +120,29 @@ def test_quotes_download_update():
     assert data[0][TURNOVER] == 1106728
 
 
+def test_quotes_late_reg_number():
+    """Под тикером IRAO обращалось две бумаги с разными регистрационными номерами.
+
+    Это вызывало скачек котировок в сто раз.
+    """
+    mng = moex.Quotes(db="test")
+    df = mng["IRAO"]
+
+    assert isinstance(df, pd.DataFrame)
+    assert df.shape[0] > 1270
+    assert df.index[0] == pd.to_datetime("2015-01-20")
+    assert df.loc["2015-01-20", CLOSE] == pytest.approx(0.7641)
+    assert df.loc["2015-01-20", TURNOVER] == pytest.approx(55127750.3)
+    assert df.loc["2020-02-03", CLOSE] == pytest.approx(5.8285)
+    assert df.loc["2020-02-03", TURNOVER] == pytest.approx(1156252597.5)
+
+
 def test_quotes_find_aliases():
     mng = moex.Quotes(db="test")
     # noinspection PyProtectedMember
-    assert set(mng._find_aliases("UPRO")) == {"UPRO", "EONR", "OGK4"}
+    tickers, date = mng._find_aliases("UPRO")
+    assert set(tickers) == {"UPRO", "EONR", "OGK4"}
+    assert date == pd.Timestamp("2007-04-19")
 
 
 def test_quotes_no_data():
