@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Optional, Any, List, Dict
 
 import apimoex
+import pandas as pd
 
 from poptimizer.config import POptimizerError
 from poptimizer.store import manager
@@ -23,6 +24,7 @@ from poptimizer.store.utils import (
 
 # Наименование данных по акциям в коллекции misc
 SECURITIES = "securities"
+LISTING = "listing"
 
 # Наименование данных по индексу в коллекции misc
 INDEX = "MCFTRR"
@@ -56,6 +58,42 @@ class Securities(AbstractManager):
             LOTSIZE=lambda x: (LOT_SIZE, x),
         )
         return manager.data_formatter(data, formatters)
+
+
+class SecuritiesListing(AbstractManager):
+    """Информация о датах регистрации акций, допущенных к листингу.
+
+    При появлении новой информации создается с нуля, так как перечень торгуемых акций может как
+    расширяться, так и сокращаться.
+
+    Данные о листинге берутся со страницы https://www.moex.com/ru/listing/securities-list.aspx
+    """
+
+    URL = "https://www.moex.com/ru/listing/securities-list-csv.aspx?type=1"
+
+    def __init__(self, db=DB) -> None:
+        super().__init__(
+            collection=MISC,
+            db=db,
+            create_from_scratch=True,
+            index=TICKER,
+            ascending_index=False,
+        )
+
+    def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
+        """Загружает полностью данные о всех торгующихся акциях."""
+        if item != LISTING:
+            raise POptimizerError(
+                f"Отсутствуют данные {self._mongo.collection.full_name}.{item}"
+            )
+        df = pd.read_csv(
+            self.URL,
+            encoding="CP1251",
+            usecols=["TRADE_CODE", "REGISTRY_NUMBER", "REGISTRY_DATE"],
+            converters=dict(REGISTRY_DATE=pd.Timestamp),
+        )
+        df.columns = [TICKER, REG_NUMBER, DATE]
+        return df.dropna().to_dict("records")
 
 
 class Index(AbstractManager):
