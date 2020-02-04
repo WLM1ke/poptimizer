@@ -1,7 +1,7 @@
 """Менеджеры данных для котировок, индекса и перечня торгуемых бумаг с MOEX."""
 from concurrent import futures
 from datetime import datetime
-from typing import Optional, Any, List, Dict
+from typing import Optional, Any, List, Dict, Tuple
 
 import apimoex
 import pandas as pd
@@ -78,6 +78,7 @@ class SecuritiesListing(AbstractManager):
             create_from_scratch=True,
             index=TICKER,
             ascending_index=False,
+            unique_index=False,
         )
 
     def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
@@ -86,14 +87,19 @@ class SecuritiesListing(AbstractManager):
             raise POptimizerError(
                 f"Отсутствуют данные {self._mongo.collection.full_name}.{item}"
             )
+        converters = dict(
+            TRADE_CODE=lambda x: x if len(x) else None,
+            REGISTRY_NUMBER=lambda x: x if len(x) else None,
+            REGISTRY_DATE=lambda x: x if len(x) else None,
+        )
         df = pd.read_csv(
             self.URL,
             encoding="CP1251",
             usecols=["TRADE_CODE", "REGISTRY_NUMBER", "REGISTRY_DATE"],
-            converters=dict(REGISTRY_DATE=pd.Timestamp),
+            converters=converters,
         )
         df.columns = [TICKER, REG_NUMBER, DATE]
-        return df.dropna().to_dict("records")
+        return df.to_dict("records")
 
 
 class Index(AbstractManager):
@@ -138,8 +144,8 @@ class Quotes(AbstractManager):
     def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
         """Загружает полностью или только обновление по ценам HLOC и оборотам в рублях."""
         if last_index is None:
-            aliases = self._find_aliases(item)
-            data = self._download_many(aliases)
+            aliases, reg_date = self._find_aliases(item)
+            data = self._download_many(aliases, reg_date)
         else:
             data = apimoex.get_market_candles(
                 self._session,
@@ -149,22 +155,31 @@ class Quotes(AbstractManager):
             )
         return self._formatter(data)
 
-    def _find_aliases(self, ticker: str) -> List[str]:
+    def _find_aliases(self, ticker: str) -> Tuple[List[str], pd.Timestamp]:
         """Ищет все тикеры с эквивалентным регистрационным номером."""
-        securities = Securities(self._mongo.db.name)[SECURITIES]
-        number = securities.at[ticker, REG_NUMBER]
-        if number is None:
-            raise POptimizerError(f"{ticker} - акция без регистрационного номера")
-        results = apimoex.find_securities(self._session, number)
-        return [row["secid"] for row in results if row["regnumber"] == number]
+        securities = SecuritiesListing(self._mongo.db.name)[LISTING]
 
-    def _download_many(self, aliases: List[str]) -> List[Dict[str, Any]]:
+        reg_date = securities.at[ticker, DATE]
+        reg_date = pd.Timestamp(reg_date)
+
+        reg_number = securities.at[ticker, REG_NUMBER]
+        if reg_number is None:
+            raise POptimizerError(f"{ticker} - акция без регистрационного номера")
+        results = apimoex.find_securities(self._session, reg_number)
+        tickers = [row["secid"] for row in results if row["regnumber"] == reg_number]
+
+        return tickers, reg_date
+
+    def _download_many(
+        self, aliases: List[str], reg_date: pd.Timestamp
+    ) -> List[Dict[str, Any]]:
         with futures.ThreadPoolExecutor(max_workers=len(aliases)) as executor:
             rez = [
                 executor.submit(
                     apimoex.get_market_candles,
                     self._session,
                     ticker,
+                    start=reg_date.date(),
                     end=self.LAST_HISTORY_DATE.date(),
                 )
                 for ticker in aliases
