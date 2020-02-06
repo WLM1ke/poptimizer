@@ -6,7 +6,7 @@ import catboost
 import hyperopt
 import numpy as np
 from hyperopt import hp
-from sklearn import metrics
+from scipy import stats
 
 from poptimizer.config import POptimizerError, ML_PARAMS
 from poptimizer.ml.examples import Examples
@@ -136,12 +136,10 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
 
         * ключ 'loss' - нормированная RMSE на кросс-валидации (для hyperopt),
         * ключ 'status' - успешного прохождения (для hyperopt),
-        * ключ 'std' - RMSE нормированный на СКО на кросс-валидации,
-        * ключ 'r2' - R2-score на кросс-валидации,
-        * ключ 'r' - R на кросс-валидации,
         * ключ 'params' - параметры данных.
         * ключ 'model' - параметры модели, в которые добавлено оптимальное количество итераций
         градиентного бустинга на кросс-валидации и общие настройки.
+        * дополнительные ключи метрик качества модели.
     """
     if verbose:
         logging.info(f"Параметры модели:\n{params}")
@@ -164,21 +162,19 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     scores = clf.get_best_score()["validation"]
     std = scores["RMSE"] * val_pool_params["weight"].mean() ** 0.5
 
-    r2 = metrics.r2_score(val_pool_params["label"], clf.predict(val_pool))
-    ev = metrics.explained_variance_score(
-        val_pool_params["label"], clf.predict(val_pool)
-    )
-    r = np.corrcoef(val_pool_params["label"], clf.predict(val_pool))[0, 1]
+    r = stats.pearsonr(val_pool_params["label"], clf.predict(val_pool))[0]
+    r_rang = stats.spearmanr(val_pool_params["label"], clf.predict(val_pool))[0]
+    t = r_rang * ((len(val_pool_params["label"]) - 2) / (1 - r_rang ** 2)) ** 0.5
 
     if verbose:
-        logging.info(f"R: {r}\n")
+        logging.info(f"R: {r}\nt: {t}\n")
     return dict(
-        loss=-r,
+        loss=-t,
         status=hyperopt.STATUS_OK,
         std=std,
-        r2=r2,
-        ev=ev,
         r=r,
+        r_rang=r_rang,
+        t=t,
         data=data_params,
         model=model_params,
     )
@@ -209,16 +205,18 @@ def optimize_hyper(examples: Examples) -> tuple:
 
 
 def print_result(name, params, examples: Examples):
-    """Проводит кросс-валидацию, выводит ее основные метрики и возвращает R."""
+    """Проводит кросс-валидацию, выводит ее основные метрики."""
     cv_results = valid_model(params, examples)
     print(
         f"\n{name}"
         f"\nR - {cv_results['r']:0.4%}"
+        f"\nR_rang - {cv_results['r_rang']:0.4%}"
+        f"\nT - {cv_results['t']:0.4}"
         f"\nКоличество итераций - {cv_results['model']['iterations']}"
         f"\n{cv_results['data']}"
         f"\n{cv_results['model']}"
     )
-    return cv_results["r"]
+    return cv_results["loss"]
 
 
 def find_better_model(port: Portfolio, params: dict = ML_PARAMS):
@@ -228,11 +226,11 @@ def find_better_model(port: Portfolio, params: dict = ML_PARAMS):
     new_params = optimize_hyper(examples)
     base_params = ML_PARAMS
     base_name = "Базовая модель"
-    base_r2 = print_result(base_name, base_params, examples)
+    base_loss = print_result(base_name, base_params, examples)
     new_name = "Найденная модель"
-    new_r2 = print_result("Найденная модель", new_params, examples)
+    new_loss = print_result("Найденная модель", new_params, examples)
 
-    if base_r2 > new_r2:
+    if base_loss < new_loss:
         print(f"\nЛУЧШАЯ МОДЕЛЬ - {base_name}" f"\n{base_params}")
     else:
         print(f"\nЛУЧШАЯ МОДЕЛЬ - {new_name}" f"\n{new_params}")

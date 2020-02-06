@@ -10,9 +10,9 @@ aiohttp_theme
 
 pandas
 numpy
+scipy
 hyperopt
 matplotlib
-scikit-learn
 catboost
 torch
 

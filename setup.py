@@ -62,7 +62,7 @@ setuptools.setup(
         "bs4",
         "lxml",
         "pyppeteer",
-        "scikit-learn",
+        "scipy",
         "certifi",
         "requests",
         "pymongo",
