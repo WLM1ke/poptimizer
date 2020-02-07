@@ -54,4 +54,5 @@ class Scaler(STD):
         """СКО за указанное количество предыдущих дней."""
         std = super().get(params)
         # noinspection PyTypeChecker
-        return std[std > LOW_STD]
+        std[std < LOW_STD] = LOW_STD
+        return std
