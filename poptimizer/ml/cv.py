@@ -118,6 +118,29 @@ def make_model_params(data_params: tuple, model_params: dict) -> dict:
     return result
 
 
+def t_of_cov(labels, labels_val, n_tickers):
+    """Значимость доходов от предсказания.
+
+    Если делать ставки на сигнал, пропорциональные разнице между сигналом и его матожиданием,
+    то средний доход от таких ставок равен ковариации между сигналом и предсказываемой величиной.
+
+    Каждый день мы делаем ставки на по всем имеющимся бумагам, соответственно можем получить оценки
+    ковариации для отдельных дней и оценить t-статистику отличности ковариации (нашей прибыли) от нуля.
+    """
+    days, rez = divmod(len(labels_val), n_tickers)
+    if rez:
+        # В перспективе возвращать loss = np.inf
+        logging.info("Слишком длинные признаки и метки - сократи их длину!!!")
+    rs = np.zeros(days)
+    for i in range(days):
+        rs[i] = np.cov(
+            labels[i * n_tickers : (i + 1) * n_tickers],
+            labels_val[i * n_tickers : (i + 1) * n_tickers],
+        )[1][0]
+    # noinspection PyUnresolvedReferences
+    return stats.ttest_1samp(rs, 0).statistic
+
+
 def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     """Осуществляет валидацию модели по R2.
 
@@ -148,6 +171,7 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     train_pool_params, val_pool_params = examples.train_val_pool_params(data_params)
     train_pool = catboost.Pool(**train_pool_params)
     val_pool = catboost.Pool(**val_pool_params)
+    n_tickers = len(examples.tickers)
     model_params = make_model_params(data_params, model_params)
     clf = catboost.CatBoostRegressor(**model_params)
     clf.fit(train_pool, eval_set=val_pool)
@@ -162,9 +186,11 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     scores = clf.get_best_score()["validation"]
     std = scores["RMSE"] * val_pool_params["weight"].mean() ** 0.5
 
-    r = stats.pearsonr(val_pool_params["label"], clf.predict(val_pool))[0]
-    r_rang = stats.spearmanr(val_pool_params["label"], clf.predict(val_pool))[0]
-    t = r_rang * ((len(val_pool_params["label"]) - 2) / (1 - r_rang ** 2)) ** 0.5
+    labels = val_pool_params["label"]
+    labels_val = clf.predict(val_pool)
+    r = stats.pearsonr(labels, labels_val)[0]
+    r_rang = stats.spearmanr(labels, labels_val)[0]
+    t = t_of_cov(labels, labels_val, n_tickers)
 
     if verbose:
         logging.info(f"R: {r}\nt: {t}\n")
