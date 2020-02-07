@@ -183,12 +183,12 @@ def test_valid_model():
 
     assert isinstance(result, dict)
     assert len(result) == 8
-    assert result["loss"] == pytest.approx(-0.211_379_120_401_245_7)
+    assert result["loss"] == pytest.approx(-2.451_513_187_577_715)
     assert result["status"] == "ok"
     assert result["std"] == pytest.approx(0.157_171_705_251_838_77)
-    assert result["r2"] == pytest.approx(-0.038_890_804_917_148_58)
-    assert result["ev"] == pytest.approx(0.000_929_818_613_295_774_2)
     assert result["r"] == pytest.approx(0.211_379_120_401_245_7)
+    assert result["r_rang"] == pytest.approx(0.071_200_763_943_929_93)
+    assert result["t"] == pytest.approx(2.451_513_187_577_715)
     assert result["data"] == PARAMS["data"]
     for key, value in PARAMS["model"].items():
         assert result["model"][key] == value
@@ -284,7 +284,7 @@ def test_find_better_model_fake_base(monkeypatch, capsys):
     monkeypatch.setattr(cv, "MAX_SEARCHES", 2)
     monkeypatch.setattr(cv, "MAX_DEPTH", 7)
     monkeypatch.setattr(
-        cv, "print_result", lambda x, y, z: 1 if x == "Базовая модель" else 0
+        cv, "print_result", lambda x, y, z: 0 if x == "Базовая модель" else 1
     )
     pos = dict(LSNGP=10, KZOS=20, GMKN=30)
     port = portfolio.Portfolio(pd.Timestamp("2018-12-19"), 100, pos)
