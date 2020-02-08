@@ -148,8 +148,8 @@ def test_get_forecast():
     assert np.allclose(
         forecast.feature_importance, [27.084442, 11.017218, 7.570018, 54.328323, 0]
     )
-    assert forecast.r2 == pytest.approx(-0.002544220995196911)
-    assert forecast.ev == pytest.approx(0.023249213701098337)
-    assert forecast.r == pytest.approx(0.17736926019064034)
+    assert forecast.r == pytest.approx(0.17736926018304452)
+    assert forecast.r_rang == pytest.approx(0.14855634765086012)
+    assert forecast.t == pytest.approx(-0.10656860240681672)
     assert forecast.average_cor == pytest.approx(0.10588718234140086)
     assert forecast.shrinkage == pytest.approx(1)
