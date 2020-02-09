@@ -63,6 +63,7 @@ setuptools.setup(
         "lxml",
         "pyppeteer",
         "scipy",
+        "sklearn",
         "certifi",
         "requests",
         "pymongo",

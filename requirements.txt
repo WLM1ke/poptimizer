@@ -11,6 +11,7 @@ aiohttp_theme
 pandas
 numpy
 scipy
+sklearn  # Нужно для отчетов
 hyperopt
 matplotlib
 catboost
