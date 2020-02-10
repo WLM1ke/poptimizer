@@ -160,7 +160,7 @@ class Quotes(AbstractManager):
         securities = SecuritiesListing(self._mongo.db.name)[LISTING]
 
         reg_date = securities.at[ticker, DATE]
-        reg_date = pd.Timestamp(reg_date)
+        reg_date = pd.to_datetime(reg_date, format="%d.%m.%Y %H:%M:%S")
 
         reg_number = securities.at[ticker, REG_NUMBER]
         if reg_number is None:
