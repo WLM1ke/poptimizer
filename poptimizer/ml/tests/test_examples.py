@@ -109,9 +109,9 @@ def test_train_val_pool_params(example):
     assert val["feature_names"] == ["Scaler", "Ticker", "Mom12m_0", "DivYield_0"]
 
     assert train["data"].index.get_level_values(0)[0] == pd.Timestamp("2010-02-09")
-    assert train["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-02-12")
+    assert train["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-02-09")
 
-    assert val["data"].index.get_level_values(0)[0] == pd.Timestamp("2018-02-16")
+    assert val["data"].index.get_level_values(0)[0] == pd.Timestamp("2018-02-15")
     assert val["data"].index.get_level_values(0)[-1] == pd.Timestamp("2018-12-07")
 
     df = example.get_all(
