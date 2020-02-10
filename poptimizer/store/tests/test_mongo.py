@@ -1,8 +1,7 @@
 import logging
-import subprocess
+import signal
 import time
 
-import psutil
 import pymongo
 import requests
 
@@ -23,9 +22,9 @@ def test_clean_up(caplog):
 
 
 def test_start_mongo_server(caplog):
-    stop_server = ["pkill", "-x", "mongod"]
-    psutil.Popen(stop_server, stdout=subprocess.DEVNULL)
-    time.sleep(1)
+    mongo_process = mongo.MONGO_PROCESS
+    mongo_process.send_signal(signal.SIGTERM)
+    mongo_process.wait()
     assert not mongo.MONGO_PROCESS.is_running()
 
     with caplog.at_level(logging.INFO):
