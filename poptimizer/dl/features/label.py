@@ -1,7 +1,7 @@
 """Метка данных."""
 import torch
 
-from poptimizer.dl.feature.feature import Feature
+from poptimizer.dl.features.feature import Feature
 from poptimizer.dl.params import ModelParams
 
 
@@ -15,7 +15,7 @@ class Label(Feature):
         self.price = torch.tensor(params.price(ticker))
         self.history_days = params.history_days
         self.forecast_days = params.forecast_days
-        self.div_share = params[self.name]["div_share"]
+        self.div_share = params.get_feat_params(self.name)["div_share"]
 
     def __getitem__(self, item: int) -> torch.Tensor:
         history_days = self.history_days

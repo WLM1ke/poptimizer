@@ -1,7 +1,7 @@
 """Описание модели и данных."""
 import copy
 from enum import Enum
-from typing import Tuple, Optional
+from typing import Tuple
 
 import pandas as pd
 
@@ -12,10 +12,13 @@ from poptimizer.ml.examples import TRAIN_VAL_SPLIT
 
 PARAMS = {
     "history_days": 252,
-    "Label": {"days": 4, "div_share": 0.7},
-    "Prices": {},
-    "Dividends": {},
-    "Weight": {},
+    "forecast_days": 4,
+    "features": {
+        "Label": {"div_share": 0.7},
+        "Prices": {},
+        "Dividends": {},
+        "Weight": {},
+    },
 }
 
 
@@ -76,13 +79,14 @@ class ModelParams(object):
         elif feat_type == FeaturesType.TEST:
             div = div.iloc[forecast_days + train_size - 1 :]
             price = price.iloc[forecast_days + train_size - 1 :]
-            self._params["Label"]["days"] = 1
-            del self._params["Weight"]
+            self._params["forecast_days"] = 1
+            del self._params["features"]["Weight"]
         elif feat_type == FeaturesType.FORECAST:
             div = div.iloc[-history_days:]
             price = price.iloc[-history_days:]
-            del self._params["Label"]
-            del self._params["Weight"]
+            self._params["forecast_days"] = 0
+            del self._params["features"]["Label"]
+            del self._params["features"]["Weight"]
 
         self._div = dict()
         self._price = dict()
@@ -92,13 +96,12 @@ class ModelParams(object):
             self._price[ticker] = price.loc[start:, ticker]
 
     @property
-    def forecast_days(self) -> Optional[int]:
+    def forecast_days(self) -> int:
         """Длинна меток в днях."""
-        label = self._params.get("Label")
-        return label and label["days"]
+        return self._params["forecast_days"]
 
     @property
-    def history_days(self):
+    def history_days(self) -> int:
         """Длинна истории для признаков в днях."""
         return self._params["history_days"]
 
@@ -112,5 +115,16 @@ class ModelParams(object):
         признаков, с учетом возможного отсутствия котировок в начале."""
         return self._div[ticker]
 
-    def __getitem__(self, feat_name: str):
-        return self._params[feat_name]
+    def len(self, ticker) -> int:
+        """Количество доступных примеров для данного тикера."""
+        return max(
+            0, len(self.price(ticker)) - self.history_days - self.forecast_days + 1
+        )
+
+    def get_all_feat(self) -> str:
+        """Получить параметры для признака."""
+        yield from self._params["features"]
+
+    def get_feat_params(self, feat_name: str) -> dict:
+        """Получить параметры для признака."""
+        return self._params["features"][feat_name]

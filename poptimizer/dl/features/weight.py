@@ -1,12 +1,12 @@
 """Вес данного примера."""
 import torch
 
-from poptimizer.dl.feature.feature import Feature
+from poptimizer.dl.features.feature import Feature
 from poptimizer.dl.params import ModelParams
 from poptimizer.ml.feature.std import LOW_STD
 
 
-class Label(Feature):
+class Weight(Feature):
     """Обратная величина СКО полной доходности обрезанная для низких значений."""
 
     def __init__(self, ticker: str, params: ModelParams):
