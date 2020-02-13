@@ -1,7 +1,8 @@
 """Вес данного примера."""
 import torch
 
-from poptimizer.dl.feature.feature import Feature, ModelParams
+from poptimizer.dl.feature.feature import Feature
+from poptimizer.dl.params import ModelParams
 from poptimizer.ml.feature.std import LOW_STD
 
 

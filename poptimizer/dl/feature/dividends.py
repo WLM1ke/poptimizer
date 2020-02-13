@@ -1,7 +1,8 @@
 """Динамика накопленных дивидендов нормированная на первоначальную цену."""
 import torch
 
-from poptimizer.dl.feature.feature import Feature, ModelParams
+from poptimizer.dl.feature.feature import Feature
+from poptimizer.dl.params import ModelParams
 
 
 class Dividends(Feature):
