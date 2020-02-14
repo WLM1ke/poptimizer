@@ -1,14 +1,14 @@
 """Метка данных."""
 import torch
 
+from poptimizer.dl.data_params import DataParams
 from poptimizer.dl.features.feature import Feature
-from poptimizer.dl.params import ModelParams
 
 
 class Label(Feature):
     """Метка линейная комбинация полной и дивидендной доходности с суммарным весом 1."""
 
-    def __init__(self, ticker: str, params: ModelParams):
+    def __init__(self, ticker: str, params: DataParams):
         super().__init__(ticker, params)
         div = torch.tensor(params.div(ticker))
         self.cum_div = torch.cumsum(div, dim=0)

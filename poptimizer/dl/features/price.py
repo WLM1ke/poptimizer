@@ -1,14 +1,14 @@
 """Динамика изменения цены нормированная на первоначальную цену."""
 import torch
 
+from poptimizer.dl.data_params import DataParams
 from poptimizer.dl.features.feature import Feature
-from poptimizer.dl.params import ModelParams
 
 
 class Prices(Feature):
     """Динамика изменения цены нормированная на первоначальную цену."""
 
-    def __init__(self, ticker: str, params: ModelParams):
+    def __init__(self, ticker: str, params: DataParams):
         super().__init__(ticker, params)
         self.price = torch.tensor(params.price(ticker))
         self.history_days = params.history_days

@@ -3,13 +3,14 @@ from abc import ABC, abstractmethod
 
 from torch import Tensor
 
-from poptimizer.dl.params import ModelParams
+from poptimizer.dl.data_params import DataParams
 
 
 class Feature(ABC):
     """Абстрактный класс признака."""
 
-    def __init__(self, ticker: str, params: ModelParams):
+    # noinspection PyUnusedLocal
+    def __init__(self, ticker: str, params: DataParams):
         pass
 
     @abstractmethod

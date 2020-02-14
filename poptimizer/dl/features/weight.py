@@ -1,15 +1,15 @@
 """Вес данного примера."""
 import torch
 
+from poptimizer.dl.data_params import DataParams
 from poptimizer.dl.features.feature import Feature
-from poptimizer.dl.params import ModelParams
 from poptimizer.ml.feature.std import LOW_STD
 
 
 class Weight(Feature):
     """Обратная величина СКО полной доходности обрезанная для низких значений."""
 
-    def __init__(self, ticker: str, params: ModelParams):
+    def __init__(self, ticker: str, params: DataParams):
         super().__init__(ticker, params)
         self.div = torch.tensor(params.div(ticker))
         self.price = torch.tensor(params.price(ticker))

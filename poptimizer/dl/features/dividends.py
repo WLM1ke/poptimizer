@@ -1,14 +1,14 @@
 """Динамика накопленных дивидендов нормированная на первоначальную цену."""
 import torch
 
+from poptimizer.dl.data_params import DataParams
 from poptimizer.dl.features.feature import Feature
-from poptimizer.dl.params import ModelParams
 
 
 class Dividends(Feature):
     """Динамика накопленных дивидендов нормированная на первоначальную цену."""
 
-    def __init__(self, ticker: str, params: ModelParams):
+    def __init__(self, ticker: str, params: DataParams):
         super().__init__(ticker, params)
         self.div = torch.tensor(params.div(ticker))
         self.history_days = params.history_days

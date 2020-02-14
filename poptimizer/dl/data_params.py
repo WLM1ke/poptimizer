@@ -22,8 +22,8 @@ PARAMS = {
 }
 
 
-class FeaturesType(Enum):
-    """Тип формируемых признаков:
+class DataType(Enum):
+    """Тип формируемых данных:
 
     - TRAIN - используются признаки, как есть для начальной части семпла.
     - VAL - используются признаки, как есть для конечной части семпла, чтобы метки не пересекались с
@@ -39,7 +39,7 @@ class FeaturesType(Enum):
     FORECAST = 4
 
 
-class ModelParams(object):
+class DataParams(object):
     """Параметры модели."""
 
     def __init__(
@@ -47,7 +47,7 @@ class ModelParams(object):
         tickers: Tuple[str, ...],
         end: pd.Timestamp,
         params: dict,
-        feat_type: FeaturesType,
+        feat_type: DataType,
     ):
         """Модель строится для определенного набора тикеров и диапазона дат с использованием
         различного набора параметров.
@@ -70,18 +70,18 @@ class ModelParams(object):
         train_size = int(
             (len(price) - history_days - forecast_days * 2 + 2) * TRAIN_VAL_SPLIT
         )
-        if feat_type == FeaturesType.TRAIN:
+        if feat_type == DataType.TRAIN:
             div = div.iloc[: history_days + forecast_days + train_size - 1]
             price = price.iloc[: history_days + forecast_days + train_size - 1]
-        elif feat_type == FeaturesType.VAL:
+        elif feat_type == DataType.VAL:
             div = div.iloc[forecast_days + train_size - 1 :]
             price = price.iloc[forecast_days + train_size - 1 :]
-        elif feat_type == FeaturesType.TEST:
+        elif feat_type == DataType.TEST:
             div = div.iloc[forecast_days + train_size - 1 :]
             price = price.iloc[forecast_days + train_size - 1 :]
             self._params["forecast_days"] = 1
             del self._params["features"]["Weight"]
-        elif feat_type == FeaturesType.FORECAST:
+        elif feat_type == DataType.FORECAST:
             div = div.iloc[-history_days:]
             price = price.iloc[-history_days:]
             self._params["forecast_days"] = 0
