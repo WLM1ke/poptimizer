@@ -7,19 +7,7 @@ import pandas as pd
 
 from poptimizer import data
 
-# Параметры формирования примеров для обучения сетей
-from poptimizer.ml.examples import TRAIN_VAL_SPLIT
-
-PARAMS = {
-    "history_days": 252,
-    "forecast_days": 4,
-    "features": {
-        "Label": {"div_share": 0.7},
-        "Prices": {},
-        "Dividends": {},
-        "Weight": {},
-    },
-}
+TRAIN_VAL_SPLIT = 0.9
 
 
 class DataType(Enum):
@@ -65,20 +53,17 @@ class DataParams(object):
         div, price = data.div_ex_date_prices(tickers, end)
         self._params = copy.deepcopy(params)
         history_days = self.history_days
-        forecast_days = self.forecast_days
 
-        train_size = int(
-            (len(price) - history_days - forecast_days * 2 + 2) * TRAIN_VAL_SPLIT
-        )
+        train_size = int(len(price) * TRAIN_VAL_SPLIT)
         if feat_type == DataType.TRAIN:
-            div = div.iloc[: history_days + forecast_days + train_size - 1]
-            price = price.iloc[: history_days + forecast_days + train_size - 1]
+            div = div.iloc[:train_size]
+            price = price.iloc[:train_size]
         elif feat_type == DataType.VAL:
-            div = div.iloc[forecast_days + train_size - 1 :]
-            price = price.iloc[forecast_days + train_size - 1 :]
+            div = div.iloc[train_size - history_days :]
+            price = price.iloc[train_size - history_days :]
         elif feat_type == DataType.TEST:
-            div = div.iloc[forecast_days + train_size - 1 :]
-            price = price.iloc[forecast_days + train_size - 1 :]
+            div = div.iloc[train_size - history_days :]
+            price = price.iloc[train_size - history_days :]
             self._params["forecast_days"] = 1
             del self._params["features"]["Weight"]
         elif feat_type == DataType.FORECAST:
