@@ -24,18 +24,18 @@ class OneTickerDataset(data.Dataset):
             self.features[feat_name] = feature_cls(ticker, params)
 
     def __getitem__(self, item) -> Dict[str, Tensor]:
-        return {name: feature[item] for name, feature in self.features}
+        return {name: feature[item] for name, feature in self.features.items()}
 
     def __len__(self) -> int:
         return self.len
 
 
 def get_data_loader(
-        tickers: Tuple[str, ...],
-        end: pd.Timestamp,
-        params: dict,
-        feat_type: DataType,
-        batch_size: int,
+    tickers: Tuple[str, ...],
+    end: pd.Timestamp,
+    params: dict,
+    feat_type: DataType,
+    batch_size: int,
 ) -> data.DataLoader:
     """
 

@@ -69,6 +69,7 @@ setuptools.setup(
         "pymongo",
         "psutil",
         "apimoex",
+        "tqdm",
     ],
     python_requires=f">={python_minimal}",
 )

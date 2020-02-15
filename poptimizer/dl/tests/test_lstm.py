@@ -1,6 +1,6 @@
 import torch
 
-from poptimizer.dl import lstm
+from poptimizer.dl.models import lstm
 
 
 def test_lstm_bi():

@@ -11,8 +11,8 @@ class Weight(Feature):
 
     def __init__(self, ticker: str, params: DataParams):
         super().__init__(ticker, params)
-        self.div = torch.tensor(params.div(ticker))
-        self.price = torch.tensor(params.price(ticker))
+        self.div = torch.tensor(params.div(ticker).values, dtype=torch.float)
+        self.price = torch.tensor(params.price(ticker).values, dtype=torch.float)
         self.history_days = params.history_days
 
     def __getitem__(self, item: int) -> torch.Tensor:
@@ -25,5 +25,5 @@ class Weight(Feature):
         price0 = price[item : item + history_days - 1]
         returns = (price1 + div) / price0
         std = torch.std(returns, dim=0, keepdim=True)
-        std = torch.max(std, LOW_STD)
+        std = torch.max(std, torch.tensor(LOW_STD))
         return std ** -2

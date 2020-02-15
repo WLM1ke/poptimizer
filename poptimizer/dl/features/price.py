@@ -10,7 +10,7 @@ class Prices(Feature):
 
     def __init__(self, ticker: str, params: DataParams):
         super().__init__(ticker, params)
-        self.price = torch.tensor(params.price(ticker))
+        self.price = torch.tensor(params.price(ticker).values, dtype=torch.float)
         self.history_days = params.history_days
 
     def __getitem__(self, item: int) -> torch.Tensor:

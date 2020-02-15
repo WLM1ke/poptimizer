@@ -10,9 +10,9 @@ class Label(Feature):
 
     def __init__(self, ticker: str, params: DataParams):
         super().__init__(ticker, params)
-        div = torch.tensor(params.div(ticker))
+        div = torch.tensor(params.div(ticker).values, dtype=torch.float)
         self.cum_div = torch.cumsum(div, dim=0)
-        self.price = torch.tensor(params.price(ticker))
+        self.price = torch.tensor(params.price(ticker).values, dtype=torch.float)
         self.history_days = params.history_days
         self.forecast_days = params.forecast_days
         self.div_share = params.get_feat_params(self.name)["div_share"]

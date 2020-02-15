@@ -3,12 +3,12 @@ import pytest
 import torch
 from torch.utils import data
 
-from poptimizer.dl import examples
+from poptimizer.dl import trainer_old
 
 
 @pytest.fixture(scope="module", name="example")
 def make_examples():
-    return examples.Examples(
+    return trainer_old.Trainer(
         ("PMSBP", "UNAC"),
         pd.Timestamp("2019-01-14"),
         {"history_days": 6, "forecast_days": 4, "div_share": 0.6},

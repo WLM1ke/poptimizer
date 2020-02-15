@@ -1,0 +1,314 @@
+"""Тренировка модели."""
+import sys
+from typing import Tuple, Dict, Optional
+
+import numpy as np
+import pandas as pd
+import torch
+import tqdm
+from scipy import stats
+from torch import nn, optim
+from torch.optim import lr_scheduler
+
+from poptimizer.config import POptimizerError
+from poptimizer.dl import datasets
+from poptimizer.dl.data_params import DataType
+from poptimizer.dl.models.conv import Conv
+
+# Параметры формирования примеров для обучения сетей
+DATA_PARAMS = {
+    "history_days": 256,
+    "forecast_days": 8,
+    "features": {
+        "Label": {"div_share": 0.7},
+        "Prices": {},
+        "Dividends": {},
+        "Weight": {},
+    },
+}
+
+
+class Trainer:
+    """Тренирует модель на основе нейронной сети."""
+
+    def __init__(
+        self,
+        tickers: Tuple[str, ...],
+        end: pd.Timestamp,
+        params: dict,
+        model: nn.Module,
+        epochs: int,
+        batch_size: int,
+        max_lr: float,
+    ):
+        self._epochs = epochs
+        self._tickers = tickers
+
+        self._train = datasets.get_data_loader(
+            tickers, end, params, DataType.TRAIN, batch_size
+        )
+        self._val = datasets.get_data_loader(
+            tickers, end, params, DataType.VAL, batch_size
+        )
+        self._test = datasets.get_data_loader(
+            tickers, end, params, DataType.TEST, batch_size
+        )
+
+        self._model = model
+        # noinspection PyUnresolvedReferences
+        self._optimizer = optim.AdamW(model.parameters())
+        # noinspection PyUnresolvedReferences
+        self._scheduler = lr_scheduler.OneCycleLR(
+            self._optimizer,
+            max_lr,
+            epochs=epochs,
+            steps_per_epoch=len(self._train),
+            pct_start=0.3,
+            base_momentum=0.85,
+            max_momentum=0.95,
+            div_factor=25.0,
+            final_div_factor=10000.0,
+        )
+
+    @staticmethod
+    def weighted_mse(
+        output: torch.Tensor, batch: Dict[str, torch.Tensor]
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Взвешенный MSE."""
+        weight = batch["Weight"]
+        loss = (output - batch["Label"]) ** 2 * weight
+        return loss.sum(), weight.sum()
+
+    def train_epoch(self) -> None:
+        """Тренировка одну эпоху."""
+        model = self._model
+        optimizer = self._optimizer
+        scheduler = self._scheduler
+        loss_fn = self.weighted_mse
+
+        model.train()
+
+        train_loss = 0.0
+        train_weight = 0.0
+
+        bar = tqdm.tqdm(self._train, file=sys.stdout)
+        bar.set_description(f"~~> Train")
+        for batch in bar:
+            optimizer.zero_grad()
+
+            output = model(batch)
+            loss, weight = loss_fn(output, batch)
+            train_loss += loss.item()
+            train_weight += weight.item()
+
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
+
+            bar.set_postfix_str(f"{train_loss / train_weight:.5f}")
+
+    def val_epoch(self, get_stat: bool) -> Optional[Dict[str, float]]:
+        """Валидация на одной эпохе"""
+        model = self._model
+        loss_fn = self.weighted_mse
+
+        val_loss = 0.0
+        val_weight = 0.0
+        val_labels = []
+        val_output = []
+
+        with torch.no_grad():
+            model.eval()
+            bar = tqdm.tqdm(self._val, file=sys.stdout)
+            bar.set_description(f"~~> Valid")
+            for batch in bar:
+                output = model(batch)
+                loss, weight = loss_fn(output, batch)
+                val_loss += loss.item()
+                val_weight += weight.item()
+
+                if get_stat:
+                    val_labels.append(batch["Label"])
+                    val_output.append(output)
+
+                bar.set_postfix_str(f"{val_loss / val_weight:.5f}")
+
+        if get_stat:
+            val_loss /= val_weight
+            val_labels = torch.cat(val_labels, dim=0).numpy().flatten()
+            val_output = torch.cat(val_output, dim=0).numpy().flatten()
+
+            std = val_loss ** 0.5
+            r = stats.pearsonr(val_labels, val_output)[0]
+            r_rang = stats.spearmanr(val_labels, val_output)[0]
+
+            return dict(std=std, r=r, r_rang=r_rang)
+
+    def test_epoch(self) -> Dict[str, float]:
+        """Тестирует, вычисляя значимость доходов от предсказания.
+
+        Если делать ставки на сигнал, пропорциональные разнице между сигналом и его матожиданием,
+        то средний доход от таких ставок равен ковариации между сигналом и предсказываемой величиной.
+
+        Каждый день мы делаем ставки на по всем имеющимся бумагам, соответственно можем получить оценки
+        ковариации для отдельных дней и оценить t-статистику отличности ковариации (нашей прибыли) от
+        нуля.
+        """
+        model = self._model
+
+        test_labels = []
+        test_output = []
+
+        with torch.no_grad():
+            model.eval()
+            bar = tqdm.tqdm(self._test, file=sys.stdout)
+            bar.set_description(f"Test")
+            for batch in bar:
+                output = model(batch)
+
+                test_labels.append(batch["Label"])
+                test_output.append(output)
+
+        test_labels = torch.cat(test_labels, dim=0).numpy().flatten()
+        test_output = torch.cat(test_output, dim=0).numpy().flatten()
+
+        days, rez = divmod(len(test_labels), len(self._tickers))
+
+        if rez:
+            raise POptimizerError(
+                "Слишком длинные признаки и метки - сократи их длину!!!"
+            )
+
+        rs = np.zeros(days)
+        for i in range(days):
+            # Срезы соответствуют разным акциям в один день
+            rs[i] = np.cov(test_labels[i::days], test_output[i::days])[1][0]
+        # noinspection PyUnresolvedReferences
+        return {"t": stats.ttest_1samp(rs, 0).statistic}
+
+    def run(self) -> dict:
+        """Производит обучение и валидацию модели."""
+        print(self._model)
+        print(f"Epochs - {self._epochs}")
+        print(f"Train size - {len(self._train.dataset)}")
+
+        stat = {}
+
+        for epoch in range(1, self._epochs + 1):
+            print(f"Epoch {epoch}")
+            self.train_epoch()
+            stat = self.val_epoch(epoch == self._epochs)
+
+        stat.update(self.test_epoch())
+
+        return stat
+
+
+def main():
+    """Вариант для тестирования"""
+    pos = dict(
+        AKRN=7 + 715 + 88 + 4,
+        ALRS=2690,
+        BANE=0 + 236 + 84,
+        BSPB=4890 + 0 + 3600 + 150,
+        CBOM=0 + 4400 + 71000,
+        CHMF=0 + 730 + 170,
+        DSKY=17720 + 740 + 6380 + 4320,
+        GCHE=0 + 0 + 24,
+        GMKN=0 + 109,
+        IRKT=0 + 7000,
+        KRKNP=66 + 0 + 43,
+        KZOS=1200 + 5080 + 5190,
+        LSNG=44600 + 14500 + 32100 + 14600,
+        LSNGP=2280 + 670 + 2410,
+        LSRG=0 + 649 + 0 + 80,
+        MGTSP=485 + 0 + 68,
+        MOEX=2110,
+        MRKC=1_833_000 + 0 + 1_196_000,
+        MRKV=0 + 9_750_000 + 2_940_000 + 4_310_000,
+        MSRS=0 + 564_000 + 7000 + 229_000,
+        MTSS=1550 + 4520 + 30 + 520,
+        MVID=0 + 0 + 800,
+        NMTP=29000 + 74000 + 13000 + 67000,
+        PHOR=126 + 127 + 165 + 405,
+        PIKK=0 + 3090 + 0 + 90,
+        PLZL=47 + 21 + 23,
+        PMSBP=0 + 0 + 1160,
+        PRTK=0 + 6980,
+        RNFT=0 + 51 + 11,
+        RTKM=0 + 0 + 2570,
+        RTKMP=0 + 29400,
+        SELG=30300 + 91400 + 24600,
+        SIBN=0 + 430,
+        SVAV=240 + 500 + 0 + 40,
+        TATNP=0 + 458,
+        TGKA=0 + 46_400_000 + 0 + 7_900_000,
+        TRCN=41 + 0 + 4 + 3,
+        UNAC=559_000 + 402_000 + 183_000,
+        UPRO=61000 + 451_000 + 0 + 53000,
+        VSMO=39 + 161 + 3,
+        # Бумаги с нулевым весом
+        CNTLP=0,
+        MSTT=0,
+        NKNC=0,
+        NVTK=0,
+        LKOH=0,
+        SNGSP=0,
+        OGKB=0,
+        AFLT=0,
+        SNGS=0,
+        MRKZ=0,
+        ROSN=0,
+        SBERP=0,
+        VTBR=0,
+        ENRU=0,
+        BANEP=0,
+        TATN=0,
+        RASP=0,
+        NLMK=0,
+        NKNCP=0,
+        FEES=0,
+        HYDR=0,
+        MRKP=0,
+        MTLRP=0,
+        MAGN=0,
+        GAZP=0,
+        SBER=0,
+        MGNT=0,
+        RSTI=0,
+        MSNG=0,
+        AFKS=0,
+        SFIN=0,
+        TRNFP=0,
+        MTLR=0,
+        ISKJ=0,
+        TRMK=0,
+        RSTIP=0,
+        OBUV=0,
+        APTK=0,
+        LNZL=0,
+        GTRK=0,
+        ROLO=0,
+        FESH=0,
+        IRAO=0,
+    )
+    model = Conv()
+    trn = Trainer(
+        tuple(pos), pd.Timestamp("2020-02-10"), DATA_PARAMS, model, 3, 100, 0.01
+    )
+    rez = trn.run()
+    print(rez)
+
+
+if __name__ == "__main__":
+    import cProfile
+    import pstats
+    from pstats import SortKey
+
+    pr = cProfile.Profile()
+    pr.enable()
+    main()
+    pr.disable()
+    sort_by = SortKey.CUMULATIVE
+    ps = pstats.Stats(pr).sort_stats(sort_by)
+    ps.print_stats("poptimizer/poptimizer", 30)

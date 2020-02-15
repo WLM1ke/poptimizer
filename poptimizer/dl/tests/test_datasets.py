@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import Dataset
 
 import poptimizer
-from poptimizer.dl import datasets
+from poptimizer.dl import datasets_old
 
 DIV, PRICE = poptimizer.data.div_ex_date_prices(
     ("KRKNP", "CHMF", "MRKC"), pd.Timestamp("2019-01-10")
@@ -40,7 +40,7 @@ TEST_DATA = [
 
 @pytest.mark.parametrize("data", TEST_DATA)
 def test_get_dataset_len_and_shape(data):
-    rez = datasets.get_dataset(*data["params"])
+    rez = datasets_old.get_dataset(*data["params"])
     assert isinstance(rez, Dataset)
     assert len(rez) == data["len"]
     assert len(rez[0]) == data["keys"]
@@ -51,7 +51,7 @@ def test_get_dataset_len_and_shape(data):
 
 @pytest.fixture(name="dataset")
 def make_dataset():
-    return datasets.get_dataset(*TEST_DATA[2]["params"])
+    return datasets_old.get_dataset(*TEST_DATA[2]["params"])
 
 
 def test_get_dataset_price_values(dataset):

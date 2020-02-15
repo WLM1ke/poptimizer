@@ -10,10 +10,9 @@ class Dividends(Feature):
 
     def __init__(self, ticker: str, params: DataParams):
         super().__init__(ticker, params)
-        self.div = torch.tensor(params.div(ticker))
+        self.div = torch.tensor(params.div(ticker).values, dtype=torch.float)
+        self.price = torch.tensor(params.price(ticker).values, dtype=torch.float)
         self.history_days = params.history_days
 
     def __getitem__(self, item: int) -> torch.Tensor:
-        history_days = self.history_days
-        div = self.div
-        return div[item : item + history_days] / div[item] - 1
+        return self.div[item : item + self.history_days] / self.price[item]
