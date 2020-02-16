@@ -7,23 +7,40 @@ import pandas as pd
 import torch
 import tqdm
 from scipy import stats
-from torch import nn, optim
+from torch import optim
 from torch.optim import lr_scheduler
 
 from poptimizer.config import POptimizerError
-from poptimizer.dl import datasets
+from poptimizer.dl import data_loader, models
 from poptimizer.dl.data_params import DataType
-from poptimizer.dl.models.conv import Conv
 
 # Параметры формирования примеров для обучения сетей
 DATA_PARAMS = {
-    "history_days": 256,
-    "forecast_days": 8,
-    "features": {
-        "Label": {"div_share": 0.7},
-        "Prices": {},
-        "Dividends": {},
-        "Weight": {},
+    "model": {
+        "name": "WaveNet",
+        "params": {
+            "gate_channels": 16,
+            "residual_channels": 16,
+            "skip_channels": 16,
+            "end_channels": 16,
+        },
+    },
+    "optimizer": {
+        "pct_start": 0.3,
+        "base_momentum": 0.85,
+        "max_momentum": 0.95,
+        "div_factor": 25.0,
+        "final_div_factor": 10000.0,
+    },
+    "data": {
+        "history_days": 256,
+        "forecast_days": 16,
+        "features": {
+            "Label": {"div_share": 0.7},
+            "Prices": {},
+            "Dividends": {},
+            "Weight": {},
+        },
     },
 }
 
@@ -36,7 +53,6 @@ class Trainer:
         tickers: Tuple[str, ...],
         end: pd.Timestamp,
         params: dict,
-        model: nn.Module,
         epochs: int,
         batch_size: int,
         max_lr: float,
@@ -44,30 +60,28 @@ class Trainer:
         self._epochs = epochs
         self._tickers = tickers
 
-        self._train = datasets.get_data_loader(
-            tickers, end, params, DataType.TRAIN, batch_size
+        self._train = data_loader.get_data_loader(
+            tickers, end, params["data"], DataType.TRAIN, batch_size
         )
-        self._val = datasets.get_data_loader(
-            tickers, end, params, DataType.VAL, batch_size
+        self._val = data_loader.get_data_loader(
+            tickers, end, params["data"], DataType.VAL, batch_size
         )
-        self._test = datasets.get_data_loader(
-            tickers, end, params, DataType.TEST, batch_size
+        self._test = data_loader.get_data_loader(
+            tickers, end, params["data"], DataType.TEST, batch_size
         )
 
-        self._model = model
+        model = getattr(models, params["model"]["name"])
+        self._model = model(params["data"]["history_days"], **params["model"]["params"])
+
         # noinspection PyUnresolvedReferences
-        self._optimizer = optim.AdamW(model.parameters())
+        self._optimizer = optim.AdamW(self._model.parameters())
         # noinspection PyUnresolvedReferences
         self._scheduler = lr_scheduler.OneCycleLR(
             self._optimizer,
             max_lr,
             epochs=epochs,
             steps_per_epoch=len(self._train),
-            pct_start=0.3,
-            base_momentum=0.85,
-            max_momentum=0.95,
-            div_factor=25.0,
-            final_div_factor=10000.0,
+            **params["optimizer"],
         )
 
     @staticmethod
@@ -292,10 +306,7 @@ def main():
         FESH=0,
         IRAO=0,
     )
-    model = Conv()
-    trn = Trainer(
-        tuple(pos), pd.Timestamp("2020-02-10"), DATA_PARAMS, model, 3, 100, 0.01
-    )
+    trn = Trainer(tuple(pos), pd.Timestamp("2020-02-10"), DATA_PARAMS, 3, 100, 0.01)
     rez = trn.run()
     print(rez)
 
