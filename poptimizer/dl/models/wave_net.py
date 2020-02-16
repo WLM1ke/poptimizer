@@ -12,8 +12,6 @@ class WaveNet(nn.Module):
     https://arxiv.org/abs/1609.03499
     """
 
-    # TODO: Настоящий dilated_convs
-    # TODO: Возможность менять кернелы в гейтах
     def __init__(
         self,
         history_days: int,

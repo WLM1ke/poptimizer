@@ -204,6 +204,9 @@ class Trainer:
     def run(self) -> dict:
         """Производит обучение и валидацию модели."""
         print(self._model)
+        print(
+            f"Количество параметров - {sum(tensor.numel() for tensor in self._model.parameters())}"
+        )
         print(f"Epochs - {self._epochs}")
         print(f"Train size - {len(self._train.dataset)}")
 
