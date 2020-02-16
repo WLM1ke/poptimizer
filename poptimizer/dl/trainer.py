@@ -20,6 +20,7 @@ DATA_PARAMS = {
         "name": "WaveNet",
         "params": {
             "kernels": 3,
+            "sub_blocks": 1,
             "gate_channels": 16,
             "residual_channels": 16,
             "skip_channels": 16,
@@ -204,6 +205,7 @@ class Trainer:
     def run(self) -> dict:
         """Производит обучение и валидацию модели."""
         print(self._model)
+        print(f"Количество слоев - {sum(1 for _ in self._model.modules())}")
         print(
             f"Количество параметров - {sum(tensor.numel() for tensor in self._model.parameters())}"
         )
@@ -310,7 +312,7 @@ def main():
         FESH=0,
         IRAO=0,
     )
-    trn = Trainer(tuple(pos), pd.Timestamp("2020-02-10"), DATA_PARAMS, 3, 100, 0.01 / 2)
+    trn = Trainer(tuple(pos), pd.Timestamp("2020-02-10"), DATA_PARAMS, 3, 100, 0.01)
     rez = trn.run()
     print(rez)
 
