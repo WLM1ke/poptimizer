@@ -19,6 +19,7 @@ DATA_PARAMS = {
     "model": {
         "name": "WaveNet",
         "params": {
+            "kernels": 3,
             "gate_channels": 16,
             "residual_channels": 16,
             "skip_channels": 16,
@@ -34,7 +35,7 @@ DATA_PARAMS = {
     },
     "data": {
         "history_days": 256,
-        "forecast_days": 16,
+        "forecast_days": 8,
         "features": {
             "Label": {"div_share": 0.7},
             "Prices": {},
@@ -306,20 +307,10 @@ def main():
         FESH=0,
         IRAO=0,
     )
-    trn = Trainer(tuple(pos), pd.Timestamp("2020-02-10"), DATA_PARAMS, 3, 100, 0.01)
+    trn = Trainer(tuple(pos), pd.Timestamp("2020-02-10"), DATA_PARAMS, 3, 100, 0.01 / 2)
     rez = trn.run()
     print(rez)
 
 
 if __name__ == "__main__":
-    import cProfile
-    import pstats
-    from pstats import SortKey
-
-    pr = cProfile.Profile()
-    pr.enable()
     main()
-    pr.disable()
-    sort_by = SortKey.CUMULATIVE
-    ps = pstats.Stats(pr).sort_stats(sort_by)
-    ps.print_stats("poptimizer/poptimizer", 30)

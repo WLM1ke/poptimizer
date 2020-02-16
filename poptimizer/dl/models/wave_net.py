@@ -17,6 +17,7 @@ class WaveNet(nn.Module):
     def __init__(
         self,
         history_days: int,
+        kernels: int = 3,
         gate_channels: int = 32,
         residual_channels: int = 32,
         skip_channels: int = 256,
@@ -32,7 +33,8 @@ class WaveNet(nn.Module):
             in_channels=2, out_channels=residual_channels, kernel_size=1
         )
 
-        self.pad = nn.ConstantPad1d(padding=(1, 0), value=0.0)
+        self.dilated_pad = nn.ConstantPad1d(padding=(1, 0), value=0.0)
+        self.signal_gate_pad = nn.ConstantPad1d(padding=(kernels - 1, 0), value=0.0)
 
         self.dilated_convs = nn.ModuleList()
         self.signal_convs = nn.ModuleList()
@@ -40,6 +42,7 @@ class WaveNet(nn.Module):
         self.residual_convs = nn.ModuleList()
         self.skip_convs = nn.ModuleList()
         layers = int(np.log2(history_days - 1)) + 1
+
         for i in range(layers):
             self.dilated_convs.append(
                 nn.Conv1d(
@@ -53,7 +56,7 @@ class WaveNet(nn.Module):
                 nn.Conv1d(
                     in_channels=residual_channels,
                     out_channels=gate_channels,
-                    kernel_size=1,
+                    kernel_size=kernels,
                     stride=1,
                 )
             )
@@ -61,7 +64,7 @@ class WaveNet(nn.Module):
                 nn.Conv1d(
                     in_channels=residual_channels,
                     out_channels=gate_channels,
-                    kernel_size=1,
+                    kernel_size=kernels,
                     stride=1,
                 )
             )
@@ -116,13 +119,13 @@ class WaveNet(nn.Module):
             # ----------------------------------------------> + ------------->	*skip*
 
             if y.shape[-1] % 2:
-                y = self.pad(y)
+                y = self.dilated_pad(y)
             y = dilated(y)
             y_rez = y
 
+            y = self.signal_gate_pad(y)
             y_signal = signal(y)
             y_signal = torch.relu(y_signal)
-
             y_gate = gate(y)
             y_gate = torch.sigmoid(y_gate)
 
