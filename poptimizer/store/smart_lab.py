@@ -34,7 +34,7 @@ DATE_COLUMN = parser.DataColumn(
 
 DIVIDENDS_COLUMN = parser.DataColumn(
     DIVIDENDS,
-    7,
+    8,
     {0: "дивиденд,руб", -1: "\n+добавить дивиденды\nИстория выплаченных дивидендов\n"},
     parser.div_parser,
 )
