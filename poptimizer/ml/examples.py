@@ -3,7 +3,6 @@ from typing import Optional, Tuple
 
 import pandas as pd
 
-from poptimizer import data
 from poptimizer.ml import feature
 
 TRAIN_VAL_SPLIT = 0.9
@@ -78,17 +77,12 @@ class Examples:
         правдоподобия для нормального распределения.
         """
         params = params or self._params
-
-        _, price = data.div_ex_date_prices(self._tickers, self._date)
-        val_start_labels = int(len(price) * TRAIN_VAL_SPLIT)
-        val_start_labels = price.index[val_start_labels - 1]
-
         df = self.get_all(params).dropna(axis=0)
         dates = df.index.get_level_values(0)
-
-        df_val = df[dates >= val_start_labels]
+        val_start = dates[int(len(dates) * TRAIN_VAL_SPLIT)]
+        df_val = df[dates >= val_start]
         label_days = params[0][1]["days"]
-        train_end = dates[dates < val_start_labels].unique()[-label_days]
+        train_end = dates[dates < val_start].unique()[-label_days]
         df_train = df.loc[dates <= train_end]
         train_params = dict(
             data=df_train.iloc[:, 1:],
