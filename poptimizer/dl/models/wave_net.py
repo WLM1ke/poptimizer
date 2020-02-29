@@ -101,6 +101,7 @@ class WaveNet(nn.Module):
     def __init__(
         self,
         history_days: int,
+        start_bn: bool = True,
         kernels: int = 2,
         sub_blocks: int = 2,
         gate_channels: int = 32,
@@ -111,7 +112,7 @@ class WaveNet(nn.Module):
         super().__init__()
         # TODO: сколько признаков
         self.skip_channels = skip_channels
-        self.bn = nn.BatchNorm1d(2)
+        self.bn = start_bn and nn.BatchNorm1d(2)
         self.start_conv = nn.Conv1d(
             in_channels=2, out_channels=residual_channels, kernel_size=1
         )
@@ -143,8 +144,9 @@ class WaveNet(nn.Module):
 
         https://github.com/vincentherrmann/pytorch-wavenet/blob/master/wavenet_model.py
         """
-        x = torch.stack([batch["Prices"], batch["Dividends"]], dim=1)
-        y = self.bn(x)
+        y = torch.stack([batch["Prices"], batch["Dividends"]], dim=1)
+        if self.bn:
+            y = self.bn(y)
         y = self.start_conv(y)
 
         skips = torch.zeros((y.shape[0], self.skip_channels, 1))
@@ -154,7 +156,7 @@ class WaveNet(nn.Module):
             skips = skips + skip
 
         skip = self.final_skip_conv(y)
-        skips = skips + skip
+        skips = skip + skips
 
         y = torch.relu(skips)
         y = self.end_conv(y)

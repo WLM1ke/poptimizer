@@ -90,6 +90,11 @@ class DataParams(object):
         """Длинна истории для признаков в днях."""
         return self._params["history_days"]
 
+    @property
+    def batch_size(self) -> int:
+        """Размер батча."""
+        return self._params["batch_size"]
+
     def price(self, ticker: str) -> pd.Series:
         """Цены для тикера и диапазона дат, которых будут использоваться для построения признаков,
         с учетом возможного отсутствия котировок в начале."""

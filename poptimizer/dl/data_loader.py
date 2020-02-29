@@ -31,11 +31,7 @@ class OneTickerDataset(data.Dataset):
 
 
 def get_data_loader(
-    tickers: Tuple[str, ...],
-    end: pd.Timestamp,
-    params: dict,
-    feat_type: DataType,
-    batch_size: int,
+    tickers: Tuple[str, ...], end: pd.Timestamp, params: dict, feat_type: DataType
 ) -> data.DataLoader:
     """
 
@@ -48,8 +44,6 @@ def get_data_loader(
         Словарь с параметрами для построения признаков и других элементов модели.
     :param feat_type:
         Тип формируемых признаков.
-    :param batch_size:
-        Размер батча.
     :return:
         Загрузчик данных.
     """
@@ -62,4 +56,4 @@ def get_data_loader(
     if feat_type == DataType.TRAIN:
         shuffle = True
 
-    return data.DataLoader(dataset, batch_size, shuffle, drop_last=False)
+    return data.DataLoader(dataset, params.batch_size, shuffle, drop_last=False)

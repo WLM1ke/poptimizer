@@ -19,6 +19,7 @@ DATA_PARAMS = {
     "model": {
         "name": "WaveNet",
         "params": {
+            "start_bn": True,
             "kernels": 3,
             "sub_blocks": 1,
             "gate_channels": 16,
@@ -28,6 +29,8 @@ DATA_PARAMS = {
         },
     },
     "optimizer": {
+        "max_lr": 0.01,
+        "epochs": 3,
         "pct_start": 0.3,
         "base_momentum": 0.85,
         "max_momentum": 0.95,
@@ -35,10 +38,11 @@ DATA_PARAMS = {
         "final_div_factor": 10000.0,
     },
     "data": {
+        "batch_size": 100,
         "history_days": 256,
         "forecast_days": 8,
         "features": {
-            "Label": {"div_share": 0.7},
+            "Label": {"div_share": 0.8},
             "Prices": {},
             "Dividends": {},
             "Weight": {},
@@ -50,26 +54,18 @@ DATA_PARAMS = {
 class Trainer:
     """Тренирует модель на основе нейронной сети."""
 
-    def __init__(
-        self,
-        tickers: Tuple[str, ...],
-        end: pd.Timestamp,
-        params: dict,
-        epochs: int,
-        batch_size: int,
-        max_lr: float,
-    ):
-        self._epochs = epochs
+    def __init__(self, tickers: Tuple[str, ...], end: pd.Timestamp, params: dict):
         self._tickers = tickers
+        self._params = params
 
         self._train = data_loader.get_data_loader(
-            tickers, end, params["data"], DataType.TRAIN, batch_size
+            tickers, end, params["data"], DataType.TRAIN
         )
         self._val = data_loader.get_data_loader(
-            tickers, end, params["data"], DataType.VAL, batch_size
+            tickers, end, params["data"], DataType.VAL
         )
         self._test = data_loader.get_data_loader(
-            tickers, end, params["data"], DataType.TEST, batch_size
+            tickers, end, params["data"], DataType.TEST
         )
 
         model = getattr(models, params["model"]["name"])
@@ -79,11 +75,7 @@ class Trainer:
         self._optimizer = optim.AdamW(self._model.parameters())
         # noinspection PyUnresolvedReferences
         self._scheduler = lr_scheduler.OneCycleLR(
-            self._optimizer,
-            max_lr,
-            epochs=epochs,
-            steps_per_epoch=len(self._train),
-            **params["optimizer"],
+            self._optimizer, steps_per_epoch=len(self._train), **params["optimizer"]
         )
 
     @staticmethod
@@ -209,15 +201,16 @@ class Trainer:
         print(
             f"Количество параметров - {sum(tensor.numel() for tensor in self._model.parameters())}"
         )
-        print(f"Epochs - {self._epochs}")
+        epochs = self._params["optimizer"]["epochs"]
+        print(f"Epochs - {epochs}")
         print(f"Train size - {len(self._train.dataset)}")
 
         stat = {}
 
-        for epoch in range(1, self._epochs + 1):
+        for epoch in range(1, epochs + 1):
             print(f"Epoch {epoch}")
             self.train_epoch()
-            stat = self.val_epoch(epoch == self._epochs)
+            stat = self.val_epoch(epoch == epochs)
 
         stat.update(self.test_epoch())
 
@@ -230,6 +223,7 @@ def main():
         AKRN=7 + 715 + 88 + 4,
         ALRS=2690,
         BANE=0 + 236 + 84,
+        BANEP=423 + 0 + 68 + 235,
         BSPB=4890 + 0 + 3600 + 150,
         CBOM=0 + 4400 + 71000,
         CHMF=0 + 730 + 170,
@@ -239,15 +233,15 @@ def main():
         IRKT=0 + 7000,
         KRKNP=66 + 0 + 43,
         KZOS=1200 + 5080 + 5190,
-        LSNG=44600 + 14500 + 32100 + 14600,
+        LSNG=0 + 0 + 28100 + 14600,
         LSNGP=2280 + 670 + 2410,
         LSRG=0 + 649 + 0 + 80,
-        MGTSP=485 + 0 + 68,
+        MGTSP=485 + 0 + 9,
         MOEX=2110,
         MRKC=1_833_000 + 0 + 1_196_000,
         MRKV=0 + 9_750_000 + 2_940_000 + 4_310_000,
-        MSRS=0 + 564_000 + 7000 + 229_000,
-        MTSS=1550 + 4520 + 30 + 520,
+        MSRS=0 + 37000 + 7000,
+        MTSS=2340 + 4520 + 480 + 520,
         MVID=0 + 0 + 800,
         NMTP=29000 + 74000 + 13000 + 67000,
         PHOR=126 + 127 + 165 + 405,
@@ -256,24 +250,24 @@ def main():
         PMSBP=0 + 0 + 1160,
         PRTK=0 + 6980,
         RNFT=0 + 51 + 11,
-        RTKM=0 + 0 + 2570,
+        RTKM=0 + 0 + 390,
         RTKMP=0 + 29400,
-        SELG=30300 + 91400 + 24600,
+        SELG=28500 + 91400 + 24600,
         SIBN=0 + 430,
-        SVAV=240 + 500 + 0 + 40,
+        SNGSP=4300 + 0 + 3000,
         TATNP=0 + 458,
-        TGKA=0 + 46_400_000 + 0 + 7_900_000,
         TRCN=41 + 0 + 4 + 3,
-        UNAC=559_000 + 402_000 + 183_000,
+        UNAC=157_000 + 402_000 + 183_000,
         UPRO=61000 + 451_000 + 0 + 53000,
         VSMO=39 + 161 + 3,
         # Бумаги с нулевым весом
+        SVAV=0,
+        TGKA=0,
         CNTLP=0,
         MSTT=0,
         NKNC=0,
         NVTK=0,
         LKOH=0,
-        SNGSP=0,
         OGKB=0,
         AFLT=0,
         SNGS=0,
@@ -282,7 +276,6 @@ def main():
         SBERP=0,
         VTBR=0,
         ENRU=0,
-        BANEP=0,
         TATN=0,
         RASP=0,
         NLMK=0,
@@ -311,8 +304,9 @@ def main():
         ROLO=0,
         FESH=0,
         IRAO=0,
+        AMEZ=0,
     )
-    trn = Trainer(tuple(pos), pd.Timestamp("2020-02-10"), DATA_PARAMS, 3, 100, 0.01)
+    trn = Trainer(tuple(pos), pd.Timestamp("2020-02-28"), DATA_PARAMS)
     rez = trn.run()
     print(rez)
 
