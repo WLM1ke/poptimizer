@@ -40,16 +40,14 @@ class Label(DaysParamsMixin, AbstractFeature):
         days = params["days"]
         div_share = params["div_share"]
 
-        returns = data.log_total_returns(self._tickers, self._last_date)
-        returns = returns.rolling(days).mean()
-        returns = returns.shift(-days)
-
         div, price = data.div_ex_date_prices(self._tickers, self._last_date)
         div = div.rolling(days).mean()
         div = div.shift(-days)
-        div = div / price
+        price_growth = (price.shift(-days) - price) / days
 
-        label = returns * (1 - div_share) + div * div_share
+        # noinspection PyTypeChecker
+        label = (div + price_growth * (1 - div_share)) / price
+
         label = label.stack()
         label.name = self.name
         return label

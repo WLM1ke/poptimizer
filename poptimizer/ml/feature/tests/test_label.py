@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 from hyperopt.pyll import Apply
 
-from poptimizer.ml.feature import label, YEAR_IN_TRADING_DAYS
+from poptimizer.ml.feature import label
 
 
 @pytest.fixture(scope="module", name="feat")
@@ -31,11 +31,11 @@ def test_get_returns(feat):
     df = feat.get({"days": 21, "div_share": 0.0})
     assert isinstance(df, pd.Series)
     assert df[(pd.Timestamp("2018-11-12"), "SNGSP")] == pytest.approx(
-        0.0995856337763434 / YEAR_IN_TRADING_DAYS
+        0.00039682539682540295
     )
 
     assert df[(pd.Timestamp("2018-05-17"), "AKRN")] == pytest.approx(
-        0.000454936219161647
+        0.00048501903658334703
     )
 
 
@@ -43,11 +43,11 @@ def test_get_0_3_div(feat):
     df = feat.get({"days": 21, "div_share": 0.3})
     assert isinstance(df, pd.Series)
     assert df[(pd.Timestamp("2018-11-12"), "SNGSP")] == pytest.approx(
-        0.0995856337763434 / YEAR_IN_TRADING_DAYS * 0.7
+        0.00027777777777778206
     )
 
     assert df[(pd.Timestamp("2018-05-17"), "AKRN")] == pytest.approx(
-        0.000851314151625369
+        0.0008723721238205595
     )
 
 
