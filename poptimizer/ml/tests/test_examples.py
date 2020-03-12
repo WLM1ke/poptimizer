@@ -72,7 +72,7 @@ def test_get_all(example):
     assert set(df.index.get_level_values(1).unique()) == {"CHMF", "AKRN", "BANEP"}
 
     assert df.loc[(pd.Timestamp("2018-12-04"), "AKRN"), "Label"] == pytest.approx(
-        np.log(4590 / 4630) / 4
+        -0.0021598272138228943
     )
     assert df.loc[(pd.Timestamp("2018-12-04"), "CHMF"), "Scaler"] == pytest.approx(
         0.17547200666439342 / YEAR_IN_TRADING_DAYS ** 0.5
