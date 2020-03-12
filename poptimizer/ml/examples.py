@@ -1,4 +1,5 @@
 """Набор обучающих примеров."""
+import copy
 from typing import Optional, Tuple
 
 import pandas as pd
@@ -27,7 +28,12 @@ class Examples:
         self._tickers = tickers
         self._date = date
         self._params = params
+
+        self._test_labels_params = copy.deepcopy(params[0][1])
+        self._test_labels_params["days"] = 1
         self._features = [
+            getattr(feature, params[0][0])(tickers, date, self._test_labels_params)
+        ] + [
             getattr(feature, cls_name)(tickers, date, feat_params)
             for cls_name, feat_params in params
         ]
@@ -40,7 +46,7 @@ class Examples:
     def get_features_names(self) -> list:
         """Название признаков."""
         rez = []
-        for feat in self._features[1:]:
+        for feat in self._features[2:]:
             rez.extend(feat.col_names)
         return rez
 
@@ -48,22 +54,22 @@ class Examples:
         """Массив с указанием номеров признаков с категориальными данными."""
         params = params or self._params
         cat_flag = []
-        for feat, (_, feat_param) in zip(self._features[1:], params[1:]):
+        for feat, (_, feat_param) in zip(self._features[2:], params[1:]):
             cat_flag.extend(feat.is_categorical(feat_param))
         return [n for n, flag in enumerate(cat_flag) if flag]
 
     def get_params_space(self) -> list:
         """Формирует общее вероятностное пространство модели."""
-        return [(feat.name, feat.get_params_space()) for feat in self._features]
+        return [(feat.name, feat.get_params_space()) for feat in self._features[1:]]
 
     def get_all(self, params: tuple) -> pd.DataFrame:
         """Получить все обучающие примеры.
 
         Значение признаков создается в том числе для не используемых признаков.
         """
-        data = [
+        data = [self._features[0].get(self._test_labels_params)] + [
             feat.get(feat_params)
-            for feat, (_, feat_params) in zip(self._features, params)
+            for feat, (_, feat_params) in zip(self._features[1:], params)
         ]
         data = pd.concat(data, axis=1)
         return data
@@ -85,18 +91,18 @@ class Examples:
         train_end = dates[dates < val_start].unique()[-label_days]
         df_train = df.loc[dates <= train_end]
         train_params = dict(
-            data=df_train.iloc[:, 1:],
-            label=df_train.iloc[:, 0],
-            weight=1 / df_train.iloc[:, 1] ** 2,
+            data=df_train.iloc[:, 2:],
+            label=df_train.iloc[:, 1],
+            weight=1 / df_train.iloc[:, 2] ** 2,
             cat_features=self.categorical_features(params),
-            feature_names=list(df.columns[1:]),
+            feature_names=list(df.columns[2:]),
         )
         val_params = dict(
-            data=df_val.iloc[:, 1:],
-            label=df_val.iloc[:, 0],
-            weight=1 / df_val.iloc[:, 1] ** 2,
+            data=df_val.iloc[:, 2:],
+            label=df_val.iloc[:, 1],
+            weight=1 / df_val.iloc[:, 2] ** 2,
             cat_features=self.categorical_features(params),
-            feature_names=list(df.columns[1:]),
+            feature_names=list(df.columns[2:]),
         )
         return train_params, val_params
 
@@ -110,18 +116,18 @@ class Examples:
         dates = df.index.get_level_values(0)
         df_predict = df.loc[dates == self._date]
         predict_params = dict(
-            data=df_predict.iloc[:, 1:],
+            data=df_predict.iloc[:, 2:],
             label=None,
-            weight=1 / df_predict.iloc[:, 1] ** 2,
+            weight=1 / df_predict.iloc[:, 2] ** 2,
             cat_features=self.categorical_features(),
-            feature_names=list(df.columns[1:]),
+            feature_names=list(df.columns[2:]),
         )
         df = df.dropna(axis=0)
         train_params = dict(
-            data=df.iloc[:, 1:],
-            label=df.iloc[:, 0],
-            weight=1 / df.iloc[:, 1] ** 2,
+            data=df.iloc[:, 2:],
+            label=df.iloc[:, 1],
+            weight=1 / df.iloc[:, 2] ** 2,
             cat_features=self.categorical_features(),
-            feature_names=list(df.columns[1:]),
+            feature_names=list(df.columns[2:]),
         )
         return train_params, predict_params
