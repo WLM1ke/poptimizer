@@ -7,7 +7,7 @@ import pandas as pd
 
 from poptimizer import data
 
-TRAIN_VAL_SPLIT = 0.9
+TRAIN_VAL_SPLIT = 0.79
 
 
 class DataType(Enum):
@@ -25,6 +25,13 @@ class DataType(Enum):
     VAL = 2
     TEST = 3
     FORECAST = 4
+
+
+def div_price_train_size(tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame, int]:
+    """Данные по дивидендам, ценам и  количество периодов в тренировочном наборе."""
+    div, price = data.div_ex_date_prices(tickers, end)
+    train_size = int(len(price) * TRAIN_VAL_SPLIT)
+    return div, price, train_size
 
 
 class DataParams(object):
@@ -50,11 +57,11 @@ class DataParams(object):
         :param feat_type:
             Тип формируемых признаков.
         """
-        div, price = data.div_ex_date_prices(tickers, end)
         self._params = copy.deepcopy(params)
         history_days = self.history_days
 
-        train_size = int(len(price) * TRAIN_VAL_SPLIT)
+        div, price, train_size = div_price_train_size(tickers, end)
+
         if feat_type == DataType.TRAIN:
             div = div.iloc[:train_size]
             price = price.iloc[:train_size]

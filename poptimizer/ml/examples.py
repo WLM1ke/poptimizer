@@ -4,9 +4,8 @@ from typing import Optional, Tuple
 
 import pandas as pd
 
+from poptimizer.dl.data_params import div_price_train_size
 from poptimizer.ml import feature
-
-TRAIN_VAL_SPLIT = 0.9
 
 
 class Examples:
@@ -85,7 +84,9 @@ class Examples:
         params = params or self._params
         df = self.get_all(params).dropna(axis=0)
         dates = df.index.get_level_values(0)
-        val_start = dates[int(len(dates) * TRAIN_VAL_SPLIT)]
+        _, price, train_size = div_price_train_size(self._tickers, self._date)
+        val_start = price.index[train_size - 1]
+
         df_val = df[dates >= val_start]
         label_days = params[0][1]["days"]
         train_end = dates[dates < val_start].unique()[-label_days]
@@ -105,6 +106,12 @@ class Examples:
             feature_names=list(df.columns[2:]),
         )
         return train_params, val_params
+
+    def test_pool_params(
+            self, params: Optional[tuple] = None
+    ) -> Tuple[dict, pd.Series]:
+        """Данные для создание catboost.Pool с примерами для тестирования и расчет коэффициента Шарпа."""
+        pass
 
     def train_predict_pool_params(self) -> Tuple[dict, dict]:
         """Данные для создание catboost.Pool с примерами для прогноза.
