@@ -1,5 +1,6 @@
 """Набор обучающих примеров."""
 import copy
+from functools import lru_cache
 from typing import Optional, Tuple
 
 import pandas as pd
@@ -36,6 +37,8 @@ class Examples:
             getattr(feature, cls_name)(tickers, date, feat_params)
             for cls_name, feat_params in params
         ]
+        _, price, train_size = div_price_train_size(self._tickers, self._date)
+        self._val_start = price.index[train_size - 1]
 
     @property
     def tickers(self):
@@ -61,12 +64,15 @@ class Examples:
         """Формирует общее вероятностное пространство модели."""
         return [(feat.name, feat.get_params_space()) for feat in self._features[1:]]
 
+    @lru_cache(maxsize=1)
     def get_all(self, params: tuple) -> pd.DataFrame:
         """Получить все обучающие примеры.
 
         Значение признаков создается в том числе для не используемых признаков.
         """
-        data = [self._features[0].get(self._test_labels_params)] + [
+        test = self._features[0].get(self._test_labels_params)
+        test.name = "Test"
+        data = [test] + [
             feat.get(feat_params)
             for feat, (_, feat_params) in zip(self._features[1:], params)
         ]
@@ -84,8 +90,7 @@ class Examples:
         params = params or self._params
         df = self.get_all(params).dropna(axis=0)
         dates = df.index.get_level_values(0)
-        _, price, train_size = div_price_train_size(self._tickers, self._date)
-        val_start = price.index[train_size - 1]
+        val_start = self._val_start
 
         df_val = df[dates >= val_start]
         label_days = params[0][1]["days"]
@@ -107,11 +112,22 @@ class Examples:
         )
         return train_params, val_params
 
-    def test_pool_params(
-        self, params: Optional[tuple] = None
-    ) -> Tuple[dict, pd.Series]:
+    def test_pool_params(self, params: Optional[tuple] = None) -> dict:
         """Данные для создание catboost.Pool с примерами для тестирования и расчет коэффициента Шарпа."""
-        pass
+        params = params or self._params
+        df = self.get_all(params).drop(columns="Label").dropna(axis=0)
+        dates = df.index.get_level_values(0)
+        val_start = self._val_start
+        df_val = df[dates >= val_start]
+
+        test_params = dict(
+            data=df_val.iloc[:, 1:],
+            label=df_val.iloc[:, 0],
+            weight=1 / df_val.iloc[:, 1] ** 2,
+            cat_features=self.categorical_features(params),
+            feature_names=list(df.columns[1:]),
+        )
+        return test_params
 
     def train_predict_pool_params(self) -> Tuple[dict, dict]:
         """Данные для создание catboost.Pool с примерами для прогноза.

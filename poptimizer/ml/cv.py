@@ -190,7 +190,13 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     labels_val = clf.predict(val_pool)
     r = stats.pearsonr(labels, labels_val)[0]
     r_rang = stats.spearmanr(labels, labels_val)[0]
-    t = t_of_cov(labels, labels_val, n_tickers)
+
+    test_pool_params = examples.test_pool_params(data_params)
+    labels = test_pool_params["label"]
+    test_pool = catboost.Pool(**test_pool_params)
+    labels_test = clf.predict(test_pool)
+
+    t = t_of_cov(labels, labels_test, n_tickers)
 
     if verbose:
         logging.info(f"R: {r}\nt: {t}\n")
