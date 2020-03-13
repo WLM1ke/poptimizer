@@ -150,6 +150,6 @@ def test_get_forecast():
     )
     assert forecast.r == pytest.approx(0.10332358633271736)
     assert forecast.r_rang == pytest.approx(0.11874801815860761)
-    assert forecast.t == pytest.approx(0.9861730856129767)
+    assert forecast.t == pytest.approx(0.11607157587804337)
     assert forecast.average_cor == pytest.approx(0.10588718234140086)
     assert forecast.shrinkage == pytest.approx(1)

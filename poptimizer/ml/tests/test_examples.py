@@ -62,7 +62,7 @@ def test_get_all(example):
         )
     )
     assert df.columns.to_list() == [
-        "Label",
+        "Test",
         "Label",
         "Scaler",
         "Ticker",
