@@ -40,13 +40,13 @@ def make_optimizer(monkeypatch):
 
 
 def test_best_sell(opt):
-    assert opt.best_sell == "GMKN"
+    assert opt.best_sell == "SNGSP"
 
 
 def test_gradient_growth(opt):
     grad = opt.metrics.gradient
     growth = opt.gradient_growth
-    assert grad["KZOS"] < grad["CBOM"]
+    assert grad["KZOS"] > grad["CBOM"]
     assert growth["KZOS"] == pytest.approx(0.0)
 
 
@@ -60,15 +60,15 @@ def test_main_stat(opt):
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (10, 4)
     assert (df.columns == ["LOWER_BOUND", "GRADIENT", "TURNOVER", "GROWTH"]).all()
-    assert df.index[0] == "CBOM"
-    assert df.index[-1] == "GMKN"
+    assert df.index[0] == "KZOS"
+    assert df.index[-1] == "MGNT"
 
 
 def test_trade_recommendation(opt):
     # noinspection PyProtectedMember
     rec = opt._trade_recommendation()
     assert isinstance(rec, str)
-    assert "Продать GMKN" in rec
+    assert "Продать SNGSP" in rec
     assert "Купить  CBOM" in rec
 
 

@@ -183,12 +183,12 @@ def test_valid_model():
 
     assert isinstance(result, dict)
     assert len(result) == 8
-    assert result["loss"] == pytest.approx(-2.583_344_166_382_38)
+    assert result["loss"] == pytest.approx(-6.366_904_908_103_047)
     assert result["status"] == "ok"
-    assert result["std"] == pytest.approx(0.158_553_693_542_395_24)
-    assert result["r"] == pytest.approx(0.215_883_883_355_510_95)
-    assert result["r_rang"] == pytest.approx(0.019_083_116_879_638_73)
-    assert result["t"] == pytest.approx(2.583_344_166_382_38)
+    assert result["std"] == pytest.approx(0.194_266_963_502_490_18)
+    assert result["r"] == pytest.approx(0.166_657_492_583_577_12)
+    assert result["r_rang"] == pytest.approx(0.117_842_376_751_568_06)
+    assert result["t"] == pytest.approx(6.366_904_908_103_047)
     assert result["data"] == PARAMS["data"]
     for key, value in PARAMS["model"].items():
         assert result["model"][key] == value
@@ -201,7 +201,7 @@ def test_valid_model():
 
 def test_cv_model_raise_max_iter(monkeypatch):
     fake_tech_params = dict(**cv.TECH_PARAMS)
-    fake_max_iter = 2
+    fake_max_iter = 1
     fake_tech_params["iterations"] = fake_max_iter
     monkeypatch.setattr(cv, "TECH_PARAMS", fake_tech_params)
     monkeypatch.setattr(cv, "MAX_ITERATIONS", fake_max_iter)
@@ -250,7 +250,7 @@ def test_optimize_hyper(monkeypatch, capsys):
     assert isinstance(result, dict)
     assert len(result) == 2
     assert result["data"] == (
-        ("Label", {"days": 25, "div_share": 0.0}),
+        ("Label", {"days": 23, "div_share": 0.0}),
         ("Scaler", {"days": 186}),
         ("Ticker", {"on_off": False}),
         ("Mom12m", {"days": 279, "periods": 1}),

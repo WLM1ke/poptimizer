@@ -108,7 +108,7 @@ class Examples:
         return train_params, val_params
 
     def test_pool_params(
-            self, params: Optional[tuple] = None
+        self, params: Optional[tuple] = None
     ) -> Tuple[dict, pd.Series]:
         """Данные для создание catboost.Pool с примерами для тестирования и расчет коэффициента Шарпа."""
         pass
