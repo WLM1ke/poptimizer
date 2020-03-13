@@ -1,6 +1,5 @@
 """Набор обучающих примеров."""
 import copy
-from functools import lru_cache
 from typing import Optional, Tuple
 
 import pandas as pd
@@ -64,7 +63,6 @@ class Examples:
         """Формирует общее вероятностное пространство модели."""
         return [(feat.name, feat.get_params_space()) for feat in self._features[1:]]
 
-    @lru_cache(maxsize=1)
     def get_all(self, params: tuple) -> pd.DataFrame:
         """Получить все обучающие примеры.
 
