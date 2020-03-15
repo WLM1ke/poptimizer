@@ -1,4 +1,5 @@
 """Менеджеры данных для котировок, индекса и перечня торгуемых бумаг с MOEX."""
+import threading
 from concurrent import futures
 from datetime import datetime
 from typing import Optional, Any, List, Dict, Tuple
@@ -70,6 +71,7 @@ class SecuritiesListing(AbstractManager):
     """
 
     URL = "https://www.moex.com/ru/listing/securities-list-csv.aspx?type=1"
+    _GET_ITEM_LOCK = threading.Lock()
 
     def __init__(self, db=DB) -> None:
         super().__init__(
@@ -80,6 +82,17 @@ class SecuritiesListing(AbstractManager):
             ascending_index=False,
             unique_index=False,
         )
+
+    def __getitem__(self, item):
+        """Получение информации о датах регистрации акций, допущенных к листингу.
+
+        Данный вызов может осуществляться в разных потоках множество раз. При отсутствии актуальных
+        локальных данных это может порождать множество запросов на скачивание файла с сайта MOEX.
+        Блокирующий вызов гарантирует одно скачивание - при последующих вызовах будет доступа
+        актуальная локальная версия.
+        """
+        with self._GET_ITEM_LOCK:
+            return super().__getitem__(item)
 
     def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
         """Загружает полностью данные о всех торгующихся акциях."""
@@ -168,6 +181,7 @@ class Quotes(AbstractManager):
         results = apimoex.find_securities(self._session, reg_number)
         tickers = [row["secid"] for row in results if row["regnumber"] == reg_number]
 
+        # noinspection PyTypeChecker
         return tickers, reg_date
 
     def _download_many(
