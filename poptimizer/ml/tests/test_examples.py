@@ -165,6 +165,9 @@ def test_test_pool_params(example):
     assert test["data"].iloc[:val_len].equals(val["data"])
     assert test["weight"].iloc[:val_len].equals(val["weight"])
 
+    df = example.get_all(params)
+    assert df.iloc[:, 0].loc[test["label"].index].equals(test["label"])
+
 
 def test_train_predict_pool_params(example):
     train, predict = example.train_predict_pool_params()
