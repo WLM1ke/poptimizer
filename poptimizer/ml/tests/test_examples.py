@@ -29,6 +29,10 @@ def create_examples():
     )
 
 
+def test_tickers(example):
+    assert example.tickers == ("AKRN", "CHMF", "BANEP")
+
+
 def test_get_features_names(example):
     assert example.get_features_names() == [
         "Scaler",
@@ -137,6 +141,29 @@ def test_train_val_pool_params(example):
     assert df.iloc[:, 2:].loc[val["data"].index].equals(val["data"])
     assert df.iloc[:, 1].loc[val["label"].index].equals(val["label"])
     assert np.allclose(1 / df.iloc[:, 2].loc[val["weight"].index] ** 2, val["weight"])
+
+
+def test_test_pool_params(example):
+    params = (
+        ("Label", {"days": 5, "div_share": 0.0}),
+        ("Scaler", {"on_off": True, "days": 5}),
+        ("Ticker", {"on_off": True}),
+        ("Mom12m", {"on_off": True, "days": 6, "periods": 1}),
+        ("DivYield", {"on_off": True, "days": 7, "periods": 1}),
+    )
+    test = example.test_pool_params(params)
+    _, val = example.train_val_pool_params(params)
+    assert isinstance(test, dict)
+    assert len(test) == 5
+
+    assert test["cat_features"] == [1]
+    assert test["feature_names"] == ["Scaler", "Ticker", "Mom12m_0", "DivYield_0"]
+
+    val_len = len(val["data"])
+    assert len(test["data"]) > val_len
+
+    assert test["data"].iloc[:val_len].equals(val["data"])
+    assert test["weight"].iloc[:val_len].equals(val["weight"])
 
 
 def test_train_predict_pool_params(example):
