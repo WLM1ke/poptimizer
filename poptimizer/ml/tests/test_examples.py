@@ -5,7 +5,6 @@ import pytest
 from poptimizer.config import AFTER_TAX
 from poptimizer.data import div
 from poptimizer.ml import examples
-from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 
 FEAT_PARAMS = (
     ("Label", {"days": 6, "div_share": 0.0}),
@@ -83,7 +82,7 @@ def test_get_all(example):
         -0.002_159_827_213_822_894_3
     )
     assert df.loc[(pd.Timestamp("2018-12-04"), "CHMF"), "Scaler"] == pytest.approx(
-        0.175_472_006_664_393_42 / YEAR_IN_TRADING_DAYS ** 0.5
+        0.011_048_880_468_016_218
     )
     assert df.loc[(pd.Timestamp("2018-12-04"), "BANEP"), "Ticker"] == "BANEP"
     assert df.loc[(pd.Timestamp("2018-12-04"), "AKRN"), "Mom12m_0"] == pytest.approx(

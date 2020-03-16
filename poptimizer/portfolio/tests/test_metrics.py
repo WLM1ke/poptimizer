@@ -166,4 +166,4 @@ def test_forecast_func(monkeypatch):
     assert isinstance(forecast, Forecast)
     assert forecast.date == pd.Timestamp("2018-12-17")
     assert forecast.tickers == ("AKRN", "PRTK", "RTKM", "SIBN")
-    assert forecast.shrinkage == pytest.approx(0.987_081_025_464_832_8)
+    assert forecast.shrinkage == pytest.approx(0.929_093_579_643_732_5)
