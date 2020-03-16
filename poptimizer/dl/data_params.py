@@ -7,7 +7,7 @@ import pandas as pd
 
 from poptimizer import data
 
-TRAIN_VAL_SPLIT = 0.79
+TRAIN_VAL_SPLIT = 0.90  # 0.79 0.85
 
 
 class DataType(Enum):

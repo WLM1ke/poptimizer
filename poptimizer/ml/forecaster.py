@@ -45,6 +45,7 @@ def ledoit_wolf_cov(
     scaler_days = valid_result["data"][1][1]["days"]
     returns = data.log_total_returns(tickers, date)
     returns = returns.iloc[-scaler_days:,]
+    returns = returns.apply(np.exp)
     cov, average_cor, shrinkage = ledoit_wolf.shrinkage(returns.values)
     cov *= scaler_days / (scaler_days - 1)
     validate_cov(cov, predict_pool_params)
