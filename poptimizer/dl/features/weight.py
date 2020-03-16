@@ -24,6 +24,6 @@ class Weight(Feature):
         div = div[item + 1 : item + history_days]
         price0 = price[item : item + history_days - 1]
         returns = (price1 + div) / price0
-        std = torch.std(returns, dim=0, keepdim=True)
+        std = torch.std(returns, dim=0, keepdim=True, unbiased=True)
         std = torch.max(std, torch.tensor(LOW_STD))
         return std ** -2

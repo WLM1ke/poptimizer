@@ -1,6 +1,7 @@
 """Признак - СКО за последние торговые дни."""
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 
 from poptimizer import data
@@ -30,7 +31,8 @@ class STD(DaysParamsMixin, AbstractFeature):
         params = params or self._params
         days = params["days"]
         returns = data.log_total_returns(self._tickers, self._last_date)
-        std = returns.rolling(days).std()
+        returns = returns.apply(np.exp)
+        std = returns.rolling(days).std(ddof=1)
         std = std.stack()
         std.name = self.name
         return std
