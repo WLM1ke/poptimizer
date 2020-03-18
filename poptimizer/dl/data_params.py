@@ -1,51 +1,34 @@
 """Описание модели и данных."""
+import abc
 import copy
-from enum import Enum
-from typing import Tuple
+from typing import Tuple, Generator
 
 import pandas as pd
 
 from poptimizer import data
 
-TRAIN_VAL_SPLIT = 0.79  # 0.79 0.85
-
-
-class DataType(Enum):
-    """Тип формируемых данных:
-
-    - TRAIN - используются признаки, как есть для начальной части семпла.
-    - VAL - используются признаки, как есть для конечной части семпла, чтобы метки не пересекались с
-    TRAIN.
-    - TEST - метки имеют длину 1 день в независимости от реального значения параметров для конечной части
-    семпла, чтобы метки не пересекались с TRAIN, а вес не формируется.
-    - FORECAST - метки и вес не формируются, а признаки формируются только дл я последней даты.
-    """
-
-    TRAIN = 1
-    VAL = 2
-    TEST = 3
-    FORECAST = 4
+# Доля дней относимых к тренировочному периоду
+TRAIN_VAL_SPLIT = 0.88  # 0.79
 
 
 def div_price_train_size(tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame, int]:
-    """Данные по дивидендам, ценам и  количество периодов в тренировочном наборе."""
+    """Данные по дивидендам, ценам и количество дней в тренировочном наборе."""
     div, price = data.div_ex_date_prices(tickers, end)
     train_size = int(len(price) * TRAIN_VAL_SPLIT)
     return div, price, train_size
 
 
-class DataParams(object):
-    """Параметры модели."""
+class DataParams(abc.ABC):
+    """Параметры данных для DL-модели."""
 
-    def __init__(
-        self,
-        tickers: Tuple[str, ...],
-        end: pd.Timestamp,
-        params: dict,
-        feat_type: DataType,
-    ):
-        """Модель строится для определенного набора тикеров и диапазона дат с использованием
-        различного набора параметров.
+    def __init__(self, tickers: Tuple[str, ...], end: pd.Timestamp, params: dict):
+        """Модель строится для определенного набора тикеров и диапазона дат.
+
+        Наборы данных для обучения, валидации, тестирования и прогнозирования реализуются в конкретных
+        классах. Кроме собственно необходимых для построения признаков параметров класс хранит
+        кешированные и обрезанные у четом типа данных и отсутствующих значений информацию о дивидендах
+        и стоимости акций, которые могут быть использованы для построения признаков и корректного их
+        выравнивания по времени.
 
         :param tickers:
             Перечень тикеров, для которых будет строится модель.
@@ -54,38 +37,28 @@ class DataParams(object):
             построения модели.
         :param params:
             Словарь с параметрами для построения признаков и других элементов модели.
-        :param feat_type:
-            Тип формируемых признаков.
         """
         self._params = copy.deepcopy(params)
-        history_days = self.history_days
-
-        div, price, train_size = div_price_train_size(tickers, end)
-
-        if feat_type == DataType.TRAIN:
-            div = div.iloc[:train_size]
-            price = price.iloc[:train_size]
-        elif feat_type == DataType.VAL:
-            div = div.iloc[train_size - history_days :]
-            price = price.iloc[train_size - history_days :]
-        elif feat_type == DataType.TEST:
-            div = div.iloc[train_size - history_days :]
-            price = price.iloc[train_size - history_days :]
-            self._params["forecast_days"] = 1
-            del self._params["features"]["Weight"]
-        elif feat_type == DataType.FORECAST:
-            div = div.iloc[-history_days:]
-            price = price.iloc[-history_days:]
-            self._params["forecast_days"] = 0
-            del self._params["features"]["Label"]
-            del self._params["features"]["Weight"]
-
+        div, price = self._div_price(tickers, end)
         self._div = dict()
         self._price = dict()
         for ticker in tickers:
             start = price[ticker].first_valid_index()
             self._div[ticker] = div.loc[start:, ticker]
             self._price[ticker] = price.loc[start:, ticker]
+
+    @abc.abstractmethod
+    def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """Данные о дивидендах и стоимости акций для указанных тикеров и конечной даты.
+
+        Метод должен реализовывать необходимую обрезку с учетом конкретного класса - для обучения,
+        валидации, тестирования или тренировки. При необходимости изменять параметры.
+        """
+
+    @property
+    def shuffle(self) -> bool:
+        """Нужно ли перемешивать данные."""
+        return False
 
     @property
     def forecast_days(self) -> int:
@@ -118,10 +91,64 @@ class DataParams(object):
             0, len(self.price(ticker)) - self.history_days - self.forecast_days + 1
         )
 
-    def get_all_feat(self) -> str:
-        """Получить параметры для признака."""
+    def get_all_feat(self) -> Generator[str, None, None]:
+        """Получить все названия признаков."""
         yield from self._params["features"]
 
     def get_feat_params(self, feat_name: str) -> dict:
         """Получить параметры для признака."""
         return self._params["features"][feat_name]
+
+
+class TrainParams(DataParams):
+    """Используются признаки, как есть для начальной части семпла."""
+
+    def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        div, price, train_size = div_price_train_size(tickers, end)
+        div = div.iloc[:train_size]
+        price = price.iloc[:train_size]
+        return div, price
+
+    @property
+    def shuffle(self):
+        """Нужно перемешивать данные."""
+        return True
+
+
+class ValParams(DataParams):
+    """Используются признаки, как есть для конечной части семпла, чтобы метки не пересекались с train."""
+
+    def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        history_days = self.history_days
+        div, price, train_size = div_price_train_size(tickers, end)
+        div = div.iloc[train_size - history_days:]
+        price = price.iloc[train_size - history_days:]
+        return div, price
+
+
+class TestParams(DataParams):
+    """Метки имеют длину 1 день в независимости от реального значения параметров для конечной части
+    семпла, чтобы метки не пересекались с TRAIN, а вес не формируется."""
+
+    def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        history_days = self.history_days
+        div, price, train_size = div_price_train_size(tickers, end)
+        div = div.iloc[train_size - history_days:]
+        price = price.iloc[train_size - history_days:]
+        self._params["forecast_days"] = 1
+        del self._params["features"]["Weight"]
+        return div, price
+
+
+class ForecastParams(DataParams):
+    """Метки и вес не формируются, а признаки формируются только для последней даты."""
+
+    def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        history_days = self.history_days
+        div, price, train_size = div_price_train_size(tickers, end)
+        div = div.iloc[-history_days:]
+        price = price.iloc[-history_days:]
+        self._params["forecast_days"] = 0
+        del self._params["features"]["Label"]
+        del self._params["features"]["Weight"]
+        return div, price

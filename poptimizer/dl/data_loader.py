@@ -1,12 +1,12 @@
 """Формирование примеров для обучения в формате PyTorch."""
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Type
 
 import pandas as pd
 from torch import Tensor
 from torch.utils import data
 
-from poptimizer.dl import features
-from poptimizer.dl.data_params import DataParams, DataType
+from poptimizer.dl import features, data_params
+from poptimizer.dl.data_params import DataParams
 
 
 class OneTickerDataset(data.Dataset):
@@ -15,7 +15,7 @@ class OneTickerDataset(data.Dataset):
     Каждая составляющая помещается в словарь в виде пары {название признака: Tensor}.
     """
 
-    def __init__(self, ticker: str, params: DataParams):
+    def __init__(self, ticker: str, params: data_params.DataParams):
         self.len = params.len(ticker)
 
         self.features = dict()
@@ -31,7 +31,10 @@ class OneTickerDataset(data.Dataset):
 
 
 def get_data_loader(
-    tickers: Tuple[str, ...], end: pd.Timestamp, params: dict, feat_type: DataType
+    tickers: Tuple[str, ...],
+    end: pd.Timestamp,
+    params: dict,
+    params_type: Type[DataParams],
 ) -> data.DataLoader:
     """
 
@@ -42,18 +45,14 @@ def get_data_loader(
         построения модели.
     :param params:
         Словарь с параметрами для построения признаков и других элементов модели.
-    :param feat_type:
+    :param params_type:
         Тип формируемых признаков.
     :return:
         Загрузчик данных.
     """
-    params = DataParams(tickers, end, params, feat_type)
+    params = params_type(tickers, end, params)
     dataset = data.ConcatDataset(
         [OneTickerDataset(ticker, params) for ticker in tickers]
     )
 
-    shuffle = False
-    if feat_type == DataType.TRAIN:
-        shuffle = True
-
-    return data.DataLoader(dataset, params.batch_size, shuffle, drop_last=False)
+    return data.DataLoader(dataset, params.batch_size, params.shuffle, drop_last=False)

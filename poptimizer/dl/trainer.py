@@ -10,9 +10,7 @@ from scipy import stats
 from torch import optim
 from torch.optim import lr_scheduler
 
-from poptimizer.config import POptimizerError
-from poptimizer.dl import data_loader, models
-from poptimizer.dl.data_params import DataType
+from poptimizer.dl import data_loader, models, data_params
 
 # Параметры формирования примеров для обучения сетей
 DATA_PARAMS = {
@@ -42,7 +40,7 @@ DATA_PARAMS = {
         "history_days": 256,
         "forecast_days": 8,
         "features": {
-            "Label": {"div_share": 0.8},
+            "Label": {"div_share": 0.9},
             "Prices": {},
             "Dividends": {},
             "Weight": {},
@@ -59,13 +57,13 @@ class Trainer:
         self._params = params
 
         self._train = data_loader.get_data_loader(
-            tickers, end, params["data"], DataType.TRAIN
+            tickers, end, params["data"], data_params.TrainParams
         )
         self._val = data_loader.get_data_loader(
-            tickers, end, params["data"], DataType.VAL
+            tickers, end, params["data"], data_params.ValParams
         )
         self._test = data_loader.get_data_loader(
-            tickers, end, params["data"], DataType.TEST
+            tickers, end, params["data"], data_params.TestParams
         )
 
         model = getattr(models, params["model"]["name"])
@@ -181,11 +179,13 @@ class Trainer:
         test_output = torch.cat(test_output, dim=0).numpy().flatten()
 
         days, rez = divmod(len(test_labels), len(self._tickers))
+        print(f"Дней для тестирования: {days}")
 
         if rez:
-            raise POptimizerError(
-                "Слишком длинные признаки и метки - сократи их длину!!!"
-            )
+            print("Слишком длинные признаки и метки - сократи их длину!!!")
+            # raise POptimizerError(
+            #    "Слишком длинные признаки и метки - сократи их длину!!!"
+            # )
 
         rs = np.zeros(days)
         for i in range(days):
@@ -204,6 +204,7 @@ class Trainer:
         epochs = self._params["optimizer"]["epochs"]
         print(f"Epochs - {epochs}")
         print(f"Train size - {len(self._train.dataset)}")
+        print(f"Val size - {len(self._val.dataset)}")
 
         stat = {}
 
@@ -223,48 +224,47 @@ def main():
         AKRN=7 + 715 + 88 + 4,
         ALRS=2690,
         BANE=0 + 236 + 84,
-        BANEP=423 + 0 + 68 + 235,
+        BANEP=1097 + 13 + 107 + 235,
         BSPB=4890 + 0 + 3600 + 150,
         CBOM=0 + 4400 + 71000,
+        CNTLP=0 + 0 + 0 + 9000,
         CHMF=0 + 730 + 170,
         DSKY=17720 + 740 + 6380 + 4320,
         GCHE=0 + 0 + 24,
-        GMKN=0 + 109,
+        GMKN=0 + 109 + 1,
         IRKT=0 + 7000,
         KRKNP=66 + 0 + 43,
         KZOS=1200 + 5080 + 5190,
-        LSNG=0 + 0 + 28100 + 14600,
         LSNGP=2280 + 670 + 2410,
         LSRG=0 + 649 + 0 + 80,
         MGTSP=485 + 0 + 9,
-        MOEX=2110,
-        MRKC=1_833_000 + 0 + 1_196_000,
-        MRKV=0 + 9_750_000 + 2_940_000 + 4_310_000,
-        MSRS=0 + 37000 + 7000,
+        MOEX=2110 + 200 + 290,
+        MRKV=0 + 9_680_000 + 1_420_000 + 1_300_000,
         MTSS=2340 + 4520 + 480 + 520,
         MVID=0 + 0 + 800,
         NMTP=29000 + 74000 + 13000 + 67000,
-        PHOR=126 + 127 + 165 + 405,
+        PHOR=216 + 127 + 165 + 405,
         PIKK=0 + 3090 + 0 + 90,
-        PLZL=47 + 21 + 23,
+        PLZL=86 + 21 + 23,
         PMSBP=0 + 0 + 1160,
         PRTK=0 + 6980,
         RNFT=0 + 51 + 11,
-        RTKM=0 + 0 + 390,
         RTKMP=0 + 29400,
-        SELG=28500 + 91400 + 24600,
         SIBN=0 + 430,
-        SNGSP=4300 + 0 + 3000,
+        SNGSP=32500 + 2800 + 7500 + 2000,
         TATNP=0 + 458,
         TRCN=41 + 0 + 4 + 3,
-        UNAC=157_000 + 402_000 + 183_000,
-        UPRO=61000 + 451_000 + 0 + 53000,
+        UPRO=345_000 + 451_000 + 283_000 + 85000,
         VSMO=39 + 161 + 3,
         # Бумаги с нулевым весом
+        RTKM=0,
+        UNAC=0,
+        MRKC=0,
+        SELG=0,
+        LSNG=0,
+        MSRS=0,
         SVAV=0,
         TGKA=0,
-        CNTLP=0,
-        MSTT=0,
         NKNC=0,
         NVTK=0,
         LKOH=0,
@@ -305,8 +305,14 @@ def main():
         FESH=0,
         IRAO=0,
         AMEZ=0,
+        YAKG=0,
+        AQUA=0,
+        RGSS=0,
+        LIFE=0,
+        KBTK=0,
+        # MSTT=0,
     )
-    trn = Trainer(tuple(pos), pd.Timestamp("2020-02-28"), DATA_PARAMS)
+    trn = Trainer(tuple(pos), pd.Timestamp("2020-03-17"), DATA_PARAMS)
     rez = trn.run()
     print(rez)
 
