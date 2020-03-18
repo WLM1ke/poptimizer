@@ -8,10 +8,12 @@ import pandas as pd
 from poptimizer import data
 
 # Доля дней относимых к тренировочному периоду
-TRAIN_VAL_SPLIT = 0.88  # 0.79
+TRAIN_VAL_SPLIT = 0.9
 
 
-def div_price_train_size(tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame, int]:
+def div_price_train_size(
+    tickers: Tuple[str, ...], end: pd.Timestamp
+) -> Tuple[pd.DataFrame, pd.DataFrame, int]:
     """Данные по дивидендам, ценам и количество дней в тренировочном наборе."""
     div, price = data.div_ex_date_prices(tickers, end)
     train_size = int(len(price) * TRAIN_VAL_SPLIT)
@@ -121,8 +123,8 @@ class ValParams(DataParams):
     def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
         history_days = self.history_days
         div, price, train_size = div_price_train_size(tickers, end)
-        div = div.iloc[train_size - history_days:]
-        price = price.iloc[train_size - history_days:]
+        div = div.iloc[train_size - history_days :]
+        price = price.iloc[train_size - history_days :]
         return div, price
 
 
@@ -133,8 +135,8 @@ class TestParams(DataParams):
     def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
         history_days = self.history_days
         div, price, train_size = div_price_train_size(tickers, end)
-        div = div.iloc[train_size - history_days:]
-        price = price.iloc[train_size - history_days:]
+        div = div.iloc[train_size - history_days :]
+        price = price.iloc[train_size - history_days :]
         self._params["forecast_days"] = 1
         del self._params["features"]["Weight"]
         return div, price
