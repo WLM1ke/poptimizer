@@ -129,8 +129,8 @@ def t_of_cov(labels, labels_val, n_tickers):
     """
     days, rez = divmod(len(labels_val), n_tickers)
     if rez:
-        # В перспективе возвращать loss = np.inf
         logging.info("Слишком длинные признаки и метки - сократи их длину!!!")
+        return 0
     rs = np.zeros(days)
     for i in range(days):
         rs[i] = np.cov(
