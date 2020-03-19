@@ -29,7 +29,7 @@ class Feature(abc.ABC):
 
     @abc.abstractmethod
     def __getitem__(self, item: int) -> Tensor:
-        pass
+        """Нумерация идет с начала ряда данных в кэше параметров данных."""
 
     @property
     def name(self) -> str:

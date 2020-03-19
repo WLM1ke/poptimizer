@@ -24,11 +24,13 @@ class Label(Feature, ABC):
         forecast_days = self.forecast_days
         price = self.price
         div = self.cum_div
+
         last_history_price = price[item + history_days - 1]
+        last_history_div = div[item + history_days - 1]
         last_forecast_price = price[item + history_days - 1 + forecast_days]
-        div = (
-            div[item + history_days - 1 + forecast_days] - div[item + history_days - 1]
-        )
+        last_forecast_div = div[item + history_days - 1 + forecast_days]
+
+        div = last_forecast_div - last_history_div
         price_growth = (last_forecast_price - last_history_price) * (1 - self.div_share)
         label = (price_growth + div) / last_history_price
         return label.reshape(-1)
