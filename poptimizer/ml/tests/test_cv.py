@@ -183,12 +183,12 @@ def test_valid_model():
 
     assert isinstance(result, dict)
     assert len(result) == 8
-    assert result["loss"] == pytest.approx(-1.324_085_690_173_167_2)
+    assert result["loss"] == pytest.approx(1.088_076_600_101_291_1)
     assert result["status"] == "ok"
-    assert result["std"] == pytest.approx(0.193_265_866_620_554_92)
-    assert result["r"] == pytest.approx(0.183_854_141_099_978_27)
-    assert result["r_rang"] == pytest.approx(0.117_833_662_975_610_03)
-    assert result["t"] == pytest.approx(1.324_085_690_173_167_2)
+    assert result["std"] == pytest.approx(0.161_530_918_521_140_13)
+    assert result["r"] == pytest.approx(-0.016_932_935_783_276_405)
+    assert result["r_rang"] == pytest.approx(-0.026_354_202_239_779_956)
+    assert result["t"] == pytest.approx(-1.088_076_600_101_291_1)
     assert result["data"] == PARAMS["data"]
     for key, value in PARAMS["model"].items():
         assert result["model"][key] == value
@@ -250,7 +250,7 @@ def test_optimize_hyper(monkeypatch, capsys):
     assert isinstance(result, dict)
     assert len(result) == 2
     assert result["data"] == (
-        ("Label", {"days": 23, "div_share": 0.0}),
+        ("Label", {"days": 30, "div_share": 0.0}),
         ("Scaler", {"days": 186}),
         ("Ticker", {"on_off": False}),
         ("Mom12m", {"days": 279, "periods": 1}),
@@ -277,17 +277,17 @@ def test_find_better_model(monkeypatch, capsys):
     captured = capsys.readouterr()
     assert "Базовая модель" in captured.out
     assert "Найденная модель" in captured.out
-    assert "ЛУЧШАЯ МОДЕЛЬ - Найденная модель" in captured.out
+    assert "ЛУЧШАЯ МОДЕЛЬ - Базовая модель" in captured.out
 
 
 def test_find_better_model_fake_base(monkeypatch, capsys):
     monkeypatch.setattr(cv, "MAX_SEARCHES", 2)
     monkeypatch.setattr(cv, "MAX_DEPTH", 7)
     monkeypatch.setattr(
-        cv, "print_result", lambda x, y, z: 0 if x == "Базовая модель" else 1
+        cv, "print_result", lambda x, y, z: 0 if x == "Найденная модель" else 1
     )
     pos = dict(LSNGP=10, KZOS=20, GMKN=30)
-    port = portfolio.Portfolio(pd.Timestamp("2018-12-19"), 100, pos)
+    port = portfolio.Portfolio(pd.Timestamp("2019-12-19"), 100, pos)
     cv.find_better_model(port)
     captured = capsys.readouterr()
-    assert "ЛУЧШАЯ МОДЕЛЬ - Базовая модель" in captured.out
+    assert "ЛУЧШАЯ МОДЕЛЬ - Найденная модель" in captured.out
