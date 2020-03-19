@@ -2,7 +2,7 @@
 import torch
 
 from poptimizer.dl.data_params import DataParams
-from poptimizer.dl.features.feature import Feature
+from poptimizer.dl.features.feature import Feature, FeatureTypes
 
 
 class Dividends(Feature):
@@ -16,3 +16,8 @@ class Dividends(Feature):
 
     def __getitem__(self, item: int) -> torch.Tensor:
         return self.div[item : item + self.history_days] / self.price[item]
+
+    @property
+    def type(self) -> FeatureTypes:
+        """Численные данные."""
+        return FeatureTypes.NUMERICAL

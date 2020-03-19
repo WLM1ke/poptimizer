@@ -2,7 +2,7 @@
 import torch
 
 from poptimizer.dl.data_params import DataParams
-from poptimizer.dl.features.feature import Feature
+from poptimizer.dl.features.feature import Feature, FeatureTypes
 from poptimizer.ml.feature.std import LOW_STD
 
 
@@ -27,3 +27,8 @@ class Weight(Feature):
         std = torch.std(returns, dim=0, keepdim=True, unbiased=True)
         std = torch.max(std, torch.tensor(LOW_STD))
         return std ** -2
+
+    @property
+    def type(self) -> FeatureTypes:
+        """Вес данных."""
+        return FeatureTypes.WEIGHT

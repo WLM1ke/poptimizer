@@ -2,7 +2,7 @@
 import torch
 
 from poptimizer.dl.data_params import DataParams
-from poptimizer.dl.features.feature import Feature
+from poptimizer.dl.features.feature import Feature, FeatureTypes
 
 
 class Prices(Feature):
@@ -17,3 +17,8 @@ class Prices(Feature):
         history_days = self.history_days
         price = self.price
         return price[item : item + history_days] / price[item] - 1
+
+    @property
+    def type(self) -> FeatureTypes:
+        """Численные данные."""
+        return FeatureTypes.NUMERICAL

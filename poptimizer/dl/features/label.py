@@ -1,11 +1,13 @@
 """Метка данных."""
+from abc import ABC
+
 import torch
 
 from poptimizer.dl.data_params import DataParams
-from poptimizer.dl.features.feature import Feature
+from poptimizer.dl.features.feature import Feature, FeatureTypes
 
 
-class Label(Feature):
+class Label(Feature, ABC):
     """Метка линейная комбинация полной и дивидендной доходности с суммарным весом 1."""
 
     def __init__(self, ticker: str, params: DataParams):
@@ -30,3 +32,8 @@ class Label(Feature):
         price_growth = (last_forecast_price - last_history_price) * (1 - self.div_share)
         label = (price_growth + div) / last_history_price
         return label.reshape(-1)
+
+    @property
+    def type(self) -> FeatureTypes:
+        """Метка данных."""
+        return FeatureTypes.LABEL
