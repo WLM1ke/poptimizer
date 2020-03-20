@@ -54,7 +54,7 @@ class AbstractFeature(ABC):
         """
 
 
-def days_choice_list(days, space_range=SPACE_RANGE) -> List[int, ...]:
+def days_choice_list(days, space_range=SPACE_RANGE) -> List[int]:
     """Список дней в окрестности указанного значения."""
     return list(range(int(days * (1 - space_range)), int(days * (1 + space_range)) + 2))
 
@@ -77,7 +77,7 @@ class DaysParamsMixin:
         }
 
 
-def periods_choice_list(periods) -> List[int, ...]:
+def periods_choice_list(periods) -> List[int]:
     """Значение периодов в диапазоне от 1 до текущего + 1."""
     return list(range(1, periods + 2))
 
