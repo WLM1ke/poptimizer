@@ -24,7 +24,5 @@ def test_period_choice():
 
     res = feature.periods_choice_list(4)
     assert isinstance(res, list)
-    assert len(res) == 3
-    assert res[0] == 3
-    assert res[1] == 4
-    assert res[2] == 5
+    assert len(res) == 5
+    assert res == list(range(1, 6))
