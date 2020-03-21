@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Количество колонок в распечатках без переноса на несколько страниц
 pd.set_option("display.max_columns", 20)
-pd.set_option("display.max_rows", 90)
+pd.set_option("display.max_rows", 100)
 pd.set_option("display.width", None)
 
 # Путь к директории с отчетам
@@ -36,7 +36,7 @@ T_SCORE = 2.0
 
 # База дивидендов содержит данные с начала 2010 года
 # Постепенно срок будет сдвигаться к началу режима TQBR для корректного учета сдвига T+2
-STATS_START = pd.Timestamp("2010-09-01")
+STATS_START = pd.Timestamp("2010-10-01")
 
 # Максимальный объем одной торговой операции в долях портфеля
 MAX_TRADE = 1 / 100
@@ -44,25 +44,25 @@ MAX_TRADE = 1 / 100
 # Параметры ML-модели
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 215, "div_share": 0.9, "on_off": True}),
-        ("Scaler", {"days": 206, "on_off": True}),
+        ("Label", {"days": 194, "div_share": 0.9, "on_off": True}),
+        ("Scaler", {"days": 210, "on_off": True}),
         ("Ticker", {"on_off": True}),
-        ("Mom12m", {"days": 206, "on_off": True, "periods": 9}),
-        ("DivYield", {"days": 216, "on_off": True, "periods": 2}),
+        ("Mom12m", {"days": 213, "on_off": True, "periods": 3}),
+        ("DivYield", {"days": 201, "on_off": True, "periods": 3}),
         ("Mom1m", {"days": 33, "on_off": False}),
-        ("RetMax", {"days": 41, "on_off": True}),
-        ("ChMom6m", {"days": 141, "on_off": True}),
-        ("STD", {"days": 33, "on_off": True}),
+        ("RetMax", {"days": 38, "on_off": True}),
+        ("ChMom6m", {"days": 131, "on_off": True}),
+        ("STD", {"days": 34, "on_off": True}),
         ("DayOfYear", {"on_off": True}),
-        ("TurnOver", {"days": 253, "normalize": False, "on_off": True}),
-        ("TurnOverVar", {"days": 215, "on_off": True}),
+        ("TurnOver", {"days": 245, "normalize": False, "on_off": True}),
+        ("TurnOverVar", {"days": 207, "on_off": True}),
     ),
     "model": {
-        "bagging_temperature": 1.4838515680275468,
-        "depth": 1,
-        "l2_leaf_reg": 1.4163763766087307,
-        "learning_rate": 0.0030749166879858927,
+        "bagging_temperature": 1.7729526391975787,
+        "depth": 2,
+        "l2_leaf_reg": 0.7986227785700475,
+        "learning_rate": 0.010747572458327463,
         "one_hot_max_size": 2,
-        "random_strength": 0.883979569437364,
+        "random_strength": 0.3845351869496457,
     },
 }
