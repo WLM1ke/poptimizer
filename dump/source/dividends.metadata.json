@@ -1,1 +1,1 @@
-{"options":{},"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_","ns":"source.dividends"},{"v":{"$numberInt":"2"},"key":{"ticker":{"$numberInt":"1"}},"name":"ticker","ns":"source.dividends","background":false}],"uuid":"bd021dc3aeb541ec8243cbf0ade72f3f"}
+{"options":{},"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_","ns":"source.dividends"},{"v":{"$numberInt":"2"},"key":{"ticker":{"$numberInt":"1"}},"name":"ticker","ns":"source.dividends","background":false}],"uuid":"56e39ec4de3449fea1664195e9335b76"}

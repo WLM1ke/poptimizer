@@ -1,6 +1,9 @@
+from contextlib import contextmanager
+
 import pandas as pd
 import pytest
 
+from poptimizer.data import div as data
 from poptimizer.dl import data_params
 
 TICKERS = ("CBOM", "DSKY", "IRKT")
@@ -14,7 +17,9 @@ PARAMS = {
 }
 
 
-def test_div_price_train_size():
+def test_div_price_train_size(monkeypatch):
+    monkeypatch.setattr(data, "STATS_START", pd.Timestamp("2010-09-01"))
+
     div, price, train_size = data_params.div_price_train_size(TICKERS, DATE)
     assert isinstance(div, pd.DataFrame)
     assert isinstance(price, pd.DataFrame)
@@ -36,9 +41,18 @@ def test_div_price_train_size():
     assert train_size == 2158
 
 
+@contextmanager
+def set_start_date():
+    saved_start_date = data.STATS_START
+    data.STATS_START = pd.Timestamp("2010-09-01")
+    yield
+    data.STATS_START = saved_start_date
+
+
 @pytest.fixture(scope="class", name="train_params")
 def make_train_params():
-    yield data_params.TrainParams(TICKERS, DATE, PARAMS)
+    with set_start_date():
+        yield data_params.TrainParams(TICKERS, DATE, PARAMS)
 
 
 class TestTrainParams:
@@ -82,7 +96,8 @@ class TestTrainParams:
 
 @pytest.fixture(scope="class", name="val_params")
 def make_val_params():
-    yield data_params.ValParams(TICKERS, DATE, PARAMS)
+    with set_start_date():
+        yield data_params.ValParams(TICKERS, DATE, PARAMS)
 
 
 class TestValParams:
@@ -117,7 +132,8 @@ class TestValParams:
 
 @pytest.fixture(scope="class", name="test_params")
 def make_test_params():
-    yield data_params.TestParams(TICKERS, DATE, PARAMS)
+    with set_start_date():
+        yield data_params.TestParams(TICKERS, DATE, PARAMS)
 
 
 class TestTestParams:
@@ -152,7 +168,8 @@ class TestTestParams:
 
 @pytest.fixture(scope="class", name="forecast_params")
 def make_forecast_params():
-    yield data_params.ForecastParams(TICKERS, DATE, PARAMS)
+    with set_start_date():
+        yield data_params.ForecastParams(TICKERS, DATE, PARAMS)
 
 
 class TestForecastParams:

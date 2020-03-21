@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 import torch
 
+from poptimizer.data import div
 from poptimizer.dl import data_params
 from poptimizer.dl.features import weight
 from poptimizer.dl.features.feature import FeatureTypes
@@ -21,10 +22,15 @@ PARAMS = {
 
 @pytest.fixture(scope="module", name="feature")
 def make_feature():
+    saved_start_date = div.STATS_START
+    div.STATS_START = pd.Timestamp("2010-09-01")
+
     params = data_params.ValParams(
         ("CNTLP", "LKOH"), pd.Timestamp("2020-03-18"), PARAMS
     )
-    return weight.Weight("CNTLP", params)
+    yield weight.Weight("CNTLP", params)
+
+    div.STATS_START = saved_start_date
 
 
 class TestWeight:

@@ -37,8 +37,8 @@ DATA_PARAMS = {
     },
     "data": {
         "batch_size": 100,
-        "history_days": 253,
-        "forecast_days": 215,
+        "history_days": 245,
+        "forecast_days": 194,
         "features": {
             "Label": {"div_share": 0.9},
             "Prices": {},
@@ -229,10 +229,10 @@ def main():
         CBOM=0 + 4400 + 71000,
         CNTLP=0 + 0 + 0 + 9000,
         CHMF=0 + 730 + 170,
-        DSKY=17720 + 740 + 6380 + 4320,
+        DSKY=7180 + 740 + 6380 + 4320,
         GCHE=0 + 0 + 24,
         GMKN=0 + 109 + 1,
-        IRKT=0 + 7000,
+        IRKT=0 + 3000,
         KRKNP=66 + 0 + 43,
         KZOS=1200 + 5080 + 5190,
         LSNGP=2280 + 670 + 2410,
@@ -243,20 +243,20 @@ def main():
         MTSS=2340 + 4520 + 480 + 520,
         MVID=0 + 0 + 800,
         NMTP=29000 + 74000 + 13000 + 67000,
-        PHOR=216 + 127 + 165 + 405,
+        PHOR=437 + 218 + 165 + 405,
         PIKK=0 + 3090 + 0 + 90,
         PLZL=86 + 21 + 23,
         PMSBP=0 + 0 + 1160,
         PRTK=0 + 6980,
         RNFT=0 + 51 + 11,
         RTKMP=0 + 29400,
-        SIBN=0 + 430,
-        SNGSP=32500 + 2800 + 7500 + 2000,
-        TATNP=0 + 458,
+        SNGSP=45200 + 5700 + 7700 + 2000,
         TRCN=41 + 0 + 4 + 3,
         UPRO=345_000 + 451_000 + 283_000 + 85000,
         VSMO=39 + 161 + 3,
         # Бумаги с нулевым весом
+        TATNP=0,
+        SIBN=0,
         RTKM=0,
         UNAC=0,
         MRKC=0,
@@ -310,9 +310,9 @@ def main():
         RGSS=0,
         LIFE=0,
         KBTK=0,
-        # MSTT=0,
+        KMAZ=0,
     )
-    trn = Trainer(tuple(pos), pd.Timestamp("2020-03-19"), DATA_PARAMS)
+    trn = Trainer(tuple(pos), pd.Timestamp("2020-03-20"), DATA_PARAMS)
     rez = trn.run()
     print(rez)
 
