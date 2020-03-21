@@ -4,7 +4,7 @@ import torch
 
 from poptimizer.data import div
 from poptimizer.dl import data_params
-from poptimizer.dl.features import price
+from poptimizer.dl.features import prices
 from poptimizer.dl.features.feature import FeatureTypes
 
 PARAMS = {
@@ -28,7 +28,7 @@ def make_feature():
     params = data_params.ValParams(
         ("CNTLP", "LKOH"), pd.Timestamp("2020-03-18"), PARAMS
     )
-    yield price.Prices("CNTLP", params)
+    yield prices.Prices("CNTLP", params)
 
     div.STATS_START = saved_start_date
 
@@ -40,7 +40,7 @@ class TestLabel:
         assert torch.tensor(-0.0740740740740742).allclose(feature[0][5])
         assert torch.tensor(-0.0824915824915825).allclose(feature[0][7])
 
-        assert feature[0].shape == torch.Size([8])
+        assert feature[49].shape == torch.Size([8])
         assert torch.tensor(0.0).allclose(feature[49][0])
         assert torch.tensor(0.176863181312569).allclose(feature[49][3])
         assert torch.tensor(0.153503893214683).allclose(feature[49][7])

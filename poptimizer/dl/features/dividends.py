@@ -15,7 +15,9 @@ class Dividends(Feature):
         self.history_days = params.history_days
 
     def __getitem__(self, item: int) -> torch.Tensor:
-        return self.div[item : item + self.history_days] / self.price[item]
+        return (
+            self.div[item : item + self.history_days].cumsum(dim=0) / self.price[item]
+        )
 
     @property
     def type(self) -> FeatureTypes:
