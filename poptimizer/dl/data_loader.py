@@ -1,5 +1,5 @@
 """Формирование примеров для обучения в формате PyTorch."""
-from typing import Dict, Tuple, Type
+from typing import Dict, Tuple, Type, List, Union
 
 import pandas as pd
 from torch import Tensor
@@ -9,10 +9,7 @@ from poptimizer.dl import features, data_params
 
 
 class OneTickerDataset(data.Dataset):
-    """Готовит обучающие примеры для одного тикера на основе параметров модели.
-
-    Каждая составляющая помещается в словарь в виде пары {название признака: Tensor}.
-    """
+    """Готовит обучающие примеры для одного тикера на основе параметров модели."""
 
     def __init__(self, ticker: str, params: data_params.DataParams):
         self.len = params.len(ticker)
@@ -21,15 +18,15 @@ class OneTickerDataset(data.Dataset):
             for feat_name in params.get_all_feat()
         ]
 
-    def __getitem__(self, item) -> Dict[str, Tensor]:
-        rez = {}
+    def __getitem__(self, item) -> Dict[str, Union[Tensor, List[Tensor]]]:
+        example = {}
         for feature in self.features:
             key = feature.key()
             if feature.unique():
-                rez[key] = feature[item]
+                example[key] = feature[item]
             else:
-                rez.setdefault(key, []).append(feature[item])
-        return rez
+                example.setdefault(key, []).append(feature[item])
+        return example
 
     def __len__(self) -> int:
         return self.len
@@ -41,12 +38,13 @@ def get_data_loader(
     params: dict,
     params_type: Type[data_params.DataParams],
 ) -> data.DataLoader:
-    """
+    """Формирует загрузчики данных для обучения, валидации, тестирования и прогнозирования для
+    заданных тикеров и конечной даты на основе словаря с параметрами.
 
     :param tickers:
         Перечень тикеров, для которых будет строится модель.
     :param end:
-        Конец диапазона дат статистики по ценам и дивидендам, которые будут использоваться для
+        Конец диапазона дат статистики, которые будут использоваться для
         построения модели.
     :param params:
         Словарь с параметрами для построения признаков и других элементов модели.
@@ -56,8 +54,6 @@ def get_data_loader(
         Загрузчик данных.
     """
     params = params_type(tickers, end, params)
-    dataset = data.ConcatDataset(
-        [OneTickerDataset(ticker, params) for ticker in tickers]
-    )
-
+    data_sets = [OneTickerDataset(ticker, params) for ticker in tickers]
+    dataset = data.ConcatDataset(data_sets)
     return data.DataLoader(dataset, params.batch_size, params.shuffle, drop_last=False)
