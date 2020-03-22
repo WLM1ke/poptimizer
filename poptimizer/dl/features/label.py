@@ -4,7 +4,7 @@ from abc import ABC
 import torch
 
 from poptimizer.dl.data_params import DataParams
-from poptimizer.dl.features.feature import Feature, FeatureTypes
+from poptimizer.dl.features.feature import Feature
 
 
 class Label(Feature, ABC):
@@ -35,7 +35,12 @@ class Label(Feature, ABC):
         label = (price_growth + div) / last_history_price
         return label.reshape(-1)
 
-    @property
-    def type(self) -> FeatureTypes:
-        """Метка данных."""
-        return FeatureTypes.LABEL
+    @staticmethod
+    def key() -> str:
+        """Ключ по которому нужно сохранять признак."""
+        return "Label"
+
+    @staticmethod
+    def unique() -> bool:
+        """Является ли признак единственным для данного ключа."""
+        return True

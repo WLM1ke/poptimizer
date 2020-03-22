@@ -5,7 +5,6 @@ import torch
 from poptimizer.data import div
 from poptimizer.dl import data_params
 from poptimizer.dl.features import weight
-from poptimizer.dl.features.feature import FeatureTypes
 
 PARAMS = {
     "batch_size": 100,
@@ -48,5 +47,8 @@ class TestWeight:
     def test_name(self, feature):
         assert feature.name == "Weight"
 
-    def test_type(self, feature):
-        assert feature.type is FeatureTypes.WEIGHT
+    def test_key(self, feature):
+        assert feature.key() == "Weight"
+
+    def test_unique(self, feature):
+        assert feature.unique() is True

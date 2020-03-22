@@ -67,7 +67,7 @@ class Trainer:
         )
 
         model = getattr(models, params["model"]["name"])
-        self._model = model(params["data"]["history_days"], **params["model"]["params"])
+        self._model = model(self._train, **params["model"]["params"])
 
         # noinspection PyUnresolvedReferences
         self._optimizer = optim.AdamW(self._model.parameters())

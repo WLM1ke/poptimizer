@@ -1,22 +1,9 @@
 """Абстрактный класс признака."""
 import abc
-import enum
 
 from torch import Tensor
 
 from poptimizer.dl.data_params import DataParams
-
-
-class FeatureTypes(enum.Enum):
-    """Типы признаков."""
-
-    # noinspection PyMethodParameters
-    def _generate_next_value_(name, start, count, last_values):
-        return name
-
-    LABEL = enum.auto()
-    WEIGHT = enum.auto()
-    NUMERICAL = enum.auto()
 
 
 class Feature(abc.ABC):
@@ -36,10 +23,12 @@ class Feature(abc.ABC):
         """Наименование признака."""
         return self.__class__.__name__
 
-    @property
+    @staticmethod
     @abc.abstractmethod
-    def type(self) -> FeatureTypes:
-        """Тип признака.
+    def key() -> str:
+        """Ключ по которому нужно сохранять признак."""
 
-        Используется моделью для агригации однотипных признаков и подачи на соответствующий вход.
-        """
+    @staticmethod
+    @abc.abstractmethod
+    def unique() -> bool:
+        """Является ли признак единственным для данного ключа."""

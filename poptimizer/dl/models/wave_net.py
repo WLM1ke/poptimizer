@@ -1,9 +1,10 @@
 """Базовая LSTM-модель"""
-from typing import Dict
+from typing import Dict, Union, List
 
 import numpy as np
 import torch
 from torch import nn
+from torch.utils.data import DataLoader
 
 
 class SubBlock(nn.Module):
@@ -100,7 +101,7 @@ class WaveNet(nn.Module):
 
     def __init__(
         self,
-        history_days: int,
+        data_loader: DataLoader,
         start_bn: bool = True,
         kernels: int = 2,
         sub_blocks: int = 2,
@@ -110,11 +111,14 @@ class WaveNet(nn.Module):
         end_channels: int = 256,
     ) -> None:
         super().__init__()
-        # TODO: сколько признаков
+        batch = next(iter(data_loader))
+        in_sequences = len(batch["Sequence"])
+        history_days = batch["Sequence"][0].shape[1]
+
         self.skip_channels = skip_channels
-        self.bn = start_bn and nn.BatchNorm1d(2)
+        self.bn = start_bn and nn.BatchNorm1d(in_sequences)
         self.start_conv = nn.Conv1d(
-            in_channels=2, out_channels=residual_channels, kernel_size=1
+            in_channels=in_sequences, out_channels=residual_channels, kernel_size=1
         )
 
         self.blocks = nn.ModuleList()
@@ -139,12 +143,14 @@ class WaveNet(nn.Module):
             in_channels=end_channels, out_channels=1, kernel_size=1
         )
 
-    def forward(self, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(
+        self, batch: Dict[str, Union[torch.Tensor, List[torch.Tensor]]]
+    ) -> torch.Tensor:
         """Реализация WaveNet для прогнозирования котировок.
 
         https://github.com/vincentherrmann/pytorch-wavenet/blob/master/wavenet_model.py
         """
-        y = torch.stack([batch["Prices"], batch["Dividends"]], dim=1)
+        y = torch.stack(batch["Sequence"], dim=1)
         if self.bn:
             y = self.bn(y)
         y = self.start_conv(y)

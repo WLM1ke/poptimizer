@@ -2,7 +2,7 @@
 import torch
 
 from poptimizer.dl.data_params import DataParams
-from poptimizer.dl.features.feature import Feature, FeatureTypes
+from poptimizer.dl.features.feature import Feature
 from poptimizer.ml.feature.std import LOW_STD
 
 
@@ -29,7 +29,12 @@ class Weight(Feature):
         std = torch.max(std, torch.tensor(LOW_STD))
         return std ** -2
 
-    @property
-    def type(self) -> FeatureTypes:
-        """Вес данных."""
-        return FeatureTypes.WEIGHT
+    @staticmethod
+    def key() -> str:
+        """Ключ по которому нужно сохранять признак."""
+        return "Weight"
+
+    @staticmethod
+    def unique() -> bool:
+        """Является ли признак единственным для данного ключа."""
+        return True

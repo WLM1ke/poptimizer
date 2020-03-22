@@ -2,10 +2,11 @@
 import torch
 
 from poptimizer.dl.data_params import DataParams
-from poptimizer.dl.features.feature import Feature, FeatureTypes
+from poptimizer.dl.features.feature import Feature
+from poptimizer.dl.features.prices import SequenceMixin
 
 
-class Dividends(Feature):
+class Dividends(SequenceMixin, Feature):
     """Динамика накопленных дивидендов нормированная на первоначальную цену."""
 
     def __init__(self, ticker: str, params: DataParams):
@@ -18,8 +19,3 @@ class Dividends(Feature):
         return (
             self.div[item : item + self.history_days].cumsum(dim=0) / self.price[item]
         )
-
-    @property
-    def type(self) -> FeatureTypes:
-        """Численные данные."""
-        return FeatureTypes.NUMERICAL

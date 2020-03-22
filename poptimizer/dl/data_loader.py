@@ -6,7 +6,6 @@ from torch import Tensor
 from torch.utils import data
 
 from poptimizer.dl import features, data_params
-from poptimizer.dl.data_params import DataParams
 
 
 class OneTickerDataset(data.Dataset):
@@ -17,14 +16,20 @@ class OneTickerDataset(data.Dataset):
 
     def __init__(self, ticker: str, params: data_params.DataParams):
         self.len = params.len(ticker)
-
-        self.features = dict()
-        for feat_name in params.get_all_feat():
-            feature_cls = getattr(features, feat_name)
-            self.features[feat_name] = feature_cls(ticker, params)
+        self.features = [
+            getattr(features, feat_name)(ticker, params)
+            for feat_name in params.get_all_feat()
+        ]
 
     def __getitem__(self, item) -> Dict[str, Tensor]:
-        return {name: feature[item] for name, feature in self.features.items()}
+        rez = {}
+        for feature in self.features:
+            key = feature.key()
+            if feature.unique():
+                rez[key] = feature[item]
+            else:
+                rez.setdefault(key, []).append(feature[item])
+        return rez
 
     def __len__(self) -> int:
         return self.len
@@ -34,7 +39,7 @@ def get_data_loader(
     tickers: Tuple[str, ...],
     end: pd.Timestamp,
     params: dict,
-    params_type: Type[DataParams],
+    params_type: Type[data_params.DataParams],
 ) -> data.DataLoader:
     """
 

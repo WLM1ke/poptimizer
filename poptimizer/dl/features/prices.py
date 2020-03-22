@@ -2,10 +2,24 @@
 import torch
 
 from poptimizer.dl.data_params import DataParams
-from poptimizer.dl.features.feature import Feature, FeatureTypes
+from poptimizer.dl.features.feature import Feature
 
 
-class Prices(Feature):
+class SequenceMixin:
+    """Характеристики признака временной последовательности данных."""
+
+    @staticmethod
+    def key() -> str:
+        """Ключ по которому нужно сохранять признак."""
+        return "Sequence"
+
+    @staticmethod
+    def unique() -> bool:
+        """Является ли признак единственным для данного ключа."""
+        return False
+
+
+class Prices(SequenceMixin, Feature):
     """Динамика изменения цены нормированная на первоначальную цену."""
 
     def __init__(self, ticker: str, params: DataParams):
@@ -17,8 +31,3 @@ class Prices(Feature):
         history_days = self.history_days
         price = self.price
         return price[item : item + history_days] / price[item] - 1
-
-    @property
-    def type(self) -> FeatureTypes:
-        """Численные данные."""
-        return FeatureTypes.NUMERICAL

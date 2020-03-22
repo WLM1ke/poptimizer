@@ -5,7 +5,6 @@ import torch
 from poptimizer.data import div
 from poptimizer.dl import data_params
 from poptimizer.dl.features import prices
-from poptimizer.dl.features.feature import FeatureTypes
 
 PARAMS = {
     "batch_size": 100,
@@ -53,5 +52,8 @@ class TestLabel:
     def test_name(self, feature):
         assert feature.name == "Prices"
 
-    def test_type(self, feature):
-        assert feature.type is FeatureTypes.NUMERICAL
+    def test_key(self, feature):
+        assert feature.key() == "Sequence"
+
+    def test_unique(self, feature):
+        assert feature.unique() is False
