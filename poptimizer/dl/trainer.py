@@ -14,27 +14,18 @@ from poptimizer.dl import data_loader, models, data_params
 
 # Параметры формирования примеров для обучения сетей
 DATA_PARAMS = {
+    "type": "WaveNet",
     "model": {
-        "name": "WaveNet",
-        "params": {
-            "start_bn": True,
-            "kernels": 3,
-            "sub_blocks": 1,
-            "gate_channels": 16,
-            "residual_channels": 16,
-            "skip_channels": 16,
-            "end_channels": 16,
-        },
+        "start_bn": True,
+        "kernels": 3,
+        "sub_blocks": 1,
+        "gate_channels": 16,
+        "residual_channels": 16,
+        "skip_channels": 16,
+        "end_channels": 16,
     },
-    "optimizer": {
-        "max_lr": 0.01,
-        "epochs": 3,
-        "pct_start": 0.3,
-        "base_momentum": 0.85,
-        "max_momentum": 0.95,
-        "div_factor": 25.0,
-        "final_div_factor": 10000.0,
-    },
+    "optimizer": {"weight_decay": 0.01},
+    "scheduler": {"max_lr": 0.005, "epochs": 3},
     "data": {
         "batch_size": 100,
         "history_days": 245,
@@ -66,14 +57,14 @@ class Trainer:
             tickers, end, params["data"], data_params.TestParams
         )
 
-        model = getattr(models, params["model"]["name"])
-        self._model = model(self._train, **params["model"]["params"])
+        model = getattr(models, params["type"])
+        self._model = model(self._train, **params["model"])
 
         # noinspection PyUnresolvedReferences
-        self._optimizer = optim.AdamW(self._model.parameters())
+        self._optimizer = optim.AdamW(self._model.parameters(), **params["optimizer"])
         # noinspection PyUnresolvedReferences
         self._scheduler = lr_scheduler.OneCycleLR(
-            self._optimizer, steps_per_epoch=len(self._train), **params["optimizer"]
+            self._optimizer, steps_per_epoch=len(self._train), **params["scheduler"]
         )
 
     @staticmethod
@@ -201,7 +192,7 @@ class Trainer:
         print(
             f"Количество параметров - {sum(tensor.numel() for tensor in self._model.parameters())}"
         )
-        epochs = self._params["optimizer"]["epochs"]
+        epochs = self._params["scheduler"]["epochs"]
         print(f"Epochs - {epochs}")
         print(f"Train size - {len(self._train.dataset)}")
         print(f"Val size - {len(self._val.dataset)}")

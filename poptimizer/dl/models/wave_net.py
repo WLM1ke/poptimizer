@@ -65,7 +65,8 @@ class Block(nn.Module):
 
      Имеет два выхода:
      - Основной с уменьшенной в два раза размерностью;
-     - Скип для суммирования с остальными скипами и расчета общего выходного значения.
+     - Скип для суммирования последнего значения слоя с остальными скипами и расчета общего выходного
+     значения.
      """
 
     def __init__(
@@ -119,8 +120,7 @@ class Block(nn.Module):
         for sub_block in self.sub_blocks:
             y = sub_block(y)
 
-        skip = self.skip_convs(y)
-        skip = skip[:, :, -1:]
+        skip = self.skip_convs(y[:, :, -1:])
 
         y = self.dilated_pad(y)
         y = self.dilated_convs(y)
@@ -146,19 +146,38 @@ class WaveNet(nn.Module):
         skip_channels: int,
         end_channels: int,
     ) -> None:
+        """
+        :param data_loader:
+            Загрузчик данных - нужен для определения параметров входных данных и расчета необходимой
+            глубины сети.
+        :param start_bn:
+            Нужно ли производить BN для входящих численных значений.
+        :param sub_blocks:
+            Количество маленьких блоков в блоке.
+        :param kernels:
+            Размер сверток в signal и gate сверточных слоях.
+        :param gate_channels:
+            Количество каналов в signal и gate сверточных слоях маленьких блоков.
+        :param residual_channels:
+            Количество каналов на входе и по обходному пути маленьких блоков.
+        :param skip_channels:
+            Количество каналов у скипа.
+        :param end_channels:
+            Количество каналов, до которого сжимаются скипы перед расчетом финального значений.
+        """
         super().__init__()
 
         batch = next(iter(data_loader))
-        in_sequences = len(batch["Sequence"])
+        input_sequences = len(batch["Sequence"])
         history_days = batch["Sequence"][0].shape[1]
 
         if start_bn:
-            self.bn = nn.BatchNorm1d(in_sequences)
+            self.bn = nn.BatchNorm1d(input_sequences)
         else:
             self.bn = nn.Identity()
 
         self.start_conv = nn.Conv1d(
-            in_channels=in_sequences, out_channels=residual_channels, kernel_size=1
+            in_channels=input_sequences, out_channels=residual_channels, kernel_size=1
         )
 
         self.blocks = nn.ModuleList()
