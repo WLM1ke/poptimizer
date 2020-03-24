@@ -6,8 +6,6 @@ import pandas as pd
 from poptimizer import data
 from poptimizer.ml.feature.feature import AbstractFeature, DaysParamsMixin
 
-YEAR_IN_TRADING_DAYS = 12 * 21
-
 
 class Label(DaysParamsMixin, AbstractFeature):
     """Метка для обучения - средняя доходность за несколько следующих дней.

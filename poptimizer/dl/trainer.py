@@ -12,6 +12,8 @@ from torch.optim import lr_scheduler
 
 from poptimizer.dl import data_loader, models, data_params
 
+YEAR_IN_TRADING_DAYS = 12 * 21
+
 # Параметры формирования примеров для обучения сетей
 DATA_PARAMS = {
     "type": "WaveNet",
@@ -182,8 +184,10 @@ class Trainer:
         for i in range(days):
             # Срезы соответствуют разным акциям в один день
             rs[i] = np.cov(test_labels[i::days], test_output[i::days])[1][0]
+        sharpe = rs.mean() / rs.std(ddof=1) * YEAR_IN_TRADING_DAYS ** 0.5
+
         # noinspection PyUnresolvedReferences
-        return {"t": stats.ttest_1samp(rs, 0).statistic}
+        return {"t": stats.ttest_1samp(rs, 0).statistic, "sharpe": sharpe}
 
     def run(self) -> dict:
         """Производит обучение и валидацию модели."""
@@ -303,7 +307,7 @@ def main():
         KBTK=0,
         KMAZ=0,
     )
-    trn = Trainer(tuple(pos), pd.Timestamp("2020-03-20"), DATA_PARAMS)
+    trn = Trainer(tuple(pos), pd.Timestamp("2020-03-23"), DATA_PARAMS)
     rez = trn.run()
     print(rez)
 

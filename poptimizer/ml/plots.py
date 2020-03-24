@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 
 from poptimizer import config
+from poptimizer.dl.trainer import YEAR_IN_TRADING_DAYS
 from poptimizer.ml import examples, cv
-from poptimizer.ml.feature import YEAR_IN_TRADING_DAYS
 
 __all__ = ["partial_dependence_curve"]
 

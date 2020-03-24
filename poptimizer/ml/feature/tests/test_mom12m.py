@@ -3,8 +3,8 @@ import pandas as pd
 import pytest
 from hyperopt.pyll import Apply
 
+from poptimizer.dl.trainer import YEAR_IN_TRADING_DAYS
 from poptimizer.ml.feature import mom12m
-from poptimizer.ml.feature.label import YEAR_IN_TRADING_DAYS
 
 
 @pytest.fixture(scope="module", name="feat")
