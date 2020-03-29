@@ -1,5 +1,5 @@
 """Ген ответственный за параметры обучения."""
-from poptimizer.evolve.genes.chromosome import GeneParams, Chromosome
+from poptimizer.evolve.chromosomes.chromosome import GeneParams, Chromosome
 
 MAX_LR = GeneParams(
     path=["scheduler", "max_lr"],

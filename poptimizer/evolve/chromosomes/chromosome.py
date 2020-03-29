@@ -82,9 +82,9 @@ class Chromosome(abc.ABC):
             if flag:
                 key = gene.path[-1]
                 value = base[key] + (diff1[key] - diff2[key]) * factor
-                if gene.lower_bound and value < gene.lower_bound:
+                if gene.lower_bound is not None and value < gene.lower_bound:
                     value = (base[key] + gene.lower_bound) / 2
-                if gene.upper_bound and value > gene.upper_bound:
+                if gene.upper_bound is not None and value > gene.upper_bound:
                     value = (base[key] + gene.upper_bound) / 2
                 child[key] = value
         return child
