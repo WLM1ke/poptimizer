@@ -31,7 +31,7 @@ DATA_PARAMS = {
     "data": {
         "batch_size": 100,
         "history_days": 245,
-        "forecast_days": 194,
+        "forecast_days": 203,
         "features": {
             "Label": {"div_share": 0.9},
             "Prices": {},
@@ -306,8 +306,10 @@ def main():
         LIFE=0,
         KBTK=0,
         KMAZ=0,
+        TTLK=0,
+        TGKD=0,
     )
-    trn = Trainer(tuple(pos), pd.Timestamp("2020-03-23"), DATA_PARAMS)
+    trn = Trainer(tuple(pos), pd.Timestamp("2020-03-27"), DATA_PARAMS)
     rez = trn.run()
     print(rez)
 

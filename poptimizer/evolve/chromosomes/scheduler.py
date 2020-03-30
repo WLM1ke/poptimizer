@@ -1,4 +1,4 @@
-"""Ген ответственный за параметры обучения."""
+"""Гены и хромосома ответственные за параметры обучения."""
 from poptimizer.evolve.chromosomes.chromosome import GeneParams, Chromosome
 
 MAX_LR = GeneParams(
@@ -10,7 +10,7 @@ MAX_LR = GeneParams(
 )
 EPOCHS = GeneParams(
     path=["scheduler", "epochs"],
-    default_value=1.3,
+    default_value=1.8,
     phenotype_function=int,
     lower_bound=1.0,
     upper_bound=None,

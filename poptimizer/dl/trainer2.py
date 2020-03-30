@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import torch
 import tqdm
-from scipy import stats
 from torch import optim
 from torch.optim import lr_scheduler
 
@@ -136,10 +135,10 @@ class Trainer2:
             val_output = torch.cat(val_output, dim=0).numpy().flatten()
 
             std = val_loss ** 0.5
-            r = stats.pearsonr(val_labels, val_output)[0]
-            r_rang = stats.spearmanr(val_labels, val_output)[0]
+            # r = stats.pearsonr(val_labels, val_output)[0]
+            # r_rang = stats.spearmanr(val_labels, val_output)[0]
 
-            return dict(std=std, r=r, r_rang=r_rang)
+            # return dict(std=std, r=r, r_rang=r_rang)
 
     def test_epoch(self) -> Dict[str, float]:
         """Тестирует, вычисляя значимость доходов от предсказания.
@@ -189,7 +188,6 @@ class Trainer2:
         else:
             sharpe = rs.mean() / rs.std(ddof=1) * YEAR_IN_TRADING_DAYS ** 0.5
 
-        print(f"Коэффициент Шарапа - {sharpe:0.4f}")
         return sharpe
 
     def train(self):

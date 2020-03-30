@@ -1,12 +1,14 @@
 """Эволюция параметров модели и хранение в MongoDB."""
 from typing import List, Type, Iterable, Optional, Tuple
 
-import numpy as np
 import pandas as pd
 
 from poptimizer.dl.trainer2 import Trainer2
 from poptimizer.evolve import genotype
 from poptimizer.evolve.chromosomes.chromosome import ParamsType, Chromosome
+from poptimizer.evolve.chromosomes.data import Data
+from poptimizer.evolve.chromosomes.model import Model
+from poptimizer.evolve.chromosomes.optimizer import Optimizer
 from poptimizer.evolve.chromosomes.scheduler import Scheduler
 from poptimizer.store.mongo import DB, MONGO_CLIENT
 
@@ -16,48 +18,35 @@ MODELS = "models"
 # Метки ключей документа
 ID = "_id"
 GENOTYPE = "genotype"
-SHARP = "sharpe"
 MODEL = "model"
-DATE = "date"
+SHARPE = "sharpe"
+SHARPE_DATE = "sharpe_date"
 
 MAX_POPULATION = 100
 BASE_PHENOTYPE = {
     "type": "WaveNet",
-    "model": {
-        "start_bn": True,
-        "kernels": 2,
-        "sub_blocks": 1,
-        "gate_channels": 1,
-        "residual_channels": 1,
-        "skip_channels": 1,
-        "end_channels": 1,
-    },
-    "optimizer": {"weight_decay": 0.01},
     "data": {
-        "batch_size": 100,
-        "history_days": 21,
-        "forecast_days": 1,
         "features": {
             "Label": {"div_share": 0.9},
             "Prices": {},
             "Dividends": {},
             "Weight": {},
-        },
+        }
     },
 }
-ALL_CHROMOSOMES_TYPES = [Scheduler]
+ALL_CHROMOSOMES_TYPES = [Scheduler, Data, Model, Optimizer]
 
 
 class Evolution:
     """Эволюция параметров модели и хранение в MongoDB."""
 
     def __init__(
-            self,
-            base_phenotype: ParamsType,
-            all_chromosome_types: List[Type[Chromosome]],
-            max_population: int = MAX_POPULATION,
-            db: str = DB,
-            collection: str = MODELS,
+        self,
+        base_phenotype: ParamsType,
+        all_chromosome_types: List[Type[Chromosome]],
+        max_population: int = MAX_POPULATION,
+        db: str = DB,
+        collection: str = MODELS,
     ):
         self._base_phenotype = base_phenotype
         self._all_chromosome_types = all_chromosome_types
@@ -78,12 +67,32 @@ class Evolution:
         doc = {GENOTYPE: genotype_params}
         self.collection.insert_one(doc)
 
-    def _update(self, timestamp, sharpe, model):
-        update = {"$set": {SHARP: sharpe, MODEL: model}}
-        self.collection.update_one({ID: timestamp}, update)
+    def _update(self, object_id, update):
+        update = {"$set": update}
+        self.collection.update_one({ID: object_id}, update)
 
-    def _delete(self, timestamp):
-        self.collection.delete_one({ID: timestamp})
+    def _delete(self, object_id):
+        self.collection.delete_one({ID: object_id})
+
+    def min_max_sharp(self) -> Tuple[Optional[float], Optional[float]]:
+        """Находит минимальное и максимальное значение коэффициента Шарпа."""
+        rez = (
+            list(
+                self.collection.find(
+                    {SHARPE: {"$exists": True}}, sort=[(SHARPE, 1)], limit=1
+                )
+            ),
+            list(
+                self.collection.find(
+                    {SHARPE: {"$exists": True}}, sort=[(SHARPE, -1)], limit=1
+                )
+            ),
+        )
+        if len(rez[0]) == 0:
+            return None, None
+
+        # noinspection PyTypeChecker
+        return tuple(i[SHARPE] for i, *_ in rez)
 
     def sample(self, num: int) -> Iterable[ParamsType]:
         """Выбирает несколько случайных генотипов.
@@ -101,42 +110,58 @@ class Evolution:
         ]
         parent, *parents = parents
         gens_params = parent.mutate(*parents)
-        print(gens_params)
         self._insert(gens_params)
+        return gens_params
 
     def selection(self, tickers: Tuple[str, ...], end: pd.Timestamp):
         """Осуществляет один отбор."""
         rivals = list(self.sample(2))
-        scores = []
-        models = []
-        for doc in rivals:
-            if doc.get(DATE) == end:
-                scores.append(doc[SHARP])
-                models.append(doc[MODEL])
-                continue
-            gen = genotype.Genotype(
-                doc[GENOTYPE], BASE_PHENOTYPE, ALL_CHROMOSOMES_TYPES
-            )
-            phenotype = gen.phenotype
-            model = doc.get(MODEL)
-            trainer = Trainer2(tickers, end, phenotype, model)
-            scores.append(trainer.sharpe)
-            models.append(trainer.model)
-        idx = np.argmax(scores)
+        for num, rival in enumerate(rivals, 1):
+            print(f"{num}: Генотип")
+            self.print_gens_params(rival[GENOTYPE])
+            if rival.get(SHARPE_DATE) != end:
+                model_state_dict = rival.get(MODEL)
+                phenotype = genotype.Genotype(
+                    rival[GENOTYPE], BASE_PHENOTYPE, ALL_CHROMOSOMES_TYPES
+                ).phenotype
+                model = Trainer2(tickers, end, phenotype, model_state_dict)
 
-        if rivals[idx].get(DATE) != end:
-            self._update(rivals[idx][ID], sharpe=scores[idx], model=models[idx])
-        self._delete(rivals[1 - idx][ID])
+                update = dict()
+                update[SHARPE] = model.sharpe
+                update[SHARPE_DATE] = end
+                if not model_state_dict:
+                    update[MODEL] = model.model
+                self._update(rival[ID], update)
+                rival.update(update)
+            print(f"Коэффициент Шарапа - {rival[SHARPE]:.4f}\n")
+
+        num, _ = max(enumerate(rivals), key=lambda x: x[1][SHARPE])
+        self._delete(rivals[1 - num][ID])
 
     def evolve(self, tickers: Tuple[str, ...], end: pd.Timestamp):
         """Осуществляет одну эпоху эволюции."""
         for step in range(1, self._max_population + 1):
-            print(f"\nШаг эволюции - {step}/{self._max_population}:")
+            print(f"***Шаг эпохи - {step}/{self._max_population}***")
+            print(
+                f"Значения коэффициента Шарпа лежат в интервале {self.min_max_sharp()}\n"
+            )
+            print("Мутация")
+            gens_params = self.mutate()
+            print(f"Генотип")
+            self.print_gens_params(gens_params)
+
             excess = self.count - self._max_population
             if excess > 0:
-                for death in range(excess):
+                for death in range(1, excess + 1):
+                    print(f"Отбор - {death}/{excess}")
                     self.selection(tickers, end)
-            self.mutate()
+
+    @staticmethod
+    def print_gens_params(param):
+        """Распечатка генотипа."""
+        for key, val in param.items():
+            print(f"{key}: {val}")
+        print()
 
 
 if __name__ == "__main__":
@@ -233,6 +258,7 @@ if __name__ == "__main__":
         KMAZ=0,
         TTLK=0,
         TGKD=0,
+        TGKB=0,
     )
     ev = Evolution(BASE_PHENOTYPE, ALL_CHROMOSOMES_TYPES)
     ev.evolve(tuple(pos), pd.Timestamp("2020-03-27"))
