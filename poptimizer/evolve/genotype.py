@@ -2,7 +2,28 @@
 import copy
 from typing import List, Dict, Union, Type, Any
 
-from poptimizer.evolve.chromosomes.chromosome import ParamsType, Chromosome
+from poptimizer import dl
+from poptimizer.evolve import chromosomes
+
+# База для формирования фенотипа
+BASE_PHENOTYPE = {
+    "type": "WaveNet",
+    "data": {
+        "features": {
+            "Label": {"div_share": 0.8},
+            "Prices": {},
+            "Dividends": {},
+            "Weight": {},
+        }
+    },
+}
+# Все используемые хромосомы
+ALL_CHROMOSOMES_TYPES = [
+    chromosomes.Data,
+    chromosomes.Model,
+    chromosomes.Optimizer,
+    chromosomes.Scheduler,
+]
 
 
 class Genotype:
@@ -10,15 +31,22 @@ class Genotype:
 
     def __init__(
         self,
-        genotype: ParamsType,
-        base_phenotype: ParamsType,
-        all_chromosome_types: List[Type[Chromosome]],
+        genotype: dl.PhenotypeType = None,
+        base_phenotype: dl.PhenotypeType = BASE_PHENOTYPE,
+        all_chromosome_types: List[
+            Type[chromosomes.Chromosome]
+        ] = ALL_CHROMOSOMES_TYPES,
     ):
+        genotype = genotype or {}
         self._genotype = [gen_type(genotype) for gen_type in all_chromosome_types]
         self._base_phenotype = base_phenotype
+        self._all_chromosome_types = all_chromosome_types
+
+    def __str__(self):
+        return "\n".join(str(chromosome) for chromosome in self._genotype)
 
     @property
-    def chromosome(self) -> List[Chromosome]:
+    def chromosomes(self) -> List[chromosomes.Chromosome]:
         """Возвращает все гены."""
         return self._genotype
 
@@ -30,14 +58,14 @@ class Genotype:
             chromosome.set_phenotype(phenotype)
         return phenotype
 
-    def mutate(
+    def make_child(
         self,
         base: "Genotype",
         diff1: "Genotype",
         diff2: "Genotype",
         factor: float = 0.8,
         probability: float = 0.9,
-    ) -> Dict[str, Any]:
+    ) -> "Genotype":
         """Реализует мутацию в рамках дифференциальной эволюции.
 
 
@@ -60,9 +88,17 @@ class Genotype:
         """
         gens_params = dict()
         for main, base, diff1, diff2 in zip(
-            self.chromosome, base.chromosome, diff1.chromosome, diff2.chromosome
+            self.chromosomes, base.chromosomes, diff1.chromosomes, diff2.chromosomes
         ):
-            gens_params[main.name()] = main.mutate(
+            gens_params[main.name()] = main.make_child(
                 base, diff1, diff2, factor, probability
             )
         return gens_params
+
+    @property
+    def as_dict(self):
+        """Словарь с описанием """
+        genotype = {
+            chromosome.name(): chromosome.as_dict for chromosome in self._genotype
+        }
+        return genotype

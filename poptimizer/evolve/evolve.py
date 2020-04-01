@@ -1,167 +1,70 @@
 """Эволюция параметров модели и хранение в MongoDB."""
-from typing import List, Type, Iterable, Optional, Tuple
+from typing import Tuple
 
 import pandas as pd
 
-from poptimizer.dl.trainer2 import Trainer2
-from poptimizer.evolve import genotype
-from poptimizer.evolve.chromosomes.chromosome import ParamsType, Chromosome
-from poptimizer.evolve.chromosomes.data import Data
-from poptimizer.evolve.chromosomes.model import Model
-from poptimizer.evolve.chromosomes.optimizer import Optimizer
-from poptimizer.evolve.chromosomes.scheduler import Scheduler
-from poptimizer.store.mongo import DB, MONGO_CLIENT
+from poptimizer.evolve import population
 
 # Коллекция для хранения моделей
 MODELS = "models"
 
 # Метки ключей документа
-ID = "_id"
-GENOTYPE = "genotype"
-MODEL = "model"
-SHARPE = "sharpe"
-SHARPE_DATE = "sharpe_date"
 
 MAX_POPULATION = 100
-BASE_PHENOTYPE = {
-    "type": "WaveNet",
-    "data": {
-        "features": {
-            "Label": {"div_share": 0.9},
-            "Prices": {},
-            "Dividends": {},
-            "Weight": {},
-        }
-    },
-}
-ALL_CHROMOSOMES_TYPES = [Scheduler, Data, Model, Optimizer]
 
 
 class Evolution:
     """Эволюция параметров модели и хранение в MongoDB."""
 
-    def __init__(
-        self,
-        base_phenotype: ParamsType,
-        all_chromosome_types: List[Type[Chromosome]],
-        max_population: int = MAX_POPULATION,
-        db: str = DB,
-        collection: str = MODELS,
-    ):
-        self._base_phenotype = base_phenotype
-        self._all_chromosome_types = all_chromosome_types
+    def __init__(self, max_population: int = MAX_POPULATION):
         self._max_population = max_population
-        self.collection = MONGO_CLIENT[db][collection]
-
-        # Для реализации механизма эволюции нужно минимум 4 генотипа
-        for i in range(4 - self.count):
-            self._insert()
-
-    @property
-    def count(self) -> int:
-        """Количество документов в коллекции."""
-        return self.collection.count_documents({})
-
-    def _insert(self, genotype_params: Optional[ParamsType] = None):
-        genotype_params = genotype_params or {}
-        doc = {GENOTYPE: genotype_params}
-        self.collection.insert_one(doc)
-
-    def _update(self, object_id, update):
-        update = {"$set": update}
-        self.collection.update_one({ID: object_id}, update)
-
-    def _delete(self, object_id):
-        self.collection.delete_one({ID: object_id})
-
-    def min_max_sharp(self) -> Tuple[Optional[float], Optional[float]]:
-        """Находит минимальное и максимальное значение коэффициента Шарпа."""
-        rez = (
-            list(
-                self.collection.find(
-                    {SHARPE: {"$exists": True}}, sort=[(SHARPE, 1)], limit=1
-                )
-            ),
-            list(
-                self.collection.find(
-                    {SHARPE: {"$exists": True}}, sort=[(SHARPE, -1)], limit=1
-                )
-            ),
-        )
-        if len(rez[0]) == 0:
-            return None, None
-
-        # noinspection PyTypeChecker
-        return tuple(i[SHARPE] for i, *_ in rez)
-
-    def sample(self, num: int) -> Iterable[ParamsType]:
-        """Выбирает несколько случайных генотипов.
-
-        Необходимо для реализации размножения и отбора.
-        """
-        return self.collection.aggregate([{"$sample": {"size": num}}])
-
-    def mutate(self):
-        """Осуществляет одну мутацию и сохраняет полученный генотип в MongoDB."""
-        parents = self.sample(4)
-        parents = [
-            genotype.Genotype(sample[GENOTYPE], BASE_PHENOTYPE, ALL_CHROMOSOMES_TYPES)
-            for sample in parents
-        ]
-        parent, *parents = parents
-        gens_params = parent.mutate(*parents)
-        self._insert(gens_params)
-        return gens_params
-
-    def selection(self, tickers: Tuple[str, ...], end: pd.Timestamp):
-        """Осуществляет один отбор."""
-        rivals = list(self.sample(2))
-        for num, rival in enumerate(rivals, 1):
-            print(f"{num}: Генотип")
-            self.print_gens_params(rival[GENOTYPE])
-            if rival.get(SHARPE_DATE) != end:
-                model_state_dict = rival.get(MODEL)
-                phenotype = genotype.Genotype(
-                    rival[GENOTYPE], BASE_PHENOTYPE, ALL_CHROMOSOMES_TYPES
-                ).phenotype
-                model = Trainer2(tickers, end, phenotype, model_state_dict)
-
-                update = dict()
-                update[SHARPE] = model.sharpe
-                update[SHARPE_DATE] = end
-                if not model_state_dict:
-                    update[MODEL] = model.model
-                self._update(rival[ID], update)
-                rival.update(update)
-            print(f"Коэффициент Шарапа - {rival[SHARPE]:.4f}\n")
-
-        num, _ = max(enumerate(rivals), key=lambda x: x[1][SHARPE])
-        self._delete(rivals[1 - num][ID])
 
     def evolve(self, tickers: Tuple[str, ...], end: pd.Timestamp):
         """Осуществляет одну эпоху эволюции."""
+        self._setup()
+
         for step in range(1, self._max_population + 1):
             print(f"***Шаг эпохи - {step}/{self._max_population}***")
-            print(
-                f"Значения коэффициента Шарпа лежат в интервале {self.min_max_sharp()}\n"
-            )
-            print("Мутация")
-            gens_params = self.mutate()
-            print(f"Генотип")
-            self.print_gens_params(gens_params)
+            population.print_stat()
+            print()
 
-            excess = self.count - self._max_population
-            if excess > 0:
-                for death in range(1, excess + 1):
-                    print(f"Отбор - {death}/{excess}")
-                    self.selection(tickers, end)
+            print("Родитель:")
+            parent, *_ = population.sample_organism(1)
+            print(parent)
+            parent_sharpe = parent.fitness(tickers, end)
+            print(f"Коэффициент Шарпа: {parent_sharpe}")
+            print()
 
-    @staticmethod
-    def print_gens_params(param):
-        """Распечатка генотипа."""
-        for key, val in param.items():
-            print(f"{key}: {val}")
+            print("Потомок:")
+            child = parent.make_child()
+            print(child)
+            child_sharpe = child.fitness(tickers, end)
+            print(f"Коэффициент Шарпа: {child_sharpe}")
+            print()
+
+            excess = population.count() > self._max_population
+
+            if excess and (child_sharpe < parent_sharpe):
+                child.kill()
+                print("Удаляю потомка.")
+                print()
+            elif excess:
+                parent.kill()
+                print("Удаляю родителя.")
+                print()
+
+    def _setup(self):
+        """Нужно минимум 4 генотипа."""
+        # TODO: добавить удаление лишних
+        count = population.count()
+        print(f"Имеется {count} генотипов из {self._max_population}")
         print()
+
+        for i in range(1, 4 - count + 1):
+            print(f"Создаю базовые генотипы - {i}/{count}")
+            organism = population.Organism()
+            print(organism)
+            print()
 
 
 if __name__ == "__main__":
@@ -259,6 +162,7 @@ if __name__ == "__main__":
         TTLK=0,
         TGKD=0,
         TGKB=0,
+        RBCM=0,
     )
-    ev = Evolution(BASE_PHENOTYPE, ALL_CHROMOSOMES_TYPES)
-    ev.evolve(tuple(pos), pd.Timestamp("2020-03-27"))
+    ev = Evolution()
+    ev.evolve(tuple(pos), pd.Timestamp("2020-04-01"))
