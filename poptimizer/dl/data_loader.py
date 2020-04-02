@@ -56,4 +56,10 @@ def get_data_loader(
     params = params_type(tickers, end, params)
     data_sets = [OneTickerDataset(ticker, params) for ticker in tickers]
     dataset = data.ConcatDataset(data_sets)
-    return data.DataLoader(dataset, params.batch_size, params.shuffle, drop_last=False)
+    return data.DataLoader(
+        dataset=dataset,
+        batch_size=params.batch_size,
+        shuffle=params.shuffle,
+        drop_last=False,
+        num_workers=1,  # Загрузка в отдельном потоке - увеличение потоков не докидывает
+    )
