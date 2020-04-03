@@ -3,56 +3,56 @@ from poptimizer.evolve.chromosomes import chromosome
 
 MAX_LR = chromosome.GeneParams(
     path=["scheduler", "max_lr"],
-    default_value=0.01,
+    default_value=(0.01, 0.1),
     phenotype_function=float,
     lower_bound=0.0,
     upper_bound=None,
 )
 EPOCHS = chromosome.GeneParams(
     path=["scheduler", "epochs"],
-    default_value=1.8,
+    default_value=(1.1, 1.2),
     phenotype_function=int,
     lower_bound=1.0,
     upper_bound=None,
 )
 PCT_START = chromosome.GeneParams(
     path=["scheduler", "pct_start"],
-    default_value=0.3,
+    default_value=(0.29, 0.31),
     phenotype_function=float,
     lower_bound=0.0,
     upper_bound=1.0,
 )
 ANNEAL_STRATEGY = chromosome.GeneParams(
     path=["scheduler", "anneal_strategy"],
-    default_value=0.9,
+    default_value=(0.1, 0.9),
     phenotype_function=lambda x: {0: "cos", 1: "linear"}[int(x)],
     lower_bound=0.0,
     upper_bound=1.99,
 )
 BASE_MOMENTUM = chromosome.GeneParams(
     path=["scheduler", "base_momentum"],
-    default_value=0.85,
+    default_value=(0.84, 0.86),
     phenotype_function=float,
     lower_bound=0.0,
     upper_bound=1.0,
 )
 MAX_MOMENTUM = chromosome.GeneParams(
     path=["scheduler", "max_momentum"],
-    default_value=0.95,
+    default_value=(0.94, 0.96),
     phenotype_function=float,
     lower_bound=0.0,
     upper_bound=1.0,
 )
 DIV_FACTOR = chromosome.GeneParams(
     path=["scheduler", "div_factor"],
-    default_value=25.0,
+    default_value=(23.0, 26.0),
     phenotype_function=float,
     lower_bound=1.0,
     upper_bound=None,
 )
 FINAL_DIV_FACTOR = chromosome.GeneParams(
     path=["scheduler", "final_div_factor"],
-    default_value=1e4,
+    default_value=(0.9e4, 1.1e4),
     phenotype_function=float,
     lower_bound=1.0,
     upper_bound=None,

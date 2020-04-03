@@ -2,7 +2,7 @@
 import abc
 import copy
 from dataclasses import dataclass
-from typing import Dict, Any, List, Callable, Optional
+from typing import Dict, Any, List, Callable, Optional, Tuple
 
 import numpy as np
 
@@ -22,15 +22,15 @@ class GeneParams:
     Значение гена может иметь верхнюю и нижнюю границу. В фенотипе значение гена может быть любым типом -
     для преобразования из float используется соответствующая функция.
 
-    Набор генов может расширяться, поэтому у гена должно быть значение по умолчанию. В старых версиях
-    генотипа данное значение будет подставляться в случая его отсутствия (с небольшой случайной
-    компонентой).
+    Набор генов может расширяться, поэтому у гена должно быть интервал значений по умолчанию -
+    будет подставляться случайное значение из этого интервала вместо отсутствующих генов для
+    обеспечения генетического разнообразия.
 
     :param path:
         Список ключей во вложенных словарях соответствующий значению данного гена в фенотипе.
         Последний ключ будет использоваться для хранения значения в словаре хромосомы.
     :param default_value:
-        Значение по умолчанию.
+        Интервал значений по умолчанию.
     :param phenotype_function:
         Функция для преобразования значения гена (float) в представление, необходимое для фенотипа.
     :param lower_bound:
@@ -40,7 +40,7 @@ class GeneParams:
     """
 
     path: List[str]
-    default_value: float
+    default_value: Tuple[float, float]
     phenotype_function: Callable[[float], Any]
     lower_bound: Optional[float]
     upper_bound: Optional[float]
@@ -80,9 +80,7 @@ class Chromosome(abc.ABC):
         return cls.__name__
 
     @classmethod
-    def _default_chromosome(
-        cls, relative_range: float = 0.1, cape: float = 2.0
-    ) -> Dict[str, float]:
+    def _default_chromosome(cls) -> Dict[str, float]:
         """Значение хромосомы по умолчанию.
 
         Используется в случае расширения генотипа - организмы с более узким генотипом получат
@@ -91,24 +89,7 @@ class Chromosome(abc.ABC):
         """
         chromosome = dict()
         for gene in cls._GENES:
-            caped_range = relative_range
-            default_value = gene.default_value
-
-            if gene.lower_bound is not None:
-                caped_range = min(
-                    caped_range,
-                    (default_value - gene.lower_bound) / default_value / cape,
-                )
-            if gene.upper_bound is not None:
-                caped_range = min(
-                    caped_range,
-                    (gene.upper_bound - default_value) / default_value / cape,
-                )
-
-            min_ = default_value * (1 - caped_range)
-            max_ = default_value * (1 + caped_range)
-
-            chromosome[gene.path[-1]] = np.random.uniform(min_, max_)
+            chromosome[gene.path[-1]] = np.random.uniform(*gene.default_value)
         return chromosome
 
     @property
@@ -138,6 +119,9 @@ class Chromosome(abc.ABC):
         probability: float,
     ) -> Dict[str, float]:
         """Мутация в соответствии с алгоритмом дифференциальной эволюции.
+
+        Если мутировавшее значение выходит за границы допустимых значений - берется среднее значение
+        между текущим границей.
 
         :param base:
             Базовая хромосома для мутации.

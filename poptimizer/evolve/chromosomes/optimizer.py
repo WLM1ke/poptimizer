@@ -3,28 +3,28 @@ from poptimizer.evolve.chromosomes import chromosome
 
 BETA2 = chromosome.GeneParams(
     path=["optimizer", "betas"],
-    default_value=0.999,
+    default_value=(0.9989, 0.9991),
     phenotype_function=lambda x: (0.9, x),
     lower_bound=0.0,
     upper_bound=1.0,
 )
 EPS = chromosome.GeneParams(
     path=["optimizer", "eps"],
-    default_value=1e-8,
+    default_value=(0.9e-8, 1.1e-8),
     phenotype_function=float,
     lower_bound=0.0,
     upper_bound=None,
 )
 WEIGHT_DECAY = chromosome.GeneParams(
     path=["optimizer", "weight_decay"],
-    default_value=1e-2,
+    default_value=(0.9e-2, 1.1e-2),
     phenotype_function=float,
     lower_bound=0.0,
     upper_bound=None,
 )
 AMSGRAD = chromosome.GeneParams(
     path=["optimizer", "amsgrad"],
-    default_value=0.9,
+    default_value=(0.1, 0.9),
     phenotype_function=lambda x: bool(int(x)),
     lower_bound=0.0,
     upper_bound=1.99,
