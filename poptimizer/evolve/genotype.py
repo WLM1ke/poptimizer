@@ -31,10 +31,10 @@ class Genotype(UserDict):
     """Класс генотипа и операций с ним."""
 
     def __init__(
-            self,
-            genotype_data: Dict[str, Dict[str, float]] = None,
-            base_phenotype: Optional[dl.PhenotypeType] = None,
-            all_chromosome_types: Optional[List[Type[chromosomes.Chromosome]]] = None,
+        self,
+        genotype_data: Dict[str, Dict[str, float]] = None,
+        base_phenotype: Optional[dl.PhenotypeType] = None,
+        all_chromosome_types: Optional[List[Type[chromosomes.Chromosome]]] = None,
     ):
         super().__init__()
 
