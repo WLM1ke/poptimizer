@@ -1,6 +1,7 @@
 """Класс генотипа и операций с ним."""
 import copy
-from typing import List, Dict, Union, Type, Any
+from collections import UserDict
+from typing import List, Dict, Union, Type, Any, Optional
 
 from poptimizer import dl
 from poptimizer.evolve import chromosomes
@@ -10,7 +11,7 @@ BASE_PHENOTYPE = {
     "type": "WaveNet",
     "data": {
         "features": {
-            "Label": {"div_share": 0.8},
+            "Label": {"div_share": 0.0},
             "Prices": {},
             "Dividends": {},
             "Weight": {},
@@ -26,36 +27,38 @@ ALL_CHROMOSOMES_TYPES = [
 ]
 
 
-class Genotype:
+class Genotype(UserDict):
     """Класс генотипа и операций с ним."""
 
     def __init__(
-        self,
-        genotype: dl.PhenotypeType = None,
-        base_phenotype: dl.PhenotypeType = BASE_PHENOTYPE,
-        all_chromosome_types: List[
-            Type[chromosomes.Chromosome]
-        ] = ALL_CHROMOSOMES_TYPES,
+            self,
+            genotype_data: Dict[str, Dict[str, float]] = None,
+            base_phenotype: Optional[dl.PhenotypeType] = None,
+            all_chromosome_types: Optional[List[Type[chromosomes.Chromosome]]] = None,
     ):
-        genotype = genotype or {}
-        self._genotype = [gen_type(genotype) for gen_type in all_chromosome_types]
-        self._base_phenotype = base_phenotype
-        self._all_chromosome_types = all_chromosome_types
+        super().__init__()
+
+        genotype_data = genotype_data or {}
+        all_chromosome_types = all_chromosome_types or ALL_CHROMOSOMES_TYPES
+
+        for gen_type in all_chromosome_types:
+            key = gen_type.__name__
+            chromosome_data = genotype_data.get(key, dict())
+            self.data[key] = gen_type(chromosome_data)
+
+        self._base_phenotype = base_phenotype or BASE_PHENOTYPE
 
     def __str__(self):
-        return "\n".join(str(chromosome) for chromosome in self._genotype)
-
-    @property
-    def chromosomes(self) -> List[chromosomes.Chromosome]:
-        """Возвращает все гены."""
-        return self._genotype
+        return "\n".join(
+            f"{key}: {chromosome}" for key, chromosome in self.data.items()
+        )
 
     @property
     def phenotype(self) -> Dict[str, Union[str, Dict[str, Any]]]:
         """Возвращает фенотип - параметры модели соответствующие набору генов."""
         phenotype = copy.deepcopy(self._base_phenotype)
-        for chromosome in self._genotype:
-            chromosome.set_phenotype(phenotype)
+        for chromosome in self.data.values():
+            chromosome.setup_phenotype(phenotype)
         return phenotype
 
     def make_child(
@@ -86,19 +89,14 @@ class Genotype:
         to exhibit values in the range [-100, 100] it's a good idea to pick the initial values from this
         range instead of unnecessarily restricting diversity.
         """
-        gens_params = dict()
-        for main, base, diff1, diff2 in zip(
-            self.chromosomes, base.chromosomes, diff1.chromosomes, diff2.chromosomes
-        ):
-            gens_params[main.name()] = main.make_child(
-                base, diff1, diff2, factor, probability
+        child = copy.deepcopy(self)
+        for key in child:
+            child[key] = self[key].make_child(
+                base[key], diff1[key], diff2[key], factor, probability
             )
-        return gens_params
+        return child
 
-    @property
-    def as_dict(self):
+    def to_dict(self):
         """Словарь с описанием """
-        genotype = {
-            chromosome.name(): chromosome.as_dict for chromosome in self._genotype
-        }
+        genotype = {key: chromosome.to_dict() for key, chromosome in self.data.items()}
         return genotype
