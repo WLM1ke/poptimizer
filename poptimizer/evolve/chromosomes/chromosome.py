@@ -1,6 +1,6 @@
-"""Абстрактный класс хромосомы."""
-import abc
+"""Базовый класс хромосомы и описание гена."""
 import copy
+from collections import UserDict
 from dataclasses import dataclass
 from typing import Dict, Any, List, Callable, Optional, Tuple
 
@@ -46,63 +46,54 @@ class GeneParams:
     upper_bound: Optional[float]
 
 
-class Chromosome(abc.ABC):
+class Chromosome(UserDict):
     """Абстрактный класс хромосомы.
 
-    Хранит значения логически связанных генов. Обновлять фенотип с учетом значений генов и
+    Хранит значения логически связанных генов, обновлять фенотип с учетом значений генов и
     осуществляет их дифференциальную эволюцию.
     """
 
     _GENES: List[GeneParams]
 
-    def __init__(self, genotype: Dict[str, Dict[str, float]]):
+    def __init__(self, genotype_data: Dict[str, Dict[str, float]]):
         """Формирует полное описании хромосомы.
 
         В старых версиях генотипа может отсутствовать хромосома или некоторые гены в ней. В место них
         подставляются значения по умолчанию с небольшой случайной составляющей для создания
         генетического разнообразия.
 
-        :param genotype:
+        :param genotype_data:
             Словарь с описание генотипа - содержит словари описанием хромосом.
         """
-        self._chromosome = self._default_chromosome()
-        self._chromosome.update(genotype.get(self.name(), dict()))
+        key = self.__class__.__name__
+        super().__init__(self._default_chromosome_data(), **genotype_data[key])
 
     def __str__(self) -> str:
-        return f"{self.name()}: {self._chromosome}"
+        return f"{self.__class__.__name__}: {self.data}"
 
     @classmethod
-    def name(cls) -> str:
-        """Название класса хромосомы.
-
-        Используется в качестве ключа для хранения хромосомы внутри словаря генотипа.
-        """
-        return cls.__name__
-
-    @classmethod
-    def _default_chromosome(cls) -> Dict[str, float]:
+    def _default_chromosome_data(cls) -> Dict[str, float]:
         """Значение хромосомы по умолчанию.
 
         Используется в случае расширения генотипа - организмы с более узким генотипом получат
         значения генов по умолчанию с небольшой случайной компонентой для генетического разнообразия и с
         учетом верхней и нижней границы значения гена.
         """
-        chromosome = dict()
+        chromosome_data = dict()
         for gene in cls._GENES:
-            chromosome[gene.path[-1]] = np.random.uniform(*gene.default_value)
-        return chromosome
+            chromosome_data[gene.path[-1]] = np.random.uniform(*gene.default_value)
+        return chromosome_data
 
-    @property
-    def as_dict(self) -> Dict[str, float]:
-        """Словарь с описание хромосомы."""
-        return self._chromosome
+    def set_genotype(self, genotype_data: Dict[str, Dict[str, float]]) -> None:
+        """Устанавливает значение генотипа."""
+        genotype_data[self.__class__.__name__] = self.data
 
     def set_phenotype(self, phenotype: dl.PhenotypeType) -> None:
         """Устанавливает значения фенотипа в соответствии значениями генов хромосомы.
 
         Значение гена (float) преобразуется в представление необходимое для фенотипа.
         """
-        chromosome = self._chromosome
+        chromosome = self.data
         for gene in self._GENES:
             node = phenotype
             for key in gene.path[:-1]:
@@ -117,11 +108,11 @@ class Chromosome(abc.ABC):
         diff2: "Chromosome",
         factor: float,
         probability: float,
-    ) -> Dict[str, float]:
+    ) -> "Chromosome":
         """Мутация в соответствии с алгоритмом дифференциальной эволюции.
 
         Если мутировавшее значение выходит за границы допустимых значений - берется среднее значение
-        между текущим границей.
+        между текущим  и границей.
 
         :param base:
             Базовая хромосома для мутации.
@@ -136,8 +127,7 @@ class Chromosome(abc.ABC):
         :return:
             Представление хромосомы потомка в виде словаря.
         """
-        child = copy.deepcopy(self._chromosome)
-        base, diff1, diff2 = base.as_dict, diff1.as_dict, diff2.as_dict
+        child = copy.deepcopy(self)
         gens = self._GENES
 
         flags = np.random.rand(len(gens))
