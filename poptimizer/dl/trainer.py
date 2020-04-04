@@ -176,9 +176,7 @@ class Trainer:
 
         if rez:
             print("Слишком длинные признаки и метки - сократи их длину!!!")
-            # raise POptimizerError(
-            #    "Слишком длинные признаки и метки - сократи их длину!!!"
-            # )
+            return -np.inf
 
         rs = np.zeros(days)
         for i in range(days):
