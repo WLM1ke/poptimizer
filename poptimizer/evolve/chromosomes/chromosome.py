@@ -55,21 +55,17 @@ class Chromosome(UserDict):
 
     _GENES: List[GeneParams]
 
-    def __init__(self, genotype_data: Dict[str, Dict[str, float]]):
+    def __init__(self, chromosome_data: Dict[str, float]):
         """Формирует полное описании хромосомы.
 
         В старых версиях генотипа может отсутствовать хромосома или некоторые гены в ней. В место них
         подставляются значения по умолчанию с небольшой случайной составляющей для создания
         генетического разнообразия.
 
-        :param genotype_data:
-            Словарь с описание генотипа - содержит словари описанием хромосом.
+        :param chromosome_data:
+            Словарь с описание хромосомы.
         """
-        key = self.__class__.__name__
-        super().__init__(self._default_chromosome_data(), **genotype_data[key])
-
-    def __str__(self) -> str:
-        return f"{self.__class__.__name__}: {self.data}"
+        super().__init__(self._default_chromosome_data(), **chromosome_data)
 
     @classmethod
     def _default_chromosome_data(cls) -> Dict[str, float]:
@@ -84,11 +80,7 @@ class Chromosome(UserDict):
             chromosome_data[gene.path[-1]] = np.random.uniform(*gene.default_value)
         return chromosome_data
 
-    def set_genotype(self, genotype_data: Dict[str, Dict[str, float]]) -> None:
-        """Устанавливает значение генотипа."""
-        genotype_data[self.__class__.__name__] = self.data
-
-    def set_phenotype(self, phenotype: dl.PhenotypeType) -> None:
+    def setup_phenotype(self, phenotype: dl.PhenotypeType) -> None:
         """Устанавливает значения фенотипа в соответствии значениями генов хромосомы.
 
         Значение гена (float) преобразуется в представление необходимое для фенотипа.
@@ -142,3 +134,7 @@ class Chromosome(UserDict):
                     value = (base[key] + gene.upper_bound) / 2
                 child[key] = value
         return child
+
+    def to_dict(self):
+        """Словарь с описанием """
+        return self.data
