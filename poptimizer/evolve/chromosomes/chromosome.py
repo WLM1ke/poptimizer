@@ -8,6 +8,10 @@ from numpy import random
 
 from poptimizer.dl import PhenotypeData
 
+# Параметры по умолчанию для дифференциальной мутации
+MUTATION_FACTOR = 0.8
+MUTATION_PROBABILITY = 0.9
+
 
 @dataclass(frozen=True)
 class GeneParams:
@@ -29,7 +33,7 @@ class GeneParams:
     соответствующая функция.
     """
 
-    path: Tuple[str]
+    path: Tuple[str, ...]
     default_range: Tuple[float, float]
     lower_bound: Optional[float]
     upper_bound: Optional[float]
@@ -71,11 +75,11 @@ class Chromosome(UserDict):
         """
         chromosome_data = dict()
         for gene in cls._GENES:
-            chromosome_data[gene.path[-1]] = random.uniform(*gene.default_value)
+            chromosome_data[gene.path[-1]] = random.uniform(*gene.default_range)
         return chromosome_data
 
-    def setup_phenotype(self, phenotype: PhenotypeData) -> NoReturn:
-        """Устанавливает значения фенотипа в соответствии со значениями генов хромосомы.
+    def change_phenotype(self, phenotype: PhenotypeData) -> NoReturn:
+        """Меняет фенотип в соответствии со значениями генов хромосомы.
 
         Значение гена (float) преобразуется в представление необходимое для фенотипа.
         """
@@ -92,8 +96,8 @@ class Chromosome(UserDict):
         base: "Chromosome",
         diff1: "Chromosome",
         diff2: "Chromosome",
-        factor: float = 0.8,
-        probability: float = 0.9,
+        factor: float = MUTATION_FACTOR,
+        probability: float = MUTATION_PROBABILITY,
     ) -> "Chromosome":
         """Мутация в соответствии с алгоритмом дифференциальной эволюции.
 
