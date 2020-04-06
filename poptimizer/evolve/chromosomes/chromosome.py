@@ -2,60 +2,54 @@
 import copy
 from collections import UserDict
 from dataclasses import dataclass
-from typing import Dict, Any, List, Callable, Optional, Tuple
+from typing import Dict, Any, Callable, Optional, Tuple, NoReturn, ClassVar
 
-import numpy as np
+from numpy import random
 
-from poptimizer import dl
+from poptimizer.dl import PhenotypeData
 
 
-# noinspection PyUnresolvedReferences
 @dataclass(frozen=True)
 class GeneParams:
     """Описание гена.
 
     Используется для описания размещения значения гена в фенотипе (система вложенных словарей
-    используемых для генерирования данных, построения модели и ее обучения) и хромосоме (вложенный
-    словарь используемый для хранения связанных генов в словаре генотипа).
+    используемых для генерирования данных, построения модели и ее обучения) и хромосоме (словарь
+    используемый для хранения связанных генов).
 
     В хромосоме все гены представлены в виде float - необходимо для реализации дифференциальной эволюции.
-    Значение гена может иметь верхнюю и нижнюю границу. В фенотипе значение гена может быть любым типом -
-    для преобразования из float используется соответствующая функция.
-
-    Набор генов может расширяться, поэтому у гена должно быть интервал значений по умолчанию -
+    Набор генов может расширяться, поэтому у гена должен быть интервал значений по умолчанию -
     будет подставляться случайное значение из этого интервала вместо отсутствующих генов для
     обеспечения генетического разнообразия.
 
-    :param path:
-        Список ключей во вложенных словарях соответствующий значению данного гена в фенотипе.
-        Последний ключ будет использоваться для хранения значения в словаре хромосомы.
-    :param default_value:
-        Интервал значений по умолчанию.
-    :param phenotype_function:
-        Функция для преобразования значения гена (float) в представление, необходимое для фенотипа.
-    :param lower_bound:
-        Минимальное значение гена - служит ограничением диапазона мутаций.
-    :param upper_bound:
-        Максимальное значение гена - служит ограничением диапазона мутаций.
+    Значение гена может иметь верхнюю и нижнюю границу, которые будут ограничивать мутацию во время
+    дифференциальной эволюции.
+
+    В фенотипе значение гена может быть любым типом - для преобразования из float используется
+    соответствующая функция.
     """
 
-    path: List[str]
-    default_value: Tuple[float, float]
-    phenotype_function: Callable[[float], Any]
+    path: Tuple[str]
+    default_range: Tuple[float, float]
     lower_bound: Optional[float]
     upper_bound: Optional[float]
+    phenotype_function: Callable[[float], Any]
+
+
+# Представление данных в хромосоме
+ChromosomeData = Dict[str, float]
 
 
 class Chromosome(UserDict):
-    """Абстрактный класс хромосомы.
+    """Базовый класс хромосомы.
 
     Хранит значения логически связанных генов, обновлять фенотип с учетом значений генов и
     осуществляет их дифференциальную эволюцию.
     """
 
-    _GENES: List[GeneParams]
+    _GENES: ClassVar[Tuple[GeneParams]] = tuple()
 
-    def __init__(self, chromosome_data: Dict[str, float]):
+    def __init__(self, chromosome_data: ChromosomeData) -> NoReturn:
         """Формирует полное описании хромосомы.
 
         В старых версиях генотипа может отсутствовать хромосома или некоторые гены в ней. В место них
@@ -68,7 +62,7 @@ class Chromosome(UserDict):
         super().__init__(self._default_chromosome_data(), **chromosome_data)
 
     @classmethod
-    def _default_chromosome_data(cls) -> Dict[str, float]:
+    def _default_chromosome_data(cls) -> ChromosomeData:
         """Значение хромосомы по умолчанию.
 
         Используется в случае расширения генотипа - организмы с более узким генотипом получат
@@ -77,11 +71,11 @@ class Chromosome(UserDict):
         """
         chromosome_data = dict()
         for gene in cls._GENES:
-            chromosome_data[gene.path[-1]] = np.random.uniform(*gene.default_value)
+            chromosome_data[gene.path[-1]] = random.uniform(*gene.default_value)
         return chromosome_data
 
-    def setup_phenotype(self, phenotype: dl.PhenotypeType) -> None:
-        """Устанавливает значения фенотипа в соответствии значениями генов хромосомы.
+    def setup_phenotype(self, phenotype: PhenotypeData) -> NoReturn:
+        """Устанавливает значения фенотипа в соответствии со значениями генов хромосомы.
 
         Значение гена (float) преобразуется в представление необходимое для фенотипа.
         """
@@ -98,8 +92,8 @@ class Chromosome(UserDict):
         base: "Chromosome",
         diff1: "Chromosome",
         diff2: "Chromosome",
-        factor: float,
-        probability: float,
+        factor: float = 0.8,
+        probability: float = 0.9,
     ) -> "Chromosome":
         """Мутация в соответствии с алгоритмом дифференциальной эволюции.
 
@@ -122,8 +116,9 @@ class Chromosome(UserDict):
         child = copy.deepcopy(self)
         gens = self._GENES
 
-        flags = np.random.rand(len(gens))
+        flags = random.rand(len(gens))
         flags = map(lambda x: x < probability, flags)
+
         for flag, gene in zip(flags, gens):
             if flag:
                 key = gene.path[-1]
@@ -135,6 +130,6 @@ class Chromosome(UserDict):
                 child[key] = value
         return child
 
-    def to_dict(self):
-        """Словарь с описанием """
+    def to_dict(self) -> ChromosomeData:
+        """Словарь с описанием."""
         return self.data
