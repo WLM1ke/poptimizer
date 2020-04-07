@@ -24,28 +24,28 @@ SUB_BLOCKS = GeneParams(
 )
 GATE_CHANNELS = GeneParams(
     path=("model", "gate_channels"),
-    default_range=(2.1, 2.9),
+    default_range=(4.1, 4.9),
     lower_bound=1.0,
     upper_bound=None,
     phenotype_function=int,
 )
 RESIDUAL_CHANNELS = GeneParams(
     path=("model", "residual_channels"),
-    default_range=(2.1, 2.9),
+    default_range=(4.1, 4.9),
     lower_bound=1.0,
     upper_bound=None,
     phenotype_function=int,
 )
 SKIP_CHANNELS = GeneParams(
     path=("model", "skip_channels"),
-    default_range=(2.1, 2.9),
+    default_range=(4.1, 4.9),
     lower_bound=1.0,
     upper_bound=None,
     phenotype_function=int,
 )
 END_CHANNELS = GeneParams(
     path=("model", "end_channels"),
-    default_range=(2.1, 2.9),
+    default_range=(4.1, 4.9),
     lower_bound=1.0,
     upper_bound=None,
     phenotype_function=int,
