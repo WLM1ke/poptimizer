@@ -1,42 +1,42 @@
-"""Гены и хромосома ответственные за параметры оптимизации."""
+"""Гены и хромосома ответственные за параметры оптимизации модели."""
 from poptimizer.evolve.chromosomes import chromosome
 
 BETA2 = chromosome.GeneParams(
-    path=["optimizer", "betas"],
-    default_value=(0.9989, 0.9991),
-    phenotype_function=lambda x: (0.9, x),
+    path=("optimizer", "betas"),
+    default_range=(0.99899, 0.99901),
     lower_bound=0.0,
     upper_bound=1.0,
+    phenotype_function=lambda x: (0.9, x),
 )
 EPS = chromosome.GeneParams(
-    path=["optimizer", "eps"],
-    default_value=(0.9e-8, 1.1e-8),
-    phenotype_function=float,
+    path=("optimizer", "eps"),
+    default_range=(0.999e-8, 1.001e-8),
     lower_bound=0.0,
     upper_bound=None,
+    phenotype_function=float,
 )
 WEIGHT_DECAY = chromosome.GeneParams(
-    path=["optimizer", "weight_decay"],
-    default_value=(0.9e-2, 1.1e-2),
-    phenotype_function=float,
+    path=("optimizer", "weight_decay"),
+    default_range=(0.999e-2, 1.01e-2),
     lower_bound=0.0,
     upper_bound=None,
+    phenotype_function=float,
 )
 AMSGRAD = chromosome.GeneParams(
-    path=["optimizer", "amsgrad"],
-    default_value=(0.1, 0.9),
-    phenotype_function=lambda x: bool(int(x)),
+    path=("optimizer", "amsgrad"),
+    default_range=(0.1, 0.9),
     lower_bound=0.0,
     upper_bound=1.99,
+    phenotype_function=lambda x: bool(int(x)),
 )
 
 
 class Optimizer(chromosome.Chromosome):
-    """Хромосома ответственная за параметры оптимизации с помощью AdamW."""
+    """Хромосома ответственная за параметры оптимизации модели с помощью AdamW."""
 
-    _GENES = [
+    _GENES = (
         BETA2,  # Бета2 - значение Бета1 переписывается One cycle learning rate policy
         EPS,  # Корректировка для численной стабильности
         WEIGHT_DECAY,  # L2 регуляризация
         AMSGRAD,  # Нужно ли использовать AMSGrad
-    ]
+    )
