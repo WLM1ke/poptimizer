@@ -61,8 +61,7 @@ class Genotype(UserDict):
             f"{key}: {chromosome}" for key, chromosome in self.data.items()
         )
 
-    @property
-    def phenotype(self) -> PhenotypeData:
+    def get_phenotype(self) -> PhenotypeData:
         """Возвращает фенотип - параметры модели соответствующие набору генов."""
         phenotype = copy.deepcopy(self._base_phenotype)
         for chromosome in self.data.values():
