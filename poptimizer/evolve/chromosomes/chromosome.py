@@ -135,5 +135,5 @@ class Chromosome(UserDict):
         return child
 
     def to_dict(self) -> ChromosomeData:
-        """Словарь с описанием."""
+        """Словарь с описанием данных."""
         return self.data
