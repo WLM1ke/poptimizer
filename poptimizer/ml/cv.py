@@ -9,6 +9,7 @@ from hyperopt import hp
 from scipy import stats
 
 from poptimizer.config import POptimizerError, ML_PARAMS
+from poptimizer.dl.trainer import YEAR_IN_TRADING_DAYS
 from poptimizer.ml.examples import Examples
 from poptimizer.ml.feature import ON_OFF
 from poptimizer.portfolio import Portfolio
@@ -37,7 +38,7 @@ MAX_SEARCHES = 100
 ONE_HOT_SIZE = [2, 1000]
 
 # Диапазон поиска скорости обучения
-LEARNING_RATE = [0.0036, 2.2e-02]
+LEARNING_RATE = [3.2e-03, 0.022]
 
 # Диапазон поиска глубины деревьев
 MAX_DEPTH = 16
@@ -133,12 +134,11 @@ def t_of_cov(labels, labels_val, n_tickers):
         return 0
     rs = np.zeros(days)
     for i in range(days):
-        rs[i] = np.cov(
-            labels[i * n_tickers : (i + 1) * n_tickers],
-            labels_val[i * n_tickers : (i + 1) * n_tickers],
-        )[1][0]
-    # noinspection PyUnresolvedReferences
-    return stats.ttest_1samp(rs, 0).statistic
+        r_expected = labels_val[i * n_tickers: (i + 1) * n_tickers]
+        weights = r_expected
+        weights = weights / weights.sum()
+        rs[i] = (labels[i::days] * weights).sum()
+    return rs.mean() / rs.std(ddof=1) * YEAR_IN_TRADING_DAYS ** 0.5
 
 
 def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
