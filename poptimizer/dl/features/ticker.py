@@ -10,7 +10,10 @@ class Ticker(Feature):
 
     def __init__(self, ticker: str, params: DataParams):
         super().__init__(ticker, params)
-        self._idx = torch.tensor([params.tickers.index(ticker)], dtype=torch.float)
+        tickers = params.tickers
+        self._idx = torch.tensor(
+            [params.tickers.index(ticker), len(tickers)], dtype=torch.long
+        )
 
     def __getitem__(self, item: int) -> torch.Tensor:
         return self._idx

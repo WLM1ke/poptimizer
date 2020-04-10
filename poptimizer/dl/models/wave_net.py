@@ -139,6 +139,7 @@ class WaveNet(nn.Module):
         self,
         data_loader: DataLoader,
         start_bn: bool,
+        embedding_dim: int,
         sub_blocks: int,
         kernels: int,
         gate_channels: int,
@@ -152,6 +153,8 @@ class WaveNet(nn.Module):
             глубины сети.
         :param start_bn:
             Нужно ли производить BN для входящих численных значений.
+        :param embedding_dim:
+            Размерность эмбединга для категориальных признаков.
         :param sub_blocks:
             Количество маленьких блоков в блоке.
         :param kernels:
@@ -170,14 +173,22 @@ class WaveNet(nn.Module):
         batch = next(iter(data_loader))
         input_sequences = len(batch["Sequence"])
         history_days = batch["Sequence"][0].shape[1]
+        self.history_days = history_days
+        num_embeddings = int(batch["Embedding"][0][1])
 
         if start_bn:
             self.bn = nn.BatchNorm1d(input_sequences)
         else:
             self.bn = nn.Identity()
 
+        self.embedding = nn.Embedding(
+            num_embeddings=num_embeddings, embedding_dim=embedding_dim
+        )
+
         self.start_conv = nn.Conv1d(
-            in_channels=input_sequences, out_channels=residual_channels, kernel_size=1
+            in_channels=input_sequences + embedding_dim,
+            out_channels=residual_channels,
+            kernel_size=1,
         )
 
         self.blocks = nn.ModuleList()
@@ -214,6 +225,14 @@ class WaveNet(nn.Module):
         """
         y = torch.stack(batch["Sequence"], dim=1)
         y = self.bn(y)
+
+        y_emb = batch["Embedding"][:, 0]
+        y_emb = self.embedding(y_emb)
+        y_emb = y_emb.unsqueeze(2).expand(
+            y_emb.shape[0], y_emb.shape[1], self.history_days
+        )
+        y = torch.cat([y, y_emb], dim=1)
+
         y = self.start_conv(y)
 
         skips = torch.zeros((y.shape[0], self.skip_channels, 1))
