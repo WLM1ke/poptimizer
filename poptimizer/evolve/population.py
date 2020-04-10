@@ -133,7 +133,8 @@ def print_stat(collection=COLLECTION) -> NoReturn:
 
     sort_type = (1, -1)
     params = {"filter": {SHARPE: {"$exists": True}}, "projection": [SHARPE], "limit": 1}
-    sharpes = [[db_find(sort=[(SHARPE, up_down)], **params)] for up_down in sort_type]
+    cursors = (db_find(sort=[(SHARPE, up_down)], **params) for up_down in sort_type)
+    sharpes = [tuple(cursor) for cursor in cursors]
     sharpes = [f"{sharpe[0][SHARPE]:.4f}" if sharpe else "-" for sharpe in sharpes]
     print(f"Коэффициент Шарпа - ({', '.join(sharpes)})")
 
@@ -144,7 +145,9 @@ def print_stat(collection=COLLECTION) -> NoReturn:
         "limit": 1,
     }
     wins = list(db_find(**params))
+    print(wins)
     max_wins = None
     if wins:
         max_wins, *_ = wins
-    print(f"Максимум побед - {max_wins[WINS]}")
+        max_wins = max_wins[WINS]
+    print(f"Максимум побед - {max_wins}")
