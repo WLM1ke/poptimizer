@@ -38,19 +38,10 @@ def test_make_child(monkeypatch):
     child = parent.make_child(base, diff1, diff2)
 
     assert isinstance(child, Genotype)
-    assert child.to_dict() == {
+    assert child.data == {
         "Data": {
             "batch_size": (2 + 1) / 2,
             "history_days": 4,
             "forecast_days": 4 + (6 - 3) * 0.8,
         }
     }
-
-
-def test_to_dict():
-    genotype_data = {"Data": {"batch_size": 3, "history_days": 4, "forecast_days": 5}}
-    chromosomes_types = [chromosomes.Data]
-    genotype = Genotype(genotype_data, all_chromosome_types=chromosomes_types)
-    result = genotype.to_dict()
-    assert isinstance(result, dict)
-    assert result == genotype_data

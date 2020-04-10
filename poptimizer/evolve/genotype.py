@@ -11,7 +11,7 @@ BASE_PHENOTYPE = {
     "type": "WaveNet",
     "data": {
         "features": {
-            "Label": {"div_share": 0.0},
+            "Label": {"div_share": 0.8},
             "Prices": {},
             "Dividends": {},
             "Weight": {},
@@ -57,14 +57,12 @@ class Genotype(UserDict):
         self._base_phenotype = base_phenotype or BASE_PHENOTYPE
 
     def __str__(self) -> str:
-        return "\n".join(
-            f"{key}: {chromosome}" for key, chromosome in self.data.items()
-        )
+        return "\n".join(f"{key}: {chromosome}" for key, chromosome in self.items())
 
     def get_phenotype(self) -> PhenotypeData:
         """Возвращает фенотип - параметры модели соответствующие набору генов."""
         phenotype = copy.deepcopy(self._base_phenotype)
-        for chromosome in self.data.values():
+        for chromosome in self.values():
             chromosome.change_phenotype(phenotype)
         return phenotype
 
@@ -76,8 +74,3 @@ class Genotype(UserDict):
         for key in child:
             child[key] = self[key].make_child(base[key], diff1[key], diff2[key])
         return child
-
-    def to_dict(self) -> GenotypeData:
-        """Словарь с описанием данных."""
-        genotype = {key: chromosome.to_dict() for key, chromosome in self.data.items()}
-        return genotype

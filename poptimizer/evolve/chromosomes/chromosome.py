@@ -83,13 +83,12 @@ class Chromosome(UserDict):
 
         Значение гена (float) преобразуется в представление необходимое для фенотипа.
         """
-        chromosome = self.data
         for gene in self._GENES:
             node = phenotype
             for key in gene.path[:-1]:
                 node = phenotype.setdefault(key, {})
             key = gene.path[-1]
-            node[key] = gene.phenotype_function(chromosome[key])
+            node[key] = gene.phenotype_function(self[key])
 
     def make_child(
         self,
@@ -133,7 +132,3 @@ class Chromosome(UserDict):
                     value = (base[key] + gene.upper_bound) / 2
                 child[key] = value
         return child
-
-    def to_dict(self) -> ChromosomeData:
-        """Словарь с описанием данных."""
-        return self.data

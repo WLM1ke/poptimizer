@@ -50,12 +50,3 @@ def test_make_child(monkeypatch):
     assert child.data["batch_size"] == 30 + 0.8 * (20 - 10)
     assert child.data["history_days"] == 20
     assert child.data["forecast_days"] == 270 + 0.8 * (280 - 260)
-
-
-def test_to_dict():
-    chromosome_data = dict(history_days=40, batch_size=10, forecast_days=270)
-    chromo = data.Data(chromosome_data)
-    chromosome_dict = chromo.to_dict()
-
-    assert isinstance(chromosome_dict, dict)
-    assert chromosome_data == chromosome_dict
