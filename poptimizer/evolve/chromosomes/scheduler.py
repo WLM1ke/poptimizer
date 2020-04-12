@@ -10,10 +10,10 @@ MAX_LR = chromosome.GeneParams(
 )
 EPOCHS = chromosome.GeneParams(
     path=("scheduler", "epochs"),
-    default_range=(1.1, 1.2),
-    lower_bound=1.0,
+    default_range=(0.999, 1.001),
+    lower_bound=0.0,
     upper_bound=None,
-    phenotype_function=int,
+    phenotype_function=float,
 )
 PCT_START = chromosome.GeneParams(
     path=("scheduler", "pct_start"),

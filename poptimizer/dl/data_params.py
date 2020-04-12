@@ -58,6 +58,11 @@ class DataParams(abc.ABC):
         """
 
     @property
+    def tickers(self) -> Tuple[str]:
+        """Сортированный перечень тикеров."""
+        return tuple(sorted(self._price.keys()))
+
+    @property
     def shuffle(self) -> bool:
         """Нужно ли перемешивать данные."""
         return False
@@ -130,7 +135,7 @@ class ValParams(DataParams):
 
 class TestParams(DataParams):
     """Метки имеют длину 1 день в независимости от реального значения параметров для конечной части
-    семпла, чтобы метки не пересекались с TRAIN, а вес не формируется."""
+    семпла, чтобы метки не пересекались с TRAIN."""
 
     def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
         history_days = self.history_days
@@ -138,7 +143,6 @@ class TestParams(DataParams):
         div = div.iloc[train_size - history_days :]
         price = price.iloc[train_size - history_days :]
         self._params["forecast_days"] = 1
-        del self._params["features"]["Weight"]
         return div, price
 
 
