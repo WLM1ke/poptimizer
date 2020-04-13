@@ -5,7 +5,7 @@ def test_init_no_data():
     chromo = scheduler.Scheduler({})
     assert len(chromo.data) == 8
     assert 0.001 < chromo.data["max_lr"] < 0.01
-    assert 1.1 < chromo.data["epochs"] < 1.2
+    assert 0.999 < chromo.data["epochs"] < 1.001
     assert 0.299 < chromo.data["pct_start"] < 0.301
     assert 0.1 < chromo.data["anneal_strategy"] < 0.9
     assert 0.849 < chromo.data["base_momentum"] < 0.851
@@ -28,7 +28,6 @@ def test_setup_phenotype():
     chromo = scheduler.Scheduler(chromosome_data)
     base_phenotype = dict(type="Test_Model")
     phenotype_data = dict(type="Test_Model", scheduler=chromosome_data)
-    phenotype_data["scheduler"]["epochs"] = 10
     # noinspection PyTypeChecker
     phenotype_data["scheduler"]["anneal_strategy"] = "linear"
     chromo.change_phenotype(base_phenotype)

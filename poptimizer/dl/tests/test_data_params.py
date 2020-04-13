@@ -163,7 +163,7 @@ class TestTestParams:
         assert test_params.len("IRKT") == 240
 
     def test_get_all_feat(self, test_params):
-        assert list(test_params.get_all_feat()) == ["Label", "Prices"]
+        assert list(test_params.get_all_feat()) == ["Label", "Prices", "Weight"]
 
 
 @pytest.fixture(scope="class", name="forecast_params")

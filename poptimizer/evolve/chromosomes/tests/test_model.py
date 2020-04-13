@@ -3,8 +3,9 @@ from poptimizer.evolve.chromosomes import model, chromosome
 
 def test_init_no_data():
     chromo = model.Model({})
-    assert len(chromo.data) == 7
+    assert len(chromo.data) == 8
     assert 1.1 < chromo.data["start_bn"] < 1.2
+    assert 4.1 < chromo.data["embedding_dim"] < 4.9
     assert 2.1 < chromo.data["kernels"] < 2.9
     assert 1.1 < chromo.data["sub_blocks"] < 1.2
     assert 4.1 < chromo.data["gate_channels"] < 4.9
@@ -16,6 +17,7 @@ def test_init_no_data():
 def test_setup_phenotype():
     chromosome_data = dict(
         start_bn=0.2,
+        embedding_dim=6,
         kernels=10,
         sub_blocks=270,
         gate_channels=2,
@@ -33,12 +35,15 @@ def test_setup_phenotype():
 
 def test_make_child_lower_and_upper_bound(monkeypatch):
     monkeypatch.setattr(
-        chromosome.random, "rand", lambda _: (0.89, 0.91, 0.89, 0.91, 0.91, 0.91, 0.91)
+        chromosome.random,
+        "rand",
+        lambda _: (0.89, 0.91, 0.91, 0.89, 0.91, 0.91, 0.91, 0.91),
     )
 
     parent = model.Model(
         dict(
             start_bn=0.2,
+            embedding_dim=8,
             kernels=10,
             sub_blocks=4,
             gate_channels=2,
@@ -50,6 +55,7 @@ def test_make_child_lower_and_upper_bound(monkeypatch):
     base = model.Model(
         dict(
             start_bn=1.9,
+            embedding_dim=6,
             kernels=10,
             sub_blocks=2,
             gate_channels=2,
@@ -61,6 +67,7 @@ def test_make_child_lower_and_upper_bound(monkeypatch):
     diff1 = model.Model(
         dict(
             start_bn=0.5,
+            embedding_dim=7,
             kernels=10,
             sub_blocks=1,
             gate_channels=2,
@@ -72,6 +79,7 @@ def test_make_child_lower_and_upper_bound(monkeypatch):
     diff2 = model.Model(
         dict(
             start_bn=0.1,
+            embedding_dim=4,
             kernels=10,
             sub_blocks=10,
             gate_channels=2,
@@ -84,9 +92,10 @@ def test_make_child_lower_and_upper_bound(monkeypatch):
     child = parent.make_child(base, diff1, diff2)
 
     assert isinstance(child, model.Model)
-    assert len(child.data) == 7
+    assert len(child.data) == 8
 
     assert child.data["start_bn"] == (1.9 + 1.99) / 2
+    assert child.data["embedding_dim"] == 8
     assert child.data["kernels"] == 10
     assert child.data["sub_blocks"] == (2 + 1) / 2
     assert child.data["gate_channels"] == 2
