@@ -134,10 +134,10 @@ def t_of_cov(labels, labels_val, n_tickers):
         return 0
     rs = np.zeros(days)
     for i in range(days):
-        r_expected = labels_val[i * n_tickers: (i + 1) * n_tickers]
-        weights = r_expected
-        weights = weights / weights.sum()
-        rs[i] = (labels[i::days] * weights).sum()
+        r_expected = labels_val[i * n_tickers : (i + 1) * n_tickers]
+        weights = stats.zscore(r_expected)
+        rs[i] = np.cov(labels[i * n_tickers : (i + 1) * n_tickers], weights)[1][0]
+
     return rs.mean() / rs.std(ddof=1) * YEAR_IN_TRADING_DAYS ** 0.5
 
 
@@ -170,6 +170,8 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     data_params, model_params = params["data"], params["model"]
     train_pool_params, val_pool_params = examples.train_val_pool_params(data_params)
     train_pool = catboost.Pool(**train_pool_params)
+    if len(val_pool_params["data"]) == 0:
+        return dict(loss=0, status=hyperopt.STATUS_OK)
     val_pool = catboost.Pool(**val_pool_params)
     n_tickers = len(examples.tickers)
     model_params = make_model_params(data_params, model_params)

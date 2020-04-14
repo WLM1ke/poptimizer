@@ -32,7 +32,7 @@ MONGO_DUMP = pathlib.Path(__file__).parents[1] / "dump"
 AFTER_TAX = 1 - 0.13
 
 # Параметр для доверительных интервалов
-T_SCORE = 2.0
+T_SCORE = 1.6
 
 # База дивидендов содержит данные с начала 2010 года
 # Постепенно срок будет сдвигаться к началу режима TQBR для корректного учета сдвига T+2
@@ -44,25 +44,25 @@ MAX_TRADE = 1 / 100
 # Параметры ML-модели
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 219, "div_share": 0.8, "on_off": True}),
-        ("Scaler", {"days": 292, "on_off": True}),
+        ("Label", {"days": 203, "div_share": 0.8, "on_off": True}),
+        ("Scaler", {"days": 225, "on_off": True}),
         ("Ticker", {"on_off": True}),
         ("Mom12m", {"days": 193, "on_off": True, "periods": 2}),
-        ("DivYield", {"days": 188, "on_off": True, "periods": 3}),
-        ("Mom1m", {"days": 25, "on_off": True}),
-        ("RetMax", {"days": 48, "on_off": True}),
-        ("ChMom6m", {"days": 126, "on_off": True}),
-        ("STD", {"days": 33, "on_off": True}),
+        ("DivYield", {"days": 192, "on_off": True, "periods": 4}),
+        ("Mom1m", {"days": 25, "on_off": False}),
+        ("RetMax", {"days": 45, "on_off": True}),
+        ("ChMom6m", {"days": 123, "on_off": True}),
+        ("STD", {"days": 32, "on_off": True}),
         ("DayOfYear", {"on_off": True}),
-        ("TurnOver", {"days": 245, "normalize": False, "on_off": True}),
-        ("TurnOverVar", {"days": 190, "on_off": True}),
+        ("TurnOver", {"days": 236, "normalize": True, "on_off": True}),
+        ("TurnOverVar", {"days": 199, "on_off": True}),
     ),
     "model": {
-        "bagging_temperature": 1.3299456314042282,
-        "depth": 1,
-        "l2_leaf_reg": 3.0090186648596693,
-        "learning_rate": 0.01086258702275685,
+        "bagging_temperature": 0.8131692814075397,
+        "depth": 15,
+        "l2_leaf_reg": 1.1290080818753965,
+        "learning_rate": 0.014342683407716387,
         "one_hot_max_size": 1000,
-        "random_strength": 0.9951193208558204,
+        "random_strength": 0.9548458820717005,
     },
 }
