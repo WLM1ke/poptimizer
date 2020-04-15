@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 
 import pandas as pd
 
-from poptimizer.dl.data_params import div_price_train_size
+from poptimizer.dl.features.data_params import div_price_train_size
 from poptimizer.ml import feature
 
 
