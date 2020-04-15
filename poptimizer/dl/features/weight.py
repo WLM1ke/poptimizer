@@ -1,8 +1,10 @@
 """Вес данного примера."""
+from typing import Tuple
+
 import torch
 
-from poptimizer.dl.data_params import DataParams
-from poptimizer.dl.features.feature import Feature
+from poptimizer.dl.features.data_params import DataParams
+from poptimizer.dl.features.feature import Feature, FeatureType
 from poptimizer.ml.feature.std import LOW_STD
 
 
@@ -29,12 +31,7 @@ class Weight(Feature):
         std = torch.max(std, torch.tensor(LOW_STD))
         return std ** -2
 
-    @staticmethod
-    def key() -> str:
-        """Ключ по которому нужно сохранять признак."""
-        return "Weight"
-
-    @staticmethod
-    def unique() -> bool:
-        """Является ли признак единственным для данного ключа."""
-        return True
+    @property
+    def type_and_size(self) -> Tuple[FeatureType, int]:
+        """Тип признака и размер признака."""
+        return FeatureType.WEIGHT, self.history_days

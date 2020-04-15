@@ -3,8 +3,7 @@ import pytest
 import torch
 
 from poptimizer.data import div
-from poptimizer.dl import data_params
-from poptimizer.dl.features import weight
+from poptimizer.dl.features import weight, data_params, FeatureType
 
 PARAMS = {
     "batch_size": 100,
@@ -44,11 +43,5 @@ class TestWeight:
         assert torch.tensor([454.104107146875]).allclose(feature[48])
         assert torch.tensor([25.0 * 25.0]).allclose(feature[236])
 
-    def test_name(self, feature):
-        assert feature.name == "Weight"
-
-    def test_key(self, feature):
-        assert feature.key() == "Weight"
-
-    def test_unique(self, feature):
-        assert feature.unique() is True
+    def test_type_and_size(self, feature):
+        assert feature.type_and_size == (FeatureType.WEIGHT, 8)
