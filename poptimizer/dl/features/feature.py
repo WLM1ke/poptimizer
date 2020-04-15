@@ -5,7 +5,7 @@ from typing import Tuple
 
 from torch import Tensor
 
-from poptimizer.dl.data_params import DataParams
+from poptimizer.dl.features.data_params import DataParams
 
 
 @enum.unique
