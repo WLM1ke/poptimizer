@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.data import div as data
-from poptimizer.dl import data_params
+from poptimizer.dl.features import data_params
 
 TICKERS = ("CBOM", "DSKY", "IRKT")
 DATE = pd.Timestamp("2020-03-17")
