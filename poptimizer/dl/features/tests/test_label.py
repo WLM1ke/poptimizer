@@ -3,8 +3,7 @@ import pytest
 import torch
 
 from poptimizer.data import div
-from poptimizer.dl import data_params
-from poptimizer.dl.features import label
+from poptimizer.dl.features import label, data_params, FeatureType
 
 PARAMS = {
     "batch_size": 100,
@@ -40,11 +39,5 @@ class TestLabel:
         )
         assert torch.tensor([0.1 * (14.06 - 14.58) / 14.58]).allclose(feature[236])
 
-    def test_name(self, feature):
-        assert feature.name == "Label"
-
-    def test_key(self, feature):
-        assert feature.key() == "Label"
-
-    def test_unique(self, feature):
-        assert feature.unique() is True
+    def test_type_and_size(self, feature):
+        assert feature.type_and_size == (FeatureType.LABEL, 4)
