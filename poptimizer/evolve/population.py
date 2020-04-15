@@ -3,6 +3,7 @@ from typing import Iterable, Tuple, NoReturn, Optional, Dict, Any
 
 import bson
 import pandas as pd
+import pymongo
 from pymongo.collection import Collection
 
 from poptimizer.config import POptimizerError
@@ -64,6 +65,11 @@ class Organism:
         """ID организма."""
         return self._data[ID]
 
+    @property
+    def genotype(self) -> Genotype:
+        """Генотип организма."""
+        return self._data[GENOTYPE]
+
     def die(self) -> NoReturn:
         """Организм удаляется из популяции."""
         self.collection.delete_one({ID: self._data[ID]})
@@ -78,14 +84,11 @@ class Organism:
         """Количество побед."""
         return self._data.get(WINS, 0)
 
-    def kill(self, organism: "Organism") -> NoReturn:
-        """Убивает другой организм и ведет счет побед."""
-        update = {WINS: self.wins + 1}
-        self._update(update)
-        organism.die()
-
     def evaluate_fitness(self, tickers: Tuple[str, ...], end: pd.Timestamp) -> float:
         """Вычисляет коэффициент Шарпа."""
+        update = {WINS: self.wins + 1}
+        self._update(update)
+
         organism = self._data
 
         if organism.get(SHARPE_DATE) == end and organism.get(SHARPE_TICKERS) == sorted(
@@ -109,8 +112,8 @@ class Organism:
 
     def make_child(self) -> "Organism":
         """Создает новый организм с помощью дифференциальной мутации."""
-        genotypes = [organism._data[GENOTYPE] for organism in _sample_organism(3)]
-        child_genotype = self._data[GENOTYPE].make_child(*genotypes)
+        genotypes = [organism.genotype for organism in _sample_organism(3)]
+        child_genotype = self.genotype.make_child(*genotypes)
         return Organism(genotype=child_genotype)
 
 
@@ -147,7 +150,9 @@ def get_random_organism(collection: Collection = None) -> Organism:
 def get_all_organisms(collection=None) -> Iterable[Organism]:
     """Получить все имеющиеся организмы."""
     collection = collection or COLLECTION
-    id_dicts = collection.find(filter={}, projection=["_id"], sort=[(SHARPE, 1)])
+    id_dicts = collection.find(
+        filter={}, projection=["_id"], sort=[(SHARPE, pymongo.ASCENDING)]
+    )
     for id_dict in id_dicts:
         yield Organism(**id_dict)
 
@@ -157,7 +162,7 @@ def print_stat(collection=None) -> NoReturn:
     collection = collection or COLLECTION
     db_find = collection.find
 
-    sort_type = (1, -1)
+    sort_type = (pymongo.ASCENDING, pymongo.DESCENDING)
     params = {"filter": {SHARPE: {"$exists": True}}, "projection": [SHARPE], "limit": 1}
     cursors = (db_find(sort=[(SHARPE, up_down)], **params) for up_down in sort_type)
     cursors = [tuple(cursor) for cursor in cursors]
@@ -167,7 +172,7 @@ def print_stat(collection=None) -> NoReturn:
     params = {
         "filter": {WINS: {"$exists": True}},
         "projection": [WINS],
-        "sort": [(WINS, -1)],
+        "sort": [(WINS, pymongo.DESCENDING)],
         "limit": 1,
     }
     wins = list(db_find(**params))

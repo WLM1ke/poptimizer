@@ -67,31 +67,6 @@ def test_initial_wins():
     assert population.Organism().wins == 0
 
 
-def test_kill():
-    winner = population.Organism()
-    loser1 = population.Organism()
-    loser2 = population.Organism()
-
-    assert winner.wins == 0
-    assert loser1.wins == 0
-    assert loser2.wins == 0
-
-    winner.kill(loser1)
-    assert winner.wins == 1
-    winner.kill(loser2)
-    assert winner.wins == 2
-
-    assert population.Organism(_id=winner._data[population.ID]).wins == 2
-
-    with pytest.raises(population.OrganismIdError) as error:
-        population.Organism(_id=loser1._data[population.ID])
-    assert "В популяции нет организма с ID" in str(error.value)
-
-    with pytest.raises(population.OrganismIdError) as error:
-        population.Organism(_id=loser2._data[population.ID])
-    assert "В популяции нет организма с ID" in str(error.value)
-
-
 class FakeTrainer:
     COUNTER = 0
 
@@ -120,6 +95,7 @@ def test_evaluate_fitness(monkeypatch):
 
     assert sharpe == 5
     assert FakeTrainer.COUNTER == 1
+    assert organism.wins == 1
 
     organism_reloaded = population.Organism(_id=id_)
 
@@ -127,23 +103,28 @@ def test_evaluate_fitness(monkeypatch):
     assert organism_reloaded._data[population.SHARPE_DATE] == pd.Timestamp("2020-04-12")
     assert organism_reloaded._data[population.SHARPE_TICKERS] == ["AKRN", "GAZP"]
     assert organism_reloaded._data[population.MODEL] == 6
+    assert organism.wins == 1
+
     assert (
         organism_reloaded.evaluate_fitness(("GAZP", "AKRN"), pd.Timestamp("2020-04-12"))
         == 5
     )
     assert FakeTrainer.COUNTER == 1
+    assert organism_reloaded.wins == 2
 
     assert (
         organism_reloaded.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-12"))
         == 5
     )
     assert FakeTrainer.COUNTER == 2
+    assert organism_reloaded.wins == 3
 
     assert (
         organism_reloaded.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-13"))
         == 5
     )
     assert FakeTrainer.COUNTER == 3
+    assert organism_reloaded.wins == 4
 
 
 def test_make_child():
@@ -164,10 +145,10 @@ def test_count():
     org2 = population.Organism()
     assert population.count() == 2
 
-    org1.kill(org2)
+    org1.die()
     assert population.count() == 1
 
-    org1.die()
+    org2.die()
     assert population.count() == 0
 
 
