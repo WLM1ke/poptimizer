@@ -3,8 +3,7 @@ import pytest
 import torch
 
 from poptimizer.data import div
-from poptimizer.dl import data_params
-from poptimizer.dl.features import dividends
+from poptimizer.dl.features import dividends, data_params, FeatureType
 
 PARAMS = {
     "batch_size": 100,
@@ -50,11 +49,5 @@ class TestLabel:
         assert torch.tensor(0.0).allclose(feature[236][4])
         assert torch.tensor(0.0).allclose(feature[236][7])
 
-    def test_name(self, feature):
-        assert feature.name == "Dividends"
-
-    def test_key(self, feature):
-        assert feature.key() == "Sequence"
-
-    def test_unique(self, feature):
-        assert feature.unique() is False
+    def test_type_and_size(self, feature):
+        assert feature.type_and_size == (FeatureType.SEQUENCE, 8)
