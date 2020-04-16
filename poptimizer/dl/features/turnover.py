@@ -15,7 +15,7 @@ class Turnover(Feature):
         super().__init__(ticker, params)
         price = params.price(ticker)
         turnover = data.turnovers((ticker,), price.index[-1])[ticker]
-        turnover = turnover.reindex(price.index, axis=0)
+        turnover = turnover.reindex(price.index, axis=0, fill_value=0)
         turnover = torch.tensor(turnover.values, dtype=torch.float)
         self.turnover = torch.log1p(turnover)
         self.history_days = params.history_days
