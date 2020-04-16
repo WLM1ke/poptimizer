@@ -2,7 +2,8 @@ import pandas as pd
 import pytest
 import torch
 
-from poptimizer.dl import data_params, data_loader
+from poptimizer.dl import data_loader
+from poptimizer.dl.features import data_params, FeatureType
 
 PARAMS = {
     "batch_size": 100,
@@ -30,33 +31,52 @@ class TestOneTickerDataset:
         dataset, _ = dataset_params
         example = dataset[22]
         assert isinstance(example, dict)
-        assert len(example) == 3
-        assert set(example) == {"Label", "Weight", "Sequence"}
-        assert isinstance(example["Label"], torch.Tensor)
-        assert isinstance(example["Weight"], torch.Tensor)
-        assert isinstance(example["Sequence"], list)
-        assert len(example["Sequence"]) == 2
-        assert isinstance(example["Sequence"][0], torch.Tensor)
-        assert isinstance(example["Sequence"][1], torch.Tensor)
+        assert len(example) == 4
+        keys = {"Label", "Prices", "Dividends", "Weight"}
+        assert set(example) == keys
+        for key in keys:
+            assert isinstance(example[key], torch.Tensor)
 
     def test_len(self, dataset_params):
         dataset, params = dataset_params
         assert len(dataset) == params.len("NMTP")
 
+    def test_features_description(self, dataset_params):
+        dataset, _ = dataset_params
+        description = dataset.features_description
+        assert isinstance(description, dict)
+        assert len(description) == 4
+        assert description == dict(
+            Label=(FeatureType.LABEL, 194),
+            Prices=(FeatureType.SEQUENCE, 245),
+            Dividends=(FeatureType.SEQUENCE, 245),
+            Weight=(FeatureType.WEIGHT, 245),
+        )
 
-def test_get_data_loader():
-    loader = data_loader.get_data_loader(
+
+@pytest.fixture(scope="class", name="loader")
+def make_data_loader():
+    return data_loader.DescribedDataLoader(
         TICKERS, DATE, PARAMS, data_params.ForecastParams
     )
-    # noinspection PyUnresolvedReferences
-    assert isinstance(loader, torch.utils.data.DataLoader)
-    assert len(loader.dataset) == 2
 
-    example = next(iter(loader))
-    assert isinstance(example, dict)
-    assert len(example) == 1
-    assert set(example) == {"Sequence"}
-    assert isinstance(example["Sequence"], list)
-    assert len(example["Sequence"]) == 2
-    assert isinstance(example["Sequence"][0], torch.Tensor)
-    assert isinstance(example["Sequence"][1], torch.Tensor)
+
+class TestDescribedDataLoader:
+    def test_data_loader(self, loader):
+        assert len(loader.dataset) == 2
+
+        example = next(iter(loader))
+        assert isinstance(example, dict)
+        assert len(example) == 2
+        keys = {"Prices", "Dividends"}
+        assert set(example) == keys
+        for key in keys:
+            assert isinstance(example[key], torch.Tensor)
+
+    def test_features_description(self, loader):
+        description = loader.features_description
+        assert isinstance(description, dict)
+        assert len(description) == 2
+        assert description == dict(
+            Prices=(FeatureType.SEQUENCE, 245), Dividends=(FeatureType.SEQUENCE, 245)
+        )

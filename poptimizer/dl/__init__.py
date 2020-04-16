@@ -1,2 +1,2 @@
 """Прогнозирование доходности  с помощью нейронных сетей."""
-from poptimizer.dl.trainer import PhenotypeData
+from poptimizer.dl.data_loader import PhenotypeData
