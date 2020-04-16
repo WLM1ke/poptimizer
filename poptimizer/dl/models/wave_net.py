@@ -1,10 +1,11 @@
 """Модель на основе WaveNet."""
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Tuple
 
 import numpy as np
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
+
+from poptimizer.dl.features import FeatureType
 
 
 class SubBlock(nn.Module):
@@ -133,11 +134,22 @@ class WaveNet(nn.Module):
 
     Сверточная сеть с большим полем восприятия - удваивается при увеличении глубины на один уровень,
     что позволяет анализировать длинные последовательности котировок.
+
+    Использует два вида входных данных:
+
+    - Временные последовательности данных о бумагах, которые объединяются в виде отдельных, проходят
+    опционально
+    отключаемую BN
+    - Качественные характеристики бумаг, которые проходят эмбеддинг с одинаковым выходным количеством
+    каналов, суммируются и добавляются к каналам временных последовательностей.
+
+    В результате общее количество входных каналов в сеть равно количеству временных
+    последовательностей и количеству каналов эмбеддинга.
     """
 
     def __init__(
         self,
-        data_loader: DataLoader,
+        features_description: Dict[str, Tuple[FeatureType, int]],
         start_bn: bool,
         embedding_dim: int,
         sub_blocks: int,
@@ -148,9 +160,8 @@ class WaveNet(nn.Module):
         end_channels: int,
     ) -> None:
         """
-        :param data_loader:
-            Загрузчик данных - нужен для определения параметров входных данных и расчета необходимой
-            глубины сети.
+        :param features_description:
+            Описание признаков.
         :param start_bn:
             Нужно ли производить BN для входящих численных значений.
         :param embedding_dim:
@@ -166,27 +177,32 @@ class WaveNet(nn.Module):
         :param skip_channels:
             Количество каналов у скипа.
         :param end_channels:
-            Количество каналов, до которого сжимаются скипы перед расчетом финального значений.
+            Количество каналов, до которого сжимаются скипы перед расчетом финальных значений.
         """
         super().__init__()
 
-        batch = next(iter(data_loader))
-        input_sequences = len(batch["Sequence"])
-        history_days = batch["Sequence"][0].shape[1]
-        self.history_days = history_days
-        num_embeddings = int(batch["Embedding"][0][1])
+        self._features_description = features_description
+
+        sequence_count = 0
+        history_days = None
+        self.embedding_dict = nn.ModuleDict()
+
+        for key, (feature_type, size) in features_description.items():
+            if feature_type is FeatureType.SEQUENCE:
+                sequence_count += 1
+                history_days = size
+            if feature_type is FeatureType.EMBEDDING:
+                self.embedding_dict[key] = nn.Embedding(
+                    num_embeddings=size, embedding_dim=embedding_dim
+                )
 
         if start_bn:
-            self.bn = nn.BatchNorm1d(input_sequences)
+            self.bn = nn.BatchNorm1d(sequence_count)
         else:
             self.bn = nn.Identity()
 
-        self.embedding = nn.Embedding(
-            num_embeddings=num_embeddings, embedding_dim=embedding_dim
-        )
-
         self.start_conv = nn.Conv1d(
-            in_channels=input_sequences + embedding_dim,
+            in_channels=sequence_count + embedding_dim,
             out_channels=residual_channels,
             kernel_size=1,
         )
@@ -204,7 +220,6 @@ class WaveNet(nn.Module):
                 )
             )
 
-        self.skip_channels = skip_channels
         self.final_skip_conv = nn.Conv1d(
             in_channels=residual_channels, out_channels=skip_channels, kernel_size=1
         )
@@ -220,22 +235,32 @@ class WaveNet(nn.Module):
         self, batch: Dict[str, Union[torch.Tensor, List[torch.Tensor]]]
     ) -> torch.Tensor:
         """
-        ->nb-start-Block-|-Block-|-...-Block-|-final_skip-|
-                         |-skips-+-...-skips-+-skips------+-relu-end-relu-output->
+        ->sequence-+
+        ->........-+
+        ->sequence-+-nb-+
+                        +-start-Block-|-Block-|-...-Block-|-final_skip-|
+        ->embedding-----+             |-skips-+-...-skips-+-skips------+-relu-end-relu-output->
+        ->........------+
+        ->embedding-----+
         """
-        y = torch.stack(batch["Sequence"], dim=1)
+        y_seq = []
+        y_emb = torch.tensor(0.0, dtype=torch.float)
+        for key, (feature_type, _) in self._features_description.items():
+            if feature_type is FeatureType.SEQUENCE:
+                y_seq.append(batch[key])
+            if feature_type is FeatureType.EMBEDDING:
+                y_emb = self.embedding_dict[key](batch[key]) + y_emb
+
+        y = torch.stack(y_seq, dim=1)
         y = self.bn(y)
 
-        y_emb = batch["Embedding"][:, 0]
-        y_emb = self.embedding(y_emb)
-        y_emb = y_emb.unsqueeze(2).expand(
-            y_emb.shape[0], y_emb.shape[1], self.history_days
-        )
+        emb_shape = y_emb.shape
+        y_emb = y_emb.unsqueeze(2).expand(*emb_shape, y.shape[2])
         y = torch.cat([y, y_emb], dim=1)
 
         y = self.start_conv(y)
 
-        skips = torch.zeros((y.shape[0], self.skip_channels, 1))
+        skips = torch.tensor(0.0, dtype=torch.float)
 
         for block in self.blocks:
             y, skip = block(y)
