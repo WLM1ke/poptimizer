@@ -12,12 +12,9 @@ import tqdm
 from torch import optim, nn
 from torch.optim import lr_scheduler
 
-from poptimizer.config import POptimizerError
+from poptimizer.config import POptimizerError, YEAR_IN_TRADING_DAYS
 from poptimizer.dl import data_loader, models
 from poptimizer.dl.features import data_params
-
-# Количество торговых дней в году
-YEAR_IN_TRADING_DAYS = 12 * 21
 
 # Ограничение на размер ошибки обучения
 HIGH_SCORE = 10

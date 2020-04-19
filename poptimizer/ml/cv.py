@@ -8,8 +8,7 @@ import numpy as np
 from hyperopt import hp
 from scipy import stats
 
-from poptimizer.config import POptimizerError, ML_PARAMS
-from poptimizer.dl.model import YEAR_IN_TRADING_DAYS
+from poptimizer.config import POptimizerError, ML_PARAMS, YEAR_IN_TRADING_DAYS
 from poptimizer.ml.examples import Examples
 from poptimizer.ml.feature import ON_OFF
 from poptimizer.portfolio import Portfolio

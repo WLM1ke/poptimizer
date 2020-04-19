@@ -28,6 +28,9 @@ REPORTS_PATH = pathlib.Path(__file__).parents[1] / "reports"
 MONGO_PATH = pathlib.Path(__file__).parents[1] / "db"
 MONGO_DUMP = pathlib.Path(__file__).parents[1] / "dump"
 
+# Количество торговых дней в году
+YEAR_IN_TRADING_DAYS = 12 * 21
+
 # Множитель, для переходя к после налоговым значениям
 AFTER_TAX = 1 - 0.13
 
