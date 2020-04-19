@@ -67,7 +67,7 @@ def test_initial_wins():
     assert population.Organism().wins == 0
 
 
-class FakeTrainer:
+class FakeModel:
     COUNTER = 0
 
     # noinspection PyUnusedLocal
@@ -75,33 +75,33 @@ class FakeTrainer:
         pass
 
     @property
-    def sharpe(self):
+    def information_ratio(self):
         self.__class__.COUNTER += 1
         return 5
 
     @property
-    def model(self):
+    def pickled_model(self):
         return 6
 
 
 def test_evaluate_fitness(monkeypatch):
-    monkeypatch.setattr(population, "Trainer", FakeTrainer)
+    monkeypatch.setattr(population, "Model", FakeModel)
 
     organism = population.Organism()
     id_ = organism.id
 
-    assert FakeTrainer.COUNTER == 0
+    assert FakeModel.COUNTER == 0
     sharpe = organism.evaluate_fitness(("GAZP", "AKRN"), pd.Timestamp("2020-04-12"))
 
     assert sharpe == 5
-    assert FakeTrainer.COUNTER == 1
+    assert FakeModel.COUNTER == 1
     assert organism.wins == 1
 
     organism_reloaded = population.Organism(_id=id_)
 
-    assert organism_reloaded._data[population.SHARPE] == 5
-    assert organism_reloaded._data[population.SHARPE_DATE] == pd.Timestamp("2020-04-12")
-    assert organism_reloaded._data[population.SHARPE_TICKERS] == ["AKRN", "GAZP"]
+    assert organism_reloaded._data[population.INFORMATION_RATIO] == 5
+    assert organism_reloaded._data[population.DATE] == pd.Timestamp("2020-04-12")
+    assert organism_reloaded._data[population.TICKERS] == ["AKRN", "GAZP"]
     assert organism_reloaded._data[population.MODEL] == 6
     assert organism.wins == 1
 
@@ -109,21 +109,21 @@ def test_evaluate_fitness(monkeypatch):
         organism_reloaded.evaluate_fitness(("GAZP", "AKRN"), pd.Timestamp("2020-04-12"))
         == 5
     )
-    assert FakeTrainer.COUNTER == 1
+    assert FakeModel.COUNTER == 2
     assert organism_reloaded.wins == 2
 
     assert (
         organism_reloaded.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-12"))
         == 5
     )
-    assert FakeTrainer.COUNTER == 2
+    assert FakeModel.COUNTER == 3
     assert organism_reloaded.wins == 3
 
     assert (
         organism_reloaded.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-13"))
         == 5
     )
-    assert FakeTrainer.COUNTER == 3
+    assert FakeModel.COUNTER == 4
     assert organism_reloaded.wins == 4
 
 

@@ -7,7 +7,7 @@ import pymongo
 from pymongo.collection import Collection
 
 from poptimizer.config import POptimizerError
-from poptimizer.dl.trainer import Trainer
+from poptimizer.dl import Model
 from poptimizer.evolve.genotype import Genotype
 from poptimizer.store.mongo import DB, MONGO_CLIENT
 
@@ -19,9 +19,9 @@ ID = "_id"
 GENOTYPE = "genotype"
 WINS = "wins"
 MODEL = "model"
-SHARPE = "sharpe"
-SHARPE_DATE = "sharpe_date"
-SHARPE_TICKERS = "tickers"
+INFORMATION_RATIO = "ir"
+DATE = "date"
+TICKERS = "tickers"
 
 
 class OrganismIdError(POptimizerError):
@@ -85,30 +85,20 @@ class Organism:
         return self._data.get(WINS, 0)
 
     def evaluate_fitness(self, tickers: Tuple[str, ...], end: pd.Timestamp) -> float:
-        """Вычисляет коэффициент Шарпа."""
-        update = {WINS: self.wins + 1}
-        self._update(update)
-
-        organism = self._data
-
-        if organism.get(SHARPE_DATE) == end and organism.get(SHARPE_TICKERS) == sorted(
-            tickers
-        ):
-            return organism[SHARPE]
-
-        trainer = Trainer(tickers, end, organism[GENOTYPE].get_phenotype())
-        sharpe = trainer.sharpe
-        model = trainer.model
+        """Тренирует модель с нуля и вычисляет информационный коэффициент."""
+        trainer = Model(tickers, end, self._data[GENOTYPE].get_phenotype())
+        ir = trainer.information_ratio
 
         update = {
-            SHARPE: sharpe,
-            SHARPE_DATE: end,
-            SHARPE_TICKERS: sorted(tickers),
-            MODEL: model,
+            WINS: self.wins + 1,
+            INFORMATION_RATIO: ir,
+            MODEL: trainer.pickled_model,
+            DATE: end,
+            TICKERS: sorted(tickers),
         }
         self._update(update)
 
-        return sharpe
+        return ir
 
     def make_child(self) -> "Organism":
         """Создает новый организм с помощью дифференциальной мутации."""
@@ -151,7 +141,7 @@ def get_all_organisms(collection=None) -> Iterable[Organism]:
     """Получить все имеющиеся организмы."""
     collection = collection or COLLECTION
     id_dicts = collection.find(
-        filter={}, projection=["_id"], sort=[(SHARPE, pymongo.ASCENDING)]
+        filter={}, projection=["_id"], sort=[(INFORMATION_RATIO, pymongo.ASCENDING)]
     )
     for id_dict in id_dicts:
         yield Organism(**id_dict)
@@ -163,11 +153,19 @@ def print_stat(collection=None) -> NoReturn:
     db_find = collection.find
 
     sort_type = (pymongo.ASCENDING, pymongo.DESCENDING)
-    params = {"filter": {SHARPE: {"$exists": True}}, "projection": [SHARPE], "limit": 1}
-    cursors = (db_find(sort=[(SHARPE, up_down)], **params) for up_down in sort_type)
+    params = {
+        "filter": {INFORMATION_RATIO: {"$exists": True}},
+        "projection": [INFORMATION_RATIO],
+        "limit": 1,
+    }
+    cursors = (
+        db_find(sort=[(INFORMATION_RATIO, up_down)], **params) for up_down in sort_type
+    )
     cursors = [tuple(cursor) for cursor in cursors]
-    sharpes = [f"{cursor[0][SHARPE]:.4f}" if cursor else "-" for cursor in cursors]
-    print(f"Коэффициент Шарпа - ({', '.join(sharpes)})")
+    sharpes = [
+        f"{cursor[0][INFORMATION_RATIO]:.4f}" if cursor else "-" for cursor in cursors
+    ]
+    print(f"IR - ({', '.join(sharpes)})")
 
     params = {
         "filter": {WINS: {"$exists": True}},
