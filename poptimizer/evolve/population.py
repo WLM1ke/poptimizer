@@ -2,6 +2,7 @@
 from typing import Iterable, Tuple, NoReturn, Optional, Dict, Any
 
 import bson
+import numpy as np
 import pandas as pd
 import pymongo
 from pymongo.collection import Collection
@@ -151,21 +152,13 @@ def print_stat(collection=None) -> NoReturn:
     """Статистика - минимальное и максимальное значение коэффициента Шарпа."""
     collection = collection or COLLECTION
     db_find = collection.find
-
-    sort_type = (pymongo.ASCENDING, pymongo.DESCENDING)
-    params = {
-        "filter": {INFORMATION_RATIO: {"$exists": True}},
-        "projection": [INFORMATION_RATIO],
-        "limit": 1,
-    }
-    cursors = (
-        db_find(sort=[(INFORMATION_RATIO, up_down)], **params) for up_down in sort_type
+    cursor = db_find(
+        filter={INFORMATION_RATIO: {"$exists": True}}, projection=[INFORMATION_RATIO]
     )
-    cursors = [tuple(cursor) for cursor in cursors]
-    sharpes = [
-        f"{cursor[0][INFORMATION_RATIO]:.4f}" if cursor else "-" for cursor in cursors
-    ]
-    print(f"IR - ({', '.join(sharpes)})")
+    irs = map(lambda x: x[INFORMATION_RATIO], cursor)
+    quantiles = np.quantile(tuple(irs), [0.0, 0.5, 1.0])
+    quantiles = map(lambda x: f"{x:.4f}", quantiles)
+    print(f"IR - ({', '.join(tuple(quantiles))})")
 
     params = {
         "filter": {WINS: {"$exists": True}},
