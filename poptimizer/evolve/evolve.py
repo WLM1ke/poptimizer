@@ -45,7 +45,7 @@ class Evolution:
                 parent_sharpe = parent.evaluate_fitness(tickers, end)
             except ModelError as error:
                 parent.die()
-                print(f"Удаляю родителя - {error.__class__.__name__}.")
+                print(f"Удаляю родителя - {error.__class__.__name__}")
                 print()
                 continue
             else:
