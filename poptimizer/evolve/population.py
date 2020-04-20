@@ -95,7 +95,7 @@ class Organism:
             INFORMATION_RATIO: ir,
             MODEL: trainer.pickled_model,
             DATE: end,
-            TICKERS: sorted(tickers),
+            TICKERS: tickers,
         }
         self._update(update)
 

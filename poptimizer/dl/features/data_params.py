@@ -59,8 +59,8 @@ class DataParams(abc.ABC):
 
     @property
     def tickers(self) -> Tuple[str]:
-        """Сортированный перечень тикеров."""
-        return tuple(sorted(self._price.keys()))
+        """Перечень тикеров."""
+        return tuple(self._price.keys())
 
     @property
     def shuffle(self) -> bool:
