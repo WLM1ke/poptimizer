@@ -166,13 +166,6 @@ class Model:
         """Тренировка модели."""
         phenotype = self._phenotype
 
-        loader_val = data_loader.DescribedDataLoader(
-            self._tickers, self._end, phenotype["data"], data_params.ValParams
-        )
-        days_val, rez = divmod(len(loader_val.dataset), len(self._tickers))
-        if rez:
-            raise TooLongHistoryError
-
         loader_train = data_loader.DescribedDataLoader(
             self._tickers, self._end, phenotype["data"], data_params.TrainParams
         )
@@ -228,10 +221,7 @@ class Model:
             if loss_current > HIGH_SCORE:
                 raise GradientsError(loss_current)
 
-        if days_val > 0:
-            self._validate(loader_val)
-        else:
-            print("~~> Valid: skipped...")
+        self._validate()
 
     @staticmethod
     def _mse(
@@ -242,8 +232,14 @@ class Model:
         loss = (output - batch["Label"]) ** 2 * weight
         return loss.sum(), weight.sum()
 
-    def _validate(self, loader_val: data_loader.DescribedDataLoader) -> NoReturn:
+    def _validate(self) -> NoReturn:
         """Валидация модели."""
+        loader_val = data_loader.DescribedDataLoader(
+            self._tickers, self._end, self._phenotype["data"], data_params.ValParams
+        )
+        if len(loader_val.dataset) // len(self._tickers) == 0:
+            print("~~> Valid: skipped...")
+
         model = self._model
         loss_fn = self._mse
 
