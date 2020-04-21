@@ -42,10 +42,10 @@ def test_ir_from_trained_and_reloaded_model(doc):
     gen["Scheduler"]["epochs"] /= 10
     phenotype = genotype.Genotype(gen).get_phenotype()
     net = model.Model(doc[TICKERS], doc[DATE], phenotype, None)
-    assert net.pickled_model is None
+    assert bytes(net) == bytes()
 
     ir = net.information_ratio
-    pickled_model = net.pickled_model
+    pickled_model = bytes(net)
 
     net = model.Model(doc[TICKERS], doc[DATE], phenotype, pickled_model)
     assert ir == net.information_ratio

@@ -87,13 +87,13 @@ class Organism:
 
     def evaluate_fitness(self, tickers: Tuple[str, ...], end: pd.Timestamp) -> float:
         """Тренирует модель с нуля и вычисляет информационный коэффициент."""
-        trainer = Model(tickers, end, self._data[GENOTYPE].get_phenotype())
-        ir = trainer.information_ratio
+        model = Model(tickers, end, self._data[GENOTYPE].get_phenotype())
+        ir = model.information_ratio
 
         update = {
             WINS: self.wins + 1,
             INFORMATION_RATIO: ir,
-            MODEL: trainer.pickled_model,
+            MODEL: bytes(model),
             DATE: end,
             TICKERS: tickers,
         }

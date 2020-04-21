@@ -79,9 +79,8 @@ class FakeModel:
         self.__class__.COUNTER += 1
         return 5
 
-    @property
-    def pickled_model(self):
-        return 6
+    def __bytes__(self):
+        return bytes(6)
 
 
 def test_evaluate_fitness(monkeypatch):
@@ -101,8 +100,8 @@ def test_evaluate_fitness(monkeypatch):
 
     assert organism_reloaded._data[population.INFORMATION_RATIO] == 5
     assert organism_reloaded._data[population.DATE] == pd.Timestamp("2020-04-12")
-    assert organism_reloaded._data[population.TICKERS] == ["AKRN", "GAZP"]
-    assert organism_reloaded._data[population.MODEL] == 6
+    assert organism_reloaded._data[population.TICKERS] == ["GAZP", "AKRN"]
+    assert organism_reloaded._data[population.MODEL] == bytes(6)
     assert organism.wins == 1
 
     assert (

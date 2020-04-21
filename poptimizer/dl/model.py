@@ -75,7 +75,7 @@ class Model:
 
         self._model = None
 
-        if pickled_model is not None:
+        if pickled_model:
             self._forecast = data_loader.DescribedDataLoader(
                 tickers, end, phenotype["data"], data_params.ForecastParams
             )
@@ -93,11 +93,10 @@ class Model:
         )
         return model
 
-    @property
-    def pickled_model(self) -> Optional[bytes]:
+    def __bytes__(self) -> bytes:
         """Внутреннее состояние натренированной модели в формате pickle."""
         if self._model is None:
-            return None
+            return bytes()
         return pickle.dumps(self._model.state_dict())
 
     @property
