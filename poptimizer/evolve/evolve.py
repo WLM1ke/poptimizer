@@ -61,7 +61,7 @@ class Evolution:
             except ModelError as error:
                 child.die()
                 new_children -= 1
-                print(f"Удаляю ребенка - {error.__class__.__name__}")
+                print(f"Удаляю потомка - {error.__class__.__name__}")
                 print()
                 continue
             else:
