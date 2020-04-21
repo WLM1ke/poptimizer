@@ -8,7 +8,7 @@ import pymongo
 from pymongo.collection import Collection
 
 from poptimizer.config import POptimizerError
-from poptimizer.dl import Model
+from poptimizer.dl import Model, DegeneratedForecastError
 from poptimizer.evolve.genotype import Genotype
 from poptimizer.store.mongo import DB, MONGO_CLIENT
 
@@ -106,6 +106,29 @@ class Organism:
         genotypes = [organism.genotype for organism in _sample_organism(3)]
         child_genotype = self.genotype.make_child(*genotypes)
         return Organism(genotype=child_genotype)
+
+    def forecast(self, tickers: Tuple[str, ...], end: pd.Timestamp) -> pd.Series:
+        """Выдает прогноз для текущего организма.
+
+        При наличие натренированной модели, которая составлена на предыдущей статистике и для таких же
+        тикеров, будет использованы сохраненные веса сети.
+        """
+        pickled_model = None
+        if (
+                self._data.get(DATE) is not None
+                and end >= self._data[DATE]
+                and tickers == tuple(self._data[TICKERS])
+        ):
+            pickled_model = self._data[MODEL]
+        model = Model(tickers, end, self._data[GENOTYPE].get_phenotype(), pickled_model)
+        try:
+            forecast = model.forecast()
+        except DegeneratedForecastError:
+            self.die()
+            raise
+
+        forecast.name = self.id
+        return forecast
 
 
 def _sample_organism(num: int, collection: Collection = None) -> Iterable[Organism]:

@@ -45,6 +45,10 @@ class DegeneratedForecastError(ModelError):
     """Константный прогноз."""
 
 
+class NotTrainedError(ModelError):
+    """Попытка получить прогноз для не тренированной модели."""
+
+
 class Model:
     """Тренирует, валидирует, тестирует и прогнозирует модель на основе нейронной сети."""
 
@@ -257,3 +261,31 @@ class Model:
                 val_weight += weight.item()
 
                 bar.set_postfix_str(f"{val_loss / val_weight:.5f}")
+
+    def forecast(self) -> pd.Series:
+        """Прогноз годовой доходности."""
+        loader = data_loader.DescribedDataLoader(
+            self._tickers,
+            self._end,
+            self._phenotype["data"],
+            data_params.ForecastParams,
+        )
+
+        model = self._model
+        if model is None:
+            raise NotTrainedError
+
+        outputs = []
+        with torch.no_grad():
+            model.eval()
+            for batch in loader:
+                output = model(batch)
+                outputs.append(output)
+        forecast = torch.cat(outputs, dim=0).numpy().flatten()
+
+        if np.isclose(forecast.std(), 0):
+            raise DegeneratedForecastError
+
+        forecast = pd.Series(forecast, index=list(self._tickers))
+        year_mul = YEAR_IN_TRADING_DAYS / self._phenotype["data"]["history_days"]
+        return forecast * year_mul
