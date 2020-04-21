@@ -234,11 +234,12 @@ class Model:
 
     def _validate(self) -> NoReturn:
         """Валидация модели."""
-        loader_val = data_loader.DescribedDataLoader(
+        loader = data_loader.DescribedDataLoader(
             self._tickers, self._end, self._phenotype["data"], data_params.ValParams
         )
-        if len(loader_val.dataset) // len(self._tickers) == 0:
+        if len(loader.dataset) // len(self._tickers) == 0:
             print("~~> Valid: skipped...")
+            return
 
         model = self._model
         loss_fn = self._mse
@@ -246,10 +247,10 @@ class Model:
         val_loss = 0.0
         val_weight = 0.0
 
-        print(f"Val size - {len(loader_val.dataset)}")
+        print(f"Val size - {len(loader.dataset)}")
         with torch.no_grad():
             model.eval()
-            bar = tqdm.tqdm(loader_val, file=sys.stdout, desc="~~> Valid")
+            bar = tqdm.tqdm(loader, file=sys.stdout, desc="~~> Valid")
             for batch in bar:
                 output = model(batch)
                 loss, weight = loss_fn(output, batch)
