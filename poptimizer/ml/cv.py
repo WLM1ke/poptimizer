@@ -220,7 +220,7 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     labels = test_pool_params["label"]
     test_pool = catboost.Pool(**test_pool_params)
     labels_test = clf.predict(test_pool)
-    std_2 = 1 / val_pool_params["weight"]
+    std_2 = 1 / test_pool_params["weight"]
 
     t = t_of_cov(labels, labels_test, std_2, n_tickers)
 
