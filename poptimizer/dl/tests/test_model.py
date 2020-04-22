@@ -1,5 +1,6 @@
 import copy
 
+import numpy as np
 import pymongo
 import pytest
 
@@ -20,6 +21,15 @@ DB_PARAMS = {
     "sort": [(WINS, pymongo.DESCENDING)],
     "limit": 1,
 }
+
+
+def test_incremental_return():
+    a = np.array([1, 2, 1, 2])
+    b = np.array([2, 3, 4, 1])
+    c = np.array([2, 4, 6, 7])
+    assert model.incremental_return(c, a, b ** 2) == pytest.approx(1.9260727134667)
+    assert model.incremental_return(c, b, a ** 2) == pytest.approx(1.55613358171397)
+    assert model.incremental_return(b, a, c ** 2) == pytest.approx(0.0777498264601518)
 
 
 @pytest.fixture(scope="module", name="doc")
