@@ -9,7 +9,7 @@ from poptimizer.ml.feature.std import LOW_STD
 
 
 class Weight(Feature):
-    """Обратная величина СКО полной доходности обрезанная для низких значений."""
+    """Обратная величина квадрата СКО полной доходности обрезанная для низких значений."""
 
     def __init__(self, ticker: str, params: DataParams):
         super().__init__(ticker, params)

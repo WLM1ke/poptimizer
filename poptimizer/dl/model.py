@@ -49,6 +49,28 @@ class NotTrainedError(ModelError):
     """Попытка получить прогноз для не тренированной модели."""
 
 
+def incremental_return(r: np.array, r_expected: np.array, std_2: np.array) -> float:
+    """Вычисляет доходность оптимального инкрементального портфеля.
+
+    Оптимальный портфель сроится из допущения отсутствия корреляции. Размеры позиций нормируются для
+    достижения фиксированного СКО портфеля.
+
+    :param r:
+        Фактическая доходность.
+    :param r_expected:
+        Прогнозная доходность.
+    :param std_2:
+        Прогнозный квадрат СКО.
+    :return:
+        Доходность нормированного по СКО оптимального инкрементального портфеля.
+    """
+    r_weighted = (r_expected / std_2).sum() / (1 / std_2).sum()
+    weight = (r_expected - r_weighted) / std_2
+    std_portfolio = (weight ** 2 * std_2).sum() ** 0.5
+    weight = weight / (std_portfolio + EPS)
+    return (r * weight).sum()
+
+
 class Model:
     """Тренирует, валидирует, тестирует и прогнозирует модель на основе нейронной сети."""
 
@@ -130,6 +152,7 @@ class Model:
         model = self._model
 
         labels = []
+        var_1 = []
         forecasts = []
 
         print(f"Дней для тестирования: {days}")
@@ -140,9 +163,11 @@ class Model:
                 forecast = model(batch)
 
                 labels.append(batch["Label"])
+                var_1.append(batch["Weight"])
                 forecasts.append(forecast)
 
         labels = torch.cat(labels, dim=0).numpy().flatten()
+        var_1 = torch.cat(var_1, dim=0).numpy().flatten()
         forecasts = torch.cat(forecasts, dim=0).numpy().flatten()
 
         r_incremental = np.zeros(days)
@@ -150,13 +175,10 @@ class Model:
         for i in range(days):
             # Срезы соответствуют разным акциям в один день
             label = labels[i::days]
+            std_2 = 1 / var_1[i::days]
             r_expected = forecasts[i::days]
 
-            r_mean = r_expected.mean()
-            r_std = r_expected.std(ddof=1)
-
-            weights = (r_expected - r_mean) / (r_std + EPS)
-            r_incremental[i] = np.cov(label, weights)[1][0]
+            r_incremental[i] = incremental_return(label, r_expected, std_2)
 
         std = r_incremental.std(ddof=1)
         if np.isclose(std, 0):

@@ -5,4 +5,5 @@ from poptimizer.dl.model import (
     Model,
     DegeneratedForecastError,
     NotTrainedError,
+    incremental_return,
 )
