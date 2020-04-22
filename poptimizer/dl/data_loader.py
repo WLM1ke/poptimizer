@@ -8,7 +8,7 @@ from torch.utils import data
 from poptimizer.dl import features
 
 # Описание фенотипа и его подразделов
-PhenotypeData = Dict[str, Union[Any, "PhenotypeType"]]
+PhenotypeData = Dict[str, Union[Any, "PhenotypeData"]]
 
 
 class OneTickerDataset(data.Dataset):

@@ -118,7 +118,29 @@ def make_model_params(data_params: tuple, model_params: dict) -> dict:
     return result
 
 
-def t_of_cov(labels, labels_val, n_tickers):
+def incremental_return(r: np.array, r_expected: np.array, std_2: np.array) -> float:
+    """Вычисляет доходность оптимального инкрементального портфеля.
+
+    Оптимальный портфель сроится из допущения отсутствия корреляции. Размеры позиций нормируются для
+    достижения фиксированного СКО портфеля.
+
+    :param r:
+        Фактическая доходность.
+    :param r_expected:
+        Прогнозная доходность.
+    :param std_2:
+        Прогнозный квадрат СКО.
+    :return:
+        Доходность нормированного по СКО оптимального инкрементального портфеля.
+    """
+    r_weighted = (r_expected / std_2).sum() / (1 / std_2).sum()
+    weight = (r_expected - r_weighted) / std_2
+    std_portfolio = (weight ** 2 * std_2).sum() ** 0.5
+    weight = weight / std_portfolio
+    return (r * weight).sum()
+
+
+def t_of_cov(labels, labels_val, std_2, n_tickers):
     """Значимость доходов от предсказания.
 
     Если делать ставки на сигнал, пропорциональные разнице между сигналом и его матожиданием,
@@ -133,9 +155,11 @@ def t_of_cov(labels, labels_val, n_tickers):
         return 0
     rs = np.zeros(days)
     for i in range(days):
+        r = labels[i * n_tickers : (i + 1) * n_tickers]
         r_expected = labels_val[i * n_tickers : (i + 1) * n_tickers]
-        weights = stats.zscore(r_expected)
-        rs[i] = np.cov(labels[i * n_tickers : (i + 1) * n_tickers], weights)[1][0]
+        std_2_ = std_2[i * n_tickers : (i + 1) * n_tickers]
+
+        rs[i] = incremental_return(r, r_expected, std_2_)
 
     return rs.mean() / rs.std(ddof=1) * YEAR_IN_TRADING_DAYS ** 0.5
 
@@ -196,8 +220,9 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     labels = test_pool_params["label"]
     test_pool = catboost.Pool(**test_pool_params)
     labels_test = clf.predict(test_pool)
+    std_2 = 1 / val_pool_params["weight"]
 
-    t = t_of_cov(labels, labels_test, n_tickers)
+    t = t_of_cov(labels, labels_test, std_2, n_tickers)
 
     if verbose:
         logging.info(f"R: {r}\nt: {t}\n")
