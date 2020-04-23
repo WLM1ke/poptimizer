@@ -236,7 +236,7 @@ class WaveNet(nn.Module):
         self.output_softplus_s = nn.Softplus()
 
     def forward(
-            self, batch: Dict[str, Union[torch.Tensor, List[torch.Tensor]]]
+        self, batch: Dict[str, Union[torch.Tensor, List[torch.Tensor]]]
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         ->sequence-+
