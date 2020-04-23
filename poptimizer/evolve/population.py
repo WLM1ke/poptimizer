@@ -115,9 +115,9 @@ class Organism:
         """
         pickled_model = None
         if (
-                self._data.get(DATE) is not None
-                and end >= self._data[DATE]
-                and tickers == tuple(self._data[TICKERS])
+            self._data.get(DATE) is not None
+            and end >= self._data[DATE]
+            and tickers == tuple(self._data[TICKERS])
         ):
             pickled_model = self._data[MODEL]
         model = Model(tickers, end, self._data[GENOTYPE].get_phenotype(), pickled_model)
