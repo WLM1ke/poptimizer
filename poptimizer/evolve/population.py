@@ -165,7 +165,7 @@ def get_all_organisms(collection=None) -> Iterable[Organism]:
     """Получить все имеющиеся организмы."""
     collection = collection or COLLECTION
     id_dicts = collection.find(
-        filter={}, projection=["_id"], sort=[(INFORMATION_RATIO, pymongo.ASCENDING)]
+        filter={}, projection=["_id"], sort=[(DATE, pymongo.ASCENDING)]
     )
     for id_dict in id_dicts:
         yield Organism(**id_dict)
