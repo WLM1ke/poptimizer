@@ -227,21 +227,25 @@ class WaveNet(nn.Module):
         self.end_conv = nn.Conv1d(
             in_channels=skip_channels, out_channels=end_channels, kernel_size=1
         )
-        self.output_conv = nn.Conv1d(
+        self.output_conv_m = nn.Conv1d(
             in_channels=end_channels, out_channels=1, kernel_size=1
         )
+        self.output_conv_s = nn.Conv1d(
+            in_channels=end_channels, out_channels=1, kernel_size=1
+        )
+        self.output_softplus_s = nn.Softplus()
 
     def forward(
-        self, batch: Dict[str, Union[torch.Tensor, List[torch.Tensor]]]
-    ) -> torch.Tensor:
+            self, batch: Dict[str, Union[torch.Tensor, List[torch.Tensor]]]
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         ->sequence-+
         ->........-+
         ->sequence-+-nb-+
                         +-start-Block-|-Block-|-...-Block-|-final_skip-|
-        ->embedding-----+             |-skips-+-...-skips-+-skips------+-relu-end-relu-output->
-        ->........------+
-        ->embedding-----+
+        ->embedding-----+             |-skips-+-...-skips-+-skips------+-relu-end-relu-|-output_m->
+        ->........------+                                                     |--------|
+        ->embedding-----+                                                     |-output_s-softplus->
         """
         y_seq = []
         y_emb = torch.tensor(0.0, dtype=torch.float)
@@ -272,6 +276,10 @@ class WaveNet(nn.Module):
         y = torch.relu(skips)
         y = self.end_conv(y)
         y = torch.relu(y)
-        y = self.output_conv(y)
 
-        return y.squeeze(dim=-1)
+        m = self.output_conv_m(y)
+
+        s = self.output_conv_s(y)
+        s = self.output_softplus_s(s)
+
+        return m.squeeze(dim=-1), s.squeeze(dim=-1)
