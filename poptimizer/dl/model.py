@@ -18,7 +18,7 @@ from poptimizer.dl import data_loader, models
 from poptimizer.dl.features import data_params
 
 # Ограничение на размер ошибки обучения
-HIGH_SCORE = 100
+HIGH_SCORE = 10
 
 # Для численной стабильности
 EPS = 1e-08
@@ -156,7 +156,7 @@ class Model:
         model = self._model
 
         labels = []
-        var_1 = []
+        var = []
         forecasts = []
 
         print(f"Дней для тестирования: {days}")
@@ -164,14 +164,14 @@ class Model:
             model.eval()
             bar = tqdm.tqdm(loader, file=sys.stdout, desc="~~> Test")
             for batch in bar:
-                forecast = model(batch)
+                m, s = model(batch)
 
                 labels.append(batch["Label"])
-                var_1.append(batch["Weight"])
-                forecasts.append(forecast)
+                var.append(s ** 2)
+                forecasts.append(m)
 
         labels = torch.cat(labels, dim=0).numpy().flatten()
-        var_1 = torch.cat(var_1, dim=0).numpy().flatten()
+        var = torch.cat(var, dim=0).numpy().flatten()
         forecasts = torch.cat(forecasts, dim=0).numpy().flatten()
 
         r_incremental = np.zeros(days)
@@ -179,7 +179,7 @@ class Model:
         for i in range(days):
             # Срезы соответствуют разным акциям в один день
             label = labels[i::days]
-            std_2 = 1 / var_1[i::days]
+            std_2 = var[i::days]
             r_expected = forecasts[i::days]
 
             r_incremental[i] = incremental_return(label, r_expected, std_2)
