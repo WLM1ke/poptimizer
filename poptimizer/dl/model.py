@@ -1,6 +1,7 @@
 """Тренировка модели."""
 import collections
 import itertools
+import math
 import pickle
 import sys
 from typing import Tuple, Dict, Optional, NoReturn
@@ -17,10 +18,13 @@ from poptimizer.dl import data_loader, models
 from poptimizer.dl.features import data_params
 
 # Ограничение на размер ошибки обучения
-HIGH_SCORE = 10
+HIGH_SCORE = 100
 
 # Для численной стабильности
 EPS = 1e-08
+
+# Начальный член в LLH нормального распределения
+LLH_START = torch.tensor(0.5 * math.log(2 * math.pi))
 
 
 class ModelError(POptimizerError):
@@ -214,7 +218,7 @@ class Model:
         loss_deque = collections.deque([0], maxlen=(total_steps + 9) // 10)
         weight_sum = 0.0
         weight_deque = collections.deque([0], maxlen=(total_steps + 9) // 10)
-        loss_fn = self._mse
+        loss_fn = self._llh
 
         loader_train = itertools.repeat(loader_train)
         loader_train = itertools.chain.from_iterable(loader_train)
@@ -233,8 +237,8 @@ class Model:
             loss_sum += loss.item() - loss_deque[0]
             loss_deque.append(loss.item())
 
-            weight_sum += weight.item() - weight_deque[0]
-            weight_deque.append(weight.item())
+            weight_sum += weight - weight_deque[0]
+            weight_deque.append(weight)
 
             loss.backward()
             optimizer.step()
@@ -249,13 +253,13 @@ class Model:
         self._validate()
 
     @staticmethod
-    def _mse(
+    def _llh(
         output: torch.Tensor, batch: Dict[str, torch.Tensor]
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """MSE."""
-        weight = torch.ones_like(batch["Weight"])
-        loss = (output - batch["Label"]) ** 2 * weight
-        return loss.sum(), weight.sum()
+    ) -> Tuple[torch.Tensor, int]:
+        """Minus Log Likelihood."""
+        m, s = output
+        llh = LLH_START + torch.log(s) + 0.5 * ((batch["Label"] - m) / s) ** 2
+        return llh.sum(), m.shape[0]
 
     def _validate(self) -> NoReturn:
         """Валидация модели."""
@@ -267,7 +271,7 @@ class Model:
             return
 
         model = self._model
-        loss_fn = self._mse
+        loss_fn = self._llh
 
         val_loss = 0.0
         val_weight = 0.0
@@ -280,7 +284,7 @@ class Model:
                 output = model(batch)
                 loss, weight = loss_fn(output, batch)
                 val_loss += loss.item()
-                val_weight += weight.item()
+                val_weight += weight
 
                 bar.set_postfix_str(f"{val_loss / val_weight:.5f}")
 
