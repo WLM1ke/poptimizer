@@ -13,7 +13,7 @@ PARAMS = {
     "batch_size": 100,
     "history_days": 16,
     "forecast_days": 8,
-    "features": {"Label": {"div_share": 0.9}, "Prices": {}, "Weight": {}},
+    "features": {"Label": {"div_share": 0.9}, "Prices": {}},
 }
 
 
@@ -88,7 +88,7 @@ class TestTrainParams:
         assert train_params.len("IRKT") == 2135
 
     def test_get_all_feat(self, train_params):
-        assert list(train_params.get_all_feat()) == ["Label", "Prices", "Weight"]
+        assert list(train_params.get_all_feat()) == ["Label", "Prices"]
 
     def test_get_feat_params(self, train_params):
         assert train_params.get_feat_params("Label") == {"div_share": 0.9}
@@ -127,7 +127,7 @@ class TestValParams:
         assert val_params.len("IRKT") == 233
 
     def test_get_all_feat(self, val_params):
-        assert list(val_params.get_all_feat()) == ["Label", "Prices", "Weight"]
+        assert list(val_params.get_all_feat()) == ["Label", "Prices"]
 
 
 @pytest.fixture(scope="class", name="test_params")
@@ -163,7 +163,7 @@ class TestTestParams:
         assert test_params.len("IRKT") == 240
 
     def test_get_all_feat(self, test_params):
-        assert list(test_params.get_all_feat()) == ["Label", "Prices", "Weight"]
+        assert list(test_params.get_all_feat()) == ["Label", "Prices"]
 
 
 @pytest.fixture(scope="class", name="forecast_params")

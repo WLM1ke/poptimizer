@@ -147,7 +147,7 @@ class TestParams(DataParams):
 
 
 class ForecastParams(DataParams):
-    """Метки и вес не формируются, а признаки формируются только для последней даты."""
+    """Метки не формируются, а признаки формируются только для последней даты."""
 
     def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
         history_days = self.history_days
@@ -156,5 +156,4 @@ class ForecastParams(DataParams):
         price = price.iloc[-history_days:]
         self._params["forecast_days"] = 0
         del self._params["features"]["Label"]
-        del self._params["features"]["Weight"]
         return div, price

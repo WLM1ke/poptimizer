@@ -20,7 +20,6 @@ class FeatureType(enum.Enum):
         return name
 
     LABEL = enum.auto()
-    WEIGHT = enum.auto()
     SEQUENCE = enum.auto()
     EMBEDDING = enum.auto()
 
