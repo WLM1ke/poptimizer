@@ -157,4 +157,4 @@ def test_evolve_bad_child(monkeypatch, capsys):
     assert fake_population.count() == 4
     assert list(fake_population._organisms) == population_ids
     captured = capsys.readouterr()
-    assert "Удаляю ребенка - ModelError" in captured.out
+    assert "Удаляю потомка - ModelError" in captured.out

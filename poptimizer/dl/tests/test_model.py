@@ -6,15 +6,7 @@ import pytest
 
 from poptimizer.dl import model
 from poptimizer.evolve import genotype
-from poptimizer.evolve.population import (
-    COLLECTION,
-    WINS,
-    GENOTYPE,
-    TICKERS,
-    DATE,
-    MODEL,
-    INFORMATION_RATIO,
-)
+from poptimizer.evolve.population import COLLECTION, WINS, GENOTYPE, TICKERS, DATE
 
 DB_PARAMS = {
     "filter": {WINS: {"$exists": True}},
@@ -37,15 +29,6 @@ def get_model_doc():
     return COLLECTION.find_one(**DB_PARAMS)
 
 
-def test_ir_from_loaded_model(doc):
-    phenotype = genotype.Genotype(doc[GENOTYPE]).get_phenotype()
-    net = model.Model(doc[TICKERS], doc[DATE], phenotype, doc[MODEL])
-    # Вычисление
-    assert doc[INFORMATION_RATIO] == net.information_ratio
-    # Из кеша
-    assert doc[INFORMATION_RATIO] == net.information_ratio
-
-
 def test_ir_from_trained_and_reloaded_model(doc):
     gen = copy.deepcopy(doc[GENOTYPE])
     # Для ускорения обучения
@@ -58,6 +41,8 @@ def test_ir_from_trained_and_reloaded_model(doc):
     pickled_model = bytes(net)
 
     net = model.Model(doc[TICKERS], doc[DATE], phenotype, pickled_model)
+    assert ir == net.information_ratio
+    # Из кеша
     assert ir == net.information_ratio
 
 
@@ -75,7 +60,7 @@ def test_raise_long_history(doc):
 def test_raise_gradient_error(doc):
     gen = copy.deepcopy(doc[GENOTYPE])
     gen["Scheduler"]["epochs"] /= 10
-    gen["Scheduler"]["max_lr"] *= 100
+    gen["Scheduler"]["max_lr"] *= 1000
     phenotype = genotype.Genotype(gen).get_phenotype()
     net = model.Model(doc[TICKERS], doc[DATE], phenotype, None)
     with pytest.raises(model.ModelError) as error:

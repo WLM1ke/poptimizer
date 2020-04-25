@@ -35,13 +35,13 @@ class TestLabel:
     def test_getitem(self, features):
         ticker1, ticker2 = features
         assert ticker1[0].shape == torch.Size([])
-        assert ticker1[0] == torch.tensor(0, dtype=torch.long)
+        assert ticker1[0] == torch.tensor(1, dtype=torch.long)
 
         assert ticker2[49].shape == torch.Size([])
-        assert ticker2[49] == torch.tensor(1, dtype=torch.long)
+        assert ticker2[49] == torch.tensor(0, dtype=torch.long)
 
-        assert ticker1[236].shape == torch.Size([])
-        assert ticker2[236] == torch.tensor(1, dtype=torch.long)
+        assert ticker2[236].shape == torch.Size([])
+        assert ticker2[236] == torch.tensor(0, dtype=torch.long)
 
     def test_type_and_size(self, features):
         ticker1, ticker2 = features

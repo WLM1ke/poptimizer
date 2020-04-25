@@ -1,4 +1,3 @@
-import logging
 import signal
 import time
 
@@ -8,37 +7,30 @@ import requests
 from poptimizer.store import mongo
 
 
-def test_clean_up(caplog):
+def test_clean_up():
     assert mongo.MONGO_PROCESS.is_running()
     assert mongo.MONGO_CLIENT.nodes == frozenset({("localhost", 27017)})
 
-    with caplog.at_level(logging.INFO):
-        mongo.clean_up(mongo.MONGO_CLIENT, mongo.HTTP_SESSION)
+    mongo.clean_up(mongo.MONGO_CLIENT, mongo.HTTP_SESSION)
 
-    assert "Подключение клиента MongoDB закрыто" in caplog.text
     assert mongo.MONGO_CLIENT.nodes == frozenset()
 
-    assert "Сессия для обновления данных по интернет закрыта" in caplog.text
 
-
-def test_start_mongo_server(caplog):
+def test_start_mongo_server():
     mongo_process = mongo.MONGO_PROCESS
     mongo_process.send_signal(signal.SIGTERM)
     mongo_process.wait()
     assert not mongo.MONGO_PROCESS.is_running()
 
-    with caplog.at_level(logging.INFO):
-        mongo.MONGO_PROCESS = mongo.start_mongo_server()
-    assert "Запускается локальный сервер MongoDB" in caplog.text
+    mongo.MONGO_PROCESS = mongo.start_mongo_server()
     time.sleep(1)
     assert mongo.MONGO_CLIENT.address == ("localhost", 27017)
 
 
-def test_no_start_mongo_server(caplog):
+def test_no_start_mongo_server():
     mongo_pid = mongo.MONGO_PROCESS.pid
-    with caplog.at_level(logging.INFO):
-        process = mongo.start_mongo_server()
-    assert "Локальный сервер MongoDB уже работает" in caplog.text
+
+    process = mongo.start_mongo_server()
     assert process.pid == mongo_pid
     assert process.is_running()
 
