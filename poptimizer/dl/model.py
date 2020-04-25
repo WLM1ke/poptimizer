@@ -18,7 +18,7 @@ from poptimizer.dl import data_loader, models
 from poptimizer.dl.features import data_params
 
 # Ограничение на размер ошибки обучения
-HIGH_SCORE = 10
+HIGH_SCORE = 100
 
 # Для численной стабильности
 EPS = 1e-08

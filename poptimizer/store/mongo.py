@@ -42,9 +42,9 @@ def start_mongo_server() -> psutil.Process:
     """Запуск сервера MongoDB."""
     for process in psutil.process_iter(attrs=["name"]):
         if "mongod" in process.info["name"]:
-            logging.info("Локальный сервер MongoDB уже работает")
+            # logging.info("Локальный сервер MongoDB уже работает")
             return process
-    logging.info("Запускается локальный сервер MongoDB")
+    # logging.info("Запускается локальный сервер MongoDB")
     config.MONGO_PATH.mkdir(parents=True, exist_ok=True)
     mongo_server = [
         "mongod",
@@ -80,7 +80,7 @@ def restore_dump(client: pymongo.MongoClient, http_session: requests.Session) ->
 
 def start_mongo_client(http_session: requests.Session) -> pymongo.MongoClient:
     """Открытие клиентского соединения с MongoDB."""
-    logging.info("Создается клиент MongoDB")
+    # logging.info("Создается клиент MongoDB")
     client = pymongo.MongoClient("localhost", 27017, tz_aware=False)
     restore_dump(client, http_session)
     return client
@@ -88,7 +88,7 @@ def start_mongo_client(http_session: requests.Session) -> pymongo.MongoClient:
 
 def start_http_session() -> requests.Session:
     """Открытие клиентского соединение с  интернетом."""
-    logging.info("Открывается сессия для обновления данных по интернет")
+    # logging.info("Открывается сессия для обновления данных по интернет")
     session = requests.Session()
     adapter = adapters.HTTPAdapter(
         pool_maxsize=HTTPS_MAX_POOL_SIZE, max_retries=MAX_RETRIES, pool_block=True
@@ -115,10 +115,10 @@ def clean_up(client: pymongo.MongoClient, http_session: requests.Session) -> Non
     dump_dividends_db(client)
 
     client.close()
-    logging.info("Подключение клиента MongoDB закрыто")
+    # logging.info("Подключение клиента MongoDB закрыто")
 
     http_session.close()
-    logging.info("Сессия для обновления данных по интернет закрыта")
+    # logging.info("Сессия для обновления данных по интернет закрыта")
 
 
 def start_and_setup_clean_up() -> Tuple[
