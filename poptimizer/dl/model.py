@@ -1,8 +1,8 @@
 """Тренировка модели."""
 import collections
+import io
 import itertools
 import math
-import pickle
 import sys
 from typing import Tuple, Dict, Optional, NoReturn
 
@@ -106,7 +106,10 @@ class Model:
         """Внутреннее состояние натренированной модели в формате pickle."""
         if self._model is None:
             return bytes()
-        return pickle.dumps(self._model.state_dict())
+        buffer = io.BytesIO()
+        state_dict = self._model.state_dict()
+        torch.save(state_dict, buffer)
+        return buffer.getvalue()
 
     def _load_trained_model(self, pickled_model: bytes) -> nn.Module:
         """Создание тренированной модели."""
@@ -117,7 +120,8 @@ class Model:
             data_params.ForecastParams,
         )
         model = self._make_untrained_model(loader)
-        state_dict = pickle.loads(pickled_model)
+        buffer = io.BytesIO(pickled_model)
+        state_dict = torch.load(buffer)
         model.load_state_dict(state_dict)
         return model
 
