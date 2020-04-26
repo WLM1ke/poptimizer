@@ -34,9 +34,8 @@ def test_ir_from_trained_and_reloaded_model(doc):
     # Для ускорения обучения
     gen["Scheduler"]["epochs"] /= 10
     phenotype = genotype.Genotype(gen).get_phenotype()
-    net = model.Model(doc[TICKERS], doc[DATE], phenotype, None)
-    assert bytes(net) == bytes()
 
+    net = model.Model(doc[TICKERS], doc[DATE], phenotype, None)
     ir = net.information_ratio
     pickled_model = bytes(net)
 
@@ -60,10 +59,8 @@ def test_raise_long_history(doc):
 def test_raise_gradient_error(doc):
     gen = copy.deepcopy(doc[GENOTYPE])
     gen["Scheduler"]["epochs"] /= 10
-    gen["Scheduler"]["max_lr"] *= 1000
+    gen["Scheduler"]["max_lr"] = 1
     phenotype = genotype.Genotype(gen).get_phenotype()
-    net = model.Model(doc[TICKERS], doc[DATE], phenotype, None)
     with pytest.raises(model.ModelError) as error:
-        # noinspection PyStatementEffect
-        net.information_ratio
+        model.Model(doc[TICKERS], doc[DATE], phenotype, None)
     assert issubclass(error.type, model.GradientsError)

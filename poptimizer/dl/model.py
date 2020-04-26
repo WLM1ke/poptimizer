@@ -104,8 +104,6 @@ class Model:
 
     def __bytes__(self) -> bytes:
         """Внутреннее состояние натренированной модели в формате pickle."""
-        if self._model is None:
-            return bytes()
         buffer = io.BytesIO()
         state_dict = self._model.state_dict()
         torch.save(state_dict, buffer)
