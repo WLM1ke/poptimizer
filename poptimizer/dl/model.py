@@ -49,10 +49,6 @@ class DegeneratedForecastError(ModelError):
     """Константный прогноз."""
 
 
-class NotTrainedError(ModelError):
-    """Попытка получить прогноз для не тренированной модели."""
-
-
 def incremental_return(r: np.array, r_expected: np.array, std_2: np.array) -> float:
     """Вычисляет доходность оптимального инкрементального портфеля.
 
@@ -99,21 +95,35 @@ class Model:
         self._end = end
         self._phenotype = phenotype
 
-        self._forecast = None
+        if pickled_model:
+            self._model = self._load_trained_model(pickled_model)
+        else:
+            self._model = self._train_model()
 
         self._information_ratio = None
 
-        self._model = None
+    def __bytes__(self) -> bytes:
+        """Внутреннее состояние натренированной модели в формате pickle."""
+        if self._model is None:
+            return bytes()
+        return pickle.dumps(self._model.state_dict())
 
-        if pickled_model:
-            self._forecast = data_loader.DescribedDataLoader(
-                tickers, end, phenotype["data"], data_params.ForecastParams
-            )
-            self._model = self._make_untrained_model(self._forecast)
-            state_dict = pickle.loads(pickled_model)
-            self._model.load_state_dict(state_dict)
+    def _load_trained_model(self, pickled_model: bytes) -> nn.Module:
+        """Создание тренированной модели."""
+        loader = data_loader.DescribedDataLoader(
+            self._tickers,
+            self._end,
+            self._phenotype["data"],
+            data_params.ForecastParams,
+        )
+        model = self._make_untrained_model(loader)
+        state_dict = pickle.loads(pickled_model)
+        model.load_state_dict(state_dict)
+        return model
 
-    def _make_untrained_model(self, loader) -> nn.Module:
+    def _make_untrained_model(
+        self, loader: data_loader.DescribedDataLoader
+    ) -> nn.Module:
         """Создает модель с не обученными весами."""
         model_type = getattr(models, self._phenotype["type"])
         model = model_type(loader.features_description, **self._phenotype["model"])
@@ -123,11 +133,100 @@ class Model:
         )
         return model
 
-    def __bytes__(self) -> bytes:
-        """Внутреннее состояние натренированной модели в формате pickle."""
-        if self._model is None:
-            return bytes()
-        return pickle.dumps(self._model.state_dict())
+    def _train_model(self) -> nn.Module:
+        """Тренировка модели."""
+        phenotype = self._phenotype
+
+        loader = data_loader.DescribedDataLoader(
+            self._tickers, self._end, phenotype["data"], data_params.TrainParams
+        )
+
+        model = self._make_untrained_model(loader)
+        optimizer = optim.AdamW(model.parameters(), **phenotype["optimizer"])
+
+        steps_per_epoch = len(loader)
+        scheduler_params = dict(phenotype["scheduler"])
+        epochs = scheduler_params.pop("epochs")
+        total_steps = 1 + int(steps_per_epoch * epochs)
+        scheduler_params["total_steps"] = total_steps
+        scheduler = lr_scheduler.OneCycleLR(optimizer, **scheduler_params)
+
+        print(f"Epochs - {epochs:.2f}")
+        print(f"Train size - {len(loader.dataset)}")
+
+        len_deque = int(total_steps ** 0.5)
+        loss_sum = 0.0
+        loss_deque = collections.deque([0], maxlen=len_deque)
+        weight_sum = 0.0
+        weight_deque = collections.deque([0], maxlen=len_deque)
+        loss_fn = self._llh
+
+        loader = itertools.repeat(loader)
+        loader = itertools.chain.from_iterable(loader)
+        loader = itertools.islice(loader, total_steps)
+
+        model.train()
+        bar = tqdm.tqdm(loader, file=sys.stdout, total=total_steps, desc="~~> Train")
+        for batch in bar:
+            optimizer.zero_grad()
+            output = model(batch)
+
+            loss, weight = loss_fn(output, batch)
+
+            loss_sum += loss.item() - loss_deque[0]
+            loss_deque.append(loss.item())
+
+            weight_sum += weight - weight_deque[0]
+            weight_deque.append(weight)
+
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
+
+            loss_current = loss_sum / weight_sum
+            bar.set_postfix_str(f"{loss_current:.5f}")
+
+            if loss_current > HIGH_SCORE:
+                raise GradientsError(loss_current)
+
+        self._validate(model)
+
+        return model
+
+    @staticmethod
+    def _llh(
+        output: torch.Tensor, batch: Dict[str, torch.Tensor]
+    ) -> Tuple[torch.Tensor, int]:
+        """Minus Log Likelihood."""
+        m, s = output
+        llh = LLH_START + torch.log(s) + 0.5 * ((batch["Label"] - m) / s) ** 2
+        return llh.sum(), m.shape[0]
+
+    def _validate(self, model: nn.Module) -> NoReturn:
+        """Валидация модели."""
+        loader = data_loader.DescribedDataLoader(
+            self._tickers, self._end, self._phenotype["data"], data_params.ValParams
+        )
+        if len(loader.dataset) // len(self._tickers) == 0:
+            print("~~> Valid: skipped...")
+            return
+
+        loss_fn = self._llh
+
+        val_loss = 0.0
+        val_weight = 0.0
+
+        print(f"Val size - {len(loader.dataset)}")
+        with torch.no_grad():
+            model.eval()
+            bar = tqdm.tqdm(loader, file=sys.stdout, desc="~~> Valid")
+            for batch in bar:
+                output = model(batch)
+                loss, weight = loss_fn(output, batch)
+                val_loss += loss.item()
+                val_weight += weight
+
+                bar.set_postfix_str(f"{val_loss / val_weight:.5f}")
 
     @property
     def information_ratio(self) -> float:
@@ -140,8 +239,9 @@ class Model:
         """Вычисляет информационный коэффициент против портфеля с равным весом активов.
 
         Оптимальный информационный коэффициент достигается при ставках, пропорциональные разнице между
-        сигналом и его средним значением для данного периода, нормированной на СКО сигнала для данного
-        периода.
+        сигналом и его средним значением для данного периода, взвешенным обратно квадрату СКО,
+        нормированной на СКО. Веса дополнительно нормируются для достижения одинакового СКО во все
+        периоды.
         """
         loader = data_loader.DescribedDataLoader(
             self._tickers, self._end, self._phenotype["data"], data_params.TestParams
@@ -151,8 +251,6 @@ class Model:
         if rez:
             raise TooLongHistoryError
 
-        if self._model is None:
-            self._train_model()
         model = self._model
 
         labels = []
@@ -191,103 +289,6 @@ class Model:
 
         return mean / std * YEAR_IN_TRADING_DAYS ** 0.5
 
-    def _train_model(self) -> NoReturn:
-        """Тренировка модели."""
-        phenotype = self._phenotype
-
-        loader_train = data_loader.DescribedDataLoader(
-            self._tickers, self._end, phenotype["data"], data_params.TrainParams
-        )
-
-        self._model = self._make_untrained_model(loader_train)
-        model = self._model
-
-        optimizer = optim.AdamW(model.parameters(), **phenotype["optimizer"])
-
-        steps_per_epoch = len(loader_train)
-        scheduler_params = dict(phenotype["scheduler"])
-        epochs = scheduler_params.pop("epochs")
-        total_steps = 1 + int(steps_per_epoch * epochs)
-        scheduler_params["total_steps"] = total_steps
-        scheduler = lr_scheduler.OneCycleLR(optimizer, **scheduler_params)
-
-        print(f"Epochs - {epochs:.2f}")
-        print(f"Train size - {len(loader_train.dataset)}")
-
-        loss_sum = 0.0
-        loss_deque = collections.deque([0], maxlen=(total_steps + 9) // 10)
-        weight_sum = 0.0
-        weight_deque = collections.deque([0], maxlen=(total_steps + 9) // 10)
-        loss_fn = self._llh
-
-        loader_train = itertools.repeat(loader_train)
-        loader_train = itertools.chain.from_iterable(loader_train)
-        loader_train = itertools.islice(loader_train, total_steps)
-
-        model.train()
-        bar = tqdm.tqdm(
-            loader_train, file=sys.stdout, total=total_steps, desc="~~> Train"
-        )
-        for batch in bar:
-            optimizer.zero_grad()
-            output = model(batch)
-
-            loss, weight = loss_fn(output, batch)
-
-            loss_sum += loss.item() - loss_deque[0]
-            loss_deque.append(loss.item())
-
-            weight_sum += weight - weight_deque[0]
-            weight_deque.append(weight)
-
-            loss.backward()
-            optimizer.step()
-            scheduler.step()
-
-            loss_current = loss_sum / weight_sum
-            bar.set_postfix_str(f"{loss_current:.5f}")
-
-            if loss_current > HIGH_SCORE:
-                raise GradientsError(loss_current)
-
-        self._validate()
-
-    @staticmethod
-    def _llh(
-        output: torch.Tensor, batch: Dict[str, torch.Tensor]
-    ) -> Tuple[torch.Tensor, int]:
-        """Minus Log Likelihood."""
-        m, s = output
-        llh = LLH_START + torch.log(s) + 0.5 * ((batch["Label"] - m) / s) ** 2
-        return llh.sum(), m.shape[0]
-
-    def _validate(self) -> NoReturn:
-        """Валидация модели."""
-        loader = data_loader.DescribedDataLoader(
-            self._tickers, self._end, self._phenotype["data"], data_params.ValParams
-        )
-        if len(loader.dataset) // len(self._tickers) == 0:
-            print("~~> Valid: skipped...")
-            return
-
-        model = self._model
-        loss_fn = self._llh
-
-        val_loss = 0.0
-        val_weight = 0.0
-
-        print(f"Val size - {len(loader.dataset)}")
-        with torch.no_grad():
-            model.eval()
-            bar = tqdm.tqdm(loader, file=sys.stdout, desc="~~> Valid")
-            for batch in bar:
-                output = model(batch)
-                loss, weight = loss_fn(output, batch)
-                val_loss += loss.item()
-                val_weight += weight
-
-                bar.set_postfix_str(f"{val_loss / val_weight:.5f}")
-
     def forecast(self) -> pd.Series:
         """Прогноз годовой доходности."""
         loader = data_loader.DescribedDataLoader(
@@ -298,8 +299,6 @@ class Model:
         )
 
         model = self._model
-        if model is None:
-            raise NotTrainedError
 
         outputs = []
         with torch.no_grad():
