@@ -17,7 +17,6 @@ DATA_PARAMS = {
         "Prices": {},
         "Dividends": {},
         "Ticker": {},
-        "Weight": {},
     },
 }
 NET_PARAMS = {
@@ -79,12 +78,17 @@ def test_wave_net_bn(loader):
 
     net = wave_net.WaveNet(loader.features_description, **NET_PARAMS)
     net.eval()
-    rez = net(batch)
-    rez2 = net(batch2)
+    m1, s1 = net(batch)
+    m2, s2 = net(batch2)
 
-    assert rez.shape == (100, 1)
-    assert rez2.shape == (50, 1)
-    assert rez2.allclose(rez[50:, :])
+    assert m1.shape == (100, 1)
+    assert s1.shape == (100, 1)
+
+    assert m2.shape == (50, 1)
+    assert s2.shape == (50, 1)
+
+    assert m2.allclose(m1[50:, :])
+    assert s2.allclose(s1[50:, :])
 
 
 def test_wave_net_no_bn(loader):
@@ -96,9 +100,14 @@ def test_wave_net_no_bn(loader):
 
     NET_PARAMS["start_bn"] = False
     net = wave_net.WaveNet(loader.features_description, **NET_PARAMS)
-    rez = net(batch)
-    rez2 = net(batch2)
+    m1, s1 = net(batch)
+    m2, s2 = net(batch2)
 
-    assert rez.shape == (100, 1)
-    assert rez2.shape == (50, 1)
-    assert rez2.allclose(rez[:50, :])
+    assert m1.shape == (100, 1)
+    assert s1.shape == (100, 1)
+
+    assert m2.shape == (50, 1)
+    assert s2.shape == (50, 1)
+
+    assert m2.allclose(m1[:50, :])
+    assert s2.allclose(s1[:50, :])
