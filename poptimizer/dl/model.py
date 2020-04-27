@@ -188,7 +188,8 @@ class Model:
             loss_current = loss_sum / weight_sum
             bar.set_postfix_str(f"{loss_current:.5f}")
 
-            if loss_current > HIGH_SCORE:
+            # Такое условие позволяет отсеять NaN
+            if not (loss_current < HIGH_SCORE):
                 raise GradientsError(loss_current)
 
         self._validate(model)
