@@ -40,6 +40,9 @@ class DataParams(abc.ABC):
         :param params:
             Словарь с параметрами для построения признаков и других элементов модели.
         """
+        self._cache = {}
+        self._tickers = tickers
+        self._end = end
         self._params = copy.deepcopy(params)
         div, price = self._div_price(tickers, end)
         self._div = dict()
@@ -58,9 +61,23 @@ class DataParams(abc.ABC):
         """
 
     @property
+    def cache(self) -> dict:
+        """Словарь для кеширования.
+
+        Признак или схожие признаки могут сохранять вспомогательную информацию, чтобы исключить
+        повторные вызовы тяжелых функций.
+        """
+        return self._cache
+
+    @property
     def tickers(self) -> Tuple[str]:
         """Перечень тикеров."""
-        return tuple(self._price.keys())
+        return self._tickers
+
+    @property
+    def end(self) -> pd.Timestamp:
+        """Конечная дата."""
+        return self._end
 
     @property
     def shuffle(self) -> bool:

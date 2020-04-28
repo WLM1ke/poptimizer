@@ -15,8 +15,8 @@ BASE_PHENOTYPE = {
             "Prices": {},
             "Dividends": {},
             "Turnover": {},
+            "AverageTurnover": {},
             "Ticker": {},
-            "Weight": {},
         }
     },
 }
