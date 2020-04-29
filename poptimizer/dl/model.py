@@ -2,7 +2,6 @@
 import collections
 import io
 import itertools
-import math
 import sys
 from typing import Tuple, Dict, Optional, NoReturn
 
@@ -22,9 +21,6 @@ HIGH_SCORE = 100
 
 # Для численной стабильности
 EPS = 1e-08
-
-# Начальный член в LLH нормального распределения
-LLH_START = torch.tensor(0.5 * math.log(2 * math.pi))
 
 
 class ModelError(POptimizerError):
@@ -47,6 +43,16 @@ class GradientsError(ModelError):
 
 class DegeneratedForecastError(ModelError):
     """Константный прогноз."""
+
+
+def normal_llh(
+    output: Tuple[torch.Tensor, torch.Tensor], batch: Dict[str, torch.Tensor]
+) -> Tuple[torch.Tensor, int]:
+    """Minus Normal Log Likelihood and batch size."""
+    m, s = output
+    dist = torch.distributions.normal.Normal(m, s)
+    llh = dist.log_prob(batch["Label"])
+    return -llh.sum(), m.shape[0]
 
 
 def incremental_return(r: np.array, r_expected: np.array, std_2: np.array) -> float:
@@ -161,7 +167,7 @@ class Model:
         loss_deque = collections.deque([0], maxlen=len_deque)
         weight_sum = 0.0
         weight_deque = collections.deque([0], maxlen=len_deque)
-        loss_fn = self._llh
+        loss_fn = normal_llh
 
         loader = itertools.repeat(loader)
         loader = itertools.chain.from_iterable(loader)
@@ -196,15 +202,6 @@ class Model:
 
         return model
 
-    @staticmethod
-    def _llh(
-        output: torch.Tensor, batch: Dict[str, torch.Tensor]
-    ) -> Tuple[torch.Tensor, int]:
-        """Minus Log Likelihood."""
-        m, s = output
-        llh = LLH_START + torch.log(s) + 0.5 * ((batch["Label"] - m) / s) ** 2
-        return llh.sum(), m.shape[0]
-
     def _validate(self, model: nn.Module) -> NoReturn:
         """Валидация модели."""
         loader = data_loader.DescribedDataLoader(
@@ -214,7 +211,7 @@ class Model:
             print("~~> Valid: skipped...")
             return
 
-        loss_fn = self._llh
+        loss_fn = normal_llh
 
         val_loss = 0.0
         val_weight = 0.0

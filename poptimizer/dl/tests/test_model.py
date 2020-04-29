@@ -3,6 +3,7 @@ import copy
 import numpy as np
 import pymongo
 import pytest
+import torch
 
 from poptimizer.dl import model
 from poptimizer.evolve import genotype
@@ -13,6 +14,16 @@ DB_PARAMS = {
     "sort": [(WINS, pymongo.DESCENDING)],
     "limit": 1,
 }
+
+
+def test_normal_llh():
+    m = torch.rand((100, 1))
+    s = torch.tensor(0.5) + torch.rand((100, 1))
+    x = dict(Label=torch.rand((100, 1)))
+    llh, size = model.normal_llh((m, s), x)
+    dist = torch.distributions.normal.Normal(m, s)
+    assert llh.allclose(-dist.log_prob(x["Label"]).sum())
+    assert size == 100
 
 
 def test_incremental_return():
