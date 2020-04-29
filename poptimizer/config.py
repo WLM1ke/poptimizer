@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Количество колонок в распечатках без переноса на несколько страниц
 pd.set_option("display.max_columns", 20)
-pd.set_option("display.max_rows", 100)
+pd.set_option("display.max_rows", 110)
 pd.set_option("display.width", None)
 
 # Путь к директории с отчетам
@@ -47,25 +47,25 @@ MAX_TRADE = 1 / 100
 # Параметры ML-модели
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 190, "div_share": 0.7, "on_off": True}),
-        ("Scaler", {"days": 205, "on_off": True}),
+        ("Label", {"days": 182, "div_share": 0.7, "on_off": True}),
+        ("Scaler", {"days": 195, "on_off": True}),
         ("Ticker", {"on_off": True}),
-        ("Mom12m", {"days": 181, "on_off": True, "periods": 3}),
-        ("DivYield", {"days": 187, "on_off": True, "periods": 2}),
-        ("Mom1m", {"days": 23, "on_off": True}),
-        ("RetMax", {"days": 44, "on_off": True}),
-        ("ChMom6m", {"days": 112, "on_off": True}),
-        ("STD", {"days": 30, "on_off": True}),
-        ("DayOfYear", {"on_off": False}),
-        ("TurnOver", {"days": 269, "normalize": True, "on_off": True}),
+        ("Mom12m", {"days": 188, "on_off": True, "periods": 3}),
+        ("DivYield", {"days": 172, "on_off": True, "periods": 3}),
+        ("Mom1m", {"days": 25, "on_off": True}),
+        ("RetMax", {"days": 40, "on_off": True}),
+        ("ChMom6m", {"days": 119, "on_off": True}),
+        ("STD", {"days": 34, "on_off": True}),
+        ("DayOfYear", {"on_off": True}),
+        ("TurnOver", {"days": 282, "normalize": False, "on_off": True}),
         ("TurnOverVar", {"days": 173, "on_off": True}),
     ),
     "model": {
-        "bagging_temperature": 0.5599793040266028,
-        "depth": 16,
-        "l2_leaf_reg": 0.8412478754428343,
-        "learning_rate": 0.0045726516089600626,
+        "bagging_temperature": 1.97326353432445,
+        "depth": 12,
+        "l2_leaf_reg": 1.0394996170242539,
+        "learning_rate": 0.0032571838373879327,
         "one_hot_max_size": 2,
-        "random_strength": 0.3322703074678968,
+        "random_strength": 2.407013242840476,
     },
 }
