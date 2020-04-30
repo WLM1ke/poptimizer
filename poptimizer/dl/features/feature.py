@@ -15,13 +15,10 @@ class FeatureType(enum.Enum):
     По разному обрабатываются нейронной сетью.
     """
 
-    # noinspection PyMethodParameters
-    def _generate_next_value_(name, start, count, last_values):
-        return name
-
     LABEL = enum.auto()
     SEQUENCE = enum.auto()
     EMBEDDING = enum.auto()
+    EMBEDDING_SEQUENCE = enum.auto()
 
 
 class Feature(abc.ABC):

@@ -31,7 +31,7 @@ def make_feature():
     div.STATS_START = saved_start_date
 
 
-class TestLabel:
+class TestTicker:
     def test_getitem(self, features):
         ticker1, ticker2 = features
         assert ticker1[0].shape == torch.Size([])

@@ -17,6 +17,7 @@ DATA_PARAMS = {
         "Prices": {},
         "Dividends": {},
         "Ticker": {},
+        "DayOfYear": {},
     },
 }
 NET_PARAMS = {
@@ -74,6 +75,7 @@ def test_wave_net_bn(loader):
     batch2 = copy.deepcopy(batch)
     batch2["Prices"] = batch2["Prices"][50:, :]
     batch2["Dividends"] = batch2["Dividends"][50:, :]
+    batch2["DayOfYear"] = batch2["DayOfYear"][50:, :]
     batch2["Ticker"] = batch2["Ticker"][50:]
 
     net = wave_net.WaveNet(loader.features_description, **NET_PARAMS)
@@ -94,9 +96,10 @@ def test_wave_net_bn(loader):
 def test_wave_net_no_bn(loader):
     batch = next(iter(loader))
     batch2 = copy.deepcopy(batch)
-    batch2["Prices"] = batch2["Prices"][:50, :]
-    batch2["Dividends"] = batch2["Dividends"][:50, :]
-    batch2["Ticker"] = batch2["Ticker"][:50]
+    batch2["Prices"] = batch2["Prices"][:40, :]
+    batch2["Dividends"] = batch2["Dividends"][:40, :]
+    batch2["DayOfYear"] = batch2["DayOfYear"][:40, :]
+    batch2["Ticker"] = batch2["Ticker"][:40]
 
     NET_PARAMS["start_bn"] = False
     net = wave_net.WaveNet(loader.features_description, **NET_PARAMS)
@@ -106,8 +109,8 @@ def test_wave_net_no_bn(loader):
     assert m1.shape == (100, 1)
     assert s1.shape == (100, 1)
 
-    assert m2.shape == (50, 1)
-    assert s2.shape == (50, 1)
+    assert m2.shape == (40, 1)
+    assert s2.shape == (40, 1)
 
-    assert m2.allclose(m1[:50, :])
-    assert s2.allclose(s1[:50, :])
+    assert m2.allclose(m1[:40, :])
+    assert s2.allclose(s1[:40, :])
