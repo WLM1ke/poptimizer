@@ -86,8 +86,23 @@ class Organism:
         return self._data.get(WINS, 0)
 
     def evaluate_fitness(self, tickers: Tuple[str, ...], end: pd.Timestamp) -> float:
-        """Тренирует модель с нуля и вычисляет информационный коэффициент."""
-        model = Model(tickers, end, self._data[GENOTYPE].get_phenotype())
+        """Вычисляет информационный коэффициент.
+
+        Если осуществлялась оценка для указанных тикеров и даты - используется сохраненное значение. Если
+        существует натренированная модель для указанных тикеров - осуществляется оценка без тренировки.
+        В ином случае тренируется и оценивается с нуля.
+        """
+        data = self._data
+        if data.get(DATE) == end and data.get(TICKERS) == tickers:
+            update = {WINS: self.wins + 1}
+            self._update(update)
+            return data[INFORMATION_RATIO]
+
+        pickled_model = data.get(MODEL)
+        if data.get(TICKERS) != tickers:
+            pickled_model = None
+
+        model = Model(tickers, end, self._data[GENOTYPE].get_phenotype(), pickled_model)
         ir = model.information_ratio
 
         update = {
@@ -179,8 +194,14 @@ def print_stat(collection=None) -> NoReturn:
         filter={INFORMATION_RATIO: {"$exists": True}}, projection=[INFORMATION_RATIO]
     )
     irs = map(lambda x: x[INFORMATION_RATIO], cursor)
-    quantiles = np.quantile(tuple(irs), [0.0, 0.5, 1.0])
-    quantiles = map(lambda x: f"{x:.4f}", quantiles)
+    irs = tuple(irs)
+    if irs:
+        quantiles = np.quantile(tuple(irs), [0.0, 0.5, 1.0])
+        quantiles = map(lambda x: f"{x:.4f}", quantiles)
+        quantiles = tuple(quantiles)
+    else:
+        quantiles = ["-"] * 3
+
     print(f"IR - ({', '.join(tuple(quantiles))})")
 
     params = {

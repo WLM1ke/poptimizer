@@ -71,7 +71,7 @@ class FakeModel:
     COUNTER = 0
 
     # noinspection PyUnusedLocal
-    def __init__(self, tickers, end, phenotype):
+    def __init__(self, tickers, end, phenotype, pickled_model):
         pass
 
     @property
@@ -124,6 +124,13 @@ def test_evaluate_fitness(monkeypatch):
     )
     assert FakeModel.COUNTER == 4
     assert organism_reloaded.wins == 4
+
+    assert (
+        organism_reloaded.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-13"))
+        == 5
+    )
+    assert FakeModel.COUNTER == 4
+    assert organism_reloaded.wins == 5
 
 
 def test_make_child():
