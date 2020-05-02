@@ -71,7 +71,7 @@ class DescribedDataLoader(data.DataLoader):
             batch_size=params.batch_size,
             shuffle=params.shuffle,
             drop_last=False,
-            num_workers=1,  # Загрузка в отдельном потоке - увеличение потоков не докидывает
+            num_workers=0,  # Загрузка в отдельном потоке - увеличение потоков не докидывает
         )
         self._features_description = data_sets[0].features_description
 
