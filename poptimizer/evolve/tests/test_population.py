@@ -108,28 +108,28 @@ def test_evaluate_fitness(monkeypatch):
         organism_reloaded.evaluate_fitness(("GAZP", "AKRN"), pd.Timestamp("2020-04-12"))
         == 5
     )
-    assert FakeModel.COUNTER == 2
+    assert FakeModel.COUNTER == 1
     assert organism_reloaded.wins == 2
 
     assert (
         organism_reloaded.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-12"))
         == 5
     )
-    assert FakeModel.COUNTER == 3
+    assert FakeModel.COUNTER == 2
     assert organism_reloaded.wins == 3
 
     assert (
         organism_reloaded.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-13"))
         == 5
     )
-    assert FakeModel.COUNTER == 4
+    assert FakeModel.COUNTER == 3
     assert organism_reloaded.wins == 4
 
     assert (
         organism_reloaded.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-13"))
         == 5
     )
-    assert FakeModel.COUNTER == 4
+    assert FakeModel.COUNTER == 3
     assert organism_reloaded.wins == 5
 
 

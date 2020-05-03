@@ -92,6 +92,7 @@ class Organism:
         существует натренированная модель для указанных тикеров - осуществляется оценка без тренировки.
         В ином случае тренируется и оценивается с нуля.
         """
+        tickers = list(tickers)
         data = self._data
         if data.get(DATE) == end and data.get(TICKERS) == tickers:
             update = {WINS: self.wins + 1}
@@ -102,7 +103,9 @@ class Organism:
         if data.get(TICKERS) != tickers:
             pickled_model = None
 
-        model = Model(tickers, end, self._data[GENOTYPE].get_phenotype(), pickled_model)
+        model = Model(
+            tuple(tickers), end, self._data[GENOTYPE].get_phenotype(), pickled_model
+        )
         ir = model.information_ratio
 
         update = {
