@@ -289,7 +289,7 @@ class Model:
 
         return mean / std * YEAR_IN_TRADING_DAYS ** 0.5
 
-    def forecast(self) -> pd.Series:
+    def forecast(self) -> Tuple[pd.Series, pd.Series]:
         """Прогноз годовой доходности."""
         loader = data_loader.DescribedDataLoader(
             self._tickers,
@@ -300,17 +300,21 @@ class Model:
 
         model = self._model
 
-        outputs = []
+        m_list = []
+        s_list = []
         with torch.no_grad():
             model.eval()
             for batch in loader:
-                output = model(batch)
-                outputs.append(output)
-        forecast = torch.cat(outputs, dim=0).numpy().flatten()
+                m, s = model(batch)
+                m_list.append(m)
+                s_list.append(s)
+        m_forecast = torch.cat(m_list, dim=0).numpy().flatten()
+        s_forecast = torch.cat(s_list, dim=0).numpy().flatten()
 
-        if np.isclose(forecast.std(), 0):
+        if np.isclose(s_forecast.std(), 0):
             raise DegeneratedForecastError
 
-        forecast = pd.Series(forecast, index=list(self._tickers))
+        m_forecast = pd.Series(m_forecast, index=list(self._tickers))
+        s_forecast = pd.Series(s_forecast, index=list(self._tickers))
         year_mul = YEAR_IN_TRADING_DAYS / self._phenotype["data"]["history_days"]
-        return forecast * year_mul
+        return m_forecast.mul(year_mul), s_forecast.mul(year_mul ** 0.5)

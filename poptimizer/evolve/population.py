@@ -125,28 +125,28 @@ class Organism:
         child_genotype = self.genotype.make_child(*genotypes)
         return Organism(genotype=child_genotype)
 
-    def forecast(self, tickers: Tuple[str, ...], end: pd.Timestamp) -> pd.Series:
+    def forecast(self, tickers: Tuple[str, ...], end: pd.Timestamp) -> Tuple[pd.Series, pd.Series]:
         """Выдает прогноз для текущего организма.
 
         При наличие натренированной модели, которая составлена на предыдущей статистике и для таких же
         тикеров, будет использованы сохраненные веса сети.
         """
-        pickled_model = None
         if (
-            self._data.get(DATE) is not None
-            and end >= self._data[DATE]
-            and tickers == tuple(self._data[TICKERS])
+                (pickled_model := self._data.get(MODEL)) is None
+                or tickers != tuple(self._data[TICKERS])
         ):
-            pickled_model = self._data[MODEL]
+            raise DegeneratedForecastError
+
         model = Model(tickers, end, self._data[GENOTYPE].get_phenotype(), pickled_model)
         try:
-            forecast = model.forecast()
+            m, s = model.forecast()
         except DegeneratedForecastError:
             self.die()
-            raise
+            raise DegeneratedForecastError
 
-        forecast.name = self.id
-        return forecast
+        m.name = self.id
+        s.name = self.id
+        return m, s
 
 
 def _sample_organism(num: int, collection: Collection = None) -> Iterable[Organism]:
