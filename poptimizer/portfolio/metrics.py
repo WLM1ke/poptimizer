@@ -1,94 +1,40 @@
-"""Абстрактный класс с метриками портфеля"""
-from dataclasses import dataclass
-
+"""Метрики для одного прогноза."""
 import numpy as np
 import pandas as pd
 
-from poptimizer import ml
-from poptimizer.config import T_SCORE
-from poptimizer.portfolio.portfolio import CASH, PORTFOLIO, Portfolio
-
-
-@dataclass(frozen=True)
-class Forecast:
-    """Класс с прогнозом."""
-
-    date: pd.Timestamp
-    tickers: tuple
-    mean: np.array
-    cov: np.array
-    num_cases: int
-    trees: int
-    depth: int
-    feature_importance: pd.Series
-    r: float
-    r_rang: float
-    t: float
-    average_cor: float
-    shrinkage: float
-    params: dict
-
-    def __str__(self) -> str:
-        return (
-            f"\nХАРАКТЕРИСТИКИ ПРОГНОЗА"
-            f"\nКоличество обучающих примеров - {self.num_cases}"
-            f"\nОбучено решающих деревьев - {self.trees}"
-            f"\nГлубина деревьев - {self.depth}"
-            f"\nR - {self.r:.2%}"
-            f"\nR_rang - {self.r_rang:.2%}"
-            f"\nT - {self.t:.2f}"
-            f"\nСредняя корреляция между акциями - {self.average_cor:.1%}"
-            f"\nСила сжатия ковариационной матрицы - {self.shrinkage:.1%}"
-            f"\n"
-            f"\nВАЖНОСТЬ ИСПОЛЬЗОВАННЫХ ПРИЗНАКОВ"
-            f"\n{self.feature_importance.to_frame().T}"
-        )
+from poptimizer import Portfolio, CASH, PORTFOLIO
 
 
 class Metrics:
     """Реализует основные метрики портфеля."""
 
-    def __init__(self, portfolio: Portfolio, months: float = 12):
+    def __init__(self, portfolio: Portfolio, mean: pd.Series, cov: np.array):
         """Использует прогноз для построения основных метрик позиций портфеля.
 
-        К основным метрикам относятся: доходность, СКО и бета. На основе их рассчитывается нижняя
-        граница доверительного интервала через определенное число месяцев и ее градиент относительно
-        веса позиции в портфеле.
+        Приближенно максимизируется геометрическая доходность портфеля исходя из прогноза. Для чего
+        рассчитывается ее производные по долям активов в портфеле на основе доходностей, СКО и бет.
 
         :param portfolio:
             Портфель, для которого рассчитываются метрики.
-        :param months:
-            Интервал в месяцах, для которого рассчитывается градиент.
+        :param mean:
+            Прогноз доходности.
+        :param cov:
+            Прогноз ковариационной матрицы.
         """
         self._portfolio = portfolio
-        self._forecast = self._forecast_func()
-        self._months = months
+        self._mean = mean
+        self._cov = cov
 
     def __str__(self) -> str:
-        frames = [self.mean, self.std, self.beta, self.lower_bound, self.gradient]
+        frames = [self.mean, self.std, self.beta, self.r_geom, self.gradient]
         df = pd.concat(frames, axis=1)
-        df.columns = ["MEAN", "STD", "BETA", "LOWER_BOUND", "GRADIENT"]
-        return (
-            f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ"
-            f"\n"
-            f"\nСКО градиента - {self.std_gradient:.2%}"
-            f"\n"
-            f"\n{df}"
-            f"\n{self._forecast}"
-        )
-
-    def _forecast_func(self) -> Forecast:
-        portfolio = self._portfolio
-        tickers = tuple(portfolio.index[:-2])
-        date = portfolio.date
-        return ml.get_forecast(tickers, date)
+        df.columns = ["MEAN", "STD", "BETA", "R_GEOM", "GRADIENT"]
+        return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ" f"\n" f"\n{df}"
 
     @property
     def mean(self) -> pd.Series:
         """Матожидание доходности по всем позициям портфеля."""
-        portfolio = self._portfolio
-        mean = self._forecast.mean
-        mean = pd.Series(mean, index=portfolio.index[:-2])
+        mean = self._mean
         mean[CASH] = 0
         weighted_mean = mean * self._portfolio.weight[mean.index]
         mean[PORTFOLIO] = weighted_mean.sum(axis=0)
@@ -98,7 +44,7 @@ class Metrics:
     def std(self) -> pd.Series:
         """СКО дивидендной доходности по всем позициям портфеля."""
         portfolio = self._portfolio
-        cov = self._forecast.cov
+        cov = self._cov
         std = np.diag(cov) ** 0.5
         std = pd.Series(std, index=portfolio.index[:-2])
         std[CASH] = 0
@@ -111,55 +57,43 @@ class Metrics:
     def beta(self) -> pd.Series:
         """Беты относительно доходности портфеля."""
         portfolio = self._portfolio
-        cov = self._forecast.cov
+        cov = self._cov
         weight = portfolio.weight[:-2].values
-        beta = cov @ weight.reshape(-1, 1) / (self.std[PORTFOLIO] ** 2)
+        beta = cov @ weight.reshape(-1, 1)
+        beta = beta / (weight.reshape(1, -1) * beta)
         beta = pd.Series(beta.flatten(), index=portfolio.index[:-2])
         beta[CASH] = 0
         beta[PORTFOLIO] = 1
         return beta
 
     @property
-    def lower_bound(self) -> pd.Series:
-        """Рассчитывает вклад в нижнюю границу доверительного интервала для доходности.
+    def r_geom(self) -> pd.Series:
+        """Приближенная оценка геометрической доходности.
 
-
-        Используемая t-статистика берется из файла настроек. Метрики пересчитываются на указанное
-        число месяцев - для доходности линейно, для СКО - пропорционально корню.
+        ДЛя портфеля равна арифметической доходности минус половина квадрата СКО. Для остальных
+        активов рассчитывается как сумма градиента и показателя для портфеля.
 
         При правильной реализации взвешенная по долям отдельных позиций граница равна границе по
         портфелю в целом.
         """
-        years = self._months / 12
-        # noinspection PyTypeChecker
-        mean = self.mean * years
-        # noinspection PyTypeChecker
-        risk = self.std[PORTFOLIO] * (years ** 0.5) * self.beta
-        lower_bound = mean - T_SCORE * risk
-        return lower_bound
+        r_geom = self.mean[PORTFOLIO] - self.std[PORTFOLIO] ** 2 / 2
+        return self.gradient.add(r_geom)
 
     @property
     def gradient(self) -> pd.Series:
-        """Рассчитывает производную нижней границы по доле актива в портфеле.
+        """Рассчитывает производную приближенного значения геометрической доходности по долям акций.
 
-        В общем случае равна (m - mp) - t * sp * (b - 1), m и mp - доходность актива и портфеля,
-        соответственно, t - t-статистика, sp - СКО портфеля, b - бета актива.
+        В общем случае равна (m - mp) - (b - 1) * sp ** 2, m и mp - доходность актива и портфеля,
+        соответственно, sp - СКО портфеля, b - бета актива.
 
         Долю актива с максимальным градиентом необходимо наращивать, а с минимальным сокращать. Так как
         важную роль в градиенте играет бета, то во многих случаях выгодно наращивать долю не той бумаги,
-        у которой достаточно низкая бета при высокой дивидендной доходности.
+        у которой достаточно низкая бета при высокой ожидаемой доходности.
 
         При правильной реализации взвешенный по долям отдельных позиций градиент равен градиенту по
         портфелю в целом и равен 0.
         """
-        years = self._months / 12
-        mean_gradient = (self.mean - self.mean[PORTFOLIO]) * years
-        # noinspection PyTypeChecker
-        risk_gradient = self.std[PORTFOLIO] * (years ** 0.5) * (self.beta - 1)
-        return mean_gradient - T_SCORE * risk_gradient
-
-    @property
-    def std_gradient(self) -> pd.Series:
-        """СКО для интервала времени расчета градиента."""
-        years = self._months / 12
-        return self.std[PORTFOLIO] * (years ** 0.5)
+        mean = self.mean
+        mean_gradient = mean - mean[PORTFOLIO]
+        risk_gradient = self.beta.sub(1) * self.std[PORTFOLIO] ** 2
+        return mean_gradient - risk_gradient
