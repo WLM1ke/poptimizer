@@ -77,8 +77,7 @@ class MetricsSingle:
         При правильной реализации взвешенная по долям отдельных позиций граница равна границе по
         портфелю в целом.
         """
-        r_geom = self.mean[PORTFOLIO] - self.std[PORTFOLIO] ** 2 / 2
-        return self.gradient.add(r_geom)
+        return self.mean - self.std[PORTFOLIO] ** 2 / 2 * (2 * self.beta - 1)
 
     @property
     def gradient(self) -> pd.Series:
