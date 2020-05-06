@@ -4,8 +4,8 @@ import pytest
 
 from poptimizer import config
 from poptimizer.data import div
-from poptimizer.portfolio import Portfolio, portfolio, metrics
-from poptimizer.portfolio.metrics import Metrics, Forecast
+from poptimizer.portfolio import Portfolio, portfolio, metrics_ml
+from poptimizer.portfolio.metrics_ml import Metrics, Forecast
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
 
 ML_PARAMS = {
@@ -149,8 +149,8 @@ def test_str(metrics_and_index):
 def test_std_gradient():
     pos = dict(AKRN=709, PRTK=100, RTKM=200, SIBN=300)
     port = portfolio.Portfolio("2018-12-17", 1000, pos)
-    metrics3 = metrics.Metrics(port, months=3)
-    metrics12 = metrics.Metrics(port, months=12)
+    metrics3 = metrics_ml.Metrics(port, months=3)
+    metrics12 = metrics_ml.Metrics(port, months=12)
     assert metrics12.std_gradient == pytest.approx(metrics12.std[PORTFOLIO])
     assert metrics3.std_gradient == pytest.approx(metrics12.std[PORTFOLIO] / 2)
     assert metrics3.std_gradient == pytest.approx(metrics3.std[PORTFOLIO] / 2)
@@ -160,7 +160,7 @@ def test_forecast_func(monkeypatch):
     monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
     pos = dict(AKRN=709, PRTK=100, RTKM=200, SIBN=300)
     port = portfolio.Portfolio("2018-12-17", 1000, pos)
-    result = metrics.Metrics(port)
+    result = metrics_ml.Metrics(port)
     # noinspection PyProtectedMember
     forecast = result._forecast_func()
     assert isinstance(forecast, Forecast)

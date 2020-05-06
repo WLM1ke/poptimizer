@@ -8,7 +8,7 @@ import pytest
 from poptimizer.config import POptimizerError
 from poptimizer.data import div
 from poptimizer.ml import forecaster, examples, cv
-from poptimizer.portfolio.metrics import Forecast
+from poptimizer.portfolio.metrics_ml import Forecast
 
 PARAMS = {
     "data": (

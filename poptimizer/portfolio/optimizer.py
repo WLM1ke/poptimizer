@@ -3,7 +3,7 @@ import pandas as pd
 
 from poptimizer import config
 from poptimizer.config import MAX_TRADE
-from poptimizer.portfolio import metrics
+from poptimizer.portfolio import metrics_ml
 from poptimizer.portfolio.portfolio import PORTFOLIO, CASH, Portfolio
 
 DAYS_IN_MONTH = 21
@@ -34,7 +34,7 @@ class Optimizer:
             Период времени для расчета метрик.
         """
         self._portfolio = portfolio
-        self._metrics = metrics.Metrics(portfolio, months)
+        self._metrics = metrics_ml.Metrics(portfolio, months)
 
     def __str__(self) -> str:
         recommendation = self._trade_recommendation()
@@ -82,7 +82,7 @@ class Optimizer:
         return self._portfolio
 
     @property
-    def metrics(self) -> metrics.Metrics:
+    def metrics(self) -> metrics_ml.Metrics:
         """Метрика, используемая для оптимизации."""
         return self._metrics
 
