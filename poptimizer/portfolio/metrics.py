@@ -1,6 +1,4 @@
 """Метрики для одного прогноза."""
-import statistics
-
 import numpy as np
 import pandas as pd
 
@@ -27,12 +25,19 @@ class MetricsSingle:
         self._mean = mean
         self._cov = cov
 
+    def __str__(self) -> str:
+        frames = [self.mean, self.std, self.beta, self.r_geom, self.gradient]
+        df = pd.concat(frames, axis=1)
+        df.columns = ["MEAN", "STD", "BETA", "R_GEOM", "GRADIENT"]
+        return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ" f"\n" f"\n{df}"
+
     @property
     def mean(self) -> pd.Series:
         """Матожидание доходности по всем позициям портфеля."""
-        mean = self._mean
+        portfolio = self._portfolio
+        mean = self._mean[portfolio.index[:-2]]
         mean[CASH] = 0
-        weighted_mean = mean * self._portfolio.weight[mean.index]
+        weighted_mean = mean * portfolio.weight[mean.index]
         mean[PORTFOLIO] = weighted_mean.sum(axis=0)
         return mean
 
@@ -56,7 +61,7 @@ class MetricsSingle:
         cov = self._cov
         weight = portfolio.weight[:-2].values
         beta = cov @ weight.reshape(-1, 1)
-        beta = beta / (weight.reshape(1, -1) * beta)
+        beta = beta / (weight.reshape(1, -1) @ beta)
         beta = pd.Series(beta.flatten(), index=portfolio.index[:-2])
         beta[CASH] = 0
         beta[PORTFOLIO] = 1
@@ -130,17 +135,17 @@ class MetricsResample:
     @property
     def mean(self) -> pd.Series:
         """Матожидание доходности по всем позициям портфеля."""
-        return statistics.mean(metric.mean for metric in self._metrics)
+        return sum(metric.mean for metric in self._metrics).div(len(self._metrics))
 
     @property
     def std(self) -> pd.Series:
         """СКО дивидендной доходности по всем позициям портфеля."""
-        return statistics.mean(metric.std for metric in self._metrics)
+        return sum(metric.std for metric in self._metrics).div(len(self._metrics))
 
     @property
     def beta(self) -> pd.Series:
         """Беты относительно доходности портфеля."""
-        return statistics.mean(metric.beta for metric in self._metrics)
+        return sum(metric.beta for metric in self._metrics).div(len(self._metrics))
 
     @property
     def r_geom(self) -> pd.Series:
@@ -152,7 +157,7 @@ class MetricsResample:
         При правильной реализации взвешенная по долям отдельных позиций граница равна границе по
         портфелю в целом.
         """
-        return statistics.mean(metric.r_geom for metric in self._metrics)
+        return sum(metric.r_geom for metric in self._metrics).div(len(self._metrics))
 
     @property
     def gradient(self) -> pd.Series:
@@ -168,7 +173,7 @@ class MetricsResample:
         При правильной реализации взвешенный по долям отдельных позиций градиент равен градиенту по
         портфелю в целом и равен 0.
         """
-        return statistics.mean(metric.gradient for metric in self._metrics)
+        return sum(metric.gradient for metric in self._metrics).div(len(self._metrics))
 
     @property
     def error(self) -> pd.Series:

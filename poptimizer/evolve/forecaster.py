@@ -85,7 +85,11 @@ def get_forecasts(tickers: Tuple[str, ...], date: pd.Timestamp) -> Forecasts:
     """
     mongodb = store.MongoDB()
     forecast_cache = mongodb[FORECAST]
-    if forecast_cache.date == date and forecast_cache.tickers == tickers:
+    if (
+        forecast_cache is not None
+        and forecast_cache.date == date
+        and forecast_cache.tickers == tickers
+    ):
         return forecast_cache
     forecast = Forecasts(tickers, date)
     mongodb[FORECAST] = forecast
