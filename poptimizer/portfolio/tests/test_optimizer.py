@@ -3,7 +3,7 @@ import pytest
 
 from poptimizer import portfolio, config
 from poptimizer.data import div
-from poptimizer.portfolio import optimizer
+from poptimizer.portfolio import optimizer_ml
 
 ML_PARAMS = {
     "data": (
@@ -36,7 +36,7 @@ def make_optimizer(monkeypatch):
         KZOS=800, MGNT=0, PIKK=800, MSTT=0, MTLRP=0, GMKN=21, CBOM=0, SNGSP=13000
     )
     port = portfolio.Portfolio(date, 1000, positions)
-    return optimizer.Optimizer(port, months=11)
+    return optimizer_ml.Optimizer(port, months=11)
 
 
 def test_best_sell(opt):
