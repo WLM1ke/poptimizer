@@ -35,7 +35,7 @@ YEAR_IN_TRADING_DAYS = 12 * 21
 AFTER_TAX = 1 - 0.13
 
 # Параметр для доверительных интервалов
-T_SCORE = 2.0
+T_SCORE = 0.5
 
 # База дивидендов содержит данные с начала 2010 года
 # Постепенно срок будет сдвигаться к началу режима TQBR для корректного учета сдвига T+2
@@ -47,25 +47,25 @@ MAX_TRADE = 1 / 100
 # Параметры ML-модели
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 155, "div_share": 0.5, "on_off": True}),
-        ("Scaler", {"days": 167, "on_off": True}),
+        ("Label", {"days": 143, "div_share": 0.4, "on_off": True}),
+        ("Scaler", {"days": 161, "on_off": True}),
         ("Ticker", {"on_off": True}),
-        ("Mom12m", {"days": 194, "on_off": True, "periods": 2}),
-        ("DivYield", {"days": 176, "on_off": True, "periods": 2}),
-        ("Mom1m", {"days": 27, "on_off": False}),
-        ("RetMax", {"days": 38, "on_off": True}),
-        ("ChMom6m", {"days": 96, "on_off": True}),
-        ("STD", {"days": 29, "on_off": True}),
+        ("Mom12m", {"days": 175, "on_off": True, "periods": 1}),
+        ("DivYield", {"days": 192, "on_off": True, "periods": 3}),
+        ("Mom1m", {"days": 29, "on_off": True}),
+        ("RetMax", {"days": 35, "on_off": True}),
+        ("ChMom6m", {"days": 98, "on_off": True}),
+        ("STD", {"days": 28, "on_off": True}),
         ("DayOfYear", {"on_off": False}),
-        ("TurnOver", {"days": 283, "normalize": True, "on_off": True}),
-        ("TurnOverVar", {"days": 157, "on_off": True}),
+        ("TurnOver", {"days": 268, "normalize": False, "on_off": True}),
+        ("TurnOverVar", {"days": 163, "on_off": True}),
     ),
     "model": {
-        "bagging_temperature": 1.1754972998402196,
-        "depth": 9,
-        "l2_leaf_reg": 2.817396504888399,
-        "learning_rate": 0.019384119549308354,
+        "bagging_temperature": 0.4521894117626858,
+        "depth": 4,
+        "l2_leaf_reg": 3.545172783263082,
+        "learning_rate": 0.003349473217292303,
         "one_hot_max_size": 1000,
-        "random_strength": 2.111763734463088,
+        "random_strength": 0.8612212169197176,
     },
 }

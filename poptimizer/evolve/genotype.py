@@ -11,7 +11,7 @@ BASE_PHENOTYPE = {
     "type": "WaveNet",
     "data": {
         "features": {
-            "Label": {"div_share": 0.5},
+            "Label": {"div_share": 0.4},
             "Prices": {},
             "Dividends": {},
             "Turnover": {},

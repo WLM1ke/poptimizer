@@ -1,7 +1,6 @@
 """Оптимизатор портфеля."""
 import pandas as pd
 
-from poptimizer import config
 from poptimizer.config import MAX_TRADE
 from poptimizer.portfolio import metrics_ml
 from poptimizer.portfolio.portfolio import PORTFOLIO, CASH, Portfolio
@@ -19,11 +18,7 @@ class Optimizer:
     Возможное улучшение сравнивается с СКО градиента.
     """
 
-    def __init__(
-        self,
-        portfolio: Portfolio,
-        months: float = config.ML_PARAMS["data"][0][1]["days"] / DAYS_IN_MONTH,
-    ):
+    def __init__(self, portfolio: Portfolio, months: float = 12):
         """Портфель оптимизируется с учетом метрик для определенного периода времени.
 
         По умолчанию период оптимизации равен периоду прогнозирования доходности.
