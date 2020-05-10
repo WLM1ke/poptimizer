@@ -39,7 +39,7 @@ T_SCORE = 0.5
 
 # База дивидендов содержит данные с начала 2010 года
 # Постепенно срок будет сдвигаться к началу режима TQBR для корректного учета сдвига T+2
-STATS_START = pd.Timestamp("2011-01-01")
+STATS_START = pd.Timestamp("2011-02-01")
 
 # Максимальный объем одной торговой операции в долях портфеля
 MAX_TRADE = 1 / 100
@@ -47,25 +47,25 @@ MAX_TRADE = 1 / 100
 # Параметры ML-модели
 ML_PARAMS = {
     "data": (
-        ("Label", {"days": 143, "div_share": 0.4, "on_off": True}),
-        ("Scaler", {"days": 161, "on_off": True}),
+        ("Label", {"days": 151, "div_share": 0.3, "on_off": True}),
+        ("Scaler", {"days": 164, "on_off": True}),
         ("Ticker", {"on_off": True}),
-        ("Mom12m", {"days": 175, "on_off": True, "periods": 1}),
-        ("DivYield", {"days": 192, "on_off": True, "periods": 3}),
-        ("Mom1m", {"days": 29, "on_off": True}),
-        ("RetMax", {"days": 35, "on_off": True}),
-        ("ChMom6m", {"days": 98, "on_off": True}),
-        ("STD", {"days": 28, "on_off": True}),
-        ("DayOfYear", {"on_off": False}),
-        ("TurnOver", {"days": 268, "normalize": False, "on_off": True}),
-        ("TurnOverVar", {"days": 163, "on_off": True}),
+        ("Mom12m", {"days": 184, "on_off": True, "periods": 1}),
+        ("DivYield", {"days": 211, "on_off": True, "periods": 2}),
+        ("Mom1m", {"days": 32, "on_off": True}),
+        ("RetMax", {"days": 33, "on_off": True}),
+        ("ChMom6m", {"days": 88, "on_off": True}),
+        ("STD", {"days": 30, "on_off": True}),
+        ("DayOfYear", {"on_off": True}),
+        ("TurnOver", {"days": 270, "normalize": True, "on_off": True}),
+        ("TurnOverVar", {"days": 147, "on_off": True}),
     ),
     "model": {
-        "bagging_temperature": 0.4521894117626858,
+        "bagging_temperature": 2.4793556010442694,
         "depth": 4,
-        "l2_leaf_reg": 3.545172783263082,
-        "learning_rate": 0.003349473217292303,
+        "l2_leaf_reg": 0.46009538650415005,
+        "learning_rate": 0.0018100226481827053,
         "one_hot_max_size": 1000,
-        "random_strength": 0.8612212169197176,
+        "random_strength": 0.47964627127098,
     },
 }
