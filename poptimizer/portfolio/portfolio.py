@@ -144,6 +144,7 @@ class Portfolio:
         result = (self.value / last_turnover).reindex(self.index)
         result = 1 - result / result.max()
         result[[CASH, PORTFOLIO]] = [1, 1]
+        result.name = "TURNOVER"
         return result
 
     def _median_turnover(self, tickers) -> pd.Series:

@@ -132,6 +132,11 @@ class MetricsResample:
         return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ" f"\n" f"\n{df}"
 
     @property
+    def count(self):
+        """Количество усредняемых метрик."""
+        return len(self._metrics)
+
+    @property
     def mean(self) -> pd.Series:
         """Матожидание доходности по всем позициям портфеля."""
         return sum(metric.mean for metric in self._metrics).div(len(self._metrics))
@@ -172,7 +177,11 @@ class MetricsResample:
         При правильной реализации взвешенный по долям отдельных позиций градиент равен градиенту по
         портфелю в целом и равен 0.
         """
-        return sum(metric.gradient for metric in self._metrics).div(len(self._metrics))
+        gradient = sum(metric.gradient for metric in self._metrics).div(
+            len(self._metrics)
+        )
+        gradient.name = "GRADIENT"
+        return gradient
 
     @property
     def error(self) -> pd.Series:

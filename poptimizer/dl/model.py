@@ -311,10 +311,7 @@ class Model:
         m_forecast = torch.cat(m_list, dim=0).numpy().flatten()
         s_forecast = torch.cat(s_list, dim=0).numpy().flatten()
 
-        if np.isclose(s_forecast.std(), 0):
-            raise DegeneratedForecastError
-
         m_forecast = pd.Series(m_forecast, index=list(self._tickers))
         s_forecast = pd.Series(s_forecast, index=list(self._tickers))
-        year_mul = YEAR_IN_TRADING_DAYS / self._phenotype["data"]["history_days"]
+        year_mul = YEAR_IN_TRADING_DAYS / self._phenotype["data"]["forecast_days"]
         return m_forecast.mul(year_mul), s_forecast.mul(year_mul ** 0.5)

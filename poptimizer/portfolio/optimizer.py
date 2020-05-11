@@ -1,5 +1,8 @@
 """Оптимизатор портфеля."""
+import math
+
 import pandas as pd
+from scipy import stats
 
 from poptimizer.config import MAX_TRADE
 from poptimizer.portfolio import metrics
@@ -7,174 +10,177 @@ from poptimizer.portfolio.portfolio import Portfolio, CASH, PORTFOLIO
 
 # На сколько сделок разбивается операция по покупке/продаже акций
 TRADES = 5
-T_SCORE = 3.6
+# Значимость отклонения градиента от нуля
+P_VALUE = 0.05
 
 
 class Optimizer:
-    """Предлагает сделки для улучшения метрик портфеля."""
+    """Предлагает сделки для улучшения метрики портфеля."""
 
-    def __init__(self, portfolio: Portfolio):
+    def __init__(self, portfolio: Portfolio, p_value: float = P_VALUE):
         """Учитывается градиент, его ошибку и ликвидность бумаг - градиент корректирует на фактор
         оборота.
 
         :param portfolio:
-            Оптимизируемый портфель."""
+            Оптимизируемый портфель.
+        :param p_value:
+            Требуемая значимость отклонения градиента от нуля.
+        """
         self._portfolio = portfolio
+        self._p_value = p_value
         self._metrics = metrics.MetricsResample(portfolio)
 
     def __str__(self) -> str:
-        return f"\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ\n\n{self.gradient}"
+        blocks = [
+            "\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ",
+            self._p_value_block(),
+            self._buy_sell_block(),
+            self._all_info_block(),
+        ]
+        return "\n\n".join(blocks)
+
+    def _p_value_block(self) -> str:
+        """Информация значимости при множественном тестировании гипотез."""
+        blocks = [
+            "Оценка значимости:",
+            f"p_value = {self.p_value:.2%}",
+            f"dof = {self.dof}",
+            f"t-score {self.t_score:.2f}",
+            f"trials = {self.trials}",
+            f"Bonferroni t_score = {self.t_score_bonferroni:.2f}",
+        ]
+        return "\n".join(blocks)
+
+    def _buy_sell_block(self) -> str:
+        """Информация о лучшей покупке и продаже."""
+        blocks = ["Лучшая сделка:", self._best_sell(), self._best_buy()]
+        return "\n".join(blocks)
+
+    def _best_sell(self) -> str:
+        """Лучшая продажа."""
+        upper_bound = self.upper_bound
+        sell = -self.buy_sell
+        upper_bound = upper_bound[sell.gt(0)]
+        ticker = upper_bound.idxmin()
+        return f"Продать {ticker} - {TRADES} сделок {sell[ticker]} лотов"
+
+    def _best_buy(self) -> str:
+        """Лучшая продажа."""
+        lower_bound = self.lower_bound
+        ticker = lower_bound.idxmax()
+        return f"Купить  {ticker} - {TRADES} сделок {self.buy_sell[ticker]} лотов"
+
+    def _all_info_block(self) -> str:
+        """Сводная информация об оптимизации."""
+        df = pd.concat(
+            [
+                self.gradient,
+                self.turnover,
+                self.lower_bound,
+                self.adj_gradient,
+                self.upper_bound,
+                self.buy_sell.replace(0, ""),
+            ],
+            axis=1,
+        )
+        return str(df.sort_values(by="GRADIENT", axis=0, ascending=False))
 
     @property
-    def portfolio(self):
+    def portfolio(self) -> Portfolio:
         """Оптимизируемый портфель."""
         return self._portfolio
 
     @property
-    def metrics(self):
+    def metrics(self) -> metrics.MetricsResample:
         """Метрики портфеля."""
         return self._metrics
 
     @property
-    def gradient(self) -> pd.DataFrame:
-        """Анализирует градиент позиций с учетом ликвидности и ошибки прогноза."""
-        portfolio = self._portfolio
-        gradient = self._metrics.gradient
-        turnover = self._portfolio.turnover_factor
-        error = self._metrics.error
-        mean = gradient.where(gradient < 0, gradient * turnover)
-        lower = mean - T_SCORE * error
-        upper = mean + T_SCORE * error
-        buy_sell = pd.Series("", index=gradient.index)
-        buy_size = (
-            portfolio.value[CASH] / TRADES / portfolio.price / portfolio.lot_size
-        ).apply(int)
-        buy_sell = buy_sell.mask(lower > 0, buy_size)
+    def gradient(self) -> pd.Series:
+        """Градиент позиций."""
+        return self._metrics.gradient
+
+    @property
+    def turnover(self) -> pd.Series:
+        """Фактор оборота позиций."""
+        return self._portfolio.turnover_factor
+
+    @property
+    def adj_gradient(self) -> pd.Series:
+        """Градиент скорректированный на оборот.
+
+        Для позиций с положительным градиентом он понижается на коэффициент оборота для учета
+        неликвидности.
+        """
+        adj_gradient = self.gradient * self.turnover
+        adj_gradient.name = "ADJ_GRAD"
+        return adj_gradient
+
+    @property
+    def p_value(self) -> float:
+        """Уровень значимости отклонения градиента от нуля."""
+        return self._p_value
+
+    @property
+    def dof(self) -> int:
+        """Количество степеней свободы в t-тесте."""
+        return self.metrics.count - 1
+
+    @property
+    def t_score(self) -> float:
+        """Базовый t-score до корректировки на множественное тестирование."""
+        p_value = 1 - self.p_value / 2
+        return stats.t.ppf(p_value, self.dof)
+
+    @property
+    def trials(self) -> int:
+        """Количество тестов на значимость.
+
+        Проверяются все позиции включая CASH, но исключая PORTFOLIO - портфель по определению имеет
+        значение градиента равное 0.
+        """
+        return len(self.portfolio.index) - 1
+
+    @property
+    def t_score_bonferroni(self) -> float:
+        """Скорректированный t-score с учетом поправки Бонферрони на множественное тестирование."""
+        p_value = self.p_value / self.trials
+        p_value = 1 - p_value / 2
+        return stats.t.ppf(p_value, self.dof)
+
+    @property
+    def lower_bound(self) -> pd.Series:
+        """Нижняя граница доверительного интервала градиента."""
+        lower = self.adj_gradient - self._metrics.error.mul(self.t_score_bonferroni)
+        lower.name = "LOWER"
+        return lower
+
+    @property
+    def upper_bound(self) -> pd.Series:
+        """Верхняя граница доверительного интервала градиента."""
+        upper = self.adj_gradient + self._metrics.error.mul(self.t_score_bonferroni)
+        upper.name = "UPPER"
+        return upper
+
+    @property
+    def buy_sell(self) -> pd.Series:
+        """Объемы продаж и покупок для позиций."""
+        portfolio = self.portfolio
+        lot_value_per_trades = (portfolio.price * portfolio.lot_size) * TRADES
+        buy_sell = pd.Series(0, index=portfolio.index)
 
         value = portfolio.value
+        buy_size = value[CASH] / lot_value_per_trades
+        buy_size = buy_size.apply(lambda x: math.ceil(x))
+        buy_sell = buy_sell.mask(self.lower_bound.gt(0), buy_size)
+
         max_trade = value[PORTFOLIO] * MAX_TRADE
-        sell_size = value.mask(max_trade > value, max_trade)
-        sell_size = max_trade / TRADES / portfolio.price / portfolio.lot_size
-        sell_size = sell_size.apply(lambda x: int(x) + 1)
+        max_trade = max(0, max_trade - value[CASH])
 
-        buy_sell = buy_sell.mask((upper < 0) & (portfolio.weight > 0), -sell_size)
-        buy_sell[CASH] = ""
-        df = pd.concat([gradient, turnover, lower, mean, upper, buy_sell], axis=1)
-        df.columns = ["GRADIENT", "TURNOVER", "LOWER", "MEAN", "UPPER", "BUY_SELL"]
-        return df.sort_values(by="GRADIENT", axis=0, ascending=False)
+        sell_size = max_trade / lot_value_per_trades
+        sell_size = sell_size.apply(lambda x: math.ceil(x))
 
-
-if __name__ == "__main__":
-    CASH_ = 2143 + 501_091 + 2049 + 1607 + (994 + 2333) - 500_000
-    POSITIONS = dict(
-        AKRN=152 + 716 + 91 + 7 + (542 + 0),
-        ALRS=2690,
-        BANEP=741 + 13 + 107 + 235,
-        BSPB=4890 + 0 + 3600 + 150,
-        CBOM=0 + 4400 + 71000 + (197_200 + 0),
-        CHMF=114 + 1029 + 170,
-        GCHE=0 + 0 + 24,
-        GMKN=0 + 58,
-        KRKNP=66 + 0 + 43,
-        KZOS=490 + 5080 + 2090,
-        LNZL=(66 + 0),
-        LSNGP=2280 + 670 + 2410,
-        MGTSP=485 + 0 + 9 + (151 + 0),
-        MOEX=2110 + 200 + 290 + (6730 + 0),
-        MSTT=720 + 0 + 100 + 320 + (840 + 0),
-        MTSS=2340 + 4800 + 1500 + 2120 + (3540 + 0),
-        MVID=90 + 0 + 800 + (6060 + 0),
-        NMTP=29000 + 74000 + 13000 + 67000,
-        PHOR=497 + 271 + 248 + 405 + (1039 + 374),
-        PIKK=0 + 3090 + 0 + 90 + (4050 + 0),
-        PLZL=86 + 21 + 23,
-        PMSBP=0 + 0 + 1160,
-        PRTK=0 + 6980 + (2420 + 0),
-        RTKM=(13150 + 0),
-        RTKMP=0 + 29400,
-        SELG=0 + 7300 + 1000,
-        SFIN=(1190 + 0),
-        SNGSP=72000 + 12200 + 22400 + 5100 + (46200 + 0),
-        TRCN=41 + 0 + 4 + 3 + (68 + 0),
-        TRNFP=7 + (13 + 0),
-        UPRO=345_000 + 451_000 + 283_000 + 85000,
-        VSMO=39 + 161 + 3,
-        # Бумаги с нулевым весом
-        RNFT=0,
-        LSRG=0,
-        DSKY=0,
-        CNTLP=0,
-        BANE=0,
-        IRKT=0,
-        MRKV=0,
-        TATNP=0,
-        SIBN=0,
-        UNAC=0,
-        MRKC=0,
-        LSNG=0,
-        MSRS=0,
-        SVAV=0,
-        TGKA=0,
-        NKNC=0,
-        NVTK=0,
-        LKOH=0,
-        OGKB=0,
-        AFLT=0,
-        SNGS=0,
-        MRKZ=0,
-        ROSN=0,
-        SBERP=0,
-        VTBR=0,
-        ENRU=0,
-        TATN=0,
-        RASP=0,
-        NLMK=0,
-        NKNCP=0,
-        FEES=0,
-        HYDR=0,
-        MRKP=0,
-        MTLRP=0,
-        MAGN=0,
-        GAZP=0,
-        SBER=0,
-        MGNT=0,
-        RSTI=0,
-        MSNG=0,
-        AFKS=0,
-        MTLR=0,
-        ISKJ=0,
-        RSTIP=0,
-        OBUV=0,
-        APTK=0,
-        GTRK=0,
-        ROLO=0,
-        FESH=0,
-        IRAO=0,
-        AMEZ=0,
-        YAKG=0,
-        AQUA=0,
-        RGSS=0,
-        LIFE=0,
-        KBTK=0,
-        KMAZ=0,
-        TTLK=0,
-        TGKD=0,
-        TGKB=0,
-        RBCM=0,
-        KZOSP=0,
-        RUGR=0,
-        CHEP=0,
-        TRMK=0,
-        TGKN=0,
-        IRGZ=0,
-        LNZLP=0,
-        BRZL=0,
-    )
-    POSITIONS.pop("OBUV")
-    POSITIONS.pop("GTRK")
-    DATE = "2020-05-05"
-
-    opt = Optimizer(Portfolio(DATE, CASH_, POSITIONS))
-    print(opt.portfolio)
-    print(opt.metrics)
-    print(opt)
+        buy_sell = buy_sell.mask(self.upper_bound.lt(0) & value.gt(0), -sell_size)
+        buy_sell[CASH] = 0
+        buy_sell.name = "BUY_SELL"
+        return buy_sell
