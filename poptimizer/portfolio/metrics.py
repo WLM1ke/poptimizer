@@ -1,8 +1,9 @@
-"""Метрики для одного прогноза."""
+"""Метрики для одного прогноза и набора прогнозов."""
 import numpy as np
 import pandas as pd
 
-from poptimizer import Portfolio, CASH, PORTFOLIO, evolve
+from poptimizer import evolve
+from poptimizer.portfolio import Portfolio, CASH, PORTFOLIO
 
 
 class MetricsSingle:
@@ -28,8 +29,7 @@ class MetricsSingle:
     def __str__(self) -> str:
         frames = [self.mean, self.std, self.beta, self.r_geom, self.gradient]
         df = pd.concat(frames, axis=1)
-        df.columns = ["MEAN", "STD", "BETA", "R_GEOM", "GRADIENT"]
-        return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ" f"\n" f"\n{df}"
+        return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n\n{df}"
 
     @property
     def mean(self) -> pd.Series:
@@ -38,12 +38,13 @@ class MetricsSingle:
         mean = self._mean[portfolio.index[:-2]]
         mean[CASH] = 0
         weighted_mean = mean * portfolio.weight[mean.index]
-        mean[PORTFOLIO] = weighted_mean.sum(axis=0)
+        mean[PORTFOLIO] = weighted_mean.sum()
+        mean.name = "MEAN"
         return mean
 
     @property
     def std(self) -> pd.Series:
-        """СКО дивидендной доходности по всем позициям портфеля."""
+        """СКО доходности по всем позициям портфеля."""
         portfolio = self._portfolio
         cov = self._cov
         std = np.diag(cov) ** 0.5
@@ -51,7 +52,8 @@ class MetricsSingle:
         std[CASH] = 0
         weight = portfolio.weight[:-2].values
         portfolio_var = weight.reshape(1, -1) @ cov @ weight.reshape(-1, 1)
-        std[PORTFOLIO] = portfolio_var[0, 0] ** 0.5
+        std[PORTFOLIO] = portfolio_var.squeeze() ** 0.5
+        std.name = "STD"
         return std
 
     @property
@@ -62,22 +64,26 @@ class MetricsSingle:
         weight = portfolio.weight[:-2].values
         beta = cov @ weight.reshape(-1, 1)
         beta = beta / (weight.reshape(1, -1) @ beta)
-        beta = pd.Series(beta.flatten(), index=portfolio.index[:-2])
+        beta = pd.Series(beta.ravel(), index=portfolio.index[:-2])
         beta[CASH] = 0
         beta[PORTFOLIO] = 1
+        beta.name = "BETA"
         return beta
 
     @property
     def r_geom(self) -> pd.Series:
         """Приближенная оценка геометрической доходности.
 
-        ДЛя портфеля равна арифметической доходности минус половина квадрата СКО. Для остальных
+        Для портфеля равна арифметической доходности минус половина квадрата СКО. Для остальных
         активов рассчитывается как сумма градиента и показателя для портфеля.
 
         При правильной реализации взвешенная по долям отдельных позиций граница равна границе по
         портфелю в целом.
         """
-        return self.mean - self.std[PORTFOLIO] ** 2 / 2 * (2 * self.beta - 1)
+        jensen_correction = self.std[PORTFOLIO] ** 2 / 2 * (self.beta.mul(2) - 1)
+        r_geom = self.mean.sub(jensen_correction)
+        r_geom.name = "R_GEOM"
+        return r_geom
 
     @property
     def gradient(self) -> pd.Series:
@@ -87,7 +93,7 @@ class MetricsSingle:
         соответственно, sp - СКО портфеля, b - бета актива.
 
         Долю актива с максимальным градиентом необходимо наращивать, а с минимальным сокращать. Так как
-        важную роль в градиенте играет бета, то во многих случаях выгодно наращивать долю не той бумаги,
+        важную роль в градиенте играет бета, то во многих случаях выгодно наращивать долю той бумаги,
         у которой достаточно низкая бета при высокой ожидаемой доходности.
 
         При правильной реализации взвешенный по долям отдельных позиций градиент равен градиенту по
@@ -96,17 +102,16 @@ class MetricsSingle:
         mean = self.mean
         mean_gradient = mean - mean[PORTFOLIO]
         risk_gradient = self.beta.sub(1) * self.std[PORTFOLIO] ** 2
-        return mean_gradient - risk_gradient
+        gradient = mean_gradient - risk_gradient
+        gradient.name = "GRAD"
+        return gradient
 
 
 class MetricsResample:
     """Реализует основные метрики портфеля для набора прогнозов."""
 
     def __init__(self, portfolio: Portfolio):
-        """Использует прогноз для построения основных метрик позиций портфеля.
-
-        Приближенно максимизируется геометрическая доходность портфеля исходя из прогноза. Для чего
-        рассчитывается ее производные по долям активов в портфеле на основе доходностей, СКО и бет.
+        """Использует набор прогнозов для построения основных метрик позиций портфеля.
 
         :param portfolio:
             Портфель, для которого рассчитываются метрики.
@@ -128,64 +133,57 @@ class MetricsResample:
             self.error,
         ]
         df = pd.concat(frames, axis=1)
-        df.columns = ["MEAN", "STD", "BETA", "R_GEOM", "GRADIENT", "ERROR"]
-        return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ" f"\n" f"\n{df}"
+        return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n\n{df}"
 
     @property
-    def count(self):
-        """Количество усредняемых метрик."""
+    def count(self) -> int:
+        """Количество прогнозов."""
         return len(self._metrics)
 
     @property
     def mean(self) -> pd.Series:
-        """Матожидание доходности по всем позициям портфеля."""
-        return sum(metric.mean for metric in self._metrics).div(len(self._metrics))
+        """Среднее для всех прогнозов матожидание доходности по позициям портфеля."""
+        mean = pd.concat([metric.mean for metric in self._metrics], axis=1).mean(axis=1)
+        mean.name = "MEAN"
+        return mean
 
     @property
     def std(self) -> pd.Series:
-        """СКО дивидендной доходности по всем позициям портфеля."""
-        return sum(metric.std for metric in self._metrics).div(len(self._metrics))
+        """Среднее для всех прогнозов СКО доходности по позициям портфеля."""
+        std = pd.concat([metric.std for metric in self._metrics], axis=1).mean(axis=1)
+        std.name = "STD"
+        return std
 
     @property
     def beta(self) -> pd.Series:
-        """Беты относительно доходности портфеля."""
-        return sum(metric.beta for metric in self._metrics).div(len(self._metrics))
+        """Средние для всех прогнозов беты относительно доходности портфеля."""
+        beta = pd.concat([metric.beta for metric in self._metrics], axis=1).mean(axis=1)
+        beta.name = "BETA"
+        return beta
 
     @property
     def r_geom(self) -> pd.Series:
-        """Приближенная оценка геометрической доходности.
-
-        ДЛя портфеля равна арифметической доходности минус половина квадрата СКО. Для остальных
-        активов рассчитывается как сумма градиента и показателя для портфеля.
-
-        При правильной реализации взвешенная по долям отдельных позиций граница равна границе по
-        портфелю в целом.
-        """
-        return sum(metric.r_geom for metric in self._metrics).div(len(self._metrics))
+        """Средние для всех прогнозов приближенные оценки геометрической доходности."""
+        r_geom = pd.concat([metric.r_geom for metric in self._metrics], axis=1).mean(
+            axis=1
+        )
+        r_geom.name = "R_GEOM"
+        return r_geom
 
     @property
     def gradient(self) -> pd.Series:
-        """Рассчитывает производную приближенного значения геометрической доходности по долям акций.
-
-        В общем случае равна (m - mp) - (b - 1) * sp ** 2, m и mp - доходность актива и портфеля,
-        соответственно, sp - СКО портфеля, b - бета актива.
-
-        Долю актива с максимальным градиентом необходимо наращивать, а с минимальным сокращать. Так как
-        важную роль в градиенте играет бета, то во многих случаях выгодно наращивать долю не той бумаги,
-        у которой достаточно низкая бета при высокой ожидаемой доходности.
-
-        При правильной реализации взвешенный по долям отдельных позиций градиент равен градиенту по
-        портфелю в целом и равен 0.
-        """
-        gradient = sum(metric.gradient for metric in self._metrics).div(
-            len(self._metrics)
-        )
-        gradient.name = "GRADIENT"
+        """Средние для всех прогнозов производные приближенного значения геометрической доходности."""
+        gradient = pd.concat(
+            [metric.gradient for metric in self._metrics], axis=1
+        ).mean(axis=1)
+        gradient.name = "GRAD"
         return gradient
 
     @property
     def error(self) -> pd.Series:
-        """Ошибки в оценке градиента."""
+        """Ошибки в оценке среднего градиента."""
         gradients = pd.concat([metric.gradient for metric in self._metrics], axis=1)
         std = gradients.std(axis=1, ddof=1)
-        return std.div(len(self._metrics) ** 0.5)
+        error = std.div(self.count ** 0.5)
+        error.name = "ERROR"
+        return error

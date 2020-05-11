@@ -43,11 +43,11 @@ class Optimizer:
         """Информация значимости при множественном тестировании гипотез."""
         blocks = [
             "Оценка значимости:",
-            f"p_value = {self.p_value:.2%}",
+            f"p-value = {self.p_value:.2%}",
             f"dof = {self.dof}",
             f"t-score {self.t_score:.2f}",
             f"trials = {self.trials}",
-            f"Bonferroni t_score = {self.t_score_bonferroni:.2f}",
+            f"Bonferroni t-score = {self.t_score_bonferroni:.2f}",
         ]
         return "\n".join(blocks)
 
@@ -83,7 +83,7 @@ class Optimizer:
             ],
             axis=1,
         )
-        return str(df.sort_values(by="GRADIENT", axis=0, ascending=False))
+        return str(df.sort_values(by="GRAD", axis=0, ascending=False))
 
     @property
     def portfolio(self) -> Portfolio:
