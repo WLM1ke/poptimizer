@@ -147,8 +147,9 @@ class Portfolio:
     def turnover_factor(self) -> pd.Series:
         """Понижающий коэффициент для акций с малым объемом оборотов относительно открытой позиции."""
         last_turnover = self._median_turnover(tuple(self.index[:-2]))
-        result = (self.value / last_turnover).reindex(self.index, fill_value=0)
+        result = (self.value / last_turnover).reindex(self.index)
         result = 1 - result / result.max()
+        result[[CASH, PORTFOLIO]] = [1, 1]
         result.name = "TURNOVER"
         return result
 
