@@ -1,6 +1,6 @@
 """Реализация класса портфеля."""
 import functools
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, NoReturn
 
 import numpy as np
 import pandas as pd
@@ -38,10 +38,10 @@ class Portfolio:
             Стоимость портфеля на отчетную дату.
         """
         self._date = pd.Timestamp(date)
-        self._shares = pd.Series(positions)
-        self._shares.sort_index(inplace=True)
+        self._shares = pd.Series(positions).sort_index()
         self._shares[CASH] = cash
         self._shares[PORTFOLIO] = 1
+        self._shares.name = "SHARES"
         if value is not None and not np.isclose(self.value[PORTFOLIO], value):
             raise POptimizerError(
                 f"Введенная стоимость портфеля {value} "
@@ -49,18 +49,15 @@ class Portfolio:
             )
 
     def __str__(self) -> str:
-        df = pd.concat(
-            [
-                self.lot_size,
-                self.shares,
-                self.price,
-                self.value,
-                self.weight,
-                self.turnover_factor,
-            ],
-            axis="columns",
-        )
-        df.columns = ["LOT_SIZE", "SHARES", "PRICE", "VALUE", "WEIGHT", "VOLUME"]
+        columns = [
+            self.lot_size,
+            self.shares,
+            self.price,
+            self.value,
+            self.weight,
+            self.turnover_factor,
+        ]
+        df = pd.concat(columns, axis="columns")
         return (
             f"\nПОРТФЕЛЬ"
             f"\n"
@@ -94,7 +91,9 @@ class Portfolio:
         CASH и PORTFOLIO - 1.
         """
         lot_size = data.lot_size(tuple(self.index[:-2]))
-        return lot_size.reindex(self.index, fill_value=1)
+        lot_size = lot_size.reindex(self.index, fill_value=1)
+        lot_size.name = "LOT_SIZE"
+        return lot_size
 
     @property
     def lots(self) -> pd.Series:
@@ -102,7 +101,9 @@ class Portfolio:
 
         CASH - в рублях и PORTFOLIO - 1.
         """
-        return self.shares / self.lot_size
+        lots = self.shares / self.lot_size
+        lots.name = "LOTS"
+        return lots
 
     @property
     @functools.lru_cache(maxsize=1)
@@ -120,12 +121,15 @@ class Portfolio:
             )
         price[CASH] = 1
         price[PORTFOLIO] = (self.shares[:-1] * price).sum(axis=0)
+        price.name = "PRICE"
         return price
 
     @property
     def value(self) -> pd.Series:
         """Стоимость позиций."""
-        return self.price * self.shares
+        value = self.price * self.shares
+        value.name = "VALUE"
+        return value
 
     @property
     def weight(self) -> pd.Series:
@@ -134,16 +138,17 @@ class Portfolio:
         PORTFOLIO - 1.
         """
         value = self.value
-        return value / value[PORTFOLIO]
+        weight = value / value[PORTFOLIO]
+        weight.name = "WEIGHT"
+        return weight
 
     @property
     @functools.lru_cache(maxsize=1)
     def turnover_factor(self) -> pd.Series:
         """Понижающий коэффициент для акций с малым объемом оборотов относительно открытой позиции."""
         last_turnover = self._median_turnover(tuple(self.index[:-2]))
-        result = (self.value / last_turnover).reindex(self.index)
+        result = (self.value / last_turnover).reindex(self.index, fill_value=0)
         result = 1 - result / result.max()
-        result[[CASH, PORTFOLIO]] = [1, 1]
         result.name = "TURNOVER"
         return result
 
@@ -154,13 +159,15 @@ class Portfolio:
         last_turnover = last_turnover.median(axis=0)
         return last_turnover
 
-    def add_tickers(self) -> None:
+    def add_tickers(self) -> NoReturn:
         """Претенденты для добавления."""
         all_tickers = data.securities_with_reg_number()
         last_turnover = self._median_turnover(tuple(all_tickers))
-        # noinspection PyTypeChecker
-        last_turnover = last_turnover[last_turnover > 0]
+        minimal_turnover = self.value[PORTFOLIO] * MAX_TRADE
+        last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]
+
         index = last_turnover.index.difference(self.index)
         last_turnover = last_turnover.reindex(index)
         last_turnover = last_turnover.sort_values(ascending=False).astype("int")
+
         print(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{last_turnover}")
