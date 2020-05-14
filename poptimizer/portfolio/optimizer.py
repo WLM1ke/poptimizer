@@ -18,8 +18,7 @@ class Optimizer:
     """Предлагает сделки для улучшения метрики портфеля."""
 
     def __init__(self, portfolio: Portfolio, p_value: float = P_VALUE):
-        """Учитывается градиент, его ошибку и ликвидность бумаг - градиент корректирует на фактор
-        оборота.
+        """Учитывается градиент, его ошибку и ликвидность бумаг.
 
         :param portfolio:
             Оптимизируемый портфель.
@@ -61,6 +60,8 @@ class Optimizer:
         upper_bound = self.upper_bound
         sell = -self.buy_sell
         upper_bound = upper_bound[sell.gt(0)]
+        if len(upper_bound) == 0:
+            return f"Покупка за счет наличных"
         ticker = upper_bound.idxmin()
         return f"Продать {ticker} - {TRADES} сделок {sell[ticker]} лотов"
 
@@ -112,7 +113,9 @@ class Optimizer:
         Для позиций с положительным градиентом он понижается на коэффициент оборота для учета
         неликвидности.
         """
-        adj_gradient = self.gradient * self.turnover
+        gradient = self.gradient
+        adj_gradient = gradient * self.turnover
+        adj_gradient = adj_gradient.mask(gradient.lt(0), gradient)
         adj_gradient.name = "ADJ_GRAD"
         return adj_gradient
 
