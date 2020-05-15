@@ -2,168 +2,181 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from poptimizer import config
-from poptimizer.data import div
-from poptimizer.portfolio import Portfolio, portfolio, metrics_ml
-from poptimizer.portfolio.metrics_ml import Metrics, Forecast
+from poptimizer.portfolio import metrics, portfolio
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
 
-ML_PARAMS = {
-    "data": (
-        ("Label", {"days": 89, "div_share": 0.3, "on_off": True}),
-        ("Scaler", {"days": 238, "on_off": True}),
-        ("Ticker", {"on_off": True}),
-        ("Mom12m", {"days": 187, "on_off": True, "periods": 2}),
-        ("DivYield", {"days": 263, "on_off": True, "periods": 2}),
-        ("Mom1m", {"days": 36, "on_off": False}),
-        ("RetMax", {"days": 48, "on_off": True}),
-        ("ChMom6m", {"days": 99, "on_off": True}),
-        ("STD", {"days": 24, "on_off": True}),
-        ("DayOfYear", {"on_off": False}),
-    ),
-    "model": {
-        "bagging_temperature": 0.491_539_233_402_797_54,
-        "depth": 16,
-        "l2_leaf_reg": 0.588_094_083_563_754_5,
-        "learning_rate": 0.005_422_182_747_620_653,
-        "one_hot_max_size": 2,
-        "random_strength": 1.063_218_585_772_184_5,
-    },
-}
+
+@pytest.fixture(scope="module", name="single")
+def make_metrics():
+    positions = dict(BSPB=4890, FESH=1300, KZOS=5080)
+    port = portfolio.Portfolio("2020-05-14", 84449, positions)
+    mean = pd.Series([0.09, 0.06, 0.07], index=list(positions))
+    cov = np.array(
+        [[0.04, 0.005, 0.01], [0.005, 0.0625, 0.00625], [0.01, 0.00625, 0.0625]]
+    )
+    yield metrics.MetricsSingle(port, mean, cov)
 
 
-@pytest.fixture(scope="function", autouse=True)
-def set_stats_start(monkeypatch):
-    monkeypatch.setattr(div, "STATS_START", pd.Timestamp("2010-01-01"))
-    yield
+class TestMetricsSingle:
+    def test_mean(self, single):
+        mean = single.mean
+        assert isinstance(mean, pd.Series)
+        assert mean.name == "MEAN"
+        assert len(mean) == 5
+        assert mean["BSPB"] == 0.09
+        assert mean["FESH"] == 0.06
+        assert mean["KZOS"] == 0.07
+        assert mean[CASH] == 0.0
+        assert mean[PORTFOLIO] == pytest.approx(0.0671295513194378)
 
+    def test_std(self, single):
+        std = single.std
+        assert isinstance(std, pd.Series)
+        assert std.name == "STD"
+        assert len(std) == 5
+        assert std["BSPB"] == 0.20
+        assert std["FESH"] == 0.25
+        assert std["KZOS"] == 0.25
+        assert std[CASH] == 0.0
+        assert std[PORTFOLIO] == pytest.approx(0.171832239704213)
 
-class SimpleMetrics(Metrics):
-    def _forecast_func(self):
-        mean = np.array([1.0, 2.0, 3.0])
-        cov = np.array([[9.0, 3.0, 1.0], [3.0, 4.0, 0.5], [1.0, 0.5, 1.0]])
-        port = self._portfolio
-        return Forecast(
-            port.date,
-            tuple(port.index[:-2]),
-            mean,
-            cov,
-            10,
-            20,
-            3,
-            pd.Series(),
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            ML_PARAMS,
+    def test_beta(self, single):
+        beta = single.beta
+        assert isinstance(beta, pd.Series)
+        assert beta.name == "BETA"
+        assert len(beta) == 5
+        assert beta["BSPB"] == pytest.approx(0.564325931057505)
+        assert beta["FESH"] == pytest.approx(0.197707113104551)
+        assert beta["KZOS"] == pytest.approx(1.3876207989677)
+        assert beta[CASH] == 0.0
+        assert beta[PORTFOLIO] == 1.0
+
+    def test_r_geom(self, single):
+        r_geom = single.r_geom
+        assert isinstance(r_geom, pd.Series)
+        assert r_geom.name == "R_GEOM"
+        assert len(r_geom) == 5
+        assert r_geom["BSPB"] == pytest.approx(0.0881006920652409)
+        assert r_geom["FESH"] == pytest.approx(0.0689255960895227)
+        assert r_geom["KZOS"] == pytest.approx(0.0437918254921255)
+        assert r_geom[CASH] == pytest.approx(0.0147631593008831)
+        assert r_geom[PORTFOLIO] == pytest.approx(0.0523663920185547)
+
+        assert r_geom[PORTFOLIO] == (single._portfolio.weight * r_geom).iloc[:-1].sum()
+
+    def test_gradient(self, single):
+        gradient = single.gradient
+        assert isinstance(gradient, pd.Series)
+        assert gradient.name == "GRAD"
+        assert len(gradient) == 5
+        assert gradient["BSPB"] == pytest.approx(0.0357343000466862)
+        assert gradient["FESH"] == pytest.approx(0.016559204070968)
+        assert gradient["KZOS"] == pytest.approx(-0.00857456652642924)
+        assert gradient[CASH] == pytest.approx(-0.0376032327176716)
+        assert gradient[PORTFOLIO] == 0.0
+
+        assert gradient[PORTFOLIO] == pytest.approx(
+            (single._portfolio.weight * gradient).iloc[:-1].sum()
         )
 
-
-@pytest.fixture(scope="module", name="metrics_and_index")
-def create_metrics_and_index():
-    date = "2018-12-10"
-    positions = dict(LSNGP=161, MSTT=505, PIKK=57)
-    portfolio = Portfolio(date, 10000, positions)
-    metrics = SimpleMetrics(portfolio, 3)
-    index = pd.Index(["LSNGP", "MSTT", "PIKK", CASH, PORTFOLIO])
-    return metrics, index
+    def test_str(self, single):
+        assert "КЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ" in str(single)
 
 
-def test_mean(metrics_and_index):
-    metrics, index = metrics_and_index
-    mean = metrics.mean
+@pytest.fixture(scope="module", name="resample")
+def make_resample():
+    positions = dict(BSPB=4890, FESH=1300)
+    port = portfolio.Portfolio("2020-05-14", 84449, positions)
 
-    assert isinstance(mean, pd.Series)
-    # noinspection PyUnresolvedReferences
-    assert (mean.index == index).all()
-    assert np.allclose(mean, [1, 2, 3, 0, 1.832_871_915_473_98])
+    mean1 = pd.Series([0.09, 0.06], index=list(positions))
+    cov1 = np.array([[0.04, 0.005], [0.005, 0.0625]])
 
+    mean2 = pd.Series([0.05, 0.09], index=list(positions))
+    cov12 = np.array([[0.0225, 0.0042], [0.0042, 0.0196]])
 
-def test_std(metrics_and_index):
-    metrics, index = metrics_and_index
-    std = metrics.std
+    def fake_get_forecasts(*_):
+        data = [(mean1, cov1), (mean2, cov12)]
+        yield from data
 
-    assert isinstance(std, pd.Series)
-    # noinspection PyUnresolvedReferences
-    assert (std.index == index).all()
-    assert np.allclose(std, [3, 2, 1, 0, 1.409_798_518_537_9])
+    saved_get_forecast = metrics.evolve.get_forecasts
+    metrics.evolve.get_forecasts = fake_get_forecasts
 
+    yield metrics.MetricsResample(port)
 
-def test_beta(metrics_and_index):
-    metrics, index = metrics_and_index
-    beta = metrics.beta
-
-    assert isinstance(beta, pd.Series)
-    # noinspection PyUnresolvedReferences
-    assert (beta.index == index).all()
-    assert np.allclose(
-        beta, [1.632_231_214_983_82, 1.310_819_128_179_28, 0.323_000_567_807_792, 0, 1]
-    )
+    metrics.evolve.get_forecasts = saved_get_forecast
 
 
-def test_lower_bound(metrics_and_index):
-    metrics, index = metrics_and_index
-    lower_bound = metrics.lower_bound
+class TestMetricsResample:
+    def test_count(self, resample):
+        assert resample.count == 2
 
-    assert isinstance(lower_bound, pd.Series)
-    # noinspection PyUnresolvedReferences
-    assert (lower_bound.index == index).all()
-    assert np.allclose(
-        lower_bound,
-        [
-            -2.051_117_148_795_5,
-            -1.347_990_864_978_29,
-            0.294_634_278_017_675,
-            0,
-            -0.951_580_539_669_401,
-        ],
-    )
+    def test_mean(self, resample):
+        mean = resample.mean
+        assert isinstance(mean, pd.Series)
+        assert mean.name == "MEAN"
+        assert len(mean) == 4
+        assert mean["BSPB"] == 0.07
+        assert mean["FESH"] == 0.075
+        assert mean[CASH] == 0.0
+        assert mean[PORTFOLIO] == pytest.approx(0.0495010842956967)
 
+    def test_std(self, resample):
+        std = resample.std
+        assert isinstance(std, pd.Series)
+        assert std.name == "STD"
+        assert len(std) == 4
+        assert std["BSPB"] == 0.175
+        assert std["FESH"] == 0.195
+        assert std[CASH] == 0.0
+        assert std[PORTFOLIO] == pytest.approx(0.119237329326756)
 
-def test_gradient(metrics_and_index):
-    metrics, index = metrics_and_index
-    gradient = metrics.gradient
+    def test_beta(self, resample):
+        beta = resample.beta
+        assert isinstance(beta, pd.Series)
+        assert beta.name == "BETA"
+        assert len(beta) == 4
+        assert beta["BSPB"] == pytest.approx(1.46588406985897)
+        assert beta["FESH"] == pytest.approx(0.302533282078987)
+        assert beta[CASH] == 0.0
+        assert beta[PORTFOLIO] == 1.0
 
-    assert isinstance(gradient, pd.Series)
-    # noinspection PyUnresolvedReferences
-    assert (gradient.index == index).all()
-    assert np.allclose(
-        gradient,
-        [
-            -1.099_536_609_126_1,
-            -0.396_410_325_308_889,
-            1.246_214_817_687_08,
-            0.951_580_539_669_401,
-            0,
-        ],
-    )
+    def test_r_geom(self, resample):
+        r_geom = resample.r_geom
+        assert isinstance(r_geom, pd.Series)
+        assert r_geom.name == "R_GEOM"
+        assert len(r_geom) == 4
+        assert r_geom["BSPB"] == pytest.approx(0.0559870972984637)
+        assert r_geom["FESH"] == pytest.approx(0.0779560420919237)
+        assert r_geom[CASH] == pytest.approx(0.00725189173625379)
+        assert r_geom[PORTFOLIO] == pytest.approx(0.0422491925594429)
 
+        assert r_geom[PORTFOLIO] == pytest.approx(
+            (resample._portfolio.weight * r_geom).iloc[:-1].sum()
+        )
 
-def test_str(metrics_and_index):
-    met, _ = metrics_and_index
-    assert "КЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ" in str(met)
+    def test_gradient(self, resample):
+        gradient = resample.gradient
+        assert isinstance(gradient, pd.Series)
+        assert gradient.name == "GRAD"
+        assert len(gradient) == 4
+        assert gradient["BSPB"] == pytest.approx(0.0137379047390208)
+        assert gradient["FESH"] == pytest.approx(0.0357068495324808)
+        assert gradient[CASH] == pytest.approx(-0.0349973008231891)
+        assert gradient[PORTFOLIO] == 0.0
 
+        assert gradient[PORTFOLIO] == pytest.approx(
+            (resample._portfolio.weight * gradient).iloc[:-1].sum()
+        )
 
-def test_std_gradient():
-    pos = dict(AKRN=709, PRTK=100, RTKM=200, SIBN=300)
-    port = portfolio.Portfolio("2018-12-17", 1000, pos)
-    metrics3 = metrics_ml.Metrics(port, months=3)
-    metrics12 = metrics_ml.Metrics(port, months=12)
-    assert metrics12.std_gradient == pytest.approx(metrics12.std[PORTFOLIO])
-    assert metrics3.std_gradient == pytest.approx(metrics12.std[PORTFOLIO] / 2)
-    assert metrics3.std_gradient == pytest.approx(metrics3.std[PORTFOLIO] / 2)
+    def test_error(self, resample):
+        gradient = resample.error
+        assert isinstance(gradient, pd.Series)
+        assert gradient.name == "ERROR"
+        assert len(gradient) == 4
+        assert gradient["BSPB"] == pytest.approx(0.00501480253039284)
+        assert gradient["FESH"] == pytest.approx(0.0249465015578035)
+        assert gradient[CASH] == pytest.approx(0.00905669393735241)
+        assert gradient[PORTFOLIO] == 0.0
 
-
-def test_forecast_func(monkeypatch):
-    monkeypatch.setattr(config, "ML_PARAMS", ML_PARAMS)
-    pos = dict(AKRN=709, PRTK=100, RTKM=200, SIBN=300)
-    port = portfolio.Portfolio("2018-12-17", 1000, pos)
-    result = metrics_ml.Metrics(port)
-    # noinspection PyProtectedMember
-    forecast = result._forecast_func()
-    assert isinstance(forecast, Forecast)
-    assert forecast.date == pd.Timestamp("2018-12-17")
-    assert forecast.tickers == ("AKRN", "PRTK", "RTKM", "SIBN")
-    assert forecast.shrinkage == pytest.approx(0.929_093_579_643_732_5)
+    def test_str(self, resample):
+        assert "КЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ" in str(resample)

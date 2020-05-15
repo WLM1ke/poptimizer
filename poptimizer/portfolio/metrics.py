@@ -77,8 +77,8 @@ class MetricsSingle:
         Для портфеля равна арифметической доходности минус половина квадрата СКО. Для остальных
         активов рассчитывается как сумма градиента и показателя для портфеля.
 
-        При правильной реализации взвешенная по долям отдельных позиций граница равна границе по
-        портфелю в целом.
+        При правильной реализации взвешенная по долям отдельных позиций геометрическая доходность
+        равна значению по портфелю в целом.
         """
         jensen_correction = self.std[PORTFOLIO] ** 2 / 2 * (self.beta.mul(2) - 1)
         r_geom = self.mean.sub(jensen_correction)
@@ -108,7 +108,7 @@ class MetricsSingle:
 
 
 class MetricsResample:
-    """Реализует основные метрики портфеля для набора прогнозов."""
+    """Реализует усредненные метрики портфеля для набора прогнозов."""
 
     def __init__(self, portfolio: Portfolio):
         """Использует набор прогнозов для построения основных метрик позиций портфеля.
@@ -164,18 +164,16 @@ class MetricsResample:
     @property
     def r_geom(self) -> pd.Series:
         """Средние для всех прогнозов приближенные оценки геометрической доходности."""
-        r_geom = pd.concat([metric.r_geom for metric in self._metrics], axis=1).mean(
-            axis=1
-        )
+        r_geom = pd.concat([metric.r_geom for metric in self._metrics], axis=1)
+        r_geom = r_geom.mean(axis=1)
         r_geom.name = "R_GEOM"
         return r_geom
 
     @property
     def gradient(self) -> pd.Series:
         """Средние для всех прогнозов производные приближенного значения геометрической доходности."""
-        gradient = pd.concat(
-            [metric.gradient for metric in self._metrics], axis=1
-        ).mean(axis=1)
+        gradient = pd.concat([metric.gradient for metric in self._metrics], axis=1)
+        gradient = gradient.mean(axis=1)
         gradient.name = "GRAD"
         return gradient
 
