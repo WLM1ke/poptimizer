@@ -174,7 +174,7 @@ class Optimizer:
 
         value = portfolio.value
         buy_size = value[CASH] / lot_value_per_trades
-        buy_size = buy_size.apply(lambda x: math.ceil(x))
+        buy_size = buy_size.apply(lambda x: math.ceil(max(0, x)))
         buy_sell = buy_sell.mask(self.lower_bound.gt(0), buy_size)
 
         max_trade = value[PORTFOLIO] * MAX_TRADE
