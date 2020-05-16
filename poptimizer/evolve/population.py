@@ -20,7 +20,7 @@ ID = "_id"
 GENOTYPE = "genotype"
 WINS = "wins"
 MODEL = "model"
-INFORMATION_RATIO = "ir"
+LLH = "llh"
 DATE = "date"
 TICKERS = "tickers"
 
@@ -97,7 +97,7 @@ class Organism:
         if data.get(DATE) == end and data.get(TICKERS) == tickers:
             update = {WINS: self.wins + 1}
             self._update(update)
-            return data[INFORMATION_RATIO]
+            return data[LLH]
 
         pickled_model = data.get(MODEL)
         if data.get(TICKERS) != tickers:
@@ -106,18 +106,18 @@ class Organism:
         model = Model(
             tuple(tickers), end, self._data[GENOTYPE].get_phenotype(), pickled_model
         )
-        ir = model.information_ratio
+        llh = model.llh
 
         update = {
             WINS: self.wins + 1,
-            INFORMATION_RATIO: ir,
+            LLH: llh,
             MODEL: bytes(model),
             DATE: end,
             TICKERS: tickers,
         }
         self._update(update)
 
-        return ir
+        return llh
 
     def make_child(self) -> "Organism":
         """Создает новый организм с помощью дифференциальной мутации."""
@@ -138,11 +138,7 @@ class Organism:
             raise DegeneratedForecastError
 
         model = Model(tickers, end, self._data[GENOTYPE].get_phenotype(), pickled_model)
-        try:
-            m, s = model.forecast()
-        except DegeneratedForecastError:
-            self.die()
-            raise DegeneratedForecastError
+        m, s = model.forecast()
 
         m.name = self.id
         s.name = self.id
@@ -194,18 +190,18 @@ def print_stat(collection=None) -> NoReturn:
     collection = collection or COLLECTION
     db_find = collection.find
     cursor = db_find(
-        filter={INFORMATION_RATIO: {"$exists": True}}, projection=[INFORMATION_RATIO]
+        filter={LLH: {"$exists": True}}, projection=[LLH]
     )
-    irs = map(lambda x: x[INFORMATION_RATIO], cursor)
-    irs = tuple(irs)
-    if irs:
-        quantiles = np.quantile(tuple(irs), [0.0, 0.5, 1.0])
+    llhs = map(lambda x: x[LLH], cursor)
+    llhs = tuple(llhs)
+    if llhs:
+        quantiles = np.quantile(tuple(llhs), [0.0, 0.5, 1.0])
         quantiles = map(lambda x: f"{x:.4f}", quantiles)
         quantiles = tuple(quantiles)
     else:
         quantiles = ["-"] * 3
 
-    print(f"IR - ({', '.join(tuple(quantiles))})")
+    print(f"LLH - ({', '.join(tuple(quantiles))})")
 
     params = {
         "filter": {WINS: {"$exists": True}},

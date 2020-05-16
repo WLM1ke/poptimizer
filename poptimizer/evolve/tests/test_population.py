@@ -98,7 +98,7 @@ def test_evaluate_fitness(monkeypatch):
 
     organism_reloaded = population.Organism(_id=id_)
 
-    assert organism_reloaded._data[population.INFORMATION_RATIO] == 5
+    assert organism_reloaded._data[population.LLH] == 5
     assert organism_reloaded._data[population.DATE] == pd.Timestamp("2020-04-12")
     assert organism_reloaded._data[population.TICKERS] == ["GAZP", "AKRN"]
     assert organism_reloaded._data[population.MODEL] == bytes(6)

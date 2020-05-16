@@ -47,13 +47,13 @@ def test_ir_from_trained_and_reloaded_model(doc):
     phenotype = genotype.Genotype(gen).get_phenotype()
 
     net = model.Model(doc[TICKERS], doc[DATE], phenotype, None)
-    ir = net.information_ratio
+    ir = net.llh
     pickled_model = bytes(net)
 
     net = model.Model(doc[TICKERS], doc[DATE], phenotype, pickled_model)
-    assert ir == net.information_ratio
+    assert ir == net.llh
     # Из кеша
-    assert ir == net.information_ratio
+    assert ir == net.llh
 
 
 def test_raise_long_history(doc):
@@ -63,7 +63,7 @@ def test_raise_long_history(doc):
     net = model.Model(doc[TICKERS], doc[DATE], phenotype, None)
     with pytest.raises(model.ModelError) as error:
         # noinspection PyStatementEffect
-        net.information_ratio
+        net.llh
     assert issubclass(error.type, model.TooLongHistoryError)
 
 

@@ -49,7 +49,7 @@ class Evolution:
                 print()
                 continue
             else:
-                print(f"IR: {parent_sharpe:.4f}")
+                print(f"LLH: {parent_sharpe:.4f}")
                 print()
 
             child = parent.make_child()
@@ -65,7 +65,7 @@ class Evolution:
                 print()
                 continue
             else:
-                print(f"IR: {child_sharpe:.4f}")
+                print(f"LLH: {child_sharpe:.4f}")
                 print()
 
             excess = population.count() > self._max_population
