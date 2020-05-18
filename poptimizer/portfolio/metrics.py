@@ -3,13 +3,14 @@ import numpy as np
 import pandas as pd
 
 from poptimizer import evolve
+from poptimizer.dl import Forecast
 from poptimizer.portfolio import Portfolio, CASH, PORTFOLIO
 
 
 class MetricsSingle:
     """Реализует основные метрики портфеля для одного прогноза."""
 
-    def __init__(self, portfolio: Portfolio, mean: pd.Series, cov: np.array):
+    def __init__(self, portfolio: Portfolio, forecast: Forecast):
         """Использует прогноз для построения основных метрик позиций портфеля.
 
         Приближенно максимизируется геометрическая доходность портфеля исходя из прогноза. Для чего
@@ -17,14 +18,12 @@ class MetricsSingle:
 
         :param portfolio:
             Портфель, для которого рассчитываются метрики.
-        :param mean:
-            Прогноз доходности.
-        :param cov:
-            Прогноз ковариационной матрицы.
+        :param forecast:
+            Прогноз доходности и ковариации.
         """
         self._portfolio = portfolio
-        self._mean = mean
-        self._cov = cov
+        self._mean = forecast.mean
+        self._cov = forecast.cov
 
     def __str__(self) -> str:
         frames = [self.mean, self.std, self.beta, self.r_geom, self.gradient]
@@ -120,8 +119,8 @@ class MetricsResample:
         tickers = tuple(portfolio.index[:-2])
         date = portfolio.date
         self._metrics = []
-        for mean, cov in evolve.get_forecasts(tickers, date):
-            self._metrics.append(MetricsSingle(portfolio, mean, cov))
+        for forecast in evolve.get_forecasts(tickers, date):
+            self._metrics.append(MetricsSingle(portfolio, forecast))
 
     def __str__(self) -> str:
         frames = [
