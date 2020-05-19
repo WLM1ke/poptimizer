@@ -8,7 +8,8 @@ import numpy as np
 from hyperopt import hp
 from scipy import stats
 
-from poptimizer.config import POptimizerError, ML_PARAMS, YEAR_IN_TRADING_DAYS
+from poptimizer import config
+from poptimizer.config import POptimizerError, ML_PARAMS
 from poptimizer.ml.examples import Examples
 from poptimizer.ml.feature import ON_OFF
 from poptimizer.portfolio import Portfolio
@@ -37,7 +38,7 @@ MAX_SEARCHES = 100
 ONE_HOT_SIZE = [2, 1000]
 
 # Диапазон поиска скорости обучения
-LEARNING_RATE = [0.3e-03, 0.002]
+LEARNING_RATE = [0.6e-03, 0.002]
 
 # Диапазон поиска глубины деревьев
 MAX_DEPTH = 16
@@ -118,29 +119,7 @@ def make_model_params(data_params: tuple, model_params: dict) -> dict:
     return result
 
 
-def incremental_return(r: np.array, r_expected: np.array, std_2: np.array) -> float:
-    """Вычисляет доходность оптимального инкрементального портфеля.
-
-    Оптимальный портфель сроится из допущения отсутствия корреляции. Размеры позиций нормируются для
-    достижения фиксированного СКО портфеля.
-
-    :param r:
-        Фактическая доходность.
-    :param r_expected:
-        Прогнозная доходность.
-    :param std_2:
-        Прогнозный квадрат СКО.
-    :return:
-        Доходность нормированного по СКО оптимального инкрементального портфеля.
-    """
-    r_weighted = (r_expected / std_2).sum() / (1 / std_2).sum()
-    weight = (r_expected - r_weighted) / std_2
-    std_portfolio = (weight ** 2 * std_2).sum() ** 0.5
-    weight = weight / std_portfolio
-    return (r * weight).sum()
-
-
-def t_of_cov(labels, labels_val, std_2, n_tickers):
+def t_of_cov(labels, labels_val, std):
     """Значимость доходов от предсказания.
 
     Если делать ставки на сигнал, пропорциональные разнице между сигналом и его матожиданием,
@@ -149,19 +128,7 @@ def t_of_cov(labels, labels_val, std_2, n_tickers):
     Каждый день мы делаем ставки на по всем имеющимся бумагам, соответственно можем получить оценки
     ковариации для отдельных дней и оценить t-статистику отличности ковариации (нашей прибыли) от нуля.
     """
-    days, rez = divmod(len(labels_val), n_tickers)
-    if rez:
-        logging.info("Слишком длинные признаки и метки - сократи их длину!!!")
-        return 0
-    rs = np.zeros(days)
-    for i in range(days):
-        r = labels[i * n_tickers : (i + 1) * n_tickers]
-        r_expected = labels_val[i * n_tickers : (i + 1) * n_tickers]
-        std_2_ = std_2[i * n_tickers : (i + 1) * n_tickers]
-
-        rs[i] = incremental_return(r, r_expected, std_2_)
-
-    return rs.mean() / rs.std(ddof=1) * YEAR_IN_TRADING_DAYS ** 0.5
+    return stats.norm(labels_val, std).logpdf(labels).mean()
 
 
 def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
@@ -221,8 +188,9 @@ def valid_model(params: dict, examples: Examples, verbose=False) -> dict:
     test_pool = catboost.Pool(**test_pool_params)
     labels_test = clf.predict(test_pool)
     std_2 = 1 / test_pool_params["weight"]
+    labels_days = config.ML_PARAMS["data"][0][1]["days"]
 
-    t = t_of_cov(labels, labels_test, std_2, n_tickers)
+    t = t_of_cov(labels, labels_test / labels_days, std_2 ** 0.5)
 
     if verbose:
         logging.info(f"R: {r}\nt: {t}\n")
