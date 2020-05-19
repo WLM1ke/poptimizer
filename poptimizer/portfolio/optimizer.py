@@ -1,6 +1,7 @@
 """Оптимизатор портфеля."""
 import math
 
+import numpy as np
 import pandas as pd
 from scipy import stats
 
@@ -68,6 +69,7 @@ class Optimizer:
     def _best_buy(self) -> str:
         """Лучшая продажа."""
         lower_bound = self.lower_bound
+        lower_bound[PORTFOLIO] = -np.inf
         ticker = lower_bound.idxmax()
         return f"Купить  {ticker} - {TRADES} сделок {self.buy_sell[ticker]} лотов"
 
