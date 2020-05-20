@@ -12,10 +12,7 @@ from poptimizer.dl import ledoit_wolf
 def ledoit_wolf_cor(
     tickers: tuple, date: pd.Timestamp, history_days: int
 ) -> Tuple[np.array, float, float]:
-    """Корреляционная матрица на основе Ledoit Wolf.
-
-    Оригинальная матрица корректируется в сторону не смещенной оценки на малой выборке.
-    """
+    """Корреляционная матрица на основе Ledoit Wolf."""
     div, p1 = data.div_ex_date_prices(tickers, date)
     p0 = p1.shift(1)
     returns = (p1 + div) / p0
