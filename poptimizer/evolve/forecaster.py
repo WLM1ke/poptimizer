@@ -7,10 +7,11 @@ import pandas as pd
 import tqdm
 
 from poptimizer import store
-from poptimizer.dl import ForecastError
 from poptimizer.evolve import population
 
 # Ключ для хранений кеша прогноза
+from poptimizer.evolve.population import ForecastError
+
 FORECAST = "dl"
 
 

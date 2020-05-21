@@ -1,13 +1,21 @@
 import copy
 
-import numpy as np
+import pandas as pd
 import pymongo
 import pytest
 import torch
 
 from poptimizer.dl import model
+from poptimizer.dl.forecast import Forecast
 from poptimizer.evolve import genotype
-from poptimizer.evolve.population import COLLECTION, WINS, GENOTYPE, TICKERS, DATE
+from poptimizer.evolve.population import (
+    COLLECTION,
+    WINS,
+    GENOTYPE,
+    TICKERS,
+    DATE,
+    MODEL,
+)
 
 DB_PARAMS = {
     "filter": {WINS: {"$exists": True}},
@@ -26,34 +34,30 @@ def test_normal_llh():
     assert size == 100
 
 
-def test_incremental_return():
-    a = np.array([1, 2, 1, 2])
-    b = np.array([2, 3, 4, 1])
-    c = np.array([2, 4, 6, 7])
-    assert model.incremental_return(c, a, b ** 2) == pytest.approx(1.9260727134667)
-    assert model.incremental_return(c, b, a ** 2) == pytest.approx(1.55613358171397)
-    assert model.incremental_return(b, a, c ** 2) == pytest.approx(0.0777498264601518)
-
-
 @pytest.fixture(scope="module", name="doc")
 def get_model_doc():
     return COLLECTION.find_one(**DB_PARAMS)
 
 
-def test_ir_from_trained_and_reloaded_model(doc):
+def test_llh_from_trained_and_reloaded_model(doc):
     gen = copy.deepcopy(doc[GENOTYPE])
     # Для ускорения обучения
     gen["Scheduler"]["epochs"] /= 10
     phenotype = genotype.Genotype(gen).get_phenotype()
 
     net = model.Model(doc[TICKERS], doc[DATE], phenotype, None)
-    ir = net.llh
+    assert bytes(net) == bytes()
+
+    llh = net.llh
     pickled_model = bytes(net)
 
     net = model.Model(doc[TICKERS], doc[DATE], phenotype, pickled_model)
-    assert ir == net.llh
+    assert llh == net.llh
+    assert bytes(net) == pickled_model
+
     # Из кеша
-    assert ir == net.llh
+    assert llh == net.llh
+    assert llh == net._eval_llh()
 
 
 def test_raise_long_history(doc):
@@ -70,8 +74,28 @@ def test_raise_long_history(doc):
 def test_raise_gradient_error(doc):
     gen = copy.deepcopy(doc[GENOTYPE])
     gen["Scheduler"]["epochs"] /= 10
-    gen["Scheduler"]["max_lr"] = 1
+    gen["Scheduler"]["max_lr"] = 10
     phenotype = genotype.Genotype(gen).get_phenotype()
+    net = model.Model(doc[TICKERS], doc[DATE], phenotype, None)
     with pytest.raises(model.ModelError) as error:
-        model.Model(doc[TICKERS], doc[DATE], phenotype, None)
+        # noinspection PyStatementEffect
+        net.llh
     assert issubclass(error.type, model.GradientsError)
+
+
+def test_forecast(doc):
+    gen = copy.deepcopy(doc[GENOTYPE])
+    gen["Scheduler"]["epochs"] /= 10
+    phenotype = genotype.Genotype(gen).get_phenotype()
+    net = model.Model(doc[TICKERS], doc[DATE], phenotype, doc[MODEL])
+    forecast = net.forecast()
+
+    assert isinstance(forecast, Forecast)
+    assert forecast.tickers == doc[TICKERS]
+    assert forecast.date == doc[DATE]
+    assert forecast.history_days == phenotype["data"]["history_days"]
+    assert forecast.forecast_days == phenotype["data"]["forecast_days"]
+    assert isinstance(forecast.mean, pd.Series)
+    assert forecast.mean.index.tolist() == list(doc[TICKERS])
+    assert isinstance(forecast.std, pd.Series)
+    assert forecast.std.index.tolist() == list(doc[TICKERS])

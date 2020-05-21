@@ -14,10 +14,9 @@ from torch.optim import lr_scheduler
 from poptimizer.config import POptimizerError, YEAR_IN_TRADING_DAYS
 from poptimizer.dl import data_loader, models
 from poptimizer.dl.features import data_params
-
-# Ограничение на минимальный размер правдоподобия
 from poptimizer.dl.forecast import Forecast
 
+# Ограничение на минимальный размер правдоподобия
 LOW_LLH = -100
 
 
@@ -37,10 +36,6 @@ class GradientsError(ModelError):
 
     Вероятно произошел взрыв градиентов.
     """
-
-
-class ForecastError(ModelError):
-    """Отсутствующий прогноз."""
 
 
 def normal_llh(
@@ -111,11 +106,11 @@ class Model:
             self._tickers, self._end, self._phenotype["data"], data_params.TestParams
         )
 
-        model = self.get_model(loader)
-
         days, rez = divmod(len(loader.dataset), len(self._tickers))
         if rez:
             raise TooLongHistoryError
+
+        model = self.get_model(loader)
 
         forecast_days = torch.tensor(
             self._phenotype["data"]["forecast_days"], dtype=torch.float

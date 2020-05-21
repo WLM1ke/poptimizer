@@ -8,7 +8,7 @@ import pymongo
 from pymongo.collection import Collection
 
 from poptimizer.config import POptimizerError
-from poptimizer.dl import Model, ForecastError, Forecast
+from poptimizer.dl import Model, Forecast
 from poptimizer.evolve.genotype import Genotype
 from poptimizer.store.mongo import DB, MONGO_CLIENT
 
@@ -23,6 +23,10 @@ MODEL = "model"
 LLH = "llh"
 DATE = "date"
 TICKERS = "tickers"
+
+
+class ForecastError(POptimizerError):
+    """Отсутствующий прогноз."""
 
 
 class OrganismIdError(POptimizerError):
