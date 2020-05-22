@@ -25,20 +25,20 @@ DATE = "date"
 TICKERS = "tickers"
 
 
-class ForecastError(POptimizerError):
-    """Отсутствующий прогноз."""
-
-
 class OrganismIdError(POptimizerError):
     """Ошибка попытки загрузить организм с отсутствующим в базе ID."""
+
+
+class ForecastError(OrganismIdError):
+    """Отсутствующий прогноз."""
 
 
 class Organism:
     """Хранящийся в MongoDB организм.
 
     Загружается по id, создается из описания генотипа или с нуля с генотипом по умолчанию.
-    Умеет рассчитывать качество организма для проведения естественного отбора, убивать другой
-    организм, умирать, размножаться и отображать количество уничтоженных организмов.
+    Умеет рассчитывать качество организма для проведения естественного отбора, умирать, размножаться и
+    отображать количество пройденных оценок качества.
     """
 
     def __init__(
@@ -90,7 +90,7 @@ class Organism:
         return self._data.get(WINS, 0)
 
     def evaluate_fitness(self, tickers: Tuple[str, ...], end: pd.Timestamp) -> float:
-        """Вычисляет информационный коэффициент.
+        """Вычисляет качество организма.
 
         Если осуществлялась оценка для указанных тикеров и даты - используется сохраненное значение. Если
         существует натренированная модель для указанных тикеров - осуществляется оценка без тренировки.
@@ -108,7 +108,7 @@ class Organism:
             pickled_model = None
 
         model = Model(
-            tuple(tickers), end, self._data[GENOTYPE].get_phenotype(), pickled_model
+            tuple(tickers), end, self.genotype.get_phenotype(), pickled_model
         )
         llh = model.llh
 
@@ -133,7 +133,7 @@ class Organism:
         """Выдает прогноз для текущего организма.
 
         При наличие натренированной модели, которая составлена на предыдущей статистике и для таких же
-        тикеров, будет использованы сохраненные веса сети.
+        тикеров, будет использованы сохраненные веса сети, или выбрасывается исключение.
         """
         if (
                 (pickled_model := self._data.get(MODEL)) is None
@@ -141,7 +141,7 @@ class Organism:
         ):
             raise ForecastError
 
-        model = Model(tickers, end, self._data[GENOTYPE].get_phenotype(), pickled_model)
+        model = Model(tickers, end, self.genotype.get_phenotype(), pickled_model)
         return model.forecast()
 
 

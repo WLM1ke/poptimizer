@@ -3,6 +3,7 @@ from typing import Iterable
 import pandas as pd
 import pytest
 
+from poptimizer.dl import Forecast
 from poptimizer.evolve import population
 from poptimizer.evolve.genotype import Genotype
 from poptimizer.store.mongo import DB, MONGO_CLIENT
@@ -75,7 +76,7 @@ class FakeModel:
         pass
 
     @property
-    def information_ratio(self):
+    def llh(self):
         self.__class__.COUNTER += 1
         return 5
 
@@ -140,6 +141,22 @@ def test_make_child():
     population.Organism()
 
     assert isinstance(organism.make_child(), population.Organism)
+
+
+def test_raise_forecast_error():
+    with pytest.raises(population.OrganismIdError) as error:
+        population.Organism().forecast(("GAZP", "AKRN"), pd.Timestamp("2020-04-13"))
+    assert isinstance(population.ForecastError(), error.type)
+
+
+def test_forecast():
+    org = population.Organism()
+    org.evaluate_fitness(("GAZP", "AKRN"), pd.Timestamp("2020-04-21"))
+    rez = org.forecast(("GAZP", "AKRN"), pd.Timestamp("2020-04-21"))
+
+    assert isinstance(rez, Forecast)
+    assert rez.date == pd.Timestamp("2020-04-21")
+    assert rez.tickers == ("GAZP", "AKRN")
 
 
 def test_count():
