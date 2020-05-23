@@ -65,12 +65,16 @@ def get_forecasts(
     :return:
         Прогнозная доходность, ковариация и дополнительная информация.
     """
-    mongodb = store.MongoDB(db=collection.database.name)
+    params = dict()
+    if collection is not None:
+        params["db"] = collection.database.name
+    mongodb = store.MongoDB(**params)
+
     forecasts_cache = mongodb[FORECAST]
     if (
-        forecasts_cache is not None
-        and forecasts_cache.date == date
-        and forecasts_cache.tickers == tickers
+            forecasts_cache is not None
+            and forecasts_cache.date == date
+            and forecasts_cache.tickers == tickers
     ):
         return forecasts_cache
     forecasts = Forecasts(tickers, date, collection)
