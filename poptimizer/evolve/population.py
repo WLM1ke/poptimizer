@@ -175,17 +175,17 @@ def get_random_organism(collection: Collection = None) -> Organism:
     return organism
 
 
-def get_all_organisms(collection=None) -> Iterable[Organism]:
+def get_all_organisms(collection: Collection = None) -> Iterable[Organism]:
     """Получить все имеющиеся организмы."""
     collection = collection or COLLECTION
     id_dicts = collection.find(
         filter={}, projection=["_id"], sort=[(DATE, pymongo.ASCENDING)]
     )
     for id_dict in id_dicts:
-        yield Organism(**id_dict)
+        yield Organism(**id_dict, collection=collection)
 
 
-def print_stat(collection=None) -> NoReturn:
+def print_stat(collection: Collection = None) -> NoReturn:
     """Статистика - минимальное и максимальное значение коэффициента Шарпа."""
     collection = collection or COLLECTION
     db_find = collection.find
