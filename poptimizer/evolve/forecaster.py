@@ -72,9 +72,9 @@ def get_forecasts(
 
     forecasts_cache = mongodb[FORECAST]
     if (
-            forecasts_cache is not None
-            and forecasts_cache.date == date
-            and forecasts_cache.tickers == tickers
+        forecasts_cache is not None
+        and forecasts_cache.date == date
+        and forecasts_cache.tickers == tickers
     ):
         return forecasts_cache
     forecasts = Forecasts(tickers, date, collection)

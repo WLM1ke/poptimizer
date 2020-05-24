@@ -14,7 +14,7 @@ SMART_LAB = "smart-lab"
 
 # Параметры парсинга сайта
 URL = "https://smart-lab.ru/dividends/index/order_by_cut_off_date/asc/"
-TABLE_INDEX = 1
+TABLE_INDEX = 0
 HEADER_SIZE = 1
 FOOTER_SIZE = 1
 
