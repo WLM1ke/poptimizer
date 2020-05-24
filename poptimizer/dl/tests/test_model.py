@@ -1,27 +1,16 @@
 import copy
 
 import pandas as pd
-import pymongo
 import pytest
 import torch
 
 from poptimizer.dl import model
 from poptimizer.dl.forecast import Forecast
-from poptimizer.evolve import genotype
-from poptimizer.evolve.population import (
-    COLLECTION,
-    WINS,
-    GENOTYPE,
-    TICKERS,
-    DATE,
-    MODEL,
-)
+from poptimizer.evolve import population
+from poptimizer.evolve.population import TICKERS, DATE, MODEL
+from poptimizer.store.mongo import MONGO_CLIENT
 
-DB_PARAMS = {
-    "filter": {WINS: {"$exists": True}},
-    "sort": [(WINS, pymongo.DESCENDING)],
-    "limit": 1,
-}
+COLLECTION = MONGO_CLIENT["test"]["test"]
 
 
 def test_normal_llh():
@@ -34,24 +23,27 @@ def test_normal_llh():
     assert size == 100
 
 
-@pytest.fixture(scope="module", name="doc")
+@pytest.fixture(scope="module", name="org")
 def get_model_doc():
-    return COLLECTION.find_one(**DB_PARAMS)
+    org = population.create_new_organism(COLLECTION)
+    org.evaluate_fitness(("KRKNP", "NMTP", "TATNP"), pd.Timestamp("2020-05-23"))
+    yield org
+    COLLECTION.drop()
 
 
-def test_llh_from_trained_and_reloaded_model(doc):
-    gen = copy.deepcopy(doc[GENOTYPE])
+def test_llh_from_trained_and_reloaded_model(org):
+    gen = copy.deepcopy(org.genotype)
     # Для ускорения обучения
     gen["Scheduler"]["epochs"] /= 10
-    phenotype = genotype.Genotype(gen).get_phenotype()
+    phenotype = gen.get_phenotype()
 
-    net = model.Model(doc[TICKERS], doc[DATE], phenotype, None)
+    net = model.Model(org._data[TICKERS], org._data[DATE], phenotype, None)
     assert bytes(net) == bytes()
 
     llh = net.llh
     pickled_model = bytes(net)
 
-    net = model.Model(doc[TICKERS], doc[DATE], phenotype, pickled_model)
+    net = model.Model(org._data[TICKERS], org._data[DATE], phenotype, pickled_model)
     assert llh == net.llh
     assert bytes(net) == pickled_model
 
@@ -60,42 +52,42 @@ def test_llh_from_trained_and_reloaded_model(doc):
     assert llh == net._eval_llh()
 
 
-def test_raise_long_history(doc):
-    gen = copy.deepcopy(doc[GENOTYPE])
-    gen["Data"]["history_days"] *= 2
-    phenotype = genotype.Genotype(gen).get_phenotype()
-    net = model.Model(doc[TICKERS], doc[DATE], phenotype, None)
+def test_raise_long_history(org):
+    gen = copy.deepcopy(org.genotype)
+    gen["Data"]["history_days"] *= 8
+    phenotype = gen.get_phenotype()
+    net = model.Model(org._data[TICKERS], org._data[DATE], phenotype, None)
     with pytest.raises(model.ModelError) as error:
         # noinspection PyStatementEffect
         net.llh
     assert issubclass(error.type, model.TooLongHistoryError)
 
 
-def test_raise_gradient_error(doc):
-    gen = copy.deepcopy(doc[GENOTYPE])
+def test_raise_gradient_error(org):
+    gen = copy.deepcopy(org.genotype)
     gen["Scheduler"]["epochs"] /= 10
     gen["Scheduler"]["max_lr"] = 10
-    phenotype = genotype.Genotype(gen).get_phenotype()
-    net = model.Model(doc[TICKERS], doc[DATE], phenotype, None)
+    phenotype = gen.get_phenotype()
+    net = model.Model(org._data[TICKERS], org._data[DATE], phenotype, None)
     with pytest.raises(model.ModelError) as error:
         # noinspection PyStatementEffect
         net.llh
     assert issubclass(error.type, model.GradientsError)
 
 
-def test_forecast(doc):
-    gen = copy.deepcopy(doc[GENOTYPE])
+def test_forecast(org):
+    gen = copy.deepcopy(org.genotype)
     gen["Scheduler"]["epochs"] /= 10
-    phenotype = genotype.Genotype(gen).get_phenotype()
-    net = model.Model(doc[TICKERS], doc[DATE], phenotype, doc[MODEL])
+    phenotype = gen.get_phenotype()
+    net = model.Model(org._data[TICKERS], org._data[DATE], phenotype, org._data[MODEL])
     forecast = net.forecast()
 
     assert isinstance(forecast, Forecast)
-    assert forecast.tickers == doc[TICKERS]
-    assert forecast.date == doc[DATE]
+    assert forecast.tickers == org._data[TICKERS]
+    assert forecast.date == org._data[DATE]
     assert forecast.history_days == phenotype["data"]["history_days"]
     assert forecast.forecast_days == phenotype["data"]["forecast_days"]
     assert isinstance(forecast.mean, pd.Series)
-    assert forecast.mean.index.tolist() == list(doc[TICKERS])
+    assert forecast.mean.index.tolist() == list(org._data[TICKERS])
     assert isinstance(forecast.std, pd.Series)
-    assert forecast.std.index.tolist() == list(doc[TICKERS])
+    assert forecast.std.index.tolist() == list(org._data[TICKERS])
