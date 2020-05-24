@@ -9,12 +9,7 @@ PARAMS = {
     "batch_size": 100,
     "history_days": 245,
     "forecast_days": 194,
-    "features": {
-        "Label": {"div_share": 0.9},
-        "Prices": {},
-        "Dividends": {},
-        "Weight": {},
-    },
+    "features": {"Label": {"div_share": 0.9}, "Prices": {}, "Dividends": {}},
 }
 TICKERS = ("NMTP", "BANEP")
 DATE = pd.Timestamp("2020-03-20")
@@ -31,8 +26,8 @@ class TestOneTickerDataset:
         dataset, _ = dataset_params
         example = dataset[22]
         assert isinstance(example, dict)
-        assert len(example) == 4
-        keys = {"Label", "Prices", "Dividends", "Weight"}
+        assert len(example) == 3
+        keys = {"Label", "Prices", "Dividends"}
         assert set(example) == keys
         for key in keys:
             assert isinstance(example[key], torch.Tensor)
@@ -45,12 +40,11 @@ class TestOneTickerDataset:
         dataset, _ = dataset_params
         description = dataset.features_description
         assert isinstance(description, dict)
-        assert len(description) == 4
+        assert len(description) == 3
         assert description == dict(
             Label=(FeatureType.LABEL, 194),
             Prices=(FeatureType.SEQUENCE, 245),
             Dividends=(FeatureType.SEQUENCE, 245),
-            Weight=(FeatureType.WEIGHT, 245),
         )
 
 
