@@ -54,7 +54,7 @@ def test_llh_from_trained_and_reloaded_model(org):
 
 def test_raise_long_history(org):
     gen = copy.deepcopy(org.genotype)
-    gen["Data"]["history_days"] *= 8
+    gen["Data"]["history_days"] = 2000
     phenotype = gen.get_phenotype()
     net = model.Model(org._data[TICKERS], org._data[DATE], phenotype, None)
     with pytest.raises(model.ModelError) as error:

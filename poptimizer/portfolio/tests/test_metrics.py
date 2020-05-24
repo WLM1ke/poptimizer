@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -14,7 +16,11 @@ def make_metrics():
     cov = np.array(
         [[0.04, 0.005, 0.01], [0.005, 0.0625, 0.00625], [0.01, 0.00625, 0.0625]]
     )
-    yield metrics.MetricsSingle(port, mean, cov)
+    fake_forecast = SimpleNamespace()
+    fake_forecast.mean = mean
+    fake_forecast.cov = cov
+    # noinspection PyTypeChecker
+    yield metrics.MetricsSingle(port, fake_forecast)
 
 
 class TestMetricsSingle:
@@ -95,7 +101,10 @@ def make_resample():
     cov12 = np.array([[0.0225, 0.0042], [0.0042, 0.0196]])
 
     def fake_get_forecasts(*_):
-        data = [(mean1, cov1), (mean2, cov12)]
+        data = [
+            SimpleNamespace(mean=mean1, cov=cov1),
+            SimpleNamespace(mean=mean2, cov=cov12),
+        ]
         yield from data
 
     saved_get_forecast = metrics.evolve.get_forecasts
