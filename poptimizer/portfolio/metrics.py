@@ -22,8 +22,7 @@ class MetricsSingle:
             Прогноз доходности и ковариации.
         """
         self._portfolio = portfolio
-        self._mean = forecast.mean
-        self._cov = forecast.cov
+        self._forecast = forecast
 
     def __str__(self) -> str:
         frames = [self.mean, self.std, self.beta, self.r_geom, self.gradient]
@@ -31,10 +30,30 @@ class MetricsSingle:
         return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n\n{df}"
 
     @property
+    def history_days(self) -> int:
+        """Количество дней истории для прогнозирования."""
+        return self._forecast.history_days
+
+    @property
+    def forecast_days(self) -> int:
+        """Количество дней в прогнозном периоде."""
+        return self._forecast.forecast_days
+
+    @property
+    def cor(self) -> float:
+        """Средняя корреляция активов."""
+        return self._forecast.cor
+
+    @property
+    def shrinkage(self) -> float:
+        """Среднее сжатие корреляционной матрицы."""
+        return self._forecast.shrinkage
+
+    @property
     def mean(self) -> pd.Series:
         """Матожидание доходности по всем позициям портфеля."""
         portfolio = self._portfolio
-        mean = self._mean[portfolio.index[:-2]]
+        mean = self._forecast.mean[portfolio.index[:-2]]
         mean[CASH] = 0
         weighted_mean = mean * portfolio.weight[mean.index]
         mean[PORTFOLIO] = weighted_mean.sum()
@@ -45,7 +64,7 @@ class MetricsSingle:
     def std(self) -> pd.Series:
         """СКО доходности по всем позициям портфеля."""
         portfolio = self._portfolio
-        cov = self._cov
+        cov = self._forecast.cov
         std = np.diag(cov) ** 0.5
         std = pd.Series(std, index=portfolio.index[:-2])
         std[CASH] = 0
@@ -59,7 +78,7 @@ class MetricsSingle:
     def beta(self) -> pd.Series:
         """Беты относительно доходности портфеля."""
         portfolio = self._portfolio
-        cov = self._cov
+        cov = self._forecast.cov
         weight = portfolio.weight[:-2].values
         beta = cov @ weight.reshape(-1, 1)
         beta = beta / (weight.reshape(1, -1) @ beta)
@@ -123,6 +142,46 @@ class MetricsResample:
             self._metrics.append(MetricsSingle(portfolio, forecast))
 
     def __str__(self) -> str:
+        blocks = [
+            f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n",
+            self._history_block(),
+            self._forecast_block(),
+            self._cor_block(),
+            self._shrinkage_block(),
+            self._main_block(),
+        ]
+        return "\n".join(blocks)
+
+    def _history_block(self) -> str:
+        """Разброс дней истории."""
+        quantile = [0.0, 0.5, 1.0]
+        data = np.quantile(list(met.history_days for met in self._metrics), quantile)
+        data = list(map(lambda x: f"{x:.0f}", data))
+        return f"Дней в истории - ({' <-> '.join(data)})"
+
+    def _forecast_block(self) -> str:
+        """Разброс прогнозных дней."""
+        quantile = [0.0, 0.5, 1.0]
+        data = np.quantile(list(met.forecast_days for met in self._metrics), quantile)
+        data = list(map(lambda x: f"{x:.0f}", data))
+        return f"Дней в прогнозе - ({' <-> '.join(data)})"
+
+    def _cor_block(self) -> str:
+        """Разброс средней корреляции."""
+        quantile = [0.0, 0.5, 1.0]
+        data = np.quantile(list(met.cor for met in self._metrics), quantile)
+        data = list(map(lambda x: f"{x:.2%}", data))
+        return f"Корреляция - ({' <-> '.join(data)})"
+
+    def _shrinkage_block(self) -> str:
+        """Разброс среднего сжатия."""
+        quantile = [0.0, 0.5, 1.0]
+        data = np.quantile(list(met.shrinkage for met in self._metrics), quantile)
+        data = list(map(lambda x: f"{x:.2%}", data))
+        return f"Сжатие - ({' <-> '.join(data)})"
+
+    def _main_block(self) -> str:
+        """Основная информация о метриках."""
         frames = [
             self.mean,
             self.std,
@@ -131,8 +190,7 @@ class MetricsResample:
             self.gradient,
             self.error,
         ]
-        df = pd.concat(frames, axis=1)
-        return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n\n{df}"
+        return f"\n{pd.concat(frames, axis=1)}"
 
     @property
     def count(self) -> int:

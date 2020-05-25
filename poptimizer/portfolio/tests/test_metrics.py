@@ -102,8 +102,22 @@ def make_resample():
 
     def fake_get_forecasts(*_):
         data = [
-            SimpleNamespace(mean=mean1, cov=cov1),
-            SimpleNamespace(mean=mean2, cov=cov12),
+            SimpleNamespace(
+                mean=mean1,
+                cov=cov1,
+                history_days=1,
+                forecast_days=3,
+                cor=0.4,
+                shrinkage=0.3,
+            ),
+            SimpleNamespace(
+                mean=mean2,
+                cov=cov12,
+                history_days=2,
+                forecast_days=3,
+                cor=0.5,
+                shrinkage=0.2,
+            ),
         ]
         yield from data
 
