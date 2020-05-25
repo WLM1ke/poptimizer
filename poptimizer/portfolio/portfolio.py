@@ -58,11 +58,13 @@ class Portfolio:
             self.turnover_factor,
         ]
         df = pd.concat(columns, axis="columns")
+        weights = self.weight.iloc[:-2]
         return (
-            f"\nПОРТФЕЛЬ"
+            f"\nПОРТФЕЛЬ - {self._date.date()}"
             f"\n"
-            f"\nДата - {self._date.date()}"
-            f"\nКоличество бумаг - {len(self.index) - 2}"
+            f"\nКоличество бумаг - {len(weights)}"
+            f"\nОткрытых позиций - {(weights > 0).sum()}"
+            f"\nЭффективных позиций - {int(1 / (weights ** 2).sum())}"
             f"\n"
             f"\n{df}"
         )

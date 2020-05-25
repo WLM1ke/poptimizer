@@ -22,7 +22,7 @@ def make_portfolio():
 def test_portfolio(monkeypatch, port):
     monkeypatch.setattr(portfolio, "MAX_TRADE", 7)
 
-    assert "Дата - 2018-03-19" in str(port)
+    assert "ПОРТФЕЛЬ - 2018-03-19" in str(port)
     assert port.date == pd.Timestamp("2018-03-19")
     assert port.index.tolist() == ["GAZP", "TTLK", "VSMO", CASH, PORTFOLIO]
     assert np.allclose(port.shares, [6820, 1_230_000, 145, 1000, 1])
