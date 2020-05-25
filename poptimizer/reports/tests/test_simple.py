@@ -55,4 +55,4 @@ def test_history(capsys):
     simple.history("test", "WLMike", 12)
     captured_string = capsys.readouterr().out
     assert "WLMike" in captured_string
-    assert "Beta" in captured_string
+    assert "PROXI" in captured_string
