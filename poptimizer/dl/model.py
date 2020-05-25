@@ -121,7 +121,8 @@ class Model:
         llh_sum = 0.0
         weight_sum = 0.0
 
-        print(f"Дней для тестирования: {days}")
+        print(f"Тестовых дней: {days}")
+        print(f"Тестовых примеров: {len(loader.dataset)}")
         with torch.no_grad():
             model.eval()
             bar = tqdm.tqdm(loader, file=sys.stdout, desc="~~> Test")
