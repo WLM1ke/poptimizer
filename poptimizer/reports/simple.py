@@ -1,9 +1,7 @@
 """Расчет дивидендов и дохода начиная с определенной даты в пересчете на неделю, месяц и год."""
-import numpy as np
 import pandas as pd
-from sklearn import linear_model
 
-from poptimizer import data, config
+from poptimizer import data
 from poptimizer.reports import pdf, pdf_middle
 
 
@@ -87,37 +85,13 @@ def stats(report_name: str, months: int):
     """
     df = monthly_returns(report_name, months)
     results = dict()
-    results["Return"] = df.mean() * 12
+    results["MEAN"] = df.mean() * 12
     results["STD"] = df.std() * 12 ** 0.5
 
     results[""] = ["", ""]
-    results["Sharpe"] = results["Return"] / results["STD"]
-    results["Lower Bound Raw"] = (
-        results["Return"] / 12 * months
-        - config.T_SCORE * results["STD"] / 12 * months ** 0.5
-    )
-    results[" "] = ["", ""]
-    clf = linear_model.LinearRegression().fit(df.iloc[:, 1:], df)
-    results["Alfa"] = pd.Series(clf.intercept_ * 12, index=["Portfolio", "MOEX"])
-    results["Beta"] = pd.Series(clf.coef_.flatten(), index=["Portfolio", "MOEX"])
-    # noinspection PyTypeChecker
-    results["R2"] = (df.corr() ** 2).loc["MOEX"]
-    results["R2"].name = "R2"
-
-    results["  "] = ["", ""]
-    feat = df.iloc[:, 1]
-    feat = pd.concat([feat, feat.apply(lambda x: x if x > 0 else 0)], axis=1)
-    clf = linear_model.LinearRegression().fit(feat, df)
-    results["Alfa+/-"] = pd.Series(clf.intercept_ * 12, index=["Portfolio", "MOEX"])
-    results["Beta+"] = pd.Series(clf.coef_.sum(axis=1), index=["Portfolio", "MOEX"])
-    results["Beta-"] = pd.Series(clf.coef_[:, 0], index=["Portfolio", "MOEX"])
-
-    results["   "] = ["", ""]
-    clf = linear_model.LinearRegression().fit(np.log1p(df.iloc[:, 1:]), np.log1p(df))
-    results["Alfa_ln"] = pd.Series(
-        (np.exp(clf.intercept_) - 1) * 12, index=["Portfolio", "MOEX"]
-    )
-    results["Gamma"] = pd.Series(clf.coef_.sum(axis=1), index=["Portfolio", "MOEX"])
+    results["G_MEAN"] = df.add(1).product(axis=0) ** (12 / len(df)) - 1
+    results["PROXI"] = results["MEAN"] - results["STD"] ** 2 / 2
+    results["Sharpe"] = results["MEAN"] / results["STD"]
 
     results = pd.DataFrame(results).T
     print(f"\n{results}")
