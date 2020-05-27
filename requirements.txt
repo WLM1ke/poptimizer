@@ -5,9 +5,6 @@ pytest-asyncio
 pandas
 numpy
 scipy
-hyperopt
-matplotlib
-catboost
 torch
 tqdm
 
