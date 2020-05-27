@@ -12,6 +12,7 @@ openpyxl
 xlrd
 lxml
 reportlab
+matplotlib
 
 pymongo
 
