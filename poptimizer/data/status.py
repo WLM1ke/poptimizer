@@ -26,19 +26,19 @@ def smart_lab_status(tickers: Tuple[str, ...]):
     """
     web = smart_lab()
     local = div.dividends_all(tuple(set(web[TICKER].values))) / AFTER_TAX
-    status = ([], [])
+    status = []
     for i in range(len(web)):
         date = web.index[i]
+        if pd.isnull(date):
+            continue
         ticker = web.iloc[i][TICKER]
         value = web.iloc[i][DIVIDENDS]
         if (date not in local.index) or not np.isclose(local.loc[date, ticker], value):
             if ticker in tickers:
-                status[0].append(ticker)
-            else:
-                status[1].append(ticker)
-    if status[0]:
+                status.append(ticker)
+    if status:
         print("\nДАННЫЕ ПО ДИВИДЕНДАМ ТРЕБУЮТ ОБНОВЛЕНИЯ", "\n")
-        print(", ".join(status[0]))
+        print(", ".join(status))
 
 
 def _get_div_data(ticker: str) -> List[Tuple[str, pd.DataFrame]]:
