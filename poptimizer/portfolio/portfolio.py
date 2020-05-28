@@ -10,6 +10,7 @@ from poptimizer.config import POptimizerError, MAX_TRADE
 
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
+TURNOVER_DAYS = 110
 
 
 class Portfolio:
@@ -158,7 +159,7 @@ class Portfolio:
     def _median_turnover(self, tickers) -> pd.Series:
         """Медианный оборот за несколько последних дней."""
         last_turnover = data.turnovers(tickers, self.date)
-        last_turnover = last_turnover.iloc[-int(1 / MAX_TRADE) :]
+        last_turnover = last_turnover.iloc[-TURNOVER_DAYS:]
         last_turnover = last_turnover.median(axis=0)
         return last_turnover
 

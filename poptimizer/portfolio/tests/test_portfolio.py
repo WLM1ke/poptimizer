@@ -20,7 +20,7 @@ def make_portfolio():
 
 
 def test_portfolio(monkeypatch, port):
-    monkeypatch.setattr(portfolio, "MAX_TRADE", 7)
+    monkeypatch.setattr(portfolio, "TURNOVER_DAYS", 100)
 
     assert "ПОРТФЕЛЬ - 2018-03-19" in str(port)
     assert port.date == pd.Timestamp("2018-03-19")
@@ -40,7 +40,7 @@ def test_portfolio(monkeypatch, port):
             1,
         ],
     )
-    assert np.allclose(port.turnover_factor, [0.999_915, 0, 0.591_099, 1, 1])
+    assert np.allclose(port.turnover_factor, [0.999_963, 0, 0.883_289, 1, 1])
 
 
 def test_portfolio_wrong_value():
