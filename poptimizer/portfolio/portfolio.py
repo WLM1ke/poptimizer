@@ -146,7 +146,6 @@ class Portfolio:
         return weight
 
     @property
-    @functools.lru_cache(maxsize=1)
     def turnover_factor(self) -> pd.Series:
         """Понижающий коэффициент для акций с малым объемом оборотов относительно открытой позиции."""
         last_turnover = self._median_turnover(tuple(self.index[:-2]))

@@ -1,4 +1,5 @@
 """Основные функции агрегации данных по котировкам акций."""
+import functools
 from concurrent import futures
 from typing import Tuple, Optional, List
 
@@ -47,6 +48,7 @@ def index(last_date: pd.Timestamp) -> pd.DataFrame:
     return df.loc[:last_date, CLOSE]
 
 
+@functools.lru_cache(maxsize=1)
 def quotes(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
     """Информация о котировках для заданных тикеров.
 
@@ -63,6 +65,7 @@ def quotes(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
     return [future.result() for future in future_tickers]
 
 
+@functools.lru_cache(maxsize=1)
 def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
     """Дневные цены закрытия для указанных тикеров до указанной даты включительно.
 
@@ -88,6 +91,7 @@ def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
     return df.replace(to_replace=[np.nan, 0], method="ffill")
 
 
+@functools.lru_cache(maxsize=1)
 def turnovers(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
     """Дневные обороты для указанных тикеров до указанной даты включительно.
 

@@ -1,4 +1,6 @@
 """Метрики для одного прогноза и набора прогнозов."""
+import functools
+
 import numpy as np
 import pandas as pd
 
@@ -50,6 +52,7 @@ class MetricsSingle:
         return self._forecast.shrinkage
 
     @property
+    @functools.lru_cache(maxsize=200)
     def mean(self) -> pd.Series:
         """Матожидание доходности по всем позициям портфеля."""
         portfolio = self._portfolio
@@ -61,6 +64,7 @@ class MetricsSingle:
         return mean
 
     @property
+    @functools.lru_cache(maxsize=200)
     def std(self) -> pd.Series:
         """СКО доходности по всем позициям портфеля."""
         portfolio = self._portfolio
@@ -75,6 +79,7 @@ class MetricsSingle:
         return std
 
     @property
+    @functools.lru_cache(maxsize=200)
     def beta(self) -> pd.Series:
         """Беты относительно доходности портфеля."""
         portfolio = self._portfolio
@@ -104,6 +109,7 @@ class MetricsSingle:
         return r_geom
 
     @property
+    @functools.lru_cache(maxsize=200)
     def gradient(self) -> pd.Series:
         """Рассчитывает производную приближенного значения геометрической доходности по долям акций.
 
