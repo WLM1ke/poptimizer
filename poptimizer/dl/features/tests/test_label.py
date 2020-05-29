@@ -9,12 +9,7 @@ PARAMS = {
     "batch_size": 100,
     "history_days": 8,
     "forecast_days": 4,
-    "features": {
-        "Label": {"div_share": 0.9},
-        "Prices": {},
-        "Dividends": {},
-        "Weight": {},
-    },
+    "features": {"Label": {}, "Prices": {}, "Dividends": {}, "Weight": {}},
 }
 
 
@@ -33,11 +28,11 @@ def make_feature():
 
 class TestLabel:
     def test_getitem(self, feature):
-        assert torch.tensor([0.1 * (10.94 - 10.90) / 10.90]).allclose(feature[0])
-        assert torch.tensor([(7.41 * 0.87 + 0.1 * (12.54 - 21.60)) / 21.60]).allclose(
+        assert torch.tensor([(10.94 - 10.90) / 10.90]).allclose(feature[0])
+        assert torch.tensor([(7.41 * 0.87 + (12.54 - 21.60)) / 21.60]).allclose(
             feature[47]
         )
-        assert torch.tensor([0.1 * (14.06 - 14.58) / 14.58]).allclose(feature[236])
+        assert torch.tensor([(14.06 - 14.58) / 14.58]).allclose(feature[236])
 
     def test_type_and_size(self, feature):
         assert feature.type_and_size == (FeatureType.LABEL, 4)

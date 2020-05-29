@@ -8,7 +8,7 @@ from poptimizer.dl.features.feature import Feature, FeatureType
 
 
 class Label(Feature):
-    """Метка линейная комбинация полной и дивидендной доходности с суммарным весом 1."""
+    """Метка - полная доходность за определенный период."""
 
     def __init__(self, ticker: str, params: DataParams):
         super().__init__(ticker, params)
@@ -17,21 +17,21 @@ class Label(Feature):
         self.price = torch.tensor(params.price(ticker).values, dtype=torch.float)
         self.history_days = params.history_days
         self.forecast_days = params.forecast_days
-        self.div_share = params.get_feat_params(self.__class__.__name__)["div_share"]
 
     def __getitem__(self, item: int) -> torch.Tensor:
-        history_days = self.history_days
-        forecast_days = self.forecast_days
         price = self.price
         div = self.cum_div
 
-        last_history_price = price[item + history_days - 1]
-        last_history_div = div[item + history_days - 1]
-        last_forecast_price = price[item + history_days - 1 + forecast_days]
-        last_forecast_div = div[item + history_days - 1 + forecast_days]
+        start = item + self.history_days - 1
+        last_history_price = price[start]
+        last_history_div = div[start]
+
+        end = start + self.forecast_days
+        last_forecast_price = price[end]
+        last_forecast_div = div[end]
 
         div = last_forecast_div - last_history_div
-        price_growth = (last_forecast_price - last_history_price) * (1 - self.div_share)
+        price_growth = last_forecast_price - last_history_price
         label = (price_growth + div) / last_history_price
         return label.reshape(-1)
 
