@@ -110,11 +110,13 @@ class Doc:
         """Сохраняет измененные значения в MongoDB."""
         collection = get_collection()
         update = self._update
-
-        collection.update_one(
-            filter={ID: self.id}, update={"$set": update}, upsert=True
-        )
+        collection.update_one(filter={ID: self.id}, update={"$set": self._update}, upsert=True)
         update.clear()
+
+    def delete(self) -> NoReturn:
+        """Удаляет документ из базы."""
+        collection = get_collection()
+        collection.delete_one({ID: self.id})
 
     id = BaseField(index=True)
     genotype = GenotypeField()

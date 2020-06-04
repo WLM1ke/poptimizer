@@ -4,68 +4,20 @@ import pandas as pd
 import pytest
 
 from poptimizer.dl import Forecast
-from poptimizer.evolve import population
-from poptimizer.evolve.genotype import Genotype
-from poptimizer.store.mongo import DB, MONGO_CLIENT
-
-TEST_COLLECTION = MONGO_CLIENT[DB]["Test"]
+from poptimizer.evolve import population, store
 
 
-@pytest.fixture(scope="function", autouse=True)
-def test_db(monkeypatch):
-    monkeypatch.setattr(population, "COLLECTION", TEST_COLLECTION)
+@pytest.fixture(scope="module", autouse=True)
+def set_test_collection():
+    # noinspection PyProtectedMember
+    saved_collection = store._COLLECTION
+    test_collection = saved_collection.database["test"]
+    store._COLLECTION = test_collection
+
     yield
-    TEST_COLLECTION.drop()
 
-
-def test_create_empty_organism():
-    organism = population.Organism()
-    assert len(organism._data) == 2
-    assert isinstance(organism._data[population.GENOTYPE], Genotype)
-    id_ = organism.id
-
-    organism_data = TEST_COLLECTION.find_one({population.ID: id_})
-    assert len(organism_data) == 2
-    assert organism_data[population.ID] == id_
-    assert organism_data[population.GENOTYPE] is None
-
-
-def test_create_organism_from_genotype_and_reload():
-    genotype_data = {"Scheduler": {"max_lr": 7}}
-    organism = population.Organism(genotype=Genotype(genotype_data))
-    assert len(organism._data) == 2
-    assert isinstance(organism._data[population.GENOTYPE], Genotype)
-    id_ = organism.id
-    genotype = organism._data[population.GENOTYPE]
-    assert genotype["Scheduler"]["max_lr"] == 7
-
-    organism_data = TEST_COLLECTION.find_one({population.ID: id_})
-    assert len(organism_data) == 2
-    assert organism_data[population.ID] == id_
-    assert organism_data[population.GENOTYPE] == genotype
-    assert organism_data[population.GENOTYPE]["Scheduler"]["max_lr"] == 7
-
-    organism = population.Organism(_id=id_)
-    assert len(organism._data) == 2
-    assert organism.id == id_
-    assert organism._data[population.GENOTYPE] == genotype
-    assert organism._data[population.GENOTYPE]["Scheduler"]["max_lr"] == 7
-
-
-def test_die():
-    organism = population.Organism()
-    id_ = organism.id
-    assert population.Organism(_id=id_).id == id_
-
-    organism.die()
-
-    with pytest.raises(population.OrganismIdError) as error:
-        population.Organism(_id=id_)
-    assert "В популяции нет организма с ID" in str(error.value)
-
-
-def test_initial_wins():
-    assert population.Organism().wins == 0
+    store._COLLECTION = saved_collection
+    test_collection.drop()
 
 
 class FakeModel:
@@ -84,67 +36,119 @@ class FakeModel:
         return bytes(6)
 
 
-def test_evaluate_fitness(monkeypatch):
+@pytest.fixture()
+def fake_model(monkeypatch):
     monkeypatch.setattr(population, "Model", FakeModel)
+    yield
 
-    organism = population.Organism()
-    id_ = organism.id
 
+@pytest.fixture(scope="module", name="organism")
+def make_organism():
+    test_organism = population.Organism()
+    yield test_organism
+
+
+@pytest.mark.usefixtures("fake_model")
+def test_evaluate_fitness(organism):
     assert FakeModel.COUNTER == 0
-    sharpe = organism.evaluate_fitness(("GAZP", "AKRN"), pd.Timestamp("2020-04-12"))
 
-    assert sharpe == 5
+    fitness = organism.evaluate_fitness(("GAZP", "AKRN"), pd.Timestamp("2020-04-12"))
+
+    assert fitness == 5
     assert FakeModel.COUNTER == 1
     assert organism.wins == 1
+    assert organism._data.date == pd.Timestamp("2020-04-12")
+    assert organism._data.tickers == ["GAZP", "AKRN"]
+    assert organism._data.model == bytes(6)
+    assert organism._data.timer > 0
 
-    organism_reloaded = population.Organism(_id=id_)
 
-    assert organism_reloaded._data[population.LLH] == 5
-    assert organism_reloaded._data[population.DATE] == pd.Timestamp("2020-04-12")
-    assert organism_reloaded._data[population.TICKERS] == ["GAZP", "AKRN"]
-    assert organism_reloaded._data[population.MODEL] == bytes(6)
+def test_reload_organism(organism):
+    population.Organism(_id=organism.id)
+
+    assert organism._data.llh == 5
+    assert organism._data.date == pd.Timestamp("2020-04-12")
+    assert organism._data.tickers == ["GAZP", "AKRN"]
+    assert organism._data.model == bytes(6)
+    assert organism._data.timer > 0
     assert organism.wins == 1
 
-    assert (
-        organism_reloaded.evaluate_fitness(("GAZP", "AKRN"), pd.Timestamp("2020-04-12"))
-        == 5
-    )
-    assert FakeModel.COUNTER == 1
-    assert organism_reloaded.wins == 2
 
-    assert (
-        organism_reloaded.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-12"))
-        == 5
-    )
+@pytest.mark.usefixtures("fake_model")
+def test_evaluate_same(organism):
+    fitness = organism.evaluate_fitness(("GAZP", "AKRN"), pd.Timestamp("2020-04-12"))
+
+    assert fitness == 5
+    assert FakeModel.COUNTER == 1
+    assert organism.wins == 2
+
+
+@pytest.mark.usefixtures("fake_model")
+def test_evaluate_new_tickers(organism):
+    fitness = organism.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-12"))
+
+    assert fitness == 5
     assert FakeModel.COUNTER == 2
-    assert organism_reloaded.wins == 3
+    assert organism.wins == 3
 
-    assert (
-        organism_reloaded.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-13"))
-        == 5
-    )
+
+@pytest.mark.usefixtures("fake_model")
+def test_evaluate_new_timestamp(organism):
+    fitness = organism.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-13"))
+
+    assert fitness == 5
     assert FakeModel.COUNTER == 3
-    assert organism_reloaded.wins == 4
-
-    assert (
-        organism_reloaded.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-13"))
-        == 5
-    )
-    assert FakeModel.COUNTER == 3
-    assert organism_reloaded.wins == 5
+    assert organism.wins == 4
 
 
-def test_make_child():
+# noinspection PyProtectedMember
+@pytest.fixture()
+def make_weak_organism():
+    weak = population.Organism()
+    weak._data.llh = -100
+    weak._data.timer = 100
+    weak._data.date = pd.Timestamp("2020-04-13")
+    weak._data.tickers = ("GAZP", "LKOH")
+
+    yield weak
+
+    weak.die()
+
+
+def test_find_weaker(organism):
+    found = organism.find_weaker()
+
+    assert isinstance(found, population.Organism)
+    assert found._data.llh <= organism._data.llh
+    assert found._data.timer >= organism._data.timer
+
+
+def test_die(organism):
+    id_ = organism.id
+    organism.die()
+
+    with pytest.raises(store.IdError) as error:
+        population.Organism(_id=id_)
+    assert str(id_) == str(error.value)
+
+
+# noinspection PyProtectedMember
+@pytest.fixture(name="one_of_three")
+def make_three_and_yield_one_organism():
+    """Нужно минимум три организма для дифференциальной эволюции."""
+    population.Organism()._data.save()
+    population.Organism()._data.save()
     organism = population.Organism()
-    # Нужно минимум три организма для дифференциальной эволюции
-    population.Organism()
-    population.Organism()
+    organism._data.save()
+    yield organism
 
-    assert isinstance(organism.make_child(), population.Organism)
+
+def test_make_child(one_of_three):
+    assert isinstance(one_of_three.make_child(), population.Organism)
 
 
 def test_raise_forecast_error():
-    with pytest.raises(population.OrganismIdError) as error:
+    with pytest.raises(population.ForecastError) as error:
         population.Organism().forecast(("GAZP", "AKRN"), pd.Timestamp("2020-04-13"))
     assert isinstance(population.ForecastError(), error.type)
 
@@ -160,50 +164,48 @@ def test_forecast():
 
 
 def test_count():
-    assert population.count() == 0
+    assert population.count() == 4
 
     org1 = population.Organism()
-    assert population.count() == 1
+    org1._data.save()
+    assert population.count() == 5
 
     org2 = population.Organism()
-    assert population.count() == 2
+    org2._data.save()
+    assert population.count() == 6
 
     org1.die()
-    assert population.count() == 1
+    assert population.count() == 5
 
     org2.die()
-    assert population.count() == 0
+    assert population.count() == 4
 
 
 def test_create_new_organism():
     org = population.create_new_organism()
     assert isinstance(org, population.Organism)
 
-    id_ = org.id
-    organism_data = TEST_COLLECTION.find_one({population.ID: id_})
-    assert len(organism_data) == 2
-    assert organism_data[population.ID] == id_
-    assert organism_data[population.GENOTYPE] is None
 
+def test_get_all_and_random_organisms():
+    organisms = population.get_all_organisms()
+    assert isinstance(organisms, Iterable)
 
-def test_get_random_organism():
-    ids = set()
-    ids.add(population.Organism().id)
-    ids.add(population.Organism().id)
-    ids.add(population.Organism().id)
+    organisms = list(organisms)
+
+    for organism in organisms:
+        assert isinstance(organism, population.Organism)
+
+    assert len(list(organisms)) == 4
+
+    ids = [organism.id for organism in organisms]
 
     org = population.get_random_organism()
     assert org.id in ids
 
 
-def test_get_all_organisms():
-    ids = list()
-    ids.append(population.Organism().id)
-    ids.append(population.Organism().id)
-    ids.append(population.Organism().id)
-    ids.sort()
+def test_print_stat(capsys):
+    population.print_stat()
+    captured = capsys.readouterr()
 
-    organisms = population.get_all_organisms()
-    assert isinstance(organisms, Iterable)
-
-    assert sorted(org.id for org in organisms) == ids
+    assert "LLH" in captured.out
+    assert "Максимум побед" in captured.out

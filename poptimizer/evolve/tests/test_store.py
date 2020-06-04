@@ -198,3 +198,13 @@ class TestDoc:
         assert doc_loaded.date is None
         assert doc_loaded.timer == 111
         assert doc_loaded.tickers is None
+
+    def test_delete(self):
+        assert store.get_collection().count_documents({}) == 1
+
+        db_doc = store.get_collection().find_one()
+        doc = store.Doc(id_=db_doc[store.ID])
+
+        doc.delete()
+
+        assert store.get_collection().count_documents({}) == 0

@@ -1,42 +1,25 @@
 """Класс организма и операции с популяцией организмов."""
-from typing import Iterable, Tuple, NoReturn, Optional, Dict, Any
+import time
+from typing import Iterable, Tuple, NoReturn, Optional
 
 import bson
 import numpy as np
 import pandas as pd
 import pymongo
-from pymongo.collection import Collection
 
 from poptimizer.config import POptimizerError
 from poptimizer.dl import Model, Forecast
+from poptimizer.evolve import store
 from poptimizer.evolve.genotype import Genotype
-from poptimizer.store.mongo import DB, MONGO_CLIENT
-
-# Коллекция для хранения моделей
-COLLECTION = MONGO_CLIENT[DB]["models"]
-
-# Ключи для хранения описания организма
-ID = "_id"
-GENOTYPE = "genotype"
-WINS = "wins"
-MODEL = "model"
-LLH = "llh"
-DATE = "date"
-TICKERS = "tickers"
 
 
-class OrganismIdError(POptimizerError):
-    """Ошибка попытки загрузить организм с отсутствующим в базе ID."""
-
-
-class ForecastError(OrganismIdError):
+class ForecastError(POptimizerError):
     """Отсутствующий прогноз."""
 
 
 class Organism:
-    """Хранящийся в MongoDB организм.
+    """Организм и основные операции с ним.
 
-    Загружается по id, создается из описания генотипа или с нуля с генотипом по умолчанию.
     Умеет рассчитывать качество организма для проведения естественного отбора, умирать, размножаться и
     отображать количество пройденных оценок качества.
     """
@@ -46,48 +29,31 @@ class Organism:
         *,
         _id: Optional[bson.ObjectId] = None,
         genotype: Optional[Genotype] = None,
-        collection: Collection = None,
     ):
-        collection = collection or COLLECTION
-        self.collection = collection
-
-        if _id is None:
-            _id = bson.ObjectId()
-            organism = {ID: _id, GENOTYPE: genotype}
-            collection.insert_one(organism)
-
-        organism = collection.find_one({ID: _id})
-        if organism is None:
-            raise OrganismIdError(f"В популяции нет организма с ID: {_id}")
-        organism[GENOTYPE] = Genotype(organism[GENOTYPE])
-        self._data = organism
+        self._data = store.Doc(id_=_id, genotype=genotype)
 
     def __str__(self) -> str:
-        return str(self._data[GENOTYPE])
+        return str(self._data.genotype)
 
     @property
     def id(self) -> bson.ObjectId:
         """ID организма."""
-        return self._data[ID]
+        return self._data.id
 
     @property
     def genotype(self) -> Genotype:
         """Генотип организма."""
-        return self._data[GENOTYPE]
+        return self._data.genotype
 
-    def die(self) -> NoReturn:
-        """Организм удаляется из популяции."""
-        self.collection.delete_one({ID: self._data[ID]})
-
-    def _update(self, update: Dict[str, Any]) -> NoReturn:
-        """Обновление данных в MongoDB и внутреннего состояния организма."""
-        self._data.update(update)
-        self.collection.update_one({ID: self._data[ID]}, {"$set": update})
+    @property
+    def timer(self) -> float:
+        """Генотип организма."""
+        return self._data.timer
 
     @property
     def wins(self) -> int:
         """Количество побед."""
-        return self._data.get(WINS, 0)
+        return self._data.wins
 
     def evaluate_fitness(self, tickers: Tuple[str, ...], end: pd.Timestamp) -> float:
         """Вычисляет качество организма.
@@ -98,30 +64,56 @@ class Organism:
         """
         tickers = list(tickers)
         data = self._data
-        if data.get(DATE) == end and data.get(TICKERS) == tickers:
-            update = {WINS: self.wins + 1}
-            self._update(update)
-            return data[LLH]
+        data.wins += 1
 
-        pickled_model = data.get(MODEL)
-        if data.get(TICKERS) != tickers:
+        if data.date == end and data.tickers == tickers:
+            data.save()
+            return data.llh
+
+        pickled_model = data.model
+        if data.tickers != tickers:
             pickled_model = None
 
+        timer = time.monotonic_ns()
         model = Model(
             tuple(tickers), end, self.genotype.get_phenotype(), pickled_model
         )
         llh = model.llh
+        timer = time.monotonic_ns() - timer
 
-        update = {
-            WINS: self.wins + 1,
-            LLH: llh,
-            MODEL: bytes(model),
-            DATE: end,
-            TICKERS: tickers,
-        }
-        self._update(update)
+        data.llh = llh
+        data.model = bytes(model)
+        data.date = end
+        data.tickers = tickers
 
+        if pickled_model is None:
+            data.timer = timer
+
+        data.save()
         return llh
+
+    def find_weaker(self) -> "Organism":
+        """Находит организм с llh меньше или равное своему и максимальным временем обучения.
+
+        Может найти самого себя.
+        """
+        data = self._data
+        collection = store.get_collection()
+        filter_ = dict(
+            llh={"$lte": data.llh},
+            date=data.date,
+            tickers=data.tickers
+        )
+        id_dict = collection.find_one(
+            filter=filter_,
+            projection=["_id"],
+            sort=[("timer", pymongo.DESCENDING)]
+        )
+        return Organism(**id_dict)
+
+    def die(self) -> NoReturn:
+        """Организм удаляется из популяции."""
+        self._data.delete()
 
     def make_child(self) -> "Organism":
         """Создает новый организм с помощью дифференциальной мутации."""
@@ -135,9 +127,10 @@ class Organism:
         При наличие натренированной модели, которая составлена на предыдущей статистике и для таких же
         тикеров, будет использованы сохраненные веса сети, или выбрасывается исключение.
         """
+        data = self._data
         if (
-                (pickled_model := self._data.get(MODEL)) is None
-                or tickers != tuple(self._data[TICKERS])
+                (pickled_model := data.model) is None
+                or tickers != tuple(data.tickers)
         ):
             raise ForecastError
 
@@ -145,54 +138,58 @@ class Organism:
         return model.forecast()
 
 
-def _sample_organism(num: int, collection: Collection = None) -> Iterable[Organism]:
+def _sample_organism(num: int) -> Iterable[Organism]:
     """Выбирает несколько случайных организмов.
 
     Необходимо для реализации размножения и отбора.
     """
-    collection = collection or COLLECTION
+    collection = store.get_collection()
     pipeline = [{"$sample": {"size": num}}, {"$project": {"_id": True}}]
     organisms = collection.aggregate(pipeline)
     yield from (Organism(**organism) for organism in organisms)
 
 
-def count(collection: Collection = None) -> int:
+def count() -> int:
     """Количество организмов в популяции."""
-    collection = collection or COLLECTION
+    collection = store.get_collection()
     return collection.count_documents({})
 
 
-def create_new_organism(collection: Collection = None) -> Organism:
+def create_new_organism() -> Organism:
     """Создает новый организм с пустым генотипом."""
-    collection = collection or COLLECTION
-    return Organism(collection=collection)
+    return Organism()
 
 
-def get_random_organism(collection: Collection = None) -> Organism:
+def get_random_organism() -> Organism:
     """Получить случайный организм из популяции."""
-    collection = collection or COLLECTION
-    organism, *_ = tuple(_sample_organism(1, collection))
+    organism, *_ = tuple(_sample_organism(1))
     return organism
 
 
-def get_all_organisms(collection: Collection = None) -> Iterable[Organism]:
+def get_all_organisms() -> Iterable[Organism]:
     """Получить все имеющиеся организмы."""
-    collection = collection or COLLECTION
+    collection = store.get_collection()
     id_dicts = collection.find(
-        filter={}, projection=["_id"], sort=[(DATE, pymongo.ASCENDING)]
+        filter={}, projection=["_id"], sort=[("llh", pymongo.ASCENDING)]
     )
     for id_dict in id_dicts:
-        yield Organism(**id_dict, collection=collection)
+        yield Organism(**id_dict)
 
 
-def print_stat(collection: Collection = None) -> NoReturn:
+def print_stat() -> NoReturn:
     """Статистика - минимальное и максимальное значение коэффициента Шарпа."""
-    collection = collection or COLLECTION
+    _print_llh_stats()
+    _print_wins_stats()
+
+
+def _print_llh_stats() -> NoReturn:
+    """Статистика по минимуму, медиане и максимуму llh."""
+    collection = store.get_collection()
     db_find = collection.find
     cursor = db_find(
-        filter={LLH: {"$exists": True}}, projection=[LLH]
+        filter=dict(llh={"$exists": True}), projection=["llh"]
     )
-    llhs = map(lambda x: x[LLH], cursor)
+    llhs = map(lambda x: x["llh"], cursor)
     llhs = tuple(llhs)
     if llhs:
         quantiles = np.quantile(tuple(llhs), [0.0, 0.5, 1.0])
@@ -200,18 +197,22 @@ def print_stat(collection: Collection = None) -> NoReturn:
         quantiles = tuple(quantiles)
     else:
         quantiles = ["-"] * 3
-
     print(f"LLH - ({', '.join(tuple(quantiles))})")
 
+
+def _print_wins_stats() -> NoReturn:
+    """Статистика по максимуму побед."""
+    collection = store.get_collection()
+    db_find = collection.find
     params = {
-        "filter": {WINS: {"$exists": True}},
-        "projection": [WINS],
-        "sort": [(WINS, pymongo.DESCENDING)],
+        "filter": dict(wins={"$exists": True}),
+        "projection": ["wins"],
+        "sort": [("wins", pymongo.DESCENDING)],
         "limit": 1,
     }
     wins = list(db_find(**params))
     max_wins = None
     if wins:
         max_wins, *_ = wins
-        max_wins = max_wins[WINS]
+        max_wins = max_wins["wins"]
     print(f"Максимум побед - {max_wins}")
