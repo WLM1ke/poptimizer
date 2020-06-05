@@ -6,11 +6,7 @@ import torch
 
 from poptimizer.dl import model
 from poptimizer.dl.forecast import Forecast
-from poptimizer.evolve import population
-from poptimizer.evolve.population import TICKERS, DATE, MODEL
-from poptimizer.store.mongo import MONGO_CLIENT
-
-COLLECTION = MONGO_CLIENT["test"]["test"]
+from poptimizer.evolve import population, store
 
 
 def test_normal_llh():
@@ -25,10 +21,18 @@ def test_normal_llh():
 
 @pytest.fixture(scope="module", name="org")
 def get_model_doc():
-    org = population.create_new_organism(COLLECTION)
+    # noinspection PyProtectedMember
+    saved_collection = store._COLLECTION
+    test_collection = saved_collection.database["test"]
+    store._COLLECTION = test_collection
+
+    org = population.create_new_organism()
     org.evaluate_fitness(("KRKNP", "NMTP", "TATNP"), pd.Timestamp("2020-05-23"))
+
     yield org
-    COLLECTION.drop()
+
+    store._COLLECTION = saved_collection
+    test_collection.drop()
 
 
 def test_llh_from_trained_and_reloaded_model(org):
@@ -37,13 +41,13 @@ def test_llh_from_trained_and_reloaded_model(org):
     gen["Scheduler"]["epochs"] /= 10
     phenotype = gen.get_phenotype()
 
-    net = model.Model(org._data[TICKERS], org._data[DATE], phenotype, None)
+    net = model.Model(tuple(org._data.tickers), org._data.date, phenotype, None)
     assert bytes(net) == bytes()
 
     llh = net.llh
     pickled_model = bytes(net)
 
-    net = model.Model(org._data[TICKERS], org._data[DATE], phenotype, pickled_model)
+    net = model.Model(tuple(org._data.tickers), org._data.date, phenotype, pickled_model)
     assert llh == net.llh
     assert bytes(net) == pickled_model
 
@@ -56,7 +60,7 @@ def test_raise_long_history(org):
     gen = copy.deepcopy(org.genotype)
     gen["Data"]["history_days"] = 2000
     phenotype = gen.get_phenotype()
-    net = model.Model(org._data[TICKERS], org._data[DATE], phenotype, None)
+    net = model.Model(tuple(org._data.tickers), org._data.date, phenotype, None)
     with pytest.raises(model.ModelError) as error:
         # noinspection PyStatementEffect
         net.llh
@@ -68,7 +72,7 @@ def test_raise_gradient_error(org):
     gen["Scheduler"]["epochs"] /= 10
     gen["Scheduler"]["max_lr"] = 10
     phenotype = gen.get_phenotype()
-    net = model.Model(org._data[TICKERS], org._data[DATE], phenotype, None)
+    net = model.Model(tuple(org._data.tickers), org._data.date, phenotype, None)
     with pytest.raises(model.ModelError) as error:
         # noinspection PyStatementEffect
         net.llh
@@ -79,15 +83,15 @@ def test_forecast(org):
     gen = copy.deepcopy(org.genotype)
     gen["Scheduler"]["epochs"] /= 10
     phenotype = gen.get_phenotype()
-    net = model.Model(org._data[TICKERS], org._data[DATE], phenotype, org._data[MODEL])
+    net = model.Model(tuple(org._data.tickers), org._data.date, phenotype, org._data.model)
     forecast = net.forecast()
 
     assert isinstance(forecast, Forecast)
-    assert forecast.tickers == org._data[TICKERS]
-    assert forecast.date == org._data[DATE]
+    assert forecast.tickers == tuple(org._data.tickers)
+    assert forecast.date == org._data.date
     assert forecast.history_days == phenotype["data"]["history_days"]
     assert forecast.forecast_days == phenotype["data"]["forecast_days"]
     assert isinstance(forecast.mean, pd.Series)
-    assert forecast.mean.index.tolist() == list(org._data[TICKERS])
+    assert forecast.mean.index.tolist() == list(org._data.tickers)
     assert isinstance(forecast.std, pd.Series)
-    assert forecast.std.index.tolist() == list(org._data[TICKERS])
+    assert forecast.std.index.tolist() == list(org._data.tickers)
