@@ -1,5 +1,5 @@
 """Эволюция параметров модели."""
-from typing import Tuple, NoReturn
+from typing import Tuple, NoReturn, Optional
 
 import pandas as pd
 
@@ -13,12 +13,16 @@ MAX_POPULATION = 100
 class Evolution:
     """Эволюция параметров модели.
 
-    Одна эпоха эволюции проходит по всем организмам популяции и сравнивает их по качеству с потомком -
-    выживает сильнейший. Более слабый родитель  может выжить, если в популяции организмов меньше
-    необходимого.
+    Одна эпоха эволюции проходит по всем организмам популяции и сравнивает их по качеству с потомком.
+    Более слабы конкурирует со всеми более слабыми, чем он организмами по времени обучения - умирает
+    самый медленный. Таким образом, конкуренция идет по двум параметрам - в первую очередь по
+    качеству, а во вторую по времени обучения. В результате популяция стремится к эффективному фронту
+    по Парето.
 
-    Организм погибает без сравнения, если во время его оценки произошло одна из ошибок оценки (слишком
-    большая длинна истории, взрыв градиентов или вырожденная модель).
+    Организмы могут погибнуть без сравнения, если во время его оценки произошло одна из ошибок оценки
+    (слишком большая длинна истории или взрыв градиентов).
+
+    Организмы могут выжить без сравнения, если популяция меньше установленной величины.
     """
 
     def __init__(self, max_population: int = MAX_POPULATION):
@@ -31,7 +35,6 @@ class Evolution:
         """
         self._setup()
 
-        new_children = 0
         count = population.count()
 
         for step, parent in enumerate(population.get_all_organisms(), 1):
@@ -39,47 +42,52 @@ class Evolution:
             population.print_stat()
             print()
 
-            print(f"Родитель - {parent.wins} победы:")
-            print(parent)
-            try:
-                parent_sharpe = parent.evaluate_fitness(tickers, end)
-            except ModelError as error:
-                parent.die()
-                print(f"Удаляю родителя - {error.__class__.__name__}")
-                print()
+            print("Родитель:")
+            parent_fitness = self._eval_and_print(parent, tickers, end)
+            if parent_fitness is None:
                 continue
-            else:
-                print(f"LLH: {parent_sharpe:.4f}")
-                print()
 
             child = parent.make_child()
             print("Потомок:")
-            new_children += 1
-            print(child)
-            try:
-                child_sharpe = child.evaluate_fitness(tickers, end)
-            except ModelError as error:
-                child.die()
-                new_children -= 1
-                print(f"Удаляю потомка - {error.__class__.__name__}")
-                print()
+            child_fitness = self._eval_and_print(child, tickers, end)
+            if child_fitness is None:
                 continue
-            else:
-                print(f"LLH: {child_sharpe:.4f}")
-                print()
 
-            excess = population.count() > self._max_population
+            if population.count() <= self._max_population:
+                continue
 
-            if parent_sharpe > child_sharpe:
-                child.die()
-                new_children -= 1
-                print("Удаляю потомка.")
-            elif excess:
-                parent.die()
-                print("Удаляю родителя.")
+            weakest = parent
+            if parent_fitness > child_fitness:
+                weakest = child
 
-            print(f"Добавлено потомков - {new_children}...")
+            weakest = weakest.find_weaker()
+            print("Более слабый и наиболее медленный - удаляю:")
+            self._eval_and_print(weakest, tickers, end)
+            weakest.die()
+
+    @staticmethod
+    def _eval_and_print(
+            organism: population.Organism, tickers: Tuple[str, ...], end: pd.Timestamp
+    ) -> Optional[float]:
+        """Оценивает организм и распечатывает метрики.
+
+        Обрабатывает ошибки оценки и возвращает None и убивает организм в случае их наличия, а если все
+        нормально, то оценку качества.
+        """
+        print(f"Побед - {organism.wins}")
+        print(organism)
+        try:
+            fitness = organism.evaluate_fitness(tickers, end)
+        except ModelError as error:
+            organism.die()
+            print(f"Удаляю - {error.__class__.__name__}")
             print()
+            return None
+        else:
+            print(f"LLH: {fitness:.4f}")
+            print(f"Timer: {organism.timer / 10 ** 9:.0f}")
+            print()
+            return fitness
 
     def _setup(self) -> NoReturn:
         """Создает популяцию из организмов по умолчанию.

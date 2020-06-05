@@ -5,9 +5,11 @@ from poptimizer.evolve import evolve
 
 
 class FakeOrganism:
-    def __init__(self, fitness, child_fitness, population):
+    def __init__(self, fitness, timer, child_fitness, child_timer, population):
         self._fitness = fitness
+        self._timer = timer
         self._child_fitness = child_fitness
+        self._child_timer = child_timer
         self._population = population
         self._population.add(self)
 
@@ -15,17 +17,26 @@ class FakeOrganism:
     def wins(self):
         return
 
+    @property
+    def timer(self):
+        return self._timer * 10 ** 9
+
     # noinspection PyUnusedLocal
     def evaluate_fitness(self, tickers, end):
         if self._fitness is None:
             raise ModelError
         return self._fitness
 
+    # noinspection PyProtectedMember
+    def find_weaker(self):
+        population = filter(lambda x: x._fitness <= self._fitness, self._population._organisms.values())
+        return max(population, key=lambda x: x._timer)
+
     def die(self):
         self._population.kill(self)
 
     def make_child(self):
-        return FakeOrganism(self._child_fitness, None, self._population)
+        return FakeOrganism(self._child_fitness, self._child_timer, None, None, self._population)
 
 
 class FakePopulation:
@@ -57,8 +68,9 @@ class FakePopulation:
 
 
 def test_setup_needed(monkeypatch):
-    organisms_params = [(None, None), (None, None)]
-    new_organisms_params = [(None, None), (None, None), (None, None), (None, None)]
+    params = (None, None, None, None)
+    organisms_params = [params, params]
+    new_organisms_params = [params, params, params, params]
     fake_population = FakePopulation(organisms_params, new_organisms_params)
     monkeypatch.setattr(evolve, "population", fake_population)
     ev = evolve.Evolution(5)
@@ -68,12 +80,13 @@ def test_setup_needed(monkeypatch):
 
 
 def test_setup_not_needed(monkeypatch):
+    params = (None, None, None, None)
     organisms_params = [
-        (None, None),
-        (None, None),
-        (None, None),
-        (None, None),
-        (None, None),
+        params,
+        params,
+        params,
+        params,
+        params,
     ]
     new_organisms_params = []
     fake_population = FakePopulation(organisms_params, new_organisms_params)
@@ -86,7 +99,7 @@ def test_setup_not_needed(monkeypatch):
 
 # noinspection DuplicatedCode
 def test_evolve_parent_win(monkeypatch):
-    organisms_params = [(4, 3), (4, 3), (5, 4), (4, 3)]
+    organisms_params = [(4, 1, 3, 2), (4, 1, 3, 2), (5, 1, 4, 2), (4, 1, 3, 2)]
     new_organisms_params = []
     fake_population = FakePopulation(organisms_params, new_organisms_params)
     monkeypatch.setattr(evolve, "population", fake_population)
@@ -100,7 +113,7 @@ def test_evolve_parent_win(monkeypatch):
 
 # noinspection DuplicatedCode
 def test_evolve_parent_loose(monkeypatch):
-    organisms_params = [(4, 3), (4, 3), (5, 4), (3, 4)]
+    organisms_params = [(4, 1, 3, 2), (4, 1, 3, 2), (5, 1, 4, 2), (3, 1, 4, 2)]
     new_organisms_params = []
     fake_population = FakePopulation(organisms_params, new_organisms_params)
     monkeypatch.setattr(evolve, "population", fake_population)
@@ -113,48 +126,21 @@ def test_evolve_parent_loose(monkeypatch):
     assert list(fake_population._organisms)[-1] != population_ids[-1]
 
 
-# noinspection DuplicatedCode
-def test_evolve_parent_loose_no_excess(monkeypatch):
-    organisms_params = [(4, 3), (4, 3), (None, 4), (3, 4)]
-    new_organisms_params = []
-    fake_population = FakePopulation(organisms_params, new_organisms_params)
-    monkeypatch.setattr(evolve, "population", fake_population)
-    population_ids = list(fake_population._organisms)
-    ev = evolve.Evolution(4)
-    assert fake_population.count() == 4
-    ev.evolve(("AKRN",), pd.Timestamp("2020-04-19"))
-    assert fake_population.count() == 4
-    assert list(fake_population._organisms)[:2] == population_ids[:2]
-    assert list(fake_population._organisms)[2] == population_ids[3]
-    assert list(fake_population._organisms)[3] not in population_ids
+class BadFakeOrganism:
+    wins = 3
+    dead = False
+
+    def evaluate_fitness(self, tickers, end):
+        raise ModelError
+
+    def die(self):
+        self.dead = True
 
 
 def test_evolve_bad_parent(monkeypatch, capsys):
-    organisms_params = [(4, 3), (4, 3), (5, 4), (None, None)]
-    new_organisms_params = []
-    fake_population = FakePopulation(organisms_params, new_organisms_params)
-    monkeypatch.setattr(evolve, "population", fake_population)
-    population_ids = list(fake_population._organisms)[:-1]
-    ev = evolve.Evolution(4)
-    assert fake_population.count() == 4
-    ev.evolve(("AKRN",), pd.Timestamp("2020-04-19"))
-    assert fake_population.count() == 3
-    assert list(fake_population._organisms) == population_ids
+    org = BadFakeOrganism()
+    # noinspection PyTypeChecker
+    assert evolve.Evolution(4)._eval_and_print(org, None, None) is None
+    assert org.dead is True
     captured = capsys.readouterr()
-    assert "Удаляю родителя - ModelError" in captured.out
-
-
-# noinspection DuplicatedCode
-def test_evolve_bad_child(monkeypatch, capsys):
-    organisms_params = [(4, 3), (4, 3), (5, 4), (1, None)]
-    new_organisms_params = []
-    fake_population = FakePopulation(organisms_params, new_organisms_params)
-    monkeypatch.setattr(evolve, "population", fake_population)
-    population_ids = list(fake_population._organisms)
-    ev = evolve.Evolution(4)
-    assert fake_population.count() == 4
-    ev.evolve(("AKRN",), pd.Timestamp("2020-04-19"))
-    assert fake_population.count() == 4
-    assert list(fake_population._organisms) == population_ids
-    captured = capsys.readouterr()
-    assert "Удаляю потомка - ModelError" in captured.out
+    assert "Удаляю - ModelError" in captured.out
