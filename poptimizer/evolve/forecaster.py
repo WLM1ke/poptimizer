@@ -4,7 +4,6 @@ from typing import Tuple, Iterator
 
 import pandas as pd
 import tqdm
-from pymongo.collection import Collection
 
 from poptimizer import store
 from poptimizer.dl import Forecast
@@ -12,7 +11,7 @@ from poptimizer.evolve import population
 from poptimizer.evolve.population import ForecastError
 
 # Ключ для хранений кеша прогноза
-FORECAST = "dl"
+FORECAST = "forecast"
 
 
 class Forecasts(Iterable):
@@ -22,14 +21,13 @@ class Forecasts(Iterable):
         self,
         tickers: Tuple[str, ...],
         date: pd.Timestamp,
-        collection: Collection = None,
     ):
         self._tickers = tickers
         self._date = date
 
         self._forecasts = []
         for organism in tqdm.tqdm(
-            population.get_all_organisms(collection), desc="Forecasts"
+                population.get_all_organisms(), desc="Forecasts"
         ):
             try:
                 forecast = organism.forecast(tickers, date)
@@ -52,7 +50,7 @@ class Forecasts(Iterable):
 
 
 def get_forecasts(
-    tickers: Tuple[str, ...], date: pd.Timestamp, collection: Collection = None
+        tickers: Tuple[str, ...], date: pd.Timestamp
 ) -> Forecasts:
     """Создает или загружает закешированный прогноз для набора тикеров на указанную дату.
 
@@ -60,15 +58,10 @@ def get_forecasts(
         Тикеры, для которых необходимо составить прогноз.
     :param date:
         Дата, на которую нужен прогноз.
-    :param collection:
-        Коллекция с организмами - нужно для тестирования.
     :return:
         Прогнозная доходность, ковариация и дополнительная информация.
     """
-    params = dict()
-    if collection is not None:
-        params["db"] = collection.database.name
-    mongodb = store.MongoDB(**params)
+    mongodb = store.MongoDB()
 
     forecasts_cache = mongodb[FORECAST]
     if (
@@ -77,6 +70,6 @@ def get_forecasts(
         and forecasts_cache.tickers == tickers
     ):
         return forecasts_cache
-    forecasts = Forecasts(tickers, date, collection)
+    forecasts = Forecasts(tickers, date)
     mongodb[FORECAST] = forecasts
     return forecasts

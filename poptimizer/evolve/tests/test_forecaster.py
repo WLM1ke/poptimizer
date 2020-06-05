@@ -4,30 +4,31 @@ import pandas as pd
 import pytest
 
 from poptimizer.dl import Forecast
-from poptimizer.evolve import population, forecaster
-from poptimizer.store.mongo import MONGO_CLIENT
-
-COLLECTION = MONGO_CLIENT["test"]["test"]
+from poptimizer.evolve import forecaster, store, population
 
 
 @pytest.fixture(scope="module", autouse=True)
-def prepare_forecasts():
-    population.create_new_organism(COLLECTION)
+def set_test_collection():
+    # noinspection PyProtectedMember
+    saved_collection = store._COLLECTION
+    test_collection = saved_collection.database["test"]
+    store._COLLECTION = test_collection
 
-    org = population.create_new_organism(COLLECTION)
+    org = population.create_new_organism()
     org.evaluate_fitness(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23"))
-    org = population.create_new_organism(COLLECTION)
+    org = population.create_new_organism()
     org.evaluate_fitness(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23"))
 
-    org = population.create_new_organism(COLLECTION)
+    org = population.create_new_organism()
     org.evaluate_fitness(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-22"))
 
-    org = population.create_new_organism(COLLECTION)
+    org = population.create_new_organism()
     org.evaluate_fitness(("AKRN", "TRNFP"), pd.Timestamp("2020-05-23"))
 
     yield
 
-    COLLECTION.drop()
+    store._COLLECTION = saved_collection
+    test_collection.drop()
 
 
 def forecasts_checkup(forecasts: forecaster.Forecasts):
@@ -44,7 +45,7 @@ def forecasts_checkup(forecasts: forecaster.Forecasts):
 
 def test_get_forecasts():
     forecasts = forecaster.get_forecasts(
-        ("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23"), COLLECTION
+        ("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23")
     )
 
     forecasts_checkup(forecasts)
@@ -52,7 +53,7 @@ def test_get_forecasts():
 
 def test_get_forecasts_from_cache():
     forecasts = forecaster.get_forecasts(
-        ("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23"), COLLECTION
+        ("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23")
     )
 
     forecasts_checkup(forecasts)
