@@ -3,10 +3,10 @@ from poptimizer.evolve.chromosomes.chromosome import GeneParams, Chromosome
 
 START_BN = GeneParams(
     path=("model", "start_bn"),
-    default_range=(1.1, 1.2),
-    lower_bound=0.0,
-    upper_bound=1.99,
-    phenotype_function=lambda x: bool(int(x)),
+    default_range=(0.0, 1.0),
+    lower_bound=None,
+    upper_bound=None,
+    phenotype_function=lambda x: x > 0,
 )
 EMBEDDING_DIM = GeneParams(
     path=("model", "embedding_dim"),

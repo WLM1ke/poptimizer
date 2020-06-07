@@ -7,7 +7,7 @@ def test_init_no_data():
     assert 0.001 < chromo.data["max_lr"] < 0.01
     assert 0.999 < chromo.data["epochs"] < 1.001
     assert 0.299 < chromo.data["pct_start"] < 0.301
-    assert 0.1 < chromo.data["anneal_strategy"] < 0.9
+    assert 0.0 < chromo.data["anneal_strategy"] < 1.0
     assert 0.849 < chromo.data["base_momentum"] < 0.851
     assert 0.949 < chromo.data["max_momentum"] < 0.951
     assert 24.9 < chromo.data["div_factor"] < 25.1
@@ -19,7 +19,7 @@ def test_setup_phenotype():
         max_lr=0.2,
         epochs=10.1,
         pct_start=0.4,
-        anneal_strategy=1.5,
+        anneal_strategy=-1.5,
         base_momentum=0.6,
         max_momentum=0.7,
         div_factor=1.8,

@@ -24,10 +24,10 @@ PCT_START = chromosome.GeneParams(
 )
 ANNEAL_STRATEGY = chromosome.GeneParams(
     path=("scheduler", "anneal_strategy"),
-    default_range=(0.1, 0.9),
-    lower_bound=0.0,
-    upper_bound=1.99,
-    phenotype_function=lambda x: {0: "cos", 1: "linear"}[int(x)],
+    default_range=(0.0, 1.0),
+    lower_bound=None,
+    upper_bound=None,
+    phenotype_function=lambda x: {0: "linear", 1: "cos"}[x > 0],
 )
 BASE_MOMENTUM = chromosome.GeneParams(
     path=("scheduler", "base_momentum"),
