@@ -20,6 +20,6 @@ apimoex==1.2.0
 bs4==0.0.1
 requests==2.23.0
 pyppeteer==0.2.2
-certifi
+certifi==2020.4.5.2
 
 psutil
