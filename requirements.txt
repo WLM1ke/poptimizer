@@ -16,7 +16,7 @@ matplotlib==3.2.1
 
 pymongo==3.10.1
 
-apimoex
+apimoex==1.2.0
 bs4
 requests
 pyppeteer
