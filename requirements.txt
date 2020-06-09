@@ -12,7 +12,7 @@ openpyxl==3.0.3
 xlrd==1.2.0
 lxml==4.5.1
 reportlab==3.5.42
-matplotlib
+matplotlib==3.2.1
 
 pymongo
 
