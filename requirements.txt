@@ -18,7 +18,7 @@ pymongo==3.10.1
 
 apimoex==1.2.0
 bs4==0.0.1
-requests
+requests==2.23.0
 pyppeteer
 certifi
 
