@@ -3,7 +3,7 @@ pytest-cov==2.9.0
 pytest-asyncio==0.12.0
 
 pandas==1.0.4
-numpy
+numpy==1.18.5
 scipy
 torch
 tqdm
