@@ -22,4 +22,4 @@ requests==2.23.0
 pyppeteer==0.2.2
 certifi==2020.4.5.2
 
-psutil
+psutil==5.7.0
