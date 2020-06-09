@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Количество колонок в распечатках без переноса на несколько страниц
 pd.set_option("display.max_columns", 20)
-pd.set_option("display.max_rows", 110)
+pd.set_option("display.max_rows", 120)
 pd.set_option("display.width", None)
 
 # Путь к директории с отчетам
