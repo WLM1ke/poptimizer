@@ -9,7 +9,7 @@ torch==1.5.0
 tqdm==4.46.1
 
 openpyxl==3.0.3
-xlrd
+xlrd==1.2.0
 lxml
 reportlab
 matplotlib
