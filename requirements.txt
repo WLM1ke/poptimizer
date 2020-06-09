@@ -14,7 +14,7 @@ lxml==4.5.1
 reportlab==3.5.42
 matplotlib==3.2.1
 
-pymongo
+pymongo==3.10.1
 
 apimoex
 bs4
