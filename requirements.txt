@@ -6,7 +6,7 @@ pandas==1.0.4
 numpy==1.18.5
 scipy==1.4.1
 torch==1.5.0
-tqdm
+tqdm==4.46.1
 
 openpyxl
 xlrd
