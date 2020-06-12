@@ -86,7 +86,7 @@ class Chromosome(UserDict):
         for gene in self._GENES:
             node = phenotype
             for key in gene.path[:-1]:
-                node = phenotype.setdefault(key, {})
+                node = node.setdefault(key, {})
             key = gene.path[-1]
             node[key] = gene.phenotype_function(self[key])
 
