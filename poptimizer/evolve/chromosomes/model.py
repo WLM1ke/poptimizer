@@ -2,59 +2,67 @@
 from poptimizer.evolve.chromosomes.chromosome import GeneParams, Chromosome
 
 START_BN = GeneParams(
-    path=("model", "start_bn"),
+    name="start_bn",
     default_range=(0.0, 1.0),
     lower_bound=None,
     upper_bound=None,
+    path=("model", "start_bn"),
     phenotype_function=lambda x: x > 0,
 )
 EMBEDDING_DIM = GeneParams(
-    path=("model", "embedding_dim"),
+    name="embedding_dim",
     default_range=(4.1, 4.9),
     lower_bound=1.0,
     upper_bound=None,
+    path=("model", "embedding_dim"),
     phenotype_function=int,
 )
 KERNELS = GeneParams(
-    path=("model", "kernels"),
+    name="kernels",
     default_range=(2.1, 2.9),
     lower_bound=1.0,
     upper_bound=None,
+    path=("model", "kernels"),
     phenotype_function=int,
 )
 SUB_BLOCKS = GeneParams(
-    path=("model", "sub_blocks"),
+    name="sub_blocks",
     default_range=(1.1, 1.2),
     lower_bound=1.0,
     upper_bound=None,
+    path=("model", "sub_blocks"),
     phenotype_function=int,
 )
 GATE_CHANNELS = GeneParams(
-    path=("model", "gate_channels"),
+    name="gate_channels",
     default_range=(4.1, 4.9),
     lower_bound=1.0,
     upper_bound=None,
+    path=("model", "gate_channels"),
     phenotype_function=int,
 )
 RESIDUAL_CHANNELS = GeneParams(
-    path=("model", "residual_channels"),
+    name="residual_channels",
     default_range=(4.1, 4.9),
     lower_bound=1.0,
     upper_bound=None,
+    path=("model", "residual_channels"),
     phenotype_function=int,
 )
 SKIP_CHANNELS = GeneParams(
-    path=("model", "skip_channels"),
+    name="skip_channels",
     default_range=(4.1, 4.9),
     lower_bound=1.0,
     upper_bound=None,
+    path=("model", "skip_channels"),
     phenotype_function=int,
 )
 END_CHANNELS = GeneParams(
-    path=("model", "end_channels"),
+    name="end_channels",
     default_range=(4.1, 4.9),
     lower_bound=1.0,
     upper_bound=None,
+    path=("model", "end_channels"),
     phenotype_function=int,
 )
 

@@ -38,10 +38,7 @@ def test_setup_phenotype():
     phenotype_data = dict(
         model="Test_Model",
         data=dict(
-            history_days=40,
-            batch_size=10,
-            forecast_days=270,
-            features=dict(Ticker=dict(ticker_on=False)),
+            history_days=40, batch_size=10, forecast_days=270, features=dict(Ticker=dict(on=False)),
         ),
     )
     assert base_phenotype == phenotype_data

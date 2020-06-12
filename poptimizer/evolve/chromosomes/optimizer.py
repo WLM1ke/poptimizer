@@ -2,31 +2,35 @@
 from poptimizer.evolve.chromosomes import chromosome
 
 BETA2 = chromosome.GeneParams(
-    path=("optimizer", "betas"),
+    name="betas",
     default_range=(0.99899, 0.99901),
     lower_bound=0.0,
     upper_bound=1.0,
+    path=("optimizer", "betas"),
     phenotype_function=lambda x: (0.9, x),
 )
 EPS = chromosome.GeneParams(
-    path=("optimizer", "eps"),
+    name="eps",
     default_range=(0.999e-8, 1.001e-8),
     lower_bound=0.0,
     upper_bound=None,
+    path=("optimizer", "eps"),
     phenotype_function=float,
 )
 WEIGHT_DECAY = chromosome.GeneParams(
-    path=("optimizer", "weight_decay"),
+    name="weight_decay",
     default_range=(0.999e-2, 1.01e-2),
     lower_bound=0.0,
     upper_bound=None,
+    path=("optimizer", "weight_decay"),
     phenotype_function=float,
 )
 AMSGRAD = chromosome.GeneParams(
-    path=("optimizer", "amsgrad"),
+    name="amsgrad",
     default_range=(0.0, 1.0),
     lower_bound=None,
     upper_bound=None,
+    path=("optimizer", "amsgrad"),
     phenotype_function=lambda x: x > 0,
 )
 

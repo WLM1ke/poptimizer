@@ -33,10 +33,11 @@ class GeneParams:
     соответствующая функция.
     """
 
-    path: Tuple[str, ...]
+    name: str
     default_range: Tuple[float, float]
     lower_bound: Optional[float]
     upper_bound: Optional[float]
+    path: Tuple[str, ...]
     phenotype_function: Callable[[float], Any]
 
 
@@ -75,7 +76,7 @@ class Chromosome(UserDict):
         """
         chromosome_data = dict()
         for gene in cls._GENES:
-            chromosome_data[gene.path[-1]] = random.uniform(*gene.default_range)
+            chromosome_data[gene.name] = random.uniform(*gene.default_range)
         return chromosome_data
 
     def change_phenotype(self, phenotype: PhenotypeData) -> NoReturn:
@@ -88,7 +89,7 @@ class Chromosome(UserDict):
             for key in gene.path[:-1]:
                 node = node.setdefault(key, {})
             key = gene.path[-1]
-            node[key] = gene.phenotype_function(self[key])
+            node[key] = gene.phenotype_function(self[gene.name])
 
     def make_child(
         self,
@@ -124,7 +125,7 @@ class Chromosome(UserDict):
 
         for flag, gene in zip(flags, gens):
             if flag:
-                key = gene.path[-1]
+                key = gene.name
                 value = base[key] + (diff1[key] - diff2[key]) * factor
                 if gene.lower_bound is not None and value < gene.lower_bound:
                     value = (base[key] + gene.lower_bound) / 2

@@ -2,31 +2,35 @@
 from poptimizer.evolve.chromosomes.chromosome import GeneParams, Chromosome
 
 BATCH_SIZE = GeneParams(
-    path=("data", "batch_size"),
+    name="batch_size",
     default_range=(128.1, 128.9),
     lower_bound=1.0,
     upper_bound=None,
+    path=("data", "batch_size"),
     phenotype_function=int,
 )
 HISTORY_DAYS = GeneParams(
-    path=("data", "history_days"),
+    name="history_days",
     default_range=(252.1, 252.9),
     lower_bound=2.0,
     upper_bound=None,
+    path=("data", "history_days"),
     phenotype_function=int,
 )
 FORECAST_DAYS = GeneParams(
-    path=("data", "forecast_days"),
+    name="forecast_days",
     default_range=(196.1, 196.9),
     lower_bound=1.0,
     upper_bound=None,
+    path=("data", "forecast_days"),
     phenotype_function=int,
 )
 TICKER_ON = GeneParams(
-    path=("data", "features", "Ticker", "ticker_on"),
+    name="ticker_on",
     default_range=(0.0, 1.0),
     lower_bound=None,
     upper_bound=None,
+    path=("data", "features", "Ticker", "on"),
     phenotype_function=lambda x: x > 0,
 )
 
