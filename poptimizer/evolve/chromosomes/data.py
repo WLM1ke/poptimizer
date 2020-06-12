@@ -22,9 +22,16 @@ FORECAST_DAYS = GeneParams(
     upper_bound=None,
     phenotype_function=int,
 )
+TICKER_ON = GeneParams(
+    path=("data", "features", "Ticker", "ticker_on"),
+    default_range=(0.0, 1.0),
+    lower_bound=None,
+    upper_bound=None,
+    phenotype_function=lambda x: x > 0,
+)
 
 
 class Data(Chromosome):
     """Хромосома ответственная за параметры данных."""
 
-    _GENES = (BATCH_SIZE, HISTORY_DAYS, FORECAST_DAYS)
+    _GENES = (BATCH_SIZE, HISTORY_DAYS, FORECAST_DAYS, TICKER_ON)

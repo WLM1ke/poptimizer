@@ -17,7 +17,6 @@ BASE_PHENOTYPE = {
             "Turnover": {},
             "AverageTurnover": {},
             "DayOfYear": {},
-            "Ticker": {},
         }
     },
 }
@@ -69,9 +68,7 @@ class Genotype(UserDict):
             chromosome.change_phenotype(phenotype)
         return phenotype
 
-    def make_child(
-        self, base: "Genotype", diff1: "Genotype", diff2: "Genotype"
-    ) -> "Genotype":
+    def make_child(self, base: "Genotype", diff1: "Genotype", diff2: "Genotype") -> "Genotype":
         """Реализует мутацию в рамках дифференциальной эволюции."""
         child = copy.deepcopy(self)
         for key in child:
