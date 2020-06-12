@@ -11,12 +11,12 @@ BASE_PHENOTYPE = {
     "type": "WaveNet",
     "data": {
         "features": {
-            "Label": {},
-            "Prices": {},
-            "Dividends": {},
-            "Turnover": {},
-            "AverageTurnover": {},
-            "DayOfYear": {},
+            "Label": {"on": True},
+            "Prices": {"on": True},
+            "Dividends": {"on": True},
+            "Turnover": {"on": True},
+            "AverageTurnover": {"on": True},
+            "DayOfYear": {"on": True},
         }
     },
 }
