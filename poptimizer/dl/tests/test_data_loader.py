@@ -9,7 +9,7 @@ PARAMS = {
     "batch_size": 100,
     "history_days": 245,
     "forecast_days": 194,
-    "features": {"Label": {"div_share": 0.9}, "Prices": {}, "Dividends": {}},
+    "features": {"Label": {"on": True}, "Prices": {"on": True}, "Dividends": {"on": True}},
 }
 TICKERS = ("NMTP", "BANEP")
 DATE = pd.Timestamp("2020-03-20")
@@ -50,9 +50,7 @@ class TestOneTickerDataset:
 
 @pytest.fixture(scope="class", name="loader")
 def make_data_loader():
-    return data_loader.DescribedDataLoader(
-        TICKERS, DATE, PARAMS, data_params.ForecastParams
-    )
+    return data_loader.DescribedDataLoader(TICKERS, DATE, PARAMS, data_params.ForecastParams)
 
 
 class TestDescribedDataLoader:
