@@ -13,11 +13,11 @@ DATA_PARAMS = {
     "history_days": 245,
     "forecast_days": 194,
     "features": {
-        "Label": {"div_share": 0.9},
-        "Prices": {},
-        "Dividends": {},
-        "Ticker": {},
-        "DayOfYear": {},
+        "Label": {"on": True},
+        "Prices": {"on": True},
+        "Dividends": {"on": True},
+        "Ticker": {"on": True},
+        "DayOfYear": {"on": True},
     },
 }
 NET_PARAMS = {
@@ -34,9 +34,7 @@ NET_PARAMS = {
 
 def test_sub_block():
     residual_channels = 4
-    net = wave_net.SubBlock(
-        kernels=2, gate_channels=3, residual_channels=residual_channels
-    )
+    net = wave_net.SubBlock(kernels=2, gate_channels=3, residual_channels=residual_channels)
     shape = (100, residual_channels, 58)
     input_tensor = torch.rand(*shape)
     input_tensor = net(input_tensor)
@@ -63,10 +61,7 @@ def test_block():
 @pytest.fixture(scope="module", name="loader")
 def make_data_loader():
     return data_loader.DescribedDataLoader(
-        ("MTSS", "BANE"),
-        pd.Timestamp("2020-03-20"),
-        DATA_PARAMS,
-        data_params.TrainParams,
+        ("MTSS", "BANE"), pd.Timestamp("2020-03-20"), DATA_PARAMS, data_params.TrainParams,
     )
 
 
