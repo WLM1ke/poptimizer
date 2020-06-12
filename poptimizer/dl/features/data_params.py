@@ -111,13 +111,11 @@ class DataParams(abc.ABC):
 
     def len(self, ticker) -> int:
         """Количество доступных примеров для данного тикера."""
-        return max(
-            0, len(self.price(ticker)) - self.history_days - self.forecast_days + 1
-        )
+        return max(0, len(self.price(ticker)) - self.history_days - self.forecast_days + 1)
 
     def get_all_feat(self) -> Generator[str, None, None]:
         """Получить все названия признаков."""
-        yield from self._params["features"]
+        yield from (feat for feat, param in self._params["features"].items() if param["on"])
 
     def get_feat_params(self, feat_name: str) -> dict:
         """Получить параметры для признака."""

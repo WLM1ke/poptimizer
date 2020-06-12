@@ -13,7 +13,7 @@ PARAMS = {
     "batch_size": 100,
     "history_days": 16,
     "forecast_days": 8,
-    "features": {"Label": {"div_share": 0.9}, "Prices": {}},
+    "features": {"Label": {"on": True}, "Prices": {"on": True}, "Turnover": {"on": False}},
 }
 
 
@@ -91,7 +91,7 @@ class TestTrainParams:
         assert list(train_params.get_all_feat()) == ["Label", "Prices"]
 
     def test_get_feat_params(self, train_params):
-        assert train_params.get_feat_params("Label") == {"div_share": 0.9}
+        assert train_params.get_feat_params("Label") == {"on": True}
 
 
 @pytest.fixture(scope="class", name="val_params")
