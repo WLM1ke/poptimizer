@@ -11,9 +11,7 @@ from poptimizer.dl.features import FeatureType
 class SubBlock(nn.Module):
     """Блок с гейтом и остаточным соединением."""
 
-    def __init__(
-        self, kernels: int, gate_channels: int, residual_channels: int
-    ) -> None:
+    def __init__(self, kernels: int, gate_channels: int, residual_channels: int) -> None:
         """
         :param kernels:
             Размер сверток в signal и gate сверточных слоях.
@@ -25,16 +23,10 @@ class SubBlock(nn.Module):
         super().__init__()
         self.signal_gate_pad = nn.ConstantPad1d(padding=(kernels - 1, 0), value=0.0)
         self.signal_conv = nn.Conv1d(
-            in_channels=residual_channels,
-            out_channels=gate_channels,
-            kernel_size=kernels,
-            stride=1,
+            in_channels=residual_channels, out_channels=gate_channels, kernel_size=kernels, stride=1,
         )
         self.gate_conv = nn.Conv1d(
-            in_channels=residual_channels,
-            out_channels=gate_channels,
-            kernel_size=kernels,
-            stride=1,
+            in_channels=residual_channels, out_channels=gate_channels, kernel_size=kernels, stride=1,
         )
         self.output_conv = nn.Conv1d(
             in_channels=gate_channels, out_channels=residual_channels, kernel_size=1
@@ -95,9 +87,7 @@ class Block(nn.Module):
         for i in range(sub_blocks):
             self.sub_blocks.append(
                 SubBlock(
-                    kernels=kernels,
-                    gate_channels=gate_channels,
-                    residual_channels=residual_channels,
+                    kernels=kernels, gate_channels=gate_channels, residual_channels=residual_channels,
                 )
             )
         self.skip_convs = nn.Conv1d(
@@ -105,10 +95,7 @@ class Block(nn.Module):
         )
         self.dilated_pad = nn.ConstantPad1d(padding=(1, 0), value=0.0)
         self.dilated_convs = nn.Conv1d(
-            in_channels=residual_channels,
-            out_channels=residual_channels,
-            kernel_size=2,
-            stride=2,
+            in_channels=residual_channels, out_channels=residual_channels, kernel_size=2, stride=2,
         )
 
     def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
@@ -197,9 +184,7 @@ class WaveNet(nn.Module):
                     num_embeddings=size, embedding_dim=embedding_dim
                 )
             if feature_type is FeatureType.EMBEDDING:
-                self.embedding_dict[key] = nn.Embedding(
-                    num_embeddings=size, embedding_dim=embedding_dim
-                )
+                self.embedding_dict[key] = nn.Embedding(num_embeddings=size, embedding_dim=embedding_dim)
 
         if start_bn:
             self.bn = nn.BatchNorm1d(sequence_count)
@@ -207,9 +192,7 @@ class WaveNet(nn.Module):
             self.bn = nn.Identity()
 
         self.start_conv = nn.Conv1d(
-            in_channels=sequence_count + embedding_dim,
-            out_channels=residual_channels,
-            kernel_size=1,
+            in_channels=sequence_count + embedding_dim, out_channels=residual_channels, kernel_size=1,
         )
 
         self.blocks = nn.ModuleList()
@@ -229,15 +212,9 @@ class WaveNet(nn.Module):
             in_channels=residual_channels, out_channels=skip_channels, kernel_size=1
         )
 
-        self.end_conv = nn.Conv1d(
-            in_channels=skip_channels, out_channels=end_channels, kernel_size=1
-        )
-        self.output_conv_m = nn.Conv1d(
-            in_channels=end_channels, out_channels=1, kernel_size=1
-        )
-        self.output_conv_s = nn.Conv1d(
-            in_channels=end_channels, out_channels=1, kernel_size=1
-        )
+        self.end_conv = nn.Conv1d(in_channels=skip_channels, out_channels=end_channels, kernel_size=1)
+        self.output_conv_m = nn.Conv1d(in_channels=end_channels, out_channels=1, kernel_size=1)
+        self.output_conv_s = nn.Conv1d(in_channels=end_channels, out_channels=1, kernel_size=1)
         self.output_softplus_s = nn.Softplus()
 
     def forward(
@@ -267,10 +244,11 @@ class WaveNet(nn.Module):
         y = self.bn(y)
 
         y_emb_seq = y_emb_seq.permute((0, 2, 1))
-        y_emb = y_emb.unsqueeze(2)
-        y_emb = y_emb_seq + y_emb
+        if self.embedding_dict:
+            y_emb = y_emb.unsqueeze(2)
+            y_emb_seq = y_emb + y_emb_seq
 
-        y = torch.cat([y, y_emb], dim=1)
+        y = torch.cat([y, y_emb_seq], dim=1)
 
         y = self.start_conv(y)
 
