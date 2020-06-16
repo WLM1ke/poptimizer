@@ -25,10 +25,7 @@ class Organism:
     """
 
     def __init__(
-        self,
-        *,
-        _id: Optional[bson.ObjectId] = None,
-        genotype: Optional[Genotype] = None,
+            self, *, _id: Optional[bson.ObjectId] = None, genotype: Optional[Genotype] = None,
     ):
         self._data = store.Doc(id_=_id, genotype=genotype)
 
@@ -75,9 +72,7 @@ class Organism:
             pickled_model = None
 
         timer = time.monotonic_ns()
-        model = Model(
-            tuple(tickers), end, self.genotype.get_phenotype(), pickled_model
-        )
+        model = Model(tuple(tickers), end, self.genotype.get_phenotype(), pickled_model)
         llh = model.llh
         timer = time.monotonic_ns() - timer
 
@@ -99,15 +94,9 @@ class Organism:
         """
         data = self._data
         collection = store.get_collection()
-        filter_ = dict(
-            llh={"$lte": data.llh},
-            date=data.date,
-            tickers=data.tickers
-        )
+        filter_ = dict(llh={"$lte": data.llh}, tickers=data.tickers)
         id_dict = collection.find_one(
-            filter=filter_,
-            projection=["_id"],
-            sort=[("timer", pymongo.DESCENDING)]
+            filter=filter_, projection=["_id"], sort=[("timer", pymongo.DESCENDING)]
         )
         return Organism(**id_dict)
 
@@ -128,10 +117,7 @@ class Organism:
         тикеров, будет использованы сохраненные веса сети, или выбрасывается исключение.
         """
         data = self._data
-        if (
-                (pickled_model := data.model) is None
-                or tickers != tuple(data.tickers)
-        ):
+        if (pickled_model := data.model) is None or tickers != tuple(data.tickers):
             raise ForecastError
 
         model = Model(tickers, end, self.genotype.get_phenotype(), pickled_model)
@@ -186,9 +172,7 @@ def _print_llh_stats() -> NoReturn:
     """Статистика по минимуму, медиане и максимуму llh."""
     collection = store.get_collection()
     db_find = collection.find
-    cursor = db_find(
-        filter=dict(llh={"$exists": True}), projection=["llh"]
-    )
+    cursor = db_find(filter=dict(llh={"$exists": True}), projection=["llh"])
     llhs = map(lambda x: x["llh"], cursor)
     llhs = tuple(llhs)
     if llhs:
