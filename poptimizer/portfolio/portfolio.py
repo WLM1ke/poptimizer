@@ -10,7 +10,7 @@ from poptimizer.config import POptimizerError, MAX_TRADE
 
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
-TURNOVER_DAYS = 150
+TURNOVER_DAYS = 170
 
 
 class Portfolio:
@@ -45,8 +45,7 @@ class Portfolio:
         self._shares.name = "SHARES"
         if value is not None and not np.isclose(self.value[PORTFOLIO], value):
             raise POptimizerError(
-                f"Введенная стоимость портфеля {value} "
-                f"не равна расчетной {self.value[PORTFOLIO]}"
+                f"Введенная стоимость портфеля {value} " f"не равна расчетной {self.value[PORTFOLIO]}"
             )
 
     def __str__(self) -> str:
@@ -119,9 +118,7 @@ class Portfolio:
         try:
             price = price.loc[self.date]
         except KeyError:
-            raise POptimizerError(
-                f"Для даты {self._date.date()} отсутствуют исторические котировки"
-            )
+            raise POptimizerError(f"Для даты {self._date.date()} отсутствуют исторические котировки")
         price[CASH] = 1
         price[PORTFOLIO] = (self.shares[:-1] * price).sum(axis=0)
         price.name = "PRICE"
