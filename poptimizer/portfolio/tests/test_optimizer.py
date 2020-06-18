@@ -38,8 +38,6 @@ def test_trials(opt):
 def test_best_combination(opt):
     df = opt.best_combination
 
-    print(df)
-
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (3, 7)
     assert list(df.columns) == ["SELL", "Q_SELL", "BUY", "Q_BUY", "GRAD_DIFF", "TURNOVER", "ADJ_P_VALUE"]
