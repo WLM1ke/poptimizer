@@ -1,7 +1,8 @@
 """Оптимизатор портфеля."""
+import itertools
 import math
+from typing import Tuple
 
-import numpy as np
 import pandas as pd
 from scipy import stats
 
@@ -34,8 +35,7 @@ class Optimizer:
         blocks = [
             "\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ",
             self._p_value_block(),
-            self._buy_sell_block(),
-            self._all_info_block(),
+            f"{self.best_combination()}",
         ]
         return "\n\n".join(blocks)
 
@@ -43,50 +43,11 @@ class Optimizer:
         """Информация значимости при множественном тестировании гипотез."""
         blocks = [
             "Оценка значимости:",
+            f"forecasts = {self.n_forecasts}",
             f"p-value = {self.p_value:.2%}",
-            f"dof = {self.dof}",
-            f"t-score {self.t_score:.2f}",
             f"trials = {self.trials}",
-            f"Bonferroni t-score = {self.t_score_bonferroni:.2f}",
         ]
         return "\n".join(blocks)
-
-    def _buy_sell_block(self) -> str:
-        """Информация о лучшей покупке и продаже."""
-        blocks = ["Лучшая сделка:", self._best_sell(), self._best_buy()]
-        return "\n".join(blocks)
-
-    def _best_sell(self) -> str:
-        """Лучшая продажа."""
-        upper_bound = self.upper_bound
-        sell = -self.buy_sell
-        upper_bound = upper_bound[sell.gt(0)]
-        if len(upper_bound) == 0:
-            return f"Покупка за счет наличных"
-        ticker = upper_bound.idxmin()
-        return f"Продать {ticker} - {TRADES} сделок {sell[ticker]} лотов"
-
-    def _best_buy(self) -> str:
-        """Лучшая продажа."""
-        lower_bound = self.lower_bound
-        lower_bound[PORTFOLIO] = -np.inf
-        ticker = lower_bound.idxmax()
-        return f"Купить  {ticker} - {TRADES} сделок {self.buy_sell[ticker]} лотов"
-
-    def _all_info_block(self) -> str:
-        """Сводная информация об оптимизации."""
-        df = pd.concat(
-            [
-                self.gradient,
-                self.turnover,
-                self.lower_bound,
-                self.adj_gradient,
-                self.upper_bound,
-                self.buy_sell.replace(0, ""),
-            ],
-            axis=1,
-        )
-        return str(df.sort_values(by="GRAD", axis=0, ascending=False))
 
     @property
     def portfolio(self) -> Portfolio:
@@ -99,93 +60,94 @@ class Optimizer:
         return self._metrics
 
     @property
-    def gradient(self) -> pd.Series:
-        """Градиент позиций."""
-        return self._metrics.gradient
-
-    @property
-    def turnover(self) -> pd.Series:
-        """Фактор оборота позиций."""
-        return self._portfolio.turnover_factor
-
-    @property
-    def adj_gradient(self) -> pd.Series:
-        """Градиент скорректированный на оборот.
-
-        Для позиций с положительным градиентом он понижается на коэффициент оборота для учета
-        неликвидности.
-        """
-        gradient = self.gradient
-        adj_gradient = gradient * self.turnover
-        adj_gradient = adj_gradient.mask(gradient.lt(0), gradient)
-        adj_gradient.name = "ADJ_GRAD"
-        return adj_gradient
-
-    @property
     def p_value(self) -> float:
         """Уровень значимости отклонения градиента от нуля."""
         return self._p_value
 
     @property
-    def dof(self) -> int:
-        """Количество степеней свободы в t-тесте."""
-        return self.metrics.count - 1
-
-    @property
-    def t_score(self) -> float:
-        """Базовый t-score до корректировки на множественное тестирование."""
-        p_value = 1 - self.p_value / 2
-        return stats.t.ppf(p_value, self.dof)
+    def n_forecasts(self) -> int:
+        """Количество прогнозов."""
+        return self.metrics.count
 
     @property
     def trials(self) -> int:
         """Количество тестов на значимость.
 
-        Проверяются все позиции включая CASH, но исключая PORTFOLIO - портфель по определению имеет
-        значение градиента равное 0.
+        Продать можно позиции с не нулевым весом.
+
+        Можно уйти в кэш или купить любую позицию, кроме продаваемой и с нулевым фактором объема.
+        Для позиции с нулевым фактором объема - уйти в кеш или купить любую позицию кроме себя.
         """
-        return len(self.portfolio.index) - 1
+        positions_to_sell = (self.portfolio.shares[:-2] > 0).sum()
+        positions = len(self.portfolio.shares) - 2
+        return positions_to_sell * positions - positions_to_sell + 1
 
-    @property
-    def t_score_bonferroni(self) -> float:
-        """Скорректированный t-score с учетом поправки Бонферрони на множественное тестирование."""
-        p_value = self.p_value / self.trials
-        p_value = 1 - p_value / 2
-        return stats.t.ppf(p_value, self.dof)
+    def best_combination(self):
+        """Лучшие комбинации для торговли.
 
-    @property
-    def lower_bound(self) -> pd.Series:
-        """Нижняя граница доверительного интервала градиента."""
-        lower = self.adj_gradient - self._metrics.error.mul(self.t_score_bonferroni)
-        lower.name = "LOWER"
-        return lower
+         Для каждого актива, который можно продать со значимым улучшением выбирается актив с
+         максимальной вероятностью улучшения.
+         """
+        rez = self._wilcoxon_tests()
 
-    @property
-    def upper_bound(self) -> pd.Series:
-        """Верхняя граница доверительного интервала градиента."""
-        upper = self.adj_gradient + self._metrics.error.mul(self.t_score_bonferroni)
-        upper.name = "UPPER"
-        return upper
+        rez = pd.DataFrame(list(rez), columns=["SELL", "BUY", "GRAD_DIFF", "TURNOVER", "ADJ_P_VALUE"])
+        rez = rez.sort_values("ADJ_P_VALUE").drop_duplicates(subset="SELL")
+        rez.index = pd.RangeIndex(start=1, stop=len(rez) + 1)
 
-    @property
-    def buy_sell(self) -> pd.Series:
-        """Объемы продаж и покупок для позиций."""
+        return self._add_sell_buy_quantity(rez)
+
+    def _wilcoxon_tests(self) -> Tuple[str, str, float, float]:
+        """Осуществляет тестирование всех допустимых пар активов с помощью теста Вилкоксона.
+
+        Возвращает все значимо улучшающие варианты сделок в формате:
+
+        - Продаваемый тикер
+        - Покупаемый тикер
+        - Медиана разницы в градиенте
+        - Значимость скорректированная на общее количество тестов и оборачиваемость покупаемого тикера.
+        """
+        positions_to_sell = self.portfolio.index[:-2][self.portfolio.shares[:-2] > 0]
+        positions_with_cash = self.portfolio.index[:-1]
+        all_gradients = self.metrics.all_gradients
+        trials = self.trials
+        turnover_all = self.portfolio.turnover_factor
+        for sell, buy in itertools.product(positions_to_sell, positions_with_cash):
+            if sell == buy or turnover_all[buy] == 0:
+                continue
+
+            diff = all_gradients.loc[buy] - all_gradients.loc[sell]
+            _, alfa = stats.wilcoxon(diff, alternative="greater", correction=True)
+
+            turnover = turnover_all[buy]
+            alfa *= trials / turnover
+
+            if not (alfa > P_VALUE):
+                yield [sell, buy, diff.median(), turnover, alfa]
+
+    def _add_sell_buy_quantity(self, rez: pd.DataFrame) -> pd.DataFrame:
+        """Добавляет колонки с объемами покупки и продажи.
+
+        Объем продажи и покупки делится на TRADES операций.
+
+        Объем продажи не может быть больше имеющегося количества и не должен приводить к повышению
+        кэша до MAX_TRADE от размера портфеля.
+
+        Объем покупки равен количеству имеющегося кеша.
+        """
         portfolio = self.portfolio
         lot_value_per_trades = (portfolio.price * portfolio.lot_size) * TRADES
-        buy_sell = pd.Series(0, index=portfolio.index)
-
         value = portfolio.value
-        buy_size = value[CASH] / lot_value_per_trades
-        buy_size = buy_size.apply(lambda x: math.ceil(max(0, x)))
-        buy_sell = buy_sell.mask(self.lower_bound.gt(0), buy_size)
 
         max_trade = value[PORTFOLIO] * MAX_TRADE
-        max_trade = max(0, max_trade - value[CASH])
-
+        max_trade = value.apply(lambda x: min(x, max(0, max_trade - value[CASH])))
         sell_size = max_trade / lot_value_per_trades
         sell_size = sell_size.apply(lambda x: math.ceil(x))
+        rez["Q_SELL"] = 0
+        rez["Q_SELL"] = rez["SELL"].apply(lambda ticker: sell_size[ticker])
 
-        buy_sell = buy_sell.mask(self.upper_bound.lt(0) & value.gt(0), -sell_size)
-        buy_sell[CASH] = 0
-        buy_sell.name = "BUY_SELL"
-        return buy_sell
+        buy_size = value[CASH] / lot_value_per_trades
+        buy_size = buy_size.apply(lambda x: math.ceil(max(0, x)))
+        rez["Q_BUY"] = 0
+        rez["Q_BUY"] = rez["BUY"].apply(lambda ticker: buy_size[ticker])
+
+        return rez[["SELL", "Q_SELL", "BUY", "Q_BUY", "GRAD_DIFF", "TURNOVER", "ADJ_P_VALUE"]]
