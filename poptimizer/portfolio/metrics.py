@@ -231,13 +231,13 @@ class MetricsResample:
         return r_geom
 
     @property
-    def gradient(self) -> pd.Series:
-        """Медиану для всех прогнозов производные приближенного значения геометрической доходности."""
-        gradient = pd.concat([metric.gradient for metric in self._metrics], axis=1).median(axis=1)
-        gradient.name = "GRAD"
-        return gradient
-
-    @property
     def all_gradients(self) -> pd.DataFrame:
         """Градиенты всех прогнозов."""
         return pd.concat([metric.gradient for metric in self._metrics], axis=1)
+
+    @property
+    def gradient(self) -> pd.Series:
+        """Медиану для всех прогнозов производные приближенного значения геометрической доходности."""
+        gradient = self.all_gradients.median(axis=1)
+        gradient.name = "GRAD"
+        return gradient

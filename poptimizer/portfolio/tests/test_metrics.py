@@ -13,9 +13,7 @@ def make_metrics():
     positions = dict(BSPB=4890, FESH=1300, KZOS=5080)
     port = portfolio.Portfolio("2020-05-14", 84449, positions)
     mean = pd.Series([0.09, 0.06, 0.07], index=list(positions))
-    cov = np.array(
-        [[0.04, 0.005, 0.01], [0.005, 0.0625, 0.00625], [0.01, 0.00625, 0.0625]]
-    )
+    cov = np.array([[0.04, 0.005, 0.01], [0.005, 0.0625, 0.00625], [0.01, 0.00625, 0.0625]])
     fake_forecast = SimpleNamespace()
     fake_forecast.mean = mean
     fake_forecast.cov = cov
@@ -103,20 +101,10 @@ def make_resample():
     def fake_get_forecasts(*_):
         data = [
             SimpleNamespace(
-                mean=mean1,
-                cov=cov1,
-                history_days=1,
-                forecast_days=3,
-                cor=0.4,
-                shrinkage=0.3,
+                mean=mean1, cov=cov1, history_days=1, forecast_days=3, cor=0.4, shrinkage=0.3,
             ),
             SimpleNamespace(
-                mean=mean2,
-                cov=cov12,
-                history_days=2,
-                forecast_days=3,
-                cor=0.5,
-                shrinkage=0.2,
+                mean=mean2, cov=cov12, history_days=2, forecast_days=3, cor=0.5, shrinkage=0.2,
             ),
         ]
         yield from data
@@ -173,9 +161,7 @@ class TestMetricsResample:
         assert r_geom[CASH] == pytest.approx(0.00725189173625379)
         assert r_geom[PORTFOLIO] == pytest.approx(0.0422491925594429)
 
-        assert r_geom[PORTFOLIO] == pytest.approx(
-            (resample._portfolio.weight * r_geom).iloc[:-1].sum()
-        )
+        assert r_geom[PORTFOLIO] == pytest.approx((resample._portfolio.weight * r_geom).iloc[:-1].sum())
 
     def test_gradient(self, resample):
         gradient = resample.gradient
@@ -190,16 +176,6 @@ class TestMetricsResample:
         assert gradient[PORTFOLIO] == pytest.approx(
             (resample._portfolio.weight * gradient).iloc[:-1].sum()
         )
-
-    def test_error(self, resample):
-        gradient = resample.error
-        assert isinstance(gradient, pd.Series)
-        assert gradient.name == "ERROR"
-        assert len(gradient) == 4
-        assert gradient["BSPB"] == pytest.approx(0.00501480253039284)
-        assert gradient["FESH"] == pytest.approx(0.0249465015578035)
-        assert gradient[CASH] == pytest.approx(0.00905669393735241)
-        assert gradient[PORTFOLIO] == 0.0
 
     def test_str(self, resample):
         assert "КЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ" in str(resample)
