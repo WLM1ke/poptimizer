@@ -194,7 +194,6 @@ class MetricsResample:
             self.beta,
             self.r_geom,
             self.gradient,
-            self.error,
         ]
         return f"\n{pd.concat(frames, axis=1)}"
 
@@ -205,46 +204,40 @@ class MetricsResample:
 
     @property
     def mean(self) -> pd.Series:
-        """Среднее для всех прогнозов матожидание доходности по позициям портфеля."""
-        mean = pd.concat([metric.mean for metric in self._metrics], axis=1).mean(axis=1)
+        """Медиану для всех прогнозов матожидание доходности по позициям портфеля."""
+        mean = pd.concat([metric.mean for metric in self._metrics], axis=1).median(axis=1)
         mean.name = "MEAN"
         return mean
 
     @property
     def std(self) -> pd.Series:
-        """Среднее для всех прогнозов СКО доходности по позициям портфеля."""
-        std = pd.concat([metric.std for metric in self._metrics], axis=1).mean(axis=1)
+        """Медиану для всех прогнозов СКО доходности по позициям портфеля."""
+        std = pd.concat([metric.std for metric in self._metrics], axis=1).median(axis=1)
         std.name = "STD"
         return std
 
     @property
     def beta(self) -> pd.Series:
-        """Средние для всех прогнозов беты относительно доходности портфеля."""
-        beta = pd.concat([metric.beta for metric in self._metrics], axis=1).mean(axis=1)
+        """Медиану для всех прогнозов беты относительно доходности портфеля."""
+        beta = pd.concat([metric.beta for metric in self._metrics], axis=1).median(axis=1)
         beta.name = "BETA"
         return beta
 
     @property
     def r_geom(self) -> pd.Series:
-        """Средние для всех прогнозов приближенные оценки геометрической доходности."""
-        r_geom = pd.concat([metric.r_geom for metric in self._metrics], axis=1)
-        r_geom = r_geom.mean(axis=1)
+        """Медиану для всех прогнозов приближенные оценки геометрической доходности."""
+        r_geom = pd.concat([metric.r_geom for metric in self._metrics], axis=1).median(axis=1)
         r_geom.name = "R_GEOM"
         return r_geom
 
     @property
     def gradient(self) -> pd.Series:
-        """Средние для всех прогнозов производные приближенного значения геометрической доходности."""
-        gradient = pd.concat([metric.gradient for metric in self._metrics], axis=1)
-        gradient = gradient.mean(axis=1)
+        """Медиану для всех прогнозов производные приближенного значения геометрической доходности."""
+        gradient = pd.concat([metric.gradient for metric in self._metrics], axis=1).median(axis=1)
         gradient.name = "GRAD"
         return gradient
 
     @property
-    def error(self) -> pd.Series:
-        """Ошибки в оценке среднего градиента."""
-        gradients = pd.concat([metric.gradient for metric in self._metrics], axis=1)
-        std = gradients.std(axis=1, ddof=1)
-        error = std.div(self.count ** 0.5)
-        error.name = "ERROR"
-        return error
+    def all_gradients(self) -> pd.DataFrame:
+        """Градиенты всех прогнозов."""
+        return pd.concat([metric.gradient for metric in self._metrics], axis=1)
