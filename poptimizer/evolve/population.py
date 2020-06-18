@@ -159,7 +159,10 @@ def get_all_organisms() -> Iterable[Organism]:
         filter={}, projection=["_id"], sort=[("date", pymongo.ASCENDING), ("llh", pymongo.ASCENDING)]
     )
     for id_dict in id_dicts:
-        yield Organism(**id_dict)
+        try:
+            yield Organism(**id_dict)
+        except store.IdError:
+            pass
 
 
 def print_stat() -> NoReturn:
