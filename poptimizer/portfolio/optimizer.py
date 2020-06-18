@@ -35,7 +35,7 @@ class Optimizer:
         blocks = [
             "\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ",
             self._p_value_block(),
-            f"{self.best_combination()}",
+            f"{self.best_combination}",
         ]
         return "\n\n".join(blocks)
 
@@ -82,6 +82,7 @@ class Optimizer:
         positions = len(self.portfolio.shares) - 2
         return positions_to_sell * positions - positions_to_sell + 1
 
+    @property
     def best_combination(self):
         """Лучшие комбинации для торговли.
 

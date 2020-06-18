@@ -8,33 +8,12 @@ from poptimizer.portfolio import optimizer
 
 class FakeMetricsResample:
     def __init__(self, _=None):
-        self.count = 9
+        self.count = 20
 
     @property
-    def gradient(self):
-        grad = dict(
-            CHEP=0.01,
-            KZOS=0.11,
-            MTSS=-0.03,
-            RTKMP=-0.06,
-            TRCN=-0.10,
-            CASH=-0.14,
-            PORTFOLIO=0.0,
-        )
-        return pd.Series(grad, name="GRAD")
-
-    @property
-    def error(self):
-        grad = dict(
-            CHEP=0.01,
-            KZOS=0.02,
-            MTSS=0.01,
-            RTKMP=0.03,
-            TRCN=0.02,
-            CASH=0.01,
-            PORTFOLIO=0.0,
-        )
-        return pd.Series(grad, name="ERROR")
+    def all_gradients(self):
+        grad = dict(CHEP=0.015, KZOS=0.20, MTSS=0.01, RTKMP=0.03, TRCN=0.04, CASH=-0.05, PORTFOLIO=0.0, )
+        return pd.DataFrame([grad] * 20).T
 
 
 @pytest.fixture(scope="module", name="opt")
@@ -52,85 +31,34 @@ def make_opt():
     optimizer.metrics.MetricsResample = saved_metrics
 
 
-def test_adj_gradient(opt):
-    adj_gradient = opt.adj_gradient
-    assert isinstance(adj_gradient, pd.Series)
-    assert len(adj_gradient) == 7
-    assert adj_gradient.name == "ADJ_GRAD"
-
-    assert adj_gradient["CHEP"] == 0.01
-    assert adj_gradient["KZOS"] < 0.11
-    assert adj_gradient["KZOS"] == 0.11 * opt.portfolio.turnover_factor["KZOS"]
-    assert adj_gradient["MTSS"] == -0.03
-    assert adj_gradient["RTKMP"] == -0.06
-    assert adj_gradient["TRCN"] == -0.10
-    assert adj_gradient["CASH"] == -0.14
-    assert adj_gradient["PORTFOLIO"] == 0
-
-
-def test_t_score(opt):
-    assert opt.t_score == stats.t.ppf(0.975, 8)
-
-
 def test_trials(opt):
-    assert opt.trials == 6
+    assert opt.trials == 4 + 4 + 4 + 5
 
 
-def test_t_score_bonferroni(opt):
-    assert opt.t_score_bonferroni == stats.t.ppf(1 - 0.025 / 6, 8)
+def test_best_combination(opt):
+    df = opt.best_combination
 
+    print(df)
 
-def test_lower_bound(opt):
-    lower_bound = opt.lower_bound
-    assert isinstance(lower_bound, pd.Series)
-    assert len(lower_bound) == 7
-    assert lower_bound.name == "LOWER"
+    assert isinstance(df, pd.DataFrame)
+    assert df.shape == (3, 7)
+    assert list(df.columns) == ["SELL", "Q_SELL", "BUY", "Q_BUY", "GRAD_DIFF", "TURNOVER", "ADJ_P_VALUE"]
 
-    t = opt.t_score_bonferroni
+    wilcoxon = stats.wilcoxon([1] * 20, alternative="greater", correction=True)[1] * 17
 
-    assert lower_bound["CHEP"] == 0.01 - t * 0.01
-    assert (
-        lower_bound["KZOS"] == 0.11 * opt.portfolio.turnover_factor["KZOS"] - t * 0.02
-    )
-    assert lower_bound["MTSS"] == -0.03 - t * 0.01
-    assert lower_bound["RTKMP"] == -0.06 - t * 0.03
-    assert lower_bound["TRCN"] == -0.10 - t * 0.02
-    assert lower_bound["CASH"] == -0.14 - t * 0.01
-    assert lower_bound["PORTFOLIO"] == 0.0
+    assert df.loc[1, "SELL"] == "MTSS"
+    assert df.loc[1, "BUY"] == "CHEP"
+    assert df.loc[1, "ADJ_P_VALUE"] == pytest.approx(wilcoxon)
 
+    wilcoxon /= opt.portfolio.turnover_factor["KZOS"]
 
-def test_upper_bound(opt):
-    upper_bound = opt.upper_bound
-    assert isinstance(upper_bound, pd.Series)
-    assert len(upper_bound) == 7
-    assert upper_bound.name == "UPPER"
+    assert df.loc[2, "SELL"] == "RTKMP"
+    assert df.loc[2, "BUY"] == "KZOS"
+    assert df.loc[2, "ADJ_P_VALUE"] == pytest.approx(wilcoxon)
 
-    t = opt.t_score_bonferroni
-
-    assert upper_bound["CHEP"] == 0.01 + t * 0.01
-    assert (
-        upper_bound["KZOS"] == 0.11 * opt.portfolio.turnover_factor["KZOS"] + t * 0.02
-    )
-    assert upper_bound["MTSS"] == -0.03 + t * 0.01
-    assert upper_bound["RTKMP"] == -0.06 + t * 0.03
-    assert upper_bound["TRCN"] == -0.10 + t * 0.02
-    assert upper_bound["CASH"] == -0.14 + t * 0.01
-    assert upper_bound["PORTFOLIO"] == 0.0
-
-
-def test_buy_sell(opt):
-    buy_sell = opt.buy_sell
-    assert isinstance(buy_sell, pd.Series)
-    assert len(buy_sell) == 7
-    assert buy_sell.name == "BUY_SELL"
-
-    assert buy_sell["CHEP"] == 0
-    assert buy_sell["KZOS"] == 1
-    assert buy_sell["MTSS"] == 0
-    assert buy_sell["RTKMP"] == 0
-    assert buy_sell["TRCN"] == -3
-    assert buy_sell["CASH"] == 0
-    assert buy_sell["PORTFOLIO"] == 0.0
+    assert df.loc[3, "SELL"] == "TRCN"
+    assert df.loc[3, "BUY"] == "KZOS"
+    assert df.loc[3, "ADJ_P_VALUE"] == pytest.approx(wilcoxon)
 
 
 def test_str(opt):
