@@ -19,22 +19,19 @@ HEADER_SIZE = 1
 FOOTER_SIZE = 1
 
 TICKER_COLUMN = parser.DataColumn(
-    TICKER,
-    1,
-    {0: "Тикер", -1: "\n+добавить дивиденды\nИстория выплаченных дивидендов\n"},
-    lambda x: x,
+    TICKER, 1, {0: "Тикер", -1: "\n+добавить дивиденды\nИстория выплаченных дивидендов\n"}, lambda x: x,
 )
 
 DATE_COLUMN = parser.DataColumn(
     DATE,
-    4,
+    9,
     {0: "дата отсечки", -1: "\n+добавить дивиденды\nИстория выплаченных дивидендов\n"},
     parser.date_parser,
 )
 
 DIVIDENDS_COLUMN = parser.DataColumn(
     DIVIDENDS,
-    8,
+    5,
     {0: "дивиденд,руб", -1: "\n+добавить дивиденды\nИстория выплаченных дивидендов\n"},
     parser.div_parser,
 )
@@ -48,18 +45,12 @@ class SmartLab(AbstractManager):
 
     def __init__(self, db=DB) -> None:
         super().__init__(
-            collection=MISC,
-            db=db,
-            create_from_scratch=True,
-            unique_index=False,
-            ascending_index=False,
+            collection=MISC, db=db, create_from_scratch=True, unique_index=False, ascending_index=False,
         )
 
     def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
         if item != SMART_LAB:
-            raise POptimizerError(
-                f"Отсутствуют данные {self._mongo.collection.full_name}.{item}"
-            )
+            raise POptimizerError(f"Отсутствуют данные {self._mongo.collection.full_name}.{item}")
         with self._session.get(URL) as respond:
             try:
                 respond.raise_for_status()
