@@ -1,11 +1,13 @@
 """Реализация класса портфеля."""
+import collections
 import functools
 from typing import Dict, Optional, Union, NoReturn
 
 import numpy as np
 import pandas as pd
+import yaml
 
-from poptimizer import data
+from poptimizer import data, config
 from poptimizer.config import POptimizerError, MAX_TRADE
 
 CASH = "CASH"
@@ -171,3 +173,18 @@ class Portfolio:
         last_turnover = last_turnover.sort_values(ascending=False).astype("int")
 
         print(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{last_turnover}")
+
+
+def load_from_yaml(date: Union[str, pd.Timestamp]) -> Portfolio:
+    """Загружает информацию о портфеле из yaml-файлов."""
+    positions = collections.Counter()
+    kwargs = collections.Counter()
+    for path in config.PORT_PATH.glob("*.yaml"):
+        with path.open() as file:
+            doc = yaml.safe_load(file)
+            pos = doc.pop("positions")
+            positions.update(pos)
+            kwargs.update(doc)
+    kwargs["positions"] = positions
+    kwargs["date"] = date
+    return Portfolio(**kwargs)

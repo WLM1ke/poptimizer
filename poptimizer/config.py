@@ -20,6 +20,9 @@ pd.set_option("display.width", None)
 # Путь к директории с отчетам
 REPORTS_PATH = pathlib.Path(__file__).parents[1] / "reports"
 
+# Путь к директории с портфелями
+PORT_PATH = pathlib.Path(__file__).parents[1] / "portfolio"
+
 # Путь к MongoDB и dump с данными по дивидендам
 MONGO_PATH = pathlib.Path(__file__).parents[1] / "db"
 MONGO_DUMP = pathlib.Path(__file__).parents[1] / "dump"

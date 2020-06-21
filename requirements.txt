@@ -23,3 +23,5 @@ pyppeteer
 certifi
 
 psutil
+
+pyyaml
