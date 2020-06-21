@@ -107,3 +107,6 @@ ENV/
 
 # MongoDB
 /db/
+
+# Portfolio data
+/portfolio/
