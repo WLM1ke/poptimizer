@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -7,10 +9,7 @@ from poptimizer.portfolio import portfolio
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
 
 PARAMS = dict(
-    date="2018-03-19",
-    cash=1000,
-    positions=dict(GAZP=6820, VSMO=145, TTLK=1_230_000),
-    value=3_699_111,
+    date="2018-03-19", cash=1000, positions=dict(GAZP=6820, VSMO=145, TTLK=1_230_000), value=3_699_111,
 )
 
 
@@ -32,13 +31,7 @@ def test_portfolio(monkeypatch, port):
     assert np.allclose(port.value, [954_186, 187_575, 2_556_350, 1000, 3_699_111])
     assert np.allclose(
         port.weight,
-        [
-            0.257_950_085_844_95,
-            0.050_708_129_601_95,
-            0.691_071_449_329_312,
-            0.000_270_335_223_788,
-            1,
-        ],
+        [0.257_950_085_844_95, 0.050_708_129_601_95, 0.691_071_449_329_312, 0.000_270_335_223_788, 1],
     )
     assert np.allclose(port.turnover_factor, [0.999_963, 0, 0.883_289, 1, 1])
 
@@ -63,3 +56,17 @@ def test_portfolio_add_tickers(monkeypatch, port, capsys):
     captured = capsys.readouterr()
     assert "ДЛЯ ДОБАВЛЕНИЯ" in captured.out
     assert "SBER" in captured.out
+
+
+def test_load_from_yaml(monkeypatch):
+    monkeypatch.setattr(portfolio.config, "PORT_PATH", Path(__file__).parent)
+    port = portfolio.load_from_yaml("2020-06-22")
+
+    assert isinstance(port, portfolio.Portfolio)
+    assert port.date == pd.Timestamp("2020-06-22")
+    print(port.value[PORTFOLIO])
+    assert list(port.index[:-2]) == ["AKRN", "GMKN", "VSMO"]
+    assert port.shares["AKRN"] == 1
+    assert port.shares["GMKN"] == 5
+    assert port.shares["VSMO"] == 4
+    assert port.shares["CASH"] == 300
