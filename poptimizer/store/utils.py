@@ -24,8 +24,8 @@ DIVIDENDS = "DIVIDENDS"
 # Часовой пояс MOEX
 MOEX_TZ = "Europe/Moscow"
 
-# Торги заканчиваются в 19.00, но данные публикуются 19.45
-END_OF_TRADING = dict(hour=19, minute=45, second=0, microsecond=0, nanosecond=0)
+# Торги заканчиваются в 24.00, но данные публикуются 00.45
+END_OF_TRADING = dict(hour=0, minute=45, second=0, microsecond=0, nanosecond=0)
 
 
 def now_and_end_of_trading_day() -> Tuple[datetime, datetime]:
@@ -38,9 +38,10 @@ def now_and_end_of_trading_day() -> Tuple[datetime, datetime]:
 
 
 def last_history_from_doc(doc: Dict[str, Any]) -> datetime:
-    """Момент времени UTC публикации данных о последних торгах, которая есть на MOEX ISS."""
+    """Момент времени UTC публикации данных о последних торгах, информация о которых есть на MOEX ISS."""
     date = pd.Timestamp(doc["data"][0]["till"], tz=MOEX_TZ)
-    return date.replace(**END_OF_TRADING).astimezone(None)
+    date = date.replace(**END_OF_TRADING) + pd.DateOffset(days=1)
+    return date.astimezone(None)
 
 
 def get_last_history_date(db: str = DB, collection: str = MISC) -> datetime:
@@ -49,10 +50,8 @@ def get_last_history_date(db: str = DB, collection: str = MISC) -> datetime:
     doc = mongodb["last_date"]
     now, end_of_trading = now_and_end_of_trading_day()
     if doc is None or doc["timestamp"] < end_of_trading:
-        data = apimoex.get_board_dates(
-            mongo.HTTP_SESSION, board="TQBR", market="shares", engine="stock"
-        )
+        data = apimoex.get_board_dates(mongo.HTTP_SESSION, board="TQBR", market="shares", engine="stock")
         doc = dict(data=data, timestamp=now)
         mongodb["last_date"] = doc
-        logging.info(f"Последняя дата с историей: {last_history_from_doc(doc).date()}")
+        logging.info(f"Последняя дата с историей: {doc['data'][0]['till']}")
     return last_history_from_doc(doc)
