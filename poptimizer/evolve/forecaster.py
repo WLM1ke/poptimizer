@@ -18,22 +18,20 @@ class Forecasts(Iterable):
     """Прогнозы доходностей и ковариационных матриц для DL-моделей."""
 
     def __init__(
-        self,
-        tickers: Tuple[str, ...],
-        date: pd.Timestamp,
+            self, tickers: Tuple[str, ...], date: pd.Timestamp,
     ):
         self._tickers = tickers
         self._date = date
 
         self._forecasts = []
-        for organism in tqdm.tqdm(
-                population.get_all_organisms(), desc="Forecasts"
-        ):
+        for organism in tqdm.tqdm(population.get_all_organisms(), desc="Forecasts"):
             try:
                 forecast = organism.forecast(tickers, date)
             except ForecastError:
                 continue
             self._forecasts.append(forecast)
+        if not self._forecasts:
+            raise population.ForecastError("Отсутствуют прогнозы - необходимо обучить модели")
 
     def __iter__(self) -> Iterator[Forecast]:
         yield from self._forecasts
@@ -49,9 +47,7 @@ class Forecasts(Iterable):
         return self._date
 
 
-def get_forecasts(
-        tickers: Tuple[str, ...], date: pd.Timestamp
-) -> Forecasts:
+def get_forecasts(tickers: Tuple[str, ...], date: pd.Timestamp) -> Forecasts:
     """Создает или загружает закешированный прогноз для набора тикеров на указанную дату.
 
     :param tickers:
