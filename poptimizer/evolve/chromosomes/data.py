@@ -33,9 +33,17 @@ TICKER_ON = GeneParams(
     path=("data", "features", "Ticker", "on"),
     phenotype_function=lambda x: x > 0,
 )
+DAY_OF_YEAR_ON = GeneParams(
+    name="day_of_year_on",
+    default_range=(0.0, 1.0),
+    lower_bound=None,
+    upper_bound=None,
+    path=("data", "features", "DayOfYear", "on"),
+    phenotype_function=lambda x: x > 0,
+)
 
 
 class Data(Chromosome):
     """Хромосома ответственная за параметры данных."""
 
-    _GENES = (BATCH_SIZE, HISTORY_DAYS, FORECAST_DAYS, TICKER_ON)
+    _GENES = (BATCH_SIZE, HISTORY_DAYS, FORECAST_DAYS, TICKER_ON, DAY_OF_YEAR_ON)

@@ -16,7 +16,6 @@ BASE_PHENOTYPE = {
             "Dividends": {"on": True},
             "Turnover": {"on": True},
             "AverageTurnover": {"on": True},
-            "DayOfYear": {"on": True},
         }
     },
 }
