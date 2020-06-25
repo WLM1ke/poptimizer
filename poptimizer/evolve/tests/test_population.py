@@ -136,10 +136,10 @@ def test_die(organism):
 @pytest.fixture(name="one_of_three")
 def make_three_and_yield_one_organism():
     """Нужно минимум три организма для дифференциальной эволюции."""
-    population.Organism()._data.save()
-    population.Organism()._data.save()
+    population.Organism().save()
+    population.Organism().save()
     organism = population.Organism()
-    organism._data.save()
+    organism.save()
     yield organism
 
 
@@ -184,6 +184,9 @@ def test_count():
 def test_create_new_organism():
     org = population.create_new_organism()
     assert isinstance(org, population.Organism)
+
+    assert population.Organism(_id=org.id).id == org.id
+    org.die()
 
 
 def test_get_all_and_random_organisms():

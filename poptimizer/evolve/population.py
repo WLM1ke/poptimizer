@@ -123,6 +123,10 @@ class Organism:
         model = Model(tickers, end, self.genotype.get_phenotype(), pickled_model)
         return model.forecast()
 
+    def save(self):
+        """Сохраняет все изменения в организме."""
+        self._data.save()
+
 
 def _sample_organism(num: int) -> Iterable[Organism]:
     """Выбирает несколько случайных организмов.
@@ -142,8 +146,10 @@ def count() -> int:
 
 
 def create_new_organism() -> Organism:
-    """Создает новый организм с пустым генотипом."""
-    return Organism()
+    """Создает новый организм с пустым генотипом и сохраняет его в базе данных."""
+    org = Organism()
+    org.save()
+    return org
 
 
 def get_random_organism() -> Organism:
