@@ -230,25 +230,30 @@ class WaveNet(nn.Module):
         ->embedding-----+                                                     |-output_s-softplus->
         """
         y_seq = []
-        y_emb_seq = torch.tensor(0.0, dtype=torch.float)
-        y_emb = torch.tensor(0.0, dtype=torch.float)
+
         for key, (feature_type, _) in self._features_description.items():
             if feature_type is FeatureType.SEQUENCE:
                 y_seq.append(batch[key])
-            if feature_type is FeatureType.EMBEDDING_SEQUENCE:
-                y_emb_seq = self.embedding_seq_dict[key](batch[key]) + y_emb_seq
-            if feature_type is FeatureType.EMBEDDING:
-                y_emb = self.embedding_dict[key](batch[key]) + y_emb
 
         y = torch.stack(y_seq, dim=1)
         y = self.bn(y)
 
-        y_emb_seq = y_emb_seq.permute((0, 2, 1))
-        if self.embedding_dict:
-            y_emb = y_emb.unsqueeze(2)
-            y_emb_seq = y_emb + y_emb_seq
+        batch_size, _, length = y.shape
 
-        y = torch.cat([y, y_emb_seq], dim=1)
+        y_emb = torch.zeros(batch_size, 1, length, dtype=torch.float)
+
+        for key, (feature_type, _) in self._features_description.items():
+            if feature_type is FeatureType.EMBEDDING_SEQUENCE:
+                emb_seq = self.embedding_seq_dict[key](batch[key])
+                emb_seq = emb_seq.permute((0, 2, 1))
+                y_emb = emb_seq + y_emb
+            if feature_type is FeatureType.EMBEDDING:
+                emb = self.embedding_dict[key](batch[key])
+                emb = emb.unsqueeze(2)
+                y_emb = emb + y_emb
+
+        if self.embedding_seq_dict or self.embedding_dict:
+            y = torch.cat([y, y_emb], dim=1)
 
         y = self.start_conv(y)
 
