@@ -5,6 +5,7 @@ import pandas as pd
 
 from poptimizer.dl import ModelError
 from poptimizer.evolve import population
+from poptimizer.portfolio import Portfolio
 
 # Максимальная популяция
 MAX_POPULATION = 100
@@ -28,11 +29,14 @@ class Evolution:
     def __init__(self, max_population: int = MAX_POPULATION):
         self._max_population = max_population
 
-    def evolve(self, tickers: Tuple[str, ...], end: pd.Timestamp) -> NoReturn:
+    def evolve(self, portfolio: Portfolio) -> NoReturn:
         """Осуществляет одну эпоху эволюции.
 
         При необходимости создается начальная популяция из организмов по умолчанию.
         """
+        tickers = tuple(portfolio.index[:-2])
+        end = portfolio.date
+
         self._setup()
 
         count = population.count()

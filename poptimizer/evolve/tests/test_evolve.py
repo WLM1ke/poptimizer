@@ -2,6 +2,7 @@ import pandas as pd
 
 from poptimizer.dl import ModelError
 from poptimizer.evolve import evolve
+from poptimizer.portfolio import Portfolio
 
 
 class FakeOrganism:
@@ -106,7 +107,8 @@ def test_evolve_parent_win(monkeypatch):
     population_ids = list(fake_population._organisms)
     ev = evolve.Evolution(4)
     assert fake_population.count() == 4
-    ev.evolve(("AKRN",), pd.Timestamp("2020-04-19"))
+    port = Portfolio(pd.Timestamp("2020-04-19"), 0, dict(AKRN=0))
+    ev.evolve(port)
     assert fake_population.count() == 4
     assert list(fake_population._organisms) == population_ids
 
@@ -120,7 +122,8 @@ def test_evolve_parent_loose(monkeypatch):
     population_ids = list(fake_population._organisms)
     ev = evolve.Evolution(4)
     assert fake_population.count() == 4
-    ev.evolve(("AKRN",), pd.Timestamp("2020-04-19"))
+    port = Portfolio(pd.Timestamp("2020-04-19"), 0, dict(AKRN=0))
+    ev.evolve(port)
     assert fake_population.count() == 4
     assert list(fake_population._organisms)[:-1] == population_ids[:-1]
     assert list(fake_population._organisms)[-1] != population_ids[-1]
