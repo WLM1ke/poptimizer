@@ -65,6 +65,7 @@ def make_data_loader():
     )
 
 
+# noinspection DuplicatedCode
 def test_wave_net_bn(loader):
     batch = next(iter(loader))
     batch2 = copy.deepcopy(batch)
@@ -88,6 +89,7 @@ def test_wave_net_bn(loader):
     assert s2.allclose(s1[50:, :])
 
 
+# noinspection DuplicatedCode
 def test_wave_net_no_bn(loader):
     batch = next(iter(loader))
     batch2 = copy.deepcopy(batch)
@@ -109,3 +111,40 @@ def test_wave_net_no_bn(loader):
 
     assert m2.allclose(m1[:40, :])
     assert s2.allclose(s1[:40, :])
+
+
+DATA_PARAMS_NO_EMB = {
+    "batch_size": 100,
+    "history_days": 245,
+    "forecast_days": 194,
+    "features": {"Label": {"on": True}, "Prices": {"on": True}, "Dividends": {"on": True}},
+}
+
+
+@pytest.fixture(scope="module", name="loader_no_emb")
+def make_data_loader_no_emb():
+    return data_loader.DescribedDataLoader(
+        ("MTSS", "BANE"), pd.Timestamp("2020-03-20"), DATA_PARAMS_NO_EMB, data_params.TrainParams,
+    )
+
+
+# noinspection DuplicatedCode
+def test_wave_net_no_embedding(loader_no_emb):
+    batch = next(iter(loader_no_emb))
+    batch2 = copy.deepcopy(batch)
+    batch2["Prices"] = batch2["Prices"][60:, :]
+    batch2["Dividends"] = batch2["Dividends"][60:, :]
+
+    net = wave_net.WaveNet(loader_no_emb.features_description, **NET_PARAMS)
+    net.eval()
+    m1, s1 = net(batch)
+    m2, s2 = net(batch2)
+
+    assert m1.shape == (100, 1)
+    assert s1.shape == (100, 1)
+
+    assert m2.shape == (40, 1)
+    assert s2.shape == (40, 1)
+
+    assert m2.allclose(m1[60:, :])
+    assert s2.allclose(s1[60:, :])

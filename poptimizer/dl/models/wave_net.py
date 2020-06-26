@@ -191,6 +191,9 @@ class WaveNet(nn.Module):
         else:
             self.bn = nn.Identity()
 
+        if not (self.embedding_seq_dict or self.embedding_dict):
+            embedding_dim = 0
+
         self.start_conv = nn.Conv1d(
             in_channels=sequence_count + embedding_dim, out_channels=residual_channels, kernel_size=1,
         )
