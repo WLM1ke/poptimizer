@@ -5,9 +5,11 @@ import itertools
 import sys
 from typing import Tuple, Dict, Optional, NoReturn
 
+import numpy as np
 import pandas as pd
 import torch
 import tqdm
+from scipy import stats
 from torch import optim, nn
 from torch.optim import lr_scheduler
 
@@ -106,20 +108,22 @@ class Model:
             self._tickers, self._end, self._phenotype["data"], data_params.TestParams
         )
 
-        days, rez = divmod(len(loader.dataset), len(self._tickers))
+        n_tickers = len(self._tickers)
+        days, rez = divmod(len(loader.dataset), n_tickers)
         if rez:
             raise TooLongHistoryError
 
         model = self.get_model(loader)
 
-        forecast_days = torch.tensor(
-            self._phenotype["data"]["forecast_days"], dtype=torch.float
-        )
+        forecast_days = torch.tensor(self._phenotype["data"]["forecast_days"], dtype=torch.float)
 
         loss_fn = normal_llh
 
         llh_sum = 0.0
         weight_sum = 0.0
+        m_all = []
+        s_all = []
+        r_all = []
 
         print(f"Тестовых дней: {days}")
         print(f"Тестовых примеров: {len(loader.dataset)}")
@@ -128,19 +132,36 @@ class Model:
             bar = tqdm.tqdm(loader, file=sys.stdout, desc="~~> Test")
             for batch in bar:
                 m, s = model(batch)
-                loss, weight = loss_fn(
-                    (m / forecast_days, s / forecast_days ** 0.5), batch
-                )
+                m_all.append(m)
+                s_all.append(s)
+                r_all.append(batch["Label"])
+                loss, weight = loss_fn((m / forecast_days, s / forecast_days ** 0.5), batch)
                 llh_sum -= loss.item()
                 weight_sum += weight
 
                 bar.set_postfix_str(f"{llh_sum / weight_sum:.5f}")
 
+        m_all = torch.cat(m_all).flatten().numpy()
+        r_all = torch.cat(r_all).flatten().numpy()
+        rez = []
+        bet = 0
+        for day in range(days):
+            m = m_all[day::days]
+            r = r_all[day::days]
+
+            rez.append((m - np.mean(m)) * (r - np.mean(r)))
+            bet += np.abs(m - np.mean(m)).sum()
+
+        rez = np.hstack(rez)
+        _, p_value = stats.wilcoxon(rez, alternative="greater", correction=True)
+        print(
+            f"Back test: p_value - {p_value:.4%}, {rez.sum():.4f} / {bet:.4f} = "
+            f"{rez.sum() / bet * 252:.4%}"
+        )
+
         return llh_sum / weight_sum
 
-    def get_model(
-        self, loader: data_loader.DescribedDataLoader, verbose: bool = True
-    ) -> nn.Module:
+    def get_model(self, loader: data_loader.DescribedDataLoader, verbose: bool = True) -> nn.Module:
         """Загрузка или обучение модели."""
         if self._model is not None:
             return self._model
@@ -154,10 +175,7 @@ class Model:
         return self._model
 
     def _load_trained_model(
-        self,
-        pickled_model: bytes,
-        loader: data_loader.DescribedDataLoader,
-        verbose: bool = True,
+            self, pickled_model: bytes, loader: data_loader.DescribedDataLoader, verbose: bool = True,
     ) -> nn.Module:
         """Создание тренированной модели."""
         model = self._make_untrained_model(loader, verbose)
@@ -271,10 +289,7 @@ class Model:
     def forecast(self) -> Forecast:
         """Прогноз годовой доходности."""
         loader = data_loader.DescribedDataLoader(
-            self._tickers,
-            self._end,
-            self._phenotype["data"],
-            data_params.ForecastParams,
+            self._tickers, self._end, self._phenotype["data"], data_params.ForecastParams,
         )
 
         model = self.get_model(loader, False)
@@ -295,9 +310,7 @@ class Model:
 
         year_mul = YEAR_IN_TRADING_DAYS / forecast_days
         m_forecast = pd.Series(m_forecast, index=list(self._tickers)).mul(year_mul)
-        s_forecast = pd.Series(s_forecast, index=list(self._tickers)).mul(
-            year_mul ** 0.5
-        )
+        s_forecast = pd.Series(s_forecast, index=list(self._tickers)).mul(year_mul ** 0.5)
 
         return Forecast(
             tickers=self._tickers,
