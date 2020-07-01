@@ -142,21 +142,59 @@ class Model:
                 bar.set_postfix_str(f"{llh_sum / weight_sum:.5f}")
 
         m_all = torch.cat(m_all).flatten().numpy()
+        s_all = torch.cat(s_all).flatten().numpy()
         r_all = torch.cat(r_all).flatten().numpy()
-        rez = []
-        bet = 0
+
+        small_mean = []
+        big_mean = []
+
+        small_std = []
+        big_std = []
+
         for day in range(days):
             m = m_all[day::days]
+            s = s_all[day::days]
             r = r_all[day::days]
 
-            rez.append((m - np.mean(m)) * (r - np.mean(r)))
-            bet += np.abs(m - np.mean(m)).sum()
+            w = stats.rankdata(-m)
+            w = w / w.sum()
+            small_mean.append((w * r).sum())
 
-        rez = np.hstack(rez)
-        _, p_value = stats.wilcoxon(rez, alternative="greater", correction=True)
+            w = stats.rankdata(m)
+            w = w / w.sum()
+            big_mean.append((w * r).sum())
+
+            w = stats.rankdata(-s)
+            w = w / w.sum()
+            small_std.append((w * r).sum())
+
+            w = stats.rankdata(s)
+            w = w / w.sum()
+            big_std.append((w * r).sum())
+
+        small_mean = np.array(small_mean)
+        big_mean = np.array(big_mean)
+        small_std = np.array(small_std)
+        big_std = np.array(big_std)
+
+        print(f"Mean max: {(big_mean.mean() - small_mean.mean()) * 252:.2%}")
         print(
-            f"Back test: p_value - {p_value:.4%}, {rez.sum():.4f} / {bet:.4f} = "
-            f"{rez.sum() / bet * 252:.4%}"
+            f"Big mean: {big_mean.mean() * 252:.2%} - {big_mean.std() * 252 ** 0.5:.2%} - "
+            f"{big_mean.mean() / big_mean.std() * 252 ** 0.5:.4f}"
+        )
+        print(
+            f"Small mean: {small_mean.mean() * 252:.2%} - {small_mean.std() * 252 ** 0.5:.2%} - "
+            f"{small_mean.mean() / small_mean.std() * 252 ** 0.5:.4f}"
+        )
+
+        print(f"Std max: {(big_std.std() - small_std.std()) * 252 ** 0.5:.2%}")
+        print(
+            f"Big std: {big_std.mean() * 252:.2%} - {big_std.std() * 252 ** 0.5:.2%} - "
+            f"{big_std.mean() / big_std.std() * 252 ** 0.5:.4f}"
+        )
+        print(
+            f"Small std: {small_std.mean() * 252:.2%} - {small_std.std() * 252 ** 0.5:.2%} - "
+            f"{small_std.mean() / small_std.std() * 252 ** 0.5:.4f}"
         )
 
         return llh_sum / weight_sum
