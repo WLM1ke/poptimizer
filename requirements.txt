@@ -1,6 +1,6 @@
 pytest
 pytest-cov
-pytest-asyncio
+pytest-asyncio==0.14.0
 
 pandas
 numpy
