@@ -11,7 +11,7 @@ tqdm
 openpyxl
 xlrd
 lxml
-reportlab
+reportlab==3.5.44
 matplotlib
 
 pymongo
