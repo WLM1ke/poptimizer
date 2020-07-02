@@ -1,5 +1,5 @@
 pytest
-pytest-cov
+pytest-cov==2.10.0
 pytest-asyncio
 
 pandas
