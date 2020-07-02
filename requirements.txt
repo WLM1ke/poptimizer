@@ -1,4 +1,4 @@
-pytest
+pytest==5.4.3
 pytest-cov
 pytest-asyncio
 
