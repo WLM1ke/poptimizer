@@ -20,7 +20,7 @@ apimoex
 beautifulsoup4
 requests
 pyppeteer
-certifi
+certifi==2020.6.20
 
 psutil
 
