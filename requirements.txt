@@ -3,7 +3,7 @@ pytest-cov
 pytest-asyncio
 
 pandas
-numpy
+numpy==1.19.0
 scipy
 torch
 tqdm
