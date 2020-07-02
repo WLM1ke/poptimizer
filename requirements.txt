@@ -4,7 +4,7 @@ pytest-asyncio
 
 pandas
 numpy
-scipy
+scipy==1.5.0
 torch
 tqdm
 
