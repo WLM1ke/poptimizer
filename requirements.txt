@@ -5,7 +5,7 @@ pytest-asyncio
 pandas
 numpy
 scipy
-torch
+torch==1.5.1
 tqdm
 
 openpyxl
