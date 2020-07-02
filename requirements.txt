@@ -8,7 +8,7 @@ scipy
 torch
 tqdm
 
-openpyxl
+openpyxl==3.0.4
 xlrd
 lxml
 reportlab
