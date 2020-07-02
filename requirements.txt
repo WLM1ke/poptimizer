@@ -6,7 +6,7 @@ pandas
 numpy
 scipy
 torch
-tqdm
+tqdm==4.47.0
 
 openpyxl
 xlrd
