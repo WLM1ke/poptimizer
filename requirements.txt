@@ -10,7 +10,7 @@ tqdm
 
 openpyxl
 xlrd
-lxml
+lxml==4.5.1
 reportlab
 matplotlib
 
