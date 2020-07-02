@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import torch
 import tqdm
-from scipy import stats
 from torch import optim, nn
 from torch.optim import lr_scheduler
 
@@ -145,56 +144,47 @@ class Model:
         s_all = torch.cat(s_all).flatten().numpy()
         r_all = torch.cat(r_all).flatten().numpy()
 
-        small_mean = []
-        big_mean = []
+        port = []
+        simple = []
 
-        small_std = []
-        big_std = []
+        w = np.full(n_tickers, 1)
+        w = w / w.sum()
 
         for day in range(days):
             m = m_all[day::days]
             s = s_all[day::days]
             r = r_all[day::days]
 
-            w = stats.rankdata(-m)
+            mp = (m * w).sum()
+            sp_2 = ((s * w) ** 2).sum()
+            b = (s ** 2 * w) / sp_2
+            grad = (m - mp) - (b - 1) * sp_2
+            buy = np.argmax(grad)
+
+            grad[w == 0] = np.inf
+            sell = np.argmin(grad)
+
+            sell_q = min(0.01, w[sell])
+
+            w[buy] = w[buy] + sell_q
+            w[sell] = w[sell] - sell_q
+
+            print(mp, sp_2 ** 0.5, 1 / (w * w).sum())
+
+            port.append((r * w).sum())
+            simple.append(r.mean())
+            w = w * (1 + r)
             w = w / w.sum()
-            small_mean.append((w * r).sum())
 
-            w = stats.rankdata(m)
-            w = w / w.sum()
-            big_mean.append((w * r).sum())
+        port = np.array(port)
+        simple = np.array(simple)
 
-            w = stats.rankdata(-s)
-            w = w / w.sum()
-            small_std.append((w * r).sum())
-
-            w = stats.rankdata(s)
-            w = w / w.sum()
-            big_std.append((w * r).sum())
-
-        small_mean = np.array(small_mean)
-        big_mean = np.array(big_mean)
-        small_std = np.array(small_std)
-        big_std = np.array(big_std)
-
-        print(f"Mean max: {(big_mean.mean() - small_mean.mean()) * 252:.2%}")
+        print(f"Port: {port.mean() * 252:.2%} - {port.std() * 252 ** 0.5:.2%}")
+        print(f"Simple: {simple.mean() * 252:.2%} - {simple.std() * 252 ** 0.5:.2%}")
         print(
-            f"Big mean: {big_mean.mean() * 252:.2%} - {big_mean.std() * 252 ** 0.5:.2%} - "
-            f"{big_mean.mean() / big_mean.std() * 252 ** 0.5:.4f}"
-        )
-        print(
-            f"Small mean: {small_mean.mean() * 252:.2%} - {small_mean.std() * 252 ** 0.5:.2%} - "
-            f"{small_mean.mean() / small_mean.std() * 252 ** 0.5:.4f}"
-        )
-
-        print(f"Std max: {(big_std.std() - small_std.std()) * 252 ** 0.5:.2%}")
-        print(
-            f"Big std: {big_std.mean() * 252:.2%} - {big_std.std() * 252 ** 0.5:.2%} - "
-            f"{big_std.mean() / big_std.std() * 252 ** 0.5:.4f}"
-        )
-        print(
-            f"Small std: {small_std.mean() * 252:.2%} - {small_std.std() * 252 ** 0.5:.2%} - "
-            f"{small_std.mean() / small_std.std() * 252 ** 0.5:.4f}"
+            f"Diff: {(port.mean() - 0.5 * port.std() ** 2) * 252:.2%} - "
+            f"{(simple.mean() - 0.5 * simple.std() ** 2) * 252:.2%} = "
+            f"{((port.mean() - simple.mean()) - 0.5 * (port.std() ** 2 - simple.std() ** 2)) * 252:.2%}"
         )
 
         return llh_sum / weight_sum
