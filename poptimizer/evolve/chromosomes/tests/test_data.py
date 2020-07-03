@@ -9,7 +9,7 @@ def test_init_no_data():
     assert 196.1 < chromo.data["forecast_days"] < 196.9
     assert 0.0 < chromo.data["ticker_on"] < 1.0
     assert 0.0 < chromo.data["day_of_year_on"] < 1.0
-    assert 0.0 < chromo.data["average_turnover"] < 1.0
+    assert 0.0 < chromo.data["average_turnover_on"] < 1.0
 
 
 def test_init_some_data():
@@ -20,7 +20,7 @@ def test_init_some_data():
     assert 196.1 < chromo.data["forecast_days"] < 196.9
     assert 0.0 < chromo.data["ticker_on"] < 1.0
     assert 0.0 < chromo.data["day_of_year_on"] < 1.0
-    assert 0.0 < chromo.data["average_turnover"] < 1.0
+    assert 0.0 < chromo.data["average_turnover_on"] < 1.0
 
 
 def test_init_all_data():
@@ -31,7 +31,7 @@ def test_init_all_data():
             forecast_days=270,
             ticker_on=-1,
             day_of_year_on=-3,
-            average_turnover=0,
+            average_turnover_on=0,
         )
     )
     assert len(chromo.data) == 6
@@ -40,7 +40,7 @@ def test_init_all_data():
     assert chromo.data["forecast_days"] == 270
     assert chromo.data["ticker_on"] == -1
     assert chromo.data["day_of_year_on"] == -3
-    assert chromo.data["average_turnover"] == 0
+    assert chromo.data["average_turnover_on"] == 0
 
 
 def test_setup_phenotype():
@@ -50,7 +50,7 @@ def test_setup_phenotype():
         forecast_days=270,
         ticker_on=-1,
         day_of_year_on=2,
-        average_turnover=0,
+        average_turnover_on=0,
     )
     chromo = data.Data(chromosome_data)
     base_phenotype = dict(model="Test_Model")
@@ -79,7 +79,7 @@ def test_make_child(monkeypatch):
             forecast_days=300,
             ticker_on=1,
             day_of_year_on=1,
-            average_turnover=1,
+            average_turnover_on=1,
         )
     )
     base = data.Data(
@@ -89,7 +89,7 @@ def test_make_child(monkeypatch):
             forecast_days=270,
             ticker_on=2,
             day_of_year_on=6,
-            average_turnover=4,
+            average_turnover_on=4,
         )
     )
     diff1 = data.Data(
@@ -99,7 +99,7 @@ def test_make_child(monkeypatch):
             forecast_days=280,
             ticker_on=1,
             day_of_year_on=1,
-            average_turnover=0,
+            average_turnover_on=0,
         )
     )
     diff2 = data.Data(
@@ -109,7 +109,7 @@ def test_make_child(monkeypatch):
             forecast_days=260,
             ticker_on=8,
             day_of_year_on=0,
-            average_turnover=3,
+            average_turnover_on=3,
         )
     )
 
@@ -123,4 +123,4 @@ def test_make_child(monkeypatch):
     assert child.data["forecast_days"] == 270 + 0.8 * (280 - 260)
     assert child.data["ticker_on"] == 2 + 0.8 * (1 - 8)
     assert child.data["day_of_year_on"] == 6 + 0.8 * (1 - 0)
-    assert child.data["average_turnover"] == 1
+    assert child.data["average_turnover_on"] == 1

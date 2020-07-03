@@ -41,8 +41,8 @@ DAY_OF_YEAR_ON = GeneParams(
     path=("data", "features", "DayOfYear", "on"),
     phenotype_function=lambda x: x > 0,
 )
-AVERAGE_TURNOVER = GeneParams(
-    name="average_turnover",
+AVERAGE_TURNOVER_ON = GeneParams(
+    name="average_turnover_on",
     default_range=(0.0, 1.0),
     lower_bound=None,
     upper_bound=None,
@@ -54,4 +54,4 @@ AVERAGE_TURNOVER = GeneParams(
 class Data(Chromosome):
     """Хромосома ответственная за параметры данных."""
 
-    _GENES = (BATCH_SIZE, HISTORY_DAYS, FORECAST_DAYS, TICKER_ON, DAY_OF_YEAR_ON, AVERAGE_TURNOVER)
+    _GENES = (BATCH_SIZE, HISTORY_DAYS, FORECAST_DAYS, TICKER_ON, DAY_OF_YEAR_ON, AVERAGE_TURNOVER_ON)
