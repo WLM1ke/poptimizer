@@ -16,7 +16,7 @@ matplotlib
 
 pymongo
 
-apimoex
+apimoex==1.2.0
 beautifulsoup4
 requests
 pyppeteer
