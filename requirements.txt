@@ -24,4 +24,4 @@ certifi
 
 psutil
 
-pyyaml
+pyyaml==5.3.1
