@@ -18,7 +18,7 @@ pymongo
 
 apimoex
 beautifulsoup4
-requests
+requests==2.24.0
 pyppeteer
 certifi
 
