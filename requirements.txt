@@ -17,7 +17,7 @@ matplotlib
 pymongo
 
 apimoex
-beautifulsoup4
+beautifulsoup4==4.9.1
 requests
 pyppeteer
 certifi
