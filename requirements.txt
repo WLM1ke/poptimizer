@@ -14,7 +14,7 @@ lxml
 reportlab
 matplotlib
 
-pymongo
+pymongo==3.10.1
 
 apimoex
 beautifulsoup4
