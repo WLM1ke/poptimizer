@@ -19,7 +19,7 @@ pymongo
 apimoex
 beautifulsoup4
 requests
-pyppeteer
+pyppeteer==0.2.2
 certifi
 
 psutil
