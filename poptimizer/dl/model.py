@@ -169,8 +169,6 @@ class Model:
             w[buy] = w[buy] + sell_q
             w[sell] = w[sell] - sell_q
 
-            print(mp, sp_2 ** 0.5, 1 / (w * w).sum())
-
             port.append((r * w).sum())
             simple.append(r.mean())
             w = w * (1 + r)
@@ -179,6 +177,7 @@ class Model:
         port = np.array(port)
         simple = np.array(simple)
 
+        print(f"Количество акций в портфеле: {1 / (w * w).sum():.1f}")
         print(f"Port: {port.mean() * 252:.2%} - {port.std() * 252 ** 0.5:.2%}")
         print(f"Simple: {simple.mean() * 252:.2%} - {simple.std() * 252 ** 0.5:.2%}")
         print(
