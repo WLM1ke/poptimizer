@@ -17,14 +17,6 @@ HISTORY_DAYS = GeneParams(
     path=("data", "history_days"),
     phenotype_function=int,
 )
-FORECAST_DAYS = GeneParams(
-    name="forecast_days",
-    default_range=(196.1, 196.9),
-    lower_bound=1.0,
-    upper_bound=None,
-    path=("data", "forecast_days"),
-    phenotype_function=int,
-)
 TICKER_ON = GeneParams(
     name="ticker_on",
     default_range=(0.0, 1.0),
@@ -54,4 +46,4 @@ AVERAGE_TURNOVER_ON = GeneParams(
 class Data(Chromosome):
     """Хромосома ответственная за параметры данных."""
 
-    _GENES = (BATCH_SIZE, HISTORY_DAYS, FORECAST_DAYS, TICKER_ON, DAY_OF_YEAR_ON, AVERAGE_TURNOVER_ON)
+    _GENES = (BATCH_SIZE, HISTORY_DAYS, TICKER_ON, DAY_OF_YEAR_ON, AVERAGE_TURNOVER_ON)
