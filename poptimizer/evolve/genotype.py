@@ -10,12 +10,13 @@ from poptimizer.evolve import chromosomes
 BASE_PHENOTYPE = {
     "type": "WaveNet",
     "data": {
+        "forecast_days": 1,
         "features": {
             "Label": {"on": True},
             "Prices": {"on": True},
             "Dividends": {"on": True},
             "Turnover": {"on": True},
-        }
+        },
     },
 }
 

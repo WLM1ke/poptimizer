@@ -25,7 +25,7 @@ class Organism:
     """
 
     def __init__(
-            self, *, _id: Optional[bson.ObjectId] = None, genotype: Optional[Genotype] = None,
+        self, *, _id: Optional[bson.ObjectId] = None, genotype: Optional[Genotype] = None,
     ):
         self._data = store.Doc(id_=_id, genotype=genotype)
 

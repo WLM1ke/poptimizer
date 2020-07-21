@@ -23,7 +23,7 @@ def test_init_some_data():
 
 def test_init_all_data():
     chromo = data.Data(
-        dict(history_days=40, batch_size=10, ticker_on=-1, day_of_year_on=-3, average_turnover_on=0, )
+        dict(history_days=40, batch_size=10, ticker_on=-1, day_of_year_on=-3, average_turnover_on=0,)
     )
     assert len(chromo.data) == 5
     assert chromo.data["batch_size"] == 10
@@ -57,16 +57,16 @@ def test_make_child(monkeypatch):
     monkeypatch.setattr(chromosome.random, "rand", lambda _: (0.89, 0.91, 0.89, 0.89, 0.91))
 
     parent = data.Data(
-        dict(batch_size=40, history_days=20, ticker_on=1, day_of_year_on=1, average_turnover_on=1, )
+        dict(batch_size=40, history_days=20, ticker_on=1, day_of_year_on=1, average_turnover_on=1,)
     )
     base = data.Data(
-        dict(batch_size=30, history_days=50, ticker_on=2, day_of_year_on=6, average_turnover_on=4, )
+        dict(batch_size=30, history_days=50, ticker_on=2, day_of_year_on=6, average_turnover_on=4,)
     )
     diff1 = data.Data(
-        dict(batch_size=20, history_days=60, ticker_on=1, day_of_year_on=1, average_turnover_on=0, )
+        dict(batch_size=20, history_days=60, ticker_on=1, day_of_year_on=1, average_turnover_on=0,)
     )
     diff2 = data.Data(
-        dict(batch_size=10, history_days=70, ticker_on=8, day_of_year_on=0, average_turnover_on=3, )
+        dict(batch_size=10, history_days=70, ticker_on=8, day_of_year_on=0, average_turnover_on=3,)
     )
 
     child = parent.make_child(base, diff1, diff2)
