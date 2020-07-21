@@ -9,12 +9,7 @@ PARAMS = {
     "batch_size": 100,
     "history_days": 8,
     "forecast_days": 4,
-    "features": {
-        "Label": {"div_share": 0.9},
-        "Prices": {},
-        "Dividends": {},
-        "Weight": {},
-    },
+    "features": {"Label": {"div_share": 0.9}, "Prices": {}, "Dividends": {}, "Weight": {}, },
 }
 
 
@@ -23,9 +18,7 @@ def make_feature():
     saved_start_date = div.STATS_START
     div.STATS_START = pd.Timestamp("2010-09-01")
 
-    params = data_params.ValParams(
-        ("CNTLP", "LKOH"), pd.Timestamp("2020-03-18"), PARAMS
-    )
+    params = data_params.TestParams(("CNTLP", "LKOH"), pd.Timestamp("2020-03-18"), PARAMS)
     yield prices.Prices("CNTLP", params)
 
     div.STATS_START = saved_start_date

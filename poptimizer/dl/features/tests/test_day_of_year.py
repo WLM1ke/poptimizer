@@ -8,7 +8,6 @@ from poptimizer.dl.features import data_params, FeatureType, day_of_year
 PARAMS = {
     "batch_size": 100,
     "history_days": 8,
-    "forecast_days": 4,
     "features": {"Label": {"div_share": 0.7}, "Prices": {}, "Dividends": {}},
 }
 
@@ -18,9 +17,7 @@ def make_feature():
     saved_start_date = div.STATS_START
     div.STATS_START = pd.Timestamp("2010-09-01")
 
-    params = data_params.ValParams(
-        ("PLZL", "KRKNP"), pd.Timestamp("2020-04-29"), PARAMS
-    )
+    params = data_params.TestParams(("PLZL", "KRKNP"), pd.Timestamp("2020-04-29"), PARAMS)
     yield day_of_year.DayOfYear("PLZL", params), day_of_year.DayOfYear("KRKNP", params)
 
     div.STATS_START = saved_start_date

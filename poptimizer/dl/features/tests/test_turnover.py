@@ -8,7 +8,6 @@ from poptimizer.dl.features import turnover, data_params, FeatureType
 PARAMS = {
     "batch_size": 100,
     "history_days": 8,
-    "forecast_days": 4,
     "features": {"Turnover": {}},
 }
 
@@ -18,9 +17,7 @@ def make_params():
     saved_start_date = div.STATS_START
     div.STATS_START = pd.Timestamp("2010-09-01")
 
-    params = data_params.ValParams(
-        ("CNTLP", "LKOH"), pd.Timestamp("2020-03-18"), PARAMS
-    )
+    params = data_params.TestParams(("CNTLP", "LKOH"), pd.Timestamp("2020-03-18"), PARAMS)
     yield params
 
     div.STATS_START = saved_start_date
