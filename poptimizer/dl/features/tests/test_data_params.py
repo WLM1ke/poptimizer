@@ -94,42 +94,6 @@ class TestTrainParams:
         assert train_params.get_feat_params("Label") == {"on": True}
 
 
-@pytest.fixture(scope="class", name="val_params")
-def make_val_params():
-    with set_start_date():
-        yield data_params.ValParams(TICKERS, DATE, PARAMS)
-
-
-class TestValParams:
-    def test_shuffle(self, val_params):
-        assert val_params.shuffle is False
-
-    def test_forecast_days(self, val_params):
-        assert val_params.forecast_days == 8
-
-    def test_price(self, val_params):
-        df = val_params.price("DSKY")
-        assert isinstance(df, pd.Series)
-        assert df.index[0] == pd.Timestamp("2019-03-12")
-        assert df.index[-1] == pd.Timestamp("2020-03-17")
-        assert df[pd.Timestamp("2020-03-16")] == pytest.approx(84.4)
-
-    def test_div(self, val_params):
-        df = val_params.div("IRKT")
-        assert isinstance(df, pd.Series)
-        assert df.index[0] == pd.Timestamp("2019-03-12")
-        assert df.index[-1] == pd.Timestamp("2020-03-17")
-        assert df[pd.Timestamp("2020-03-16")] == pytest.approx(0.0)
-
-    def test_len(self, val_params):
-        assert val_params.len("CBOM") == 233
-        assert val_params.len("DSKY") == 233
-        assert val_params.len("IRKT") == 233
-
-    def test_get_all_feat(self, val_params):
-        assert list(val_params.get_all_feat()) == ["Label", "Prices"]
-
-
 @pytest.fixture(scope="class", name="test_params")
 def make_test_params():
     with set_start_date():

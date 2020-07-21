@@ -3,7 +3,7 @@ import collections
 import io
 import itertools
 import sys
-from typing import Tuple, Dict, Optional, NoReturn
+from typing import Tuple, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -283,35 +283,7 @@ class Model:
             if not (llh > LOW_LLH):
                 raise GradientsError(llh)
 
-        self._validate(model)
-
         return model
-
-    def _validate(self, model: nn.Module) -> NoReturn:
-        """Валидация модели."""
-        loader = data_loader.DescribedDataLoader(
-            self._tickers, self._end, self._phenotype["data"], data_params.ValParams
-        )
-        if len(loader.dataset) // len(self._tickers) == 0:
-            print("~~> Valid: skipped...")
-            return
-
-        loss_fn = normal_llh
-
-        llh_sum = 0.0
-        weight_sum = 0.0
-
-        print(f"Val size - {len(loader.dataset)}")
-        with torch.no_grad():
-            model.eval()
-            bar = tqdm.tqdm(loader, file=sys.stdout, desc="~~> Valid")
-            for batch in bar:
-                output = model(batch)
-                loss, weight = loss_fn(output, batch)
-                llh_sum += -loss.item()
-                weight_sum += weight
-
-                bar.set_postfix_str(f"{llh_sum / weight_sum:.5f}")
 
     def forecast(self) -> Forecast:
         """Прогноз годовой доходности."""

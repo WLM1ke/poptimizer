@@ -137,17 +137,6 @@ class TrainParams(DataParams):
         return True
 
 
-class ValParams(DataParams):
-    """Используются признаки, как есть для конечной части семпла, чтобы метки не пересекались с train."""
-
-    def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        history_days = self.history_days
-        div, price, train_size = div_price_train_size(tickers, end)
-        div = div.iloc[train_size - history_days :]
-        price = price.iloc[train_size - history_days :]
-        return div, price
-
-
 class TestParams(DataParams):
     """Метки имеют длину 1 день в независимости от реального значения параметров для конечной части
     семпла, чтобы метки не пересекались с TRAIN."""
