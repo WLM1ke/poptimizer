@@ -121,7 +121,11 @@ class Organism:
             raise ForecastError
 
         model = Model(tickers, end, self.genotype.get_phenotype(), pickled_model)
-        return model.forecast()
+        forecast = model.forecast()
+        if np.any(np.isnan(forecast.cov)):
+            self.die()
+            raise ForecastError
+        return forecast
 
     def save(self):
         """Сохраняет все изменения в организме."""
