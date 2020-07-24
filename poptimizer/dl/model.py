@@ -5,7 +5,6 @@ import itertools
 import sys
 from typing import Tuple, Dict, Optional
 
-import numpy as np
 import pandas as pd
 import torch
 import tqdm
@@ -120,9 +119,6 @@ class Model:
 
         llh_sum = 0.0
         weight_sum = 0.0
-        m_all = []
-        s_all = []
-        r_all = []
 
         print(f"Тестовых дней: {days}")
         print(f"Тестовых примеров: {len(loader.dataset)}")
@@ -131,60 +127,11 @@ class Model:
             bar = tqdm.tqdm(loader, file=sys.stdout, desc="~~> Test")
             for batch in bar:
                 m, s = model(batch)
-                m_all.append(m)
-                s_all.append(s)
-                r_all.append(batch["Label"])
                 loss, weight = loss_fn((m / forecast_days, s / forecast_days ** 0.5), batch)
                 llh_sum -= loss.item()
                 weight_sum += weight
 
                 bar.set_postfix_str(f"{llh_sum / weight_sum:.5f}")
-
-        m_all = torch.cat(m_all).flatten().numpy()
-        s_all = torch.cat(s_all).flatten().numpy()
-        r_all = torch.cat(r_all).flatten().numpy()
-
-        port = []
-        simple = []
-
-        w = np.full(n_tickers, 1)
-        w = w / w.sum()
-
-        for day in range(days):
-            m = m_all[day::days]
-            s = s_all[day::days]
-            r = r_all[day::days]
-
-            mp = (m * w).sum()
-            sp_2 = ((s * w) ** 2).sum()
-            b = (s ** 2 * w) / sp_2
-            grad = (m - mp) - (b - 1) * sp_2
-            buy = np.argmax(grad)
-
-            grad[w == 0] = np.inf
-            sell = np.argmin(grad)
-
-            sell_q = min(0.01, w[sell])
-
-            w[buy] = w[buy] + sell_q
-            w[sell] = w[sell] - sell_q
-
-            port.append((r * w).sum())
-            simple.append(r.mean())
-            w = w * (1 + r)
-            w = w / w.sum()
-
-        port = np.array(port)
-        simple = np.array(simple)
-
-        print(f"Количество акций в портфеле: {1 / (w * w).sum():.1f}")
-        print(f"Port: {port.mean() * 252:.2%} - {port.std() * 252 ** 0.5:.2%}")
-        print(f"Simple: {simple.mean() * 252:.2%} - {simple.std() * 252 ** 0.5:.2%}")
-        print(
-            f"Diff: {(port.mean() - 0.5 * port.std() ** 2) * 252:.2%} - "
-            f"{(simple.mean() - 0.5 * simple.std() ** 2) * 252:.2%} = "
-            f"{((port.mean() - simple.mean()) - 0.5 * (port.std() ** 2 - simple.std() ** 2)) * 252:.2%}"
-        )
 
         return llh_sum / weight_sum
 
@@ -202,7 +149,7 @@ class Model:
         return self._model
 
     def _load_trained_model(
-            self, pickled_model: bytes, loader: data_loader.DescribedDataLoader, verbose: bool = True,
+        self, pickled_model: bytes, loader: data_loader.DescribedDataLoader, verbose: bool = True,
     ) -> nn.Module:
         """Создание тренированной модели."""
         model = self._make_untrained_model(loader, verbose)
