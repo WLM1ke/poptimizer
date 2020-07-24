@@ -8,7 +8,7 @@ from poptimizer.dl.features import dividends, data_params, FeatureType
 PARAMS = {
     "batch_size": 100,
     "history_days": 8,
-    "features": {"Label": {"div_share": 0.9}, "Prices": {}, "Dividends": {}, "Weight": {}, },
+    "features": {"Label": {"div_share": 0.9}, "Prices": {}, "Dividends": {}, "Weight": {}},
 }
 
 
