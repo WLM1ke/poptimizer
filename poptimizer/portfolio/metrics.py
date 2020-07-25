@@ -155,6 +155,7 @@ class MetricsResample:
             self._cor_block(),
             self._shrinkage_block(),
             self._main_block(),
+            self._grad_summary(),
         ]
         return "\n".join(blocks)
 
@@ -197,7 +198,27 @@ class MetricsResample:
         ]
         return f"\n{pd.concat(frames, axis=1)}"
 
-    @property
+    def _grad_summary(self) -> str:
+        """Информация о максимальном и минимальном градиенте.
+
+        Вспомогательная информация для осуществления операций, не связанных с оптимизацией:
+
+        - Выводом средств
+        - Покупкой бумаг на поступившие дивиденды.
+
+        Бумага с минимальным градиентом выбирается среди имеющих не нулевой вес.
+        Бумага с максимальным градиентом выбирается с учетом фактора оборота.
+        """
+        min_grad_ticker = self.gradient.iloc[:-2][self._portfolio.weight.iloc[:-2] > 0].idxmin()
+        max_grad_ticker = (self.gradient * self._portfolio.turnover_factor).iloc[:-2].idxmax()
+        strings = [
+            "\nЭкстремальные градиенты",
+            f"{min_grad_ticker}: {self.gradient[min_grad_ticker]: .4f}",
+            f"{max_grad_ticker}: {self.gradient[max_grad_ticker]: .4f}",
+        ]
+        return "\n".join(strings)
+
+    @functools.cached_property
     def count(self) -> int:
         """Количество прогнозов."""
         return len(self._metrics)
