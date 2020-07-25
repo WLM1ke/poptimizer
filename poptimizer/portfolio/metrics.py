@@ -31,28 +31,27 @@ class MetricsSingle:
         df = pd.concat(frames, axis=1)
         return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n\n{df}"
 
-    @property
+    @functools.cached_property
     def history_days(self) -> int:
         """Количество дней истории для прогнозирования."""
         return self._forecast.history_days
 
-    @property
+    @functools.cached_property
     def forecast_days(self) -> int:
         """Количество дней в прогнозном периоде."""
         return self._forecast.forecast_days
 
-    @property
+    @functools.cached_property
     def cor(self) -> float:
         """Средняя корреляция активов."""
         return self._forecast.cor
 
-    @property
+    @functools.cached_property
     def shrinkage(self) -> float:
         """Среднее сжатие корреляционной матрицы."""
         return self._forecast.shrinkage
 
-    @property
-    @functools.lru_cache(maxsize=200)
+    @functools.cached_property
     def mean(self) -> pd.Series:
         """Матожидание доходности по всем позициям портфеля."""
         portfolio = self._portfolio
@@ -63,8 +62,7 @@ class MetricsSingle:
         mean.name = "MEAN"
         return mean
 
-    @property
-    @functools.lru_cache(maxsize=200)
+    @functools.cached_property
     def std(self) -> pd.Series:
         """СКО доходности по всем позициям портфеля."""
         portfolio = self._portfolio
@@ -78,8 +76,7 @@ class MetricsSingle:
         std.name = "STD"
         return std
 
-    @property
-    @functools.lru_cache(maxsize=200)
+    @functools.cached_property
     def beta(self) -> pd.Series:
         """Беты относительно доходности портфеля."""
         portfolio = self._portfolio
@@ -93,7 +90,7 @@ class MetricsSingle:
         beta.name = "BETA"
         return beta
 
-    @property
+    @functools.cached_property
     def r_geom(self) -> pd.Series:
         """Приближенная оценка геометрической доходности.
 
@@ -108,8 +105,7 @@ class MetricsSingle:
         r_geom.name = "R_GEOM"
         return r_geom
 
-    @property
-    @functools.lru_cache(maxsize=200)
+    @functools.cached_property
     def gradient(self) -> pd.Series:
         """Рассчитывает производную приближенного значения геометрической доходности по долям акций.
 
@@ -223,40 +219,40 @@ class MetricsResample:
         """Количество прогнозов."""
         return len(self._metrics)
 
-    @property
+    @functools.cached_property
     def mean(self) -> pd.Series:
         """Медиану для всех прогнозов матожидание доходности по позициям портфеля."""
         mean = pd.concat([metric.mean for metric in self._metrics], axis=1).median(axis=1)
         mean.name = "MEAN"
         return mean
 
-    @property
+    @functools.cached_property
     def std(self) -> pd.Series:
         """Медиану для всех прогнозов СКО доходности по позициям портфеля."""
         std = pd.concat([metric.std for metric in self._metrics], axis=1).median(axis=1)
         std.name = "STD"
         return std
 
-    @property
+    @functools.cached_property
     def beta(self) -> pd.Series:
         """Медиану для всех прогнозов беты относительно доходности портфеля."""
         beta = pd.concat([metric.beta for metric in self._metrics], axis=1).median(axis=1)
         beta.name = "BETA"
         return beta
 
-    @property
+    @functools.cached_property
     def r_geom(self) -> pd.Series:
         """Медиану для всех прогнозов приближенные оценки геометрической доходности."""
         r_geom = pd.concat([metric.r_geom for metric in self._metrics], axis=1).median(axis=1)
         r_geom.name = "R_GEOM"
         return r_geom
 
-    @property
+    @functools.cached_property
     def all_gradients(self) -> pd.DataFrame:
         """Градиенты всех прогнозов."""
         return pd.concat([metric.gradient for metric in self._metrics], axis=1)
 
-    @property
+    @functools.cached_property
     def gradient(self) -> pd.Series:
         """Медиану для всех прогнозов производные приближенного значения геометрической доходности."""
         gradient = self.all_gradients.median(axis=1)
