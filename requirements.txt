@@ -1,27 +1,37 @@
+# Тестирование
 pytest
 pytest-cov
 pytest-asyncio
 
+# Математические операции и нейронные сети
 pandas
 numpy
 scipy
 torch
 tqdm
 
+# pdf и xls
 openpyxl
 xlrd
 lxml
 reportlab
 matplotlib
 
+# MongoDB
 pymongo
 
+# Web
 apimoex
 beautifulsoup4
 requests
 pyppeteer
 certifi
 
+# Операции с сабпроцессами
 psutil
 
+# Yaml
 pyyaml
+
+# CLI
+typer

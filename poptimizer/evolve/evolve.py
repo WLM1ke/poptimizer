@@ -5,7 +5,7 @@ import pandas as pd
 
 from poptimizer.dl import ModelError
 from poptimizer.evolve import population
-from poptimizer.portfolio import Portfolio
+from poptimizer.portfolio.portfolio import Portfolio
 
 # Максимальная популяция
 MAX_POPULATION = 100
@@ -71,7 +71,7 @@ class Evolution:
 
     @staticmethod
     def _eval_and_print(
-            organism: population.Organism, tickers: Tuple[str, ...], end: pd.Timestamp
+        organism: population.Organism, tickers: Tuple[str, ...], end: pd.Timestamp
     ) -> Optional[float]:
         """Оценивает организм и распечатывает метрики.
 
