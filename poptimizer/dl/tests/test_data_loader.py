@@ -8,7 +8,6 @@ from poptimizer.dl.features import data_params, FeatureType
 PARAMS = {
     "batch_size": 100,
     "history_days": 245,
-    "forecast_days": 194,
     "features": {"Label": {"on": True}, "Prices": {"on": True}, "Dividends": {"on": True}},
 }
 TICKERS = ("NMTP", "BANEP")

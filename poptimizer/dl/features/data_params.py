@@ -85,11 +85,6 @@ class DataParams(abc.ABC):
         return False
 
     @property
-    def forecast_days(self) -> int:
-        """Длинна меток в днях."""
-        return self._params["forecast_days"]
-
-    @property
     def history_days(self) -> int:
         """Длинна истории для признаков в днях."""
         return self._params["history_days"]
@@ -111,7 +106,7 @@ class DataParams(abc.ABC):
 
     def len(self, ticker) -> int:
         """Количество доступных примеров для данного тикера."""
-        return max(0, len(self.price(ticker)) - self.history_days - self.forecast_days + 1)
+        return max(0, len(self.price(ticker)) - self.history_days)
 
     def get_all_feat(self) -> Generator[str, None, None]:
         """Получить все названия признаков."""
@@ -146,7 +141,6 @@ class TestParams(DataParams):
         div, price, train_size = div_price_train_size(tickers, end)
         div = div.iloc[train_size - history_days :]
         price = price.iloc[train_size - history_days :]
-        self._params["forecast_days"] = 1
         return div, price
 
 
@@ -158,6 +152,5 @@ class ForecastParams(DataParams):
         div, price, train_size = div_price_train_size(tickers, end)
         div = div.iloc[-history_days:]
         price = price.iloc[-history_days:]
-        self._params["forecast_days"] = 0
         del self._params["features"]["Label"]
         return div, price

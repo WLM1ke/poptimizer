@@ -16,7 +16,6 @@ class Label(Feature):
         self.cum_div = torch.cumsum(div, dim=0)
         self.price = torch.tensor(params.price(ticker).values, dtype=torch.float)
         self.history_days = params.history_days
-        self.forecast_days = params.forecast_days
 
     def __getitem__(self, item: int) -> torch.Tensor:
         price = self.price
@@ -26,7 +25,7 @@ class Label(Feature):
         last_history_price = price[start]
         last_history_div = div[start]
 
-        end = start + self.forecast_days
+        end = start + 1
         last_forecast_price = price[end]
         last_forecast_div = div[end]
 
@@ -38,4 +37,4 @@ class Label(Feature):
     @property
     def type_and_size(self) -> Tuple[FeatureType, int]:
         """Тип признака и размер признака."""
-        return FeatureType.LABEL, self.forecast_days
+        return FeatureType.LABEL, 1

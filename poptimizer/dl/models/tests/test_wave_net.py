@@ -11,7 +11,6 @@ from poptimizer.dl.models import wave_net
 DATA_PARAMS = {
     "batch_size": 100,
     "history_days": 245,
-    "forecast_days": 194,
     "features": {
         "Label": {"on": True},
         "Prices": {"on": True},
@@ -116,7 +115,6 @@ def test_wave_net_no_bn(loader):
 DATA_PARAMS_NO_EMB = {
     "batch_size": 100,
     "history_days": 245,
-    "forecast_days": 194,
     "features": {"Label": {"on": True}, "Prices": {"on": True}, "Dividends": {"on": True}},
 }
 
