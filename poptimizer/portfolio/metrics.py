@@ -147,7 +147,6 @@ class MetricsResample:
         blocks = [
             f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n",
             self._history_block(),
-            self._forecast_block(),
             self._cor_block(),
             self._shrinkage_block(),
             self._main_block(),
@@ -161,13 +160,6 @@ class MetricsResample:
         data = np.quantile(list(met.history_days for met in self._metrics), quantile)
         data = list(map(lambda x: f"{x:.0f}", data))
         return f"Дней в истории - ({' <-> '.join(data)})"
-
-    def _forecast_block(self) -> str:
-        """Разброс прогнозных дней."""
-        quantile = [0.0, 0.5, 1.0]
-        data = np.quantile(list(met.forecast_days for met in self._metrics), quantile)
-        data = list(map(lambda x: f"{x:.0f}", data))
-        return f"Дней в прогнозе - ({' <-> '.join(data)})"
 
     def _cor_block(self) -> str:
         """Разброс средней корреляции."""
