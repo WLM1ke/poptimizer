@@ -4,13 +4,11 @@ from shutil import copyfile
 import pandas as pd
 import pytest
 
-from poptimizer import portfolio, PORTFOLIO
 from poptimizer.config import POptimizerError
+from poptimizer.portfolio import portfolio, PORTFOLIO
 from poptimizer.reports import pdf
 
-POSITIONS = dict(
-    MSTT=440, RTKMP=1500, MTSS=140, AKRN=12, MSRS=57000, UPRO=13000, PMSBP=480
-)
+POSITIONS = dict(MSTT=440, RTKMP=1500, MTSS=140, AKRN=12, MSRS=57000, UPRO=13000, PMSBP=480)
 CASH = 32412
 DATE_OLD = "2018-04-30"
 DATE_NEW = "2018-05-07"
@@ -39,9 +37,7 @@ def test_read_data():
 
 def test_update_data():
     port = portfolio.Portfolio(date=DATE_NEW, cash=CASH, positions=POSITIONS)
-    pdf.update_data(
-        "test", port.date, port.value[PORTFOLIO], dict(WLMike=1000, Igor=-2000), 1234
-    )
+    pdf.update_data("test", port.date, port.value[PORTFOLIO], dict(WLMike=1000, Igor=-2000), 1234)
     df = pdf.read_data("test")
     assert df.shape == (241, 6)
     assert df.index[-1] == pd.Timestamp("2018-05-07")
@@ -57,11 +53,7 @@ def test_update_data_bad_date():
     port = portfolio.Portfolio(date=DATE_OLD, cash=CASH, positions=POSITIONS)
     with pytest.raises(POptimizerError) as error:
         pdf.update_data(
-            "test",
-            port.date,
-            port.value[PORTFOLIO],
-            dict(WLMike=1000, Igor=-2000),
-            1234,
+            "test", port.date, port.value[PORTFOLIO], dict(WLMike=1000, Igor=-2000), 1234,
         )
     assert str(error.value) == "В этом месяце данные уже вносились в отчет"
 
@@ -69,9 +61,7 @@ def test_update_data_bad_date():
 def test_update_data_bad_investor_name():
     port = portfolio.Portfolio(date=DATE_NEW, cash=CASH, positions=POSITIONS)
     with pytest.raises(POptimizerError) as error:
-        pdf.update_data(
-            "test", port.date, port.value[PORTFOLIO], dict(WLMike1=1000), 1234
-        )
+        pdf.update_data("test", port.date, port.value[PORTFOLIO], dict(WLMike1=1000), 1234)
     assert str(error.value) == "Неверное имя инвестора - WLMike1"
 
 
