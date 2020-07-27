@@ -2,8 +2,7 @@ import pandas as pd
 import pytest
 from scipy import stats
 
-from poptimizer import Portfolio
-from poptimizer.portfolio import optimizer
+from poptimizer.portfolio import Portfolio, optimizer
 
 
 class FakeMetricsResample:
