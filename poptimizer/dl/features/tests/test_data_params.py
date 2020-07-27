@@ -12,7 +12,6 @@ DATE = pd.Timestamp("2020-03-17")
 PARAMS = {
     "batch_size": 100,
     "history_days": 16,
-    "forecast_days": 8,
     "features": {"Label": {"on": True}, "Prices": {"on": True}, "Turnover": {"on": False}},
 }
 
@@ -59,9 +58,6 @@ class TestTrainParams:
     def test_shuffle(self, train_params):
         assert train_params.shuffle is True
 
-    def test_forecast_days(self, train_params):
-        assert train_params.forecast_days == 8
-
     def test_history_days(self, train_params):
         assert train_params.history_days == 16
 
@@ -104,9 +100,6 @@ class TestTestParams:
     def test_shuffle(self, test_params):
         assert test_params.shuffle is False
 
-    def test_forecast_days(self, test_params):
-        assert test_params.forecast_days == 1
-
     def test_price(self, test_params):
         df = test_params.price("IRKT")
         assert isinstance(df, pd.Series)
@@ -139,9 +132,6 @@ def make_forecast_params():
 class TestForecastParams:
     def test_shuffle(self, forecast_params):
         assert forecast_params.shuffle is False
-
-    def test_forecast_days(self, forecast_params):
-        assert forecast_params.forecast_days == 0
 
     def test_price(self, forecast_params):
         df = forecast_params.price("IRKT")

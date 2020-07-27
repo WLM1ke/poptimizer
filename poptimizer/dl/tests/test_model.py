@@ -90,7 +90,6 @@ def test_forecast(org):
     assert forecast.tickers == tuple(org._data.tickers)
     assert forecast.date == org._data.date
     assert forecast.history_days == phenotype["data"]["history_days"]
-    assert forecast.forecast_days == phenotype["data"]["forecast_days"]
     assert isinstance(forecast.mean, pd.Series)
     assert forecast.mean.index.tolist() == list(org._data.tickers)
     assert isinstance(forecast.std, pd.Series)

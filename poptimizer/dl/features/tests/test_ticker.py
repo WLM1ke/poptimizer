@@ -8,7 +8,6 @@ from poptimizer.dl.features import data_params, FeatureType, ticker
 PARAMS = {
     "batch_size": 100,
     "history_days": 8,
-    "forecast_days": 4,
     "features": {"Label": {"div_share": 0.9}, "Prices": {}, "Dividends": {}, "Weight": {}},
 }
 

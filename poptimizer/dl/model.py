@@ -113,8 +113,6 @@ class Model:
 
         model = self.get_model(loader)
 
-        forecast_days = torch.tensor(self._phenotype["data"]["forecast_days"], dtype=torch.float)
-
         loss_fn = normal_llh
 
         llh_sum = 0.0
@@ -127,7 +125,7 @@ class Model:
             bar = tqdm.tqdm(loader, file=sys.stdout, desc="~~> Test")
             for batch in bar:
                 m, s = model(batch)
-                loss, weight = loss_fn((m / forecast_days, s / forecast_days ** 0.5), batch)
+                loss, weight = loss_fn((m, s), batch)
                 llh_sum -= loss.item()
                 weight_sum += weight
 
@@ -251,18 +249,15 @@ class Model:
         m_forecast = torch.cat(m_list, dim=0).numpy().flatten()
         s_forecast = torch.cat(s_list, dim=0).numpy().flatten()
 
-        forecast_days = self._phenotype["data"]["forecast_days"]
         history_days = self._phenotype["data"]["history_days"]
 
-        year_mul = YEAR_IN_TRADING_DAYS / forecast_days
-        m_forecast = pd.Series(m_forecast, index=list(self._tickers)).mul(year_mul)
-        s_forecast = pd.Series(s_forecast, index=list(self._tickers)).mul(year_mul ** 0.5)
+        m_forecast = pd.Series(m_forecast, index=list(self._tickers)).mul(YEAR_IN_TRADING_DAYS)
+        s_forecast = pd.Series(s_forecast, index=list(self._tickers)).mul(YEAR_IN_TRADING_DAYS ** 0.5)
 
         return Forecast(
             tickers=self._tickers,
             date=self._end,
             history_days=history_days,
-            forecast_days=forecast_days,
             mean=m_forecast,
             std=s_forecast,
         )

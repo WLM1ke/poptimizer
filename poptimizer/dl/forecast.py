@@ -28,7 +28,6 @@ class Forecast:
     tickers: Tuple[str, ...]
     date: pd.Timestamp
     history_days: int
-    forecast_days: int
     mean: pd.Series
     std: pd.Series
     cov: np.array = dataclasses.field(init=False)
@@ -36,8 +35,6 @@ class Forecast:
     shrinkage: float = dataclasses.field(init=False)
 
     def __post_init__(self):
-        sigma, self.cor, self.shrinkage = ledoit_wolf_cor(
-            self.tickers, self.date, self.history_days
-        )
+        sigma, self.cor, self.shrinkage = ledoit_wolf_cor(self.tickers, self.date, self.history_days)
         std = self.std.values
         self.cov = std.reshape(1, -1) * sigma * std.reshape(-1, 1)

@@ -37,11 +37,6 @@ class MetricsSingle:
         return self._forecast.history_days
 
     @functools.cached_property
-    def forecast_days(self) -> int:
-        """Количество дней в прогнозном периоде."""
-        return self._forecast.forecast_days
-
-    @functools.cached_property
     def cor(self) -> float:
         """Средняя корреляция активов."""
         return self._forecast.cor
