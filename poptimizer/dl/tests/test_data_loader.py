@@ -8,7 +8,6 @@ from poptimizer.dl.features import data_params, FeatureType
 PARAMS = {
     "batch_size": 100,
     "history_days": 245,
-    "forecast_days": 194,
     "features": {"Label": {"on": True}, "Prices": {"on": True}, "Dividends": {"on": True}},
 }
 TICKERS = ("NMTP", "BANEP")
@@ -42,7 +41,7 @@ class TestOneTickerDataset:
         assert isinstance(description, dict)
         assert len(description) == 3
         assert description == dict(
-            Label=(FeatureType.LABEL, 194),
+            Label=(FeatureType.LABEL, 1),
             Prices=(FeatureType.SEQUENCE, 245),
             Dividends=(FeatureType.SEQUENCE, 245),
         )

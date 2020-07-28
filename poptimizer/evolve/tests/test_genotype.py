@@ -4,7 +4,7 @@ from poptimizer.evolve.genotype import Genotype
 
 
 def test_get_phenotype():
-    genotype_data = {"Data": {"batch_size": 3, "history_days": 4, "forecast_days": 5}}
+    genotype_data = {"Data": {"batch_size": 3, "history_days": 4}}
     chromosomes_types = [chromosomes.Data]
     base_phenotype = {"type": "TestNet", "data": {"features": {"Prices": {}}}}
     genotype = Genotype(genotype_data, base_phenotype, chromosomes_types)

@@ -12,7 +12,6 @@ DATE = pd.Timestamp("2020-03-17")
 PARAMS = {
     "batch_size": 100,
     "history_days": 16,
-    "forecast_days": 8,
     "features": {"Label": {"on": True}, "Prices": {"on": True}, "Turnover": {"on": False}},
 }
 
@@ -59,9 +58,6 @@ class TestTrainParams:
     def test_shuffle(self, train_params):
         assert train_params.shuffle is True
 
-    def test_forecast_days(self, train_params):
-        assert train_params.forecast_days == 8
-
     def test_history_days(self, train_params):
         assert train_params.history_days == 16
 
@@ -83,9 +79,9 @@ class TestTrainParams:
         assert df[pd.Timestamp("2017-07-14")] == pytest.approx(3.48 * 0.87)
 
     def test_len(self, train_params):
-        assert train_params.len("CBOM") == 927
-        assert train_params.len("DSKY") == 517
-        assert train_params.len("IRKT") == 2135
+        assert train_params.len("CBOM") == 927 + 7
+        assert train_params.len("DSKY") == 517 + 7
+        assert train_params.len("IRKT") == 2135 + 7
 
     def test_get_all_feat(self, train_params):
         assert list(train_params.get_all_feat()) == ["Label", "Prices"]
@@ -103,9 +99,6 @@ def make_test_params():
 class TestTestParams:
     def test_shuffle(self, test_params):
         assert test_params.shuffle is False
-
-    def test_forecast_days(self, test_params):
-        assert test_params.forecast_days == 1
 
     def test_price(self, test_params):
         df = test_params.price("IRKT")
@@ -139,9 +132,6 @@ def make_forecast_params():
 class TestForecastParams:
     def test_shuffle(self, forecast_params):
         assert forecast_params.shuffle is False
-
-    def test_forecast_days(self, forecast_params):
-        assert forecast_params.forecast_days == 0
 
     def test_price(self, forecast_params):
         df = forecast_params.price("IRKT")

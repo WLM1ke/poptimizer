@@ -122,7 +122,7 @@ class Optimizer:
             turnover = turnover_all[buy]
             alfa *= trials / turnover
 
-            if not (alfa > P_VALUE * 70):
+            if not (alfa > P_VALUE):
                 yield [sell, buy, diff.median(), turnover, alfa]
 
     def _add_sell_buy_quantity(self, rez: pd.DataFrame) -> pd.DataFrame:
