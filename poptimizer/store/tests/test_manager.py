@@ -8,7 +8,7 @@ from poptimizer.store import utils, manager, DATE
 from poptimizer.store.mongo import MONGO_CLIENT
 
 
-@pytest.fixture("module", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def drop_test_db():
     MONGO_CLIENT.drop_database("test")
     yield
@@ -43,9 +43,7 @@ def test_create():
 
     data = mng["AKRN"]
     assert isinstance(data, pd.DataFrame)
-    assert data.equals(
-        pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]}, index=[1, 2])
-    )
+    assert data.equals(pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]}, index=[1, 2]))
     assert collection.find_one({"_id": "AKRN"})["timestamp"] > time0
 
 
@@ -59,9 +57,7 @@ def test_no_update():
 
     data = mng["AKRN"]
     assert isinstance(data, pd.DataFrame)
-    assert data.equals(
-        pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]}, index=[1, 2])
-    )
+    assert data.equals(pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]}, index=[1, 2]))
     assert collection.find_one({"_id": "AKRN"})["timestamp"] < time0
 
 
@@ -84,9 +80,7 @@ def test_update(monkeypatch, next_week_date):
 
     data = mng["AKRN"]
     assert isinstance(data, pd.DataFrame)
-    assert data.equals(
-        pd.DataFrame(data={"col1": [1, 2, 5], "col2": [10, 15, 5]}, index=[1, 2, 4])
-    )
+    assert data.equals(pd.DataFrame(data={"col1": [1, 2, 5], "col2": [10, 15, 5]}, index=[1, 2, 4]))
     assert collection.find_one({"_id": "AKRN"})["timestamp"] > time0
 
 
@@ -101,9 +95,7 @@ def test_data_create_from_scratch(monkeypatch, next_week_date):
 
     data = mng["AKRN"]
     assert isinstance(data, pd.DataFrame)
-    assert data.equals(
-        pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]}, index=[1, 2])
-    )
+    assert data.equals(pd.DataFrame(data={"col1": [1, 2], "col2": [10, 15]}, index=[1, 2]))
     assert collection.find_one({"_id": "AKRN"})["timestamp"] > time0
 
 
@@ -170,9 +162,7 @@ def test_validate_all(monkeypatch, next_week_date):
 
     data = mng["AKRN"]
     assert isinstance(data, pd.DataFrame)
-    assert data.equals(
-        pd.DataFrame(data={"col1": [1, 2, 9], "col2": [10, 15, 11]}, index=[1, 2, 7])
-    )
+    assert data.equals(pd.DataFrame(data={"col1": [1, 2, 9], "col2": [10, 15, 11]}, index=[1, 2, 7]))
     assert collection.find_one({"_id": "AKRN"})["timestamp"] > time0
 
 

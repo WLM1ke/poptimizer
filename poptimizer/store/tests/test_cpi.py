@@ -14,7 +14,7 @@ CHECK_POINTS = [
 ]
 
 
-@pytest.fixture("module", name="manager")
+@pytest.fixture(scope="module", name="manager")
 def manager_in_clean_test_db():
     MONGO_CLIENT.drop_database("test")
     yield cpi.Macro(db="test")

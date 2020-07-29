@@ -8,7 +8,7 @@ from poptimizer.store.mongo import MONGO_CLIENT
 from poptimizer.store.utils import REG_NUMBER, LOT_SIZE, TICKER, CLOSE, TURNOVER, DATE
 
 
-@pytest.fixture("module", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def manager_in_clean_test_db():
     MONGO_CLIENT.drop_database("test")
     yield

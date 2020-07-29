@@ -5,7 +5,7 @@ import pytest
 from poptimizer.store import utils, mongo
 
 
-@pytest.fixture("module", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def drop_test_db():
     mongo.MONGO_CLIENT.drop_database("test")
     yield

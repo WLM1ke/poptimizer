@@ -7,7 +7,7 @@ from poptimizer.store import database
 from poptimizer.store.mongo import MONGO_CLIENT
 
 
-@pytest.fixture("module", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def drop_test_db():
     MONGO_CLIENT.drop_database("test")
     yield
