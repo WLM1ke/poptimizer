@@ -72,7 +72,7 @@ def test_setup_phenotype():
 
 
 def test_make_child(monkeypatch):
-    monkeypatch.setattr(chromosome.random, "rand", lambda _: (0.89, 0.91, 0.89, 0.89, 0.91, 0.89))
+    monkeypatch.setattr(chromosome.random, "rand", lambda _: (0.89, 0.91, 0.89, 0.89, 0.89, 0.91))
 
     parent = data.Data(
         dict(
