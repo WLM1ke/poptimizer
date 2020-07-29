@@ -54,4 +54,4 @@ TURNOVER_ON = GeneParams(
 class Data(Chromosome):
     """Хромосома ответственная за параметры данных."""
 
-    _GENES = (BATCH_SIZE, HISTORY_DAYS, TICKER_ON, DAY_OF_YEAR_ON, AVERAGE_TURNOVER_ON, TURNOVER_ON)
+    _GENES = (BATCH_SIZE, HISTORY_DAYS, TICKER_ON, DAY_OF_YEAR_ON, TURNOVER_ON, AVERAGE_TURNOVER_ON)
