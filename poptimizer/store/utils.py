@@ -1,7 +1,7 @@
 """Вспомогательные функции для хранения данных."""
 import logging
 from datetime import datetime
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, List
 
 import apimoex
 import pandas as pd
@@ -33,18 +33,20 @@ def now_and_end_of_trading_day() -> Tuple[datetime, datetime]:
     now = pd.Timestamp.now(MOEX_TZ)
     end_of_trading = now.replace(**END_OF_TRADING)
     if end_of_trading > now:
+        # noinspection PyArgumentList
         end_of_trading += pd.DateOffset(days=-1)
     return now.astimezone(None), end_of_trading.astimezone(None)
 
 
-def last_history_from_doc(doc: Dict[str, Any]) -> datetime:
+def last_history_from_doc(doc: Dict[str, List[Dict[str, str]]]) -> pd.Timestamp:
     """Момент времени UTC публикации данных о последних торгах, информация о которых есть на MOEX ISS."""
     date = pd.Timestamp(doc["data"][0]["till"], tz=MOEX_TZ)
+    # noinspection PyArgumentList
     date = date.replace(**END_OF_TRADING) + pd.DateOffset(days=1)
     return date.astimezone(None)
 
 
-def get_last_history_date(db: str = DB, collection: str = MISC) -> datetime:
+def get_last_history_date(db: str = DB, collection: str = MISC) -> pd.Timestamp:
     """"Момент времени UTC после, которого не нужно обновлять данные."""
     mongodb = database.MongoDB(collection, db)
     doc = mongodb["last_date"]
