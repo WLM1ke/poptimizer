@@ -9,7 +9,7 @@ import pandas as pd
 from poptimizer import store
 from poptimizer.store import SECURITIES, LOT_SIZE, INDEX, CLOSE, TURNOVER, database
 
-__all__ = ["lot_size", "prices", "turnovers", "securities_with_reg_number", "index"]
+__all__ = ["lot_size", "prices", "turnovers", "securities_with_reg_number", "index", "last_history_date"]
 
 from poptimizer.store.mongo import DB, MISC
 

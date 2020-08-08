@@ -12,9 +12,10 @@ from poptimizer.evolve import Evolution
 from poptimizer.portfolio import load_from_yaml, Optimizer
 
 
-def evolve(date: str = typer.Argument(..., help="YYYY-MM-DD")):
+def evolve():
     """Run evolution."""
     ev = Evolution()
+    date = data.last_history_date()
     port = load_from_yaml(date)
     ev.evolve(port)
 
