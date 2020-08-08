@@ -7,9 +7,11 @@ import numpy as np
 import pandas as pd
 
 from poptimizer import store
-from poptimizer.store import SECURITIES, LOT_SIZE, INDEX, CLOSE, TURNOVER
+from poptimizer.store import SECURITIES, LOT_SIZE, INDEX, CLOSE, TURNOVER, database
 
 __all__ = ["lot_size", "prices", "turnovers", "securities_with_reg_number", "index"]
+
+from poptimizer.store.mongo import DB, MISC
 
 
 def securities_with_reg_number() -> pd.Index:
@@ -106,3 +108,10 @@ def turnovers(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:  # type:
     df = df.loc[:last_date]
     df.columns = tickers
     return df.fillna(0, axis=0)
+
+
+def last_history_date(db: str = DB, collection: str = MISC) -> pd.Timestamp:
+    """Последняя доступная дата исторических котировок."""
+    mongodb = database.MongoDB(collection, db)
+    doc = mongodb["last_date"]
+    return pd.Timestamp(doc["data"][0]["till"])
