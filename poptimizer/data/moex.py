@@ -49,7 +49,7 @@ def index(last_date: pd.Timestamp) -> pd.DataFrame:
 
 
 @functools.lru_cache(maxsize=1)
-def quotes(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
+def quotes(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:  # type: ignore
     """Информация о котировках для заданных тикеров.
 
     :param tickers:
@@ -59,14 +59,12 @@ def quotes(tickers: Tuple[str, ...]) -> List[pd.DataFrame]:
     """
     manager = store.Quotes()
     with futures.ThreadPoolExecutor() as executor:
-        future_tickers = [
-            executor.submit(lambda x: manager[x], ticker) for ticker in tickers
-        ]
+        future_tickers = [executor.submit(lambda x: manager[x], ticker) for ticker in tickers]
     return [future.result() for future in future_tickers]
 
 
 @functools.lru_cache(maxsize=1)
-def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
+def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:  # type: ignore
     """Дневные цены закрытия для указанных тикеров до указанной даты включительно.
 
     Пропуски заполнены предыдущими значениями.
@@ -80,11 +78,7 @@ def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
     """
     quotes_list = quotes(tickers)
     df = pd.concat(
-        [
-            df[CLOSE] if not df.empty else pd.DataFrame(columns=[CLOSE])
-            for df in quotes_list
-        ],
-        axis=1,
+        [df[CLOSE] if not df.empty else pd.DataFrame(columns=[CLOSE]) for df in quotes_list], axis=1,
     )
     df = df.loc[:last_date]
     df.columns = tickers
@@ -92,7 +86,7 @@ def prices(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
 
 
 @functools.lru_cache(maxsize=1)
-def turnovers(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
+def turnovers(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:  # type: ignore
     """Дневные обороты для указанных тикеров до указанной даты включительно.
 
     Пропуски заполнены нулевыми значениями.
@@ -106,10 +100,7 @@ def turnovers(tickers: tuple, last_date: pd.Timestamp) -> pd.DataFrame:
     """
     quotes_list = quotes(tickers)
     df = pd.concat(
-        [
-            df[TURNOVER] if not df.empty else pd.DataFrame(columns=[TURNOVER])
-            for df in quotes_list
-        ],
+        [df[TURNOVER] if not df.empty else pd.DataFrame(columns=[TURNOVER]) for df in quotes_list],
         axis=1,
     )
     df = df.loc[:last_date]
