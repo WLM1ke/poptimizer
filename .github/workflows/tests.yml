@@ -30,7 +30,8 @@ jobs:
     - name: Install MongoDB
       run: |
         brew tap mongodb/brew
-        brew install mongodb-community@4.2
+        brew install mongodb-community
+        brew install mongodb-database-tools
 
     - name: Test with pytest
       run: |
