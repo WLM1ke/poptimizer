@@ -35,3 +35,8 @@ pyyaml
 
 # CLI
 typer
+
+# Качество кода
+mypy
+wemake-python-styleguide
+black
