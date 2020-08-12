@@ -4,7 +4,7 @@ from typing import Tuple
 import numpy as np
 import torch
 
-from poptimizer import data
+from poptimizer import data_old
 from poptimizer.dl.features.data_params import DataParams
 from poptimizer.dl.features.feature import Feature, FeatureType
 
@@ -21,7 +21,7 @@ class Turnover(Feature):
 
         cache = params.cache
         if (turnover := cache.get(TURNOVER)) is None:
-            turnover = data.turnovers(params.tickers, params.end)
+            turnover = data_old.turnovers(params.tickers, params.end)
             cache[TURNOVER] = turnover
 
         turnover = turnover[ticker]
@@ -32,7 +32,7 @@ class Turnover(Feature):
         self.history_days = params.history_days
 
     def __getitem__(self, item: int) -> torch.Tensor:
-        return self.turnover[item: item + self.history_days]
+        return self.turnover[item : item + self.history_days]
 
     @property
     def type_and_size(self) -> Tuple[FeatureType, int]:
@@ -53,7 +53,7 @@ class AverageTurnover(Feature):
         cache = params.cache
         if (turnover := cache.get(AVERAGE_TURNOVER)) is None:
             if (turnover := cache.get(TURNOVER)) is None:
-                turnover = data.turnovers(params.tickers, params.end)
+                turnover = data_old.turnovers(params.tickers, params.end)
                 cache[TURNOVER] = turnover
             turnover = turnover.mean(axis=1)
             turnover = turnover.apply(np.log1p)
@@ -65,7 +65,7 @@ class AverageTurnover(Feature):
         self.history_days = params.history_days
 
     def __getitem__(self, item: int) -> torch.Tensor:
-        return self.turnover[item: item + self.history_days]
+        return self.turnover[item : item + self.history_days]
 
     @property
     def type_and_size(self) -> Tuple[FeatureType, int]:

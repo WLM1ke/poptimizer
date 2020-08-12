@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 import torch
 
-from poptimizer.data import div
+from poptimizer.data_old import div
 from poptimizer.dl.features import dividends, data_params, FeatureType
 
 PARAMS = {

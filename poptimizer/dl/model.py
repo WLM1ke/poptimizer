@@ -45,7 +45,7 @@ def normal_llh(
     m, s = output
     dist = torch.distributions.normal.Normal(m, s)
     llh = dist.log_prob(batch["Label"])
-    return -llh.sum(), m.shape[0]
+    return -llh.sum(), m.shape[0], llh
 
 
 class Model:
@@ -117,6 +117,7 @@ class Model:
 
         llh_sum = 0.0
         weight_sum = 0.0
+        llh_all = []
 
         print(f"Тестовых дней: {days}")
         print(f"Тестовых примеров: {len(loader.dataset)}")
@@ -125,11 +126,15 @@ class Model:
             bar = tqdm.tqdm(loader, file=sys.stdout, desc="~~> Test")
             for batch in bar:
                 m, s = model(batch)
-                loss, weight = loss_fn((m, s), batch)
+                loss, weight, llh = loss_fn((m, s), batch)
                 llh_sum -= loss.item()
                 weight_sum += weight
+                llh_all.append(llh)
 
                 bar.set_postfix_str(f"{llh_sum / weight_sum:.5f}")
+
+        llh_all = torch.cat(llh_all)
+        print(f"STD: {llh_all.std(unbiased=True).item() / len(llh_all) ** 0.5:.4f}")
 
         return llh_sum / weight_sum
 
@@ -209,7 +214,7 @@ class Model:
             optimizer.zero_grad()
             output = model(batch)
 
-            loss, weight = loss_fn(output, batch)
+            loss, weight, _ = loss_fn(output, batch)
 
             llh_sum += -loss.item() - llh_deque[0]
             llh_deque.append(-loss.item())

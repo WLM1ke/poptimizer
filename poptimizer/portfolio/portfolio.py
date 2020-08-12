@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from poptimizer import data, config
+from poptimizer import data_old, config
 from poptimizer.config import POptimizerError, MAX_TRADE
 
 CASH = "CASH"
@@ -94,7 +94,7 @@ class Portfolio:
 
         CASH и PORTFOLIO - 1.
         """
-        lot_size = data.lot_size(tuple(self.index[:-2]))
+        lot_size = data_old.lot_size(tuple(self.index[:-2]))
         lot_size = lot_size.reindex(self.index, fill_value=1)
         lot_size.name = "LOT_SIZE"
         return lot_size
@@ -116,7 +116,7 @@ class Portfolio:
 
         CASH - 1 и PORTFOLIO - расчетная стоимость.
         """
-        price = data.prices(tuple(self.index[:-2]), self.date)
+        price = data_old.prices(tuple(self.index[:-2]), self.date)
         try:
             price = price.loc[self.date]
         except KeyError:
@@ -156,14 +156,14 @@ class Portfolio:
 
     def _median_turnover(self, tickers) -> pd.Series:
         """Медианный оборот за несколько последних дней."""
-        last_turnover = data.turnovers(tickers, self.date)
+        last_turnover = data_old.turnovers(tickers, self.date)
         last_turnover = last_turnover.iloc[-TURNOVER_DAYS:]
         last_turnover = last_turnover.median(axis=0)
         return last_turnover
 
     def add_tickers(self) -> NoReturn:
         """Претенденты для добавления."""
-        all_tickers = data.securities_with_reg_number()
+        all_tickers = data_old.securities_with_reg_number()
         last_turnover = self._median_turnover(tuple(all_tickers))
         minimal_turnover = self.value[PORTFOLIO] * MAX_TRADE
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]

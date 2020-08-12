@@ -1,6 +1,6 @@
 import pandas as pd
 
-from poptimizer.data import status
+from poptimizer.data_old import status
 from poptimizer.store import DATE, TICKER, DIVIDENDS
 
 RESULT = """

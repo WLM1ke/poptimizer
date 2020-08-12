@@ -5,17 +5,17 @@ from typing import Tuple, Generator
 
 import pandas as pd
 
-from poptimizer import data
+from poptimizer import data_old
 
 # Доля дней относимых к тренировочному периоду
-TRAIN_VAL_SPLIT = 0.9
+TRAIN_VAL_SPLIT = 0.99
 
 
 def div_price_train_size(
     tickers: Tuple[str, ...], end: pd.Timestamp
 ) -> Tuple[pd.DataFrame, pd.DataFrame, int]:
     """Данные по дивидендам, ценам и количество дней в тренировочном наборе."""
-    div, price = data.div_ex_date_prices(tickers, end)
+    div, price = data_old.div_ex_date_prices(tickers, end)
     train_size = int(len(price) * TRAIN_VAL_SPLIT)
     return div, price, train_size
 

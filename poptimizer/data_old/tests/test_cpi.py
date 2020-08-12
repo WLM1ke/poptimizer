@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from poptimizer.data import cpi
+from poptimizer.data_old import cpi
 
 
 def test_monthly_cpi():

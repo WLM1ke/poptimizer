@@ -7,7 +7,7 @@ import pandas as pd
 from reportlab import platypus
 from reportlab.lib.units import inch
 
-from poptimizer import data
+from poptimizer import data_old
 from poptimizer.reports.pdf_style import (
     LINE_WIDTH,
     LINE_COLOR,
@@ -36,7 +36,7 @@ def portfolio_cum_return(df: pd.DataFrame):
 def index_cum_return(df):
     """Кумулятивная доходность индекса привязанная к отчетным периодам."""
     date = df.index[-1]
-    index = data.index(date)
+    index = data_old.index(date)
     index = index[df.index]
     return index / index.iloc[0]
 
@@ -62,9 +62,7 @@ def make_plot(df: pd.DataFrame, width: float, height: float):
     plt.yticks(fontsize=8)
     plt.xticks(x_ticks_loc, x_ticks_labels, fontsize=8)
     plt.legend(
-        ("Portfolio", "MOEX Russia Net Total Return (Resident)"),
-        fontsize=8,
-        frameon=False,
+        ("Portfolio", "MOEX Russia Net Total Return (Resident)"), fontsize=8, frameon=False,
     )
 
     file = BytesIO()
@@ -131,9 +129,7 @@ def portfolio_return_block(df: pd.DataFrame, block_position: BlockPosition):
         showBoundary=0,
     )
     frame.addFromList([block_header, table], block_position.canvas)
-    image = make_plot(
-        df, block_position.width * (1 - LEFT_PART_OF_BLOCK), block_position.height
-    )
+    image = make_plot(df, block_position.width * (1 - LEFT_PART_OF_BLOCK), block_position.height)
     image.drawOn(
         block_position.canvas,
         block_position.x + block_position.width * LEFT_PART_OF_BLOCK,

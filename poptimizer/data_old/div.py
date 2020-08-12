@@ -8,7 +8,7 @@ from pandas.tseries import offsets
 
 from poptimizer import store
 from poptimizer.config import AFTER_TAX, STATS_START
-from poptimizer.data import moex
+from poptimizer.data_old import moex
 from poptimizer.store import DATE
 
 __all__ = ["log_total_returns", "div_ex_date_prices"]
@@ -52,9 +52,7 @@ def t2_shift(date: pd.Timestamp, index: pd.DatetimeIndex) -> pd.Timestamp:
     return next_b_day - 2 * offsets.BDay()
 
 
-def div_ex_date_prices(
-    tickers: tuple, last_date: pd.Timestamp
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def div_ex_date_prices(tickers: tuple, last_date: pd.Timestamp) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Дивиденды на с привязкой к эксдивидендной дате и цены.
 
     Дивиденды на эксдивидендную дату нужны для корректного расчета доходности. Также для многих

@@ -6,8 +6,8 @@
 """
 import typer
 
-from poptimizer import data
-from poptimizer.data import dividends_status
+from poptimizer import data_old
+from poptimizer.data_old import dividends_status
 from poptimizer.evolve import Evolution
 from poptimizer.portfolio import load_from_yaml, Optimizer
 
@@ -15,7 +15,7 @@ from poptimizer.portfolio import load_from_yaml, Optimizer
 def evolve():
     """Run evolution."""
     ev = Evolution()
-    date = data.last_history_date()
+    date = data_old.last_history_date()
     port = load_from_yaml(date)
     ev.evolve(port)
 
@@ -32,7 +32,7 @@ def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD")):
     print(opt.portfolio)
     print(opt.metrics)
     print(opt)
-    data.smart_lab_status(tuple(port.index[:-2]))
+    data_old.smart_lab_status(tuple(port.index[:-2]))
 
 
 if __name__ == "__main__":

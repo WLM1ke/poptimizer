@@ -6,7 +6,7 @@ import pandas as pd
 
 from poptimizer import store
 from poptimizer.config import AFTER_TAX, STATS_START
-from poptimizer.data import div
+from poptimizer.data_old import div
 from poptimizer.store import TICKER, DIVIDENDS, SMART_LAB
 
 __all__ = ["smart_lab_status", "dividends_status"]
@@ -88,9 +88,7 @@ def dividends_status(ticker: str):
         df.name = name
         compare_df = pd.concat([main_df, df], axis="columns")
         compare_df["STATUS"] = "ERROR"
-        compare_df.loc[
-            np.isclose(compare_df[ticker].values, compare_df[name].values), "STATUS"
-        ] = ""
+        compare_df.loc[np.isclose(compare_df[ticker].values, compare_df[name].values), "STATUS"] = ""
         print(compare_df)
         result.append(compare_df)
     return result

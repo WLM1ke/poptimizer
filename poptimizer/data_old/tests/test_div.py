@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.config import AFTER_TAX
-from poptimizer.data import moex, div
+from poptimizer.data_old import moex, div
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -22,14 +22,10 @@ def test_dividends_all():
     assert dividends.index[0] == pd.Timestamp("2010-05-21")
     assert dividends.index[-1] >= pd.Timestamp("2018-12-04")
 
-    assert dividends.loc["2018-06-19", "CHMF"] == pytest.approx(
-        (38.32 + 27.72) * AFTER_TAX
-    )
+    assert dividends.loc["2018-06-19", "CHMF"] == pytest.approx((38.32 + 27.72) * AFTER_TAX)
     assert dividends.loc["2017-12-05", "CHMF"] == pytest.approx(35.61 * AFTER_TAX)
     assert dividends.loc["2010-11-12", "CHMF"] == pytest.approx(4.29 * AFTER_TAX)
-    assert dividends.loc["2011-05-22", "CHMF"] == pytest.approx(
-        (2.42 + 3.9) * AFTER_TAX
-    )
+    assert dividends.loc["2011-05-22", "CHMF"] == pytest.approx((2.42 + 3.9) * AFTER_TAX)
 
     assert dividends.loc["2018-07-17", "GMKN"] == pytest.approx(607.98 * AFTER_TAX)
     assert dividends.loc["2017-10-19", "GMKN"] == pytest.approx(224.2 * AFTER_TAX)
@@ -50,14 +46,10 @@ def test_dividends_all_one_ticker():
     assert dividends.index[0] == pd.Timestamp("2010-11-12")
     assert dividends.index[-1] >= pd.Timestamp("2019-09-17")
 
-    assert dividends.loc["2018-06-19", "CHMF"] == pytest.approx(
-        (38.32 + 27.72) * AFTER_TAX
-    )
+    assert dividends.loc["2018-06-19", "CHMF"] == pytest.approx((38.32 + 27.72) * AFTER_TAX)
     assert dividends.loc["2017-12-05", "CHMF"] == pytest.approx(35.61 * AFTER_TAX)
     assert dividends.loc["2010-11-12", "CHMF"] == pytest.approx(4.29 * AFTER_TAX)
-    assert dividends.loc["2011-05-22", "CHMF"] == pytest.approx(
-        (2.42 + 3.9) * AFTER_TAX
-    )
+    assert dividends.loc["2011-05-22", "CHMF"] == pytest.approx((2.42 + 3.9) * AFTER_TAX)
 
 
 def test_t2_shift():
@@ -108,14 +100,10 @@ def test_log_total_returns():
     assert data.index[0] == pd.Timestamp("2010-06-16")
     assert data.index[-1] == pd.Timestamp("2018-10-17")
 
-    assert data.loc["2018-10-08", "MTSS"] == pytest.approx(
-        np.log(((269.9 + 2.6 * AFTER_TAX) / 275.1))
-    )
+    assert data.loc["2018-10-08", "MTSS"] == pytest.approx(np.log(((269.9 + 2.6 * AFTER_TAX) / 275.1)))
     assert data.loc["2018-10-09", "MTSS"] == pytest.approx(np.log(((264 + 0) / 269.9)))
 
-    assert data.loc["2018-10-01", "GMKN"] == pytest.approx(
-        np.log(((11307 + 0) / 11388))
-    )
+    assert data.loc["2018-10-01", "GMKN"] == pytest.approx(np.log(((11307 + 0) / 11388)))
     assert data.loc["2018-09-28", "GMKN"] == pytest.approx(
         np.log(((11388 + 776.02 * AFTER_TAX) / 11830))
     )

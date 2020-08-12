@@ -1,7 +1,7 @@
 """Расчет дивидендов и дохода начиная с определенной даты в пересчете на неделю, месяц и год."""
 import pandas as pd
 
-from poptimizer import data
+from poptimizer import data_old
 from poptimizer.reports import pdf, pdf_middle
 
 
@@ -16,13 +16,11 @@ def get_investor_data(file_name: str, investor_name: str) -> pd.DataFrame:
     return df
 
 
-def constant_prices_data(
-    report_name: str, investor_name: str, months: int
-) -> pd.DataFrame:
+def constant_prices_data(report_name: str, investor_name: str, months: int) -> pd.DataFrame:
     """Переводит данные в постоянные цены."""
     df = get_investor_data(report_name, investor_name)
     df = df.iloc[-months - 1 :]
-    cpi = data.monthly_cpi(df.index[-1])
+    cpi = data_old.monthly_cpi(df.index[-1])
     cpi = cpi[-len(df) :]
     cpi = cpi.cumprod()
     cpi = cpi.iloc[-1] / cpi
@@ -55,9 +53,7 @@ def income(report_name: str, investor_name: str, months: int):
     incomes = df["Value"].iloc[-1] - df["Value"].iloc[0] - df["Inflow"].iloc[1:].sum()
     months = len(df) - 1
     periods = dict(Y=months / 12, M=months, W=(months / 12) * 365.25 / 7)
-    print(
-        f"\n{investor_name} в среднем (с коррекцией на инфляцию) за {months} месяцев:"
-    )
+    print(f"\n{investor_name} в среднем (с коррекцией на инфляцию) за {months} месяцев:")
     for period, divider in periods.items():
         print(
             f"1{period}:",

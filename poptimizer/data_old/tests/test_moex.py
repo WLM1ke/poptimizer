@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from poptimizer.data import moex
+from poptimizer.data_old import moex
 from poptimizer.store import CLOSE, TURNOVER
 
 
