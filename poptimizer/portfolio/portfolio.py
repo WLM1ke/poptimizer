@@ -12,7 +12,7 @@ from poptimizer.config import POptimizerError, MAX_TRADE
 
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
-TURNOVER_DAYS = 300
+TURNOVER_DAYS = 330
 
 
 class Portfolio:
