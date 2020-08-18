@@ -1,22 +1,59 @@
-"""Базовый класс таблицы с данными и типа данных."""
+"""Основные классы модели данных - таблица и реестр таблиц."""
 from datetime import datetime
-from typing import Optional
+from typing import Dict, NamedTuple, NewType, Optional, Tuple
 
 import pandas as pd
 
 from poptimizer.config import POptimizerError
-from poptimizer.data.registry import TableName, get_specs
+from poptimizer.data.core import ports
 
 
 class TableError(POptimizerError):
     """Ошибки связанные с созданием и обновлением таблиц."""
 
 
+TableGroup = NewType("TableGroup", str)
+TableId = NewType("TableId", str)
+TableName = Tuple[TableGroup, TableId]
+
+
+class TableSpec(NamedTuple):
+    """Описание разновидности таблицы с данными, особенностей обновления и валидации.
+
+    - множество таблиц данного типа
+    - возможность инкрементального обновления или только полной загрузки
+    - уникальный индекс
+    - возрастающий индекс
+    """
+
+    updater: ports.AbstractUpdater
+
+
+class TablesRegistry:
+    """Реестр спецификации таблиц."""
+
+    def __init__(self) -> None:
+        """Создает пустой реестр."""
+        self._registry: Dict[TableGroup, TableSpec] = {}
+
+    def create_registry(self, spec: Dict[TableGroup, TableSpec]) -> None:
+        """Создает реестр на основе спецификации таблиц в реестр."""
+        self._registry = dict(spec)
+
+    def get_specs(self, name: TableName) -> TableSpec:
+        """Получает спецификацию для таблицы."""
+        table_group = name[0]
+        return self._registry[table_group]
+
+
+registry = TablesRegistry()
+
+
 class Table:
     """Базовый класс таблицы с данными."""
 
     def __init__(
-        self, name: TableName, df: Optional[pd.DataFrame] = None, timestamp: Optional[datetime] = None,
+        self, name: TableName, df: pd.DataFrame, timestamp: Optional[datetime] = None,
     ):
         """При создании и последующем обновлении автоматически сохраняется момент UTC.
 
@@ -32,24 +69,21 @@ class Table:
             Имя отсутствует в реестре.
         """
         try:
-            get_specs(name)
+            registry.get_specs(name)
         except KeyError:
             raise TableError(f"Имя отсутствует в реестре - {name}")
         self._name = name
         self._df = df
-        self._timestamp = timestamp
+        self._timestamp: datetime = timestamp or datetime.utcnow()
 
     def __str__(self) -> str:
         """Отображает название класса и таблицы."""
         return f"{self.__class__.__name__}({', '.join(self._name)})"
 
     @property
-    def df(self) -> Optional[pd.DataFrame]:
+    def df(self) -> pd.DataFrame:
         """Таблица с данными."""
-        df = self._df
-        if df is None:
-            return None
-        return df.copy()
+        return self._df.copy()
 
     @df.setter
     def df(self, df: pd.DataFrame) -> None:
@@ -58,7 +92,7 @@ class Table:
         self._df = df
 
     @property
-    def timestamp(self) -> Optional[datetime]:
+    def timestamp(self) -> datetime:
         """Момент обновления данных UTC."""
         return self._timestamp
 
