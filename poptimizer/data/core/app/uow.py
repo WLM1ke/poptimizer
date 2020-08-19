@@ -9,7 +9,7 @@ from poptimizer.data.infrastructure import db
 class UnitOfWork:
     """Группа операций с таблицами, в конце которой осуществляется сохранение изменных данных."""
 
-    def __init__(self, db_factory: Callable[[], ports.AbstractDBSession] = db.InMemoryDBSession) -> None:
+    def __init__(self, db_factory: Callable[[], ports.AbstractDBSession] = db.MongoDBSession) -> None:
         """Создает изолированную сессию с базой данной и репо."""
         self._db = db_factory()
         self._repo = repo.Repo(self._db)
