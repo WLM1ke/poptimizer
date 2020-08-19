@@ -6,17 +6,17 @@ from poptimizer.data.core.domain import model, services
 
 
 def _convent_to_table(table_vars: ports.TableVars) -> model.Table:
-    group = model.TableGroup(table_vars["group"])
-    id_ = table_vars["_id"]
-    df = table_vars["df"]
-    timestamp = table_vars["timestamp"]
+    group = model.TableGroup(table_vars.group)
+    id_ = table_vars.id_
+    df = table_vars.df
+    timestamp = table_vars.timestamp
     name = (model.TableGroup(group), model.TableId(id_))
     return services.recreate_table(name, df, timestamp)
 
 
 def _convent_to_vars(table: model.Table) -> ports.TableVars:
     group, id_ = table.name
-    return ports.TableVars(group=group, _id=id_, df=table.df, timestamp=table.timestamp)
+    return ports.TableVars(group=group, id=id_, df=table.df, timestamp=table.timestamp)
 
 
 class Repo:

@@ -1,7 +1,7 @@
 """Интерфейсы взаимодействия."""
 import abc
 from datetime import datetime
-from typing import Iterable, Optional, Tuple, TypedDict
+from typing import Iterable, NamedTuple, Optional, Tuple
 
 import pandas as pd
 
@@ -18,11 +18,11 @@ class AbstractUpdater(abc.ABC):
         """Загружает обновление."""
 
 
-class TableVars(TypedDict):
-    """Представление таблицы в виде словаря."""
+class TableVars(NamedTuple):
+    """Представление таблицы в виде кортежа."""
 
     group: str
-    _id: str
+    id_: str
     df: pd.DataFrame
     timestamp: datetime
 
