@@ -39,7 +39,7 @@ class MongoDBSession(ports.AbstractDBSession):
         if (doc := self._db[collection].find_one({"_id": id_})) is None:
             return None
         df = pd.DataFrame(**doc["data"])
-        return ports.TableVars(group=group, id=id_, df=df, timestamp=doc["timestamp"])
+        return ports.TableVars(group=group, id_=id_, df=df, timestamp=doc["timestamp"])
 
     def commit(self, tables_vars: Iterable[ports.TableVars]) -> None:
         """Записывает данные в MongoDB."""

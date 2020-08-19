@@ -16,7 +16,7 @@ def _convent_to_table(table_vars: ports.TableVars) -> model.Table:
 
 def _convent_to_vars(table: model.Table) -> ports.TableVars:
     group, id_ = table.name
-    return ports.TableVars(group=group, id=id_, df=table.df, timestamp=table.timestamp)
+    return ports.TableVars(group=group, id_=id_, df=table.df, timestamp=table.timestamp)
 
 
 class Repo:
