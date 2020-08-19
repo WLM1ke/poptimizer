@@ -3,7 +3,7 @@ from typing import Type
 
 from poptimizer.data.core.app import uow
 from poptimizer.data.core.domain import model
-from poptimizer.data.infrastructure import trading_dates
+from poptimizer.data.infrastructure.updaters import trading_dates
 
 
 def register_all_tables() -> None:
