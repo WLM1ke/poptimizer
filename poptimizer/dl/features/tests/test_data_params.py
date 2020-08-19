@@ -1,5 +1,3 @@
-from contextlib import contextmanager
-
 import pandas as pd
 import pytest
 
@@ -16,9 +14,14 @@ PARAMS = {
 }
 
 
-def test_div_price_train_size(monkeypatch):
+@pytest.fixture(scope="function", autouse=True)
+def set_split(monkeypatch):
+    monkeypatch.setattr(data_params, "TRAIN_VAL_SPLIT", 0.9)
     monkeypatch.setattr(data, "STATS_START", pd.Timestamp("2010-09-01"))
+    yield
 
+
+def test_div_price_train_size():
     div, price, train_size = data_params.div_price_train_size(TICKERS, DATE)
     assert isinstance(div, pd.DataFrame)
     assert isinstance(price, pd.DataFrame)
@@ -40,18 +43,9 @@ def test_div_price_train_size(monkeypatch):
     assert train_size == 2158
 
 
-@contextmanager
-def set_start_date():
-    saved_start_date = data.STATS_START
-    data.STATS_START = pd.Timestamp("2010-09-01")
-    yield
-    data.STATS_START = saved_start_date
-
-
-@pytest.fixture(scope="class", name="train_params")
+@pytest.fixture(scope="function", name="train_params")
 def make_train_params():
-    with set_start_date():
-        yield data_params.TrainParams(TICKERS, DATE, PARAMS)
+    yield data_params.TrainParams(TICKERS, DATE, PARAMS)
 
 
 class TestTrainParams:
@@ -90,10 +84,9 @@ class TestTrainParams:
         assert train_params.get_feat_params("Label") == {"on": True}
 
 
-@pytest.fixture(scope="class", name="test_params")
+@pytest.fixture(scope="function", name="test_params")
 def make_test_params():
-    with set_start_date():
-        yield data_params.TestParams(TICKERS, DATE, PARAMS)
+    yield data_params.TestParams(TICKERS, DATE, PARAMS)
 
 
 class TestTestParams:
@@ -123,10 +116,9 @@ class TestTestParams:
         assert list(test_params.get_all_feat()) == ["Label", "Prices"]
 
 
-@pytest.fixture(scope="class", name="forecast_params")
+@pytest.fixture(scope="function", name="forecast_params")
 def make_forecast_params():
-    with set_start_date():
-        yield data_params.ForecastParams(TICKERS, DATE, PARAMS)
+    yield data_params.ForecastParams(TICKERS, DATE, PARAMS)
 
 
 class TestForecastParams:
