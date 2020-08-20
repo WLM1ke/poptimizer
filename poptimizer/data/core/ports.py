@@ -18,7 +18,7 @@ class AbstractUpdater(abc.ABC):
         """Загружает обновление."""
 
 
-class TableVars(NamedTuple):
+class TableTuple(NamedTuple):
     """Представление таблицы в виде кортежа."""
 
     group: str
@@ -31,9 +31,9 @@ class AbstractDBSession(abc.ABC):
     """Сессия работы с базой данных."""
 
     @abc.abstractmethod
-    def get(self, name: Tuple[str, str]) -> Optional[TableVars]:
+    def get(self, name: Tuple[str, str]) -> Optional[TableTuple]:
         """Получает данные из хранилища."""
 
     @abc.abstractmethod
-    def commit(self, tables_vars: Iterable[TableVars]) -> None:
+    def commit(self, tables_vars: Iterable[TableTuple]) -> None:
         """Сохраняет данные таблиц."""

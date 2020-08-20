@@ -34,7 +34,7 @@ class MongoDBSession(ports.AbstractDBSession):
         client = get_mongo_client()
         self._db = client[DB]
 
-    def get(self, name: Tuple[str, str]) -> Optional[ports.TableVars]:
+    def get(self, name: Tuple[str, str]) -> Optional[ports.TableTuple]:
         """Извлекает документ из коллекции."""
         group, id_ = name
         collection = group
@@ -43,9 +43,9 @@ class MongoDBSession(ports.AbstractDBSession):
         if (doc := self._db[collection].find_one({"_id": id_})) is None:
             return None
         df = pd.DataFrame(**doc["data"])
-        return ports.TableVars(group=group, id_=id_, df=df, timestamp=doc["timestamp"])
+        return ports.TableTuple(group=group, id_=id_, df=df, timestamp=doc["timestamp"])
 
-    def commit(self, tables_vars: Iterable[ports.TableVars]) -> None:
+    def commit(self, tables_vars: Iterable[ports.TableTuple]) -> None:
         """Записывает данные в MongoDB."""
         for table in tables_vars:
             collection = table.group
@@ -60,7 +60,7 @@ class MongoDBSession(ports.AbstractDBSession):
 class InMemoryDBSession(ports.AbstractDBSession):
     """Реализация сессии с хранением в памяти для тестов."""
 
-    def __init__(self, tables_vars: Optional[Iterable[ports.TableVars]] = None) -> None:
+    def __init__(self, tables_vars: Optional[Iterable[ports.TableTuple]] = None) -> None:
         """Создает хранилище в памяти."""
         self.committed = {}
         if tables_vars is not None:
@@ -68,11 +68,11 @@ class InMemoryDBSession(ports.AbstractDBSession):
                 {(table_vars.group, table_vars.id_): table_vars for table_vars in tables_vars},
             )
 
-    def get(self, name: Tuple[str, str]) -> Optional[ports.TableVars]:
+    def get(self, name: Tuple[str, str]) -> Optional[ports.TableTuple]:
         """Выдает таблицы, переданные при создании."""
         return self.committed.get(name)
 
-    def commit(self, tables_vars: Iterable[ports.TableVars]) -> None:
+    def commit(self, tables_vars: Iterable[ports.TableTuple]) -> None:
         """Дополняет словарь таблиц, переданных при создании."""
         tables_dict = {(table_vars.group, table_vars.id_): table_vars for table_vars in tables_vars}
         return self.committed.update(tables_dict)

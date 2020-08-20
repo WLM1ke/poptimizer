@@ -8,7 +8,7 @@ import pandas as pd
 from poptimizer import data_old
 
 # Доля дней относимых к тренировочному периоду
-TRAIN_VAL_SPLIT = 0.99
+TRAIN_VAL_SPLIT = 0.998
 
 
 def div_price_train_size(

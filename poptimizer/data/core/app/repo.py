@@ -3,21 +3,7 @@ from datetime import datetime
 from typing import Dict, Iterable, NamedTuple, Optional
 
 from poptimizer.data.core import ports
-from poptimizer.data.core.domain import model, services
-
-
-def _convent_to_table(table_vars: ports.TableVars) -> model.Table:
-    group = model.TableGroup(table_vars.group)
-    id_ = table_vars.id_
-    df = table_vars.df
-    timestamp = table_vars.timestamp
-    name = (model.TableGroup(group), model.TableId(id_))
-    return services.recreate_table(name, df, timestamp)
-
-
-def _convent_to_vars(table: model.Table) -> ports.TableVars:
-    group, id_ = table.name
-    return ports.TableVars(group=group, id_=id_, df=table.df, timestamp=table.timestamp)
+from poptimizer.data.core.domain import factories, model
 
 
 class TimedTable(NamedTuple):
@@ -43,16 +29,16 @@ class Repo:
         """Берет таблицу из репозитория."""
         if (timed_table := self._seen.get(name)) is not None:
             return timed_table.table
-        if (table_vars := self._session.get(name)) is not None:
-            table = _convent_to_table(table_vars)
+        if (table_tuple := self._session.get(name)) is not None:
+            table = factories.recreate_table(table_tuple)
             self._seen[table.name] = TimedTable(table, table.timestamp)
             return table
         return None
 
-    def seen(self) -> Iterable[ports.TableVars]:
+    def seen(self) -> Iterable[ports.TableTuple]:
         """Возвращает данные о таблицах."""
         yield from (
-            _convent_to_vars(table)
+            factories.convent_to_tuple(table)
             for table, timestamp in self._seen.values()
             if timestamp != table.timestamp
         )

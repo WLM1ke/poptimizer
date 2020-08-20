@@ -5,7 +5,6 @@ import apimoex
 import pandas as pd
 
 from poptimizer.data.infrastructure import connection
-
 from poptimizer.data.infrastructure.updaters import base_updater
 
 logger = logging.getLogger(__name__)
