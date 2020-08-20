@@ -1,4 +1,5 @@
 """Реализации сессий доступа к базе данных."""
+import logging
 from typing import Iterable, Optional, Tuple
 
 import pandas as pd
@@ -11,6 +12,9 @@ DB = "data_new"
 MISC = "misc"
 PORT = 27017
 CLIENT = pymongo.MongoClient("localhost", PORT, tz_aware=False)
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_mongo_client() -> pymongo.MongoClient:
@@ -48,6 +52,7 @@ class MongoDBSession(ports.AbstractDBSession):
             id_ = table.id_
             if collection == table.id_:
                 collection = MISC
+            logger.info(f"Сохраняю {collection}.{id_}")
             doc = dict(_id=id_, data=table.df.to_dict("split"), timestamp=table.timestamp)
             self._db[collection].replace_one({"_id": id_}, doc, upsert=True)
 
