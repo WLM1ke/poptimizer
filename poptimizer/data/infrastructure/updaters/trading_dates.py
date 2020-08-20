@@ -4,13 +4,13 @@ import logging
 import apimoex
 import pandas as pd
 
+from poptimizer.data.core import ports
 from poptimizer.data.infrastructure import connection
-from poptimizer.data.infrastructure.updaters import base_updater
 
 logger = logging.getLogger(__name__)
 
 
-class TradingDatesUpdater(base_updater.BaseUpdater):
+class TradingDatesUpdater(ports.AbstractUpdater):
     """Обновление для таблиц с диапазоном доступных торговых дат."""
 
     def get_update(self) -> pd.DataFrame:

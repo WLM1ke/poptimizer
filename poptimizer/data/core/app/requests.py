@@ -4,7 +4,7 @@ from typing import Tuple, cast
 import pandas as pd
 
 from poptimizer.data.core.app import config
-from poptimizer.data.core.domain import factories, model
+from poptimizer.data.core.domain import factories, model, services
 
 uow_factory = config.get_uow_factory()
 
@@ -19,6 +19,6 @@ def get_table(name: Tuple[str, str]) -> pd.DataFrame:
             df = updater.get_update()
             table = factories.create_table(name, df)
             repo.add(table)
-        elif updater.need_update(table.timestamp):
+        elif services.need_update(table):
             table.df = updater.get_update()
         return table.df

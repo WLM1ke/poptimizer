@@ -10,10 +10,6 @@ class AbstractUpdater(abc.ABC):
     """Обновляет конкретную группу таблиц."""
 
     @abc.abstractmethod
-    def need_update(self, timestamp: datetime) -> bool:
-        """Проверяет необходимость обновления."""
-
-    @abc.abstractmethod
     def get_update(self) -> pd.DataFrame:
         """Загружает обновление."""
 
