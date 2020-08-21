@@ -2,7 +2,7 @@
 from typing import Callable
 
 from poptimizer.data.core import ports
-from poptimizer.data.core.app import repo
+from poptimizer.data.core.domain import repo
 from poptimizer.data.infrastructure import db
 
 
