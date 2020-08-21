@@ -19,13 +19,13 @@ class Repo:
     def __init__(self, session: ports.AbstractDBSession) -> None:
         """Сохраняются ссылки на таблицы, которые были добавлены или взяты из репозитория."""
         self._session = session
-        self._seen: Dict[model.TableName, TimedTable] = {}
+        self._seen: Dict[ports.TableName, TimedTable] = {}
 
     def add(self, table: model.Table) -> None:
         """Добавляет таблицу в репозиторий."""
         self._seen[table.name] = TimedTable(table, None)
 
-    def get(self, name: model.TableName) -> Optional[model.Table]:
+    def get(self, name: ports.TableName) -> Optional[model.Table]:
         """Берет таблицу из репозитория."""
         if (timed_table := self._seen.get(name)) is not None:
             return timed_table.table

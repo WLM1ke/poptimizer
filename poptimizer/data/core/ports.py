@@ -6,21 +6,28 @@ from typing import Iterable, NamedTuple, Optional, Tuple
 import pandas as pd
 
 
-class AbstractUpdater(abc.ABC):
-    """Обновляет конкретную группу таблиц."""
+class TableName(NamedTuple):
+    """Наименование таблицы."""
 
-    @abc.abstractmethod
-    def get_update(self) -> pd.DataFrame:
-        """Загружает обновление."""
+    group: str
+    name: str
 
 
 class TableTuple(NamedTuple):
     """Представление таблицы в виде кортежа."""
 
     group: str
-    id_: str
+    name: str
     df: pd.DataFrame
     timestamp: datetime
+
+
+class AbstractUpdater(abc.ABC):
+    """Обновляет конкретную группу таблиц."""
+
+    @abc.abstractmethod
+    def get_update(self) -> pd.DataFrame:
+        """Загружает обновление."""
 
 
 class AbstractDBSession(abc.ABC):

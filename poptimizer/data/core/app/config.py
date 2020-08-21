@@ -9,7 +9,7 @@ from poptimizer.data.infrastructure.updaters import trading_dates
 def register_all_tables() -> None:
     """Регистрация таблиц."""
     tables = {
-        model.TableGroup("trading_dates"): model.TableSpec(updater=trading_dates.TradingDatesUpdater()),
+        "trading_dates": model.TableSpec(updater=trading_dates.TradingDatesUpdater()),
     }
     model.registry.create_registry(tables)
 

@@ -5,20 +5,18 @@ from poptimizer.data.core import ports
 from poptimizer.data.core.domain import model
 
 
-def create_table(name: model.TableName, df: pd.DataFrame) -> model.Table:
+def create_table(name: ports.TableName, df: pd.DataFrame) -> model.Table:
     """Создает таблицу."""
     return model.Table(name, df)
 
 
 def recreate_table(table_tuple: ports.TableTuple) -> model.Table:
     """Создает таблицу на основе данных и обновляет ее."""
-    group = model.TableGroup(table_tuple.group)
-    id_ = model.TableId(table_tuple.id_)
-    name = (group, id_)
+    name = ports.TableName(table_tuple.group, table_tuple.name)
     return model.Table(name, table_tuple.df, table_tuple.timestamp)
 
 
 def convent_to_tuple(table: model.Table) -> ports.TableTuple:
     """Конвертирует объект в кортеж."""
-    group, id_ = table.name
-    return ports.TableTuple(group=group, id_=id_, df=table.df, timestamp=table.timestamp)
+    group, name = table.name
+    return ports.TableTuple(group=group, name=name, df=table.df, timestamp=table.timestamp)

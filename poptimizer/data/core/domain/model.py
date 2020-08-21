@@ -1,6 +1,6 @@
 """Основные классы модели данных - таблица и реестр таблиц."""
 from datetime import datetime
-from typing import Dict, NamedTuple, NewType, Optional, Tuple
+from typing import Dict, NamedTuple, Optional
 
 import pandas as pd
 
@@ -10,11 +10,6 @@ from poptimizer.data.core import ports
 
 class TableError(POptimizerError):
     """Ошибки связанные с созданием и обновлением таблиц."""
-
-
-TableGroup = NewType("TableGroup", str)
-TableId = NewType("TableId", str)
-TableName = Tuple[TableGroup, TableId]
 
 
 class TableSpec(NamedTuple):
@@ -34,15 +29,15 @@ class TablesRegistry:
 
     def __init__(self) -> None:
         """Создает пустой реестр."""
-        self._registry: Dict[TableGroup, TableSpec] = {}
+        self._registry: Dict[str, TableSpec] = {}
 
-    def create_registry(self, spec: Dict[TableGroup, TableSpec]) -> None:
+    def create_registry(self, spec: Dict[str, TableSpec]) -> None:
         """Создает реестр на основе спецификации таблиц в реестр."""
         self._registry = dict(spec)
 
-    def get_specs(self, name: TableName) -> TableSpec:
+    def get_specs(self, name: ports.TableName) -> TableSpec:
         """Получает спецификацию для таблицы."""
-        table_group = name[0]
+        table_group = name.group
         return self._registry[table_group]
 
 
@@ -53,7 +48,7 @@ class Table:
     """Базовый класс таблицы с данными."""
 
     def __init__(
-        self, name: TableName, df: pd.DataFrame, timestamp: Optional[datetime] = None,
+        self, name: ports.TableName, df: pd.DataFrame, timestamp: Optional[datetime] = None,
     ):
         """При создании и последующем обновлении автоматически сохраняется момент UTC.
 
@@ -97,6 +92,6 @@ class Table:
         return self._timestamp
 
     @property
-    def name(self) -> TableName:
+    def name(self) -> ports.TableName:
         """Наименование таблицы."""
         return self._name

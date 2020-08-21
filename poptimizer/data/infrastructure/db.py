@@ -34,27 +34,27 @@ class MongoDBSession(ports.AbstractDBSession):
         client = get_mongo_client()
         self._db = client[DB]
 
-    def get(self, name: Tuple[str, str]) -> Optional[ports.TableTuple]:
+    def get(self, table_name: Tuple[str, str]) -> Optional[ports.TableTuple]:
         """Извлекает документ из коллекции."""
-        group, id_ = name
+        group, name = table_name
         collection = group
-        if collection == id_:
+        if collection == name:
             collection = MISC
-        if (doc := self._db[collection].find_one({"_id": id_})) is None:
+        if (doc := self._db[collection].find_one({"_id": name})) is None:
             return None
         df = pd.DataFrame(**doc["data"])
-        return ports.TableTuple(group=group, id_=id_, df=df, timestamp=doc["timestamp"])
+        return ports.TableTuple(group=group, name=name, df=df, timestamp=doc["timestamp"])
 
     def commit(self, tables_vars: Iterable[ports.TableTuple]) -> None:
         """Записывает данные в MongoDB."""
         for table in tables_vars:
             collection = table.group
-            id_ = table.id_
-            if collection == table.id_:
+            name = table.name
+            if collection == name:
                 collection = MISC
-            logger.info(f"Сохраняю {collection}.{id_}")
-            doc = dict(_id=id_, data=table.df.to_dict("split"), timestamp=table.timestamp)
-            self._db[collection].replace_one({"_id": id_}, doc, upsert=True)
+            logger.info(f"Сохраняю {collection}.{name}")
+            doc = dict(_id=name, data=table.df.to_dict("split"), timestamp=table.timestamp)
+            self._db[collection].replace_one({"_id": name}, doc, upsert=True)
 
 
 class InMemoryDBSession(ports.AbstractDBSession):
@@ -65,7 +65,7 @@ class InMemoryDBSession(ports.AbstractDBSession):
         self.committed = {}
         if tables_vars is not None:
             self.committed.update(
-                {(table_vars.group, table_vars.id_): table_vars for table_vars in tables_vars},
+                {(table_vars.group, table_vars.name): table_vars for table_vars in tables_vars},
             )
 
     def get(self, name: Tuple[str, str]) -> Optional[ports.TableTuple]:
@@ -74,5 +74,5 @@ class InMemoryDBSession(ports.AbstractDBSession):
 
     def commit(self, tables_vars: Iterable[ports.TableTuple]) -> None:
         """Дополняет словарь таблиц, переданных при создании."""
-        tables_dict = {(table_vars.group, table_vars.id_): table_vars for table_vars in tables_vars}
+        tables_dict = {(table_vars.group, table_vars.name): table_vars for table_vars in tables_vars}
         return self.committed.update(tables_dict)
