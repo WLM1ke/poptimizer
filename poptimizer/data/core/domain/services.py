@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from pytz import timezone
 
+from poptimizer.data.core import ports
 from poptimizer.data.core.domain import model
 
 # Часовой пояс MOEX
@@ -29,6 +30,14 @@ def need_update(table: model.Table) -> bool:
     Если последние обновление было раньше публикации данных о последних торгах, то требуется
     обновление.
     """
-    if table.timestamp < _end_of_trading_day():
+    if (timestamp := table.timestamp) is None or timestamp < _end_of_trading_day():
         return True
     return False
+
+
+def update_table(table: model.Table, updater: ports.AbstractUpdater) -> None:
+    """Обновляет таблицу."""
+    if not need_update(table):
+        return None
+    df = updater.get_update()
+    table.df = df
