@@ -4,7 +4,12 @@ from typing import Optional
 
 import pandas as pd
 
+from poptimizer.config import POptimizerError
 from poptimizer.data.core import ports
+
+
+class TableError(POptimizerError):
+    """Ошибки связанные с операциями над таблицами."""
 
 
 class Table:
@@ -13,7 +18,7 @@ class Table:
     def __init__(
         self,
         name: ports.TableName,
-        helper_table: Optional["Table"],
+        helper_table: Optional["Table"] = None,
         df: Optional[pd.DataFrame] = None,
         timestamp: Optional[datetime] = None,
     ):
@@ -34,6 +39,10 @@ class Table:
         self._helper_table = helper_table
         self._df = df
         self._timestamp = timestamp
+
+    def __str__(self) -> str:
+        """Отображает название класса и таблицы."""
+        return f"{self.__class__.__name__}({', '.join(self._name)})"
 
     @property
     def name(self) -> ports.TableName:
