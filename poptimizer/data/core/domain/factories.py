@@ -17,6 +17,6 @@ def recreate_table(table_tuple: ports.TableTuple) -> model.Table:
 def convent_to_tuple(table: model.Table) -> ports.TableTuple:
     """Конвертирует объект в кортеж."""
     if (timestamp := table.timestamp) is None:
-        raise model.TableError(f"Попытка сериализации пустой таблицы {table}")
+        raise ports.DataError(f"Попытка сериализации пустой таблицы {table}")
     group, name = table.name
     return ports.TableTuple(group=group, name=name, df=table.df, timestamp=timestamp)

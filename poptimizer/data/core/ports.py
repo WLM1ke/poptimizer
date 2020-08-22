@@ -5,6 +5,12 @@ from typing import Iterable, NamedTuple, Optional, Tuple
 
 import pandas as pd
 
+from poptimizer.config import POptimizerError
+
+
+class DataError(POptimizerError):
+    """Ошибки связанные с операциями по обновлению данных."""
+
 
 class TableName(NamedTuple):
     """Наименование таблицы."""
@@ -26,7 +32,7 @@ class AbstractUpdater(abc.ABC):
     """Обновляет конкретную группу таблиц."""
 
     @abc.abstractmethod
-    def get_update(self) -> pd.DataFrame:
+    def get_update(self, table_name: TableName) -> pd.DataFrame:
         """Загружает обновление."""
 
 

@@ -4,12 +4,7 @@ from typing import Optional
 
 import pandas as pd
 
-from poptimizer.config import POptimizerError
 from poptimizer.data.core import ports
-
-
-class TableError(POptimizerError):
-    """Ошибки связанные с операциями над таблицами."""
 
 
 class Table:
