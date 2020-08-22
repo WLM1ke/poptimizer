@@ -2,6 +2,7 @@
 import pandas as pd
 
 from poptimizer.data.core import ports
+from poptimizer.data.core.app import config
 from poptimizer.data.core.domain import factories, repo, services
 
 
@@ -27,14 +28,12 @@ class UnitOfWork:
         return self._repo
 
 
-def get_table(table_name: ports.TableName,
-              db_session: ports.AbstractDBSession,
-              updater: ports.AbstractUpdater) -> pd.DataFrame:
+def get_table(table_name: ports.TableName, app_config: config.AppConfig) -> pd.DataFrame:
     """Возвращает таблицу по наименованию."""
-    with UnitOfWork(db_session) as uow:
+    with UnitOfWork(app_config.db_session) as uow:
         table = uow.repo.get(table_name)
         if table is None:
             table = factories.create_table(table_name)
             uow.repo.add(table)
-        services.update_table(table, updater)
+        services.update_table(table, app_config.updater)
         return table.df
