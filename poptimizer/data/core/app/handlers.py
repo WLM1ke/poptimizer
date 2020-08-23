@@ -3,7 +3,7 @@ import pandas as pd
 
 from poptimizer.data.core import ports
 from poptimizer.data.core.app import config
-from poptimizer.data.core.domain import factories, repo, services
+from poptimizer.data.core.domain import repo, services
 
 
 class UnitOfWork:
