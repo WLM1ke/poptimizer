@@ -40,7 +40,7 @@ class GradientsError(ModelError):
 
 def normal_llh(
     output: Tuple[torch.Tensor, torch.Tensor], batch: Dict[str, torch.Tensor]
-) -> Tuple[torch.Tensor, int]:
+) -> Tuple[torch.Tensor, int, torch.Tensor]:
     """Minus Normal Log Likelihood and batch size."""
     m, s = output
     dist = torch.distributions.normal.Normal(m, s)

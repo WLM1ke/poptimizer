@@ -13,9 +13,10 @@ def test_normal_llh():
     m = torch.rand((100, 1))
     s = torch.tensor(0.5) + torch.rand((100, 1))
     x = dict(Label=torch.rand((100, 1)))
-    llh, size = model.normal_llh((m, s), x)
+    llh, size, llh_all = model.normal_llh((m, s), x)
     dist = torch.distributions.normal.Normal(m, s)
     assert llh.allclose(-dist.log_prob(x["Label"]).sum())
+    assert llh_all.allclose(dist.log_prob(x["Label"]))
     assert size == 100
 
 
@@ -54,17 +55,6 @@ def test_llh_from_trained_and_reloaded_model(org):
     # Из кеша
     assert llh == net.llh
     assert llh == net._eval_llh()
-
-
-def test_raise_long_history(org):
-    gen = copy.deepcopy(org.genotype)
-    gen["Data"]["history_days"] = 2000
-    phenotype = gen.get_phenotype()
-    net = model.Model(tuple(org._data.tickers), org._data.date, phenotype, None)
-    with pytest.raises(model.ModelError) as error:
-        # noinspection PyStatementEffect
-        net.llh
-    assert issubclass(error.type, model.TooLongHistoryError)
 
 
 def test_raise_gradient_error(org):

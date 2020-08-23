@@ -16,7 +16,7 @@ PARAMS = {
 
 @pytest.fixture(scope="function", autouse=True)
 def set_split(monkeypatch):
-    monkeypatch.setattr(data_params, "TRAIN_VAL_SPLIT", 0.9)
+    monkeypatch.setattr(data_params, "TEST_DAYS", 240)
     monkeypatch.setattr(data, "STATS_START", pd.Timestamp("2010-09-01"))
     yield
 
