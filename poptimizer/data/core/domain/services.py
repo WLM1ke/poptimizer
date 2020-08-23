@@ -64,5 +64,5 @@ def update_table(table: model.Table, registry: ports.AbstractUpdatersRegistry) -
         update_table(helper_table, registry)
     if need_update(table):
         updater = registry[table.name.group]
-        df = updater.get_update(table.name)
+        df = updater(table.name)
         table.df = df

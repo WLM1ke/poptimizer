@@ -105,7 +105,7 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
 class ConomyUpdater(ports.AbstractUpdater):
     """Обновление для таблиц с дивидендами на https://www.conomy.ru/."""
 
-    def get_update(self, name: ports.TableName) -> pd.DataFrame:
+    def __call__(self, name: ports.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
         group, ticker = name
         if group != ports.CONOMY:

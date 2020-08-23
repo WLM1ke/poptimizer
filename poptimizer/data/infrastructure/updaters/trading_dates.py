@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class TradingDatesUpdater(ports.AbstractUpdater):
     """Обновление для таблиц с диапазоном доступных торговых дат."""
 
-    def get_update(self, name: ports.TableName) -> pd.DataFrame:
+    def __call__(self, name: ports.TableName) -> pd.DataFrame:
         """Получение обновленных данных о доступном диапазоне торговых дат."""
         if name != ports.TableName(ports.TRADING_DATES, ports.TRADING_DATES):
             raise ports.DataError(f"Некорректное имя таблицы для обновления {name}")

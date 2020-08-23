@@ -51,7 +51,7 @@ class AbstractUpdater(abc.ABC):
     """Обновляет конкретную группу таблиц."""
 
     @abc.abstractmethod
-    def get_update(self, table_name: TableName) -> pd.DataFrame:
+    def __call__(self, table_name: TableName) -> pd.DataFrame:
         """Загружает обновление."""
 
 
