@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 
 from pytz import timezone
 
-from poptimizer.data.core import ports
-from poptimizer.data.core.domain import model
+from poptimizer.data import ports
+from poptimizer.data.domain import model
 
 # Часовой пояс MOEX
 MOEX_TZ = timezone("Europe/Moscow")

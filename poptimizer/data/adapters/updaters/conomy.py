@@ -9,7 +9,7 @@ import pyppeteer
 from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
-from poptimizer.data.core import ports
+from poptimizer.data import ports
 from poptimizer.data.adapters.updaters import names, parser
 
 logger = logging.getLogger(__name__)

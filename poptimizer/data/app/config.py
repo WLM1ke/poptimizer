@@ -2,7 +2,7 @@
 from types import MappingProxyType
 from typing import Mapping, NamedTuple
 
-from poptimizer.data.core import ports
+from poptimizer.data import ports
 from poptimizer.data.adapters import db
 from poptimizer.data.adapters.updaters import conomy, trading_dates
 

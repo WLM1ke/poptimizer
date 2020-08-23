@@ -5,7 +5,7 @@ from typing import Iterable, Optional
 import pandas as pd
 import pymongo
 
-from poptimizer.data.core import ports
+from poptimizer.data import ports
 
 # База данных, база для одиночный значений и соединение
 DB = "data_new"

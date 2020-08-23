@@ -1,9 +1,9 @@
 """Запросы таблиц."""
 import pandas as pd
 
-from poptimizer.data.core import ports
-from poptimizer.data.core.app import config
-from poptimizer.data.core.domain import repo, services
+from poptimizer.data import ports
+from poptimizer.data.app import config
+from poptimizer.data.domain import repo, services
 
 
 class UnitOfWork:

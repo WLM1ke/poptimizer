@@ -6,7 +6,7 @@ from typing import Callable, List, NamedTuple, Optional, Tuple, Union
 import bs4
 import pandas as pd
 
-from poptimizer.data.core import ports
+from poptimizer.data import ports
 
 DIV_PATTERN = r".*\d"
 DATE_PATTERN = r"\d{2}\.\d{2}\.\d{4}"

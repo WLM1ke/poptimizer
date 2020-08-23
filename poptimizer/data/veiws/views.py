@@ -1,8 +1,8 @@
 """Стандартные представления информации для остальных пакетов программы."""
 import pandas as pd
 
-from poptimizer.data.core import ports
-from poptimizer.data.core.app import config, handlers
+from poptimizer.data import ports
+from poptimizer.data.app import config, handlers
 
 
 def last_history_date() -> pd.Timestamp:

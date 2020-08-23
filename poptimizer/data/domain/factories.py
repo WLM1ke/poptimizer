@@ -1,8 +1,8 @@
 """Фабрики по созданию объектов и их сериализации."""
 from typing import Optional
 
-from poptimizer.data.core import ports
-from poptimizer.data.core.domain import model
+from poptimizer.data import ports
+from poptimizer.data.domain import model
 
 
 def get_helper_name(name: ports.TableName) -> Optional[ports.TableName]:

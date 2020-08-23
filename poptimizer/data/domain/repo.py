@@ -2,8 +2,8 @@
 from datetime import datetime
 from typing import Dict, Iterable, NamedTuple, Optional
 
-from poptimizer.data.core import ports
-from poptimizer.data.core.domain import factories, model
+from poptimizer.data import ports
+from poptimizer.data.domain import factories, model
 
 
 class TimedTable(NamedTuple):

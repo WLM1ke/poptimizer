@@ -4,7 +4,7 @@ from typing import Optional
 
 import pandas as pd
 
-from poptimizer.data.core import ports
+from poptimizer.data import ports
 
 
 class Table:
