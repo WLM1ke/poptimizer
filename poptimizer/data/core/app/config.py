@@ -1,18 +1,25 @@
 """Конфигурация приложения."""
-from typing import NamedTuple
+from types import MappingProxyType
+from typing import Mapping, NamedTuple
 
 from poptimizer.data.core import ports
 from poptimizer.data.infrastructure import db
-from poptimizer.data.infrastructure.updaters import trading_dates
+from poptimizer.data.infrastructure.updaters import conomy, trading_dates
 
 
 class AppConfig(NamedTuple):
     """Описание конфигурации приложения."""
+
     db_session: ports.AbstractDBSession
-    updater: ports.AbstractUpdater
+    updaters_registry: ports.AbstractUpdatersRegistry
 
 
-CONFIG = AppConfig(db_session=db.MongoDBSession(), updater=trading_dates.TradingDatesUpdater())
+UPDATER_REGISTRY: Mapping[ports.GroupName, ports.AbstractUpdater] = MappingProxyType(
+    {ports.TRADING_DATES: trading_dates.TradingDatesUpdater(), ports.CONOMY: conomy.ConomyUpdater()},
+)
+
+
+CONFIG = AppConfig(db_session=db.MongoDBSession(), updaters_registry=UPDATER_REGISTRY)
 
 
 def get() -> AppConfig:
