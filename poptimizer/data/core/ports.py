@@ -55,4 +55,4 @@ class AbstractUpdater(abc.ABC):
         """Загружает обновление."""
 
 
-UpdatersRegistry = Mapping[GroupName, AbstractUpdater]
+AbstractUpdatersRegistry = Mapping[GroupName, AbstractUpdater]
