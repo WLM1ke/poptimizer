@@ -38,6 +38,6 @@ def need_update(table: model.Table) -> bool:
 def update_table(table: model.Table, updater: ports.AbstractUpdater) -> None:
     """Обновляет таблицу."""
     if not need_update(table):
-        return None
+        return
     df = updater.get_update(table.name)
     table.df = df

@@ -1,7 +1,7 @@
 """Интерфейсы взаимодействия."""
 import abc
 from datetime import datetime
-from typing import Iterable, NamedTuple, Optional, Tuple
+from typing import Iterable, Literal, NamedTuple, Optional, Tuple
 
 import pandas as pd
 
@@ -12,10 +12,15 @@ class DataError(POptimizerError):
     """Ошибки связанные с операциями по обновлению данных."""
 
 
+# Наименования групп таблиц
+TRADING_DATES = "trading_dates"
+CONOMY = "conomy"
+
+
 class TableName(NamedTuple):
     """Наименование таблицы."""
 
-    group: str
+    group: Literal["trading_dates", "conomy"]
     name: str
 
 
