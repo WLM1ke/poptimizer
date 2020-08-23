@@ -32,8 +32,5 @@ def get_table(table_name: ports.TableName, app_config: config.AppConfig) -> pd.D
     """Возвращает таблицу по наименованию."""
     with UnitOfWork(app_config.db_session) as uow:
         table = uow.repo.get(table_name)
-        if table is None:
-            table = factories.create_table(table_name)
-            uow.repo.add(table)
-        services.update_table(table, app_config.updater)
+        services.update_table(table, app_config.updaters_registry)
         return table.df
