@@ -11,3 +11,10 @@ def last_history_date() -> pd.Timestamp:
     app_config = config.get()
     df = handlers.get_table(table_name, app_config)
     return pd.Timestamp(df.loc[0, "till"])
+
+
+def conomy(ticker: str) -> pd.DataFrame:
+    """Информация по дивидендам с conomy.ru."""
+    table_name = ports.TableName(ports.CONOMY, ticker)
+    app_config = config.get()
+    return handlers.get_table(table_name, app_config)
