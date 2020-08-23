@@ -1,7 +1,7 @@
 """Описание модели и данных."""
 import abc
 import copy
-from typing import Tuple, Generator
+from typing import Generator, Tuple
 
 import pandas as pd
 
@@ -16,7 +16,7 @@ def div_price_train_size(
 ) -> Tuple[pd.DataFrame, pd.DataFrame, int]:
     """Данные по дивидендам, ценам и количество дней в тренировочном наборе."""
     div, price = data_old.div_ex_date_prices(tickers, end)
-    train_size = int(len(price) * TRAIN_VAL_SPLIT)
+    train_size = len(price) - TEST_DAYS
     return div, price, train_size
 
 
