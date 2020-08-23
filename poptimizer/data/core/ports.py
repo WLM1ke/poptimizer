@@ -1,7 +1,7 @@
 """Интерфейсы взаимодействия."""
 import abc
 from datetime import datetime
-from typing import Iterable, Literal, Mapping, NamedTuple, Optional, Tuple
+from typing import Final, Iterable, Literal, Mapping, NamedTuple, Optional, Tuple
 
 import pandas as pd
 
@@ -13,8 +13,8 @@ class DataError(POptimizerError):
 
 
 # Наименования групп таблиц
-TRADING_DATES = "trading_dates"
-CONOMY = "conomy"
+TRADING_DATES: Final = "trading_dates"
+CONOMY: Final = "conomy"
 
 GroupName = Literal["trading_dates", "conomy"]
 
@@ -29,7 +29,7 @@ class TableName(NamedTuple):
 class TableTuple(NamedTuple):
     """Представление таблицы в виде кортежа."""
 
-    group: str
+    group: GroupName
     name: str
     df: pd.DataFrame
     timestamp: datetime
