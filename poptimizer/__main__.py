@@ -7,10 +7,10 @@
 import typer
 
 from poptimizer import data_old
-from poptimizer.data.veiws import views
+from poptimizer.data import views
 from poptimizer.data_old import dividends_status
 from poptimizer.evolve import Evolution
-from poptimizer.portfolio import load_from_yaml, Optimizer
+from poptimizer.portfolio import Optimizer, load_from_yaml
 
 
 def evolve():
