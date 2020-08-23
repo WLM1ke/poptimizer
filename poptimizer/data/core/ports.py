@@ -1,7 +1,7 @@
 """Интерфейсы взаимодействия."""
 import abc
 from datetime import datetime
-from typing import Final, Iterable, Literal, Mapping, NamedTuple, Optional, Tuple
+from typing import Final, Iterable, Literal, Mapping, NamedTuple, Optional
 
 import pandas as pd
 
@@ -39,7 +39,7 @@ class AbstractDBSession(abc.ABC):
     """Сессия работы с базой данных."""
 
     @abc.abstractmethod
-    def get(self, name: Tuple[str, str]) -> Optional[TableTuple]:
+    def get(self, table_name: TableName) -> Optional[TableTuple]:
         """Получает данные из хранилища."""
 
     @abc.abstractmethod

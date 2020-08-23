@@ -1,6 +1,6 @@
 """Реализации сессий доступа к базе данных."""
 import logging
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, Optional
 
 import pandas as pd
 import pymongo
@@ -34,10 +34,10 @@ class MongoDBSession(ports.AbstractDBSession):
         client = get_mongo_client()
         self._db = client[DB]
 
-    def get(self, table_name: Tuple[str, str]) -> Optional[ports.TableTuple]:
+    def get(self, table_name: ports.TableName) -> Optional[ports.TableTuple]:
         """Извлекает документ из коллекции."""
         group, name = table_name
-        collection = group
+        collection: str = group
         if collection == name:
             collection = MISC
         if (doc := self._db[collection].find_one({"_id": name})) is None:
@@ -48,7 +48,7 @@ class MongoDBSession(ports.AbstractDBSession):
     def commit(self, tables_vars: Iterable[ports.TableTuple]) -> None:
         """Записывает данные в MongoDB."""
         for table in tables_vars:
-            collection = table.group
+            collection: str = table.group
             name = table.name
             if collection == name:
                 collection = MISC
@@ -68,9 +68,9 @@ class InMemoryDBSession(ports.AbstractDBSession):
                 {(table_vars.group, table_vars.name): table_vars for table_vars in tables_vars},
             )
 
-    def get(self, name: Tuple[str, str]) -> Optional[ports.TableTuple]:
+    def get(self, table_name: ports.TableName) -> Optional[ports.TableTuple]:
         """Выдает таблицы, переданные при создании."""
-        return self.committed.get(name)
+        return self.committed.get(table_name)
 
     def commit(self, tables_vars: Iterable[ports.TableTuple]) -> None:
         """Дополняет словарь таблиц, переданных при создании."""
