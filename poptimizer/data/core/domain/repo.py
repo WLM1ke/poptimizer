@@ -1,4 +1,4 @@
-"""Инициализация реестра таблиц и реализация репозиторий с таблицами."""
+"""Реализация репозиторий с таблицами."""
 from datetime import datetime
 from typing import Dict, Iterable, NamedTuple, Optional
 
@@ -23,17 +23,21 @@ class Repo:
 
     def add(self, table: model.Table) -> None:
         """Добавляет таблицу в репозиторий."""
-        self._seen[table.name] = TimedTable(table, None)
+        self._seen[table.name] = TimedTable(table, table.timestamp)
 
-    def get(self, name: ports.TableName) -> Optional[model.Table]:
-        """Берет таблицу из репозитория."""
+    def get(self, name: ports.TableName) -> model.Table:
+        """Берет таблицу из репозитория.
+
+        При необходимости создает ее.
+        """
         if (timed_table := self._seen.get(name)) is not None:
             return timed_table.table
-        if (table_tuple := self._session.get(name)) is not None:
-            table = factories.recreate_table(table_tuple)
-            self._seen[table.name] = TimedTable(table, table.timestamp)
+
+        helper = self._load_helper(name)
+        if (table := self._load_main(name, helper)) is not None:
             return table
-        return None
+
+        return self._create_main(name, helper)
 
     def seen(self) -> Iterable[ports.TableTuple]:
         """Возвращает данные о таблицах."""
@@ -42,3 +46,21 @@ class Repo:
             for table, timestamp in self._seen.values()
             if timestamp != table.timestamp
         )
+
+    def _load_helper(self, name: ports.TableName) -> Optional[model.Table]:
+        helper = None
+        if (helper_name := factories.get_helper_name(name)) is not None:
+            helper = self.get(helper_name)
+        return helper
+
+    def _load_main(self, name: ports.TableName, helper: Optional[model.Table]) -> Optional[model.Table]:
+        if (table_tuple := self._session.get(name)) is not None:
+            table = factories.recreate_table(table_tuple, helper)
+            self.add(table)
+            return table
+        return None
+
+    def _create_main(self, name: ports.TableName, helper: Optional[model.Table]) -> model.Table:
+        table = factories.create_table(name, helper)
+        self.add(table)
+        return table
