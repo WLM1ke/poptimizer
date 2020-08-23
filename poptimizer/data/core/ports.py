@@ -1,7 +1,7 @@
 """Интерфейсы взаимодействия."""
 import abc
 from datetime import datetime
-from typing import Iterable, Literal, NamedTuple, Optional, Tuple
+from typing import Iterable, Literal, Mapping, NamedTuple, Optional, Tuple
 
 import pandas as pd
 
@@ -16,11 +16,13 @@ class DataError(POptimizerError):
 TRADING_DATES = "trading_dates"
 CONOMY = "conomy"
 
+GroupName = Literal["trading_dates", "conomy"]
+
 
 class TableName(NamedTuple):
     """Наименование таблицы."""
 
-    group: Literal["trading_dates", "conomy"]
+    group: GroupName
     name: str
 
 
@@ -33,14 +35,6 @@ class TableTuple(NamedTuple):
     timestamp: datetime
 
 
-class AbstractUpdater(abc.ABC):
-    """Обновляет конкретную группу таблиц."""
-
-    @abc.abstractmethod
-    def get_update(self, table_name: TableName) -> pd.DataFrame:
-        """Загружает обновление."""
-
-
 class AbstractDBSession(abc.ABC):
     """Сессия работы с базой данных."""
 
@@ -51,3 +45,14 @@ class AbstractDBSession(abc.ABC):
     @abc.abstractmethod
     def commit(self, tables_vars: Iterable[TableTuple]) -> None:
         """Сохраняет данные таблиц."""
+
+
+class AbstractUpdater(abc.ABC):
+    """Обновляет конкретную группу таблиц."""
+
+    @abc.abstractmethod
+    def get_update(self, table_name: TableName) -> pd.DataFrame:
+        """Загружает обновление."""
+
+
+UpdatersRegistry = Mapping[GroupName, AbstractUpdater]
