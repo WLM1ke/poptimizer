@@ -5,7 +5,7 @@ import apimoex
 import pandas as pd
 
 from poptimizer.data.core import ports
-from poptimizer.data.infrastructure import connection
+from poptimizer.data.adapters import connection
 
 logger = logging.getLogger(__name__)
 

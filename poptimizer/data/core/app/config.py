@@ -3,8 +3,8 @@ from types import MappingProxyType
 from typing import Mapping, NamedTuple
 
 from poptimizer.data.core import ports
-from poptimizer.data.infrastructure import db
-from poptimizer.data.infrastructure.updaters import conomy, trading_dates
+from poptimizer.data.adapters import db
+from poptimizer.data.adapters.updaters import conomy, trading_dates
 
 
 class AppConfig(NamedTuple):
