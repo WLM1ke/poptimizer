@@ -16,10 +16,13 @@ PARAMS = {
 def make_feature():
     saved_start_date = div.STATS_START
     div.STATS_START = pd.Timestamp("2010-09-01")
+    saved_test_days = data_params.TEST_DAYS
+    data_params.TEST_DAYS = 243
 
     params = data_params.TestParams(("PLZL", "KRKNP"), pd.Timestamp("2020-04-29"), PARAMS)
     yield day_of_year.DayOfYear("PLZL", params), day_of_year.DayOfYear("KRKNP", params)
 
+    data_params.TEST_DAYS = saved_test_days
     div.STATS_START = saved_start_date
 
 
