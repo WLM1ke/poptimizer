@@ -80,8 +80,7 @@ class HTMLTable:
         """Формирует список строк, содержащих заголовки."""
         raw_name = self._cols_desc[0].raw_name
         num_of_headers = len(raw_name)
-        headers = list(range(num_of_headers))
-        return headers
+        return list(range(num_of_headers))
 
     def _validate_header(self, columns: pd.Index) -> None:
         """Проверяет, что заголовки соответствуют описанию."""
