@@ -4,7 +4,7 @@ from typing import Mapping, NamedTuple
 
 from poptimizer.data import ports
 from poptimizer.data.adapters import db
-from poptimizer.data.adapters.updaters import conomy, trading_dates
+from poptimizer.data.adapters.updaters import conomy, dohod, trading_dates
 
 
 class AppConfig(NamedTuple):
@@ -15,7 +15,11 @@ class AppConfig(NamedTuple):
 
 
 UPDATER_REGISTRY: Mapping[ports.GroupName, ports.AbstractUpdater] = MappingProxyType(
-    {ports.TRADING_DATES: trading_dates.TradingDatesUpdater(), ports.CONOMY: conomy.ConomyUpdater()},
+    {
+        ports.TRADING_DATES: trading_dates.TradingDatesUpdater(),
+        ports.CONOMY: conomy.ConomyUpdater(),
+        ports.DOHOD: dohod.DohodUpdater(),
+    },
 )
 
 
