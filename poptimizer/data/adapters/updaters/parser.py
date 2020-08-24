@@ -28,7 +28,7 @@ class ColDesc(NamedTuple):
     """
 
     num: int
-    raw_name: Union[str, Tuple[str, ...]]
+    raw_name: Tuple[str, ...]
     name: str
     parser_func: ParserFunc
 
@@ -77,20 +77,17 @@ class HTMLTable:
     def _get_header_nums(self) -> List[int]:
         """Формирует список строк, содержащих заголовки."""
         raw_name = self._cols_desc[0].raw_name
-        if isinstance(raw_name, str):
-            headers = [0]
-        else:
-            num_of_headers = len(raw_name)
-            headers = list(range(num_of_headers))
+        num_of_headers = len(raw_name)
+        headers = list(range(num_of_headers))
         return headers
 
     def _validate_header(self, columns: pd.Index) -> None:
         """Проверяет, что заголовки соответствуют описанию."""
         for desc in self._cols_desc:
             header = columns[desc.num]
+            if not isinstance(header, tuple):
+                header = [header]
             raw_name = desc.raw_name
-            if isinstance(raw_name, str) and raw_name in header:
-                continue
             if all(part in name for part, name in zip(raw_name, header)):
                 continue
             raise ports.DataError(f"Неверный заголовок: {desc.raw_name} не входит в {header}")
