@@ -18,3 +18,10 @@ def conomy(ticker: str) -> pd.DataFrame:
     table_name = ports.TableName(ports.CONOMY, ticker)
     app_config = config.get()
     return handlers.get_table(table_name, app_config)
+
+
+def dohod(ticker: str) -> pd.DataFrame:
+    """Информация по дивидендам с dohod.ru."""
+    table_name = ports.TableName(ports.DOHOD, ticker)
+    app_config = config.get()
+    return handlers.get_table(table_name, app_config)
