@@ -30,7 +30,7 @@ class ColDesc(NamedTuple):
     num: int
     raw_name: Tuple[str, ...]
     name: str
-    parser_func: ParserFunc
+    parser_func: Optional[ParserFunc]
 
 
 def date_parser(date: str) -> Optional[datetime]:
@@ -46,10 +46,10 @@ def div_parser(div: str) -> Optional[float]:
     """Функция парсинга значений в столбце с дивидендами."""
     re_div = re.search(DIV_PATTERN, div)
     if re_div:
-        date_string = re_div.group(0)
-        date_string = date_string.replace(",", ".")
-        date_string = date_string.replace(" ", "")
-        return float(date_string)
+        div_string = re_div.group(0)
+        div_string = div_string.replace(",", ".")
+        div_string = div_string.replace(" ", "")
+        return float(div_string)
     return None
 
 
@@ -68,10 +68,12 @@ class HTMLTable:
 
     def get_df(self) -> pd.DataFrame:
         """Получает таблицу из html-документа и форматирует ее в соответствии с описанием."""
-        converters = {desc.num: desc.parser_func for desc in self._cols_desc}
+        converters = {
+            desc.num: desc.parser_func for desc in self._cols_desc if desc.parser_func is not None
+        }
         header_nums = self._get_header_nums()
         df, *_ = pd.read_html(
-            self._table, header=header_nums, converters=converters, displayed_only=False,
+            self._table, header=header_nums, converters=converters, thousands=" ", displayed_only=False,
         )
         self._validate_header(df.columns)
         return self._get_selected_col(df)

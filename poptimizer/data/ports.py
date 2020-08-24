@@ -16,8 +16,9 @@ class DataError(POptimizerError):
 TRADING_DATES: Final = "trading_dates"
 CONOMY: Final = "conomy"
 DOHOD: Final = "dohod"
+SMART_LAB: Final = "smart_lab"
 
-GroupName = Literal["trading_dates", "conomy", "dohod"]
+GroupName = Literal["trading_dates", "conomy", "dohod", "smart_lab"]
 
 
 class TableName(NamedTuple):

@@ -1,3 +1,6 @@
 """Наименование столбцов."""
+from typing import Final
 
-DATE = "DATE"
+DATE: Final = "DATE"
+TICKER: Final = "TICKER"
+DIVIDENDS: Final = "DIVIDENDS"
