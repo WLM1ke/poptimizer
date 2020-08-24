@@ -3,8 +3,7 @@ import apimoex
 import pandas as pd
 
 from poptimizer.data import ports
-from poptimizer.data.adapters import connection
-from poptimizer.data.adapters.updaters import updater
+from poptimizer.data.adapters.updaters import connection, updater
 
 
 class TradingDatesUpdater(updater.BaseUpdater):
