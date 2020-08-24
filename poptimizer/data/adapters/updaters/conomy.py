@@ -1,6 +1,5 @@
 """Загрузка данных с https://www.conomy.ru/."""
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 from typing import List, cast
 
@@ -10,9 +9,7 @@ from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
 from poptimizer.data import ports
-from poptimizer.data.adapters.updaters import names, parser
-
-logger = logging.getLogger(__name__)
+from poptimizer.data.adapters.updaters import names, parser, updater
 
 # Параметры поиска страницы эмитента
 SEARCH_URL = "https://www.conomy.ru/search"
@@ -102,7 +99,7 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
     return columns
 
 
-class ConomyUpdater(ports.AbstractUpdater):
+class ConomyUpdater(updater.BaseUpdater):
     """Обновление для таблиц с дивидендами на https://www.conomy.ru/."""
 
     def __call__(self, name: ports.TableName) -> pd.DataFrame:
@@ -110,7 +107,7 @@ class ConomyUpdater(ports.AbstractUpdater):
         group, ticker = name
         if group != ports.CONOMY:
             raise ports.DataError(f"Некорректное имя таблицы для обновления {name}")
-        logger.info(f"Загрузка данных: {name}")
+        self._logger.info(f"Загрузка данных: {name}")
 
         html = asyncio.run(get_html(ticker))
         cols_desc = get_col_desc(ticker)
