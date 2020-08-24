@@ -15,8 +15,9 @@ class DataError(POptimizerError):
 # Наименования групп таблиц
 TRADING_DATES: Final = "trading_dates"
 CONOMY: Final = "conomy"
+DOHOD: Final = "dohod"
 
-GroupName = Literal["trading_dates", "conomy"]
+GroupName = Literal["trading_dates", "conomy", "dohod"]
 
 
 class TableName(NamedTuple):

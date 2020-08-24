@@ -102,12 +102,9 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
 class ConomyUpdater(updater.BaseUpdater):
     """Обновление для таблиц с дивидендами на https://www.conomy.ru/."""
 
-    def __call__(self, name: ports.TableName) -> pd.DataFrame:
+    def __call__(self, table_name: ports.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
-        group, ticker = name
-        if group != ports.CONOMY:
-            raise ports.DataError(f"Некорректное имя таблицы для обновления {name}")
-        self._logger.info(f"Загрузка данных: {name}")
+        ticker = self._log_and_validate_group(table_name, ports.CONOMY)
 
         html = asyncio.run(get_html(ticker))
         cols_desc = get_col_desc(ticker)
