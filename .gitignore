@@ -109,4 +109,5 @@ ENV/
 /db/
 
 # Portfolio data
-/portfolio/
+/portfolio/*
+!/portfolio/base.yaml
