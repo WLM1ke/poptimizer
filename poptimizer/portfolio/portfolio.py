@@ -51,6 +51,11 @@ class Portfolio:
             )
 
     def __str__(self) -> str:
+        blocks = [f"ПОРТФЕЛЬ - {self._date.date()}", self._positions_stats(), f"{self._main_info_df()}"]
+        return "\n\n".join(blocks)
+
+    def _main_info_df(self) -> pd.DataFrame:
+        """Сводная информация по портфелю."""
         columns = [
             self.lot_size,
             self.shares,
@@ -59,17 +64,19 @@ class Portfolio:
             self.weight,
             self.turnover_factor,
         ]
-        df = pd.concat(columns, axis="columns")
+        return pd.concat(columns, axis="columns")
+
+    def _positions_stats(self) -> str:
+        """Информация о количестве позиций"""
         weights = self.weight.iloc[:-2]
-        return (
-            f"\nПОРТФЕЛЬ - {self._date.date()}"
-            f"\n"
-            f"\nКоличество бумаг - {len(weights)}"
-            f"\nОткрытых позиций - {(weights > 0).sum()}"
-            f"\nЭффективных позиций - {int(1 / (weights ** 2).sum())}"
-            f"\n"
-            f"\n{df}"
-        )
+        blocks = [
+            f"Количество бумаг - {len(weights)}",
+            f"Открытых позиций - {(weights > 0).sum()}",
+        ]
+        if (sum_w := self.weight.iloc[:-2].sum()) != 0:
+            weights = weights / sum_w
+            blocks.append(f"Эффективных позиций - {int(1 / (weights ** 2).sum())}")
+        return "\n".join(blocks)
 
     @property
     def date(self) -> pd.Timestamp:
