@@ -20,8 +20,8 @@ def _to_utc_naive(date: datetime) -> datetime:
     return date.replace(tzinfo=None)
 
 
-def _end_of_trading_day() -> datetime:
-    """Конец последнего торгового дня в UTC."""
+def _end_of_potential_trading_day() -> datetime:
+    """Конец возможного последнего торгового дня UTC."""
     now = datetime.now(MOEX_TZ)
     end_of_trading = now.replace(hour=END_HOUR, minute=END_MINUTE, second=0, microsecond=0)
     if end_of_trading > now:
@@ -29,8 +29,8 @@ def _end_of_trading_day() -> datetime:
     return _to_utc_naive(end_of_trading)
 
 
-def _last_history_date(helper_table: model.Table) -> datetime:
-    """Момент времени UTC публикации информации о последних торгах."""
+def _end_of_real_trading_day(helper_table: model.Table) -> datetime:
+    """Конец реального (с имеющейся историей) торгового дня UTC."""
     df = helper_table.df
     if df is None:
         raise ports.DataError(f"Некорректная вспомогательная таблица {helper_table}")
@@ -41,21 +41,39 @@ def _last_history_date(helper_table: model.Table) -> datetime:
     return _to_utc_naive(date)
 
 
+def rule_for_new_or_without_helper(table: model.Table) -> bool:
+    """Правило обновления для таблиц без вспомогательной таблицы.
+
+    - Если новая, то есть не содержит данных
+    - Не обновлялась после возможного окончания последнего торгового дня
+    """
+    if (timestamp := table.timestamp) is None:
+        return True
+    return table.helper_table is None and timestamp < _end_of_potential_trading_day()
+
+
+def rule_for_new_or_with_helper(table: model.Table) -> bool:
+    """Правило обновления для таблиц с вспомогательной таблицей.
+
+    - Если новая, то есть не содержит данных
+    - Не обновлялась после реального окончания последнего торгового дня из вспомогательной таблицы
+    """
+    if (timestamp := table.timestamp) is None:
+        return True
+    return table.helper_table is not None and timestamp < _end_of_real_trading_day(table.helper_table)
+
+
 def need_update(table: model.Table) -> bool:
     """Нужно ли обновлять данные о диапазоне доступных торговых дат.
 
     Если последние обновление было раньше публикации данных о последних торгах, то требуется
     обновление.
     """
-    timestamp = table.timestamp
-    if timestamp is None:
-        return True
-    if (helper_table := table.helper_table) is not None:
-        if timestamp < _last_history_date(helper_table):
-            return True
-    elif timestamp < _end_of_trading_day():
-        return True
-    return False
+    check_func = (
+        rule_for_new_or_without_helper,
+        rule_for_new_or_with_helper,
+    )
+    return any(func(table) for func in check_func)
 
 
 def update_table(table: model.Table, registry: ports.AbstractUpdatersRegistry) -> None:
