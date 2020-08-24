@@ -70,7 +70,9 @@ class HTMLTable:
         """Получает таблицу из html-документа и форматирует ее в соответствии с описанием."""
         converters = {desc.num: desc.parser_func for desc in self._cols_desc}
         header_nums = self._get_header_nums()
-        df, *_ = pd.read_html(self._table, header=header_nums, converters=converters)
+        df, *_ = pd.read_html(
+            self._table, header=header_nums, converters=converters, displayed_only=False,
+        )
         self._validate_header(df.columns)
         return self._get_selected_col(df)
 
