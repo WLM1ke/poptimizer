@@ -15,6 +15,7 @@ def test_get_phenotype():
             "history_days": 4,
             "features": {
                 "Prices": {},
+                "Dividends": {"on": True},
                 "Turnover": {"on": True},
                 "AverageTurnover": {"on": True},
                 "Ticker": {"on": True},
@@ -34,6 +35,7 @@ def test_make_child(monkeypatch):
             "history_days": 4,
             "ticker_on": 2,
             "day_of_year_on": 1,
+            "dividends_on": 3,
             "turnover_on": 1,
             "average_turnover_on": 1,
         }
@@ -44,6 +46,7 @@ def test_make_child(monkeypatch):
             "history_days": 5,
             "ticker_on": 3,
             "day_of_year_on": 7,
+            "dividends_on": 4,
             "turnover_on": 6,
             "average_turnover_on": 4,
         }
@@ -54,6 +57,7 @@ def test_make_child(monkeypatch):
             "history_days": 3,
             "ticker_on": 3,
             "day_of_year_on": 3,
+            "dividends_on": 1,
             "turnover_on": 4,
             "average_turnover_on": 2,
         }
@@ -64,6 +68,7 @@ def test_make_child(monkeypatch):
             "history_days": 6,
             "ticker_on": 1,
             "day_of_year_on": 8,
+            "dividends_on": 1,
             "turnover_on": 2,
             "average_turnover_on": 9,
         }
@@ -74,7 +79,7 @@ def test_make_child(monkeypatch):
     diff1 = Genotype(diff1, all_chromosome_types=chromosomes_types)
     diff2 = Genotype(diff2, all_chromosome_types=chromosomes_types)
 
-    monkeypatch.setattr(chromosome.random, "rand", lambda _: (0.89, 0.91, 0.89, 0.89, 0.89, 0.91))
+    monkeypatch.setattr(chromosome.random, "rand", lambda _: (0.89, 0.91, 0.89, 0.89, 0.91, 0.89, 0.91))
 
     child = parent.make_child(base, diff1, diff2)
 
@@ -85,6 +90,7 @@ def test_make_child(monkeypatch):
             "history_days": 4,
             "ticker_on": 3 + (3 - 1) * 0.8,
             "day_of_year_on": 7 + (3 - 8) * 0.8,
+            "dividends_on": 3,
             "turnover_on": 6 + (4 - 2) * 0.8,
             "average_turnover_on": 1,
         }
