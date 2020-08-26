@@ -9,7 +9,7 @@ from poptimizer.evolve import chromosomes
 # База для формирования фенотипа
 BASE_PHENOTYPE = {
     "type": "WaveNet",
-    "data": {"features": {"Label": {"on": True}, "Prices": {"on": True}, "Dividends": {"on": True}}},
+    "data": {"features": {"Label": {"on": True}, "Prices": {"on": True}}},
 }
 
 # Все используемые хромосомы
