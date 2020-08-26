@@ -33,4 +33,5 @@ class DohodUpdater(updater.BaseUpdater):
         html = connection.get_html(url)
         cols_desc = get_col_desc(ticker)
         table = parser.HTMLTable(html, TABLE_INDEX, cols_desc)
-        return table.get_df()
+        df = table.get_df()
+        return df.sort_index(axis=0)

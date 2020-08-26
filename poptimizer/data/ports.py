@@ -1,5 +1,6 @@
 """Интерфейсы взаимодействия."""
 import abc
+import enum
 from datetime import datetime
 from typing import Final, Iterable, Literal, Mapping, NamedTuple, Optional
 
@@ -57,4 +58,20 @@ class AbstractUpdater(abc.ABC):
         """Загружает обновление."""
 
 
-AbstractUpdatersRegistry = Mapping[GroupName, AbstractUpdater]
+class IndexChecks(enum.Flag):
+    """Виды проверок для индекса таблицы."""
+
+    NO_CHECKS = 0  # noqa: WPS115
+    UNIQUE = enum.auto()  # noqa: WPS115
+    ASCENDING = enum.auto()  # noqa: WPS115
+    UNIQUE_ASCENDING = UNIQUE | ASCENDING  # noqa: WPS115
+
+
+class TableDescription(NamedTuple):
+    """Описание типа таблицы."""
+
+    updater: AbstractUpdater
+    index_checks: IndexChecks
+
+
+AbstractTableDescriptionRegistry = Mapping[GroupName, TableDescription]

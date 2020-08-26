@@ -11,20 +11,27 @@ class AppConfig(NamedTuple):
     """Описание конфигурации приложения."""
 
     db_session: ports.AbstractDBSession
-    updaters_registry: ports.AbstractUpdatersRegistry
+    description_registry: ports.AbstractTableDescriptionRegistry
 
 
-UPDATER_REGISTRY: Mapping[ports.GroupName, ports.AbstractUpdater] = MappingProxyType(
-    {
-        ports.TRADING_DATES: trading_dates.TradingDatesUpdater(),
-        ports.CONOMY: conomy.ConomyUpdater(),
-        ports.DOHOD: dohod.DohodUpdater(),
-        ports.SMART_LAB: smart_lab.SmartLabUpdater(),
-    },
+TRADING_DATES = ports.TableDescription(
+    updater=trading_dates.TradingDatesUpdater(), index_checks=ports.IndexChecks.NO_CHECKS,
+)
+CONOMY = ports.TableDescription(updater=conomy.ConomyUpdater(), index_checks=ports.IndexChecks.ASCENDING)
+DOHOD = ports.TableDescription(updater=dohod.DohodUpdater(), index_checks=ports.IndexChecks.ASCENDING)
+SMART_LAB = ports.TableDescription(
+    updater=smart_lab.SmartLabUpdater(), index_checks=ports.IndexChecks.NO_CHECKS,
 )
 
-
-CONFIG = AppConfig(db_session=db.MongoDBSession(), updaters_registry=UPDATER_REGISTRY)
+UPDATER_REGISTRY: Mapping[ports.GroupName, ports.TableDescription] = MappingProxyType(
+    {
+        ports.TRADING_DATES: TRADING_DATES,
+        ports.CONOMY: CONOMY,
+        ports.DOHOD: DOHOD,
+        ports.SMART_LAB: SMART_LAB,
+    },
+)
+CONFIG = AppConfig(db_session=db.MongoDBSession(), description_registry=UPDATER_REGISTRY)
 
 
 def get() -> AppConfig:

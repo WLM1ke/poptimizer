@@ -1,44 +1,9 @@
 """Доменные службы, ответственные за обновление таблиц."""
-from datetime import datetime, timedelta
 
-from pytz import timezone
+import pandas as pd
 
 from poptimizer.data import ports
-from poptimizer.data.domain import model
-
-# Часовой пояс MOEX
-MOEX_TZ = timezone("Europe/Moscow")
-
-# Торги заканчиваются в 24.00, но данные публикуются 00.45
-END_HOUR = 0
-END_MINUTE = 45
-
-
-def _to_utc_naive(date: datetime) -> datetime:
-    """Переводит дату в UTC и делает ее наивной."""
-    date = date.astimezone(timezone("UTC"))
-    return date.replace(tzinfo=None)
-
-
-def _end_of_potential_trading_day() -> datetime:
-    """Конец возможного последнего торгового дня UTC."""
-    now = datetime.now(MOEX_TZ)
-    end_of_trading = now.replace(hour=END_HOUR, minute=END_MINUTE, second=0, microsecond=0)
-    if end_of_trading > now:
-        end_of_trading += timedelta(days=-1)
-    return _to_utc_naive(end_of_trading)
-
-
-def _end_of_real_trading_day(helper_table: model.Table) -> datetime:
-    """Конец реального (с имеющейся историей) торгового дня UTC."""
-    df = helper_table.df
-    if df is None:
-        raise ports.DataError(f"Некорректная вспомогательная таблица {helper_table}")
-    date_str = df.loc[0, "till"]
-    date = datetime.strptime(date_str, "%Y-%m-%d")  # noqa: WPS323
-    date = date.replace(hour=END_HOUR, minute=END_MINUTE, second=0, microsecond=0, tzinfo=MOEX_TZ)
-    date = date + timedelta(days=1)
-    return _to_utc_naive(date)
+from poptimizer.data.domain import model, trading_day
 
 
 def rule_for_new_or_without_helper(table: model.Table) -> bool:
@@ -49,7 +14,7 @@ def rule_for_new_or_without_helper(table: model.Table) -> bool:
     """
     if (timestamp := table.timestamp) is None:
         return True
-    return table.helper_table is None and timestamp < _end_of_potential_trading_day()
+    return table.helper_table is None and timestamp < trading_day.potential_end()
 
 
 def rule_for_new_or_with_helper(table: model.Table) -> bool:
@@ -60,7 +25,7 @@ def rule_for_new_or_with_helper(table: model.Table) -> bool:
     """
     if (timestamp := table.timestamp) is None:
         return True
-    return table.helper_table is not None and timestamp < _end_of_real_trading_day(table.helper_table)
+    return table.helper_table is not None and timestamp < trading_day.real_end(table.helper_table)
 
 
 def need_update(table: model.Table) -> bool:
@@ -76,11 +41,22 @@ def need_update(table: model.Table) -> bool:
     return any(func(table) for func in check_func)
 
 
-def update_table(table: model.Table, registry: ports.AbstractUpdatersRegistry) -> None:
+def valid_index(df: pd.DataFrame, index_checks: ports.IndexChecks) -> None:
+    """Проверка индекса таблицы."""
+    index = df.index
+    if index_checks & ports.IndexChecks.UNIQUE and not index.is_unique:
+        raise ports.DataError("Индекс не уникален")
+    if index_checks & ports.IndexChecks.ASCENDING and not index.is_monotonic_increasing:
+        raise ports.DataError("Индекс не не возрастает")
+
+
+def update_table(table: model.Table, registry: ports.AbstractTableDescriptionRegistry) -> None:
     """Обновляет таблицу."""
     if (helper_table := table.helper_table) is not None:
         update_table(helper_table, registry)
     if need_update(table):
-        updater = registry[table.name.group]
+        table_desc = registry[table.name.group]
+        updater = table_desc.updater
         df = updater(table.name)
+        valid_index(df, table_desc.index_checks)
         table.df = df
