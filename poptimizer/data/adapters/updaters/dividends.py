@@ -1,0 +1,37 @@
+"""Загрузка данных по дивидендам."""
+import pandas as pd
+import pymongo
+
+from poptimizer.data import ports
+from poptimizer.data.adapters import db
+from poptimizer.data.adapters.updaters import names, updater
+
+# Где хранятся данные о дивидендах
+SOURCE_DB = "source"
+SOURCE_COLLECTION = "dividends"
+
+
+class DividendsUpdater(updater.BaseUpdater):
+    """Обновление данных из базы данных, заполняемой в ручную."""
+
+    def __call__(self, table_name: ports.TableName) -> pd.DataFrame:
+        """Получение дивидендов для заданного тикера."""
+        ticker = self._log_and_validate_group(table_name, ports.DIVIDENDS)
+
+        client = db.get_mongo_client()
+        collection = client[SOURCE_DB][SOURCE_COLLECTION]
+
+        json = list(
+            collection.aggregate(
+                [
+                    {"$match": {"ticker": ticker}},
+                    {"$project": {"_id": False, "date": True, "dividends": True}},
+                    {"$group": {"_id": "$date", ticker: {"$sum": "$dividends"}}},
+                    {"$sort": {"_id": pymongo.ASCENDING}},
+                ],
+            ),
+        )
+
+        df = pd.DataFrame(json)
+        df.columns = [names.DATE, ticker]
+        return df.set_index(names.DATE)

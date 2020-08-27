@@ -18,8 +18,9 @@ TRADING_DATES: Final = "trading_dates"
 CONOMY: Final = "conomy"
 DOHOD: Final = "dohod"
 SMART_LAB: Final = "smart_lab"
+DIVIDENDS: Final = "dividends"
 
-GroupName = Literal["trading_dates", "conomy", "dohod", "smart_lab"]
+GroupName = Literal["trading_dates", "conomy", "dohod", "smart_lab", "dividends"]
 
 
 class TableName(NamedTuple):
