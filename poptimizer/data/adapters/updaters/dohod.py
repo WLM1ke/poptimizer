@@ -29,8 +29,7 @@ class DohodUpdater(updater.BaseUpdater):
         """Получение дивидендов для заданного тикера."""
         ticker = self._log_and_validate_group(table_name, ports.DOHOD)
 
-        url = f"{URL}{ticker.lower()}"
-        html = connection.get_html(url)
+        html = connection.get_html(f"{URL}{ticker.lower()}")
         cols_desc = get_col_desc(ticker)
         table = parser.HTMLTable(html, TABLE_INDEX, cols_desc)
         df = table.get_df()
