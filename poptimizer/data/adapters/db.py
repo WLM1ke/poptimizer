@@ -14,7 +14,7 @@ PORT = 27017
 CLIENT = pymongo.MongoClient("localhost", PORT, tz_aware=False)
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("MongoDB")
 
 
 def get_mongo_client() -> pymongo.MongoClient:
