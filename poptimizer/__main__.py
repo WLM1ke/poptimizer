@@ -6,7 +6,6 @@
 """
 import typer
 
-from poptimizer import data_old
 from poptimizer.data import views
 from poptimizer.data_old import dividends_status
 from poptimizer.evolve import Evolution
@@ -33,7 +32,9 @@ def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD")):
     print(opt.portfolio)
     print(opt.metrics)
     print(opt)
-    data_old.smart_lab_status(tuple(port.index[:-2]))
+    if tickers := views.new_on_smart_lab(tuple(port.index[:-2])):
+        print("\nДАННЫЕ ПО ДИВИДЕНДАМ ТРЕБУЮТ ОБНОВЛЕНИЯ\n")
+        print(", ".join(tickers))
 
 
 if __name__ == "__main__":
