@@ -3,8 +3,8 @@ from typing import List
 
 import pandas as pd
 
-from poptimizer.data import ports
-from poptimizer.data.adapters.updaters import connection, names, parser, updater
+from poptimizer.data import names, ports
+from poptimizer.data.adapters.updaters import connection, parser, updater
 
 # Параметры парсинга сайта
 URL = "https://www.dohod.ru/ik/analytics/dividend/"
@@ -14,10 +14,16 @@ TABLE_INDEX = 2
 def get_col_desc(ticker: str) -> List[parser.ColDesc]:
     """Формирует список с описанием нужных столбцов."""
     date_col = parser.ColDesc(
-        num=0, raw_name=("Дата закрытия реестра",), name=names.DATE, parser_func=parser.date_parser,
+        num=0,
+        raw_name=("Дата закрытия реестра",),
+        name=names.DATE,
+        parser_func=parser.date_parser,
     )
     div_col = parser.ColDesc(
-        num=2, raw_name=("Дивиденд (руб.)",), name=ticker, parser_func=parser.div_parser,
+        num=2,
+        raw_name=("Дивиденд (руб.)",),
+        name=ticker,
+        parser_func=parser.div_parser,
     )
     return [date_col, div_col]
 

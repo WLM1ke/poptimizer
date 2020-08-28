@@ -2,9 +2,9 @@
 import pandas as pd
 import pymongo
 
-from poptimizer.data import ports
+from poptimizer.data import names, ports
 from poptimizer.data.adapters import db
-from poptimizer.data.adapters.updaters import names, updater
+from poptimizer.data.adapters.updaters import updater
 
 # Где хранятся данные о дивидендах
 SOURCE_DB = "source"

@@ -8,8 +8,8 @@ import pyppeteer
 from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
-from poptimizer.data import ports
-from poptimizer.data.adapters.updaters import names, parser, updater
+from poptimizer.data import names, ports
+from poptimizer.data.adapters.updaters import parser, updater
 
 # Параметры поиска страницы эмитента
 SEARCH_URL = "https://www.conomy.ru/search"
@@ -93,7 +93,10 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
         columns.append(common)
         return columns
     preferred = parser.ColDesc(
-        num=8, raw_name=("H", "Размер дивидендов", "АПИ"), name=ticker, parser_func=parser.div_parser,
+        num=8,
+        raw_name=("H", "Размер дивидендов", "АПИ"),
+        name=ticker,
+        parser_func=parser.div_parser,
     )
     columns.append(preferred)
     return columns
