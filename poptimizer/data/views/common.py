@@ -1,7 +1,5 @@
 """Стандартные представления информации для остальных пакетов программы."""
-from typing import List, Tuple
 
-import numpy as np
 import pandas as pd
 
 from poptimizer.data import ports
@@ -42,27 +40,3 @@ def dividends(ticker: str) -> pd.DataFrame:
     table_name = ports.TableName(ports.DIVIDENDS, ticker)
     app_config = config.get()
     return handlers.get_table(table_name, app_config)
-
-
-def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
-    """Список тикеров с новой информацией о дивидендах на SmartLab.
-
-    Выбираются только тикеры из предоставленного списка.
-
-    :param tickers:
-        Тикеры, для которых нужно проверить актуальность данных.
-    :return:
-        Список новых тикеров.
-    """
-    status = []
-    for ticker, date, div in smart_lab().itertuples():
-        if ticker not in tickers:
-            continue
-
-        df = dividends(ticker)
-        if date not in df.index:
-            status.append(ticker)
-        elif not np.isclose(df.loc[date, ticker], div):
-            status.append(ticker)
-
-    return status
