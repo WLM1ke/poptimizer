@@ -22,7 +22,7 @@ def evolve():
 
 def dividends(ticker: str):
     """Get dividends status."""
-    dividends_status(ticker)
+    views.dividends_validation(ticker)
 
 
 def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD")):
@@ -32,9 +32,7 @@ def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD")):
     print(opt.portfolio)
     print(opt.metrics)
     print(opt)
-    if tickers := views.new_on_smart_lab(tuple(port.index[:-2])):
-        print("\nДАННЫЕ ПО ДИВИДЕНДАМ ТРЕБУЮТ ОБНОВЛЕНИЯ\n")
-        print(", ".join(tickers))
+    views.new_on_smart_lab(tuple(port.index[:-2]))
 
 
 if __name__ == "__main__":

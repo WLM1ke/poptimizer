@@ -47,3 +47,22 @@ def _compare(source_name: str, df_div: pd.DataFrame, df_dohod: pd.DataFrame) -> 
     print(f"\nСРАВНЕНИЕ ЛОКАЛЬНЫХ ДАННЫХ С {source_name}\n\n{df}")  # noqa: WPS421
 
     return df
+
+
+def dividends_validation(ticker: str) -> None:
+    """Проверяет корректности данных о дивидендах для тикера.
+
+    Сравнивает основные данные по дивидендам с альтернативными источниками и распечатывает результаты
+    сравнения.
+
+    :param ticker:
+        Тикер.
+    """
+    df_div = common.dividends(ticker)
+
+    _compare("dohod.ru", df_div, common.dohod(ticker))
+    _compare("conomy.ru", df_div, common.conomy(ticker))
+
+    df = common.smart_lab()
+    df = df.loc[df.index == ticker]
+    _compare("smart-lab.ru", df_div, df.set_index(names.DATE))
