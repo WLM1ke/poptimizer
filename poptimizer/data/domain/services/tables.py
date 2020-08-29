@@ -46,7 +46,8 @@ def get_update(table: model.Table, table_desc: ports.TableDescription) -> pd.Dat
     updater = table_desc.updater
     df_new = updater(table.name)
     df_old = table.df
-    valid_df(df_new, df_old, table_desc)
+    if df_old is not None:
+        valid_df(df_new, df_old, table_desc)
     return df_new
 
 
