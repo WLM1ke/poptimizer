@@ -3,7 +3,8 @@ import pandas as pd
 
 from poptimizer.data import ports
 from poptimizer.data.app import config
-from poptimizer.data.domain import repo, services
+from poptimizer.data.domain import repo
+from poptimizer.data.domain.services import tables
 
 
 class UnitOfWork:
@@ -32,7 +33,7 @@ def get_table(table_name: ports.TableName, app_config: config.AppConfig) -> pd.D
     """Возвращает таблицу по наименованию."""
     with UnitOfWork(app_config.db_session) as uow:
         table = uow.repo.get(table_name)
-        services.update_table(table, app_config.description_registry)
+        tables.update_table(table, app_config.description_registry)
         return table.df
 
 
@@ -40,5 +41,5 @@ def get_table_force_update(table_name: ports.TableName, app_config: config.AppCo
     """Возвращает таблицу по наименованию с принудительным обновлением."""
     with UnitOfWork(app_config.db_session) as uow:
         table = uow.repo.get(table_name)
-        services.force_update_table(table, app_config.description_registry)
+        tables.force_update_table(table, app_config.description_registry)
         return table.df
