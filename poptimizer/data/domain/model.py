@@ -4,7 +4,7 @@ from typing import Optional
 
 import pandas as pd
 
-from poptimizer.data import ports
+from poptimizer.data.ports import base
 
 
 class Table:
@@ -12,7 +12,7 @@ class Table:
 
     def __init__(
         self,
-        name: ports.TableName,
+        name: base.TableName,
         helper_table: Optional["Table"] = None,
         df: Optional[pd.DataFrame] = None,
         timestamp: Optional[datetime] = None,
@@ -40,7 +40,7 @@ class Table:
         return f"{self.__class__.__name__}({', '.join(self._name)})"
 
     @property
-    def name(self) -> ports.TableName:
+    def name(self) -> base.TableName:
         """Наименование таблицы."""
         return self._name
 

@@ -1,47 +1,47 @@
 """Доменные службы, ответственные за обновление таблиц."""
 import pandas as pd
 
-from poptimizer.data import ports
 from poptimizer.data.domain import model
 from poptimizer.data.domain.services import need_update
+from poptimizer.data.ports import app, base
 
 
-def valid_index(df: pd.DataFrame, index_checks: ports.IndexChecks) -> None:
+def valid_index(df: pd.DataFrame, index_checks: app.IndexChecks) -> None:
     """Проверка индекса таблицы."""
     index = df.index
-    if index_checks & ports.IndexChecks.UNIQUE and not index.is_unique:
-        raise ports.DataError(f"Индекс не уникален\n{df}")
-    if index_checks & ports.IndexChecks.ASCENDING and not index.is_monotonic_increasing:
-        raise ports.DataError(f"Индекс не возрастает\n{df}")
+    if index_checks & app.IndexChecks.UNIQUE and not index.is_unique:
+        raise base.DataError(f"Индекс не уникален\n{df}")
+    if index_checks & app.IndexChecks.ASCENDING and not index.is_monotonic_increasing:
+        raise base.DataError(f"Индекс не возрастает\n{df}")
 
 
-def update_helper(table: model.Table, registry: ports.AbstractTableDescriptionRegistry) -> None:
+def update_helper(table: model.Table, registry: app.AbstractTableDescriptionRegistry) -> None:
     """Обновляет вспомогательную таблицу."""
     if (helper_table := table.helper_table) is not None:
         update_table(helper_table, registry)
 
 
-def valid_df(df_new: pd.DataFrame, df_old: pd.DataFrame, table_desc: ports.TableDescription) -> None:
+def valid_df(df_new: pd.DataFrame, df_old: pd.DataFrame, table_desc: app.TableDescription) -> None:
     """Проверяет корректность новых данных."""
     val_type = table_desc.validation_type
 
-    if val_type is ports.ValType.NO_VAL:
+    if val_type is app.ValType.NO_VAL:
         return None
-    elif val_type is ports.ValType.LAST:
+    elif val_type is app.ValType.LAST:
         df_new = df_new.iloc[:1]
         df_old = df_old.iloc[-1:]
-    elif val_type is ports.ValType.ALL:
+    elif val_type is app.ValType.ALL:
         df_new = df_new.reindex(df_old.index)
 
     try:
         pd.testing.assert_frame_equal(df_new, df_old)
     except AssertionError:
-        raise ports.DataError("Новые данные не соответствуют старым")
+        raise base.DataError("Новые данные не соответствуют старым")
 
     return None
 
 
-def get_update(table: model.Table, table_desc: ports.TableDescription) -> pd.DataFrame:
+def get_update(table: model.Table, table_desc: app.TableDescription) -> pd.DataFrame:
     """Получает обновление и проверяет его корректность."""
     updater = table_desc.updater
     df_new = updater(table.name)
@@ -51,7 +51,7 @@ def get_update(table: model.Table, table_desc: ports.TableDescription) -> pd.Dat
     return df_new
 
 
-def update_main(table: model.Table, registry: ports.AbstractTableDescriptionRegistry) -> None:
+def update_main(table: model.Table, registry: app.AbstractTableDescriptionRegistry) -> None:
     """Обновляет данные основной таблицы."""
     table_desc = registry[table.name.group]
     df = get_update(table, table_desc)
@@ -61,7 +61,7 @@ def update_main(table: model.Table, registry: ports.AbstractTableDescriptionRegi
 
 def update_table(
     table: model.Table,
-    registry: ports.AbstractTableDescriptionRegistry,
+    registry: app.AbstractTableDescriptionRegistry,
     force: bool = False,
 ) -> None:
     """Обновляет таблицу."""
@@ -70,6 +70,6 @@ def update_table(
         update_main(table, registry)
 
 
-def force_update_table(table: model.Table, registry: ports.AbstractTableDescriptionRegistry) -> None:
+def force_update_table(table: model.Table, registry: app.AbstractTableDescriptionRegistry) -> None:
     """Принудительно обновляет таблицу."""
     update_table(table, registry, force=True)

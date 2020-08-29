@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 
 from pytz import timezone
 
-from poptimizer.data import ports
 from poptimizer.data.domain import model
+from poptimizer.data.ports import base
 
 # Часовой пояс MOEX
 MOEX_TZ = timezone("Europe/Moscow")
@@ -33,7 +33,7 @@ def real_end(helper_table: model.Table) -> datetime:
     """Конец реального (с имеющейся историей) торгового дня UTC."""
     df = helper_table.df
     if df is None:
-        raise ports.DataError(f"Некорректная вспомогательная таблица {helper_table}")
+        raise base.DataError(f"Некорректная вспомогательная таблица {helper_table}")
     date_str = df.loc[0, "till"]
     date = datetime.strptime(date_str, "%Y-%m-%d")  # noqa: WPS323
     date = date.replace(hour=END_HOUR, minute=END_MINUTE, second=0, microsecond=0, tzinfo=MOEX_TZ)

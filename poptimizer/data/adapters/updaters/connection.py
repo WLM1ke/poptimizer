@@ -2,7 +2,7 @@
 import requests
 from requests import adapters
 
-from poptimizer.data import ports
+from poptimizer.data.ports import base
 
 # Максимальный пул соединений по HTTPS и повторных загрузок
 MAX_POOL_SIZE = 20
@@ -32,7 +32,7 @@ def get_html(url: str) -> str:
         try:
             respond.raise_for_status()
         except requests.HTTPError:
-            raise ports.DataError(f"Данные {url} не загружены")
+            raise base.DataError(f"Данные {url} не загружены")
         else:
             html = respond.text
     return html

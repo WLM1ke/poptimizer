@@ -6,7 +6,7 @@ from typing import Callable, List, NamedTuple, Optional, Tuple, Union
 import bs4
 import pandas as pd
 
-from poptimizer.data import ports
+from poptimizer.data.ports import base
 
 DIV_PATTERN = r".*\d"
 DATE_PATTERN = r"\d{2}\.\d{2}\.\d{4}"
@@ -62,7 +62,7 @@ class HTMLTable:
         try:
             table = soup.find_all("table")[table_num]
         except IndexError:
-            raise ports.DataError(f"На странице нет таблицы {table_num}")
+            raise base.DataError(f"На странице нет таблицы {table_num}")
         self._table = f"html{table}/html"
         self._cols_desc = cols_desc
 
@@ -73,7 +73,11 @@ class HTMLTable:
         }
         header_nums = self._get_header_nums()
         df, *_ = pd.read_html(
-            self._table, header=header_nums, converters=converters, thousands=" ", displayed_only=False,
+            self._table,
+            header=header_nums,
+            converters=converters,
+            thousands=" ",
+            displayed_only=False,
         )
         self._validate_header(df.columns)
         return self._get_selected_col(df)
@@ -93,7 +97,7 @@ class HTMLTable:
             raw_name = desc.raw_name
             if all(part in name for part, name in zip(raw_name, header)):
                 continue
-            raise ports.DataError(f"Неверный заголовок: {desc.raw_name} не входит в {header}")
+            raise base.DataError(f"Неверный заголовок: {desc.raw_name} не входит в {header}")
 
     def _get_selected_col(self, df: pd.DataFrame) -> pd.DataFrame:
         """Выбирает столбцы в соответствии с описанием."""

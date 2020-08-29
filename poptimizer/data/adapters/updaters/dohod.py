@@ -3,8 +3,8 @@ from typing import List
 
 import pandas as pd
 
-from poptimizer.data import names, ports
 from poptimizer.data.adapters.updaters import connection, parser, updater
+from poptimizer.data.ports import base, names
 
 # Параметры парсинга сайта
 URL = "https://www.dohod.ru/ik/analytics/dividend/"
@@ -31,9 +31,9 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
 class DohodUpdater(updater.BaseUpdater):
     """Обновление данных с https://dohod.ru."""
 
-    def __call__(self, table_name: ports.TableName) -> pd.DataFrame:
+    def __call__(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
-        ticker = self._log_and_validate_group(table_name, ports.DOHOD)
+        ticker = self._log_and_validate_group(table_name, base.DOHOD)
 
         html = connection.get_html(f"{URL}{ticker.lower()}")
         cols_desc = get_col_desc(ticker)

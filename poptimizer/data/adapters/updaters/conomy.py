@@ -8,8 +8,8 @@ import pyppeteer
 from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
-from poptimizer.data import names, ports
 from poptimizer.data.adapters.updaters import parser, updater
+from poptimizer.data.ports import base, names
 
 # Параметры поиска страницы эмитента
 SEARCH_URL = "https://www.conomy.ru/search"
@@ -71,7 +71,7 @@ def is_common(ticker: str) -> bool:
     elif len(ticker) == COMMON_TICKER_LENGTH + 1:
         if ticker[COMMON_TICKER_LENGTH] == PREFERRED_TICKER_ENDING:
             return False
-    raise ports.DataError(f"Некорректный тикер {ticker}")
+    raise base.DataError(f"Некорректный тикер {ticker}")
 
 
 def get_col_desc(ticker: str) -> List[parser.ColDesc]:
@@ -105,9 +105,9 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
 class ConomyUpdater(updater.BaseUpdater):
     """Обновление для таблиц с дивидендами на https://www.conomy.ru/."""
 
-    def __call__(self, table_name: ports.TableName) -> pd.DataFrame:
+    def __call__(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
-        ticker = self._log_and_validate_group(table_name, ports.CONOMY)
+        ticker = self._log_and_validate_group(table_name, base.CONOMY)
 
         html = asyncio.run(get_html(ticker))
         cols_desc = get_col_desc(ticker)

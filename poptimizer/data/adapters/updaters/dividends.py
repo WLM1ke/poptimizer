@@ -2,9 +2,9 @@
 import pandas as pd
 import pymongo
 
-from poptimizer.data import names, ports
 from poptimizer.data.adapters import db
 from poptimizer.data.adapters.updaters import updater
+from poptimizer.data.ports import base, names
 
 # Где хранятся данные о дивидендах
 SOURCE_DB = "source"
@@ -14,9 +14,9 @@ SOURCE_COLLECTION = "dividends"
 class DividendsUpdater(updater.BaseUpdater):
     """Обновление данных из базы данных, заполняемой в ручную."""
 
-    def __call__(self, table_name: ports.TableName) -> pd.DataFrame:
+    def __call__(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
-        ticker = self._log_and_validate_group(table_name, ports.DIVIDENDS)
+        ticker = self._log_and_validate_group(table_name, base.DIVIDENDS)
 
         client = db.get_mongo_client()
         collection = client[SOURCE_DB][SOURCE_COLLECTION]

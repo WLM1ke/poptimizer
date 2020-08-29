@@ -2,57 +2,57 @@
 from types import MappingProxyType
 from typing import Mapping, NamedTuple
 
-from poptimizer.data import ports
 from poptimizer.data.adapters import db
 from poptimizer.data.adapters.updaters import conomy, cpi, dividends, dohod, smart_lab, trading_dates
+from poptimizer.data.ports import app, base, infrustructure
 
 
 class AppConfig(NamedTuple):
     """Описание конфигурации приложения."""
 
-    db_session: ports.AbstractDBSession
-    description_registry: ports.AbstractTableDescriptionRegistry
+    db_session: infrustructure.AbstractDBSession
+    description_registry: app.AbstractTableDescriptionRegistry
 
 
-TRADING_DATES = ports.TableDescription(
+TRADING_DATES = app.TableDescription(
     updater=trading_dates.TradingDatesUpdater(),
-    index_checks=ports.IndexChecks.NO_CHECKS,
-    validation_type=ports.ValType.NO_VAL,
+    index_checks=app.IndexChecks.NO_CHECKS,
+    validation_type=app.ValType.NO_VAL,
 )
-CONOMY = ports.TableDescription(
+CONOMY = app.TableDescription(
     updater=conomy.ConomyUpdater(),
-    index_checks=ports.IndexChecks.ASCENDING,
-    validation_type=ports.ValType.NO_VAL,
+    index_checks=app.IndexChecks.ASCENDING,
+    validation_type=app.ValType.NO_VAL,
 )
-DOHOD = ports.TableDescription(
+DOHOD = app.TableDescription(
     updater=dohod.DohodUpdater(),
-    index_checks=ports.IndexChecks.ASCENDING,
-    validation_type=ports.ValType.NO_VAL,
+    index_checks=app.IndexChecks.ASCENDING,
+    validation_type=app.ValType.NO_VAL,
 )
-SMART_LAB = ports.TableDescription(
+SMART_LAB = app.TableDescription(
     updater=smart_lab.SmartLabUpdater(),
-    index_checks=ports.IndexChecks.NO_CHECKS,
-    validation_type=ports.ValType.NO_VAL,
+    index_checks=app.IndexChecks.NO_CHECKS,
+    validation_type=app.ValType.NO_VAL,
 )
-DIVIDENDS = ports.TableDescription(
+DIVIDENDS = app.TableDescription(
     updater=dividends.DividendsUpdater(),
-    index_checks=ports.IndexChecks.UNIQUE_ASCENDING,
-    validation_type=ports.ValType.NO_VAL,
+    index_checks=app.IndexChecks.UNIQUE_ASCENDING,
+    validation_type=app.ValType.NO_VAL,
 )
-CPI = ports.TableDescription(
+CPI = app.TableDescription(
     updater=cpi.CPIUpdater(),
-    index_checks=ports.IndexChecks.UNIQUE_ASCENDING,
-    validation_type=ports.ValType.ALL,
+    index_checks=app.IndexChecks.UNIQUE_ASCENDING,
+    validation_type=app.ValType.ALL,
 )
 
-UPDATER_REGISTRY: Mapping[ports.GroupName, ports.TableDescription] = MappingProxyType(
+UPDATER_REGISTRY: Mapping[base.GroupName, app.TableDescription] = MappingProxyType(
     {
-        ports.TRADING_DATES: TRADING_DATES,
-        ports.CONOMY: CONOMY,
-        ports.DOHOD: DOHOD,
-        ports.SMART_LAB: SMART_LAB,
-        ports.DIVIDENDS: DIVIDENDS,
-        ports.CPI: CPI,
+        base.TRADING_DATES: TRADING_DATES,
+        base.CONOMY: CONOMY,
+        base.DOHOD: DOHOD,
+        base.SMART_LAB: SMART_LAB,
+        base.DIVIDENDS: DIVIDENDS,
+        base.CPI: CPI,
     },
 )
 CONFIG = AppConfig(db_session=db.MongoDBSession(), description_registry=UPDATER_REGISTRY)

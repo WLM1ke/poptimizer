@@ -3,8 +3,8 @@ from typing import List
 
 import pandas as pd
 
-from poptimizer.data import names, ports
 from poptimizer.data.adapters.updaters import connection, parser, updater
+from poptimizer.data.ports import base, names
 
 # Параметры парсинга сайта
 URL = "https://smart-lab.ru/dividends/index/order_by_cut_off_date/asc/"
@@ -34,16 +34,16 @@ def get_col_desc() -> List[parser.ColDesc]:
 class SmartLabUpdater(updater.BaseUpdater):
     """Обновление данных с https://www.smart-lab.ru."""
 
-    def __call__(self, table_name: ports.TableName) -> pd.DataFrame:
+    def __call__(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
-        name = self._log_and_validate_group(table_name, ports.SMART_LAB)
-        if name != ports.SMART_LAB:
-            raise ports.DataError(f"Некорректное имя таблицы для обновления {table_name}")
+        name = self._log_and_validate_group(table_name, base.SMART_LAB)
+        if name != base.SMART_LAB:
+            raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
         html = connection.get_html(URL)
         cols_desc = get_col_desc()
         table = parser.HTMLTable(html, TABLE_INDEX, cols_desc)
         df = table.get_df()
         if FOOTER not in df.index[-1]:
-            raise ports.DataError(f"Некорректная html-таблица {table_name}")
+            raise base.DataError(f"Некорректная html-таблица {table_name}")
         return df.dropna()

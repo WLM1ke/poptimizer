@@ -5,7 +5,7 @@ from typing import Iterable, Optional
 import pandas as pd
 import pymongo
 
-from poptimizer.data import ports
+from poptimizer.data.ports import base, infrustructure
 
 # База данных, база для одиночный значений и соединение
 DB = "data_new"
@@ -22,7 +22,7 @@ def get_mongo_client() -> pymongo.MongoClient:
     return CLIENT
 
 
-class MongoDBSession(ports.AbstractDBSession):
+class MongoDBSession(infrustructure.AbstractDBSession):
     """Реализация сессии с хранением в MongoDB.
 
     При совпадении id и группы данные записываются в специальную коллекцию, в ином случае в коллекцию
@@ -34,7 +34,7 @@ class MongoDBSession(ports.AbstractDBSession):
         client = get_mongo_client()
         self._db = client[DB]
 
-    def get(self, table_name: ports.TableName) -> Optional[ports.TableTuple]:
+    def get(self, table_name: base.TableName) -> Optional[base.TableTuple]:
         """Извлекает документ из коллекции."""
         group, name = table_name
         collection: str = group
@@ -43,9 +43,9 @@ class MongoDBSession(ports.AbstractDBSession):
         if (doc := self._db[collection].find_one({"_id": name})) is None:
             return None
         df = pd.DataFrame(**doc["data"])
-        return ports.TableTuple(group=group, name=name, df=df, timestamp=doc["timestamp"])
+        return base.TableTuple(group=group, name=name, df=df, timestamp=doc["timestamp"])
 
-    def commit(self, tables_vars: Iterable[ports.TableTuple]) -> None:
+    def commit(self, tables_vars: Iterable[base.TableTuple]) -> None:
         """Записывает данные в MongoDB."""
         for table in tables_vars:
             collection: str = table.group
@@ -57,10 +57,10 @@ class MongoDBSession(ports.AbstractDBSession):
             self._db[collection].replace_one({"_id": name}, doc, upsert=True)
 
 
-class InMemoryDBSession(ports.AbstractDBSession):
+class InMemoryDBSession(infrustructure.AbstractDBSession):
     """Реализация сессии с хранением в памяти для тестов."""
 
-    def __init__(self, tables_vars: Optional[Iterable[ports.TableTuple]] = None) -> None:
+    def __init__(self, tables_vars: Optional[Iterable[base.TableTuple]] = None) -> None:
         """Создает хранилище в памяти."""
         self.committed = {}
         if tables_vars is not None:
@@ -68,11 +68,11 @@ class InMemoryDBSession(ports.AbstractDBSession):
                 {(table_vars.group, table_vars.name): table_vars for table_vars in tables_vars},
             )
 
-    def get(self, table_name: ports.TableName) -> Optional[ports.TableTuple]:
+    def get(self, table_name: base.TableName) -> Optional[base.TableTuple]:
         """Выдает таблицы, переданные при создании."""
         return self.committed.get(table_name)
 
-    def commit(self, tables_vars: Iterable[ports.TableTuple]) -> None:
+    def commit(self, tables_vars: Iterable[base.TableTuple]) -> None:
         """Дополняет словарь таблиц, переданных при создании."""
         tables_dict = {(table_vars.group, table_vars.name): table_vars for table_vars in tables_vars}
         return self.committed.update(tables_dict)

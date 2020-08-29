@@ -1,8 +1,8 @@
 """Загрузка данных по потребительской инфляции."""
 import pandas as pd
 
-from poptimizer.data import names, ports
 from poptimizer.data.adapters.updaters import updater
+from poptimizer.data.ports import base, names
 
 # Параметры загрузки валидации данных
 URL_CPI = "https://rosstat.gov.ru/storage/mediabank/chSxGUk7/i_ipc.xlsx"
@@ -19,21 +19,21 @@ def _validate(df: pd.DataFrame) -> None:
     first_year = df.columns[0]
     first_month = df.index[0]
     if months != NUM_OF_MONTH:
-        raise ports.DataError("Таблица должна содержать 12 строк с месяцами")
+        raise base.DataError("Таблица должна содержать 12 строк с месяцами")
     if first_year != FIRST_YEAR:
-        raise ports.DataError("Первый год должен быть 1991")
+        raise base.DataError("Первый год должен быть 1991")
     if first_month != FIRST_MONTH:
-        raise ports.DataError("Первый месяц должен быть январь")
+        raise base.DataError("Первый месяц должен быть январь")
 
 
 class CPIUpdater(updater.BaseUpdater):
     """Обновление данных инфляции с https://rosstat.gov.ru."""
 
-    def __call__(self, table_name: ports.TableName) -> pd.DataFrame:
+    def __call__(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение данных по  инфляции."""
-        name = self._log_and_validate_group(table_name, ports.CPI)
-        if name != ports.CPI:
-            raise ports.DataError(f"Некорректное имя таблицы для обновления {table_name}")
+        name = self._log_and_validate_group(table_name, base.CPI)
+        if name != base.CPI:
+            raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
         df = pd.read_excel(URL_CPI, **PARSING_PARAMETERS)
         _validate(df)

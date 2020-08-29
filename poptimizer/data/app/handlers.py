@@ -1,16 +1,16 @@
 """Запросы таблиц."""
 import pandas as pd
 
-from poptimizer.data import ports
 from poptimizer.data.app import config
 from poptimizer.data.domain import repo
 from poptimizer.data.domain.services import tables
+from poptimizer.data.ports import base, infrustructure
 
 
 class UnitOfWork:
     """Группа операций с таблицами, в конце которой осуществляется сохранение изменных данных."""
 
-    def __init__(self, db_session: ports.AbstractDBSession) -> None:
+    def __init__(self, db_session: infrustructure.AbstractDBSession) -> None:
         """Создает изолированную сессию с базой данной и репо."""
         self._db_session = db_session
         self._repo = repo.Repo(db_session)
@@ -29,7 +29,7 @@ class UnitOfWork:
         return self._repo
 
 
-def get_table(table_name: ports.TableName, app_config: config.AppConfig) -> pd.DataFrame:
+def get_table(table_name: base.TableName, app_config: config.AppConfig) -> pd.DataFrame:
     """Возвращает таблицу по наименованию."""
     with UnitOfWork(app_config.db_session) as uow:
         table = uow.repo.get(table_name)
@@ -37,7 +37,7 @@ def get_table(table_name: ports.TableName, app_config: config.AppConfig) -> pd.D
         return table.df
 
 
-def get_table_force_update(table_name: ports.TableName, app_config: config.AppConfig) -> pd.DataFrame:
+def get_table_force_update(table_name: base.TableName, app_config: config.AppConfig) -> pd.DataFrame:
     """Возвращает таблицу по наименованию с принудительным обновлением."""
     with UnitOfWork(app_config.db_session) as uow:
         table = uow.repo.get(table_name)

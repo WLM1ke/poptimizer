@@ -4,7 +4,7 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
-from poptimizer.data import names
+from poptimizer.data.ports import names
 from poptimizer.data.views import common
 
 
