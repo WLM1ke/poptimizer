@@ -69,11 +69,20 @@ class IndexChecks(enum.Flag):
     UNIQUE_ASCENDING = UNIQUE | ASCENDING  # noqa: WPS115
 
 
+class ValType(enum.Enum):
+    """Виды проверок для индекса таблицы."""
+
+    NO_VAL = enum.auto()  # noqa: WPS115
+    LAST = enum.auto()  # noqa: WPS115
+    ALL = enum.auto()  # noqa: WPS115
+
+
 class TableDescription(NamedTuple):
     """Описание типа таблицы."""
 
     updater: AbstractUpdater
     index_checks: IndexChecks
+    validation_type: ValType
 
 
 AbstractTableDescriptionRegistry = Mapping[GroupName, TableDescription]

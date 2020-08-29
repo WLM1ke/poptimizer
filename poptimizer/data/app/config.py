@@ -4,7 +4,7 @@ from typing import Mapping, NamedTuple
 
 from poptimizer.data import ports
 from poptimizer.data.adapters import db
-from poptimizer.data.adapters.updaters import conomy, dividends, dohod, smart_lab, trading_dates
+from poptimizer.data.adapters.updaters import conomy, cpi, dividends, dohod, smart_lab, trading_dates
 
 
 class AppConfig(NamedTuple):
@@ -15,15 +15,34 @@ class AppConfig(NamedTuple):
 
 
 TRADING_DATES = ports.TableDescription(
-    updater=trading_dates.TradingDatesUpdater(), index_checks=ports.IndexChecks.NO_CHECKS,
+    updater=trading_dates.TradingDatesUpdater(),
+    index_checks=ports.IndexChecks.NO_CHECKS,
+    validation_type=ports.ValType.NO_VAL,
 )
-CONOMY = ports.TableDescription(updater=conomy.ConomyUpdater(), index_checks=ports.IndexChecks.ASCENDING)
-DOHOD = ports.TableDescription(updater=dohod.DohodUpdater(), index_checks=ports.IndexChecks.ASCENDING)
+CONOMY = ports.TableDescription(
+    updater=conomy.ConomyUpdater(),
+    index_checks=ports.IndexChecks.ASCENDING,
+    validation_type=ports.ValType.NO_VAL,
+)
+DOHOD = ports.TableDescription(
+    updater=dohod.DohodUpdater(),
+    index_checks=ports.IndexChecks.ASCENDING,
+    validation_type=ports.ValType.NO_VAL,
+)
 SMART_LAB = ports.TableDescription(
-    updater=smart_lab.SmartLabUpdater(), index_checks=ports.IndexChecks.NO_CHECKS,
+    updater=smart_lab.SmartLabUpdater(),
+    index_checks=ports.IndexChecks.NO_CHECKS,
+    validation_type=ports.ValType.NO_VAL,
 )
 DIVIDENDS = ports.TableDescription(
-    updater=dividends.DividendsUpdater(), index_checks=ports.IndexChecks.UNIQUE_ASCENDING,
+    updater=dividends.DividendsUpdater(),
+    index_checks=ports.IndexChecks.UNIQUE_ASCENDING,
+    validation_type=ports.ValType.NO_VAL,
+)
+CPI = ports.TableDescription(
+    updater=cpi.CPIUpdater(),
+    index_checks=ports.IndexChecks.UNIQUE_ASCENDING,
+    validation_type=ports.ValType.NO_VAL,
 )
 
 UPDATER_REGISTRY: Mapping[ports.GroupName, ports.TableDescription] = MappingProxyType(
@@ -33,6 +52,7 @@ UPDATER_REGISTRY: Mapping[ports.GroupName, ports.TableDescription] = MappingProx
         ports.DOHOD: DOHOD,
         ports.SMART_LAB: SMART_LAB,
         ports.DIVIDENDS: DIVIDENDS,
+        ports.CPI: CPI,
     },
 )
 CONFIG = AppConfig(db_session=db.MongoDBSession(), description_registry=UPDATER_REGISTRY)
