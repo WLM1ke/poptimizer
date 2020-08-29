@@ -35,8 +35,8 @@ def valid_df(df_new: pd.DataFrame, df_old: pd.DataFrame, table_desc: ports.Table
 
     try:
         pd.testing.assert_frame_equal(df_new, df_old)
-    except AssertionError as error:
-        raise ports.DataError(error.args)
+    except AssertionError:
+        raise ports.DataError("Новые данные не соответствуют старым")
 
     return None
 
