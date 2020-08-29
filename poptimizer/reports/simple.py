@@ -20,7 +20,7 @@ def constant_prices_data(report_name: str, investor_name: str, months: int) -> p
     """Переводит данные в постоянные цены."""
     df = get_investor_data(report_name, investor_name)
     df = df.iloc[-months - 1 :]
-    cpi = common.monthly_cpi(df.index[-1])
+    cpi = common.cpi(df.index[-1])
     cpi = cpi[-len(df) :]
     cpi = cpi.cumprod()
     cpi = cpi.iloc[-1] / cpi
