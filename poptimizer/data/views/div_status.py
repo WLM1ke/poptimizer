@@ -58,7 +58,7 @@ def dividends_validation(ticker: str) -> None:
     :param ticker:
         Тикер.
     """
-    df_div = common.dividends(ticker)
+    df_div = common.dividends_force_update(ticker)
 
     _compare("dohod.ru", df_div, common.dohod(ticker))
     _compare("conomy.ru", df_div, common.conomy(ticker))

@@ -40,3 +40,10 @@ def dividends(ticker: str) -> pd.DataFrame:
     table_name = ports.TableName(ports.DIVIDENDS, ticker)
     app_config = config.get()
     return handlers.get_table(table_name, app_config)
+
+
+def dividends_force_update(ticker: str) -> pd.DataFrame:
+    """Дивиденды для данного тикера с принудительным обновлением данных по дивидендам."""
+    table_name = ports.TableName(ports.DIVIDENDS, ticker)
+    app_config = config.get()
+    return handlers.get_table_force_update(table_name, app_config)

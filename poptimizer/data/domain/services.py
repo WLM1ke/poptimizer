@@ -60,3 +60,14 @@ def update_table(table: model.Table, registry: ports.AbstractTableDescriptionReg
         df = updater(table.name)
         valid_index(df, table_desc.index_checks)
         table.df = df
+
+
+def force_update_table(table: model.Table, registry: ports.AbstractTableDescriptionRegistry) -> None:
+    """Принудительно обновляет таблицу."""
+    if (helper_table := table.helper_table) is not None:
+        update_table(helper_table, registry)
+    table_desc = registry[table.name.group]
+    updater = table_desc.updater
+    df = updater(table.name)
+    valid_index(df, table_desc.index_checks)
+    table.df = df
