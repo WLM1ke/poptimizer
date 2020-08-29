@@ -36,9 +36,9 @@ def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
     return status
 
 
-def _compare(source_name: str, df_div: pd.DataFrame, df_dohod: pd.DataFrame) -> pd.DataFrame:
+def _compare(source_name: str, df_local: pd.DataFrame, df_source: pd.DataFrame) -> pd.DataFrame:
     """Сравнивает данные по дивидендам из двух источников."""
-    df = pd.concat([df_div, df_dohod], axis=1)
+    df = pd.concat([df_local, df_source], axis="columns")
     df.columns = ["LOCAL", "SOURCE"]
     df["STATUS"] = "ERROR"
     equal_div = np.isclose(df.iloc[:, 0], df.iloc[:, 1])
