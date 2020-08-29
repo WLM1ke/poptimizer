@@ -45,9 +45,9 @@ def valid_index(df: pd.DataFrame, index_checks: ports.IndexChecks) -> None:
     """Проверка индекса таблицы."""
     index = df.index
     if index_checks & ports.IndexChecks.UNIQUE and not index.is_unique:
-        raise ports.DataError("Индекс не уникален")
+        raise ports.DataError(f"Индекс не уникален\n{df}")
     if index_checks & ports.IndexChecks.ASCENDING and not index.is_monotonic_increasing:
-        raise ports.DataError("Индекс не не возрастает")
+        raise ports.DataError(f"Индекс не возрастает\n{df}")
 
 
 def update_table(table: model.Table, registry: ports.AbstractTableDescriptionRegistry) -> None:
