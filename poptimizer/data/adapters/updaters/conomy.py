@@ -113,4 +113,5 @@ class ConomyUpdater(updater.BaseUpdater):
         cols_desc = get_col_desc(ticker)
         table = parser.HTMLTable(html, TABLE_INDEX, cols_desc)
         df = table.get_df()
+        df = df.loc[df.index.dropna()]
         return df.sort_index(axis=0)
