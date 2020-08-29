@@ -38,7 +38,7 @@ def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
 
 def _compare(source_name: str, df_local: pd.DataFrame, df_source: pd.DataFrame) -> pd.DataFrame:
     """Сравнивает данные по дивидендам из двух источников."""
-    df_source = df_source.groupby(lambda x: x).sum()
+    df_source = df_source.groupby(lambda date: date).sum()
     df = pd.concat([df_local, df_source], axis="columns")
     df.columns = ["LOCAL", "SOURCE"]
     df["STATUS"] = "ERROR"
