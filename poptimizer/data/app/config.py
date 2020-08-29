@@ -42,7 +42,7 @@ DIVIDENDS = ports.TableDescription(
 CPI = ports.TableDescription(
     updater=cpi.CPIUpdater(),
     index_checks=ports.IndexChecks.UNIQUE_ASCENDING,
-    validation_type=ports.ValType.NO_VAL,
+    validation_type=ports.ValType.ALL,
 )
 
 UPDATER_REGISTRY: Mapping[ports.GroupName, ports.TableDescription] = MappingProxyType(
