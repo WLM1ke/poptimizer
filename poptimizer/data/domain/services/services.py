@@ -21,11 +21,39 @@ def update_helper(table: model.Table, registry: ports.AbstractTableDescriptionRe
         update_table(helper_table, registry)
 
 
+def valid_df(df_new: pd.DataFrame, df_old: pd.DataFrame, table_desc: ports.TableDescription) -> None:
+    """Проверяет корректность новых данных."""
+    val_type = table_desc.validation_type
+
+    if val_type is ports.ValType.NO_VAL:
+        return None
+    elif val_type is ports.ValType.LAST:
+        df_new = df_new.iloc[:1]
+        df_old = df_old.iloc[-1:]
+    elif val_type is ports.ValType.ALL:
+        df_new = df_new.reindex(df_old.index)
+
+    try:
+        pd.testing.assert_frame_equal(df_new, df_old)
+    except AssertionError as error:
+        raise ports.DataError(error.args)
+
+    return None
+
+
+def get_update(table: model.Table, table_desc: ports.TableDescription) -> pd.DataFrame:
+    """Получает обновление и проверяет его корректность."""
+    updater = table_desc.updater
+    df_new = updater(table.name)
+    df_old = table.df
+    valid_df(df_new, df_old, table_desc)
+    return df_new
+
+
 def update_main(table: model.Table, registry: ports.AbstractTableDescriptionRegistry) -> None:
     """Обновляет данные основной таблицы."""
     table_desc = registry[table.name.group]
-    updater = table_desc.updater
-    df = updater(table.name)
+    df = get_update(table, table_desc)
     valid_index(df, table_desc.index_checks)
     table.df = df
 
