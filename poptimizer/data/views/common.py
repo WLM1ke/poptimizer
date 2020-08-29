@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from poptimizer.data import ports
+from poptimizer.data import names, ports
 from poptimizer.data.app import config, handlers
 
 
@@ -47,3 +47,11 @@ def dividends_force_update(ticker: str) -> pd.DataFrame:
     table_name = ports.TableName(ports.DIVIDENDS, ticker)
     app_config = config.get()
     return handlers.get_table_force_update(table_name, app_config)
+
+
+def cpi(date: pd.Timestamp) -> pd.Series:
+    """Потребительская инфляция."""
+    table_name = ports.TableName(ports.CPI, ports.CPI)
+    app_config = config.get()
+    df = handlers.get_table(table_name, app_config)
+    return df.loc[:date, names.CPI]
