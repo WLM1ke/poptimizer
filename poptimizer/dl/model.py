@@ -152,7 +152,10 @@ class Model:
         return self._model
 
     def _load_trained_model(
-        self, pickled_model: bytes, loader: data_loader.DescribedDataLoader, verbose: bool = True,
+        self,
+        pickled_model: bytes,
+        loader: data_loader.DescribedDataLoader,
+        verbose: bool = True,
     ) -> nn.Module:
         """Создание тренированной модели."""
         model = self._make_untrained_model(loader, verbose)
@@ -197,11 +200,10 @@ class Model:
         print(f"Epochs - {epochs:.2f}")
         print(f"Train size - {len(loader.dataset)}")
 
-        len_deque = int(total_steps ** 0.5)
         llh_sum = 0.0
-        llh_deque = collections.deque([0], maxlen=len_deque)
+        llh_deque = collections.deque([0], maxlen=steps_per_epoch)
         weight_sum = 0.0
-        weight_deque = collections.deque([0], maxlen=len_deque)
+        weight_deque = collections.deque([0], maxlen=steps_per_epoch)
         loss_fn = normal_llh
 
         loader = itertools.repeat(loader)
@@ -238,7 +240,10 @@ class Model:
     def forecast(self) -> Forecast:
         """Прогноз годовой доходности."""
         loader = data_loader.DescribedDataLoader(
-            self._tickers, self._end, self._phenotype["data"], data_params.ForecastParams,
+            self._tickers,
+            self._end,
+            self._phenotype["data"],
+            data_params.ForecastParams,
         )
 
         model = self.get_model(loader, False)
