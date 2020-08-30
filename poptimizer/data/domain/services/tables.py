@@ -40,7 +40,7 @@ def get_update(table: model.Table, table_desc: app.TableDescription) -> pd.DataF
     else:
         date = settings.STATS_START
         if df_old is not None:
-            date = df_old.index[-1]
+            date = df_old.index[-1].date()
         df_new = updater(table.name, date)
         if df_old is not None:
             df_new = pd.concat([df_old.iloc[:-1], df_new], axis=0)
