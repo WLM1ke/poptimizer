@@ -9,6 +9,7 @@ import yaml
 
 from poptimizer import data_old, config
 from poptimizer.config import POptimizerError, MAX_TRADE
+from poptimizer.data.views import moex
 
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
@@ -101,7 +102,7 @@ class Portfolio:
 
         CASH и PORTFOLIO - 1.
         """
-        lot_size = data_old.lot_size(tuple(self.index[:-2]))
+        lot_size = moex.lot_size(tuple(self.index[:-2]))
         lot_size = lot_size.reindex(self.index, fill_value=1)
         lot_size.name = "LOT_SIZE"
         return lot_size
@@ -170,7 +171,7 @@ class Portfolio:
 
     def add_tickers(self) -> NoReturn:
         """Претенденты для добавления."""
-        all_tickers = data_old.securities_with_reg_number()
+        all_tickers = moex.securities_with_reg_number()
         last_turnover = self._median_turnover(tuple(all_tickers))
         minimal_turnover = self.value[PORTFOLIO] * MAX_TRADE
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]
