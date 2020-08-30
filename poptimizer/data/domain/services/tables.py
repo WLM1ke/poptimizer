@@ -1,9 +1,10 @@
 """Доменные службы, ответственные за обновление таблиц."""
 import pandas as pd
 
+from poptimizer.data import settings
 from poptimizer.data.domain import model
 from poptimizer.data.domain.services import need_update
-from poptimizer.data.ports import app, base
+from poptimizer.data.ports import app, base, outer
 
 
 def valid_index(df: pd.DataFrame, index_checks: app.IndexChecks) -> None:
@@ -23,29 +24,27 @@ def update_helper(table: model.Table, registry: app.AbstractTableDescriptionRegi
 
 def valid_df(df_new: pd.DataFrame, df_old: pd.DataFrame, table_desc: app.TableDescription) -> None:
     """Проверяет корректность новых данных."""
-    val_type = table_desc.validation_type
-
-    if val_type is app.ValType.NO_VAL:
-        return None
-    elif val_type is app.ValType.LAST:
-        df_new = df_new.iloc[:1]
-        df_old = df_old.iloc[-1:]
-    elif val_type is app.ValType.ALL:
+    if table_desc.validate:
         df_new = df_new.reindex(df_old.index)
-
-    try:
-        pd.testing.assert_frame_equal(df_new, df_old)
-    except AssertionError:
-        raise base.DataError("Новые данные не соответствуют старым")
-
-    return None
+        try:
+            pd.testing.assert_frame_equal(df_new, df_old)
+        except AssertionError:
+            raise base.DataError("Новые данные не соответствуют старым")
 
 
 def get_update(table: model.Table, table_desc: app.TableDescription) -> pd.DataFrame:
     """Получает обновление и проверяет его корректность."""
     updater = table_desc.updater
-    df_new = updater(table.name)
     df_old = table.df
+    if isinstance(updater, outer.AbstractUpdater):
+        df_new = updater(table.name)
+    else:
+        date = settings.STATS_START
+        if df_old is not None:
+            date = df_old.index[-1]
+        df_new = updater(table.name, date)
+        if df_old is not None:
+            df_new = pd.concat([df_old.iloc[:-1], df_new], axis=0)
     if df_old is not None:
         valid_df(df_new, df_old, table_desc)
     return df_new

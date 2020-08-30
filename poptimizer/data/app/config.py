@@ -25,42 +25,42 @@ class AppConfig(NamedTuple):
 TRADING_DATES = app.TableDescription(
     updater=trading_dates.TradingDatesUpdater(),
     index_checks=app.IndexChecks.NO_CHECKS,
-    validation_type=app.ValType.NO_VAL,
+    validate=False,
 )
 CONOMY = app.TableDescription(
     updater=conomy.ConomyUpdater(),
     index_checks=app.IndexChecks.ASCENDING,
-    validation_type=app.ValType.NO_VAL,
+    validate=False,
 )
 DOHOD = app.TableDescription(
     updater=dohod.DohodUpdater(),
     index_checks=app.IndexChecks.ASCENDING,
-    validation_type=app.ValType.NO_VAL,
+    validate=False,
 )
 SMART_LAB = app.TableDescription(
     updater=smart_lab.SmartLabUpdater(),
     index_checks=app.IndexChecks.NO_CHECKS,
-    validation_type=app.ValType.NO_VAL,
+    validate=False,
 )
 DIVIDENDS = app.TableDescription(
     updater=dividends.DividendsUpdater(),
     index_checks=app.IndexChecks.UNIQUE_ASCENDING,
-    validation_type=app.ValType.NO_VAL,
+    validate=False,
 )
 CPI = app.TableDescription(
     updater=cpi.CPIUpdater(),
     index_checks=app.IndexChecks.UNIQUE_ASCENDING,
-    validation_type=app.ValType.ALL,
+    validate=True,
 )
 SECURITIES = app.TableDescription(
     updater=moex.SecuritiesUpdater(),
     index_checks=app.IndexChecks.UNIQUE_ASCENDING,
-    validation_type=app.ValType.NO_VAL,
+    validate=False,
 )
 INDEX = app.TableDescription(
     updater=moex.IndexUpdater(),
     index_checks=app.IndexChecks.UNIQUE_ASCENDING,
-    validation_type=app.ValType.LAST,
+    validate=True,
 )
 
 UPDATER_REGISTRY: Mapping[base.GroupName, app.TableDescription] = MappingProxyType(
