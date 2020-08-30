@@ -1,8 +1,8 @@
 """Загрузка данных по потребительской инфляции."""
 import pandas as pd
 
-from poptimizer.data.adapters.updaters import updater
-from poptimizer.data.ports import base, names
+from poptimizer.data.adapters.updaters import logger
+from poptimizer.data.ports import base, names, outer
 
 # Параметры загрузки валидации данных
 URL_CPI = "https://rosstat.gov.ru/storage/mediabank/chSxGUk7/i_ipc.xlsx"
@@ -26,7 +26,7 @@ def _validate(df: pd.DataFrame) -> None:
         raise base.DataError("Первый месяц должен быть январь")
 
 
-class CPIUpdater(updater.BaseUpdater):
+class CPIUpdater(logger.LoggerMixin, outer.AbstractUpdater):
     """Обновление данных инфляции с https://rosstat.gov.ru."""
 
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:

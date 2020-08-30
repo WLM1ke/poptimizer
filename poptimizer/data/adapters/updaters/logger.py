@@ -1,21 +1,15 @@
 """Базовый класс загрузки данных."""
 import logging
 
-import pandas as pd
-
 from poptimizer.data.ports import base, outer
 
 
-class BaseUpdater(outer.AbstractUpdater):
-    """Базовый класс для обновления данных."""
+class LoggerMixin:
+    """Mixin для проверки наименования таблицы и логирования."""
 
     def __init__(self) -> None:
         """Создается логгер с именем класса."""
         self._logger = logging.getLogger(self.__class__.__name__)
-
-    def __call__(self, table_name: base.TableName) -> pd.DataFrame:
-        """Получение необходимых данных для обновления."""
-        raise NotImplementedError
 
     def _log_and_validate_group(
         self,

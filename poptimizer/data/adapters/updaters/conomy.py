@@ -8,8 +8,8 @@ import pyppeteer
 from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
-from poptimizer.data.adapters.updaters import parser, updater
-from poptimizer.data.ports import base, names
+from poptimizer.data.adapters.updaters import logger, parser
+from poptimizer.data.ports import base, names, outer
 
 # Параметры поиска страницы эмитента
 SEARCH_URL = "https://www.conomy.ru/search"
@@ -102,7 +102,7 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
     return columns
 
 
-class ConomyUpdater(updater.BaseUpdater):
+class ConomyUpdater(logger.LoggerMixin, outer.AbstractUpdater):
     """Обновление для таблиц с дивидендами на https://www.conomy.ru/."""
 
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:
