@@ -3,10 +3,10 @@ import logging
 
 import pandas as pd
 
-from poptimizer.data.ports import base, infrustructure
+from poptimizer.data.ports import base, outer
 
 
-class BaseUpdater(infrustructure.AbstractUpdater):
+class BaseUpdater(outer.AbstractUpdater):
     """Базовый класс для обновления данных."""
 
     def __init__(self) -> None:

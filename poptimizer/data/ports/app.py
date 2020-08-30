@@ -2,7 +2,7 @@
 import enum
 from typing import Mapping, NamedTuple
 
-from poptimizer.data.ports import base, infrustructure
+from poptimizer.data.ports import base, outer
 
 
 class IndexChecks(enum.Flag):
@@ -25,7 +25,7 @@ class ValType(enum.Enum):
 class TableDescription(NamedTuple):
     """Описание типа таблицы."""
 
-    updater: infrustructure.AbstractUpdater
+    updater: outer.AbstractUpdater
     index_checks: IndexChecks
     validation_type: ValType
 

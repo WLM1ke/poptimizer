@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Dict, Iterable, NamedTuple, Optional
 
 from poptimizer.data.domain import factories, model
-from poptimizer.data.ports import base, infrustructure
+from poptimizer.data.ports import base, outer
 
 
 class TimedTable(NamedTuple):
@@ -16,7 +16,7 @@ class TimedTable(NamedTuple):
 class Repo:
     """Класс репозитория для хранения таблиц."""
 
-    def __init__(self, session: infrustructure.AbstractDBSession) -> None:
+    def __init__(self, session: outer.AbstractDBSession) -> None:
         """Сохраняются ссылки на таблицы, которые были добавлены или взяты из репозитория."""
         self._session = session
         self._seen: Dict[base.TableName, TimedTable] = {}

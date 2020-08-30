@@ -4,13 +4,13 @@ from typing import Mapping, NamedTuple
 
 from poptimizer.data.adapters import db
 from poptimizer.data.adapters.updaters import conomy, cpi, dividends, dohod, smart_lab, trading_dates
-from poptimizer.data.ports import app, base, infrustructure
+from poptimizer.data.ports import app, base, outer
 
 
 class AppConfig(NamedTuple):
     """Описание конфигурации приложения."""
 
-    db_session: infrustructure.AbstractDBSession
+    db_session: outer.AbstractDBSession
     description_registry: app.AbstractTableDescriptionRegistry
 
 

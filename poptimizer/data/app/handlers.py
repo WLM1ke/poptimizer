@@ -4,13 +4,13 @@ import pandas as pd
 from poptimizer.data.app import config
 from poptimizer.data.domain import repo
 from poptimizer.data.domain.services import tables
-from poptimizer.data.ports import base, infrustructure
+from poptimizer.data.ports import base, outer
 
 
 class UnitOfWork:
     """Группа операций с таблицами, в конце которой осуществляется сохранение изменных данных."""
 
-    def __init__(self, db_session: infrustructure.AbstractDBSession) -> None:
+    def __init__(self, db_session: outer.AbstractDBSession) -> None:
         """Создает изолированную сессию с базой данной и репо."""
         self._db_session = db_session
         self._repo = repo.Repo(db_session)

@@ -5,7 +5,7 @@ from typing import Iterable, Optional
 import pandas as pd
 import pymongo
 
-from poptimizer.data.ports import base, infrustructure
+from poptimizer.data.ports import base, outer
 
 # База данных, база для одиночный значений и соединение
 DB = "data_new"
@@ -22,7 +22,7 @@ def get_mongo_client() -> pymongo.MongoClient:
     return CLIENT
 
 
-class MongoDBSession(infrustructure.AbstractDBSession):
+class MongoDBSession(outer.AbstractDBSession):
     """Реализация сессии с хранением в MongoDB.
 
     При совпадении id и группы данные записываются в специальную коллекцию, в ином случае в коллекцию
@@ -57,7 +57,7 @@ class MongoDBSession(infrustructure.AbstractDBSession):
             self._db[collection].replace_one({"_id": name}, doc, upsert=True)
 
 
-class InMemoryDBSession(infrustructure.AbstractDBSession):
+class InMemoryDBSession(outer.AbstractDBSession):
     """Реализация сессии с хранением в памяти для тестов."""
 
     def __init__(self, tables_vars: Optional[Iterable[base.TableTuple]] = None) -> None:
