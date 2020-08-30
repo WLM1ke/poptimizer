@@ -1,7 +1,7 @@
 """Базовый класс загрузки данных."""
 import logging
 
-from poptimizer.data.ports import base, outer
+from poptimizer.data.ports import base
 
 
 class LoggerMixin:
