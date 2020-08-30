@@ -19,5 +19,5 @@ class LoggerMixin:
         group, name = table_name
         if group != updater_group:
             raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
-        self._logger.info(f"Загрузка данных: {table_name}")
+        self._logger.info(f"Загрузка {table_name}")
         return name
