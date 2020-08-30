@@ -3,7 +3,15 @@ from types import MappingProxyType
 from typing import Mapping, NamedTuple
 
 from poptimizer.data.adapters import db
-from poptimizer.data.adapters.updaters import conomy, cpi, dividends, dohod, smart_lab, trading_dates
+from poptimizer.data.adapters.updaters import (
+    conomy,
+    cpi,
+    dividends,
+    dohod,
+    moex,
+    smart_lab,
+    trading_dates,
+)
 from poptimizer.data.ports import app, base, outer
 
 
@@ -44,6 +52,11 @@ CPI = app.TableDescription(
     index_checks=app.IndexChecks.UNIQUE_ASCENDING,
     validation_type=app.ValType.ALL,
 )
+SECURITIES = app.TableDescription(
+    updater=moex.SecuritiesUpdater(),
+    index_checks=app.IndexChecks.UNIQUE_ASCENDING,
+    validation_type=app.ValType.NO_VAL,
+)
 
 UPDATER_REGISTRY: Mapping[base.GroupName, app.TableDescription] = MappingProxyType(
     {
@@ -53,6 +66,7 @@ UPDATER_REGISTRY: Mapping[base.GroupName, app.TableDescription] = MappingProxyTy
         base.SMART_LAB: SMART_LAB,
         base.DIVIDENDS: DIVIDENDS,
         base.CPI: CPI,
+        base.SECURITIES: SECURITIES,
     },
 )
 CONFIG = AppConfig(db_session=db.MongoDBSession(), description_registry=UPDATER_REGISTRY)
