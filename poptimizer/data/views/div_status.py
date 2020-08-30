@@ -4,7 +4,7 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
-from poptimizer.data.ports import names
+from poptimizer.data.ports import col
 from poptimizer.data.views import common
 
 
@@ -66,4 +66,4 @@ def dividends_validation(ticker: str) -> None:
 
     df = common.smart_lab()
     df = df.loc[df.index == ticker]
-    _compare("smart-lab.ru", df_div, df.set_index(names.DATE))
+    _compare("smart-lab.ru", df_div, df.set_index(col.DATE))

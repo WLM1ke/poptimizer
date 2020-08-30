@@ -4,7 +4,7 @@ from typing import Tuple
 import pandas as pd
 
 from poptimizer.data.app import config, handlers
-from poptimizer.data.ports import base, names
+from poptimizer.data.ports import base, col
 
 
 def securities_with_reg_number() -> pd.Index:
@@ -26,7 +26,7 @@ def lot_size(tickers: Tuple[str, ...]) -> pd.Series:
     table_name = base.TableName(base.SECURITIES, base.SECURITIES)
     app_config = config.get()
     df = handlers.get_table(table_name, app_config)
-    return df.loc[list(tickers), names.LOT_SIZE]
+    return df.loc[list(tickers), col.LOT_SIZE]
 
 
 def index(last_date: pd.Timestamp) -> pd.DataFrame:
@@ -40,4 +40,4 @@ def index(last_date: pd.Timestamp) -> pd.DataFrame:
     table_name = base.TableName(base.INDEX, base.INDEX)
     app_config = config.get()
     df = handlers.get_table(table_name, app_config)
-    return df.loc[:last_date, names.CLOSE]
+    return df.loc[:last_date, col.CLOSE]

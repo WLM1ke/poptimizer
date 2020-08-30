@@ -4,7 +4,7 @@ import pymongo
 
 from poptimizer.data.adapters import db
 from poptimizer.data.adapters.updaters import logger
-from poptimizer.data.ports import base, names, outer
+from poptimizer.data.ports import base, col, outer
 
 # Где хранятся данные о дивидендах
 SOURCE_DB = "source"
@@ -33,5 +33,5 @@ class DividendsUpdater(logger.LoggerMixin, outer.AbstractUpdater):
         )
 
         df = pd.DataFrame(json)
-        df.columns = [names.DATE, ticker]
-        return df.set_index(names.DATE)
+        df.columns = [col.DATE, ticker]
+        return df.set_index(col.DATE)

@@ -2,7 +2,7 @@
 import pandas as pd
 
 from poptimizer.data.app import config, handlers
-from poptimizer.data.ports import base, names
+from poptimizer.data.ports import base, col
 
 
 def last_history_date() -> pd.Timestamp:
@@ -53,4 +53,4 @@ def cpi(date: pd.Timestamp) -> pd.Series:
     table_name = base.TableName(base.CPI, base.CPI)
     app_config = config.get()
     df = handlers.get_table(table_name, app_config)
-    return df.loc[:date, names.CPI]
+    return df.loc[:date, col.CPI]

@@ -4,7 +4,7 @@ from typing import List
 import pandas as pd
 
 from poptimizer.data.adapters.updaters import connection, parser, logger
-from poptimizer.data.ports import base, names, outer
+from poptimizer.data.ports import base, col, outer
 
 # Параметры парсинга сайта
 URL = "https://www.dohod.ru/ik/analytics/dividend/"
@@ -16,7 +16,7 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
     date_col = parser.ColDesc(
         num=0,
         raw_name=("Дата закрытия реестра",),
-        name=names.DATE,
+        name=col.DATE,
         parser_func=parser.date_parser,
     )
     div_col = parser.ColDesc(

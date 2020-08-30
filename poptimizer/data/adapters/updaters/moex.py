@@ -5,7 +5,7 @@ import apimoex
 import pandas as pd
 
 from poptimizer.data.adapters.updaters import connection, logger
-from poptimizer.data.ports import base, names, outer
+from poptimizer.data.ports import base, col, outer
 
 
 class SecuritiesUpdater(logger.LoggerMixin, outer.AbstractUpdater):
@@ -20,8 +20,8 @@ class SecuritiesUpdater(logger.LoggerMixin, outer.AbstractUpdater):
         columns = ("SECID", "REGNUMBER", "LOTSIZE")
         json = apimoex.get_board_securities(connection.get_http_session(), columns=columns)
         df = pd.DataFrame(json)
-        df.columns = [names.TICKER, names.REG_NUMBER, names.LOT_SIZE]
-        return df.set_index(names.TICKER)
+        df.columns = [col.TICKER, col.REG_NUMBER, col.LOT_SIZE]
+        return df.set_index(col.TICKER)
 
 
 class IndexUpdater(logger.LoggerMixin, outer.AbstractIncrementalUpdater):
@@ -42,6 +42,6 @@ class IndexUpdater(logger.LoggerMixin, outer.AbstractIncrementalUpdater):
             market="index",
         )
         df = pd.DataFrame(json)
-        df.columns = [names.DATE, names.CLOSE]
-        df[names.DATE] = pd.to_datetime(df[names.DATE])
-        return df.set_index(names.DATE)
+        df.columns = [col.DATE, col.CLOSE]
+        df[col.DATE] = pd.to_datetime(df[col.DATE])
+        return df.set_index(col.DATE)

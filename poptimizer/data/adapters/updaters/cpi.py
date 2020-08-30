@@ -2,7 +2,7 @@
 import pandas as pd
 
 from poptimizer.data.adapters.updaters import logger
-from poptimizer.data.ports import base, names, outer
+from poptimizer.data.ports import base, col, outer
 
 # Параметры загрузки валидации данных
 URL_CPI = "https://rosstat.gov.ru/storage/mediabank/chSxGUk7/i_ipc.xlsx"
@@ -40,11 +40,11 @@ class CPIUpdater(logger.LoggerMixin, outer.AbstractUpdater):
         df = df.transpose().stack()
         first_year = df.index[0][0]
         df.index = pd.date_range(
-            name=names.DATE,
+            name=col.DATE,
             freq="M",
             start=pd.Timestamp(year=first_year, month=1, day=END_OF_JAN),
             periods=len(df),
         )
         # Данные должны быть не в процентах, а в долях
         df = df.div(100)
-        return df.to_frame(names.CPI)
+        return df.to_frame(col.CPI)

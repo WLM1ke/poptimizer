@@ -9,7 +9,7 @@ from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
 from poptimizer.data.adapters.updaters import logger, parser
-from poptimizer.data.ports import base, names, outer
+from poptimizer.data.ports import base, col, outer
 
 # Параметры поиска страницы эмитента
 SEARCH_URL = "https://www.conomy.ru/search"
@@ -79,7 +79,7 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
     date = parser.ColDesc(
         num=5,
         raw_name=("E", "Дата закрытия реестра акционеров", "Под выплату дивидендов"),
-        name=names.DATE,
+        name=col.DATE,
         parser_func=parser.date_parser,
     )
     columns = [date]

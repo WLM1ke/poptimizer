@@ -4,7 +4,7 @@ from typing import List
 import pandas as pd
 
 from poptimizer.data.adapters.updaters import connection, parser, logger
-from poptimizer.data.ports import base, names, outer
+from poptimizer.data.ports import base, col, outer
 
 # Параметры парсинга сайта
 URL = "https://smart-lab.ru/dividends/index/order_by_cut_off_date/asc/"
@@ -15,17 +15,17 @@ FOOTER = "+добавить дивиденды"
 
 def get_col_desc() -> List[parser.ColDesc]:
     """Формирует список с описанием нужных столбцов."""
-    ticker = parser.ColDesc(num=1, raw_name=("Тикер",), name=names.TICKER, parser_func=None)
+    ticker = parser.ColDesc(num=1, raw_name=("Тикер",), name=col.TICKER, parser_func=None)
     date = parser.ColDesc(
         num=9,
         raw_name=("дата отсечки",),
-        name=names.DATE,
+        name=col.DATE,
         parser_func=parser.date_parser,
     )
     div = parser.ColDesc(
         num=5,
         raw_name=("дивиденд,руб",),
-        name=names.DIVIDENDS,
+        name=col.DIVIDENDS,
         parser_func=parser.div_parser,
     )
     return [ticker, date, div]
