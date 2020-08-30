@@ -25,7 +25,7 @@ class ValType(enum.Enum):
 class TableDescription(NamedTuple):
     """Описание типа таблицы."""
 
-    updater: outer.AbstractUpdater
+    updater: outer.Updaters
     index_checks: IndexChecks
     validation_type: ValType
 

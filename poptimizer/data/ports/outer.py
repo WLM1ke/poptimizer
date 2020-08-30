@@ -1,6 +1,7 @@
 """Интерфейсы внешней инфраструктуры."""
 import abc
-from typing import Iterable, Optional
+import datetime
+from typing import Iterable, Optional, Union
 
 import pandas as pd
 
@@ -24,4 +25,15 @@ class AbstractUpdater(abc.ABC):
 
     @abc.abstractmethod
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:
-        """Загружает обновление."""
+        """Загружает данные обновления полностью."""
+
+
+class AbstractIncrementalUpdater(abc.ABC):
+    """Обновляет конкретную группу таблиц."""
+
+    @abc.abstractmethod
+    def __call__(self, table_name: base.TableName, start_date: datetime.date) -> pd.DataFrame:
+        """Загружает данные обновления начиная с некой даты."""
+
+
+Updaters = Union[AbstractUpdater, AbstractIncrementalUpdater]

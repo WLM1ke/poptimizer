@@ -57,6 +57,11 @@ SECURITIES = app.TableDescription(
     index_checks=app.IndexChecks.UNIQUE_ASCENDING,
     validation_type=app.ValType.NO_VAL,
 )
+INDEX = app.TableDescription(
+    updater=moex.IndexUpdater(),
+    index_checks=app.IndexChecks.UNIQUE_ASCENDING,
+    validation_type=app.ValType.LAST,
+)
 
 UPDATER_REGISTRY: Mapping[base.GroupName, app.TableDescription] = MappingProxyType(
     {
@@ -67,6 +72,7 @@ UPDATER_REGISTRY: Mapping[base.GroupName, app.TableDescription] = MappingProxyTy
         base.DIVIDENDS: DIVIDENDS,
         base.CPI: CPI,
         base.SECURITIES: SECURITIES,
+        base.INDEX: INDEX,
     },
 )
 CONFIG = AppConfig(db_session=db.MongoDBSession(), description_registry=UPDATER_REGISTRY)
