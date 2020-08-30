@@ -43,4 +43,5 @@ class IndexUpdater(logger.LoggerMixin, outer.AbstractIncrementalUpdater):
         )
         df = pd.DataFrame(json)
         df.columns = [names.DATE, names.CLOSE]
+        df[names.DATE] = pd.to_datetime(df[names.DATE])
         return df.set_index(names.DATE)
