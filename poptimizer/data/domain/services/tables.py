@@ -22,14 +22,13 @@ def update_helper(table: model.Table, registry: app.AbstractTableDescriptionRegi
         update_table(helper_table, registry)
 
 
-def valid_df(df_new: pd.DataFrame, df_old: pd.DataFrame, table_desc: app.TableDescription) -> None:
+def valid_df(df_new: pd.DataFrame, df_old: pd.DataFrame) -> None:
     """Проверяет корректность новых данных."""
-    if table_desc.validate:
-        df_new = df_new.reindex(df_old.index)
-        try:
-            pd.testing.assert_frame_equal(df_new, df_old)
-        except AssertionError:
-            raise base.DataError("Новые данные не соответствуют старым")
+    df_new = df_new.reindex(df_old.index)
+    try:
+        pd.testing.assert_frame_equal(df_new, df_old)
+    except AssertionError:
+        raise base.DataError("Новые данные не соответствуют старым")
 
 
 def get_update(table: model.Table, table_desc: app.TableDescription) -> pd.DataFrame:
@@ -45,8 +44,8 @@ def get_update(table: model.Table, table_desc: app.TableDescription) -> pd.DataF
         df_new = updater(table.name, date)
         if df_old is not None:
             df_new = pd.concat([df_old.iloc[:-1], df_new], axis=0)
-    if df_old is not None:
-        valid_df(df_new, df_old, table_desc)
+    if df_old is not None and table_desc.validate:
+        valid_df(df_new, df_old)
     return df_new
 
 
