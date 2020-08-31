@@ -1,5 +1,6 @@
 """Загрузка данных с MOEX."""
 import datetime
+from typing import Optional
 
 import apimoex
 import pandas as pd
@@ -27,7 +28,11 @@ class SecuritiesLoader(logger.LoggerMixin, outer.AbstractLoader):
 class IndexLoader(logger.LoggerMixin, outer.AbstractIncrementalLoader):
     """Котировки индекса полной доходности с учетом российских налогов - MCFTRR."""
 
-    def __call__(self, table_name: base.TableName, start_date: datetime.date) -> pd.DataFrame:
+    def __call__(
+        self,
+        table_name: base.TableName,
+        start_date: Optional[datetime.date] = None,
+    ) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
         name = self._log_and_validate_group(table_name, base.INDEX)
         if name != base.INDEX:
