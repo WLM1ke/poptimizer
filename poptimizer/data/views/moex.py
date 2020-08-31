@@ -12,7 +12,7 @@ def securities_with_reg_number() -> pd.Index:
     """Все акции с регистрационным номером."""
     table_name = base.TableName(base.SECURITIES, base.SECURITIES)
     app_config = config.get()
-    df = handlers.get_table(table_name, app_config)
+    df = handlers.get_df(table_name, app_config)
     return df.dropna(axis=0).index
 
 
@@ -26,7 +26,7 @@ def lot_size(tickers: Tuple[str, ...]) -> pd.Series:
     """
     table_name = base.TableName(base.SECURITIES, base.SECURITIES)
     app_config = config.get()
-    df = handlers.get_table(table_name, app_config)
+    df = handlers.get_df(table_name, app_config)
     return df.loc[list(tickers), col.LOT_SIZE]
 
 
@@ -40,5 +40,5 @@ def index(last_date: pd.Timestamp) -> pd.DataFrame:
     """
     table_name = base.TableName(base.INDEX, base.INDEX)
     app_config = config.get()
-    df = handlers.get_table(table_name, app_config)
+    df = handlers.get_df(table_name, app_config)
     return df.loc[:last_date, col.CLOSE]

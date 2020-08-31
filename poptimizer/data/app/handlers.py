@@ -30,15 +30,15 @@ class UnitOfWork:
         return self._repo
 
 
-def get_table(table_name: base.TableName, app_config: poptimizer.data.ports.app.Config) -> pd.DataFrame:
+def get_df(table_name: base.TableName, app_config: poptimizer.data.ports.app.Config) -> pd.DataFrame:
     """Возвращает таблицу по наименованию."""
     with UnitOfWork(app_config.db_session) as uow:
         table = uow.repo.get(table_name)
-        tables.update_table(table, app_config.description_registry)
+        tables.update(table, app_config.description_registry)
         return table.df
 
 
-def get_table_force_update(
+def get_df_force_update(
     table_name: base.TableName, app_config: poptimizer.data.ports.app.Config
 ) -> pd.DataFrame:
     """Возвращает таблицу по наименованию с принудительным обновлением."""

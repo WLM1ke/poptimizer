@@ -19,7 +19,7 @@ def valid_index(df: pd.DataFrame, index_checks: app.IndexChecks) -> None:
 def update_helper(table: model.Table, registry: app.AbstractTableDescriptionRegistry) -> None:
     """Обновляет вспомогательную таблицу."""
     if (helper_table := table.helper_table) is not None:
-        update_table(helper_table, registry)
+        update(helper_table, registry)
 
 
 def valid_df(df_new: pd.DataFrame, df_old: pd.DataFrame) -> None:
@@ -57,7 +57,7 @@ def update_main(table: model.Table, registry: app.AbstractTableDescriptionRegist
     table.df = df
 
 
-def update_table(
+def update(
     table: model.Table,
     registry: app.AbstractTableDescriptionRegistry,
     force: bool = False,
@@ -70,4 +70,4 @@ def update_table(
 
 def force_update_table(table: model.Table, registry: app.AbstractTableDescriptionRegistry) -> None:
     """Принудительно обновляет таблицу."""
-    update_table(table, registry, force=True)
+    update(table, registry, force=True)
