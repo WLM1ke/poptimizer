@@ -55,13 +55,13 @@ def test_dividends_status(capsys):
     assert len(result) == 3
 
     assert result[0].shape >= (4, 3)
-    assert result[0].iloc[0, 2] == ""
-    assert result[0].iloc[3, 2] == "ERROR"
+    assert result[0].iloc[0, 2] == "ERROR"
+    assert result[0].iloc[4, 2] == ""
     assert "СРАВНЕНИЕ ОСНОВНЫХ ДАННЫХ С Dohod" in captured.out
 
     assert result[1].shape >= (4, 3)
-    assert result[1].iloc[2, 2] == ""
-    assert result[1].iloc[1, 2] == "ERROR"
+    assert result[1].iloc[0, 2] == "ERROR"
+    assert result[1].iloc[1, 2] == ""
     assert "СРАВНЕНИЕ ОСНОВНЫХ ДАННЫХ С Conomy" in captured.out
 
     assert "СРАВНЕНИЕ ОСНОВНЫХ ДАННЫХ С SmartLab" in captured.out
