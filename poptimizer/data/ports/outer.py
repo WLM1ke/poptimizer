@@ -32,8 +32,15 @@ class AbstractIncrementalLoader(abc.ABC):
     """Обновляет конкретную группу таблиц."""
 
     @abc.abstractmethod
-    def __call__(self, table_name: base.TableName, start_date: datetime.date) -> pd.DataFrame:
-        """Загружает данные обновления начиная с некой даты."""
+    def __call__(
+        self,
+        table_name: base.TableName,
+        start_date: Optional[datetime.date] = None,
+    ) -> pd.DataFrame:
+        """Загружает данные обновления начиная с некой даты.
+
+        При отсутствии даты загружает все данные.
+        """
 
 
 Loaders = Union[AbstractLoader, AbstractIncrementalLoader]

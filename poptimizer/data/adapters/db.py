@@ -52,7 +52,7 @@ class MongoDBSession(outer.AbstractDBSession):
             name = table.name
             if collection == name:
                 collection = MISC
-            logger.info(f"Сохраняю {collection}.{name}")
+            logger.info(f"Сохранение {collection}.{name}")
             doc = dict(_id=name, data=table.df.to_dict("split"), timestamp=table.timestamp)
             self._db[collection].replace_one({"_id": name}, doc, upsert=True)
 

@@ -1,7 +1,6 @@
 """Доменные службы, ответственные за обновление таблиц."""
 import pandas as pd
 
-import poptimizer.data.config
 from poptimizer.data.domain import model
 from poptimizer.data.domain.services import need_update
 from poptimizer.data.ports import app, base, outer
@@ -35,17 +34,20 @@ def get_update(table: model.Table, table_desc: app.TableDescription) -> pd.DataF
     """Получает обновление и проверяет его корректность."""
     updater = table_desc.loader
     df_old = table.df
+
+    if df_old is None:
+        return updater(table.name)
+
     if isinstance(updater, outer.AbstractLoader):
         df_new = updater(table.name)
     else:
-        date = poptimizer.data.config.STATS_START
-        if df_old is not None:
-            date = df_old.index[-1].date()
+        date = df_old.index[-1].date()
         df_new = updater(table.name, date)
-        if df_old is not None:
-            df_new = pd.concat([df_old.iloc[:-1], df_new], axis=0)
-    if df_old is not None and table_desc.validate:
+        df_new = pd.concat([df_old.iloc[:-1], df_new], axis=0)
+
+    if table_desc.validate:
         valid_df(df_new, df_old)
+
     return df_new
 
 
