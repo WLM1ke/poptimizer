@@ -33,9 +33,9 @@ def valid_df(df_new: pd.DataFrame, df_old: pd.DataFrame) -> None:
 
 def get_update(table: model.Table, table_desc: app.TableDescription) -> pd.DataFrame:
     """Получает обновление и проверяет его корректность."""
-    updater = table_desc.updater
+    updater = table_desc.loader
     df_old = table.df
-    if isinstance(updater, outer.AbstractUpdater):
+    if isinstance(updater, outer.AbstractLoader):
         df_new = updater(table.name)
     else:
         date = poptimizer.data.config.STATS_START

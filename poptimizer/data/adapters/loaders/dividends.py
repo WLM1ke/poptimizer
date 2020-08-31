@@ -3,7 +3,7 @@ import pandas as pd
 import pymongo
 
 from poptimizer.data.adapters import db
-from poptimizer.data.adapters.updaters import logger
+from poptimizer.data.adapters.loaders import logger
 from poptimizer.data.ports import base, col, outer
 
 # Где хранятся данные о дивидендах
@@ -11,7 +11,7 @@ SOURCE_DB = "source"
 SOURCE_COLLECTION = "dividends"
 
 
-class DividendsUpdater(logger.LoggerMixin, outer.AbstractUpdater):
+class DividendsLoader(logger.LoggerMixin, outer.AbstractLoader):
     """Обновление данных из базы данных, заполняемой в ручную."""
 
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:

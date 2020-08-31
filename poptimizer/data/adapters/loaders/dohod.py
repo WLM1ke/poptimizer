@@ -3,7 +3,7 @@ from typing import List
 
 import pandas as pd
 
-from poptimizer.data.adapters.updaters import connection, logger, parser
+from poptimizer.data.adapters.loaders import connection, logger, parser
 from poptimizer.data.ports import base, col, outer
 
 # Параметры парсинга сайта
@@ -28,7 +28,7 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
     return [date_col, div_col]
 
 
-class DohodUpdater(logger.LoggerMixin, outer.AbstractUpdater):
+class DohodLoader(logger.LoggerMixin, outer.AbstractLoader):
     """Обновление данных с https://dohod.ru."""
 
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:

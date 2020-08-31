@@ -4,11 +4,11 @@ import datetime
 import apimoex
 import pandas as pd
 
-from poptimizer.data.adapters.updaters import connection, logger
+from poptimizer.data.adapters.loaders import connection, logger
 from poptimizer.data.ports import base, col, outer
 
 
-class SecuritiesUpdater(logger.LoggerMixin, outer.AbstractUpdater):
+class SecuritiesLoader(logger.LoggerMixin, outer.AbstractLoader):
     """Информация о всех торгующихся акциях."""
 
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:
@@ -24,7 +24,7 @@ class SecuritiesUpdater(logger.LoggerMixin, outer.AbstractUpdater):
         return df.set_index(col.TICKER)
 
 
-class IndexUpdater(logger.LoggerMixin, outer.AbstractIncrementalUpdater):
+class IndexLoader(logger.LoggerMixin, outer.AbstractIncrementalLoader):
     """Котировки индекса полной доходности с учетом российских налогов - MCFTRR."""
 
     def __call__(self, table_name: base.TableName, start_date: datetime.date) -> pd.DataFrame:

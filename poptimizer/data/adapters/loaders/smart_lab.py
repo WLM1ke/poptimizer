@@ -3,7 +3,7 @@ from typing import List
 
 import pandas as pd
 
-from poptimizer.data.adapters.updaters import connection, logger, parser
+from poptimizer.data.adapters.loaders import connection, logger, parser
 from poptimizer.data.ports import base, col, outer
 
 # Параметры парсинга сайта
@@ -31,7 +31,7 @@ def get_col_desc() -> List[parser.ColDesc]:
     return [ticker, date, div]
 
 
-class SmartLabUpdater(logger.LoggerMixin, outer.AbstractUpdater):
+class SmartLabLoader(logger.LoggerMixin, outer.AbstractLoader):
     """Обновление данных с https://www.smart-lab.ru."""
 
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:

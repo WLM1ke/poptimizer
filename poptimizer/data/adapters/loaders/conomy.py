@@ -8,7 +8,7 @@ import pyppeteer
 from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
-from poptimizer.data.adapters.updaters import logger, parser
+from poptimizer.data.adapters.loaders import logger, parser
 from poptimizer.data.ports import base, col, outer
 
 # Параметры поиска страницы эмитента
@@ -102,7 +102,7 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
     return columns
 
 
-class ConomyUpdater(logger.LoggerMixin, outer.AbstractUpdater):
+class ConomyLoader(logger.LoggerMixin, outer.AbstractLoader):
     """Обновление для таблиц с дивидендами на https://www.conomy.ru/."""
 
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:

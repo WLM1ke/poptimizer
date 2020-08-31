@@ -20,7 +20,7 @@ class AbstractDBSession(abc.ABC):
         """Сохраняет данные таблиц."""
 
 
-class AbstractUpdater(abc.ABC):
+class AbstractLoader(abc.ABC):
     """Обновляет конкретную группу таблиц."""
 
     @abc.abstractmethod
@@ -28,7 +28,7 @@ class AbstractUpdater(abc.ABC):
         """Загружает данные обновления полностью."""
 
 
-class AbstractIncrementalUpdater(abc.ABC):
+class AbstractIncrementalLoader(abc.ABC):
     """Обновляет конкретную группу таблиц."""
 
     @abc.abstractmethod
@@ -36,4 +36,4 @@ class AbstractIncrementalUpdater(abc.ABC):
         """Загружает данные обновления начиная с некой даты."""
 
 
-Updaters = Union[AbstractUpdater, AbstractIncrementalUpdater]
+Loaders = Union[AbstractLoader, AbstractIncrementalLoader]

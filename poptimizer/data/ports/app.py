@@ -17,7 +17,7 @@ class IndexChecks(enum.Flag):
 class TableDescription(NamedTuple):
     """Описание типа таблицы."""
 
-    updater: outer.Updaters
+    loader: outer.Loaders
     index_checks: IndexChecks
     validate: bool
 

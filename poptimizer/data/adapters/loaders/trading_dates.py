@@ -2,11 +2,11 @@
 import apimoex
 import pandas as pd
 
-from poptimizer.data.adapters.updaters import connection, logger
+from poptimizer.data.adapters.loaders import connection, logger
 from poptimizer.data.ports import base, outer
 
 
-class TradingDatesUpdater(logger.LoggerMixin, outer.AbstractUpdater):
+class TradingDatesLoader(logger.LoggerMixin, outer.AbstractLoader):
     """Обновление для таблиц с диапазоном доступных торговых дат."""
 
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:

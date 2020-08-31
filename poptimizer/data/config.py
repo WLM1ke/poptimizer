@@ -4,7 +4,7 @@ from types import MappingProxyType
 from typing import Final, Mapping
 
 from poptimizer.data.adapters import db
-from poptimizer.data.adapters.updaters import (
+from poptimizer.data.adapters.loaders import (
     conomy,
     cpi,
     dividends,
@@ -16,47 +16,47 @@ from poptimizer.data.adapters.updaters import (
 from poptimizer.data.ports import app, base
 
 TRADING_DATES = app.TableDescription(
-    updater=trading_dates.TradingDatesUpdater(),
+    loader=trading_dates.TradingDatesLoader(),
     index_checks=app.IndexChecks.NO_CHECKS,
     validate=False,
 )
 CONOMY = app.TableDescription(
-    updater=conomy.ConomyUpdater(),
+    loader=conomy.ConomyLoader(),
     index_checks=app.IndexChecks.ASCENDING,
     validate=False,
 )
 DOHOD = app.TableDescription(
-    updater=dohod.DohodUpdater(),
+    loader=dohod.DohodLoader(),
     index_checks=app.IndexChecks.ASCENDING,
     validate=False,
 )
 SMART_LAB = app.TableDescription(
-    updater=smart_lab.SmartLabUpdater(),
+    loader=smart_lab.SmartLabLoader(),
     index_checks=app.IndexChecks.NO_CHECKS,
     validate=False,
 )
 DIVIDENDS = app.TableDescription(
-    updater=dividends.DividendsUpdater(),
+    loader=dividends.DividendsLoader(),
     index_checks=app.IndexChecks.UNIQUE_ASCENDING,
     validate=False,
 )
 CPI = app.TableDescription(
-    updater=cpi.CPIUpdater(),
+    loader=cpi.CPILoader(),
     index_checks=app.IndexChecks.UNIQUE_ASCENDING,
     validate=True,
 )
 SECURITIES = app.TableDescription(
-    updater=moex.SecuritiesUpdater(),
+    loader=moex.SecuritiesLoader(),
     index_checks=app.IndexChecks.UNIQUE_ASCENDING,
     validate=False,
 )
 INDEX = app.TableDescription(
-    updater=moex.IndexUpdater(),
+    loader=moex.IndexLoader(),
     index_checks=app.IndexChecks.UNIQUE_ASCENDING,
     validate=True,
 )
 
-UPDATER_REGISTRY: Mapping[base.GroupName, app.TableDescription] = MappingProxyType(
+TABLES_REGISTRY: Mapping[base.GroupName, app.TableDescription] = MappingProxyType(
     {
         base.TRADING_DATES: TRADING_DATES,
         base.CONOMY: CONOMY,
@@ -70,7 +70,7 @@ UPDATER_REGISTRY: Mapping[base.GroupName, app.TableDescription] = MappingProxyTy
 )
 _START_YEAR = 2015
 STATS_START: Final = datetime.date(_START_YEAR, 1, 1)
-CONFIG = app.Config(db_session=db.MongoDBSession(), description_registry=UPDATER_REGISTRY)
+CONFIG = app.Config(db_session=db.MongoDBSession(), description_registry=TABLES_REGISTRY)
 
 
 def get() -> app.Config:
