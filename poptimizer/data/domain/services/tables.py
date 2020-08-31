@@ -1,7 +1,7 @@
 """Доменные службы, ответственные за обновление таблиц."""
 import pandas as pd
 
-from poptimizer.data import settings
+import poptimizer.data.config
 from poptimizer.data.domain import model
 from poptimizer.data.domain.services import need_update
 from poptimizer.data.ports import app, base, outer
@@ -38,7 +38,7 @@ def get_update(table: model.Table, table_desc: app.TableDescription) -> pd.DataF
     if isinstance(updater, outer.AbstractUpdater):
         df_new = updater(table.name)
     else:
-        date = settings.STATS_START
+        date = poptimizer.data.config.STATS_START
         if df_old is not None:
             date = df_old.index[-1].date()
         df_new = updater(table.name, date)

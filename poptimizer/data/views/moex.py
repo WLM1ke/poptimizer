@@ -3,7 +3,8 @@ from typing import Tuple
 
 import pandas as pd
 
-from poptimizer.data.app import config, handlers
+from poptimizer.data.app import handlers
+from poptimizer.data import config
 from poptimizer.data.ports import base, col
 
 

@@ -1,6 +1,7 @@
 """Конфигурация приложения."""
+import datetime
 from types import MappingProxyType
-from typing import Mapping, NamedTuple
+from typing import Final, Mapping
 
 from poptimizer.data.adapters import db
 from poptimizer.data.adapters.updaters import (
@@ -12,15 +13,7 @@ from poptimizer.data.adapters.updaters import (
     smart_lab,
     trading_dates,
 )
-from poptimizer.data.ports import app, base, outer
-
-
-class AppConfig(NamedTuple):
-    """Описание конфигурации приложения."""
-
-    db_session: outer.AbstractDBSession
-    description_registry: app.AbstractTableDescriptionRegistry
-
+from poptimizer.data.ports import app, base
 
 TRADING_DATES = app.TableDescription(
     updater=trading_dates.TradingDatesUpdater(),
@@ -75,9 +68,11 @@ UPDATER_REGISTRY: Mapping[base.GroupName, app.TableDescription] = MappingProxyTy
         base.INDEX: INDEX,
     },
 )
-CONFIG = AppConfig(db_session=db.MongoDBSession(), description_registry=UPDATER_REGISTRY)
+_START_YEAR = 2015
+STATS_START: Final = datetime.date(_START_YEAR, 1, 1)
+CONFIG = app.Config(db_session=db.MongoDBSession(), description_registry=UPDATER_REGISTRY)
 
 
-def get() -> AppConfig:
+def get() -> app.Config:
     """Возвращает конфигурацию приложения."""
     return CONFIG

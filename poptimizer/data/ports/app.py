@@ -23,3 +23,10 @@ class TableDescription(NamedTuple):
 
 
 AbstractTableDescriptionRegistry = Mapping[base.GroupName, TableDescription]
+
+
+class Config(NamedTuple):
+    """Описание конфигурации приложения."""
+
+    db_session: outer.AbstractDBSession
+    description_registry: AbstractTableDescriptionRegistry
