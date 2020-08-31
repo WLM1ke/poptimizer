@@ -1,11 +1,9 @@
 """Запросы таблиц."""
 import pandas as pd
 
-import poptimizer.data.ports.app
-from poptimizer.data import config
 from poptimizer.data.domain import repo
 from poptimizer.data.domain.services import tables
-from poptimizer.data.ports import base, outer
+from poptimizer.data.ports import app, base, outer
 
 
 class UnitOfWork:
@@ -30,7 +28,7 @@ class UnitOfWork:
         return self._repo
 
 
-def get_df(table_name: base.TableName, app_config: poptimizer.data.ports.app.Config) -> pd.DataFrame:
+def get_df(table_name: base.TableName, app_config: app.Config) -> pd.DataFrame:
     """Возвращает таблицу по наименованию."""
     with UnitOfWork(app_config.db_session) as uow:
         table = uow.repo.get(table_name)
@@ -38,9 +36,7 @@ def get_df(table_name: base.TableName, app_config: poptimizer.data.ports.app.Con
         return table.df
 
 
-def get_df_force_update(
-    table_name: base.TableName, app_config: poptimizer.data.ports.app.Config
-) -> pd.DataFrame:
+def get_df_force_update(table_name: base.TableName, app_config: app.Config) -> pd.DataFrame:
     """Возвращает таблицу по наименованию с принудительным обновлением."""
     with UnitOfWork(app_config.db_session) as uow:
         table = uow.repo.get(table_name)

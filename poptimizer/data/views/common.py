@@ -1,8 +1,8 @@
 """Стандартные представления информации для остальных пакетов программы."""
 import pandas as pd
 
-from poptimizer.data.app import handlers
 from poptimizer.data import config
+from poptimizer.data.app import handlers
 from poptimizer.data.ports import base, col
 
 
