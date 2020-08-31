@@ -69,8 +69,12 @@ TABLES_REGISTRY: Mapping[base.GroupName, app.TableDescription] = MappingProxyTyp
     },
 )
 _START_YEAR = 2015
-STATS_START: Final = datetime.date(_START_YEAR, 1, 1)
-CONFIG = app.Config(db_session=db.MongoDBSession(), description_registry=TABLES_REGISTRY)
+START_DATE: Final = datetime.date(_START_YEAR, 1, 1)
+CONFIG = app.Config(
+    db_session=db.MongoDBSession(),
+    description_registry=TABLES_REGISTRY,
+    start_date=START_DATE,
+)
 
 
 def get() -> app.Config:

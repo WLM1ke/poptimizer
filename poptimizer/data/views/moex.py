@@ -41,4 +41,4 @@ def index(last_date: pd.Timestamp) -> pd.DataFrame:
     table_name = base.TableName(base.INDEX, base.INDEX)
     app_config = config.get()
     df = handlers.get_df(table_name, app_config)
-    return df.loc[:last_date, col.CLOSE]
+    return df.loc[app_config.start_date : last_date, col.CLOSE]

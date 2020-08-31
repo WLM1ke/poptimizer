@@ -1,4 +1,5 @@
 """Интерфейс регистра с описанием таблиц."""
+import datetime
 import enum
 from typing import Mapping, NamedTuple
 
@@ -30,3 +31,4 @@ class Config(NamedTuple):
 
     db_session: outer.AbstractDBSession
     description_registry: AbstractTableDescriptionRegistry
+    start_date: datetime.date

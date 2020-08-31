@@ -18,14 +18,16 @@ def conomy(ticker: str) -> pd.DataFrame:
     """Информация по дивидендам с conomy.ru."""
     table_name = base.TableName(base.CONOMY, ticker)
     app_config = config.get()
-    return handlers.get_df(table_name, app_config)
+    df = handlers.get_df(table_name, app_config)
+    return df.loc[app_config.start_date :]
 
 
 def dohod(ticker: str) -> pd.DataFrame:
     """Информация по дивидендам с dohod.ru."""
     table_name = base.TableName(base.DOHOD, ticker)
     app_config = config.get()
-    return handlers.get_df(table_name, app_config)
+    df = handlers.get_df(table_name, app_config)
+    return df.loc[app_config.start_date :]
 
 
 def smart_lab() -> pd.DataFrame:
@@ -39,14 +41,16 @@ def dividends(ticker: str) -> pd.DataFrame:
     """Дивиденды для данного тикера."""
     table_name = base.TableName(base.DIVIDENDS, ticker)
     app_config = config.get()
-    return handlers.get_df(table_name, app_config)
+    df = handlers.get_df(table_name, app_config)
+    return df.loc[app_config.start_date :]
 
 
 def dividends_force_update(ticker: str) -> pd.DataFrame:
     """Дивиденды для данного тикера с принудительным обновлением данных по дивидендам."""
     table_name = base.TableName(base.DIVIDENDS, ticker)
     app_config = config.get()
-    return handlers.get_df_force_update(table_name, app_config)
+    df = handlers.get_df(table_name, app_config)
+    return df.loc[app_config.start_date :]
 
 
 def cpi(date: pd.Timestamp) -> pd.Series:
@@ -54,4 +58,4 @@ def cpi(date: pd.Timestamp) -> pd.Series:
     table_name = base.TableName(base.CPI, base.CPI)
     app_config = config.get()
     df = handlers.get_df(table_name, app_config)
-    return df.loc[:date, col.CPI]
+    return df.loc[app_config.start_date : date, col.CPI]
