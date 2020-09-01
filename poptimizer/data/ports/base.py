@@ -1,7 +1,7 @@
 """Базовые структуры данных."""
 import enum
 from datetime import datetime
-from typing import Final, Literal, NamedTuple, Optional
+from typing import Final, Literal, NamedTuple
 
 import pandas as pd
 

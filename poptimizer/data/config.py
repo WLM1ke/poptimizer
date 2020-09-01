@@ -3,7 +3,6 @@ import datetime
 from types import MappingProxyType
 from typing import Final, Mapping
 
-import poptimizer.data.ports.base
 from poptimizer.data.adapters import db
 from poptimizer.data.adapters.loaders import (
     conomy,
@@ -18,42 +17,42 @@ from poptimizer.data.ports import app, base
 
 TRADING_DATES = app.TableDescription(
     loader=trading_dates.TradingDatesLoader(),
-    index_checks=poptimizer.data.ports.base.IndexChecks.NO_CHECKS,
+    index_checks=base.IndexChecks.NO_CHECKS,
     validate=False,
 )
 CONOMY = app.TableDescription(
     loader=conomy.ConomyLoader(),
-    index_checks=poptimizer.data.ports.base.IndexChecks.ASCENDING,
+    index_checks=base.IndexChecks.ASCENDING,
     validate=False,
 )
 DOHOD = app.TableDescription(
     loader=dohod.DohodLoader(),
-    index_checks=poptimizer.data.ports.base.IndexChecks.ASCENDING,
+    index_checks=base.IndexChecks.ASCENDING,
     validate=False,
 )
 SMART_LAB = app.TableDescription(
     loader=smart_lab.SmartLabLoader(),
-    index_checks=poptimizer.data.ports.base.IndexChecks.NO_CHECKS,
+    index_checks=base.IndexChecks.NO_CHECKS,
     validate=False,
 )
 DIVIDENDS = app.TableDescription(
     loader=dividends.DividendsLoader(),
-    index_checks=poptimizer.data.ports.base.IndexChecks.UNIQUE_ASCENDING,
+    index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=False,
 )
 CPI = app.TableDescription(
     loader=cpi.CPILoader(),
-    index_checks=poptimizer.data.ports.base.IndexChecks.UNIQUE_ASCENDING,
+    index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=True,
 )
 SECURITIES = app.TableDescription(
     loader=moex.SecuritiesLoader(),
-    index_checks=poptimizer.data.ports.base.IndexChecks.UNIQUE_ASCENDING,
+    index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=False,
 )
 INDEX = app.TableDescription(
     loader=moex.IndexLoader(),
-    index_checks=poptimizer.data.ports.base.IndexChecks.UNIQUE_ASCENDING,
+    index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=True,
 )
 
