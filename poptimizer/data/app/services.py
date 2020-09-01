@@ -3,43 +3,14 @@ from poptimizer.data.domain import factories, model, repo
 from poptimizer.data.ports import app, base, events, outer
 
 
-class UnitOfWork:
-    """Группа операций с таблицами, в конце которой осуществляется сохранение изменных данных."""
-
-    def __init__(
-        self,
-        description_registry: app.AbstractTableDescriptionRegistry,
-        db_session: outer.AbstractDBSession,
-    ) -> None:
-        """Создает изолированную сессию с базой данной и репо."""
-        self._db_session = db_session
-        self._repo = repo.Repo(description_registry, db_session)
-
-    def __enter__(self) -> "UnitOfWork":
-        """Возвращает репо с таблицами."""
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback) -> None:  # type: ignore
-        """Сохраняет изменные данные в базу данных."""
-        if exc_type is None:
-            self._db_session.commit(self._repo.seen())
-
-    @property
-    def repo(self) -> repo.Repo:
-        """Репо, хранящее информацию о виденных в рамках UoW таблицах."""
-        return self._repo
-
-
 def _load_or_create_table(
     table_name: base.TableName,
-    registry: app.AbstractTableDescriptionRegistry,
-    uow: UnitOfWork,
+    repository: repo.Repo,
 ) -> model.Table:
-    table = uow.repo.get(table_name)
-    if table is None:
-        desc = registry[table_name.group]
+    if (table := repository.get_table(table_name)) is None:
+        desc = repository.get_description(table_name)
         table = factories.create_table(table_name, desc)
-        uow.repo.add(table)
+        repository.add_table(table)
     return table
 
 
@@ -52,18 +23,17 @@ class EventsBus:
         db_session: outer.AbstractDBSession,
     ) -> None:
         """Создает изолированную сессию с базой данной и репо."""
-        self._registry = description_registry
-        self._db_session = db_session
+        self._repo_params = (description_registry, db_session)
 
     def handle_event(self, message: events.AbstractEvent) -> None:
         """Обработка сообщения и его следующих за ним."""
         messages = [message]
-        registry = self._registry
+        repo_params = self._repo_params
         while messages:
             message = messages.pop()
-            with UnitOfWork(registry, self._db_session) as uow:
+            with repo.Repo(*repo_params) as repository:
                 tables_dict = {
-                    table_name: _load_or_create_table(table_name, registry, uow)
+                    table_name: _load_or_create_table(table_name, repository)
                     for table_name in message.tables_required
                 }
                 message.handle_event(tables_dict)

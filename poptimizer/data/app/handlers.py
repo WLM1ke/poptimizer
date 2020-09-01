@@ -16,7 +16,7 @@ def get_df(
     event = events.UpdateDataFrame(table_name, force_update)
     bus.handle_event(event)
     store = repo.Repo(app_config.description_registry, app_config.db_session)
-    if (table := store.get(table_name)) is None:
+    if (table := store.get_table(table_name)) is None:
         raise base.DataError(f"Таблицы {table_name} нет в хранилище")
     return table.df
 
