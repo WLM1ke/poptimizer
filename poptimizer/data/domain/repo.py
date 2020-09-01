@@ -19,11 +19,11 @@ class Repo:
     def __init__(
         self,
         description_registry: app.AbstractTableDescriptionRegistry,
-        session: outer.AbstractDBSession,
+        db_session: outer.AbstractDBSession,
     ) -> None:
         """Сохраняются ссылки на таблицы, которые были добавлены или взяты из репозитория."""
         self._descriptions = description_registry
-        self._session = session
+        self._session = db_session
         self._seen: Dict[base.TableName, TimedTable] = {}
 
     def add(self, table: model.Table) -> None:
