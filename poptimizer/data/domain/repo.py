@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Dict, Iterable, NamedTuple, Optional
 
 from poptimizer.data.domain import factories, model
-from poptimizer.data.ports import base, outer
+from poptimizer.data.ports import app, base, outer
 
 
 class TimedTable(NamedTuple):
@@ -16,28 +16,33 @@ class TimedTable(NamedTuple):
 class Repo:
     """Класс репозитория для хранения таблиц."""
 
-    def __init__(self, session: outer.AbstractDBSession) -> None:
+    def __init__(
+        self,
+        description_registry: app.AbstractTableDescriptionRegistry,
+        session: outer.AbstractDBSession,
+    ) -> None:
         """Сохраняются ссылки на таблицы, которые были добавлены или взяты из репозитория."""
+        self._descriptions = description_registry
         self._session = session
         self._seen: Dict[base.TableName, TimedTable] = {}
 
     def add(self, table: model.Table) -> None:
         """Добавляет таблицу в репозиторий."""
-        self._seen[table.name] = TimedTable(table, table.timestamp)
+        self._seen[table.name] = TimedTable(table, None)
 
-    def get(self, name: base.TableName) -> model.Table:
-        """Берет таблицу из репозитория.
-
-        При необходимости создает ее.
-        """
-        if (timed_table := self._seen.get(name)) is not None:
+    def get(self, table_name: base.TableName) -> Optional[model.Table]:
+        """Берет таблицу из репозитория."""
+        if (timed_table := self._seen.get(table_name)) is not None:
             return timed_table.table
 
-        helper = self._load_helper(name)
-        if (table := self._load_main(name, helper)) is not None:
-            return table
+        if (table_tuple := self._session.get(table_name)) is None:
+            return None
 
-        return self._create_main(name, helper)
+        desc = self._descriptions[table_name.group]
+        table = factories.recreate_table(table_tuple, desc)
+        self._seen[table.name] = TimedTable(table, table.timestamp)
+
+        return table
 
     def seen(self) -> Iterable[base.TableTuple]:
         """Возвращает данные о таблицах."""
@@ -46,21 +51,3 @@ class Repo:
             for table, timestamp in self._seen.values()
             if timestamp != table.timestamp
         )
-
-    def _load_helper(self, name: base.TableName) -> Optional[model.Table]:
-        helper = None
-        if (helper_name := factories.get_helper_name(name)) is not None:
-            helper = self.get(helper_name)
-        return helper
-
-    def _load_main(self, name: base.TableName, helper: Optional[model.Table]) -> Optional[model.Table]:
-        if (table_tuple := self._session.get(name)) is not None:
-            table = factories.recreate_table(table_tuple, helper)
-            self.add(table)
-            return table
-        return None
-
-    def _create_main(self, name: base.TableName, helper: Optional[model.Table]) -> model.Table:
-        table = factories.create_table(name, helper)
-        self.add(table)
-        return table
