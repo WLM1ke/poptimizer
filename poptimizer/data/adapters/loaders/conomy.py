@@ -9,7 +9,7 @@ from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
 from poptimizer.data.adapters.loaders import logger, parser
-from poptimizer.data.ports import base, col, outer
+from poptimizer.data.ports import base, col
 
 # Параметры поиска страницы эмитента
 SEARCH_URL = "https://www.conomy.ru/search"
@@ -102,7 +102,7 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
     return columns
 
 
-class ConomyLoader(logger.LoggerMixin, outer.AbstractLoader):
+class ConomyLoader(logger.LoggerMixin, base.AbstractLoader):
     """Обновление для таблиц с дивидендами на https://www.conomy.ru/."""
 
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:

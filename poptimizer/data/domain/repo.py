@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Dict, NamedTuple, Optional
 
 from poptimizer.data.domain import factories, model
-from poptimizer.data.ports import app, base, outer
+from poptimizer.data.ports import base, outer
 
 
 class TimedTable(NamedTuple):
@@ -18,7 +18,7 @@ class Repo:
 
     def __init__(
         self,
-        description_registry: app.AbstractTableDescriptionRegistry,
+        description_registry: outer.AbstractTableDescriptionRegistry,
         db_session: outer.AbstractDBSession,
     ) -> None:
         """Сохраняются ссылки на таблицы, которые были добавлены или взяты из репозитория."""
@@ -59,6 +59,6 @@ class Repo:
 
         return table
 
-    def get_description(self, table_name: base.TableName) -> outer.TableDescription:
+    def get_description(self, table_name: base.TableName) -> base.TableDescription:
         """Регистр с описанием типов таблиц."""
         return self._descriptions[table_name.group]

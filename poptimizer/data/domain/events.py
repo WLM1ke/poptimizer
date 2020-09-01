@@ -3,10 +3,10 @@ from datetime import datetime
 from typing import Dict, Optional, Tuple
 
 from poptimizer.data.domain import model, services
-from poptimizer.data.ports import base, domain
+from poptimizer.data.ports import base, outer
 
 
-class UpdateDataFrame(domain.AbstractEvent):
+class UpdateDataFrame(outer.AbstractEvent):
     """Команда обновить DataFrame."""
 
     def __init__(self, table_name: base.TableName, force: bool = False):
@@ -34,7 +34,7 @@ class UpdateDataFrame(domain.AbstractEvent):
             self.new_events.append(UpdateTableWithHelper(table_name, helper_name))
 
 
-class UpdateTableWithHelper(domain.AbstractEvent):
+class UpdateTableWithHelper(outer.AbstractEvent):
     """Команда обновить с помощью вспомогательной таблицы."""
 
     def __init__(self, table_name: base.TableName, helper_name: base.TableName) -> None:
@@ -61,7 +61,7 @@ class UpdateTableWithHelper(domain.AbstractEvent):
             main.update()
 
 
-class UpdateTableByDate(domain.AbstractEvent):
+class UpdateTableByDate(outer.AbstractEvent):
     """Команда обновить таблицу с учетом последней торговой даты."""
 
     def __init__(

@@ -4,7 +4,7 @@ from typing import List
 import pandas as pd
 
 from poptimizer.data.adapters.loaders import connection, logger, parser
-from poptimizer.data.ports import base, col, outer
+from poptimizer.data.ports import base, col
 
 # Параметры парсинга сайта
 URL = "https://www.dohod.ru/ik/analytics/dividend/"
@@ -28,7 +28,7 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
     return [date_col, div_col]
 
 
-class DohodLoader(logger.LoggerMixin, outer.AbstractLoader):
+class DohodLoader(logger.LoggerMixin, base.AbstractLoader):
     """Обновление данных с https://dohod.ru."""
 
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:

@@ -1,7 +1,8 @@
-"""Базовые структуры данных."""
+"""Базовые типы данных домена."""
+import abc
+import datetime
 import enum
-from datetime import datetime
-from typing import Final, Literal, NamedTuple
+from typing import Final, Literal, NamedTuple, Optional, Union
 
 import pandas as pd
 
@@ -50,10 +51,35 @@ class IndexChecks(enum.Flag):
     UNIQUE_ASCENDING = UNIQUE | ASCENDING  # noqa: WPS115
 
 
-class TableTuple(NamedTuple):
-    """Представление таблицы в виде кортежа."""
+class AbstractLoader(abc.ABC):
+    """Обновляет конкретную группу таблиц."""
 
-    group: GroupName
-    name: str
-    df: pd.DataFrame
-    timestamp: datetime
+    @abc.abstractmethod
+    def __call__(self, table_name: TableName) -> pd.DataFrame:
+        """Загружает данные обновления полностью."""
+
+
+class AbstractIncrementalLoader(abc.ABC):
+    """Обновляет конкретную группу таблиц."""
+
+    @abc.abstractmethod
+    def __call__(
+        self,
+        table_name: TableName,
+        start_date: Optional[datetime.date] = None,
+    ) -> pd.DataFrame:
+        """Загружает данные обновления начиная с некой даты.
+
+        При отсутствии даты загружает все данные.
+        """
+
+
+Loaders = Union[AbstractLoader, AbstractIncrementalLoader]
+
+
+class TableDescription(NamedTuple):
+    """Описание правил обновления таблицы."""
+
+    loader: Loaders
+    index_checks: IndexChecks
+    validate: bool

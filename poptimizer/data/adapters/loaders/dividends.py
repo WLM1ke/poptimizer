@@ -4,14 +4,14 @@ import pymongo
 
 from poptimizer.data.adapters import db
 from poptimizer.data.adapters.loaders import logger
-from poptimizer.data.ports import base, col, outer
+from poptimizer.data.ports import base, col
 
 # Где хранятся данные о дивидендах
 SOURCE_DB = "source"
 SOURCE_COLLECTION = "dividends"
 
 
-class DividendsLoader(logger.LoggerMixin, outer.AbstractLoader):
+class DividendsLoader(logger.LoggerMixin, base.AbstractLoader):
     """Обновление данных из базы данных, заполняемой в ручную."""
 
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:

@@ -6,10 +6,10 @@ import apimoex
 import pandas as pd
 
 from poptimizer.data.adapters.loaders import connection, logger
-from poptimizer.data.ports import base, col, outer
+from poptimizer.data.ports import base, col
 
 
-class SecuritiesLoader(logger.LoggerMixin, outer.AbstractLoader):
+class SecuritiesLoader(logger.LoggerMixin, base.AbstractLoader):
     """Информация о всех торгующихся акциях."""
 
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:
@@ -25,7 +25,7 @@ class SecuritiesLoader(logger.LoggerMixin, outer.AbstractLoader):
         return df.set_index(col.TICKER)
 
 
-class IndexLoader(logger.LoggerMixin, outer.AbstractIncrementalLoader):
+class IndexLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
     """Котировки индекса полной доходности с учетом российских налогов - MCFTRR."""
 
     def __call__(

@@ -2,7 +2,7 @@
 import pandas as pd
 
 from poptimizer.data.domain import factories, model, repo
-from poptimizer.data.ports import app, base, domain, outer
+from poptimizer.data.ports import base, outer
 
 
 def _load_or_create_table(
@@ -16,18 +16,18 @@ def _load_or_create_table(
     return table
 
 
-class EventsBus(app.AbstractEventsBus):
+class EventsBus(outer.AbstractEventsBus):
     """Шина для обработки сообщений."""
 
     def __init__(
         self,
-        description_registry: app.AbstractTableDescriptionRegistry,
+        description_registry: outer.AbstractTableDescriptionRegistry,
         db_session: outer.AbstractDBSession,
     ) -> None:
         """Сохраняет параметры для создания изолированных репо для каждой обработки события."""
         self._repo_params = (description_registry, db_session)
 
-    def handle_event(self, message: domain.AbstractEvent) -> None:
+    def handle_event(self, message: outer.AbstractEvent) -> None:
         """Обработка сообщения и следующих за ним."""
         messages = [message]
         repo_params = self._repo_params
@@ -42,12 +42,12 @@ class EventsBus(app.AbstractEventsBus):
             messages.extend(message.new_events)
 
 
-class Viewer(app.AbstractViewer):
+class Viewer(outer.AbstractViewer):
     """Позволяет смотреть DataFrame по имени таблицы."""
 
     def __init__(
         self,
-        description_registry: app.AbstractTableDescriptionRegistry,
+        description_registry: outer.AbstractTableDescriptionRegistry,
         db_session: outer.AbstractDBSession,
     ) -> None:
         """Сохраняет репо для просмотра данных."""

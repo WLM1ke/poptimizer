@@ -4,7 +4,7 @@ from typing import Optional
 
 import pandas as pd
 
-from poptimizer.data.ports import base, outer
+from poptimizer.data.ports import base
 
 
 class Table:
@@ -13,7 +13,7 @@ class Table:
     def __init__(
         self,
         name: base.TableName,
-        desc: outer.TableDescription,
+        desc: base.TableDescription,
         df: Optional[pd.DataFrame] = None,
         timestamp: Optional[datetime] = None,
     ):
@@ -72,7 +72,7 @@ class Table:
             self._set_df(loader(name))
             return
 
-        if isinstance(loader, outer.AbstractLoader):
+        if isinstance(loader, base.AbstractLoader):
             df_new = loader(name)
         else:
             date = df_old.index[-1].date()

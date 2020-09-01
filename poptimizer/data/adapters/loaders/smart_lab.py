@@ -4,7 +4,7 @@ from typing import List
 import pandas as pd
 
 from poptimizer.data.adapters.loaders import connection, logger, parser
-from poptimizer.data.ports import base, col, outer
+from poptimizer.data.ports import base, col
 
 # Параметры парсинга сайта
 URL = "https://smart-lab.ru/dividends/index/order_by_cut_off_date/asc/"
@@ -31,7 +31,7 @@ def get_col_desc() -> List[parser.ColDesc]:
     return [ticker, date, div]
 
 
-class SmartLabLoader(logger.LoggerMixin, outer.AbstractLoader):
+class SmartLabLoader(logger.LoggerMixin, base.AbstractLoader):
     """Обновление данных с https://www.smart-lab.ru."""
 
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:

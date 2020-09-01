@@ -2,6 +2,7 @@ import datetime
 
 import pytest
 
+import poptimizer.data.ports.outer
 from poptimizer.data import config
 
 
@@ -11,7 +12,7 @@ def set_start_date(monkeypatch):
     monkeypatch.setattr(
         config,
         "CONFIG",
-        config.app.Config(
+        poptimizer.data.ports.outer.Config(
             event_bus=app_conf.event_bus,
             viewer=app_conf.viewer,
             start_date=datetime.date(2010, 1, 1),
