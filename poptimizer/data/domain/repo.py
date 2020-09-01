@@ -59,6 +59,6 @@ class Repo:
 
         return table
 
-    def get_description(self, table_name: base.TableName) -> app.TableDescription:
+    def get_description(self, table_name: base.TableName) -> outer.TableDescription:
         """Регистр с описанием типов таблиц."""
         return self._descriptions[table_name.group]

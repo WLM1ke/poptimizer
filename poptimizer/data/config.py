@@ -13,50 +13,51 @@ from poptimizer.data.adapters.loaders import (
     smart_lab,
     trading_dates,
 )
-from poptimizer.data.ports import app, base
+from poptimizer.data.app import services
+from poptimizer.data.ports import app, base, outer
 
-TRADING_DATES = app.TableDescription(
+TRADING_DATES = outer.TableDescription(
     loader=trading_dates.TradingDatesLoader(),
     index_checks=base.IndexChecks.NO_CHECKS,
     validate=False,
 )
-CONOMY = app.TableDescription(
+CONOMY = outer.TableDescription(
     loader=conomy.ConomyLoader(),
     index_checks=base.IndexChecks.ASCENDING,
     validate=False,
 )
-DOHOD = app.TableDescription(
+DOHOD = outer.TableDescription(
     loader=dohod.DohodLoader(),
     index_checks=base.IndexChecks.ASCENDING,
     validate=False,
 )
-SMART_LAB = app.TableDescription(
+SMART_LAB = outer.TableDescription(
     loader=smart_lab.SmartLabLoader(),
     index_checks=base.IndexChecks.NO_CHECKS,
     validate=False,
 )
-DIVIDENDS = app.TableDescription(
+DIVIDENDS = outer.TableDescription(
     loader=dividends.DividendsLoader(),
     index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=False,
 )
-CPI = app.TableDescription(
+CPI = outer.TableDescription(
     loader=cpi.CPILoader(),
     index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=True,
 )
-SECURITIES = app.TableDescription(
+SECURITIES = outer.TableDescription(
     loader=moex.SecuritiesLoader(),
     index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=False,
 )
-INDEX = app.TableDescription(
+INDEX = outer.TableDescription(
     loader=moex.IndexLoader(),
     index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=True,
 )
 
-TABLES_REGISTRY: Mapping[base.GroupName, app.TableDescription] = MappingProxyType(
+TABLES_REGISTRY: Mapping[base.GroupName, outer.TableDescription] = MappingProxyType(
     {
         base.TRADING_DATES: TRADING_DATES,
         base.CONOMY: CONOMY,
@@ -70,9 +71,10 @@ TABLES_REGISTRY: Mapping[base.GroupName, app.TableDescription] = MappingProxyTyp
 )
 _START_YEAR = 2015
 START_DATE: Final = datetime.date(_START_YEAR, 1, 1)
+DB_SESSION = db.MongoDBSession()
 CONFIG = app.Config(
-    db_session=db.MongoDBSession(),
-    description_registry=TABLES_REGISTRY,
+    event_bus=services.EventsBus(TABLES_REGISTRY, DB_SESSION),
+    viewer=services.Viewer(TABLES_REGISTRY, DB_SESSION),
     start_date=START_DATE,
 )
 

@@ -1,7 +1,7 @@
 """Интерфейсы внешней инфраструктуры."""
 import abc
 import datetime
-from typing import Iterable, Optional, Union
+from typing import Iterable, NamedTuple, Optional, Union
 
 import pandas as pd
 
@@ -44,3 +44,11 @@ class AbstractIncrementalLoader(abc.ABC):
 
 
 Loaders = Union[AbstractLoader, AbstractIncrementalLoader]
+
+
+class TableDescription(NamedTuple):
+    """Описание правил обновления таблицы."""
+
+    loader: Loaders
+    index_checks: base.IndexChecks
+    validate: bool

@@ -1,14 +1,14 @@
 """Фабрики по созданию объектов и их сериализации."""
 from poptimizer.data.domain import model
-from poptimizer.data.ports import app, base
+from poptimizer.data.ports import base, outer
 
 
-def create_table(name: base.TableName, desc: app.TableDescription) -> model.Table:
+def create_table(name: base.TableName, desc: outer.TableDescription) -> model.Table:
     """Создает таблицу."""
     return model.Table(name=name, desc=desc)
 
 
-def recreate_table(table_tuple: base.TableTuple, desc: app.TableDescription) -> model.Table:
+def recreate_table(table_tuple: base.TableTuple, desc: outer.TableDescription) -> model.Table:
     """Создает таблицу на основе данных и обновляет ее."""
     name = base.TableName(table_tuple.group, table_tuple.name)
     return model.Table(name, desc, table_tuple.df, table_tuple.timestamp)

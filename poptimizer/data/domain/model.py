@@ -4,7 +4,7 @@ from typing import Optional
 
 import pandas as pd
 
-from poptimizer.data.ports import app, base, outer
+from poptimizer.data.ports import base, outer
 
 
 class Table:
@@ -13,7 +13,7 @@ class Table:
     def __init__(
         self,
         name: base.TableName,
-        desc: app.TableDescription,
+        desc: outer.TableDescription,
         df: Optional[pd.DataFrame] = None,
         timestamp: Optional[datetime] = None,
     ):
