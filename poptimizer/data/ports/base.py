@@ -1,4 +1,5 @@
 """Базовые структуры данных."""
+import enum
 from datetime import datetime
 from typing import Final, Literal, NamedTuple
 
@@ -38,6 +39,15 @@ class TableName(NamedTuple):
 
     group: GroupName
     name: str
+
+
+class IndexChecks(enum.Flag):
+    """Виды проверок для индекса таблицы."""
+
+    NO_CHECKS = 0  # noqa: WPS115
+    UNIQUE = enum.auto()  # noqa: WPS115
+    ASCENDING = enum.auto()  # noqa: WPS115
+    UNIQUE_ASCENDING = UNIQUE | ASCENDING  # noqa: WPS115
 
 
 class TableTuple(NamedTuple):

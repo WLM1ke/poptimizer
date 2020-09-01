@@ -1,22 +1,13 @@
 """Интерфейс регистра с описанием таблиц."""
 import datetime
-import enum
 from typing import Mapping, NamedTuple
 
 from poptimizer.data.ports import base, outer
-
-
-class IndexChecks(enum.Flag):
-    """Виды проверок для индекса таблицы."""
-
-    NO_CHECKS = 0  # noqa: WPS115
-    UNIQUE = enum.auto()  # noqa: WPS115
-    ASCENDING = enum.auto()  # noqa: WPS115
-    UNIQUE_ASCENDING = UNIQUE | ASCENDING  # noqa: WPS115
+from poptimizer.data.ports.base import IndexChecks
 
 
 class TableDescription(NamedTuple):
-    """Описание типа таблицы."""
+    """Описание правил обновления таблицы."""
 
     loader: outer.Loaders
     index_checks: IndexChecks
