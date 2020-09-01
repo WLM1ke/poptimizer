@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 
 from poptimizer.data import config
@@ -5,13 +7,14 @@ from poptimizer.data import config
 
 @pytest.fixture(scope="function", autouse=True)
 def set_start_date(monkeypatch):
+    app_conf = config.get()
     monkeypatch.setattr(
         config,
         "CONFIG",
         config.app.Config(
-            db_session=config.db.MongoDBSession(),
-            description_registry=config.TABLES_REGISTRY,
-            start_date=config.datetime.date(2010, 1, 1),
+            event_bus=app_conf.event_bus,
+            viewer=app_conf.viewer,
+            start_date=datetime.date(2010, 1, 1),
         ),
     )
     yield
