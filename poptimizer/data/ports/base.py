@@ -55,5 +55,5 @@ class TableTuple(NamedTuple):
 
     group: GroupName
     name: str
-    df: Optional[pd.DataFrame]
-    timestamp: Optional[datetime]
+    df: pd.DataFrame
+    timestamp: datetime

@@ -17,4 +17,6 @@ def recreate_table(table_tuple: base.TableTuple, desc: app.TableDescription) -> 
 def convent_to_tuple(table: model.Table) -> base.TableTuple:
     """Конвертирует объект в кортеж."""
     group, name = table.name
-    return base.TableTuple(group=group, name=name, df=table.df, timestamp=table.timestamp)
+    if (timestamp := table.timestamp) is None:
+        raise base.DataError(f"Попытка сериализации пустой таблицы {table.name}")
+    return base.TableTuple(group=group, name=name, df=table.df, timestamp=timestamp)
