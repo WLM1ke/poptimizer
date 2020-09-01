@@ -37,10 +37,6 @@ class Table:
         self._df = df
         self._timestamp = timestamp
 
-    def __str__(self) -> str:
-        """Отображает название класса и таблицы."""
-        return f"{self.__class__.__name__}({', '.join(self._name)})"
-
     @property
     def name(self) -> base.TableName:
         """Наименование таблицы."""
@@ -52,6 +48,11 @@ class Table:
         if (df := self._df) is None:
             return None
         return df.copy()
+
+    @property
+    def timestamp(self) -> Optional[datetime]:
+        """Момент последнего обновления таблицы."""
+        return self._timestamp
 
     def need_update(self, end_of_trading_day: datetime) -> bool:
         """Нужно ли обновить таблицу."""

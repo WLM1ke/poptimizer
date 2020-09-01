@@ -1,7 +1,7 @@
 """Базовые структуры данных."""
 import enum
 from datetime import datetime
-from typing import Final, Literal, NamedTuple
+from typing import Final, Literal, NamedTuple, Optional
 
 import pandas as pd
 
@@ -55,5 +55,5 @@ class TableTuple(NamedTuple):
 
     group: GroupName
     name: str
-    df: pd.DataFrame
-    timestamp: datetime
+    df: Optional[pd.DataFrame]
+    timestamp: Optional[datetime]
