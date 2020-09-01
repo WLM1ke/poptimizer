@@ -1,7 +1,7 @@
 """Запросы таблиц."""
 import pandas as pd
 
-from poptimizer.data.app.uow import UnitOfWork
+from poptimizer.data.app.services import UnitOfWork
 from poptimizer.data.domain import factories, model
 from poptimizer.data.domain.services import tables
 from poptimizer.data.ports import app, base
