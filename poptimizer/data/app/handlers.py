@@ -1,23 +1,9 @@
 """Запросы таблиц."""
 import pandas as pd
 
-from poptimizer.data.app.services import UnitOfWork
-from poptimizer.data.domain import factories, model
-from poptimizer.data.domain.services import tables
+from poptimizer.data.app import services
+from poptimizer.data.domain import events, repo
 from poptimizer.data.ports import app, base
-
-
-def _load_or_create_table(
-    table_name: base.TableName,
-    app_config: app.Config,
-    uow: UnitOfWork,
-) -> model.Table:
-    table = uow.repo.get(table_name)
-    if table is None:
-        desc = app_config.description_registry[table_name.group]
-        table = factories.create_table(table_name, desc)
-        uow.repo.add(table)
-    return table
 
 
 def get_df(
@@ -26,17 +12,13 @@ def get_df(
     force_update: bool = False,
 ) -> pd.DataFrame:
     """Возвращает таблицу по наименованию."""
-    with UnitOfWork(app_config.description_registry, app_config.db_session) as uow:
-        helper_name = tables.get_helper_name(table_name)
-        helper = None
-        if helper_name is not None:
-            helper = _load_or_create_table(helper_name, app_config, uow)
-            tables.update(helper, helper=None)
-
-        table = _load_or_create_table(table_name, app_config, uow)
-        tables.update(table, helper, force_update)
-
-        return table.df
+    bus = services.EventsBus(app_config.description_registry, app_config.db_session)
+    event = events.UpdateDataFrame(table_name, force_update)
+    bus.handle_event(event)
+    store = repo.Repo(app_config.description_registry, app_config.db_session)
+    if (table := store.get(table_name)) is None:
+        raise base.DataError(f"Таблицы {table_name} нет в хранилище")
+    return table.df
 
 
 def get_df_force_update(table_name: base.TableName, app_config: app.Config) -> pd.DataFrame:
