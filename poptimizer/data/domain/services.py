@@ -21,7 +21,7 @@ def _to_utc_naive(date: datetime) -> datetime:
     return date.replace(tzinfo=None)
 
 
-def potential_end() -> datetime:
+def trading_day_potential_end() -> datetime:
     """Конец возможного последнего торгового дня UTC."""
     now = datetime.now(MOEX_TZ)
     end_of_trading = now.replace(hour=END_HOUR, minute=END_MINUTE, second=0, microsecond=0)
@@ -30,7 +30,7 @@ def potential_end() -> datetime:
     return _to_utc_naive(end_of_trading)
 
 
-def real_end(helper_table: model.Table) -> datetime:
+def trading_day_real_end(helper_table: model.Table) -> datetime:
     """Конец реального (с имеющейся историей) торгового дня UTC."""
     df = helper_table.df
     if df is None:
@@ -42,12 +42,8 @@ def real_end(helper_table: model.Table) -> datetime:
     return _to_utc_naive(date)
 
 
-def get_end(helper: Optional[model.Table]) -> datetime:
-    """Возвращает конец торгового дня.
-
-    Потенциальный при отсутствии вспомогательной таблицы.
-    Реальный - при наличии.
-    """
-    if helper is None:
-        return potential_end()
-    return real_end(helper)
+def get_helper_name(name: base.TableName) -> Optional[base.TableName]:
+    """Имя вспомогательной таблицы."""
+    if name.group != base.TRADING_DATES:
+        return base.TableName(base.TRADING_DATES, base.TRADING_DATES)
+    return None

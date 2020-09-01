@@ -2,8 +2,7 @@
 from datetime import datetime
 from typing import Dict, Optional, Tuple
 
-from poptimizer.data.domain import model
-from poptimizer.data.domain.services import tables, trading_day
+from poptimizer.data.domain import model, services
 from poptimizer.data.ports import base, events
 
 
@@ -28,8 +27,8 @@ class UpdateDataFrame(events.AbstractEvent):
 
         if force:
             self.new_events.append(UpdateTableByDate(table_name))
-        elif (helper_name := tables.get_helper_name(self._table_name)) is None:
-            end_of_trading_day = trading_day.potential_end()
+        elif (helper_name := services.get_helper_name(self._table_name)) is None:
+            end_of_trading_day = services.trading_day_potential_end()
             self.new_events.append(UpdateTableByDate(table_name, end_of_trading_day))
         else:
             self.new_events.append(UpdateTableWithHelper(table_name, helper_name))
@@ -52,12 +51,12 @@ class UpdateTableWithHelper(events.AbstractEvent):
     def handle_event(self, tables_dict: Dict[base.TableName, model.Table]) -> None:
         """Обновляет вспомогательную таблицу, а потом основную с учетом необходимости."""
         helper = tables_dict[self._helper_name]
-        end_of_trading_day = trading_day.potential_end()
+        end_of_trading_day = services.trading_day_potential_end()
         if helper.need_update(end_of_trading_day):
             helper.update()
 
         main = tables_dict[self._table_name]
-        end_of_trading_day = trading_day.real_end(helper)
+        end_of_trading_day = services.trading_day_real_end(helper)
         if main.need_update(end_of_trading_day):
             main.update()
 
