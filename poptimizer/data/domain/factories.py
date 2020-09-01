@@ -5,13 +5,6 @@ from poptimizer.data.domain import model
 from poptimizer.data.ports import base
 
 
-def get_helper_name(name: base.TableName) -> Optional[base.TableName]:
-    """Имя вспомогательной таблицы."""
-    if name.group != base.TRADING_DATES:
-        return base.TableName(base.TRADING_DATES, base.TRADING_DATES)
-    return None
-
-
 def create_table(name: base.TableName, helper: Optional[model.Table]) -> model.Table:
     """Создает таблицу."""
     return model.Table(name=name, helper_table=helper)

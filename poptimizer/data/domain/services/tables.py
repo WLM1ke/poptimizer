@@ -3,6 +3,14 @@ from typing import Optional
 
 from poptimizer.data.domain import model
 from poptimizer.data.domain.services import trading_day
+from poptimizer.data.ports import base
+
+
+def get_helper_name(name: base.TableName) -> Optional[base.TableName]:
+    """Имя вспомогательной таблицы."""
+    if name.group != base.TRADING_DATES:
+        return base.TableName(base.TRADING_DATES, base.TRADING_DATES)
+    return None
 
 
 def update(
