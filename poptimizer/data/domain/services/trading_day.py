@@ -1,5 +1,6 @@
 """Проверка необходимости осуществления обновления таблицы."""
 from datetime import datetime, timedelta
+from typing import Optional
 
 from pytz import timezone
 
@@ -41,36 +42,12 @@ def real_end(helper_table: model.Table) -> datetime:
     return _to_utc_naive(date)
 
 
-def rule_for_new_or_without_helper(table: model.Table) -> bool:
-    """Правило обновления для таблиц без вспомогательной таблицы.
+def get_end(helper: Optional[model.Table]) -> datetime:
+    """Возвращает конец торгового дня.
 
-    - Если новая, то есть не содержит данных
-    - Не обновлялась после возможного окончания последнего торгового дня
+    Потенциальный при отсутствии вспомогательной таблицы.
+    Реальный - при наличии.
     """
-    if (timestamp := table.timestamp) is None:
-        return True
-    return table.helper_table is None and timestamp < potential_end()
-
-
-def rule_for_new_or_with_helper(table: model.Table) -> bool:
-    """Правило обновления для таблиц с вспомогательной таблицей.
-
-    - Если новая, то есть не содержит данных
-    - Не обновлялась после реального окончания последнего торгового дня из вспомогательной таблицы
-    """
-    if (timestamp := table.timestamp) is None:
-        return True
-    return table.helper_table is not None and timestamp < real_end(table.helper_table)
-
-
-def check(table: model.Table) -> bool:
-    """Нужно ли обновлять данные о диапазоне доступных торговых дат.
-
-    Если последние обновление было раньше публикации данных о последних торгах, то требуется
-    обновление.
-    """
-    check_func = (
-        rule_for_new_or_without_helper,
-        rule_for_new_or_with_helper,
-    )
-    return any(func(table) for func in check_func)
+    if helper is None:
+        return potential_end()
+    return real_end(helper)
