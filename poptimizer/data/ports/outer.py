@@ -52,7 +52,7 @@ class AbstractDBSession(abc.ABC):
         """Сохраняет данные таблиц."""
 
 
-AbstractTableDescriptionRegistry = Mapping[base.GroupName, base.TableDescription]
+TableDescriptionRegistry = Mapping[base.GroupName, base.TableDescription]
 
 
 class AbstractEventsBus(abc.ABC):
@@ -69,11 +69,3 @@ class AbstractViewer(abc.ABC):
     @abc.abstractmethod
     def get_df(self, table_name: base.TableName) -> pd.DataFrame:
         """Возвращает DataFrame по имени таблицы."""
-
-
-class Config(NamedTuple):
-    """Описание конфигурации приложения."""
-
-    event_bus: AbstractEventsBus
-    viewer: AbstractViewer
-    start_date: datetime.date

@@ -6,6 +6,7 @@ from typing import Tuple
 import pandas as pd
 from scipy import stats
 
+from poptimizer import config
 from poptimizer.config import MAX_TRADE
 from poptimizer.portfolio import metrics
 from poptimizer.portfolio.portfolio import Portfolio, CASH, PORTFOLIO
@@ -14,6 +15,9 @@ from poptimizer.portfolio.portfolio import Portfolio, CASH, PORTFOLIO
 TRADES = 5
 # Значимость отклонения градиента от нуля
 P_VALUE = 0.05
+
+# Издержки в годовом выражении для двух операций
+COSTS = (config.YEAR_IN_TRADING_DAYS * 2) * (0.025 / 100) * 0.02
 
 
 class Optimizer:
@@ -86,9 +90,9 @@ class Optimizer:
     def best_combination(self):
         """Лучшие комбинации для торговли.
 
-         Для каждого актива, который можно продать со значимым улучшением выбирается актив с
-         максимальной вероятностью улучшения.
-         """
+        Для каждого актива, который можно продать со значимым улучшением выбирается актив с
+        максимальной вероятностью улучшения.
+        """
         rez = self._wilcoxon_tests()
 
         rez = pd.DataFrame(list(rez), columns=["SELL", "BUY", "GRAD_DIFF", "TURNOVER", "ADJ_P_VALUE"])
@@ -116,7 +120,7 @@ class Optimizer:
             if sell == buy or turnover_all[buy] == 0:
                 continue
 
-            diff = all_gradients.loc[buy] - all_gradients.loc[sell]
+            diff = all_gradients.loc[buy] - all_gradients.loc[sell] - COSTS
             _, alfa = stats.wilcoxon(diff, alternative="greater", correction=True)
 
             turnover = turnover_all[buy]

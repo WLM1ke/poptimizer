@@ -1,4 +1,6 @@
 """Группа операций с таблицами, в конце которой осуществляется сохранение изменных данных."""
+from typing import Callable
+
 import pandas as pd
 
 from poptimizer.data.domain import factories, model, repo
@@ -19,21 +21,17 @@ def _load_or_create_table(
 class EventsBus(outer.AbstractEventsBus):
     """Шина для обработки сообщений."""
 
-    def __init__(
-        self,
-        description_registry: outer.AbstractTableDescriptionRegistry,
-        db_session: outer.AbstractDBSession,
-    ) -> None:
+    def __init__(self, repo_factory: Callable[[], repo.Repo]) -> None:
         """Сохраняет параметры для создания изолированных репо для каждой обработки события."""
-        self._repo_params = (description_registry, db_session)
+        self._repo_factory = repo_factory
 
     def handle_event(self, message: outer.AbstractEvent) -> None:
         """Обработка сообщения и следующих за ним."""
         messages = [message]
-        repo_params = self._repo_params
+        repo_factory = self._repo_factory
         while messages:
             message = messages.pop()
-            with repo.Repo(*repo_params) as store:
+            with repo_factory() as store:
                 tables_dict = {
                     table_name: _load_or_create_table(table_name, store)
                     for table_name in message.tables_required
@@ -45,13 +43,9 @@ class EventsBus(outer.AbstractEventsBus):
 class Viewer(outer.AbstractViewer):
     """Позволяет смотреть DataFrame по имени таблицы."""
 
-    def __init__(
-        self,
-        description_registry: outer.AbstractTableDescriptionRegistry,
-        db_session: outer.AbstractDBSession,
-    ) -> None:
+    def __init__(self, repo_factory: Callable[[], repo.Repo]) -> None:
         """Сохраняет репо для просмотра данных."""
-        self._repo = repo.Repo(description_registry, db_session)
+        self._repo = repo_factory()
 
     def get_df(self, table_name: base.TableName) -> pd.DataFrame:
         """Возвращает DataFrame по имени таблицы."""

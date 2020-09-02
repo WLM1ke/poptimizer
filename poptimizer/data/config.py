@@ -1,7 +1,7 @@
 """Конфигурация приложения."""
 import datetime
 from types import MappingProxyType
-from typing import Final, Mapping
+from typing import Final
 
 from poptimizer.data.adapters import db
 from poptimizer.data.adapters.loaders import (
@@ -14,71 +14,74 @@ from poptimizer.data.adapters.loaders import (
     trading_dates,
 )
 from poptimizer.data.app import services
+from poptimizer.data.domain import repo
 from poptimizer.data.ports import base, outer
 
-TRADING_DATES = base.TableDescription(
+_TRADING_DATES = base.TableDescription(
     loader=trading_dates.TradingDatesLoader(),
     index_checks=base.IndexChecks.NO_CHECKS,
     validate=False,
 )
-CONOMY = base.TableDescription(
+_CONOMY = base.TableDescription(
     loader=conomy.ConomyLoader(),
     index_checks=base.IndexChecks.ASCENDING,
     validate=False,
 )
-DOHOD = base.TableDescription(
+_DOHOD = base.TableDescription(
     loader=dohod.DohodLoader(),
     index_checks=base.IndexChecks.ASCENDING,
     validate=False,
 )
-SMART_LAB = base.TableDescription(
+_SMART_LAB = base.TableDescription(
     loader=smart_lab.SmartLabLoader(),
     index_checks=base.IndexChecks.NO_CHECKS,
     validate=False,
 )
-DIVIDENDS = base.TableDescription(
+_DIVIDENDS = base.TableDescription(
     loader=dividends.DividendsLoader(),
     index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=False,
 )
-CPI = base.TableDescription(
+_CPI = base.TableDescription(
     loader=cpi.CPILoader(),
     index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=True,
 )
-SECURITIES = base.TableDescription(
+_SECURITIES = base.TableDescription(
     loader=moex.SecuritiesLoader(),
     index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=False,
 )
-INDEX = base.TableDescription(
+_INDEX = base.TableDescription(
     loader=moex.IndexLoader(),
     index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=True,
 )
 
-TABLES_REGISTRY: Mapping[base.GroupName, base.TableDescription] = MappingProxyType(
+_TABLES_REGISTRY: outer.TableDescriptionRegistry = MappingProxyType(
     {
-        base.TRADING_DATES: TRADING_DATES,
-        base.CONOMY: CONOMY,
-        base.DOHOD: DOHOD,
-        base.SMART_LAB: SMART_LAB,
-        base.DIVIDENDS: DIVIDENDS,
-        base.CPI: CPI,
-        base.SECURITIES: SECURITIES,
-        base.INDEX: INDEX,
+        base.TRADING_DATES: _TRADING_DATES,
+        base.CONOMY: _CONOMY,
+        base.DOHOD: _DOHOD,
+        base.SMART_LAB: _SMART_LAB,
+        base.DIVIDENDS: _DIVIDENDS,
+        base.CPI: _CPI,
+        base.SECURITIES: _SECURITIES,
+        base.INDEX: _INDEX,
     },
 )
+_DB_SESSION = db.MongoDBSession()
+
+
+def repo_factory() -> repo.Repo:
+    """Создает репо."""
+    return repo.Repo(_TABLES_REGISTRY, _DB_SESSION)
+
+
+# Параметры для инициализации обработчиков на уровне приложения
+EVENTS_BUS = services.EventsBus(repo_factory)
+VIEWER = services.Viewer(repo_factory)
+
+# Параметры представления конечных данных
 _START_YEAR = 2015
 START_DATE: Final = datetime.date(_START_YEAR, 1, 1)
-DB_SESSION = db.MongoDBSession()
-CONFIG = outer.Config(
-    event_bus=services.EventsBus(TABLES_REGISTRY, DB_SESSION),
-    viewer=services.Viewer(TABLES_REGISTRY, DB_SESSION),
-    start_date=START_DATE,
-)
-
-
-def get() -> outer.Config:
-    """Возвращает конфигурацию приложения."""
-    return CONFIG

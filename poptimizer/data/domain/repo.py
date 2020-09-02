@@ -18,7 +18,7 @@ class Repo:
 
     def __init__(
         self,
-        description_registry: outer.AbstractTableDescriptionRegistry,
+        description_registry: outer.TableDescriptionRegistry,
         db_session: outer.AbstractDBSession,
     ) -> None:
         """Сохраняются ссылки на таблицы, которые были добавлены или взяты из репозитория."""
