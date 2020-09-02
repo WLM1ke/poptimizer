@@ -12,7 +12,7 @@
 ^^^^^^^^^^^^^^^^
 
 * Возможность анализа всех акций, обращающихся на MOEX
-* База данных дивидендов с 2010г по ~100 наиболее ликвидным акциям
+* База данных дивидендов с 2015г по ~100 наиболее ликвидным акциям
 * Возможность сверки базы данных дивидендов с информацией на сайтах `www.dohod.ru <https://www.dohod.ru/ik/analytics/dividend>`_, `www.conomy.ru <https://www.conomy.ru/dates-close/dates-close2>`_ и `www.smart-lab.ru <https://smart-lab.ru/dividends/index/order_by_yield/desc/>`_
 
 Прогнозирование параметров активов
@@ -33,9 +33,10 @@
 Направления дальнейшего развития
 --------------------------------
 
+* Рефакторинг кода на основе `DDD <https://en.wikipedia.org/wiki/Domain-driven_design>`_, `MyPy <http://mypy.readthedocs.org/en/latest/>`_ и `wemake <https://wemake-python-stylegui.de/en/latest/>`_
+* Возможность анализа иностранных акций, обращающихся на MOEX
 * Возможность анализа ETF, обращающихся на MOEX
 * Использование смеси логнормальных распределений вместо нормального распределения для прогнозирования доходности и дисперсии активов
 * Применение нелинейного сжатия Ledoit-Wolf для оценки корреляции активов
 * Поиск оптимальной архитектуры сетей с помощью эволюции с "нуля" по аналогии с `Evolving Neural Networks through Augmenting Topologies <http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf>`_
-* Возможность анализа иностранных акций, обращающихся на MOEX
 * Использование Reinforcement learning для построения портфеля, вместо прямой оптимизации
