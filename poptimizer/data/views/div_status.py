@@ -4,15 +4,15 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
-from poptimizer.data.app import handlers
-from poptimizer.data.views import crop
+from poptimizer.data.config import bootstrap
 from poptimizer.data.ports import base, col
+from poptimizer.data.views import crop
 
 
 def smart_lab() -> pd.DataFrame:
     """Информация по дивидендам с smart-lab.ru."""
     table_name = base.TableName(base.SMART_LAB, base.SMART_LAB)
-    return handlers.get_df(table_name)
+    return bootstrap.get_handler().get_df(table_name)
 
 
 def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:

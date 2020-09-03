@@ -1,7 +1,6 @@
 """Загрузка данных по потребительской инфляции."""
 import pandas as pd
 
-import poptimizer.data.views.crop
 from poptimizer.data.adapters.loaders import logger
 from poptimizer.data.ports import base, col
 

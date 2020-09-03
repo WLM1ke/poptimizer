@@ -2,7 +2,8 @@
 import apimoex
 import pandas as pd
 
-from poptimizer.data.adapters.loaders import connection, logger
+from poptimizer.data.adapters.loaders import logger
+from poptimizer.data.config import resources
 from poptimizer.data.ports import base
 
 
@@ -15,7 +16,7 @@ class TradingDatesLoader(logger.LoggerMixin, base.AbstractLoader):
         if name != base.TRADING_DATES:
             raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
-        session = connection.get_http_session()
+        session = resources.get_http_session()
         json = apimoex.get_board_dates(session, board="TQBR", market="shares", engine="stock")
         self._logger.info(f"Последняя дата с историей: {json[0]['till']}")
         return pd.DataFrame(json)

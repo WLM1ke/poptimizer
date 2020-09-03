@@ -2,8 +2,8 @@
 import pandas as pd
 import pymongo
 
-from poptimizer.data.adapters import db
 from poptimizer.data.adapters.loaders import logger
+from poptimizer.data.config import resources
 from poptimizer.data.ports import base, col
 
 # Где хранятся данные о дивидендах
@@ -18,7 +18,7 @@ class DividendsLoader(logger.LoggerMixin, base.AbstractLoader):
         """Получение дивидендов для заданного тикера."""
         ticker = self._log_and_validate_group(table_name, base.DIVIDENDS)
 
-        client = db.get_mongo_client()
+        client = resources.get_mongo_client()
         collection = client[SOURCE_DB][SOURCE_COLLECTION]
 
         json = list(

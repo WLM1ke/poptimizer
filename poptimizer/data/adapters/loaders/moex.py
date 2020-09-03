@@ -6,7 +6,8 @@ import apimoex
 import pandas as pd
 from pytz import timezone
 
-from poptimizer.data.adapters.loaders import connection, logger
+from poptimizer.data.adapters.loaders import logger
+from poptimizer.data.config import resources
 from poptimizer.data.ports import base, col
 
 # Часовой пояс MOEX
@@ -23,7 +24,7 @@ class SecuritiesLoader(logger.LoggerMixin, base.AbstractLoader):
             raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
         columns = ("SECID", "REGNUMBER", "LOTSIZE")
-        json = apimoex.get_board_securities(connection.get_http_session(), columns=columns)
+        json = apimoex.get_board_securities(resources.get_http_session(), columns=columns)
         df = pd.DataFrame(json)
         df.columns = [col.TICKER, col.REG_NUMBER, col.LOT_SIZE]
         return df.set_index(col.TICKER)
@@ -43,7 +44,7 @@ class IndexLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
             raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
         json = apimoex.get_board_history(
-            session=connection.get_http_session(),
+            session=resources.get_http_session(),
             start=str(start_date),
             security=base.INDEX,
             columns=("TRADEDATE", "CLOSE"),
@@ -68,7 +69,7 @@ def _previous_day_in_moscow() -> str:
 
 def _download_many(aliases: List[str]) -> pd.DataFrame:
     """Загрузка нескольких рядов котировок."""
-    http_session = connection.get_http_session()
+    http_session = resources.get_http_session()
     json_all_aliases = []
     for ticker in aliases:
         json = apimoex.get_market_candles(http_session, ticker, end=_previous_day_in_moscow())
@@ -100,7 +101,7 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
             df = _download_many(aliases)
         else:
             json = apimoex.get_market_candles(
-                connection.get_http_session(),
+                resources.get_http_session(),
                 ticker,
                 start=str(start_date),
                 end=_previous_day_in_moscow(),
@@ -121,7 +122,7 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
     def _find_aliases(self, ticker: str) -> List[str]:
         """Ищет все тикеры с эквивалентным регистрационным номером."""
         number = self._get_reg_num(ticker)
-        json = apimoex.find_securities(connection.get_http_session(), number)
+        json = apimoex.find_securities(resources.get_http_session(), number)
         return [row["secid"] for row in json if row["regnumber"] == number]
 
     def _get_reg_num(self, ticker: str) -> str:

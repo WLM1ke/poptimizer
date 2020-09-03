@@ -3,23 +3,13 @@ import logging
 from typing import Iterable, Optional
 
 import pandas as pd
-import pymongo
 
+from poptimizer.data.config.resources import get_mongo_client
 from poptimizer.data.ports import base, outer
 
-# База данных, база для одиночный значений и соединение
+# База данных и коллекция для одиночный
 DB = "data_new"
 MISC = "misc"
-PORT = 27017
-CLIENT = pymongo.MongoClient("localhost", PORT, tz_aware=False)
-
-
-logger = logging.getLogger("MongoDB")
-
-
-def get_mongo_client() -> pymongo.MongoClient:
-    """Клиентское соединение с MongoDB."""
-    return CLIENT
 
 
 class MongoDBSession(outer.AbstractDBSession):
@@ -31,6 +21,7 @@ class MongoDBSession(outer.AbstractDBSession):
 
     def __init__(self) -> None:
         """Получает ссылку на базу данных."""
+        self._logger = logging.getLogger(self.__class__.__name__)
         client = get_mongo_client()
         self._db = client[DB]
 
@@ -47,6 +38,7 @@ class MongoDBSession(outer.AbstractDBSession):
 
     def commit(self, tables_vars: Iterable[outer.TableTuple]) -> None:
         """Записывает данные в MongoDB."""
+        logger = self._logger
         for table in tables_vars:
             collection: str = table.group
             name = table.name
