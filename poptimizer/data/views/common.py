@@ -10,9 +10,3 @@ def last_history_date() -> pd.Timestamp:
     table_name = base.TableName(base.TRADING_DATES, base.TRADING_DATES)
     df = handlers.get_df(table_name)
     return pd.Timestamp(df.loc[0, "till"])
-
-
-def smart_lab() -> pd.DataFrame:
-    """Информация по дивидендам с smart-lab.ru."""
-    table_name = base.TableName(base.SMART_LAB, base.SMART_LAB)
-    return handlers.get_df(table_name)

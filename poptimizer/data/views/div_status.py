@@ -4,9 +4,15 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
+from poptimizer.data.app import handlers
 from poptimizer.data.views import crop
-from poptimizer.data.ports import col
-from poptimizer.data.views import common
+from poptimizer.data.ports import base, col
+
+
+def smart_lab() -> pd.DataFrame:
+    """Информация по дивидендам с smart-lab.ru."""
+    table_name = base.TableName(base.SMART_LAB, base.SMART_LAB)
+    return handlers.get_df(table_name)
 
 
 def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
@@ -20,7 +26,7 @@ def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
         Список новых тикеров.
     """
     status = []
-    for ticker, date, div in common.smart_lab().itertuples():
+    for ticker, date, div in smart_lab().itertuples():
         if ticker not in tickers:
             continue
 
@@ -65,6 +71,6 @@ def dividends_validation(ticker: str) -> None:
     _compare("dohod.ru", df_div, crop.dohod(ticker))
     _compare("conomy.ru", df_div, crop.conomy(ticker))
 
-    df = common.smart_lab()
+    df = smart_lab()
     df = df.loc[df.index == ticker]
     _compare("smart-lab.ru", df_div, df.set_index(col.DATE))
