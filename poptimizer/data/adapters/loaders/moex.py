@@ -107,7 +107,14 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
             )
             df = pd.DataFrame(json)
 
-        df.columns = [col.DATE, col.OPEN, col.CLOSE, col.HIGH, col.LOW, col.TURNOVER]  # noqa: WPS221
+        df.columns = [
+            col.DATE,
+            col.OPEN,
+            col.CLOSE,
+            col.HIGH,
+            col.LOW,
+            col.TURNOVER,
+        ]
         df[col.DATE] = pd.to_datetime(df[col.DATE])
         return df.set_index(col.DATE)
 
