@@ -4,7 +4,6 @@ import pandas as pd
 import pyppeteer
 import pytest
 
-import poptimizer.data.views.crop
 from poptimizer.config import POptimizerError
 from poptimizer.store import conomy
 from poptimizer.store.mongo import MONGO_CLIENT
@@ -61,7 +60,7 @@ def test_conomy_common(manager):
     assert list(df.columns) == ["SBER"]
     df = df["SBER"]
     assert df.size >= 9
-    assert poptimizer.data.views.crop.index[0] == pd.Timestamp("2010-04-16")
+    assert df.index[0] == pd.Timestamp("2010-04-16")
     assert df["2011-04-15"] == 0.92
 
 

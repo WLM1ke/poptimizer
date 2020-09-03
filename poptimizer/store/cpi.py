@@ -3,7 +3,7 @@ from typing import Any, Optional, List, Dict
 
 import pandas as pd
 
-import poptimizer.data.views.crop
+from poptimizer.data.views import crop
 from poptimizer.config import POptimizerError
 from poptimizer.store import utils
 from poptimizer.store.manager import AbstractManager
@@ -37,8 +37,8 @@ class Macro(AbstractManager):
         df = pd.read_excel(URL_CPI, **PARSING_PARAMETERS)
         self._validate(df)
         df = df.transpose().stack()
-        first_year = poptimizer.data.views.crop.index[0][0]
-        poptimizer.data.views.crop.index = pd.date_range(
+        first_year = df.index[0][0]
+        df.index = pd.date_range(
             name=utils.DATE,
             freq="M",
             start=pd.Timestamp(year=first_year, month=1, day=31),

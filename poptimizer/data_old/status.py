@@ -4,7 +4,6 @@ from typing import Tuple, List
 import numpy as np
 import pandas as pd
 
-import poptimizer.data.views.crop
 from poptimizer import store
 from poptimizer.config import AFTER_TAX, STATS_START
 from poptimizer.data_old import div
@@ -34,9 +33,7 @@ def smart_lab_status(tickers: Tuple[str, ...]):
             continue
         ticker = web.iloc[i][TICKER]
         value = web.iloc[i][DIVIDENDS]
-        if (date not in poptimizer.data.views.crop.index) or not np.isclose(
-            local.loc[date, ticker], value
-        ):
+        if (date not in local.index) or not np.isclose(local.loc[date, ticker], value):
             if ticker in tickers:
                 status.append(ticker)
     if status:
