@@ -1,5 +1,6 @@
 import pytest
 
+import poptimizer.data.views.crop
 from poptimizer.portfolio import portfolio, PORTFOLIO
 from poptimizer.reports import pdf_lower
 from poptimizer.reports.pdf_lower import OTHER
@@ -44,7 +45,7 @@ TEST_PORTFOLIO = portfolio.Portfolio(date=DATE, cash=CASH, positions=POSITIONS)
 
 def test_drop_small_positions():
     df = pdf_lower.drop_small_positions(TEST_PORTFOLIO)
-    index = df.index
+    index = poptimizer.data.views.crop.index
     assert len(df) == pdf_lower.MAX_TABLE_ROWS + 2
     assert index[-1] == PORTFOLIO
     assert df[PORTFOLIO] == pytest.approx(39_226_178)

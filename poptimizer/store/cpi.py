@@ -3,6 +3,7 @@ from typing import Any, Optional, List, Dict
 
 import pandas as pd
 
+import poptimizer.data.views.crop
 from poptimizer.config import POptimizerError
 from poptimizer.store import utils
 from poptimizer.store.manager import AbstractManager
@@ -13,9 +14,7 @@ CPI = "CPI"
 
 # Параметры загрузки валидации данных
 URL_CPI = "http://www.gks.ru/free_doc/new_site/prices/potr/I_ipc.xlsx"
-PARSING_PARAMETERS = dict(
-    sheet_name="ИПЦ", header=3, skiprows=[4], skipfooter=3, index_col=0
-)
+PARSING_PARAMETERS = dict(sheet_name="ИПЦ", header=3, skiprows=[4], skipfooter=3, index_col=0)
 NUM_OF_MONTH = 12
 FIRST_YEAR = 1991
 FIRST_MONTH = "январь"
@@ -34,14 +33,12 @@ class Macro(AbstractManager):
     def _download(self, item: str, last_index: Optional[Any]) -> List[Dict[str, Any]]:
         """Загружает полностью данные по инфляции с сайта ФСГС."""
         if item != CPI:
-            raise POptimizerError(
-                f"Отсутствуют данные {self._mongo.collection.full_name}.{item}"
-            )
+            raise POptimizerError(f"Отсутствуют данные {self._mongo.collection.full_name}.{item}")
         df = pd.read_excel(URL_CPI, **PARSING_PARAMETERS)
         self._validate(df)
         df = df.transpose().stack()
-        first_year = df.index[0][0]
-        df.index = pd.date_range(
+        first_year = poptimizer.data.views.crop.index[0][0]
+        poptimizer.data.views.crop.index = pd.date_range(
             name=utils.DATE,
             freq="M",
             start=pd.Timestamp(year=first_year, month=1, day=31),

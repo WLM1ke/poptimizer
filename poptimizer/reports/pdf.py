@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 
+import poptimizer.data.views.crop
 from poptimizer.config import REPORTS_PATH, POptimizerError
 from poptimizer.portfolio import Portfolio, PORTFOLIO
 from poptimizer.reports import pdf_style, pdf_upper, pdf_middle, pdf_lower
@@ -30,9 +31,7 @@ def read_data(report_name: str):
     return data
 
 
-def update_data(
-    report_name: str, date: pd.Timestamp, value: float, inflows: dict, dividends: float
-):
+def update_data(report_name: str, date: pd.Timestamp, value: float, inflows: dict, dividends: float):
     """Обновляет файл с данными статистики изменения стоимости портфеля.
 
     Проверяет, что в этом месяце статистика еще не вносилась.
@@ -50,7 +49,7 @@ def update_data(
     """
     df = read_data(report_name)
 
-    last_date = df.index[-1]
+    last_date = poptimizer.data.views.crop.index[-1]
     if last_date + pd.DateOffset(months=1, day=1) > date:
         raise POptimizerError("В этом месяце данные уже вносились в отчет")
 
@@ -67,9 +66,7 @@ def update_data(
     investors = pdf_upper.get_investors_names(df)
     value_labels = "Value_" + investors
     pre_inflow_value = df.loc[last_date, value_labels] * portfolio_return
-    df.loc[date, value_labels] = pre_inflow_value.add(
-        df.loc[date, investors].values, fill_value=0
-    )
+    df.loc[date, value_labels] = pre_inflow_value.add(df.loc[date, investors].values, fill_value=0)
 
     if dividends == 0:
         df.loc[date, "Dividends"] = np.nan
@@ -111,9 +108,7 @@ def make_report(report_name: str, portfolio: Portfolio):
     )
     pdf_upper.flow_and_dividends_block(data[-61:], upper_block_position)
     # Разделитель между верхним и средним блоком
-    pdf_style.make_section_delimiter(
-        canvas, pdf_style.bottom_margin() + FIRST_BLOCK_HEIGHT
-    )
+    pdf_style.make_section_delimiter(canvas, pdf_style.bottom_margin() + FIRST_BLOCK_HEIGHT)
     # Средний блок
     middle_block_position = pdf_style.BlockPosition(
         canvas=canvas,
@@ -124,9 +119,7 @@ def make_report(report_name: str, portfolio: Portfolio):
     )
     pdf_middle.portfolio_return_block(data[-61:], middle_block_position)
     # Разделитель между средним и нижним блоком
-    pdf_style.make_section_delimiter(
-        canvas, pdf_style.bottom_margin() + SECOND_BLOCK_HEIGHT
-    )
+    pdf_style.make_section_delimiter(canvas, pdf_style.bottom_margin() + SECOND_BLOCK_HEIGHT)
     # Нижний блок
     lower_block_position = pdf_style.BlockPosition(
         canvas=canvas,
@@ -156,7 +149,5 @@ def report(report_name: str, portfolio: Portfolio, inflows: dict, dividends: flo
     :param dividends:
         Дивиденды за период.
     """
-    update_data(
-        report_name, portfolio.date, portfolio.value[PORTFOLIO], inflows, dividends
-    )
+    update_data(report_name, portfolio.date, portfolio.value[PORTFOLIO], inflows, dividends)
     make_report(report_name, portfolio)

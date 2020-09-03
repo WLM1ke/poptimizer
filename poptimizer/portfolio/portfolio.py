@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
+import poptimizer.data.views.crop
 from poptimizer import data_old, config
 from poptimizer.config import POptimizerError, MAX_TRADE
 from poptimizer.data.views import moex
@@ -176,7 +177,7 @@ class Portfolio:
         minimal_turnover = self.value[PORTFOLIO] * MAX_TRADE
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]
 
-        index = last_turnover.index.difference(self.index)
+        index = poptimizer.data.views.crop.index.difference(self.index)
         last_turnover = last_turnover.reindex(index)
         last_turnover = last_turnover.sort_values(ascending=False).astype("int")
 

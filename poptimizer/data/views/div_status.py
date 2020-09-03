@@ -4,6 +4,7 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
+import poptimizer.data.views.crop
 from poptimizer.data.ports import col
 from poptimizer.data.views import common
 
@@ -23,7 +24,7 @@ def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
         if ticker not in tickers:
             continue
 
-        df = common.dividends(ticker)
+        df = poptimizer.data.views.crop.dividends(ticker)
         if date not in df.index:
             status.append(ticker)
         elif not np.isclose(df.loc[date, ticker], div):
@@ -59,10 +60,10 @@ def dividends_validation(ticker: str) -> None:
     :param ticker:
         Тикер.
     """
-    df_div = common.dividends_force_update(ticker)
+    df_div = poptimizer.data.views.crop.dividends_force_update(ticker)
 
-    _compare("dohod.ru", df_div, common.dohod(ticker))
-    _compare("conomy.ru", df_div, common.conomy(ticker))
+    _compare("dohod.ru", df_div, poptimizer.data.views.crop.dohod(ticker))
+    _compare("conomy.ru", df_div, poptimizer.data.views.crop.conomy(ticker))
 
     df = common.smart_lab()
     df = df.loc[df.index == ticker]

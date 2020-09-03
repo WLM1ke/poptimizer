@@ -4,6 +4,7 @@ from shutil import copyfile
 import pandas as pd
 import pytest
 
+import poptimizer.data.views.crop
 from poptimizer.config import POptimizerError
 from poptimizer.portfolio import portfolio, PORTFOLIO
 from poptimizer.reports import pdf
@@ -30,8 +31,8 @@ def fake_report_path(report_path, monkeypatch):
 def test_read_data():
     df = pdf.read_data("test")
     assert df.shape == (240, 6)
-    assert df.index[0] == pd.Timestamp("2008-02-21")
-    assert df.index[-1] == pd.Timestamp("2018-04-19")
+    assert poptimizer.data.views.crop.index[0] == pd.Timestamp("2008-02-21")
+    assert poptimizer.data.views.crop.index[-1] == pd.Timestamp("2018-04-19")
     assert df.loc["2018-04-19", "Value"] == pytest.approx(392_261.78)
 
 
@@ -40,7 +41,7 @@ def test_update_data():
     pdf.update_data("test", port.date, port.value[PORTFOLIO], dict(WLMike=1000, Igor=-2000), 1234)
     df = pdf.read_data("test")
     assert df.shape == (241, 6)
-    assert df.index[-1] == pd.Timestamp("2018-05-07")
+    assert poptimizer.data.views.crop.index[-1] == pd.Timestamp("2018-05-07")
     assert df.loc["2018-05-07", "WLMike"] == pytest.approx(1000)
     assert df.loc["2018-05-07", "Igor"] == pytest.approx(-2000)
     assert df.loc["2018-05-07", "Value_WLMike"] == pytest.approx(384_396.431_074_62)
@@ -53,7 +54,11 @@ def test_update_data_bad_date():
     port = portfolio.Portfolio(date=DATE_OLD, cash=CASH, positions=POSITIONS)
     with pytest.raises(POptimizerError) as error:
         pdf.update_data(
-            "test", port.date, port.value[PORTFOLIO], dict(WLMike=1000, Igor=-2000), 1234,
+            "test",
+            port.date,
+            port.value[PORTFOLIO],
+            dict(WLMike=1000, Igor=-2000),
+            1234,
         )
     assert str(error.value) == "В этом месяце данные уже вносились в отчет"
 
@@ -78,7 +83,7 @@ def test_report_new_month():
     pdf.report("test", port, dict(WLMike=10000, Igor=-5000), 4321)
     df = pdf.read_data("test")
     date = port.date
-    assert df.index[-1] == date
+    assert poptimizer.data.views.crop.index[-1] == date
     assert df.loc[date, "WLMike"] == pytest.approx(10000)
     assert df.loc[date, "Igor"] == pytest.approx(-5000)
     assert df.loc[date, "Value_WLMike"] == pytest.approx(387_550.829_708_377)
@@ -92,7 +97,7 @@ def test_report_no_dividends():
     pdf.report("test", port, dict(WLMike=10000, Igor=-5000), 0)
     df = pdf.read_data("test")
     date = port.date
-    assert df.index[-1] == date
+    assert poptimizer.data.views.crop.index[-1] == date
     assert df.loc[date, "WLMike"] == pytest.approx(10000)
     assert df.loc[date, "Igor"] == pytest.approx(-5000)
     assert df.loc[date, "Value_WLMike"] == pytest.approx(387_550.829_708_377)

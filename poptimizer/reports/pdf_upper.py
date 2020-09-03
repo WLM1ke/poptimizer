@@ -3,6 +3,7 @@
 import pandas as pd
 from reportlab import platypus
 
+import poptimizer.data.views.crop
 from poptimizer.reports.pdf_style import (
     LINE_WIDTH,
     LINE_COLOR,
@@ -23,7 +24,7 @@ def get_last_values(df: pd.DataFrame):
     columns = df.columns
     columns_names = columns[columns.str.contains("Value")]
     df = df[columns_names].iloc[-2:]
-    df.index = df.index.date.astype(str)
+    poptimizer.data.views.crop.index = poptimizer.data.views.crop.index.date.astype(str)
     df.columns = df.columns.str.replace("Value_", "")
     df.columns = df.columns.str.replace("Value", "Portfolio")
     return df
@@ -47,7 +48,7 @@ def get_inflows(df: pd.DataFrame):
 def add_shares(table: pd.DataFrame):
     """Добавляет к таблице долю инвесторов в портфеле."""
     share = table.div(table["Portfolio"], axis="index")
-    share.index = ["%"] * len(share)
+    poptimizer.data.views.crop.index = ["%"] * len(share)
     return pd.concat([table, share])
 
 
@@ -56,9 +57,7 @@ def make_flow_df(df: pd.DataFrame):
     table = get_last_values(df)
     inflow = get_inflows(df)
     pre_inflow_value = table["Portfolio"].iloc[-1] - inflow["Portfolio"]
-    table.loc["Pre Inflow"] = (
-        table.iloc[-2] * pre_inflow_value / table["Portfolio"].iloc[-2]
-    )
+    table.loc["Pre Inflow"] = table.iloc[-2] * pre_inflow_value / table["Portfolio"].iloc[-2]
     table = add_shares(table)
     table.loc["Inflow"] = inflow.values
     # Правильная последовательность строк и наименования
@@ -70,7 +69,7 @@ def make_list_of_lists_flow(df: pd.DataFrame):
     """Создает таблицу движения средств в виде списка списков."""
     flow_df = make_flow_df(df)
     list_of_lists = [[""] + list(flow_df.columns)]
-    for row, name in enumerate(flow_df.index):
+    for row, name in enumerate(poptimizer.data.views.crop.index):
         row_list = [name]
         for column, _ in enumerate(flow_df.columns):
             value = flow_df.iat[row, column]
@@ -119,7 +118,7 @@ def make_list_of_lists_dividends(df: pd.DataFrame):
     value = f"{value:,.0f}".replace(",", " ")
     list_of_lists.append([period, value])
     df = make_12m_dividends_df(df)
-    index = df.index
+    index = poptimizer.data.views.crop.index
     for i in range(5):
         period = f"{index[-12 * i - 13].date()} - {index[-12 * i - 1].date()}"
         value = df.iloc[-12 * i - 1]
@@ -149,9 +148,7 @@ def flow_and_dividends_block(df: pd.DataFrame, block_position: BlockPosition):
 
     В левой части располагается табличка движения средств, а в правой - таблица дивидендов.
     """
-    left_block_header = platypus.Paragraph(
-        "Last Month Change and Inflow", BLOCK_HEADER_STYLE
-    )
+    left_block_header = platypus.Paragraph("Last Month Change and Inflow", BLOCK_HEADER_STYLE)
     left_table = make_pdf_flow(df)
     left_frame = platypus.Frame(
         block_position.x,

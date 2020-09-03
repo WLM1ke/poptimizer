@@ -1,6 +1,7 @@
 """Загрузка данных по потребительской инфляции."""
 import pandas as pd
 
+import poptimizer.data.views.crop
 from poptimizer.data.adapters.loaders import logger
 from poptimizer.data.ports import base, col
 
@@ -38,8 +39,8 @@ class CPILoader(logger.LoggerMixin, base.AbstractLoader):
         df = pd.read_excel(URL_CPI, **PARSING_PARAMETERS)
         _validate(df)
         df = df.transpose().stack()
-        first_year = df.index[0][0]
-        df.index = pd.date_range(
+        first_year = poptimizer.data.views.crop.index[0][0]
+        poptimizer.data.views.crop.index = pd.date_range(
             name=col.DATE,
             freq="M",
             start=pd.Timestamp(year=first_year, month=1, day=END_OF_JAN),
