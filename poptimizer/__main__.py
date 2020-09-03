@@ -6,7 +6,7 @@
 """
 import typer
 
-from poptimizer.data.views import div_status, common
+from poptimizer.data.views import div_status, moex
 from poptimizer.evolve import Evolution
 from poptimizer.portfolio import Optimizer, load_from_yaml
 
@@ -14,7 +14,7 @@ from poptimizer.portfolio import Optimizer, load_from_yaml
 def evolve():
     """Run evolution."""
     ev = Evolution()
-    date = common.last_history_date()
+    date = moex.last_history_date()
     port = load_from_yaml(date)
     ev.evolve(port)
 

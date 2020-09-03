@@ -2,7 +2,6 @@
 import pandas as pd
 
 import poptimizer.data.views.crop
-from poptimizer.data.views import common
 from poptimizer.reports import pdf, pdf_middle
 
 

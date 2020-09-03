@@ -7,6 +7,13 @@ from poptimizer.data.app import handlers
 from poptimizer.data.ports import base, col
 
 
+def last_history_date() -> pd.Timestamp:
+    """Последняя доступная дата исторических котировок."""
+    table_name = base.TableName(base.TRADING_DATES, base.TRADING_DATES)
+    df = handlers.get_df(table_name)
+    return pd.Timestamp(df.loc[0, "till"])
+
+
 def securities_with_reg_number() -> pd.Index:
     """Все акции с регистрационным номером."""
     table_name = base.TableName(base.SECURITIES, base.SECURITIES)
