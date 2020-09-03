@@ -5,7 +5,9 @@ from typing import Callable, List, NamedTuple, Optional, Tuple, Union
 
 import bs4
 import pandas as pd
+import requests
 
+from poptimizer.data.config import resources
 from poptimizer.data.ports import base
 
 DIV_PATTERN = r".*\d"
@@ -56,8 +58,17 @@ def div_parser(div: str) -> Optional[float]:
 class HTMLTable:
     """Извлекает таблицу из html-страницы."""
 
-    def __init__(self, html: str, table_num: int, cols_desc: List[ColDesc]) -> None:
+    def __init__(self, url: str, table_num: int, cols_desc: List[ColDesc]) -> None:
         """Проверяет наличие таблицы на html-странице."""
+        session = resources.get_http_session()
+        with session.get(url) as respond:
+            try:
+                respond.raise_for_status()
+            except requests.HTTPError:
+                raise base.DataError(f"Данные {url} не загружены")
+            else:
+                html = respond.text
+
         soup = bs4.BeautifulSoup(html, "lxml")
         try:
             table = soup.find_all("table")[table_num]

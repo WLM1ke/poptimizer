@@ -3,7 +3,7 @@ from typing import List
 
 import pandas as pd
 
-from poptimizer.data.adapters.loaders import connection, logger, parser
+from poptimizer.data.adapters.loaders import logger, parser
 from poptimizer.data.ports import base, col
 
 # Параметры парсинга сайта
@@ -35,9 +35,8 @@ class DohodLoader(logger.LoggerMixin, base.AbstractLoader):
         """Получение дивидендов для заданного тикера."""
         ticker = self._log_and_validate_group(table_name, base.DOHOD)
 
-        html = connection.get_html(f"{URL}{ticker.lower()}")
         cols_desc = get_col_desc(ticker)
-        table = parser.HTMLTable(html, TABLE_INDEX, cols_desc)
+        table = parser.HTMLTable(f"{URL}{ticker.lower()}", TABLE_INDEX, cols_desc)
         df = table.get_df()
         df = df.sort_index(axis=0)
         return df.groupby(lambda date: date).sum()
