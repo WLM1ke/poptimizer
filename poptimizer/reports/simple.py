@@ -1,7 +1,7 @@
 """Расчет дивидендов и дохода начиная с определенной даты в пересчете на неделю, месяц и год."""
 import pandas as pd
 
-import poptimizer.data.views.crop
+from poptimizer.data.views import crop
 from poptimizer.reports import pdf, pdf_middle
 
 
@@ -20,7 +20,7 @@ def constant_prices_data(report_name: str, investor_name: str, months: int) -> p
     """Переводит данные в постоянные цены."""
     df = get_investor_data(report_name, investor_name)
     df = df.iloc[-months - 1 :]
-    cpi = poptimizer.data.views.crop.cpi(poptimizer.data.views.crop.index[-1])
+    cpi = crop.cpi(df.index[-1])
     cpi = cpi[-len(df) :]
     cpi = cpi.cumprod()
     cpi = cpi.iloc[-1] / cpi

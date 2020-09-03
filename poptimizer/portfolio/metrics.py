@@ -4,7 +4,6 @@ import functools
 import numpy as np
 import pandas as pd
 
-import poptimizer.data.views.crop
 from poptimizer import evolve
 from poptimizer.dl import Forecast
 from poptimizer.portfolio.portfolio import Portfolio, CASH, PORTFOLIO
@@ -53,7 +52,7 @@ class MetricsSingle:
         portfolio = self._portfolio
         mean = self._forecast.mean[portfolio.index[:-2]]
         mean[CASH] = 0
-        weighted_mean = mean * portfolio.weight[poptimizer.data.views.crop.index]
+        weighted_mean = mean * portfolio.weight[mean.index]
         mean[PORTFOLIO] = weighted_mean.sum()
         mean.name = "MEAN"
         return mean

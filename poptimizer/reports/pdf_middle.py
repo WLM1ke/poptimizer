@@ -7,9 +7,7 @@ import pandas as pd
 from reportlab import platypus
 from reportlab.lib.units import inch
 
-import poptimizer.data.views.crop
-from poptimizer import data_old
-from poptimizer.data.views import moex
+from poptimizer.data.views import crop
 from poptimizer.reports.pdf_style import (
     LINE_WIDTH,
     LINE_COLOR,
@@ -37,9 +35,9 @@ def portfolio_cum_return(df: pd.DataFrame):
 
 def index_cum_return(df):
     """Кумулятивная доходность индекса привязанная к отчетным периодам."""
-    date = poptimizer.data.views.crop.index[-1]
-    index = poptimizer.data.views.crop.index(date)
-    index = index[poptimizer.data.views.crop.index]
+    date = df.index[-1]
+    index = crop.index(date)
+    index = index[df.index]
     return index / index.iloc[0]
 
 

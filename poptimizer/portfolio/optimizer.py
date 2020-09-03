@@ -6,7 +6,6 @@ from typing import Tuple
 import pandas as pd
 from scipy import stats
 
-import poptimizer.data.views.crop
 from poptimizer import config
 from poptimizer.config import MAX_TRADE
 from poptimizer.portfolio import metrics
@@ -98,7 +97,7 @@ class Optimizer:
 
         rez = pd.DataFrame(list(rez), columns=["SELL", "BUY", "GRAD_DIFF", "TURNOVER", "ADJ_P_VALUE"])
         rez = rez.sort_values("ADJ_P_VALUE").drop_duplicates(subset="SELL")
-        poptimizer.data.views.crop.index = pd.RangeIndex(start=1, stop=len(rez) + 1)
+        rez.index = pd.RangeIndex(start=1, stop=len(rez) + 1)
 
         return self._add_sell_buy_quantity(rez)
 
