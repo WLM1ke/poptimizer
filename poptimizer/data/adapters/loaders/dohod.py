@@ -39,4 +39,5 @@ class DohodLoader(logger.LoggerMixin, base.AbstractLoader):
         cols_desc = get_col_desc(ticker)
         table = parser.HTMLTable(html, TABLE_INDEX, cols_desc)
         df = table.get_df()
-        return df.sort_index(axis=0)
+        df = df.sort_index(axis=0)
+        return df.groupby(lambda date: date).sum()

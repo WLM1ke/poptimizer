@@ -24,12 +24,12 @@ _TRADING_DATES = base.TableDescription(
 )
 _CONOMY = base.TableDescription(
     loader=conomy.ConomyLoader(),
-    index_checks=base.IndexChecks.ASCENDING,
+    index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=False,
 )
 _DOHOD = base.TableDescription(
     loader=dohod.DohodLoader(),
-    index_checks=base.IndexChecks.ASCENDING,
+    index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=False,
 )
 _SMART_LAB = base.TableDescription(
