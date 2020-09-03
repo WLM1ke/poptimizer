@@ -46,7 +46,7 @@ def make_plot(portfolio: Portfolio, width: float, height: float):
     """Строит диаграмму структуры портфеля и возвращает объект pdf-изображения."""
     position_value = drop_small_positions(portfolio)
     position_share = position_value[:-1] / position_value[PORTFOLIO]
-    labels = poptimizer.data.views.crop.index + position_share.apply(lambda x: f"\n{x:.1%}")
+    labels = position_share.index + position_share.apply(lambda x: f"\n{x:.1%}")
     _, ax = plt.subplots(1, 1, figsize=(width / inch, height / inch))
     _, texts = ax.pie(
         position_share,
@@ -67,7 +67,7 @@ def make_list_of_lists_table(portfolio: Portfolio):
     position_value = drop_small_positions(portfolio)
     position_share = position_value / position_value[PORTFOLIO]
     list_of_lists = [["Name", "Value", "Share"]]
-    for i in poptimizer.data.views.crop.index:
+    for i in position_value.index:
         name = i
         value = f"{position_value[i]:,.0f}".replace(",", " ")
         share = f"{position_share[i]:.1%}"

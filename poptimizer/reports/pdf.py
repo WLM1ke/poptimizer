@@ -2,7 +2,6 @@
 import numpy as np
 import pandas as pd
 
-import poptimizer.data.views.crop
 from poptimizer.config import REPORTS_PATH, POptimizerError
 from poptimizer.portfolio import Portfolio, PORTFOLIO
 from poptimizer.reports import pdf_style, pdf_upper, pdf_middle, pdf_lower
@@ -49,7 +48,7 @@ def update_data(report_name: str, date: pd.Timestamp, value: float, inflows: dic
     """
     df = read_data(report_name)
 
-    last_date = poptimizer.data.views.crop.index[-1]
+    last_date = df.index[-1]
     if last_date + pd.DateOffset(months=1, day=1) > date:
         raise POptimizerError("В этом месяце данные уже вносились в отчет")
 

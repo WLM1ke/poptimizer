@@ -3,7 +3,6 @@
 import pandas as pd
 from reportlab import platypus
 
-import poptimizer.data.views.crop
 from poptimizer.reports.pdf_style import (
     LINE_WIDTH,
     LINE_COLOR,
@@ -24,7 +23,7 @@ def get_last_values(df: pd.DataFrame):
     columns = df.columns
     columns_names = columns[columns.str.contains("Value")]
     df = df[columns_names].iloc[-2:]
-    poptimizer.data.views.crop.index = poptimizer.data.views.crop.index.date.astype(str)
+    df.index = df.index.date.astype(str)
     df.columns = df.columns.str.replace("Value_", "")
     df.columns = df.columns.str.replace("Value", "Portfolio")
     return df
@@ -48,7 +47,7 @@ def get_inflows(df: pd.DataFrame):
 def add_shares(table: pd.DataFrame):
     """Добавляет к таблице долю инвесторов в портфеле."""
     share = table.div(table["Portfolio"], axis="index")
-    poptimizer.data.views.crop.index = ["%"] * len(share)
+    share.index = ["%"] * len(share)
     return pd.concat([table, share])
 
 
@@ -69,7 +68,7 @@ def make_list_of_lists_flow(df: pd.DataFrame):
     """Создает таблицу движения средств в виде списка списков."""
     flow_df = make_flow_df(df)
     list_of_lists = [[""] + list(flow_df.columns)]
-    for row, name in enumerate(poptimizer.data.views.crop.index):
+    for row, name in enumerate(flow_df.index):
         row_list = [name]
         for column, _ in enumerate(flow_df.columns):
             value = flow_df.iat[row, column]
@@ -118,7 +117,7 @@ def make_list_of_lists_dividends(df: pd.DataFrame):
     value = f"{value:,.0f}".replace(",", " ")
     list_of_lists.append([period, value])
     df = make_12m_dividends_df(df)
-    index = poptimizer.data.views.crop.index
+    index = df.index
     for i in range(5):
         period = f"{index[-12 * i - 13].date()} - {index[-12 * i - 1].date()}"
         value = df.iloc[-12 * i - 1]
