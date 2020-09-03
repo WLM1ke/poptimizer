@@ -22,6 +22,7 @@ DIVIDENDS: Final = "dividends"
 CPI: Final = "CPI"
 SECURITIES: Final = "securities"
 INDEX: Final = "MCFTRR"
+QUOTES: Final = "quotes"
 
 GroupName = Literal[
     "trading_dates",
@@ -32,6 +33,7 @@ GroupName = Literal[
     "CPI",
     "securities",
     "MCFTRR",
+    "quotes",
 ]
 
 
