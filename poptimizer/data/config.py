@@ -57,6 +57,11 @@ _INDEX = base.TableDescription(
     index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=True,
 )
+_QUOTES = base.TableDescription(
+    loader=moex.QuotesLoader(),
+    index_checks=base.IndexChecks.UNIQUE_ASCENDING,
+    validate=True,
+)
 
 _TABLES_REGISTRY: outer.TableDescriptionRegistry = MappingProxyType(
     {
@@ -68,6 +73,7 @@ _TABLES_REGISTRY: outer.TableDescriptionRegistry = MappingProxyType(
         base.CPI: _CPI,
         base.SECURITIES: _SECURITIES,
         base.INDEX: _INDEX,
+        base.QUOTES: _QUOTES,
     },
 )
 _DB_SESSION = db.MongoDBSession()
