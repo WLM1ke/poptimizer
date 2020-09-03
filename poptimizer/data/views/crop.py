@@ -20,17 +20,10 @@ def dohod(ticker: str) -> pd.DataFrame:
     return df.loc[config.START_DATE :]  # type: ignore
 
 
-def dividends(ticker: str) -> pd.DataFrame:
+def dividends(ticker: str, force_update: bool = False) -> pd.DataFrame:
     """Дивиденды для данного тикера."""
     table_name = base.TableName(base.DIVIDENDS, ticker)
-    df = handlers.get_df(table_name)
-    return df.loc[config.START_DATE :]  # type: ignore
-
-
-def dividends_force_update(ticker: str) -> pd.DataFrame:
-    """Дивиденды для данного тикера с принудительным обновлением данных по дивидендам."""
-    table_name = base.TableName(base.DIVIDENDS, ticker)
-    df = handlers.get_df(table_name)
+    df = handlers.get_df(table_name, force_update)
     return df.loc[config.START_DATE :]  # type: ignore
 
 
