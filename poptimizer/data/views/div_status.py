@@ -12,7 +12,8 @@ from poptimizer.data.views import crop
 def smart_lab() -> pd.DataFrame:
     """Информация по дивидендам с smart-lab.ru."""
     table_name = base.TableName(base.SMART_LAB, base.SMART_LAB)
-    return bootstrap.get_handler().get_df(table_name)
+    requests_handler = bootstrap.get_handler()
+    return requests_handler.get_df(table_name)
 
 
 def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
