@@ -3,13 +3,13 @@ import datetime
 import pytest
 
 
-from poptimizer.data import config
+from poptimizer.data.config import bootstrap
 
 
 @pytest.fixture(scope="function", autouse=True)
 def set_start_date(monkeypatch):
     monkeypatch.setattr(
-        config,
+        bootstrap,
         "START_DATE",
         datetime.date(2010, 1, 1),
     )
