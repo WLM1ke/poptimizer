@@ -12,8 +12,7 @@ def _load_or_create_table(
     store: repo.Repo,
 ) -> model.Table:
     if (table := store.get_table(table_name)) is None:
-        desc = store.get_description(table_name)
-        table = factories.create_table(table_name, desc)
+        table = factories.create_table(table_name)
         store.add_table(table)
     return table
 

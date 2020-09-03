@@ -16,13 +16,8 @@ class TimedTable(NamedTuple):
 class Repo:
     """Класс репозитория для хранения таблиц."""
 
-    def __init__(
-        self,
-        description_registry: outer.TableDescriptionRegistry,
-        db_session: outer.AbstractDBSession,
-    ) -> None:
+    def __init__(self, db_session: outer.AbstractDBSession) -> None:
         """Сохраняются ссылки на таблицы, которые были добавлены или взяты из репозитория."""
-        self._descriptions = description_registry
         self._session = db_session
         self._seen: Dict[base.TableName, TimedTable] = {}
 
@@ -53,12 +48,7 @@ class Repo:
         if (table_tuple := self._session.get(table_name)) is None:
             return None
 
-        desc = self._descriptions[table_name.group]
-        table = factories.recreate_table(table_tuple, desc)
+        table = factories.recreate_table(table_tuple)
         self._seen[table.name] = TimedTable(table, table.timestamp)
 
         return table
-
-    def get_description(self, table_name: base.TableName) -> base.TableDescription:
-        """Регистр с описанием типов таблиц."""
-        return self._descriptions[table_name.group]
