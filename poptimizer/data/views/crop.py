@@ -1,4 +1,4 @@
-"""Запросы содержащие обрезку по первоначальной дате."""
+"""Запросы содержащие обрезку по первоначальной дате - для внутреннего использования."""
 import pandas as pd
 
 from poptimizer.data.config import bootstrap
@@ -26,21 +26,15 @@ def dividends(ticker: str, force_update: bool = False) -> pd.DataFrame:
     return df.loc[bootstrap.get_start_date() :]  # type: ignore
 
 
-def cpi(date: pd.Timestamp) -> pd.Series:
+def cpi() -> pd.Series:
     """Потребительская инфляция."""
     table_name = base.TableName(base.CPI, base.CPI)
     df = bootstrap.get_handler().get_df(table_name)
-    return df.loc[bootstrap.get_start_date() : date, col.CPI]  # type: ignore
+    return df.loc[bootstrap.get_start_date() :, col.CPI]  # type: ignore
 
 
-def index(last_date: pd.Timestamp) -> pd.DataFrame:
-    """Загрузка данных по индексу полной доходности с учетом российских налогов - MCFTRR.
-
-    :param last_date:
-        Последняя дата котировок.
-    :return:
-        История цен закрытия индекса.
-    """
+def index() -> pd.DataFrame:
+    """Загрузка данных по индексу полной доходности с учетом российских налогов - MCFTRR."""
     table_name = base.TableName(base.INDEX, base.INDEX)
     df = bootstrap.get_handler().get_df(table_name)
-    return df.loc[bootstrap.get_start_date() : last_date, col.CLOSE]  # type: ignore
+    return df.loc[bootstrap.get_start_date() :, col.CLOSE]  # type: ignore
