@@ -5,7 +5,7 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 
-from poptimizer import data_old
+from poptimizer.data.views import moex
 from poptimizer.dl import ledoit_wolf
 
 
@@ -13,7 +13,7 @@ def ledoit_wolf_cor(
     tickers: tuple, date: pd.Timestamp, history_days: int
 ) -> Tuple[np.array, float, float]:
     """Корреляционная матрица на основе Ledoit Wolf."""
-    div, p1 = data_old.div_ex_date_prices(tickers, date)
+    div, p1 = moex.div_and_prices(tickers, date)
     p0 = p1.shift(1)
     returns = (p1 + div) / p0
     returns = returns.iloc[-history_days:]

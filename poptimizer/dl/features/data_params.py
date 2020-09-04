@@ -8,6 +8,8 @@ import pandas as pd
 from poptimizer import data_old
 
 # Доля дней относимых к тренировочному периоду
+from poptimizer.data.views import moex
+
 TEST_DAYS = 1
 
 
@@ -15,7 +17,7 @@ def div_price_train_size(
     tickers: Tuple[str, ...], end: pd.Timestamp
 ) -> Tuple[pd.DataFrame, pd.DataFrame, int]:
     """Данные по дивидендам, ценам и количество дней в тренировочном наборе."""
-    div, price = data_old.div_ex_date_prices(tickers, end)
+    div, price = moex.div_and_prices(tickers, end)
     train_size = len(price) - TEST_DAYS
     return div, price, train_size
 
