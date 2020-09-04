@@ -4,6 +4,7 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
+from pandas.tseries import offsets
 
 from poptimizer.data.config import bootstrap
 from poptimizer.data.ports import base, col
@@ -84,3 +85,57 @@ def turnovers(tickers: Tuple[str, ...], last_date: pd.Timestamp) -> pd.DataFrame
     df = df.loc[:last_date]
     df.columns = tickers
     return df.fillna(0, axis=0)
+
+
+def _dividends_all(tickers: Tuple[str, ...]) -> pd.DataFrame:
+    """Дивиденды по заданным тикерам после уплаты налогов.
+
+    Значения для дат, в которые нет дивидендов у данного тикера (есть у какого-то другого),
+    заполняются 0.
+
+    :param tickers:
+        Тикеры, для которых нужна информация.
+    :return:
+        Дивиденды.
+    """
+    dfs = [crop.dividends(ticker) for ticker in tickers]
+    df = pd.concat(dfs, axis=1)
+    df = df.reindex(columns=tickers)
+    df = df.fillna(0, axis=0)
+    return df.mul(bootstrap.get_after_tax_rate())
+
+
+def _t2_shift(date: pd.Timestamp, index: pd.DatetimeIndex) -> pd.Timestamp:
+    """Рассчитывает эксдивидендную дату для режима T-2 на основании даты закрытия реестра.
+
+    Если дата не содержится в индексе цен, то необходимо найти предыдущую из индекса цен. После этого
+    взять сдвинутую на 1 назад дату.
+
+    Если дата находится в будущем за пределом истории котировок, то нужно сдвинуть на 1 бизнес день
+    вперед и на два назад. Это не эквивалентно сдвигу на один день назад для выходных.
+    """
+    if date <= index[-1]:
+        position = index.get_loc(date, "ffill")
+        return index[position - 1]
+
+    next_b_day = date + offsets.BDay()
+    return next_b_day - 2 * offsets.BDay()
+
+
+def div_and_prices(
+    tickers: Tuple[str, ...],
+    last_date: pd.Timestamp,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Дивиденды на с привязкой к эксдивидендной дате и цены.
+
+    Дивиденды на эксдивидендную дату нужны для корректного расчета доходности. Также для многих
+    расчетов удобна привязка к торговым дням, а отсечки часто приходятся на выходные.
+
+    Данные обрезаются с учетом установки о начале статистики.
+    """
+    price = prices(tickers, last_date)
+    div = _dividends_all(tickers)
+    div.index = div.index.map(functools.partial(_t2_shift, index=price.index))
+    # Может образоваться несколько одинаковых дат, если часть дивидендов приходится на выходные
+    div = div.groupby(by=col.DATE).sum()
+    return div.reindex(index=price.index, fill_value=0), price
