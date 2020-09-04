@@ -32,6 +32,11 @@ class DividendsLoader(logger.LoggerMixin, base.AbstractLoader):
             ),
         )
 
-        df = pd.DataFrame(json)
-        df.columns = [col.DATE, ticker]
+        columns = [col.DATE, ticker]
+
+        df = pd.DataFrame(columns=columns)
+        if json:
+            df = pd.DataFrame(json)
+            df.columns = [col.DATE, ticker]
+
         return df.set_index(col.DATE)
