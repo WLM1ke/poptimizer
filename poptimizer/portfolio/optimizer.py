@@ -17,7 +17,7 @@ TRADES = 5
 P_VALUE = 0.05
 
 # Издержки в годовом выражении для двух операций
-COSTS = (config.YEAR_IN_TRADING_DAYS * 2) * (0.025 / 100) * 0.02
+COSTS = (config.YEAR_IN_TRADING_DAYS * 2) * (0.025 / 100) * 0.04
 
 
 class Optimizer:

@@ -61,3 +61,26 @@ def prices(tickers: Tuple[str, ...], last_date: pd.Timestamp) -> pd.DataFrame:
     df = df.loc[:last_date]
     df.columns = tickers
     return df.replace(to_replace=[np.nan, 0], method="ffill")
+
+
+@functools.lru_cache(maxsize=1)
+def turnovers(tickers: Tuple[str, ...], last_date: pd.Timestamp) -> pd.DataFrame:
+    """Дневные обороты для указанных тикеров до указанной даты включительно.
+
+    Пропуски заполнены нулевыми значениями.
+
+    :param tickers:
+        Тикеры, для которых нужна информация.
+    :param last_date:
+        Последняя дата оборотов.
+    :return:
+        Обороты.
+    """
+    quotes_list = crop.quotes(tickers)
+    df = pd.concat(
+        [df[col.TURNOVER] for df in quotes_list],
+        axis=1,
+    )
+    df = df.loc[:last_date]
+    df.columns = tickers
+    return df.fillna(0, axis=0)
