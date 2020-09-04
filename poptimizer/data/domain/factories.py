@@ -44,8 +44,9 @@ _CPI = base.TableDescription(
     index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=True,
 )
+_SECURITIES_LOADER = moex.SecuritiesLoader()
 _SECURITIES = base.TableDescription(
-    loader=moex.SecuritiesLoader(),
+    loader=_SECURITIES_LOADER,
     index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=False,
 )
@@ -55,7 +56,7 @@ _INDEX = base.TableDescription(
     validate=True,
 )
 _QUOTES = base.TableDescription(
-    loader=moex.QuotesLoader(),
+    loader=moex.QuotesLoader(_SECURITIES_LOADER),
     index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=True,
 )

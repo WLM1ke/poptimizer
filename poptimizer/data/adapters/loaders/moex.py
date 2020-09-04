@@ -81,20 +81,10 @@ def _previous_day_in_moscow() -> str:
     return str(date.date())
 
 
-def _get_reg_num(ticker: str) -> str:
-    """Регистрационный номер акции."""
-    loader = SecuritiesLoader()
-    table_name = base.TableName(base.SECURITIES, base.SECURITIES)
-    df = loader(table_name)
-
-    return cast(str, df.at[ticker, col.REG_NUMBER])
-
-
-def _find_aliases(ticker: str) -> List[str]:
+def _find_aliases(reg_num: str) -> List[str]:
     """Ищет все тикеры с эквивалентным регистрационным номером."""
-    number = _get_reg_num(ticker)
-    json = apimoex.find_securities(resources.get_http_session(), number)
-    return [row["secid"] for row in json if row["regnumber"] == number]
+    json = apimoex.find_securities(resources.get_http_session(), reg_num)
+    return [row["secid"] for row in json if row["regnumber"] == reg_num]
 
 
 def _download_many(aliases: List[str]) -> pd.DataFrame:
@@ -113,6 +103,11 @@ def _download_many(aliases: List[str]) -> pd.DataFrame:
 class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
     """Котировки акций."""
 
+    def __init__(self, securities_loader: SecuritiesLoader) -> None:
+        """Для загрузки нужны данные регистрационных номерах."""
+        super().__init__()
+        self._securities_loader = securities_loader
+
     def __call__(
         self,
         table_name: base.TableName,
@@ -122,7 +117,8 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
         ticker = self._log_and_validate_group(table_name, base.QUOTES)
 
         if start_date is None:
-            aliases = _find_aliases(ticker)
+            reg_num = self._get_reg_num(ticker)
+            aliases = _find_aliases(reg_num)
             df = _download_many(aliases)
         else:
             json = apimoex.get_market_candles(
@@ -143,3 +139,9 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
         ]
         df[col.DATE] = pd.to_datetime(df[col.DATE])
         return df.set_index(col.DATE)
+
+    def _get_reg_num(self, ticker: str) -> str:
+        """Регистрационный номер акции."""
+        table_name = base.TableName(base.SECURITIES, base.SECURITIES)
+        df = self._securities_loader(table_name)
+        return cast(str, df.at[ticker, col.REG_NUMBER])
