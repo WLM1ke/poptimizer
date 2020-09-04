@@ -1,4 +1,5 @@
 """Основные классы модели данных - таблица и реестр таблиц."""
+import threading
 from datetime import datetime
 from typing import Optional
 
@@ -36,6 +37,7 @@ class Table:
         self._validate = desc.validate
         self._df = df
         self._timestamp = timestamp
+        self._df_lock = threading.RLock()
 
     @property
     def name(self) -> base.TableName:
@@ -54,23 +56,25 @@ class Table:
         """Момент последнего обновления таблицы."""
         return self._timestamp
 
-    def need_update(self, end_of_trading_day: datetime) -> bool:
-        """Нужно ли обновить таблицу."""
-        if self._timestamp is None:
-            return True
-        if end_of_trading_day > self._timestamp:
-            return True
-        return False
+    def update(self, end_of_trading_day: Optional[datetime]) -> None:
+        """Обновляет таблицу.
 
-    def update(self) -> None:
-        """Осуществляет необходимые проверки и обновляет таблицу."""
+        Если конец рабочего дня None, то принудительно. В ином случае, если данные устарели.
+        """
+        with self._df_lock:
+            timestamp = self._timestamp
+            if (end_of_trading_day is None) or (timestamp is None) or end_of_trading_day > timestamp:
+                df = self._prepare_df()
+                self._set_df(df)
+
+    def _prepare_df(self) -> pd.DataFrame:
+        """Готовит новый DataFrame и осуществляет необходимые проверки."""
         loader = self._loader
         df_old = self.df
         name = self._name
 
         if df_old is None:
-            self._set_df(loader(name))
-            return
+            return loader(name)
 
         if isinstance(loader, base.AbstractLoader):
             df_new = loader(name)
@@ -86,7 +90,7 @@ class Table:
             except AssertionError:
                 raise base.DataError("Новые данные не соответствуют старым")
 
-        self._set_df(df_new)
+        return df_new
 
     def _set_df(self, df: pd.DataFrame) -> None:
         """Устанавливает новое значение и обновляет момент обновления UTC."""

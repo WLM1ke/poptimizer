@@ -52,13 +52,11 @@ class UpdateTableWithHelper(outer.AbstractEvent):
         """Обновляет вспомогательную таблицу, а потом основную с учетом необходимости."""
         helper = tables_dict[self._helper_name]
         end_of_trading_day = services.trading_day_potential_end()
-        if helper.need_update(end_of_trading_day):
-            helper.update()
+        helper.update(end_of_trading_day)
 
         main = tables_dict[self._table_name]
         end_of_trading_day = services.trading_day_real_end(helper)
-        if main.need_update(end_of_trading_day):
-            main.update()
+        main.update(end_of_trading_day)
 
 
 class UpdateTableByDate(outer.AbstractEvent):
@@ -84,7 +82,5 @@ class UpdateTableByDate(outer.AbstractEvent):
 
         При отсутствии даты принудительно, а при наличии с учетом необходимости.
         """
-        end = self._end_of_trading_day
         table = tables_dict[self._table_names]
-        if end is None or table.need_update(end):
-            table.update()
+        table.update(self._end_of_trading_day)
