@@ -137,5 +137,5 @@ def div_and_prices(
     div = _dividends_all(tickers)
     div.index = div.index.map(functools.partial(_t2_shift, index=price.index))
     # Может образоваться несколько одинаковых дат, если часть дивидендов приходится на выходные
-    div = div.groupby(by=col.DATE).sum()
+    div = div.groupby(by=lambda date: date).sum()
     return div.reindex(index=price.index, fill_value=0), price
