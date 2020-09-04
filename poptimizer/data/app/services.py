@@ -50,7 +50,7 @@ class EventsBus(outer.AbstractEventsBus):
             with self._repo_factory() as store:
                 one_event_handler = functools.partial(_handle_one_event, store=store)
                 future_events = thread_pool.map(one_event_handler, events)
-            events = list(itertools.chain.from_iterable(future_events))
+                events = list(itertools.chain.from_iterable(future_events))
 
 
 class Viewer(outer.AbstractViewer):
