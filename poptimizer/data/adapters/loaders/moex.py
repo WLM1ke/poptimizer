@@ -18,17 +18,30 @@ MOEX_TZ = timezone("Europe/Moscow")
 class SecuritiesLoader(logger.LoggerMixin, base.AbstractLoader):
     """Информация о всех торгующихся акциях."""
 
+    def __init__(self) -> None:
+        """Кэшируются вспомогательные данные, чтобы сократить количество обращений к серверу MOEX."""
+        super().__init__()
+        self._securities_cache: Optional[pd.DataFrame] = None
+        self._cache_lock = threading.RLock()
+
     def __call__(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение списка торгуемых акций с регистрационным номером и размером лота."""
         name = self._log_and_validate_group(table_name, base.SECURITIES)
         if name != base.SECURITIES:
             raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
-        columns = ("SECID", "REGNUMBER", "LOTSIZE")
-        json = apimoex.get_board_securities(resources.get_http_session(), columns=columns)
-        df = pd.DataFrame(json)
-        df.columns = [col.TICKER, col.REG_NUMBER, col.LOT_SIZE]
-        return df.set_index(col.TICKER)
+        with self._cache_lock:
+            if self._securities_cache is not None:
+                self._logger.info(f"Загрузка из кэша {table_name}")
+                return self._securities_cache
+
+            columns = ("SECID", "REGNUMBER", "LOTSIZE")
+            json = apimoex.get_board_securities(resources.get_http_session(), columns=columns)
+            df = pd.DataFrame(json)
+            df.columns = [col.TICKER, col.REG_NUMBER, col.LOT_SIZE]
+            self._securities_cache = df.set_index(col.TICKER)
+
+            return self._securities_cache
 
 
 class IndexLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
@@ -68,6 +81,22 @@ def _previous_day_in_moscow() -> str:
     return str(date.date())
 
 
+def _get_reg_num(ticker: str) -> str:
+    """Регистрационный номер акции."""
+    loader = SecuritiesLoader()
+    table_name = base.TableName(base.SECURITIES, base.SECURITIES)
+    df = loader(table_name)
+
+    return cast(str, df.at[ticker, col.REG_NUMBER])
+
+
+def _find_aliases(ticker: str) -> List[str]:
+    """Ищет все тикеры с эквивалентным регистрационным номером."""
+    number = _get_reg_num(ticker)
+    json = apimoex.find_securities(resources.get_http_session(), number)
+    return [row["secid"] for row in json if row["regnumber"] == number]
+
+
 def _download_many(aliases: List[str]) -> pd.DataFrame:
     """Загрузка нескольких рядов котировок."""
     http_session = resources.get_http_session()
@@ -84,12 +113,6 @@ def _download_many(aliases: List[str]) -> pd.DataFrame:
 class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
     """Котировки акций."""
 
-    def __init__(self) -> None:
-        """Кэшируются вспомогательные данные, чтобы сократить количество обращений к серверу MOEX."""
-        super().__init__()
-        self._securities_cache = None
-        self._cache_lock = threading.RLock()
-
     def __call__(
         self,
         table_name: base.TableName,
@@ -99,7 +122,7 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
         ticker = self._log_and_validate_group(table_name, base.QUOTES)
 
         if start_date is None:
-            aliases = self._find_aliases(ticker)
+            aliases = _find_aliases(ticker)
             df = _download_many(aliases)
         else:
             json = apimoex.get_market_candles(
@@ -120,20 +143,3 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
         ]
         df[col.DATE] = pd.to_datetime(df[col.DATE])
         return df.set_index(col.DATE)
-
-    def _find_aliases(self, ticker: str) -> List[str]:
-        """Ищет все тикеры с эквивалентным регистрационным номером."""
-        number = self._get_reg_num(ticker)
-        json = apimoex.find_securities(resources.get_http_session(), number)
-        return [row["secid"] for row in json if row["regnumber"] == number]
-
-    def _get_reg_num(self, ticker: str) -> str:
-        with self._cache_lock:
-            df = self._securities_cache
-            if df is None:
-                loader = SecuritiesLoader()
-                table_name = base.TableName(base.SECURITIES, base.SECURITIES)
-                df = loader(table_name)
-                self._securities_cache = df
-
-        return cast(str, df.at[ticker, col.REG_NUMBER])
