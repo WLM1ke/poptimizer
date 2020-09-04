@@ -1,5 +1,5 @@
 """Запросы таблиц."""
-from typing import Callable, List
+from typing import Callable, List, Tuple
 
 import pandas as pd
 
@@ -27,7 +27,7 @@ class Handler:
         self._bus.handle_events([event])
         return self._viewer.get_df(table_name)
 
-    def get_dfs(self, group: base.GroupName, names: List[str]) -> List[pd.DataFrame]:
+    def get_dfs(self, group: base.GroupName, names: Tuple[str, ...]) -> List[pd.DataFrame]:
         """Возвращает несколько DataFrame из одной группы."""
         table_names = [base.TableName(group, name) for name in names]
 
