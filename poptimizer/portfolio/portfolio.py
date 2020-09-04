@@ -125,7 +125,7 @@ class Portfolio:
 
         CASH - 1 и PORTFOLIO - расчетная стоимость.
         """
-        price = data_old.prices(tuple(self.index[:-2]), self.date)
+        price = moex.prices(tuple(self.index[:-2]), self.date)
         try:
             price = price.loc[self.date]
         except KeyError:
