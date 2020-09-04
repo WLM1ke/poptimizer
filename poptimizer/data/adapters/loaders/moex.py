@@ -1,5 +1,6 @@
 """Загрузка данных с MOEX."""
 import datetime
+import threading
 from typing import List, Optional, cast
 
 import apimoex
@@ -87,6 +88,7 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
         """Кэшируются вспомогательные данные, чтобы сократить количество обращений к серверу MOEX."""
         super().__init__()
         self._securities_cache = None
+        self._cache_lock = threading.RLock()
 
     def __call__(
         self,
@@ -126,11 +128,12 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
         return [row["secid"] for row in json if row["regnumber"] == number]
 
     def _get_reg_num(self, ticker: str) -> str:
-        df = self._securities_cache
-        if df is None:
-            loader = SecuritiesLoader()
-            table_name = base.TableName(base.SECURITIES, base.SECURITIES)
-            df = loader(table_name)
-            self._securities_cache = df
+        with self._cache_lock:
+            df = self._securities_cache
+            if df is None:
+                loader = SecuritiesLoader()
+                table_name = base.TableName(base.SECURITIES, base.SECURITIES)
+                df = loader(table_name)
+                self._securities_cache = df
 
         return cast(str, df.at[ticker, col.REG_NUMBER])
