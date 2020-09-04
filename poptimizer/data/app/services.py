@@ -36,7 +36,7 @@ class EventsBus(outer.AbstractEventsBus):
         """Сохраняет параметры для создания изолированных репо для каждой обработки события."""
         self._repo_factory = repo_factory
 
-    def handle_event(self, event: outer.AbstractEvent) -> None:
+    def handle_events(self, events: List[outer.AbstractEvent]) -> None:
         """Обработка сообщения и следующих за ним.
 
         Обработка сообщений идет поколениями - первое поколение генерирует поколение сообщений
@@ -44,7 +44,6 @@ class EventsBus(outer.AbstractEventsBus):
         версией репо, что обеспечивает согласованность данных во всех потоках. После обработки
         поколения изменения сохраняются и создается новая версии репо для следующего поколения.
         """
-        events = [event]
         thread_pool = resources.get_thread_pool()
         while events:
             with self._repo_factory() as store:

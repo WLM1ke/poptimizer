@@ -59,7 +59,7 @@ class AbstractEventsBus(abc.ABC):
     """Шина для обработки сообщений."""
 
     @abc.abstractmethod
-    def handle_event(self, message: AbstractEvent) -> None:
+    def handle_events(self, events: List[AbstractEvent]) -> None:
         """Обработка сообщения и следующих за ним."""
 
 
