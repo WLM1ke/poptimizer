@@ -165,7 +165,7 @@ class Portfolio:
 
     def _median_turnover(self, tickers) -> pd.Series:
         """Медианный оборот за несколько последних дней."""
-        last_turnover = data_old.turnovers(tickers, self.date)
+        last_turnover = moex.turnovers(tickers, self.date)
         last_turnover = last_turnover.iloc[-TURNOVER_DAYS:]
         last_turnover = last_turnover.median(axis=0)
         return last_turnover
