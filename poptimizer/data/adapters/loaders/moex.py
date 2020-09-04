@@ -19,7 +19,7 @@ class SecuritiesLoader(logger.LoggerMixin, base.AbstractLoader):
     """Информация о всех торгующихся акциях."""
 
     def __init__(self) -> None:
-        """Кэшируются вспомогательные данные, чтобы сократить количество обращений к серверу MOEX."""
+        """Кэшируются данные, чтобы сократить количество обращений к серверу MOEX."""
         super().__init__()
         self._securities_cache: Optional[pd.DataFrame] = None
         self._cache_lock = threading.RLock()
