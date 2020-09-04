@@ -1,4 +1,5 @@
 """Реализация репозиторий с таблицами."""
+import threading
 from datetime import datetime
 from typing import Dict, NamedTuple, Optional
 
@@ -20,6 +21,7 @@ class Repo:
         """Сохраняются ссылки на таблицы, которые были добавлены или взяты из репозитория."""
         self._session = db_session
         self._seen: Dict[base.TableName, TimedTable] = {}
+        self._seen_loc = threading.RLock()
 
     def __enter__(self) -> "Repo":
         """Возвращает репо с таблицами."""
@@ -27,28 +29,31 @@ class Repo:
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:  # type: ignore
         """Сохраняет изменные данные в базу данных."""
-        if exc_type is None:
-            for_commit = (
-                factories.convent_to_tuple(table)
-                for table, timestamp in self._seen.values()
-                if timestamp != table.timestamp
-            )
-            self._session.commit(for_commit)
-        self._seen.clear()
+        with self._seen_loc:
+            if exc_type is None:
+                for_commit = (
+                    factories.convent_to_tuple(table)
+                    for table, timestamp in self._seen.values()
+                    if timestamp != table.timestamp
+                )
+                self._session.commit(for_commit)
+            self._seen.clear()
 
     def add_table(self, table: model.Table) -> None:
         """Добавляет таблицу в репозиторий."""
-        self._seen[table.name] = TimedTable(table, None)
+        with self._seen_loc:
+            self._seen[table.name] = TimedTable(table, None)
 
     def get_table(self, table_name: base.TableName) -> Optional[model.Table]:
         """Берет таблицу из репозитория."""
-        if (timed_table := self._seen.get(table_name)) is not None:
-            return timed_table.table
+        with self._seen_loc:
+            if (timed_table := self._seen.get(table_name)) is not None:
+                return timed_table.table
 
-        if (table_tuple := self._session.get(table_name)) is None:
-            return None
+            if (table_tuple := self._session.get(table_name)) is None:
+                return None
 
-        table = factories.recreate_table(table_tuple)
-        self._seen[table.name] = TimedTable(table, table.timestamp)
+            table = factories.recreate_table(table_tuple)
+            self._seen[table.name] = TimedTable(table, table.timestamp)
 
-        return table
+            return table
