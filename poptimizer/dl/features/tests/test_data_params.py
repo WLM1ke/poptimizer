@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
 
+from poptimizer.data.config import bootstrap
 from poptimizer.data_old import div as data
 from poptimizer.dl.features import data_params
 
@@ -17,7 +18,7 @@ PARAMS = {
 @pytest.fixture(scope="function", autouse=True)
 def set_split(monkeypatch):
     monkeypatch.setattr(data_params, "TEST_DAYS", 240)
-    monkeypatch.setattr(data, "STATS_START", pd.Timestamp("2010-09-01"))
+    monkeypatch.setattr(bootstrap, "START_DATE", pd.Timestamp("2010-09-01"))
     yield
 
 
