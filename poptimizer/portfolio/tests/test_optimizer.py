@@ -34,7 +34,8 @@ def test_trials(opt):
     assert opt.trials == 4 + 4 + 4 + 5
 
 
-def test_best_combination(opt):
+def test_best_combination(opt, monkeypatch):
+    monkeypatch.setattr(optimizer, "COSTS", 0)
     df = opt.best_combination
 
     assert isinstance(df, pd.DataFrame)
