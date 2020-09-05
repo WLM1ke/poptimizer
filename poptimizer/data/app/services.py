@@ -2,12 +2,18 @@
 import asyncio
 import contextlib
 import itertools
-from typing import AsyncIterator, List, Tuple
+from typing import AsyncIterator, List, TYPE_CHECKING, Tuple
 
 import pandas as pd
 
 from poptimizer.data.domain import factories, model, repo
 from poptimizer.data.ports import base, outer
+
+
+if TYPE_CHECKING:
+    EventsQueue = asyncio.Queue[outer.AbstractEvent]
+else:
+    EventsQueue = asyncio.Queue
 
 
 @contextlib.asynccontextmanager
@@ -34,12 +40,22 @@ async def _load_or_create_table(
         return table_name, table
 
 
-async def _handle_one_event(event: outer.AbstractEvent, store: repo.Repo) -> List[outer.AbstractEvent]:
+async def _put_in_queue(events: List[outer.AbstractEvent], events_queue: EventsQueue) -> None:
+    for event in events:
+        await events_queue.put(event)
+
+
+async def _handle_one_event(
+    event: outer.AbstractEvent,
+    store: repo.Repo,
+    queue: EventsQueue,
+) -> None:
     """Обрабатывает одно событие и возвращает  дочерние."""
     aws = [_load_or_create_table(table_name, store) for table_name in event.tables_required]
     tables_dict = dict(await asyncio.gather(*aws))
     event.handle_event(tables_dict)
-    return event.new_events
+    await _put_in_queue(event.new_events, queue)
+    queue.task_done()
 
 
 class EventsBus(outer.AbstractEventsBus):
@@ -50,18 +66,14 @@ class EventsBus(outer.AbstractEventsBus):
         self._db_session = db_session
 
     async def handle_events(self, events: List[outer.AbstractEvent]) -> None:
-        """Обработка сообщения и следующих за ним.
+        """Обработка сообщения и следующих за ним."""
+        events_queue: EventsQueue = asyncio.Queue()
+        await _put_in_queue(events, events_queue)
 
-        Обработка сообщений идет поколениями - первое поколение генерирует поколение сообщений
-        потомков и т.д. В рамках поколения обработка сообщений идет в несколько потоков с одной
-        версией репо, что обеспечивает согласованность данных во всех потоках. После обработки
-        поколения изменения сохраняются и создается новая версии репо для следующего поколения.
-        """
-        while events:
-            async with unit_of_work(self._db_session) as store:
-                aws = [_handle_one_event(event, store) for event in events]
-                next_events = await asyncio.gather(*aws)
-                events = list(itertools.chain.from_iterable(next_events))
+        async with unit_of_work(self._db_session) as store:
+            while not events_queue.empty():
+                event = await events_queue.get()
+                asyncio.create_task(_handle_one_event(event, store, events_queue))
 
 
 class Viewer(outer.AbstractViewer):
