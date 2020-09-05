@@ -84,9 +84,9 @@ class Table:
             df_new = pd.concat([df_old.iloc[:-1], df_new], axis=0)
 
         if self._validate:
-            df_new = df_new.reindex(df_old.index)
+            df_new_val = df_new.reindex(df_old.index)
             try:
-                pd.testing.assert_frame_equal(df_new, df_old)
+                pd.testing.assert_frame_equal(df_new_val, df_old)
             except AssertionError:
                 raise base.DataError("Новые данные не соответствуют старым")
 
