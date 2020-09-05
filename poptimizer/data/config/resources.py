@@ -1,7 +1,5 @@
 """Конфигурация внешних ресурсов приложения."""
-
 import requests
-from motor import motor_asyncio
 from requests import adapters
 
 # Настройки http-соединения
@@ -23,13 +21,3 @@ HTTP_SESSION = start_http_session()
 def get_http_session() -> requests.Session:
     """Сессия  http-соединений."""
     return HTTP_SESSION
-
-
-# Настройки клиента MongoDB
-MONGO_URI = "mongodb://localhost:27017"
-CLIENT = motor_asyncio.AsyncIOMotorClient(MONGO_URI, tz_aware=False)
-
-
-def get_mongo_client() -> motor_asyncio.AsyncIOMotorClient:
-    """Клиентское соединение с MongoDB."""
-    return CLIENT

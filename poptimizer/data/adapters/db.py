@@ -4,12 +4,11 @@ import logging
 from typing import Iterable, Optional, Tuple
 
 import pandas as pd
+from motor import motor_asyncio
 
-from poptimizer.data.config import resources
 from poptimizer.data.ports import base, outer
 
-# База данных и коллекция для одиночный
-DB = "data_new"
+# Коллекция для одиночный записей
 MISC = "misc"
 
 
@@ -29,11 +28,10 @@ class MongoDBSession(outer.AbstractDBSession):
     группы.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, db: motor_asyncio.AsyncIOMotorDatabase) -> None:
         """Получает ссылку на базу данных."""
         self._logger = logging.getLogger(self.__class__.__name__)
-        client = resources.get_mongo_client()
-        self._db = client[DB]
+        self._db = db
 
     async def get(self, table_name: base.TableName) -> Optional[outer.TableTuple]:
         """Извлекает документ из коллекции."""
