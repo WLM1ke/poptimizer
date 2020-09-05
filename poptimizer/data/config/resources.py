@@ -1,8 +1,7 @@
 """Конфигурация внешних ресурсов приложения."""
-from concurrent import futures
 
-import pymongo
 import requests
+from motor import motor_asyncio
 from requests import adapters
 
 # Настройки http-соединения
@@ -27,19 +26,10 @@ def get_http_session() -> requests.Session:
 
 
 # Настройки клиента MongoDB
-PORT = 27017
-CLIENT = pymongo.MongoClient("localhost", PORT, tz_aware=False)
+MONGO_URI = "mongodb://localhost:27017"
+CLIENT = motor_asyncio.AsyncIOMotorClient(MONGO_URI, tz_aware=False)
 
 
-def get_mongo_client() -> pymongo.MongoClient:
+def get_mongo_client() -> motor_asyncio.AsyncIOMotorClient:
     """Клиентское соединение с MongoDB."""
     return CLIENT
-
-
-# Настройки пула потоков - количество потоков равно размеру пула http-соединений
-THREAD_POOL = futures.ThreadPoolExecutor(max_workers=MAX_POOL_SIZE)
-
-
-def get_thread_pool() -> futures.ThreadPoolExecutor:
-    """Пул потоков."""
-    return THREAD_POOL

@@ -5,19 +5,13 @@ from typing import Final
 
 from poptimizer.data.adapters import db
 from poptimizer.data.app import handlers
-from poptimizer.data.domain import repo
 
 # Настройки обработчика запросов к приложению
 _DB_SESSION = db.MongoDBSession()
 
 
-def _repo_factory() -> repo.Repo:
-    """Создает репо."""
-    return repo.Repo(_DB_SESSION)
-
-
 _LOOP = asyncio.get_event_loop()
-HANDLER = handlers.Handler(_LOOP, _repo_factory)
+HANDLER = handlers.Handler(_LOOP, _DB_SESSION)
 
 
 def get_handler() -> handlers.Handler:

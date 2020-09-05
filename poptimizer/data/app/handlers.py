@@ -1,23 +1,22 @@
 """Запросы таблиц."""
 import asyncio
-from typing import Awaitable, Callable, List, Tuple
+from typing import Awaitable, List, Tuple
 
 import pandas as pd
 
 from poptimizer.data.app import services
 from poptimizer.data.domain import events
-from poptimizer.data.domain.repo import Repo
 from poptimizer.data.ports import base, outer
 
 
 class Handler:
     """Обработчик запросов к приложению."""
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, repo_factory: Callable[[], Repo]):
+    def __init__(self, loop: asyncio.AbstractEventLoop, db_session: outer.AbstractDBSession):
         """Создает шину сообщений и просмотрщик данных."""
         self._loop = loop
-        self._bus = services.EventsBus(repo_factory)
-        self._viewer = services.Viewer(repo_factory)
+        self._bus = services.EventsBus(db_session)
+        self._viewer = services.Viewer(db_session)
 
     def get_df(
         self,
@@ -30,7 +29,11 @@ class Handler:
         loop.run_until_complete(self._bus.handle_events([event]))
         return loop.run_until_complete(self._viewer.get_df(table_name))
 
-    def get_dfs(self, group: base.GroupName, names: Tuple[str, ...]) -> Tuple[pd.DataFrame, ...]:
+    def get_dfs(
+        self,
+        group: base.GroupName,
+        names: Tuple[str, ...],
+    ) -> Tuple[pd.DataFrame, ...]:
         """Возвращает несколько DataFrame из одной группы."""
         table_names = [base.TableName(group, name) for name in names]
 

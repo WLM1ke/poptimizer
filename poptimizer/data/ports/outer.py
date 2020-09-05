@@ -44,11 +44,11 @@ class AbstractDBSession(abc.ABC):
     """Сессия работы с базой данных."""
 
     @abc.abstractmethod
-    def get(self, table_name: base.TableName) -> Optional[TableTuple]:
+    async def get(self, table_name: base.TableName) -> Optional[TableTuple]:
         """Получает данные из хранилища."""
 
     @abc.abstractmethod
-    def commit(self, tables_vars: Iterable[TableTuple]) -> None:
+    async def commit(self, tables_vars: Iterable[TableTuple]) -> None:
         """Сохраняет данные таблиц."""
 
 
