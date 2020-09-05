@@ -95,8 +95,10 @@ def _download_many(aliases: List[str]) -> pd.DataFrame:
         json = apimoex.get_market_candles(http_session, ticker, end=_previous_day_in_moscow())
         json_all_aliases.extend(json)
 
-    df = pd.DataFrame(json_all_aliases)
-    df = df.sort_values(by=["begin", "value"])
+    df = pd.DataFrame(columns=["begin", "open", "close", "high", "low", "value"])
+    if json_all_aliases:
+        df = pd.DataFrame(json_all_aliases)
+        df = df.sort_values(by=["begin", "value"])
     return df.groupby("begin", as_index=False).last()
 
 
