@@ -1,4 +1,5 @@
 """Конфигурация запуска приложения."""
+import asyncio
 import datetime
 from typing import Final
 
@@ -15,7 +16,8 @@ def _repo_factory() -> repo.Repo:
     return repo.Repo(_DB_SESSION)
 
 
-HANDLER = handlers.Handler(_repo_factory)
+_LOOP = asyncio.get_event_loop()
+HANDLER = handlers.Handler(_LOOP, _repo_factory)
 
 
 def get_handler() -> handlers.Handler:

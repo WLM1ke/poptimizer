@@ -59,7 +59,7 @@ class AbstractEventsBus(abc.ABC):
     """Шина для обработки сообщений."""
 
     @abc.abstractmethod
-    def handle_events(self, events: List[AbstractEvent]) -> None:
+    async def handle_events(self, events: List[AbstractEvent]) -> None:
         """Обработка сообщения и следующих за ним."""
 
 
@@ -67,5 +67,5 @@ class AbstractViewer(abc.ABC):
     """Позволяет смотреть DataFrame по имени таблицы."""
 
     @abc.abstractmethod
-    def get_df(self, table_name: base.TableName) -> pd.DataFrame:
+    async def get_df(self, table_name: base.TableName) -> pd.DataFrame:
         """Возвращает DataFrame по имени таблицы."""

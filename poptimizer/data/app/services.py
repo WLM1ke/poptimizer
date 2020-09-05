@@ -36,7 +36,7 @@ class EventsBus(outer.AbstractEventsBus):
         """Сохраняет параметры для создания изолированных репо для каждой обработки события."""
         self._repo_factory = repo_factory
 
-    def handle_events(self, events: List[outer.AbstractEvent]) -> None:
+    async def handle_events(self, events: List[outer.AbstractEvent]) -> None:
         """Обработка сообщения и следующих за ним.
 
         Обработка сообщений идет поколениями - первое поколение генерирует поколение сообщений
@@ -59,7 +59,7 @@ class Viewer(outer.AbstractViewer):
         """Сохраняет репо для просмотра данных."""
         self._repo_factory = repo_factory
 
-    def get_df(self, table_name: base.TableName) -> pd.DataFrame:
+    async def get_df(self, table_name: base.TableName) -> pd.DataFrame:
         """Возвращает DataFrame по имени таблицы."""
         with self._repo_factory() as store:
             if (table := store.get_table(table_name)) is None:
