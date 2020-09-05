@@ -1,14 +1,12 @@
 """Группа операций с таблицами, в конце которой осуществляется сохранение изменных данных."""
 import asyncio
 import contextlib
-import itertools
-from typing import AsyncIterator, List, TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, AsyncIterator, List, Tuple
 
 import pandas as pd
 
 from poptimizer.data.domain import factories, model, repo
 from poptimizer.data.ports import base, outer
-
 
 if TYPE_CHECKING:
     EventsQueue = asyncio.Queue[outer.AbstractEvent]
