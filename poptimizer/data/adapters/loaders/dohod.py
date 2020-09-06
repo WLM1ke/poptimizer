@@ -3,7 +3,8 @@ from typing import List
 
 import pandas as pd
 
-from poptimizer.data.adapters.loaders import logger, parser
+from poptimizer.data.adapters.loaders import parser
+from poptimizer.data.adapters import logger
 from poptimizer.data.ports import base, col
 
 # Параметры парсинга сайта

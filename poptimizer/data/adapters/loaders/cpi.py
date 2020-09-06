@@ -1,7 +1,7 @@
 """Загрузка данных по потребительской инфляции."""
 import pandas as pd
 
-from poptimizer.data.adapters.loaders import logger
+from poptimizer.data.adapters import logger
 from poptimizer.data.ports import base, col
 
 # Параметры загрузки валидации данных

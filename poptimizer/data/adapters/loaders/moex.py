@@ -7,7 +7,7 @@ import apimoex
 import pandas as pd
 from pytz import timezone
 
-from poptimizer.data.adapters.loaders import logger
+from poptimizer.data.adapters import logger
 from poptimizer.data.config import resources
 from poptimizer.data.ports import base, col
 

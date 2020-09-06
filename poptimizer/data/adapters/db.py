@@ -1,11 +1,11 @@
 """Реализации сессий доступа к базе данных."""
 import asyncio
-import logging
 from typing import Iterable, Optional, Tuple
 
 import pandas as pd
 from motor import motor_asyncio
 
+from poptimizer.data.adapters import logger
 from poptimizer.data.ports import base, outer
 
 # Коллекция для одиночный записей
@@ -30,7 +30,7 @@ class MongoDBSession(outer.AbstractDBSession):
 
     def __init__(self, db: motor_asyncio.AsyncIOMotorDatabase) -> None:
         """Получает ссылку на базу данных."""
-        self._logger = logging.getLogger(self.__class__.__name__)
+        self._logger = logger.AsyncLogger(self.__class__.__name__)
         self._db = db
 
     async def get(self, table_name: base.TableName) -> Optional[outer.TableTuple]:

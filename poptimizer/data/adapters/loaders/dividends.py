@@ -2,7 +2,7 @@
 import pandas as pd
 import pymongo
 
-from poptimizer.data.adapters.loaders import logger
+from poptimizer.data.adapters import logger
 from poptimizer.data.ports import base, col
 
 # Где хранятся данные о дивидендах
