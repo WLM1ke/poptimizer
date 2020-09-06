@@ -2,6 +2,7 @@
 import pandas as pd
 
 from poptimizer.data.adapters import logger
+from poptimizer.data.config import resources
 from poptimizer.data.ports import base, col
 
 # Параметры загрузки валидации данных
@@ -11,6 +12,14 @@ PARSING_PARAMETERS = dict(sheet_name="ИПЦ", header=3, skiprows=[4], skipfoote
 NUM_OF_MONTH = 12
 FIRST_YEAR = 1991
 FIRST_MONTH = "январь"
+
+
+async def _load_xlsx() -> pd.DataFrame:
+    """Загрузка Excel-файла с данными по инфляции."""
+    session = resources.get_aiohttp_session()
+    resp = await session.get(URL_CPI)
+    xls_file = await resp.read()
+    return pd.read_excel(xls_file, **PARSING_PARAMETERS)
 
 
 def _validate(df: pd.DataFrame) -> None:
@@ -26,6 +35,20 @@ def _validate(df: pd.DataFrame) -> None:
         raise base.DataError("Первый месяц должен быть январь")
 
 
+def _clean_up(df: pd.DataFrame) -> pd.DataFrame:
+    """Форматирование данных."""
+    df = df.transpose().stack()
+    first_year = df.index[0][0]
+    df.index = pd.date_range(
+        name=col.DATE,
+        freq="M",
+        start=pd.Timestamp(year=first_year, month=1, day=END_OF_JAN),
+        periods=len(df),
+    )
+    df = df.div(100)
+    return df.to_frame(col.CPI)
+
+
 class CPILoader(logger.LoggerMixin, base.AbstractLoader):
     """Обновление данных инфляции с https://rosstat.gov.ru."""
 
@@ -35,16 +58,6 @@ class CPILoader(logger.LoggerMixin, base.AbstractLoader):
         if name != base.CPI:
             raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
-        df = pd.read_excel(URL_CPI, **PARSING_PARAMETERS)
+        df = await _load_xlsx()
         _validate(df)
-        df = df.transpose().stack()
-        first_year = df.index[0][0]
-        df.index = pd.date_range(
-            name=col.DATE,
-            freq="M",
-            start=pd.Timestamp(year=first_year, month=1, day=END_OF_JAN),
-            periods=len(df),
-        )
-        # Данные должны быть не в процентах, а в долях
-        df = df.div(100)
-        return df.to_frame(col.CPI)
+        return _clean_up(df)

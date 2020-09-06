@@ -1,4 +1,8 @@
 """Конфигурация внешних ресурсов приложения."""
+import asyncio
+import atexit
+
+import aiohttp
 import requests
 from requests import adapters
 
@@ -21,3 +25,20 @@ HTTP_SESSION = start_http_session()
 def get_http_session() -> requests.Session:
     """Сессия  http-соединений."""
     return HTTP_SESSION
+
+
+AIOHTTP_SESSION = aiohttp.ClientSession()
+
+
+def get_aiohttp_session() -> aiohttp.ClientSession:
+    """Клиентская сессия aiohttp."""
+    return AIOHTTP_SESSION
+
+
+def clean_up() -> None:
+    """Закрывает клиентскую сессию aiohttp."""
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(AIOHTTP_SESSION.close())
+
+
+atexit.register(clean_up)
