@@ -79,13 +79,11 @@ class Table:
             return await loader.get(name)
 
         if isinstance(loader, base.AbstractLoader):
-            df_new = await loader.get(name)
-        else:
-            date = df_old.index[-1].date()
-            df_new = await loader.get(name, date)
-            df_new = pd.concat([df_old.iloc[:-1], df_new], axis=0)
+            return await loader.get(name)
 
-        return df_new
+        date = df_old.index[-1].date()
+        df_new = await loader.get(name, date)
+        return pd.concat([df_old.iloc[:-1], df_new], axis=0)
 
     def _validate_df(self, df_new: pd.DataFrame) -> None:
         """Проверяет значения и индекс новых данных."""
