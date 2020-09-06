@@ -66,7 +66,8 @@ class Table:
             if (end_of_trading_day is None) or (timestamp is None) or end_of_trading_day > timestamp:
                 df_new = await self._prepare_df()
                 self._validate_df(df_new)
-                self._set_df(df_new)
+                self._timestamp = datetime.utcnow()
+                self._df = df_new
 
     async def _prepare_df(self) -> pd.DataFrame:
         """Готовит новый DataFrame и осуществляет необходимые проверки."""
@@ -103,8 +104,3 @@ class Table:
             raise base.DataError(f"Индекс не уникален\n{df_new}")
         if index_checks & base.IndexChecks.ASCENDING and not index.is_monotonic_increasing:
             raise base.DataError(f"Индекс не возрастает\n{df_new}")
-
-    def _set_df(self, df_new: pd.DataFrame) -> None:
-        """Устанавливает новое значение и обновляет момент обновления UTC."""
-        self._timestamp = datetime.utcnow()
-        self._df = df_new
