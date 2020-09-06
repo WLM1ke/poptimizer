@@ -64,8 +64,9 @@ class Table:
         async with self._df_lock:
             timestamp = self._timestamp
             if (end_of_trading_day is None) or (timestamp is None) or end_of_trading_day > timestamp:
-                df = await self._prepare_df()
-                self._set_df(df)
+                df_new = await self._prepare_df()
+                self._validate_df(df_new)
+                self._set_df(df_new)
 
     async def _prepare_df(self) -> pd.DataFrame:
         """Готовит новый DataFrame и осуществляет необходимые проверки."""
@@ -83,23 +84,27 @@ class Table:
             df_new = await loader.get(name, date)
             df_new = pd.concat([df_old.iloc[:-1], df_new], axis=0)
 
-        if self._validate:
+        return df_new
+
+    def _validate_df(self, df_new: pd.DataFrame) -> None:
+        """Проверяет значения и индекс новых данных."""
+        df_old = self._df
+
+        if df_old is not None and self._validate:
             df_new_val = df_new.reindex(df_old.index)
             try:
                 pd.testing.assert_frame_equal(df_new_val, df_old)
             except AssertionError:
                 raise base.DataError("Новые данные не соответствуют старым")
 
-        return df_new
-
-    def _set_df(self, df: pd.DataFrame) -> None:
-        """Устанавливает новое значение и обновляет момент обновления UTC."""
-        index = df.index
+        index = df_new.index
         index_checks = self._index_checks
         if index_checks & base.IndexChecks.UNIQUE and not index.is_unique:
-            raise base.DataError(f"Индекс не уникален\n{df}")
+            raise base.DataError(f"Индекс не уникален\n{df_new}")
         if index_checks & base.IndexChecks.ASCENDING and not index.is_monotonic_increasing:
-            raise base.DataError(f"Индекс не возрастает\n{df}")
+            raise base.DataError(f"Индекс не возрастает\n{df_new}")
 
+    def _set_df(self, df_new: pd.DataFrame) -> None:
+        """Устанавливает новое значение и обновляет момент обновления UTC."""
         self._timestamp = datetime.utcnow()
-        self._df = df
+        self._df = df_new
