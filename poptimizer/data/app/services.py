@@ -48,12 +48,19 @@ async def _handle_one_event(
     store: repo.Repo,
     queue: EventsQueue,
 ) -> None:
-    """Обрабатывает одно событие и возвращает  дочерние."""
+    """Обрабатывает одно событие и добавляет в очередь дочерние события."""
     aws = [_load_or_create_table(table_name, store) for table_name in event.tables_required]
     tables_dict = dict(await asyncio.gather(*aws))
     event.handle_event(tables_dict)
     await _put_in_queue(event.new_events, queue)
     queue.task_done()
+
+
+async def _queue_processor(events_queue: EventsQueue, store: repo.Repo) -> None:
+    """Вытягивает сообщения из очереди событий и запускает их обработку."""
+    while True:
+        event = await events_queue.get()
+        asyncio.create_task(_handle_one_event(event, store, events_queue))
 
 
 class EventsBus(outer.AbstractEventsBus):
@@ -67,11 +74,10 @@ class EventsBus(outer.AbstractEventsBus):
         """Обработка сообщения и следующих за ним."""
         events_queue: EventsQueue = asyncio.Queue()
         await _put_in_queue(events, events_queue)
-
         async with unit_of_work(self._db_session) as store:
-            while not events_queue.empty():
-                event = await events_queue.get()
-                asyncio.create_task(_handle_one_event(event, store, events_queue))
+            processor_task = asyncio.create_task(_queue_processor(events_queue, store))
+            await events_queue.join()
+            processor_task.cancel()
 
 
 class Viewer(outer.AbstractViewer):

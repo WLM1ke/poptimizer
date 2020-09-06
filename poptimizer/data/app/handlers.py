@@ -24,8 +24,8 @@ class Handler:
         force_update: bool = False,
     ) -> pd.DataFrame:
         """Возвращает DataFrame по наименованию таблицы."""
-        loop = self._loop
         event = events.UpdateDataFrame(table_name, force_update)
+        loop = self._loop
         loop.run_until_complete(self._bus.handle_events([event]))
         return loop.run_until_complete(self._viewer.get_df(table_name))
 
