@@ -24,7 +24,7 @@ class SecuritiesLoader(logger.LoggerMixin, base.AbstractLoader):
         self._securities_cache: Optional[pd.DataFrame] = None
         self._cache_lock = threading.RLock()
 
-    def __call__(self, table_name: base.TableName) -> pd.DataFrame:
+    async def __call__(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение списка торгуемых акций с регистрационным номером и размером лота."""
         name = self._log_and_validate_group(table_name, base.SECURITIES)
         if name != base.SECURITIES:
@@ -47,7 +47,7 @@ class SecuritiesLoader(logger.LoggerMixin, base.AbstractLoader):
 class IndexLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
     """Котировки индекса полной доходности с учетом российских налогов - MCFTRR."""
 
-    def __call__(
+    async def __call__(
         self,
         table_name: base.TableName,
         start_date: Optional[datetime.date] = None,
@@ -110,7 +110,7 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
         super().__init__()
         self._securities_loader = securities_loader
 
-    def __call__(
+    async def __call__(
         self,
         table_name: base.TableName,
         start_date: Optional[datetime.date] = None,
@@ -119,7 +119,7 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
         ticker = self._log_and_validate_group(table_name, base.QUOTES)
 
         if start_date is None:
-            reg_num = self._get_reg_num(ticker)
+            reg_num = await self._get_reg_num(ticker)
             aliases = _find_aliases(reg_num)
             df = _download_many(aliases)
         else:
@@ -142,8 +142,8 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
         df[col.DATE] = pd.to_datetime(df[col.DATE])
         return df.set_index(col.DATE)
 
-    def _get_reg_num(self, ticker: str) -> str:
+    async def _get_reg_num(self, ticker: str) -> str:
         """Регистрационный номер акции."""
         table_name = base.TableName(base.SECURITIES, base.SECURITIES)
-        df = self._securities_loader(table_name)
+        df = await self._securities_loader(table_name)
         return cast(str, df.at[ticker, col.REG_NUMBER])

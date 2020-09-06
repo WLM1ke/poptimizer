@@ -31,7 +31,7 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
 class DohodLoader(logger.LoggerMixin, base.AbstractLoader):
     """Обновление данных с https://dohod.ru."""
 
-    def __call__(self, table_name: base.TableName) -> pd.DataFrame:
+    async def __call__(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
         ticker = self._log_and_validate_group(table_name, base.DOHOD)
 

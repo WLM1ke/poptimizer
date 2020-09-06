@@ -29,7 +29,7 @@ def _validate(df: pd.DataFrame) -> None:
 class CPILoader(logger.LoggerMixin, base.AbstractLoader):
     """Обновление данных инфляции с https://rosstat.gov.ru."""
 
-    def __call__(self, table_name: base.TableName) -> pd.DataFrame:
+    async def __call__(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение данных по  инфляции."""
         name = self._log_and_validate_group(table_name, base.CPI)
         if name != base.CPI:

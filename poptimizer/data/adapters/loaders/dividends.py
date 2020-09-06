@@ -13,7 +13,7 @@ SOURCE_COLLECTION = "dividends"
 class DividendsLoader(logger.LoggerMixin, base.AbstractLoader):
     """Обновление данных из базы данных, заполняемой в ручную."""
 
-    def __call__(self, table_name: base.TableName) -> pd.DataFrame:
+    async def __call__(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
         ticker = self._log_and_validate_group(table_name, base.DIVIDENDS)
 

@@ -1,5 +1,5 @@
 """Основные классы модели данных - таблица и реестр таблиц."""
-import threading
+import asyncio
 from datetime import datetime
 from typing import Optional
 
@@ -37,7 +37,7 @@ class Table:
         self._validate = desc.validate
         self._df = df
         self._timestamp = timestamp
-        self._df_lock = threading.RLock()
+        self._df_lock = asyncio.Lock()
 
     @property
     def name(self) -> base.TableName:
@@ -61,26 +61,26 @@ class Table:
 
         Если конец рабочего дня None, то принудительно. В ином случае, если данные устарели.
         """
-        with self._df_lock:
+        async with self._df_lock:
             timestamp = self._timestamp
             if (end_of_trading_day is None) or (timestamp is None) or end_of_trading_day > timestamp:
-                df = self._prepare_df()
+                df = await self._prepare_df()
                 self._set_df(df)
 
-    def _prepare_df(self) -> pd.DataFrame:
+    async def _prepare_df(self) -> pd.DataFrame:
         """Готовит новый DataFrame и осуществляет необходимые проверки."""
         loader = self._loader
         df_old = self.df
         name = self._name
 
         if df_old is None:
-            return loader(name)
+            return await loader(name)
 
         if isinstance(loader, base.AbstractLoader):
-            df_new = loader(name)
+            df_new = await loader(name)
         else:
             date = df_old.index[-1].date()
-            df_new = loader(name, date)
+            df_new = await loader(name, date)
             df_new = pd.concat([df_old.iloc[:-1], df_new], axis=0)
 
         if self._validate:

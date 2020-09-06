@@ -105,7 +105,7 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
 class ConomyLoader(logger.LoggerMixin, base.AbstractLoader):
     """Обновление для таблиц с дивидендами на https://www.conomy.ru/."""
 
-    def __call__(self, table_name: base.TableName) -> pd.DataFrame:
+    async def __call__(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
         ticker = self._log_and_validate_group(table_name, base.CONOMY)
 
