@@ -57,7 +57,7 @@ class AbstractLoader(abc.ABC):
     """Обновляет конкретную группу таблиц."""
 
     @abc.abstractmethod
-    async def __call__(self, table_name: TableName) -> pd.DataFrame:
+    async def get(self, table_name: TableName) -> pd.DataFrame:
         """Загружает данные обновления полностью."""
 
 
@@ -65,7 +65,7 @@ class AbstractIncrementalLoader(abc.ABC):
     """Обновляет конкретную группу таблиц."""
 
     @abc.abstractmethod
-    async def __call__(
+    async def get(
         self,
         table_name: TableName,
         start_date: Optional[datetime.date] = None,

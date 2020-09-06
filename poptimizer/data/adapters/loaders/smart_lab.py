@@ -34,7 +34,7 @@ def get_col_desc() -> List[parser.ColDesc]:
 class SmartLabLoader(logger.LoggerMixin, base.AbstractLoader):
     """Обновление данных с https://www.smart-lab.ru."""
 
-    async def __call__(self, table_name: base.TableName) -> pd.DataFrame:
+    async def get(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
         name = self._log_and_validate_group(table_name, base.SMART_LAB)
         if name != base.SMART_LAB:

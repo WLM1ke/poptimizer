@@ -74,13 +74,13 @@ class Table:
         name = self._name
 
         if df_old is None:
-            return await loader(name)
+            return await loader.get(name)
 
         if isinstance(loader, base.AbstractLoader):
-            df_new = await loader(name)
+            df_new = await loader.get(name)
         else:
             date = df_old.index[-1].date()
-            df_new = await loader(name, date)
+            df_new = await loader.get(name, date)
             df_new = pd.concat([df_old.iloc[:-1], df_new], axis=0)
 
         if self._validate:

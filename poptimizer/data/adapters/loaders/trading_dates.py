@@ -19,7 +19,7 @@ class TradingDatesLoader(logger.LoggerMixin, base.AbstractLoader):
         self._dates_cache: Optional[pd.DataFrame] = None
         self._cache_lock = threading.RLock()
 
-    async def __call__(self, table_name: base.TableName) -> pd.DataFrame:
+    async def get(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение обновленных данных о доступном диапазоне торговых дат."""
         name = self._log_and_validate_group(table_name, base.TRADING_DATES)
         if name != base.TRADING_DATES:
