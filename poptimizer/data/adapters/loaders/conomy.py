@@ -1,5 +1,4 @@
 """Загрузка данных с https://www.conomy.ru/."""
-import asyncio
 from contextlib import asynccontextmanager
 from typing import List, cast
 
@@ -8,7 +7,8 @@ import pyppeteer
 from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
-from poptimizer.data.adapters.loaders import logger, parser
+from poptimizer.data.adapters.loaders import parser
+from poptimizer.data.adapters import logger
 from poptimizer.data.ports import base, col
 
 # Параметры поиска страницы эмитента
@@ -109,7 +109,7 @@ class ConomyLoader(logger.LoggerMixin, base.AbstractLoader):
         """Получение дивидендов для заданного тикера."""
         ticker = self._log_and_validate_group(table_name, base.CONOMY)
 
-        html = asyncio.run(get_html(ticker))
+        html = await get_html(ticker)
         cols_desc = get_col_desc(ticker)
         table = parser.HTMLTable(html, TABLE_INDEX, cols_desc)
         df = table.get_df()
