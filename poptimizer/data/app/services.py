@@ -51,7 +51,7 @@ async def _handle_one_event(
     """Обрабатывает одно событие и добавляет в очередь дочерние события."""
     aws = [_load_or_create_table(table_name, store) for table_name in event.tables_required]
     tables_dict = dict(await asyncio.gather(*aws))
-    event.handle_event(tables_dict)
+    await event.handle_event(tables_dict)
     await _put_in_queue(event.new_events, queue)
     queue.task_done()
 

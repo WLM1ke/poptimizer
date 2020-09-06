@@ -22,7 +22,7 @@ class AbstractEvent(abc.ABC):
         return ()
 
     @abc.abstractmethod
-    def handle_event(self, tables_dict: Dict[base.TableName, model.Table]) -> None:
+    async def handle_event(self, tables_dict: Dict[base.TableName, model.Table]) -> None:
         """Обрабатывает событие."""
 
     @property

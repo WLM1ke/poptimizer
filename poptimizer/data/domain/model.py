@@ -56,7 +56,7 @@ class Table:
         """Момент последнего обновления таблицы."""
         return self._timestamp
 
-    def update(self, end_of_trading_day: Optional[datetime]) -> None:
+    async def update(self, end_of_trading_day: Optional[datetime]) -> None:
         """Обновляет таблицу.
 
         Если конец рабочего дня None, то принудительно. В ином случае, если данные устарели.

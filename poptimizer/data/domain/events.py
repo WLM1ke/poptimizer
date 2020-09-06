@@ -15,7 +15,7 @@ class UpdateDataFrame(outer.AbstractEvent):
         self._table_name = table_name
         self._force = force
 
-    def handle_event(self, tables_dict: Dict[base.TableName, model.Table]) -> None:
+    async def handle_event(self, tables_dict: Dict[base.TableName, model.Table]) -> None:
         """Осуществляет выбор варианта обновления.
 
         - Принудительное
@@ -48,15 +48,15 @@ class UpdateTableWithHelper(outer.AbstractEvent):
         """Для обновления нужна сама таблица и вспомогательная."""
         return self._helper_name, self._table_name
 
-    def handle_event(self, tables_dict: Dict[base.TableName, model.Table]) -> None:
+    async def handle_event(self, tables_dict: Dict[base.TableName, model.Table]) -> None:
         """Обновляет вспомогательную таблицу, а потом основную с учетом необходимости."""
         helper = tables_dict[self._helper_name]
         end_of_trading_day = services.trading_day_potential_end()
-        helper.update(end_of_trading_day)
+        await helper.update(end_of_trading_day)
 
         main = tables_dict[self._table_name]
         end_of_trading_day = services.trading_day_real_end(helper)
-        main.update(end_of_trading_day)
+        await main.update(end_of_trading_day)
 
 
 class UpdateTableByDate(outer.AbstractEvent):
@@ -77,10 +77,10 @@ class UpdateTableByDate(outer.AbstractEvent):
         """Для обновления таблицы требуется ее загрузка."""
         return (self._table_names,)
 
-    def handle_event(self, tables_dict: Dict[base.TableName, model.Table]) -> None:
+    async def handle_event(self, tables_dict: Dict[base.TableName, model.Table]) -> None:
         """Обновляет таблицу.
 
         При отсутствии даты принудительно, а при наличии с учетом необходимости.
         """
         table = tables_dict[self._table_names]
-        table.update(self._end_of_trading_day)
+        await table.update(self._end_of_trading_day)
