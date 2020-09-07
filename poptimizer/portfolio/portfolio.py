@@ -13,7 +13,7 @@ from poptimizer.data.views import moex
 
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
-TURNOVER_DAYS = 267
+TURNOVER_DAYS = 240
 
 
 class Portfolio:
