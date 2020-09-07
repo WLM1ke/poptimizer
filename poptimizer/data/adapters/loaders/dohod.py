@@ -3,8 +3,8 @@ from typing import List
 
 import pandas as pd
 
-from poptimizer.data.adapters.loaders import parser
 from poptimizer.data.adapters import logger
+from poptimizer.data.adapters.loaders import parser
 from poptimizer.data.ports import base, col
 
 # Параметры парсинга сайта
@@ -37,7 +37,8 @@ class DohodLoader(logger.LoggerMixin, base.AbstractLoader):
         ticker = self._log_and_validate_group(table_name, base.DOHOD)
 
         cols_desc = get_col_desc(ticker)
-        table = parser.HTMLTable(f"{URL}{ticker.lower()}", TABLE_INDEX, cols_desc)
+        html = await parser.get_html(f"{URL}{ticker.lower()}")
+        table = parser.HTMLTable(html, TABLE_INDEX, cols_desc)
         df = table.get_df()
         df = df.sort_index(axis=0)
         return df.groupby(lambda date: date).sum()
