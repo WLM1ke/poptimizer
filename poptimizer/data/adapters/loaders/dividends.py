@@ -3,6 +3,7 @@ import pandas as pd
 import pymongo
 
 from poptimizer.data.adapters import logger
+from poptimizer.data.config import resources
 from poptimizer.data.ports import base, col
 
 # Где хранятся данные о дивидендах
@@ -17,25 +18,18 @@ class DividendsLoader(logger.LoggerMixin, base.AbstractLoader):
         """Получение дивидендов для заданного тикера."""
         ticker = self._log_and_validate_group(table_name, base.DIVIDENDS)
 
-        client = pymongo.MongoClient("mongodb://localhost:27017", tz_aware=False)  # Переделать
-        collection = client[SOURCE_DB][SOURCE_COLLECTION]
+        collection = resources.get_mongo_client()[SOURCE_DB][SOURCE_COLLECTION]
 
-        json = list(
-            collection.aggregate(
-                [
-                    {"$match": {"ticker": ticker}},
-                    {"$project": {"_id": False, "date": True, "dividends": True}},
-                    {"$group": {"_id": "$date", ticker: {"$sum": "$dividends"}}},
-                    {"$sort": {"_id": pymongo.ASCENDING}},
-                ],
-            ),
+        docs_cursor = collection.aggregate(
+            [
+                {"$match": {"ticker": ticker}},
+                {"$project": {"date": True, "dividends": True}},
+                {"$group": {"_id": "$date", ticker: {"$sum": "$dividends"}}},
+                {"$sort": {"_id": pymongo.ASCENDING}},
+            ],
         )
+        json = await docs_cursor.to_list(length=None)
+        df = pd.DataFrame(json, columns=["_id", ticker])
 
-        columns = [col.DATE, ticker]
-
-        df = pd.DataFrame(columns=columns)
-        if json:
-            df = pd.DataFrame(json)
-            df.columns = [col.DATE, ticker]
-
+        df.columns = [col.DATE, ticker]
         return df.set_index(col.DATE)
