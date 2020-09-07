@@ -4,6 +4,7 @@ import atexit
 
 import aiohttp
 import requests
+from motor import motor_asyncio
 from requests import adapters
 
 # Настройки http-соединения
@@ -27,12 +28,23 @@ def get_http_session() -> requests.Session:
     return HTTP_SESSION
 
 
+# Пул с асинхронными http-соединениями
 AIOHTTP_SESSION = aiohttp.ClientSession()
 
 
 def get_aiohttp_session() -> aiohttp.ClientSession:
     """Клиентская сессия aiohttp."""
     return AIOHTTP_SESSION
+
+
+# Настройки MongoDB
+_MONGO_URI = "mongodb://localhost:27017"
+MONGO_CLIENT = motor_asyncio.AsyncIOMotorClient(_MONGO_URI, tz_aware=False)
+
+
+def get_mongo_client() -> motor_asyncio.AsyncIOMotorClient:
+    """Асинхронный клиент для работы с MongoDB."""
+    return MONGO_CLIENT
 
 
 def clean_up() -> None:

@@ -3,19 +3,12 @@ import asyncio
 import datetime
 from typing import Final
 
-from motor import motor_asyncio
-
 from poptimizer.data.adapters import db
 from poptimizer.data.app import handlers
-
-# Настройки MongoDB
-_MONGO_URI = "mongodb://localhost:27017"
-_CLIENT = motor_asyncio.AsyncIOMotorClient(_MONGO_URI, tz_aware=False)
-
+from poptimizer.data.config import resources
 
 # Настройки обработчика запросов к приложению
-_DB = _CLIENT["data_new"]
-_DB_SESSION = db.MongoDBSession(_DB)
+_DB_SESSION = db.MongoDBSession(resources.MONGO_CLIENT["data_new"])
 _LOOP = asyncio.get_event_loop()
 HANDLER = handlers.Handler(_LOOP, _DB_SESSION)
 
