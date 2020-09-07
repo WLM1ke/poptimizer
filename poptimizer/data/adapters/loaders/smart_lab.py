@@ -3,8 +3,8 @@ from typing import List
 
 import pandas as pd
 
-from poptimizer.data.adapters.loaders import parser
 from poptimizer.data.adapters import logger
+from poptimizer.data.adapters.loaders import parser
 from poptimizer.data.ports import base, col
 
 # Параметры парсинга сайта
@@ -42,7 +42,8 @@ class SmartLabLoader(logger.LoggerMixin, base.AbstractLoader):
             raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
         cols_desc = get_col_desc()
-        table = parser.HTMLTable(URL, TABLE_INDEX, cols_desc)
+        html = await parser.get_html(URL)
+        table = parser.HTMLTable(html, TABLE_INDEX, cols_desc)
         df = table.get_df()
         if FOOTER not in df.index[-1]:
             raise base.DataError(f"Некорректная html-таблица {table_name}")
