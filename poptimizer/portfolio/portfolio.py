@@ -7,8 +7,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-import poptimizer.data.views.crop
-from poptimizer import data_old, config
+from poptimizer import config
 from poptimizer.config import POptimizerError, MAX_TRADE
 from poptimizer.data.views import moex
 
