@@ -24,6 +24,7 @@ motor
 apimoex
 beautifulsoup4
 requests
+aiohttp
 pyppeteer
 certifi
 
