@@ -59,8 +59,9 @@ class IndexLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
         if name != base.INDEX:
             raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
-        json = apimoex.get_board_history(
-            session=resources.get_http_session(),
+        http_session = resources.get_aiohttp_session()
+        json = await aiomoex.get_board_history(
+            session=http_session,
             start=str(start_date),
             security=base.INDEX,
             columns=("TRADEDATE", "CLOSE"),
