@@ -3,9 +3,9 @@ import re
 from datetime import datetime
 from typing import Callable, List, NamedTuple, Optional, Tuple, Union
 
+import aiohttp
 import bs4
 import pandas as pd
-import requests
 
 from poptimizer.data.config import resources
 from poptimizer.data.ports import base
@@ -61,7 +61,7 @@ async def get_html(url: str) -> str:
     async with session.get(url) as respond:
         try:
             respond.raise_for_status()
-        except requests.HTTPError:
+        except aiohttp.ClientResponseError:
             raise base.DataError(f"Данные {url} не загружены")
         else:
             return await respond.text()
