@@ -1,4 +1,5 @@
 """Загрузка данных с MOEX."""
+import asyncio
 import datetime
 import threading
 from typing import List, Optional, cast
@@ -23,7 +24,7 @@ class SecuritiesLoader(logger.LoggerMixin, base.AbstractLoader):
         """Кэшируются данные, чтобы сократить количество обращений к серверу MOEX."""
         super().__init__()
         self._securities_cache: Optional[pd.DataFrame] = None
-        self._cache_lock = threading.RLock()
+        self._cache_lock = asyncio.Lock()
 
     async def get(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение списка торгуемых акций с регистрационным номером и размером лота."""
@@ -31,7 +32,7 @@ class SecuritiesLoader(logger.LoggerMixin, base.AbstractLoader):
         if name != base.SECURITIES:
             raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
-        with self._cache_lock:
+        async with self._cache_lock:
             if self._securities_cache is not None:
                 self._logger.info(f"Загрузка из кэша {table_name}")
                 return self._securities_cache
