@@ -1,11 +1,10 @@
 """Загрузка данных с MOEX."""
 import asyncio
 import datetime
-import threading
 from typing import List, Optional, cast
 
+import aiohttp
 import aiomoex
-import apimoex
 import pandas as pd
 from pytz import timezone
 
@@ -59,7 +58,6 @@ class IndexLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
         name = self._log_and_validate_group(table_name, base.INDEX)
         if name != base.INDEX:
             raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
-
         http_session = resources.get_aiohttp_session()
         json = await aiomoex.get_board_history(
             session=http_session,
@@ -85,23 +83,22 @@ def _previous_day_in_moscow() -> str:
     return str(date.date())
 
 
-def _find_aliases(reg_num: str) -> List[str]:
+async def _find_aliases(http_session: aiohttp.ClientSession, reg_num: str) -> List[str]:
     """Ищет все тикеры с эквивалентным регистрационным номером."""
-    json = apimoex.find_securities(resources.get_http_session(), reg_num)
+    json = await aiomoex.find_securities(http_session, reg_num)
     return [row["secid"] for row in json if row["regnumber"] == reg_num]
 
 
-def _download_many(aliases: List[str]) -> pd.DataFrame:
+async def _download_many(http_session: aiohttp.ClientSession, aliases: List[str]) -> pd.DataFrame:
     """Загрузка нескольких рядов котировок."""
-    http_session = resources.get_http_session()
     json_all_aliases = []
     for ticker in aliases:
-        json = apimoex.get_market_candles(http_session, ticker, end=_previous_day_in_moscow())
+        json = await aiomoex.get_market_candles(http_session, ticker, end=_previous_day_in_moscow())
         json_all_aliases.extend(json)
 
-    df = pd.DataFrame(columns=["begin", "open", "close", "high", "low", "value"])
+    df = pd.DataFrame(columns=["open", "close", "high", "low", "value", "volume", "begin", "end"])
     if json_all_aliases:
-        df = pd.DataFrame(json_all_aliases)
+        df = df.append(json_all_aliases)
         df = df.sort_values(by=["begin", "value"])
     return df.groupby("begin", as_index=False).last()
 
@@ -122,19 +119,21 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
         """Получение котировок акций в формате OCHLV."""
         ticker = self._log_and_validate_group(table_name, base.QUOTES)
 
+        http_session = resources.get_aiohttp_session()
         if start_date is None:
             reg_num = await self._get_reg_num(ticker)
-            aliases = _find_aliases(reg_num)
-            df = _download_many(aliases)
+            aliases = await _find_aliases(http_session, reg_num)
+            df = await _download_many(http_session, aliases)
         else:
-            json = apimoex.get_market_candles(
-                resources.get_http_session(),
+            json = await aiomoex.get_market_candles(
+                http_session,
                 ticker,
                 start=str(start_date),
                 end=_previous_day_in_moscow(),
             )
             df = pd.DataFrame(json)
 
+        df = df[["begin", "open", "close", "high", "low", "value"]]
         df.columns = [
             col.DATE,
             col.OPEN,
