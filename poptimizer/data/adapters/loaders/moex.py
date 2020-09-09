@@ -3,6 +3,7 @@ import datetime
 import threading
 from typing import List, Optional, cast
 
+import aiomoex
 import apimoex
 import pandas as pd
 from pytz import timezone
@@ -36,7 +37,7 @@ class SecuritiesLoader(logger.LoggerMixin, base.AbstractLoader):
                 return self._securities_cache
 
             columns = ("SECID", "REGNUMBER", "LOTSIZE")
-            json = apimoex.get_board_securities(resources.get_http_session(), columns=columns)
+            json = await aiomoex.get_board_securities(resources.get_aiohttp_session(), columns=columns)
             df = pd.DataFrame(json)
             df.columns = [col.TICKER, col.REG_NUMBER, col.LOT_SIZE]
             self._securities_cache = df.set_index(col.TICKER)
