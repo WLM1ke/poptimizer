@@ -1,17 +1,12 @@
 """Группа операций с таблицами, в конце которой осуществляется сохранение изменных данных."""
 import asyncio
 import contextlib
-from typing import TYPE_CHECKING, AsyncIterator, List, Tuple
+from typing import AsyncIterator, List, Tuple
 
 import pandas as pd
 
 from poptimizer.data.domain import factories, model, repo
 from poptimizer.data.ports import base, outer
-
-if TYPE_CHECKING:
-    EventsQueue = asyncio.Queue[outer.AbstractEvent]
-else:
-    EventsQueue = asyncio.Queue
 
 
 @contextlib.asynccontextmanager
@@ -38,25 +33,19 @@ async def _load_or_create_table(
         return table_name, table
 
 
-async def _put_in_queue(events: List[outer.AbstractEvent], events_queue: EventsQueue) -> None:
-    for event in events:
-        await events_queue.put(event)
-
-
 async def _handle_one_event(
     event: outer.AbstractEvent,
     store: repo.Repo,
-    queue: EventsQueue,
+    queue: outer.EventsQueue,
 ) -> None:
     """Обрабатывает одно событие и добавляет в очередь дочерние события."""
     aws = [_load_or_create_table(table_name, store) for table_name in event.tables_required]
     tables_dict = dict(await asyncio.gather(*aws))
-    await event.handle_event(tables_dict)
-    await _put_in_queue(event.new_events, queue)
+    await event.handle_event(queue, tables_dict)
     queue.task_done()
 
 
-async def _queue_processor(events_queue: EventsQueue, store: repo.Repo) -> None:
+async def _queue_processor(events_queue: outer.EventsQueue, store: repo.Repo) -> None:
     """Вытягивает сообщения из очереди событий и запускает их обработку."""
     while True:
         event = await events_queue.get()
@@ -72,8 +61,10 @@ class EventsBus(outer.AbstractEventsBus):
 
     async def handle_events(self, events: List[outer.AbstractEvent]) -> None:
         """Обработка сообщения и следующих за ним."""
-        events_queue: EventsQueue = asyncio.Queue()
-        await _put_in_queue(events, events_queue)
+        events_queue: outer.EventsQueue = asyncio.Queue()
+        for event in events:
+            await events_queue.put(event)
+
         async with unit_of_work(self._db_session) as store:
             processor_task = asyncio.create_task(_queue_processor(events_queue, store))
             await events_queue.join()

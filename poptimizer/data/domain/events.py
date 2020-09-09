@@ -15,7 +15,11 @@ class UpdateDataFrame(outer.AbstractEvent):
         self._table_name = table_name
         self._force = force
 
-    async def handle_event(self, tables_dict: Dict[base.TableName, model.Table]) -> None:
+    async def handle_event(
+        self,
+        queue: outer.EventsQueue,
+        tables_dict: Dict[base.TableName, model.Table],
+    ) -> None:
         """Осуществляет выбор варианта обновления.
 
         - Принудительное
@@ -26,12 +30,12 @@ class UpdateDataFrame(outer.AbstractEvent):
         force = self._force
 
         if force:
-            self.new_events.append(UpdateTableByDate(table_name))
+            await queue.put(UpdateTableByDate(table_name))
         elif (helper_name := services.get_helper_name(self._table_name)) is None:
             end_of_trading_day = services.trading_day_potential_end()
-            self.new_events.append(UpdateTableByDate(table_name, end_of_trading_day))
+            await queue.put(UpdateTableByDate(table_name, end_of_trading_day))
         else:
-            self.new_events.append(UpdateTableWithHelper(table_name, helper_name))
+            await queue.put(UpdateTableWithHelper(table_name, helper_name))
 
 
 class UpdateTableWithHelper(outer.AbstractEvent):
@@ -48,7 +52,11 @@ class UpdateTableWithHelper(outer.AbstractEvent):
         """Для обновления нужна сама таблица и вспомогательная."""
         return self._helper_name, self._table_name
 
-    async def handle_event(self, tables_dict: Dict[base.TableName, model.Table]) -> None:
+    async def handle_event(
+        self,
+        queue: outer.EventsQueue,
+        tables_dict: Dict[base.TableName, model.Table],
+    ) -> None:
         """Обновляет вспомогательную таблицу, а потом основную с учетом необходимости."""
         helper = tables_dict[self._helper_name]
         end_of_trading_day = services.trading_day_potential_end()
@@ -77,7 +85,11 @@ class UpdateTableByDate(outer.AbstractEvent):
         """Для обновления таблицы требуется ее загрузка."""
         return (self._table_names,)
 
-    async def handle_event(self, tables_dict: Dict[base.TableName, model.Table]) -> None:
+    async def handle_event(
+        self,
+        queue: outer.EventsQueue,
+        tables_dict: Dict[base.TableName, model.Table],
+    ) -> None:
         """Обновляет таблицу.
 
         При отсутствии даты принудительно, а при наличии с учетом необходимости.
