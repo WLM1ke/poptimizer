@@ -21,8 +21,8 @@ FIRST_MONTH = "январь"
 
 async def _get_xlsx_url(session: aiohttp.ClientSession) -> str:
     """Получить url для файла с инфляцией."""
-    resp = await session.get(URL_CORE + URL_END)
-    html = await resp.text()
+    async with session.get(URL_CORE + URL_END) as resp:
+        html = await resp.text()
     if match := re.search(FILE_PATTERN, html):
         return match.group(0)
     raise base.DataError("На странице отсутствует URL файла с инфляцией")
@@ -32,8 +32,8 @@ async def _load_xlsx() -> pd.DataFrame:
     """Загрузка Excel-файла с данными по инфляции."""
     session = resources.get_aiohttp_session()
     file_url = await _get_xlsx_url(session)
-    resp = await session.get(file_url)
-    xls_file = await resp.read()
+    async with session.get(file_url) as resp:
+        xls_file = await resp.read()
     return pd.read_excel(xls_file, **PARSING_PARAMETERS)
 
 
