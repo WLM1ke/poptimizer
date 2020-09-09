@@ -1,5 +1,5 @@
 """Спецификация таблицы с диапазоном торговых дат."""
-import threading
+import asyncio
 from typing import Optional
 
 import aiomoex
@@ -17,7 +17,7 @@ class TradingDatesLoader(logger.LoggerMixin, base.AbstractLoader):
         """Кэшируются данные, чтобы сократить количество обращений к серверу MOEX."""
         super().__init__()
         self._dates_cache: Optional[pd.DataFrame] = None
-        self._cache_lock = threading.RLock()
+        self._cache_lock = asyncio.Lock()
 
     async def get(self, table_name: base.TableName) -> pd.DataFrame:
         """Получение обновленных данных о доступном диапазоне торговых дат."""
