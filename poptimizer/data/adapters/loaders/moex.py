@@ -37,7 +37,8 @@ class SecuritiesLoader(logger.LoggerMixin, base.AbstractLoader):
                 return self._securities_cache
 
             columns = ("SECID", "REGNUMBER", "LOTSIZE")
-            json = await aiomoex.get_board_securities(resources.get_aiohttp_session(), columns=columns)
+            http_session = resources.get_aiohttp_session()
+            json = await aiomoex.get_board_securities(http_session, columns=columns)
             df = pd.DataFrame(json)
             df.columns = [col.TICKER, col.REG_NUMBER, col.LOT_SIZE]
             self._securities_cache = df.set_index(col.TICKER)
