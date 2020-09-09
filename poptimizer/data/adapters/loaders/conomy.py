@@ -7,8 +7,8 @@ import pyppeteer
 from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
-from poptimizer.data.adapters.loaders import parser
 from poptimizer.data.adapters import logger
+from poptimizer.data.adapters.loaders import parser
 from poptimizer.data.ports import base, col
 
 # Параметры поиска страницы эмитента

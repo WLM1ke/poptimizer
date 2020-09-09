@@ -5,7 +5,6 @@ import atexit
 import aiohttp
 from motor import motor_asyncio
 
-
 # Пул с асинхронными http-соединениями
 AIOHTTP_SESSION = aiohttp.ClientSession()
 
