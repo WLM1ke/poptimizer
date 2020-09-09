@@ -22,6 +22,7 @@ motor
 
 # Web
 apimoex
+aiomoex
 beautifulsoup4
 requests
 aiohttp
