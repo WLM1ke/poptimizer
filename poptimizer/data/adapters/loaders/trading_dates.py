@@ -2,7 +2,7 @@
 import threading
 from typing import Optional
 
-import apimoex
+import aiomoex
 import pandas as pd
 
 from poptimizer.data.adapters import logger
@@ -30,8 +30,8 @@ class TradingDatesLoader(logger.LoggerMixin, base.AbstractLoader):
                 self._logger.info(f"Загрузка из кэша {table_name}")
                 return self._dates_cache
 
-            session = resources.get_http_session()
-            json = apimoex.get_board_dates(session, board="TQBR", market="shares", engine="stock")
+            session = resources.get_aiohttp_session()
+            json = await aiomoex.get_board_dates(session, board="TQBR", market="shares", engine="stock")
             self._dates_cache = pd.DataFrame(json)
             self._logger.info(f"Последняя дата с историей: {json[0]['till']}")
 
