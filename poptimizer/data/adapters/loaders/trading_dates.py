@@ -25,7 +25,7 @@ class TradingDatesLoader(logger.LoggerMixin, base.AbstractLoader):
         if name != base.TRADING_DATES:
             raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
-        with self._cache_lock:
+        async with self._cache_lock:
             if self._dates_cache is not None:
                 self._logger.info(f"Загрузка из кэша {table_name}")
                 return self._dates_cache
