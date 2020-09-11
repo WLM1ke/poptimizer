@@ -52,7 +52,7 @@ class Chromosome(UserDict):
     осуществляет их дифференциальную эволюцию.
     """
 
-    _GENES: ClassVar[Tuple[GeneParams]] = tuple()
+    _GENES: ClassVar[Tuple[GeneParams, ...]] = tuple()
 
     def __init__(self, chromosome_data: ChromosomeData) -> NoReturn:
         """Формирует полное описании хромосомы.
