@@ -23,10 +23,16 @@ class SubBlock(nn.Module):
         super().__init__()
         self.signal_gate_pad = nn.ConstantPad1d(padding=(kernels - 1, 0), value=0.0)
         self.signal_conv = nn.Conv1d(
-            in_channels=residual_channels, out_channels=gate_channels, kernel_size=kernels, stride=1,
+            in_channels=residual_channels,
+            out_channels=gate_channels,
+            kernel_size=kernels,
+            stride=1,
         )
         self.gate_conv = nn.Conv1d(
-            in_channels=residual_channels, out_channels=gate_channels, kernel_size=kernels, stride=1,
+            in_channels=residual_channels,
+            out_channels=gate_channels,
+            kernel_size=kernels,
+            stride=1,
         )
         self.output_conv = nn.Conv1d(
             in_channels=gate_channels, out_channels=residual_channels, kernel_size=1
@@ -56,11 +62,11 @@ class SubBlock(nn.Module):
 class Block(nn.Module):
     """Блок, состоящий из нескольких маленьких блоков и последующим уменьшением размерности.
 
-     Имеет два выхода:
-     - Основной с уменьшенной в два раза размерностью;
-     - Скип для суммирования последнего значения слоя с остальными скипами и расчета общего выходного
-     значения.
-     """
+    Имеет два выхода:
+    - Основной с уменьшенной в два раза размерностью;
+    - Скип для суммирования последнего значения слоя с остальными скипами и расчета общего выходного
+    значения.
+    """
 
     def __init__(
         self,
@@ -87,7 +93,9 @@ class Block(nn.Module):
         for i in range(sub_blocks):
             self.sub_blocks.append(
                 SubBlock(
-                    kernels=kernels, gate_channels=gate_channels, residual_channels=residual_channels,
+                    kernels=kernels,
+                    gate_channels=gate_channels,
+                    residual_channels=residual_channels,
                 )
             )
         self.skip_convs = nn.Conv1d(
@@ -95,7 +103,10 @@ class Block(nn.Module):
         )
         self.dilated_pad = nn.ConstantPad1d(padding=(1, 0), value=0.0)
         self.dilated_convs = nn.Conv1d(
-            in_channels=residual_channels, out_channels=residual_channels, kernel_size=2, stride=2,
+            in_channels=residual_channels,
+            out_channels=residual_channels,
+            kernel_size=2,
+            stride=2,
         )
 
     def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
@@ -195,11 +206,15 @@ class WaveNet(nn.Module):
             embedding_dim = 0
 
         self.start_conv = nn.Conv1d(
-            in_channels=sequence_count + embedding_dim, out_channels=residual_channels, kernel_size=1,
+            in_channels=sequence_count + embedding_dim,
+            out_channels=residual_channels,
+            kernel_size=1,
         )
 
         self.blocks = nn.ModuleList()
-        blocks = int(np.log2(history_days - 1)) + 1
+        blocks = 1
+        if history_days is not None:
+            blocks = int(np.log2(history_days - 1)) + 1
         for block in range(blocks):
             self.blocks.append(
                 Block(
