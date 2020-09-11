@@ -75,7 +75,7 @@ class Table:
         df_old = self.df
         name = self._name
 
-        if df_old is None:
+        if df_old is None or df_old.empty:
             return await loader.get(name)
 
         if isinstance(loader, base.AbstractLoader):
