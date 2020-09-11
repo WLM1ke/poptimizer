@@ -17,7 +17,7 @@ PARAMS = {
 
 @pytest.fixture(scope="function", autouse=True)
 def set_split(monkeypatch):
-    monkeypatch.setattr(data_params, "TEST_DAYS", 240)
+    monkeypatch.setattr(data_params, "FORECAST_DAYS", 240)
     monkeypatch.setattr(bootstrap, "START_DATE", pd.Timestamp("2010-09-01"))
     yield
 
@@ -74,9 +74,9 @@ class TestTrainParams:
         assert df[pd.Timestamp("2017-07-14")] == pytest.approx(3.48 * 0.87)
 
     def test_len(self, train_params):
-        assert train_params.len("CBOM") == 927 + 7
-        assert train_params.len("DSKY") == 517 + 7
-        assert train_params.len("IRKT") == 2135 + 7
+        assert train_params.len("CBOM") == 927 + 7 - 239
+        assert train_params.len("DSKY") == 517 + 7 - 239
+        assert train_params.len("IRKT") == 2135 + 7 - 239
 
     def test_get_all_feat(self, train_params):
         assert list(train_params.get_all_feat()) == ["Label", "Prices"]
@@ -109,9 +109,9 @@ class TestTestParams:
         assert df[pd.Timestamp("2019-06-06")] == pytest.approx(0.11 * 0.87)
 
     def test_len(self, test_params):
-        assert test_params.len("CBOM") == 240
-        assert test_params.len("DSKY") == 240
-        assert test_params.len("IRKT") == 240
+        assert test_params.len("CBOM") == 1
+        assert test_params.len("DSKY") == 1
+        assert test_params.len("IRKT") == 1
 
     def test_get_all_feat(self, test_params):
         assert list(test_params.get_all_feat()) == ["Label", "Prices"]

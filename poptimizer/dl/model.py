@@ -261,7 +261,7 @@ class Model:
 
         history_days = self._phenotype["data"]["history_days"]
 
-        year_mul = YEAR_IN_TRADING_DAYS
+        year_mul = YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS
         m_forecast = pd.Series(m_forecast, index=list(self._tickers)).mul(year_mul)
         s_forecast = pd.Series(s_forecast, index=list(self._tickers)).mul(year_mul ** 0.5)
 

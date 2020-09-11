@@ -16,13 +16,13 @@ PARAMS = {
 def make_feature():
     saved_start_date = div.STATS_START
     div.STATS_START = pd.Timestamp("2010-09-01")
-    saved_test_days = data_params.TEST_DAYS
-    data_params.TEST_DAYS = 240
+    saved_test_days = data_params.FORECAST_DAYS
+    data_params.FORECAST_DAYS = 240
 
     params = data_params.TestParams(("CNTLP", "LKOH"), pd.Timestamp("2020-03-18"), PARAMS)
     yield dividends.Dividends("CNTLP", params)
 
-    data_params.TEST_DAYS = saved_test_days
+    data_params.FORECAST_DAYS = saved_test_days
     div.STATS_START = saved_start_date
 
 

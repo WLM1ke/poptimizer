@@ -10,7 +10,7 @@ from poptimizer import data_old
 # Доля дней относимых к тренировочному периоду
 from poptimizer.data.views import moex
 
-TEST_DAYS = 1
+FORECAST_DAYS = 1
 
 
 def div_price_train_size(
@@ -18,7 +18,7 @@ def div_price_train_size(
 ) -> Tuple[pd.DataFrame, pd.DataFrame, int]:
     """Данные по дивидендам, ценам и количество дней в тренировочном наборе."""
     div, price = moex.div_and_prices(tickers, end)
-    train_size = len(price) - TEST_DAYS
+    train_size = len(price) - FORECAST_DAYS
     return div, price, train_size
 
 
@@ -108,7 +108,7 @@ class DataParams(abc.ABC):
 
     def len(self, ticker) -> int:
         """Количество доступных примеров для данного тикера."""
-        return max(0, len(self.price(ticker)) - self.history_days)
+        return max(0, len(self.price(ticker)) - self.history_days - FORECAST_DAYS + 1)
 
     def get_all_feat(self) -> Generator[str, None, None]:
         """Получить все названия признаков."""
@@ -151,7 +151,7 @@ class ForecastParams(DataParams):
 
     def len(self, ticker) -> int:
         """Количество доступных примеров для данного тикера."""
-        return max(0, len(self.price(ticker)) - self.history_days + 1)
+        return 1
 
     def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
         history_days = self.history_days

@@ -3,14 +3,14 @@ from typing import Tuple
 
 import torch
 
-from poptimizer.dl.features.data_params import DataParams
+from poptimizer.dl.features import data_params
 from poptimizer.dl.features.feature import Feature, FeatureType
 
 
 class Label(Feature):
     """Метка - полная доходность за определенный период."""
 
-    def __init__(self, ticker: str, params: DataParams):
+    def __init__(self, ticker: str, params: data_params.DataParams):
         super().__init__(ticker, params)
         div = torch.tensor(params.div(ticker).values, dtype=torch.float)
         self.cum_div = torch.cumsum(div, dim=0)
@@ -25,7 +25,7 @@ class Label(Feature):
         last_history_price = price[start]
         last_history_div = div[start]
 
-        end = start + 1
+        end = start + data_params.FORECAST_DAYS
         last_forecast_price = price[end]
         last_forecast_div = div[end]
 
@@ -37,4 +37,4 @@ class Label(Feature):
     @property
     def type_and_size(self) -> Tuple[FeatureType, int]:
         """Тип признака и размер признака."""
-        return FeatureType.LABEL, 1
+        return FeatureType.LABEL, data_params.FORECAST_DAYS
