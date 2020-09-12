@@ -1,4 +1,4 @@
-"""Базовые типы данных домена."""
+"""Базовые типы, необходимые для описания таблицы с данными."""
 import abc
 import datetime
 import enum
@@ -54,21 +54,21 @@ class IndexChecks(enum.Flag):
 
 
 class AbstractLoader(abc.ABC):
-    """Обновляет конкретную группу таблиц."""
+    """Загружает обновление для таблицы полностью."""
 
     @abc.abstractmethod
     async def get(self, table_name: TableName) -> pd.DataFrame:
-        """Загружает данные обновления полностью."""
+        """Загружает данные."""
 
 
 class AbstractIncrementalLoader(abc.ABC):
-    """Обновляет конкретную группу таблиц."""
+    """Загружает обновление для таблицы с некоторой даты."""
 
     @abc.abstractmethod
     async def get(
         self,
         table_name: TableName,
-        start_date: Optional[datetime.date] = None,
+        last_index: Optional[str] = None,
     ) -> pd.DataFrame:
         """Загружает данные обновления начиная с некой даты.
 

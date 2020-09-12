@@ -52,7 +52,7 @@ class IndexLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
     async def get(
         self,
         table_name: base.TableName,
-        start_date: Optional[datetime.date] = None,
+        last_index: Optional[str] = None,
     ) -> pd.DataFrame:
         """Получение цен закрытия индекса MCFTRR."""
         name = self._log_and_validate_group(table_name, base.INDEX)
@@ -61,7 +61,7 @@ class IndexLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
         http_session = resources.get_aiohttp_session()
         json = await aiomoex.get_board_history(
             session=http_session,
-            start=str(start_date),
+            start=last_index,
             security=base.INDEX,
             columns=("TRADEDATE", "CLOSE"),
             board="RTSI",
@@ -114,13 +114,13 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
     async def get(
         self,
         table_name: base.TableName,
-        start_date: Optional[datetime.date] = None,
+        last_index: Optional[str] = None,
     ) -> pd.DataFrame:
         """Получение котировок акций в формате OCHLV."""
         ticker = self._log_and_validate_group(table_name, base.QUOTES)
 
         http_session = resources.get_aiohttp_session()
-        if start_date is None:
+        if last_index is None:
             reg_num = await self._get_reg_num(ticker)
             aliases = await _find_aliases(http_session, reg_num)
             df = await _download_many(http_session, aliases)
@@ -128,7 +128,7 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
             json = await aiomoex.get_market_candles(
                 http_session,
                 ticker,
-                start=str(start_date),
+                start=last_index,
                 end=_previous_day_in_moscow(),
             )
             df = pd.DataFrame(json)
