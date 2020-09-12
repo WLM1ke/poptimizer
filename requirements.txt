@@ -1,6 +1,7 @@
 # Тестирование
 pytest
 pytest-cov
+pytest-mock
 pytest-asyncio
 
 # Математические операции и нейронные сети
