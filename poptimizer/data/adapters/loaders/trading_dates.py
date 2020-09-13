@@ -32,7 +32,7 @@ class TradingDatesLoader(logger.LoggerMixin, base.AbstractLoader):
 
             session = resources.get_aiohttp_session()
             json = await aiomoex.get_board_dates(session, board="TQBR", market="shares", engine="stock")
-            self._dates_cache = pd.DataFrame(json)
+            self._dates_cache = pd.DataFrame(json, dtype="datetime64[ns]")
             self._logger.info(f"Последняя дата с историей: {json[0]['till']}")
 
             return self._dates_cache
