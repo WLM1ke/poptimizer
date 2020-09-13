@@ -63,7 +63,7 @@ class UpdateTableWithHelper(outer.AbstractEvent):
         await helper.update(end_of_trading_day)
 
         main = tables_dict[self._table_name]
-        end_of_trading_day = services.trading_day_real_end(helper)
+        end_of_trading_day = services.trading_day_real_end(helper.df)
         await main.update(end_of_trading_day)
 
 
