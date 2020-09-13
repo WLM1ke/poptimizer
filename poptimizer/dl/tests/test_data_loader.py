@@ -4,6 +4,7 @@ import torch
 
 from poptimizer.dl import data_loader
 from poptimizer.dl.features import data_params, FeatureType
+from poptimizer.dl.features.data_params import FORECAST_DAYS
 
 PARAMS = {
     "batch_size": 100,
@@ -41,7 +42,7 @@ class TestOneTickerDataset:
         assert isinstance(description, dict)
         assert len(description) == 3
         assert description == dict(
-            Label=(FeatureType.LABEL, 1),
+            Label=(FeatureType.LABEL, FORECAST_DAYS),
             Prices=(FeatureType.SEQUENCE, 245),
             Dividends=(FeatureType.SEQUENCE, 245),
         )
