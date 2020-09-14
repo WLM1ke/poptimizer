@@ -24,7 +24,7 @@ class Handler:
         force_update: bool = False,
     ) -> pd.DataFrame:
         """Возвращает DataFrame по наименованию таблицы."""
-        event = events.UpdateDataFrame(table_name, force_update)
+        event = events.UpdateChecked(table_name, force_update)
         loop = self._loop
         loop.run_until_complete(self._bus.handle_events([event]))
         return loop.run_until_complete(self._viewer.get_df(table_name))
@@ -38,7 +38,7 @@ class Handler:
         table_names = [base.TableName(group, name) for name in names]
 
         update_events: List[outer.AbstractEvent] = [
-            events.UpdateDataFrame(table_name) for table_name in table_names
+            events.UpdateChecked(table_name) for table_name in table_names
         ]
         loop = self._loop
         loop.run_until_complete(self._bus.handle_events(update_events))

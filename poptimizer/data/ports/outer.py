@@ -2,7 +2,7 @@
 import abc
 import asyncio
 import datetime
-from typing import TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Iterable, List, NamedTuple, Optional
 
 import pandas as pd
 
@@ -19,15 +19,15 @@ class AbstractEvent(abc.ABC):
     """Абстрактный класс события."""
 
     @property
-    def tables_required(self) -> Tuple[base.TableName, ...]:
+    @abc.abstractmethod
+    def table_required(self) -> Optional[base.TableName]:
         """Перечень таблиц, которые нужны обработчику события."""
-        return ()
 
     @abc.abstractmethod
     async def handle_event(
         self,
         queue: EventsQueue,
-        tables_dict: Dict[base.TableName, model.Table],
+        table: Optional[model.Table],
     ) -> None:
         """Обрабатывает событие и добавляет новые события в очередь."""
 

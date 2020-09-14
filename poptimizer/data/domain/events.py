@@ -1,12 +1,13 @@
 """Сообщения доменной области."""
 from datetime import datetime
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 from poptimizer.data.domain import model, services
 from poptimizer.data.ports import base, outer
+from poptimizer.data.ports.outer import EventsQueue
 
 
-class UpdateDataFrame(outer.AbstractEvent):
+class UpdateChecked(outer.AbstractEvent):
     """Команда обновить DataFrame."""
 
     def __init__(self, table_name: base.TableName, force: bool = False):
@@ -15,10 +16,14 @@ class UpdateDataFrame(outer.AbstractEvent):
         self._table_name = table_name
         self._force = force
 
+    @property
+    def table_required(self) -> Optional[base.TableName]:
+        """Не требуется таблица."""
+
     async def handle_event(
         self,
         queue: outer.EventsQueue,
-        tables_dict: Dict[base.TableName, model.Table],
+        table: Optional[model.Table],
     ) -> None:
         """Осуществляет выбор варианта обновления.
 
@@ -35,36 +40,35 @@ class UpdateDataFrame(outer.AbstractEvent):
             end_of_trading_day = services.trading_day_potential_end()
             await queue.put(UpdateTableByDate(table_name, end_of_trading_day))
         else:
-            await queue.put(UpdateTableWithHelper(table_name, helper_name))
+            await queue.put(TradingDayEndRequired(table_name, helper_name))
 
 
-class UpdateTableWithHelper(outer.AbstractEvent):
-    """Команда обновить с помощью вспомогательной таблицы."""
+class TradingDayEndRequired(outer.AbstractEvent):
+    """Узнает время окончания последних торгов."""
 
-    def __init__(self, table_name: base.TableName, helper_name: base.TableName) -> None:
-        """Для обновление нужно имена основной и вспомогательной таблиц."""
+    def __init__(self, table_name: base.TableName, helper_name: base.TableName):
+        """Хранит название обновляемой таблицы и вспомогательной таблицы с датами торгов."""
         super().__init__()
         self._table_name = table_name
         self._helper_name = helper_name
 
     @property
-    def tables_required(self) -> Tuple[base.TableName, ...]:
-        """Для обновления нужна сама таблица и вспомогательная."""
-        return self._helper_name, self._table_name
+    def table_required(self) -> Optional[base.TableName]:
+        """Нужна вспомогательная таблица."""
+        return self._helper_name
 
     async def handle_event(
         self,
-        queue: outer.EventsQueue,
-        tables_dict: Dict[base.TableName, model.Table],
+        queue: EventsQueue,
+        table: Optional[model.Table],
     ) -> None:
-        """Обновляет вспомогательную таблицу, а потом основную с учетом необходимости."""
-        helper = tables_dict[self._helper_name]
+        """Узнает окончание рабочего дня и запрашивает обновление."""
+        if table is None:
+            raise base.DataError("Нужна таблица")
         end_of_trading_day = services.trading_day_potential_end()
-        await helper.update(end_of_trading_day)
-
-        main = tables_dict[self._table_name]
-        end_of_trading_day = services.trading_day_real_end(helper.df)
-        await main.update(end_of_trading_day)
+        await table.update(end_of_trading_day)
+        end_of_trading_day = services.trading_day_real_end(table.df)
+        await queue.put(UpdateTableByDate(self._table_name, end_of_trading_day))
 
 
 class UpdateTableByDate(outer.AbstractEvent):
@@ -81,18 +85,19 @@ class UpdateTableByDate(outer.AbstractEvent):
         self._end_of_trading_day = end_of_trading_day
 
     @property
-    def tables_required(self) -> Tuple[base.TableName, ...]:
+    def table_required(self) -> base.TableName:
         """Для обновления таблицы требуется ее загрузка."""
-        return (self._table_names,)
+        return self._table_names
 
     async def handle_event(
         self,
         queue: outer.EventsQueue,
-        tables_dict: Dict[base.TableName, model.Table],
+        table: Optional[model.Table],
     ) -> None:
         """Обновляет таблицу.
 
         При отсутствии даты принудительно, а при наличии с учетом необходимости.
         """
-        table = tables_dict[self._table_names]
+        if table is None:
+            raise base.DataError("Нужна таблица")
         await table.update(self._end_of_trading_day)

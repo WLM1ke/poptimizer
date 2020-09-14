@@ -1,7 +1,7 @@
 """Группа операций с таблицами, в конце которой осуществляется сохранение изменных данных."""
 import asyncio
 import contextlib
-from typing import AsyncIterator, List, Tuple
+from typing import AsyncIterator, List
 
 import pandas as pd
 
@@ -25,12 +25,12 @@ async def unit_of_work(db_session: outer.AbstractDBSession) -> AsyncIterator[rep
 async def _load_or_create_table(
     table_name: base.TableName,
     store: repo.Repo,
-) -> Tuple[base.TableName, model.Table]:
+) -> model.Table:
     async with store:
         if (table := await store.get_table(table_name)) is None:
             table = factories.create_table(table_name)
             store.add_table(table)
-        return table_name, table
+        return table
 
 
 async def _handle_one_event(
@@ -39,9 +39,10 @@ async def _handle_one_event(
     queue: outer.EventsQueue,
 ) -> None:
     """Обрабатывает одно событие и добавляет в очередь дочерние события."""
-    aws = [_load_or_create_table(table_name, store) for table_name in event.tables_required]
-    tables_dict = dict(await asyncio.gather(*aws))
-    await event.handle_event(queue, tables_dict)
+    table = None
+    if (table_name := event.table_required) is not None:
+        table = await _load_or_create_table(table_name, store)
+    await event.handle_event(queue, table)
     queue.task_done()
 
 
