@@ -2,7 +2,7 @@
 import abc
 import asyncio
 import datetime
-from typing import TYPE_CHECKING, Dict, Iterable, List, Mapping, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple
 
 import pandas as pd
 
@@ -51,9 +51,6 @@ class AbstractDBSession(abc.ABC):
     @abc.abstractmethod
     async def commit(self, tables_vars: Iterable[TableTuple]) -> None:
         """Сохраняет данные таблиц."""
-
-
-TableDescriptionRegistry = Mapping[base.GroupName, base.TableDescription]
 
 
 class AbstractEventsBus(abc.ABC):

@@ -1,4 +1,4 @@
-"""Фабрики по созданию объектов и их сериализации."""
+"""Фабрики по созданию таблиц и их сериализации."""
 from types import MappingProxyType
 
 from poptimizer.data.adapters.loaders import (
@@ -60,7 +60,7 @@ _QUOTES = base.TableDescription(
     index_checks=base.IndexChecks.UNIQUE_ASCENDING,
     validate=True,
 )
-_TABLES_REGISTRY: outer.TableDescriptionRegistry = MappingProxyType(
+_TABLES_REGISTRY = MappingProxyType(
     {
         base.TRADING_DATES: _TRADING_DATES,
         base.CONOMY: _CONOMY,
@@ -76,7 +76,7 @@ _TABLES_REGISTRY: outer.TableDescriptionRegistry = MappingProxyType(
 
 
 def create_table(name: base.TableName) -> model.Table:
-    """Создает таблицу."""
+    """Создает пустую новую таблицу."""
     return model.Table(name=name, desc=_TABLES_REGISTRY[name.group])
 
 
@@ -87,7 +87,7 @@ def recreate_table(table_tuple: outer.TableTuple) -> model.Table:
 
 
 def convent_to_tuple(table: model.Table) -> outer.TableTuple:
-    """Конвертирует объект в кортеж."""
+    """Конвертирует таблицу в кортеж."""
     group, name = table.name
     if (timestamp := table.timestamp) is None:
         raise base.DataError(f"Попытка сериализации пустой таблицы {table.name}")
