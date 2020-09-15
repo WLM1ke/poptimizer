@@ -23,7 +23,12 @@ def _to_utc_naive(date: datetime) -> datetime:
 def trading_day_potential_end() -> datetime:
     """Конец возможного последнего торгового дня UTC."""
     now = datetime.now(MOEX_TZ)
-    end_of_trading = now.replace(hour=END_HOUR, minute=END_MINUTE, second=0, microsecond=0)
+    end_of_trading = now.replace(
+        hour=END_HOUR,
+        minute=END_MINUTE,
+        second=0,
+        microsecond=0,
+    )
     if end_of_trading > now:
         end_of_trading -= timedelta(days=1)
     return _to_utc_naive(end_of_trading)
@@ -35,6 +40,8 @@ def trading_day_real_end(df: pd.DataFrame) -> datetime:
     end_of_trading = last_trading_day.replace(
         hour=END_HOUR,
         minute=END_MINUTE,
+        second=0,
+        microsecond=0,
         tzinfo=MOEX_TZ,
     )
     end_of_trading += timedelta(days=1)
