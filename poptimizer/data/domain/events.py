@@ -1,4 +1,4 @@
-"""Сообщения доменной области."""
+"""События, связанные с обновлением таблиц."""
 from datetime import datetime
 from typing import Optional
 
@@ -35,10 +35,10 @@ class UpdateChecked(outer.AbstractEvent):
         force = self._force
 
         if force:
-            await queue.put(UpdateTableByDate(table_name))
+            await queue.put(TradingDateLoaded(table_name))
         elif (helper_name := services.get_helper_name(self._table_name)) is None:
             end_of_trading_day = services.trading_day_potential_end()
-            await queue.put(UpdateTableByDate(table_name, end_of_trading_day))
+            await queue.put(TradingDateLoaded(table_name, end_of_trading_day))
         else:
             await queue.put(TradingDayEndRequired(table_name, helper_name))
 
@@ -68,10 +68,10 @@ class TradingDayEndRequired(outer.AbstractEvent):
         end_of_trading_day = services.trading_day_potential_end()
         await table.update(end_of_trading_day)
         end_of_trading_day = services.trading_day_real_end(table.df)
-        await queue.put(UpdateTableByDate(self._table_name, end_of_trading_day))
+        await queue.put(TradingDateLoaded(self._table_name, end_of_trading_day))
 
 
-class UpdateTableByDate(outer.AbstractEvent):
+class TradingDateLoaded(outer.AbstractEvent):
     """Команда обновить таблицу с учетом последней торговой даты."""
 
     def __init__(
