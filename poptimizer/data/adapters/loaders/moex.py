@@ -10,13 +10,13 @@ from pytz import timezone
 
 from poptimizer.data.adapters import logger
 from poptimizer.data.config import resources
-from poptimizer.data.ports import base, col
+from poptimizer.data.ports import col, outer
 
 # Часовой пояс MOEX
 MOEX_TZ = timezone("Europe/Moscow")
 
 
-class SecuritiesLoader(logger.LoggerMixin, base.AbstractLoader):
+class SecuritiesLoader(logger.LoggerMixin, outer.AbstractLoader):
     """Информация о всех торгующихся акциях."""
 
     def __init__(self) -> None:
@@ -25,11 +25,11 @@ class SecuritiesLoader(logger.LoggerMixin, base.AbstractLoader):
         self._securities_cache: Optional[pd.DataFrame] = None
         self._cache_lock = asyncio.Lock()
 
-    async def get(self, table_name: base.TableName) -> pd.DataFrame:
+    async def get(self, table_name: outer.TableName) -> pd.DataFrame:
         """Получение списка торгуемых акций с регистрационным номером и размером лота."""
-        name = self._log_and_validate_group(table_name, base.SECURITIES)
-        if name != base.SECURITIES:
-            raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
+        name = self._log_and_validate_group(table_name, outer.SECURITIES)
+        if name != outer.SECURITIES:
+            raise outer.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
         async with self._cache_lock:
             if self._securities_cache is not None:
@@ -46,23 +46,23 @@ class SecuritiesLoader(logger.LoggerMixin, base.AbstractLoader):
             return self._securities_cache
 
 
-class IndexLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
+class IndexLoader(logger.LoggerMixin, outer.AbstractIncrementalLoader):
     """Котировки индекса полной доходности с учетом российских налогов - MCFTRR."""
 
     async def get(
         self,
-        table_name: base.TableName,
+        table_name: outer.TableName,
         last_index: Optional[str] = None,
     ) -> pd.DataFrame:
         """Получение цен закрытия индекса MCFTRR."""
-        name = self._log_and_validate_group(table_name, base.INDEX)
-        if name != base.INDEX:
-            raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
+        name = self._log_and_validate_group(table_name, outer.INDEX)
+        if name != outer.INDEX:
+            raise outer.DataError(f"Некорректное имя таблицы для обновления {table_name}")
         http_session = resources.get_aiohttp_session()
         json = await aiomoex.get_board_history(
             session=http_session,
             start=last_index,
-            security=base.INDEX,
+            security=outer.INDEX,
             columns=("TRADEDATE", "CLOSE"),
             board="RTSI",
             market="index",
@@ -103,7 +103,7 @@ async def _download_many(http_session: aiohttp.ClientSession, aliases: List[str]
     return df.groupby("begin", as_index=False).last()
 
 
-class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
+class QuotesLoader(logger.LoggerMixin, outer.AbstractIncrementalLoader):
     """Котировки акций."""
 
     def __init__(self, securities_loader: SecuritiesLoader) -> None:
@@ -113,11 +113,11 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
 
     async def get(
         self,
-        table_name: base.TableName,
+        table_name: outer.TableName,
         last_index: Optional[str] = None,
     ) -> pd.DataFrame:
         """Получение котировок акций в формате OCHLV."""
-        ticker = self._log_and_validate_group(table_name, base.QUOTES)
+        ticker = self._log_and_validate_group(table_name, outer.QUOTES)
 
         http_session = resources.get_aiohttp_session()
         if last_index is None:
@@ -147,6 +147,6 @@ class QuotesLoader(logger.LoggerMixin, base.AbstractIncrementalLoader):
 
     async def _get_reg_num(self, ticker: str) -> str:
         """Регистрационный номер акции."""
-        table_name = base.TableName(base.SECURITIES, base.SECURITIES)
+        table_name = outer.TableName(outer.SECURITIES, outer.SECURITIES)
         df = await self._securities_loader.get(table_name)
         return cast(str, df.at[ticker, col.REG_NUMBER])

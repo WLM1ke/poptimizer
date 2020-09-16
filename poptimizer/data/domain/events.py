@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Optional
 import pandas as pd
 
 from poptimizer.data.domain import model, services
-from poptimizer.data.ports import base
+from poptimizer.data.ports import outer
 
 
 class AbstractEvent(abc.ABC):
@@ -25,7 +25,7 @@ class Command(AbstractEvent):
 
     @property
     @abc.abstractmethod
-    def table_required(self) -> Optional[base.TableName]:
+    def table_required(self) -> Optional[outer.TableName]:
         """Перечень таблиц, которые нужны обработчику события."""
 
     @abc.abstractmethod
@@ -40,14 +40,14 @@ class Command(AbstractEvent):
 class GetDataFrame(Command):
     """Команда обновить DataFrame."""
 
-    def __init__(self, table_name: base.TableName, force: bool = False):
+    def __init__(self, table_name: outer.TableName, force: bool = False):
         """Обновление может быть принудительным или по необходимости."""
         super().__init__()
         self._table_name = table_name
         self._force = force
 
     @property
-    def table_required(self) -> Optional[base.TableName]:
+    def table_required(self) -> Optional[outer.TableName]:
         """Не требуется таблица."""
 
     async def handle_event(
@@ -76,14 +76,14 @@ class GetDataFrame(Command):
 class GetEndOfTradingDay(Command):
     """Узнает время окончания последних торгов."""
 
-    def __init__(self, table_name: base.TableName, helper_name: base.TableName):
+    def __init__(self, table_name: outer.TableName, helper_name: outer.TableName):
         """Хранит название обновляемой таблицы и вспомогательной таблицы с датами торгов."""
         super().__init__()
         self._table_name = table_name
         self._helper_name = helper_name
 
     @property
-    def table_required(self) -> Optional[base.TableName]:
+    def table_required(self) -> Optional[outer.TableName]:
         """Нужна вспомогательная таблица."""
         return self._helper_name
 
@@ -94,7 +94,7 @@ class GetEndOfTradingDay(Command):
     ) -> None:
         """Узнает окончание рабочего дня и запрашивает обновление."""
         if table is None:
-            raise base.DataError("Нужна таблица")
+            raise outer.DataError("Нужна таблица")
         end_of_trading_day = services.trading_day_potential_end()
         await table.update(end_of_trading_day)
         end_of_trading_day = services.trading_day_real_end(table.df)
@@ -106,7 +106,7 @@ class UpdateTable(Command):
 
     def __init__(
         self,
-        table_name: base.TableName,
+        table_name: outer.TableName,
         end_of_trading_day: Optional[datetime] = None,
     ) -> None:
         """Обновляет таблицу с учетом конца торгового дня, а при отсутствии принудительно."""
@@ -115,7 +115,7 @@ class UpdateTable(Command):
         self._end_of_trading_day = end_of_trading_day
 
     @property
-    def table_required(self) -> base.TableName:
+    def table_required(self) -> outer.TableName:
         """Для обновления таблицы требуется ее загрузка."""
         return self._table_names
 
@@ -129,7 +129,7 @@ class UpdateTable(Command):
         При отсутствии даты принудительно, а при наличии с учетом необходимости.
         """
         if table is None:
-            raise base.DataError("Нужна таблица")
+            raise outer.DataError("Нужна таблица")
         await table.update(self._end_of_trading_day)
         await queue.put(Result(table.name, table.df))
 
@@ -137,13 +137,13 @@ class UpdateTable(Command):
 class Result(AbstractEvent):
     """Событие с результатом выполнения команды."""
 
-    def __init__(self, name: base.TableName, df: pd.DataFrame):
+    def __init__(self, name: outer.TableName, df: pd.DataFrame):
         """Имя и DataFrame с результатом."""
         self._name = name
         self._df = df
 
     @property
-    def name(self) -> base.TableName:
+    def name(self) -> outer.TableName:
         """Имя таблицы."""
         return self._name
 

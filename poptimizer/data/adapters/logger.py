@@ -2,7 +2,7 @@
 import asyncio
 import logging
 
-from poptimizer.data.ports import base
+from poptimizer.data.ports import outer
 
 
 class AsyncLogger:
@@ -31,11 +31,11 @@ class LoggerMixin:
 
     def _log_and_validate_group(
         self,
-        table_name: base.TableName,
-        loader_group: base.GroupName,
+        table_name: outer.TableName,
+        loader_group: outer.GroupName,
     ) -> str:
         group, name = table_name
         if group != loader_group:
-            raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
+            raise outer.DataError(f"Некорректное имя таблицы для обновления {table_name}")
         self._logger.info(f"Загрузка {table_name}")
         return name

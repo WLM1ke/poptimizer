@@ -6,7 +6,7 @@ import pandas as pd
 from motor import motor_asyncio
 
 from poptimizer.data.adapters import logger
-from poptimizer.data.ports import base, outer
+from poptimizer.data.ports import outer
 
 # Коллекция для одиночный записей
 MISC = "misc"
@@ -33,7 +33,7 @@ class MongoDBSession(outer.AbstractDBSession):
         self._logger = logger.AsyncLogger(self.__class__.__name__)
         self._db = db
 
-    async def get(self, table_name: base.TableName) -> Optional[outer.TableTuple]:
+    async def get(self, table_name: outer.TableName) -> Optional[outer.TableTuple]:
         """Извлекает документ из коллекции."""
         group, name = table_name
         collection: str = group

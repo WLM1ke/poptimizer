@@ -5,7 +5,7 @@ from types import TracebackType
 from typing import AsyncContextManager, Dict, NamedTuple, Optional, Type
 
 from poptimizer.data.domain import factories, model
-from poptimizer.data.ports import base, outer
+from poptimizer.data.ports import outer
 
 
 class TimedTable(NamedTuple):
@@ -25,7 +25,7 @@ class Repo(AsyncContextManager[None]):
     def __init__(self, db_session: outer.AbstractDBSession) -> None:
         """Сохраняются ссылки на таблицы, которые были добавлены или взяты из репозитория."""
         self._session = db_session
-        self._seen: Dict[base.TableName, TimedTable] = {}
+        self._seen: Dict[outer.TableName, TimedTable] = {}
         self._seen_loc = asyncio.Lock()
 
     async def __aenter__(self) -> None:
@@ -45,7 +45,7 @@ class Repo(AsyncContextManager[None]):
         """Добавляет таблицу в репозиторий."""
         self._seen[table.name] = TimedTable(table, None)
 
-    async def get_table(self, table_name: base.TableName) -> Optional[model.Table]:
+    async def get_table(self, table_name: outer.TableName) -> Optional[model.Table]:
         """Берет таблицу из репозитория."""
         if (timed_table := self._seen.get(table_name)) is not None:
             return timed_table.table

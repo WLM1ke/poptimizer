@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.data.domain import services
-from poptimizer.data.ports import base
+from poptimizer.data.ports import outer
 
 UTC_NOW = datetime.now(timezone.utc)
 TO_NAIVE_CASES = (
@@ -64,17 +64,17 @@ def test_day_real_end():
     assert services.trading_day_real_end(df) == datetime(2020, 9, 11, 21, 45)
 
 
-MAIN_HELPER = base.TableName(base.TRADING_DATES, base.TRADING_DATES)
+MAIN_HELPER = outer.TableName(outer.TRADING_DATES, outer.TRADING_DATES)
 HELPER_NAME_CASES = (
-    (base.TableName(base.TRADING_DATES, base.TRADING_DATES), None),
-    (base.TableName(base.CONOMY, base.TRADING_DATES), MAIN_HELPER),
-    (base.TableName(base.DOHOD, base.TRADING_DATES), MAIN_HELPER),
-    (base.TableName(base.SMART_LAB, base.TRADING_DATES), MAIN_HELPER),
-    (base.TableName(base.DIVIDENDS, base.TRADING_DATES), MAIN_HELPER),
-    (base.TableName(base.CPI, base.TRADING_DATES), MAIN_HELPER),
-    (base.TableName(base.SECURITIES, base.TRADING_DATES), MAIN_HELPER),
-    (base.TableName(base.INDEX, base.TRADING_DATES), MAIN_HELPER),
-    (base.TableName(base.QUOTES, base.TRADING_DATES), MAIN_HELPER),
+    (outer.TableName(outer.TRADING_DATES, outer.TRADING_DATES), None),
+    (outer.TableName(outer.CONOMY, outer.TRADING_DATES), MAIN_HELPER),
+    (outer.TableName(outer.DOHOD, outer.TRADING_DATES), MAIN_HELPER),
+    (outer.TableName(outer.SMART_LAB, outer.TRADING_DATES), MAIN_HELPER),
+    (outer.TableName(outer.DIVIDENDS, outer.TRADING_DATES), MAIN_HELPER),
+    (outer.TableName(outer.CPI, outer.TRADING_DATES), MAIN_HELPER),
+    (outer.TableName(outer.SECURITIES, outer.TRADING_DATES), MAIN_HELPER),
+    (outer.TableName(outer.INDEX, outer.TRADING_DATES), MAIN_HELPER),
+    (outer.TableName(outer.QUOTES, outer.TRADING_DATES), MAIN_HELPER),
 )
 
 

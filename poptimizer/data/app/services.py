@@ -6,11 +6,13 @@ from typing import AsyncIterator, Dict, List
 import pandas as pd
 
 from poptimizer.data.domain import events, factories, model, repo
-from poptimizer.data.ports import base, outer
+from poptimizer.data.ports import outer
 
 
 @contextlib.asynccontextmanager
-async def unit_of_work(db_session: outer.AbstractDBSession) -> AsyncIterator[repo.Repo]:
+async def unit_of_work(
+    db_session: outer.AbstractDBSession,
+) -> AsyncIterator[repo.Repo]:
     """Одна транзакция в базу данных.
 
     Контекстный менеджер, возвращающий Репо для транзакций.
@@ -23,7 +25,7 @@ async def unit_of_work(db_session: outer.AbstractDBSession) -> AsyncIterator[rep
 
 
 async def _load_or_create_table(
-    table_name: base.TableName,
+    table_name: outer.TableName,
     store: repo.Repo,
 ) -> model.Table:
     async with store:
@@ -49,9 +51,9 @@ async def _handle_one_command(
 async def _queue_processor(
     events_queue: events.EventsQueue,
     store: repo.Repo,
-) -> Dict[base.TableName, pd.DataFrame]:
+) -> Dict[outer.TableName, pd.DataFrame]:
     """Вытягивает сообщения из очереди событий и запускает их обработку."""
-    events_results: Dict[base.TableName, pd.DataFrame] = {}
+    events_results: Dict[outer.TableName, pd.DataFrame] = {}
     n_results = events_queue.qsize()
     while len(events_results) < n_results:
         event = await events_queue.get()
@@ -61,7 +63,7 @@ async def _queue_processor(
         elif isinstance(event, events.Command):
             asyncio.create_task(_handle_one_command(event, store, events_queue))
         else:
-            raise base.DataError("Неизвестный тип события")
+            raise outer.DataError("Неизвестный тип события")
     return events_results
 
 
@@ -75,7 +77,7 @@ class EventsBus:
     async def handle_events(
         self,
         events_list: List[events.Command],
-    ) -> Dict[base.TableName, pd.DataFrame]:
+    ) -> Dict[outer.TableName, pd.DataFrame]:
         """Обработка сообщения и следующих за ним."""
         events_queue: events.EventsQueue = asyncio.Queue()
         for event in events_list:

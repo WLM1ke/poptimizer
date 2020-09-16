@@ -5,7 +5,7 @@ import pandas as pd
 
 from poptimizer.data.adapters import logger
 from poptimizer.data.adapters.loaders import parser
-from poptimizer.data.ports import base, col
+from poptimizer.data.ports import col, outer
 
 # Параметры парсинга сайта
 URL = "https://smart-lab.ru/dividends/index/order_by_cut_off_date/asc/"
@@ -32,19 +32,19 @@ def get_col_desc() -> List[parser.ColDesc]:
     return [ticker, date, div]
 
 
-class SmartLabLoader(logger.LoggerMixin, base.AbstractLoader):
+class SmartLabLoader(logger.LoggerMixin, outer.AbstractLoader):
     """Обновление данных с https://www.smart-lab.ru."""
 
-    async def get(self, table_name: base.TableName) -> pd.DataFrame:
+    async def get(self, table_name: outer.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
-        name = self._log_and_validate_group(table_name, base.SMART_LAB)
-        if name != base.SMART_LAB:
-            raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
+        name = self._log_and_validate_group(table_name, outer.SMART_LAB)
+        if name != outer.SMART_LAB:
+            raise outer.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
         cols_desc = get_col_desc()
         html = await parser.get_html(URL)
         table = parser.HTMLTable(html, TABLE_INDEX, cols_desc)
         df = table.get_df()
         if FOOTER not in df.index[-1]:
-            raise base.DataError(f"Некорректная html-таблица {table_name}")
+            raise outer.DataError(f"Некорректная html-таблица {table_name}")
         return df.dropna()

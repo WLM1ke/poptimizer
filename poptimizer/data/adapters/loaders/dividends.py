@@ -4,19 +4,19 @@ import pymongo
 
 from poptimizer.data.adapters import logger
 from poptimizer.data.config import resources
-from poptimizer.data.ports import base, col
+from poptimizer.data.ports import col, outer
 
 # Где хранятся данные о дивидендах
 SOURCE_DB = "source"
 SOURCE_COLLECTION = "dividends"
 
 
-class DividendsLoader(logger.LoggerMixin, base.AbstractLoader):
+class DividendsLoader(logger.LoggerMixin, outer.AbstractLoader):
     """Обновление данных из базы данных, заполняемой в ручную."""
 
-    async def get(self, table_name: base.TableName) -> pd.DataFrame:
+    async def get(self, table_name: outer.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
-        ticker = self._log_and_validate_group(table_name, base.DIVIDENDS)
+        ticker = self._log_and_validate_group(table_name, outer.DIVIDENDS)
 
         collection = resources.get_mongo_client()[SOURCE_DB][SOURCE_COLLECTION]
 

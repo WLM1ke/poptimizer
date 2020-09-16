@@ -5,9 +5,9 @@ import pandas as pd
 import pytest
 
 from poptimizer.data.domain import factories, model
-from poptimizer.data.ports import base, outer
+from poptimizer.data.ports import outer
 
-TABLE_NAME = base.TableName(base.QUOTES, "VSMO")
+TABLE_NAME = outer.TableName(outer.QUOTES, "VSMO")
 TABLE_VARS = outer.TableTuple(
     TABLE_NAME.group,
     TABLE_NAME.name,
@@ -39,7 +39,7 @@ def test_recreate_table():
     assert table.df is not TABLE_VARS.df
     assert table.timestamp == TABLE_VARS.timestamp
 
-    desc = base.TableDescription(table._loader, table._index_checks, table._validate)
+    desc = model.TableDescription(table._loader, table._index_checks, table._validate)
     assert desc == factories._TABLES_REGISTRY[TABLE_NAME.group]
 
 
@@ -58,5 +58,5 @@ def test_convent_to_tuple_raises_on_empty_table():
     """Проверка запрета на сериализацию пустой таблицы."""
     table = factories.create_table(TABLE_NAME)
 
-    with pytest.raises(base.DataError, match="Попытка сериализации пустой таблицы"):
+    with pytest.raises(outer.DataError, match="Попытка сериализации пустой таблицы"):
         factories.convent_to_tuple(table)

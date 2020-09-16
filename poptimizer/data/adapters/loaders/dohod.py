@@ -5,7 +5,7 @@ import pandas as pd
 
 from poptimizer.data.adapters import logger
 from poptimizer.data.adapters.loaders import parser
-from poptimizer.data.ports import base, col
+from poptimizer.data.ports import col, outer
 
 # Параметры парсинга сайта
 URL = "https://www.dohod.ru/ik/analytics/dividend/"
@@ -29,12 +29,12 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
     return [date_col, div_col]
 
 
-class DohodLoader(logger.LoggerMixin, base.AbstractLoader):
+class DohodLoader(logger.LoggerMixin, outer.AbstractLoader):
     """Обновление данных с https://dohod.ru."""
 
-    async def get(self, table_name: base.TableName) -> pd.DataFrame:
+    async def get(self, table_name: outer.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
-        ticker = self._log_and_validate_group(table_name, base.DOHOD)
+        ticker = self._log_and_validate_group(table_name, outer.DOHOD)
 
         cols_desc = get_col_desc(ticker)
         html = await parser.get_html(f"{URL}{ticker.lower()}")

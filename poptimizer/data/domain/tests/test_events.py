@@ -5,10 +5,10 @@ from datetime import datetime
 import pytest
 
 from poptimizer.data.domain import events, services
-from poptimizer.data.ports import base
+from poptimizer.data.ports import outer
 
-HELPER_NAME = base.TableName(base.TRADING_DATES, base.TRADING_DATES)
-USUAL_NAME = base.TableName(base.QUOTES, "SNGSP")
+HELPER_NAME = outer.TableName(outer.TRADING_DATES, outer.TRADING_DATES)
+USUAL_NAME = outer.TableName(outer.QUOTES, "SNGSP")
 FAKE_END_OF_TRADING_DAY = datetime(2020, 9, 15, 15, 58)
 
 
@@ -96,7 +96,7 @@ async def test_end_of_trading_day_raises():
     queue = asyncio.Queue()
 
     event = events.GetEndOfTradingDay(USUAL_NAME, HELPER_NAME)
-    with pytest.raises(base.DataError, match="Нужна таблица"):
+    with pytest.raises(outer.DataError, match="Нужна таблица"):
         await event.handle_event(queue, None)
 
 
@@ -125,5 +125,5 @@ async def test_update_table_raises():
     queue = asyncio.Queue()
 
     event = events.UpdateTable(USUAL_NAME, FAKE_END_OF_TRADING_DAY)
-    with pytest.raises(base.DataError, match="Нужна таблица"):
+    with pytest.raises(outer.DataError, match="Нужна таблица"):
         await event.handle_event(queue, None)

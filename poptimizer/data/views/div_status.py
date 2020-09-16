@@ -5,13 +5,13 @@ import numpy as np
 import pandas as pd
 
 from poptimizer.data.config import bootstrap
-from poptimizer.data.ports import base, col
+from poptimizer.data.ports import col, outer
 from poptimizer.data.views import crop
 
 
 def smart_lab() -> pd.DataFrame:
     """Информация по дивидендам с smart-lab.ru."""
-    table_name = base.TableName(base.SMART_LAB, base.SMART_LAB)
+    table_name = outer.TableName(outer.SMART_LAB, outer.SMART_LAB)
     requests_handler = bootstrap.get_handler()
     return requests_handler.get_df(table_name)
 

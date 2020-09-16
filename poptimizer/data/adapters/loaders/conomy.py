@@ -9,7 +9,7 @@ from pyppeteer.page import Page
 
 from poptimizer.data.adapters import logger
 from poptimizer.data.adapters.loaders import parser
-from poptimizer.data.ports import base, col
+from poptimizer.data.ports import col, outer
 
 # Параметры поиска страницы эмитента
 SEARCH_URL = "https://www.conomy.ru/search"
@@ -71,7 +71,7 @@ def is_common(ticker: str) -> bool:
     elif len(ticker) == COMMON_TICKER_LENGTH + 1:
         if ticker[COMMON_TICKER_LENGTH] == PREFERRED_TICKER_ENDING:
             return False
-    raise base.DataError(f"Некорректный тикер {ticker}")
+    raise outer.DataError(f"Некорректный тикер {ticker}")
 
 
 def get_col_desc(ticker: str) -> List[parser.ColDesc]:
@@ -102,12 +102,12 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
     return columns
 
 
-class ConomyLoader(logger.LoggerMixin, base.AbstractLoader):
+class ConomyLoader(logger.LoggerMixin, outer.AbstractLoader):
     """Обновление для таблиц с дивидендами на https://www.conomy.ru/."""
 
-    async def get(self, table_name: base.TableName) -> pd.DataFrame:
+    async def get(self, table_name: outer.TableName) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
-        ticker = self._log_and_validate_group(table_name, base.CONOMY)
+        ticker = self._log_and_validate_group(table_name, outer.CONOMY)
 
         html = await get_html(ticker)
         cols_desc = get_col_desc(ticker)

@@ -7,10 +7,10 @@ import pandas as pd
 
 from poptimizer.data.adapters import logger
 from poptimizer.data.config import resources
-from poptimizer.data.ports import base
+from poptimizer.data.ports import outer
 
 
-class TradingDatesLoader(logger.LoggerMixin, base.AbstractLoader):
+class TradingDatesLoader(logger.LoggerMixin, outer.AbstractLoader):
     """Обновление для таблиц с диапазоном доступных торговых дат."""
 
     def __init__(self) -> None:
@@ -19,11 +19,11 @@ class TradingDatesLoader(logger.LoggerMixin, base.AbstractLoader):
         self._dates_cache: Optional[pd.DataFrame] = None
         self._cache_lock = asyncio.Lock()
 
-    async def get(self, table_name: base.TableName) -> pd.DataFrame:
+    async def get(self, table_name: outer.TableName) -> pd.DataFrame:
         """Получение обновленных данных о доступном диапазоне торговых дат."""
-        name = self._log_and_validate_group(table_name, base.TRADING_DATES)
-        if name != base.TRADING_DATES:
-            raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
+        name = self._log_and_validate_group(table_name, outer.TRADING_DATES)
+        if name != outer.TRADING_DATES:
+            raise outer.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
         async with self._cache_lock:
             if self._dates_cache is not None:

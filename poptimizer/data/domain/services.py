@@ -4,7 +4,7 @@ from typing import Final, Optional
 
 import pandas as pd
 
-from poptimizer.data.ports import base
+from poptimizer.data.ports import outer
 
 # Часовой пояс MOEX
 MOEX_TZ: Final = timezone(timedelta(hours=3))
@@ -48,8 +48,8 @@ def trading_day_real_end(df: pd.DataFrame) -> datetime:
     return _to_utc_naive(end_of_trading)
 
 
-def get_helper_name(name: base.TableName) -> Optional[base.TableName]:
+def get_helper_name(name: outer.TableName) -> Optional[outer.TableName]:
     """Имя вспомогательной таблицы."""
-    if name.group != base.TRADING_DATES:
-        return base.TableName(base.TRADING_DATES, base.TRADING_DATES)
+    if name.group != outer.TRADING_DATES:
+        return outer.TableName(outer.TRADING_DATES, outer.TRADING_DATES)
     return None

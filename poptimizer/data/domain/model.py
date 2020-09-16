@@ -1,11 +1,30 @@
 """Таблица с данными."""
 import asyncio
+import enum
 from datetime import datetime
-from typing import Optional
+from typing import NamedTuple, Optional
 
 import pandas as pd
 
-from poptimizer.data.ports import base
+from poptimizer.data.ports import outer
+from poptimizer.data.ports.outer import Loaders
+
+
+class IndexChecks(enum.Flag):
+    """Виды проверок для индекса таблицы."""
+
+    NO_CHECKS = 0  # noqa: WPS115
+    UNIQUE = enum.auto()  # noqa: WPS115
+    ASCENDING = enum.auto()  # noqa: WPS115
+    UNIQUE_ASCENDING = UNIQUE | ASCENDING  # noqa: WPS115
+
+
+class TableDescription(NamedTuple):
+    """Описание правил обновления таблицы."""
+
+    loader: Loaders
+    index_checks: IndexChecks
+    validate: bool
 
 
 def _update_cond(timestamp: Optional[datetime], end_of_trading_day: Optional[datetime]) -> bool:
@@ -20,16 +39,16 @@ def _update_cond(timestamp: Optional[datetime], end_of_trading_day: Optional[dat
 
 
 async def _prepare_df(
-    name: base.TableName,
+    name: outer.TableName,
     df: Optional[pd.DataFrame],
-    loader: base.Loaders,
+    loader: outer.Loaders,
 ) -> pd.DataFrame:
     """Готовит новый DataFrame."""
     if df is None:
         return await loader.get(name)
     if df.empty:
         return await loader.get(name)
-    if isinstance(loader, base.AbstractLoader):
+    if isinstance(loader, outer.AbstractLoader):
         return await loader.get(name)
 
     date = df.index[-1].date()
@@ -48,15 +67,15 @@ def _validate_data(validate: bool, df_old: pd.DataFrame, df_new: pd.DataFrame) -
     try:
         pd.testing.assert_frame_equal(df_new_val, df_old)
     except AssertionError:
-        raise base.DataError("Новые данные не соответствуют старым")
+        raise outer.DataError("Новые данные не соответствуют старым")
 
 
-def _check_index(check: base.IndexChecks, index: pd.Index) -> None:
+def _check_index(check: IndexChecks, index: pd.Index) -> None:
     """Проверка свойств индекса."""
-    if check & base.IndexChecks.UNIQUE and not index.is_unique:
-        raise base.DataError("Индекс не уникален")
-    if check & base.IndexChecks.ASCENDING and not index.is_monotonic_increasing:
-        raise base.DataError("Индекс не возрастает")
+    if check & IndexChecks.UNIQUE and not index.is_unique:
+        raise outer.DataError("Индекс не уникален")
+    if check & IndexChecks.ASCENDING and not index.is_monotonic_increasing:
+        raise outer.DataError("Индекс не возрастает")
 
 
 class Table:
@@ -64,8 +83,8 @@ class Table:
 
     def __init__(
         self,
-        name: base.TableName,
-        desc: base.TableDescription,
+        name: outer.TableName,
+        desc: TableDescription,
         df: Optional[pd.DataFrame] = None,
         timestamp: Optional[datetime] = None,
     ):
@@ -91,7 +110,7 @@ class Table:
         self._df_lock = asyncio.Lock()
 
     @property
-    def name(self) -> base.TableName:
+    def name(self) -> outer.TableName:
         """Наименование таблицы."""
         return self._name
 

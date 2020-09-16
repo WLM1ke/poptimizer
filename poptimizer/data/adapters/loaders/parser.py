@@ -8,7 +8,7 @@ import bs4
 import pandas as pd
 
 from poptimizer.data.config import resources
-from poptimizer.data.ports import base
+from poptimizer.data.ports import outer
 
 DIV_PATTERN = r".*\d"
 DATE_PATTERN = r"\d{2}\.\d{2}\.\d{4}"
@@ -62,7 +62,7 @@ async def get_html(url: str) -> str:
         try:
             respond.raise_for_status()
         except aiohttp.ClientResponseError:
-            raise base.DataError(f"Данные {url} не загружены")
+            raise outer.DataError(f"Данные {url} не загружены")
         else:
             return await respond.text()
 
@@ -76,7 +76,7 @@ class HTMLTable:
         try:
             table = soup.find_all("table")[table_num]
         except IndexError:
-            raise base.DataError(f"На странице нет таблицы {table_num}")
+            raise outer.DataError(f"На странице нет таблицы {table_num}")
         self._table = f"html{table}/html"
         self._cols_desc = cols_desc
 
@@ -111,7 +111,7 @@ class HTMLTable:
             raw_name = desc.raw_name
             if all(part in name for part, name in zip(raw_name, header)):
                 continue
-            raise base.DataError(f"Неверный заголовок: {desc.raw_name} не входит в {header}")
+            raise outer.DataError(f"Неверный заголовок: {desc.raw_name} не входит в {header}")
 
     def _get_selected_col(self, df: pd.DataFrame) -> pd.DataFrame:
         """Выбирает столбцы в соответствии с описанием."""

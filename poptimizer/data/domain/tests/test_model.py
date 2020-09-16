@@ -6,9 +6,9 @@ import pandas as pd
 import pytest
 
 from poptimizer.data.domain import model
-from poptimizer.data.ports import base
+from poptimizer.data.ports import outer
 
-TABLE_NAME = base.TableName(base.QUOTES, "GAZP")
+TABLE_NAME = outer.TableName(outer.QUOTES, "GAZP")
 DF = pd.DataFrame(
     [1, 2],
     index=[datetime(2020, 9, 9), datetime(2020, 9, 10)],
@@ -31,20 +31,20 @@ DF_RESULT = pd.DataFrame(
 )
 
 
-class TestLoader(base.AbstractLoader):
+class TestLoader(outer.AbstractLoader):
     """Тестовая реализация загрузчика данных."""
 
-    async def get(self, table_name: base.TableName) -> pd.DataFrame:
+    async def get(self, table_name: outer.TableName) -> pd.DataFrame:
         """Получить обновление."""
         return DF_LOADER
 
 
-class TestIncrementalLoader(base.AbstractIncrementalLoader):
+class TestIncrementalLoader(outer.AbstractIncrementalLoader):
     """Тестовая реализация инкрементального загрузчика данных."""
 
     async def get(
         self,
-        table_name: base.TableName,
+        table_name: outer.TableName,
         last_index: Optional[str] = None,
     ) -> pd.DataFrame:
         """Получить обновление."""
@@ -56,9 +56,9 @@ def make_empty_table():
     """Создание пустой таблицы для тестов."""
     return model.Table(
         name=TABLE_NAME,
-        desc=base.TableDescription(
+        desc=model.TableDescription(
             loader=TestLoader(),
-            index_checks=base.IndexChecks.NO_CHECKS,
+            index_checks=model.IndexChecks.NO_CHECKS,
             validate=False,
         ),
     )
@@ -75,9 +75,9 @@ def test_table_df_copy():
     """Таблица должна возвращать одинаковые копии DataFrame."""
     table = model.Table(
         name=TABLE_NAME,
-        desc=base.TableDescription(
+        desc=model.TableDescription(
             loader=TestLoader(),
-            index_checks=base.IndexChecks.NO_CHECKS,
+            index_checks=model.IndexChecks.NO_CHECKS,
             validate=False,
         ),
         df=DF,
@@ -154,22 +154,22 @@ def test_validate_data(validate, df_old, df_new, raises):
     старого индекса.
     """
     if raises:
-        with pytest.raises(base.DataError, match="Новые данные не соответствуют старым"):
+        with pytest.raises(outer.DataError, match="Новые данные не соответствуют старым"):
             model._validate_data(validate, df_old, df_new)
     else:
         model._validate_data(validate, df_old, df_new)
 
 
 CHECK_INDEX_CASES = (
-    (base.IndexChecks.NO_CHECKS, pd.Index([0, 1, 1]), False),
-    (base.IndexChecks.NO_CHECKS, pd.Index([2, 1, 3]), False),
-    (base.IndexChecks.UNIQUE, pd.Index([2, 1, 3]), False),
-    (base.IndexChecks.UNIQUE, pd.Index([0, 1, 1]), True),
-    (base.IndexChecks.ASCENDING, pd.Index([2, 1, 3]), True),
-    (base.IndexChecks.ASCENDING, pd.Index([0, 1, 1]), False),
-    (base.IndexChecks.UNIQUE_ASCENDING, pd.Index([2, 1, 3]), True),
-    (base.IndexChecks.UNIQUE_ASCENDING, pd.Index([0, 1, 1]), True),
-    (base.IndexChecks.UNIQUE_ASCENDING, pd.Index([1, 2, 3]), False),
+    (model.IndexChecks.NO_CHECKS, pd.Index([0, 1, 1]), False),
+    (model.IndexChecks.NO_CHECKS, pd.Index([2, 1, 3]), False),
+    (model.IndexChecks.UNIQUE, pd.Index([2, 1, 3]), False),
+    (model.IndexChecks.UNIQUE, pd.Index([0, 1, 1]), True),
+    (model.IndexChecks.ASCENDING, pd.Index([2, 1, 3]), True),
+    (model.IndexChecks.ASCENDING, pd.Index([0, 1, 1]), False),
+    (model.IndexChecks.UNIQUE_ASCENDING, pd.Index([2, 1, 3]), True),
+    (model.IndexChecks.UNIQUE_ASCENDING, pd.Index([0, 1, 1]), True),
+    (model.IndexChecks.UNIQUE_ASCENDING, pd.Index([1, 2, 3]), False),
 )
 
 
@@ -183,7 +183,7 @@ def test_check_index(check, index, raises):
      - пропускаемые аналогичными по строгости, срабатывали на других аналогах
     """
     if raises:
-        with pytest.raises(base.DataError, match="Индекс не"):
+        with pytest.raises(outer.DataError, match="Индекс не"):
             model._check_index(check, index)
     else:
         model._check_index(check, index)

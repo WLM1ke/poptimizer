@@ -6,7 +6,7 @@ import pandas as pd
 
 from poptimizer.data.adapters import logger
 from poptimizer.data.config import resources
-from poptimizer.data.ports import base, col
+from poptimizer.data.ports import col, outer
 
 # Параметры загрузки валидации данных
 URL_CORE = "https://rosstat.gov.ru/storage/mediabank/pcRcsWuc/"
@@ -25,7 +25,7 @@ async def _get_xlsx_url(session: aiohttp.ClientSession) -> str:
         html = await resp.text()
     if match := re.search(FILE_PATTERN, html):
         return match.group(0)
-    raise base.DataError("На странице отсутствует URL файла с инфляцией")
+    raise outer.DataError("На странице отсутствует URL файла с инфляцией")
 
 
 async def _load_xlsx() -> pd.DataFrame:
@@ -43,11 +43,11 @@ def _validate(df: pd.DataFrame) -> None:
     first_year = df.columns[0]
     first_month = df.index[0]
     if months != NUM_OF_MONTH:
-        raise base.DataError("Таблица должна содержать 12 строк с месяцами")
+        raise outer.DataError("Таблица должна содержать 12 строк с месяцами")
     if first_year != FIRST_YEAR:
-        raise base.DataError("Первый год должен быть 1991")
+        raise outer.DataError("Первый год должен быть 1991")
     if first_month != FIRST_MONTH:
-        raise base.DataError("Первый месяц должен быть январь")
+        raise outer.DataError("Первый месяц должен быть январь")
 
 
 def _clean_up(df: pd.DataFrame) -> pd.DataFrame:
@@ -64,14 +64,14 @@ def _clean_up(df: pd.DataFrame) -> pd.DataFrame:
     return df.to_frame(col.CPI)
 
 
-class CPILoader(logger.LoggerMixin, base.AbstractLoader):
+class CPILoader(logger.LoggerMixin, outer.AbstractLoader):
     """Обновление данных инфляции с https://rosstat.gov.ru."""
 
-    async def get(self, table_name: base.TableName) -> pd.DataFrame:
+    async def get(self, table_name: outer.TableName) -> pd.DataFrame:
         """Получение данных по  инфляции."""
-        name = self._log_and_validate_group(table_name, base.CPI)
-        if name != base.CPI:
-            raise base.DataError(f"Некорректное имя таблицы для обновления {table_name}")
+        name = self._log_and_validate_group(table_name, outer.CPI)
+        if name != outer.CPI:
+            raise outer.DataError(f"Некорректное имя таблицы для обновления {table_name}")
 
         df = await _load_xlsx()
         _validate(df)
