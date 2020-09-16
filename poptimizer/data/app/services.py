@@ -5,7 +5,7 @@ from typing import AsyncIterator, List
 
 import pandas as pd
 
-from poptimizer.data.domain import factories, model, repo
+from poptimizer.data.domain import events, factories, model, repo
 from poptimizer.data.ports import base, outer
 
 
@@ -34,9 +34,9 @@ async def _load_or_create_table(
 
 
 async def _handle_one_event(
-    event: outer.AbstractEvent,
+    event: events.AbstractEvent,
     store: repo.Repo,
-    queue: outer.EventsQueue,
+    queue: events.EventsQueue,
 ) -> None:
     """Обрабатывает одно событие и добавляет в очередь дочерние события."""
     table = None
@@ -46,7 +46,7 @@ async def _handle_one_event(
     queue.task_done()
 
 
-async def _queue_processor(events_queue: outer.EventsQueue, store: repo.Repo) -> None:
+async def _queue_processor(events_queue: events.EventsQueue, store: repo.Repo) -> None:
     """Вытягивает сообщения из очереди событий и запускает их обработку."""
     while True:
         event = await events_queue.get()
@@ -60,10 +60,10 @@ class EventsBus(outer.AbstractEventsBus):
         """Сохраняет параметры для создания изолированных UoW."""
         self._db_session = db_session
 
-    async def handle_events(self, events: List[outer.AbstractEvent]) -> None:
+    async def handle_events(self, events_list: List[events.AbstractEvent]) -> None:
         """Обработка сообщения и следующих за ним."""
-        events_queue: outer.EventsQueue = asyncio.Queue()
-        for event in events:
+        events_queue: events.EventsQueue = asyncio.Queue()
+        for event in events_list:
             await events_queue.put(event)
 
         async with unit_of_work(self._db_session) as store:

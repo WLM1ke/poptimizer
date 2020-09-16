@@ -37,7 +37,7 @@ class Handler:
         """Возвращает несколько DataFrame из одной группы."""
         table_names = [base.TableName(group, name) for name in names]
 
-        update_events: List[outer.AbstractEvent] = [
+        update_events: List[events.AbstractEvent] = [
             events.UpdateChecked(table_name) for table_name in table_names
         ]
         loop = self._loop

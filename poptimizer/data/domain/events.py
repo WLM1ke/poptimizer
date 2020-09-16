@@ -1,13 +1,36 @@
 """События, связанные с обновлением таблиц."""
+import abc
+import asyncio
 from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from poptimizer.data.domain import model, services
-from poptimizer.data.ports import base, outer
-from poptimizer.data.ports.outer import EventsQueue
+from poptimizer.data.ports import base
+
+if TYPE_CHECKING:
+    EventsQueue = asyncio.Queue["AbstractEvent"]
+else:
+    EventsQueue = asyncio.Queue
 
 
-class UpdateChecked(outer.AbstractEvent):
+class AbstractEvent(abc.ABC):
+    """Абстрактный класс события."""
+
+    @property
+    @abc.abstractmethod
+    def table_required(self) -> Optional[base.TableName]:
+        """Перечень таблиц, которые нужны обработчику события."""
+
+    @abc.abstractmethod
+    async def handle_event(
+        self,
+        queue: EventsQueue,
+        table: Optional[model.Table],
+    ) -> None:
+        """Обрабатывает событие и добавляет новые события в очередь."""
+
+
+class UpdateChecked(AbstractEvent):
     """Команда обновить DataFrame."""
 
     def __init__(self, table_name: base.TableName, force: bool = False):
@@ -22,7 +45,7 @@ class UpdateChecked(outer.AbstractEvent):
 
     async def handle_event(
         self,
-        queue: outer.EventsQueue,
+        queue: EventsQueue,
         table: Optional[model.Table],
     ) -> None:
         """Осуществляет выбор варианта обновления.
@@ -43,7 +66,7 @@ class UpdateChecked(outer.AbstractEvent):
             await queue.put(TradingDayEndRequired(table_name, helper_name))
 
 
-class TradingDayEndRequired(outer.AbstractEvent):
+class TradingDayEndRequired(AbstractEvent):
     """Узнает время окончания последних торгов."""
 
     def __init__(self, table_name: base.TableName, helper_name: base.TableName):
@@ -71,7 +94,7 @@ class TradingDayEndRequired(outer.AbstractEvent):
         await queue.put(TradingDateLoaded(self._table_name, end_of_trading_day))
 
 
-class TradingDateLoaded(outer.AbstractEvent):
+class TradingDateLoaded(AbstractEvent):
     """Команда обновить таблицу с учетом последней торговой даты."""
 
     def __init__(
@@ -91,7 +114,7 @@ class TradingDateLoaded(outer.AbstractEvent):
 
     async def handle_event(
         self,
-        queue: outer.EventsQueue,
+        queue: EventsQueue,
         table: Optional[model.Table],
     ) -> None:
         """Обновляет таблицу.

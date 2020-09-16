@@ -1,35 +1,12 @@
 """Интерфейсы служб и вспомогательных типов данных."""
 import abc
-import asyncio
 import datetime
-from typing import TYPE_CHECKING, Iterable, List, NamedTuple, Optional
+from typing import Iterable, List, NamedTuple, Optional
 
 import pandas as pd
 
-from poptimizer.data.domain import model
+from poptimizer.data.domain import events
 from poptimizer.data.ports import base
-
-if TYPE_CHECKING:
-    EventsQueue = asyncio.Queue["AbstractEvent"]
-else:
-    EventsQueue = asyncio.Queue
-
-
-class AbstractEvent(abc.ABC):
-    """Абстрактный класс события."""
-
-    @property
-    @abc.abstractmethod
-    def table_required(self) -> Optional[base.TableName]:
-        """Перечень таблиц, которые нужны обработчику события."""
-
-    @abc.abstractmethod
-    async def handle_event(
-        self,
-        queue: EventsQueue,
-        table: Optional[model.Table],
-    ) -> None:
-        """Обрабатывает событие и добавляет новые события в очередь."""
 
 
 class TableTuple(NamedTuple):
@@ -57,7 +34,7 @@ class AbstractEventsBus(abc.ABC):
     """Шина для обработки сообщений."""
 
     @abc.abstractmethod
-    async def handle_events(self, events: List[AbstractEvent]) -> None:
+    async def handle_events(self, events_list: List[events.AbstractEvent]) -> None:
         """Обработка сообщения и следующих за ним."""
 
 
