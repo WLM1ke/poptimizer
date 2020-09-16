@@ -12,7 +12,7 @@ USUAL_NAME = base.TableName(base.QUOTES, "SNGSP")
 FAKE_END_OF_TRADING_DAY = datetime(2020, 9, 15, 15, 58)
 
 
-UPDATE_CHECKED_CASES = (
+GET_DATA_FRAME_CASES = (
     (
         (USUAL_NAME, True),
         events.UpdateTable,
@@ -39,10 +39,10 @@ UPDATE_CHECKED_CASES = (
 
 @pytest.mark.parametrize(
     "event_args, child_type, child_name, child_attr, child_value",
-    UPDATE_CHECKED_CASES,
+    GET_DATA_FRAME_CASES,
 )
 @pytest.mark.asyncio
-async def test_update_checked_force(
+async def test_get_data_frame(
     event_args,
     child_type,
     child_name,
@@ -70,7 +70,7 @@ async def test_update_checked_force(
 
 
 @pytest.mark.asyncio
-async def test_trading_day_required(monkeypatch, mocker):
+async def test_end_of_trading_day(monkeypatch, mocker):
     """Обновляет вспомогательную таблицу и не добавляет новые событие по обновлению основной таблицы."""
     monkeypatch.setattr(services, "trading_day_real_end", lambda _: FAKE_END_OF_TRADING_DAY)
     mocker_table = mocker.AsyncMock()
@@ -91,7 +91,7 @@ async def test_trading_day_required(monkeypatch, mocker):
 
 
 @pytest.mark.asyncio
-async def test_trading_day_required_raises():
+async def test_end_of_trading_day_raises():
     """Исключение при попытке обработки без таблицы."""
     queue = asyncio.Queue()
 
@@ -101,7 +101,7 @@ async def test_trading_day_required_raises():
 
 
 @pytest.mark.asyncio
-async def test_trading_day_loaded(mocker):
+async def test_update_table(mocker):
     """Обновляет таблицу и не добавляет новые события."""
     mocker_table = mocker.AsyncMock()
     queue = asyncio.Queue()
@@ -110,12 +110,17 @@ async def test_trading_day_loaded(mocker):
     assert event.table_required is USUAL_NAME
 
     await event.handle_event(queue, mocker_table)
-    assert queue.qsize() == 0
+    assert queue.qsize() == 1
     mocker_table.update.assert_called_once_with(FAKE_END_OF_TRADING_DAY)
+
+    child_event = await queue.get()
+    assert isinstance(child_event, events.Result)
+    assert child_event.name is mocker_table.name
+    assert child_event.df is mocker_table.df
 
 
 @pytest.mark.asyncio
-async def test_trading_day_loaded_raises():
+async def test_update_table_raises():
     """Исключение при попытке обработки без таблицы."""
     queue = asyncio.Queue()
 
