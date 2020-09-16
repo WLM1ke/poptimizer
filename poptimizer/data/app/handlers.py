@@ -1,6 +1,6 @@
 """Запросы таблиц."""
 import asyncio
-from typing import Awaitable, List, Tuple
+from typing import Dict, List, Tuple
 
 import pandas as pd
 
@@ -16,7 +16,6 @@ class Handler:
         """Создает шину сообщений и просмотрщик данных."""
         self._loop = loop
         self._bus = services.EventsBus(db_session)
-        self._viewer = services.Viewer(db_session)
 
     def get_df(
         self,
@@ -24,10 +23,9 @@ class Handler:
         force_update: bool = False,
     ) -> pd.DataFrame:
         """Возвращает DataFrame по наименованию таблицы."""
-        event = events.UpdateChecked(table_name, force_update)
-        loop = self._loop
-        loop.run_until_complete(self._bus.handle_events([event]))
-        return loop.run_until_complete(self._viewer.get_df(table_name))
+        command = events.GetDataFrame(table_name, force_update)
+        result_dict = self._run_commands([command])
+        return result_dict[table_name]
 
     def get_dfs(
         self,
@@ -37,12 +35,9 @@ class Handler:
         """Возвращает несколько DataFrame из одной группы."""
         table_names = [base.TableName(group, name) for name in names]
 
-        update_events: List[events.AbstractEvent] = [
-            events.UpdateChecked(table_name) for table_name in table_names
-        ]
-        loop = self._loop
-        loop.run_until_complete(self._bus.handle_events(update_events))
+        commands: List[events.Command] = [events.GetDataFrame(table_name) for table_name in table_names]
+        result_dict = self._run_commands(commands)
+        return tuple(result_dict[name] for name in table_names)
 
-        aws = [self._viewer.get_df(table_name) for table_name in table_names]
-        dfs: Awaitable[Tuple[pd.DataFrame, ...]] = asyncio.gather(*aws)
-        return loop.run_until_complete(dfs)
+    def _run_commands(self, commands: List[events.Command]) -> Dict[base.TableName, pd.DataFrame]:
+        return self._loop.run_until_complete(self._bus.handle_events(commands))

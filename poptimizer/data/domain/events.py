@@ -4,17 +4,24 @@ import asyncio
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
+import pandas as pd
+
 from poptimizer.data.domain import model, services
 from poptimizer.data.ports import base
-
-if TYPE_CHECKING:
-    EventsQueue = asyncio.Queue["AbstractEvent"]
-else:
-    EventsQueue = asyncio.Queue
 
 
 class AbstractEvent(abc.ABC):
     """Абстрактный класс события."""
+
+
+if TYPE_CHECKING:
+    EventsQueue = asyncio.Queue[AbstractEvent]
+else:
+    EventsQueue = asyncio.Queue
+
+
+class Command(AbstractEvent):
+    """Абстрактный класс команды."""
 
     @property
     @abc.abstractmethod
@@ -30,7 +37,7 @@ class AbstractEvent(abc.ABC):
         """Обрабатывает событие и добавляет новые события в очередь."""
 
 
-class UpdateChecked(AbstractEvent):
+class GetDataFrame(Command):
     """Команда обновить DataFrame."""
 
     def __init__(self, table_name: base.TableName, force: bool = False):
@@ -58,15 +65,15 @@ class UpdateChecked(AbstractEvent):
         force = self._force
 
         if force:
-            await queue.put(TradingDateLoaded(table_name))
+            await queue.put(UpdateTable(table_name))
         elif (helper_name := services.get_helper_name(self._table_name)) is None:
             end_of_trading_day = services.trading_day_potential_end()
-            await queue.put(TradingDateLoaded(table_name, end_of_trading_day))
+            await queue.put(UpdateTable(table_name, end_of_trading_day))
         else:
-            await queue.put(TradingDayEndRequired(table_name, helper_name))
+            await queue.put(GetEndOfTradingDay(table_name, helper_name))
 
 
-class TradingDayEndRequired(AbstractEvent):
+class GetEndOfTradingDay(Command):
     """Узнает время окончания последних торгов."""
 
     def __init__(self, table_name: base.TableName, helper_name: base.TableName):
@@ -91,10 +98,10 @@ class TradingDayEndRequired(AbstractEvent):
         end_of_trading_day = services.trading_day_potential_end()
         await table.update(end_of_trading_day)
         end_of_trading_day = services.trading_day_real_end(table.df)
-        await queue.put(TradingDateLoaded(self._table_name, end_of_trading_day))
+        await queue.put(UpdateTable(self._table_name, end_of_trading_day))
 
 
-class TradingDateLoaded(AbstractEvent):
+class UpdateTable(Command):
     """Команда обновить таблицу с учетом последней торговой даты."""
 
     def __init__(
@@ -117,10 +124,30 @@ class TradingDateLoaded(AbstractEvent):
         queue: EventsQueue,
         table: Optional[model.Table],
     ) -> None:
-        """Обновляет таблицу.
+        """Обновляет таблицу и публикует результат.
 
         При отсутствии даты принудительно, а при наличии с учетом необходимости.
         """
         if table is None:
             raise base.DataError("Нужна таблица")
         await table.update(self._end_of_trading_day)
+        await queue.put(Result(table.name, table.df))
+
+
+class Result(AbstractEvent):
+    """Событие с результатом выполнения команды."""
+
+    def __init__(self, name: base.TableName, df: pd.DataFrame):
+        """Имя и DataFrame с результатом."""
+        self._name = name
+        self._df = df
+
+    @property
+    def name(self) -> base.TableName:
+        """Имя таблицы."""
+        return self._name
+
+    @property
+    def df(self) -> pd.DataFrame:
+        """Результат в виде DataFrame."""
+        return self._df

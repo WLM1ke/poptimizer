@@ -1,7 +1,7 @@
 """Группа операций с таблицами, в конце которой осуществляется сохранение изменных данных."""
 import asyncio
 import contextlib
-from typing import AsyncIterator, List
+from typing import AsyncIterator, Dict, List
 
 import pandas as pd
 
@@ -33,8 +33,8 @@ async def _load_or_create_table(
         return table
 
 
-async def _handle_one_event(
-    event: events.AbstractEvent,
+async def _handle_one_command(
+    event: events.Command,
     store: repo.Repo,
     queue: events.EventsQueue,
 ) -> None:
@@ -46,21 +46,36 @@ async def _handle_one_event(
     queue.task_done()
 
 
-async def _queue_processor(events_queue: events.EventsQueue, store: repo.Repo) -> None:
+async def _queue_processor(
+    events_queue: events.EventsQueue,
+    store: repo.Repo,
+) -> Dict[base.TableName, pd.DataFrame]:
     """Вытягивает сообщения из очереди событий и запускает их обработку."""
-    while True:
+    events_results: Dict[base.TableName, pd.DataFrame] = {}
+    n_results = events_queue.qsize()
+    while len(events_results) < n_results:
         event = await events_queue.get()
-        asyncio.create_task(_handle_one_event(event, store, events_queue))
+        if isinstance(event, events.Result):
+            events_results[event.name] = event.df
+            events_queue.task_done()
+        elif isinstance(event, events.Command):
+            asyncio.create_task(_handle_one_command(event, store, events_queue))
+        else:
+            raise base.DataError("Неизвестный тип события")
+    return events_results
 
 
-class EventsBus(outer.AbstractEventsBus):
+class EventsBus:
     """Шина для обработки сообщений."""
 
     def __init__(self, db_session: outer.AbstractDBSession) -> None:
         """Сохраняет параметры для создания изолированных UoW."""
         self._db_session = db_session
 
-    async def handle_events(self, events_list: List[events.AbstractEvent]) -> None:
+    async def handle_events(
+        self,
+        events_list: List[events.Command],
+    ) -> Dict[base.TableName, pd.DataFrame]:
         """Обработка сообщения и следующих за ним."""
         events_queue: events.EventsQueue = asyncio.Queue()
         for event in events_list:
@@ -69,19 +84,4 @@ class EventsBus(outer.AbstractEventsBus):
         async with unit_of_work(self._db_session) as store:
             processor_task = asyncio.create_task(_queue_processor(events_queue, store))
             await events_queue.join()
-            processor_task.cancel()
-
-
-class Viewer(outer.AbstractViewer):
-    """Позволяет смотреть DataFrame по имени таблицы."""
-
-    def __init__(self, db_session: outer.AbstractDBSession) -> None:
-        """Сохраняет репо для просмотра данных."""
-        self._db_session = db_session
-
-    async def get_df(self, table_name: base.TableName) -> pd.DataFrame:
-        """Возвращает DataFrame по имени таблицы."""
-        if (table_tuple := await self._db_session.get(table_name)) is None:
-            raise base.DataError(f"Таблицы {table_name} нет в хранилище")
-        table = factories.recreate_table(table_tuple)
-        return table.df
+        return processor_task.result()

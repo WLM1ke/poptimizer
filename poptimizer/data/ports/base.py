@@ -1,6 +1,5 @@
 """Базовые типы, необходимые для описания таблицы с данными."""
 import abc
-import datetime
 import enum
 from typing import Final, Literal, NamedTuple, Optional, Union
 
