@@ -203,15 +203,11 @@ class WaveNet(nn.Module):
             self.bn = nn.Identity()
 
         self.start_conv = nn.Conv1d(
-            in_channels=sequence_count + embedding_dim,
-            out_channels=residual_channels,
-            kernel_size=1,
+            in_channels=sequence_count + embedding_dim, out_channels=residual_channels, kernel_size=1,
         )
 
         self.blocks = nn.ModuleList()
-        blocks = 1
-        if history_days is not None:
-            blocks = int(np.log2(history_days - 1)) + 1
+        blocks = int(np.log2(history_days - 1)) + 1
         for block in range(blocks):
             self.blocks.append(
                 Block(
