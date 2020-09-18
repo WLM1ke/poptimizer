@@ -67,3 +67,12 @@ class Repo(AsyncContextManager[None]):
                 if timestamp != table.timestamp
             )
             await self._session.commit(for_commit)
+
+
+async def load_or_create_table(store: Repo, table_name: outer.TableName) -> model.Table:
+    """Загружает, а при отсутствии создает таблицу и сохраняет ее."""
+    async with store:
+        if (table := await store.get_table(table_name)) is None:
+            table = factories.create_table(table_name)
+            store.add_table(table)
+        return table
