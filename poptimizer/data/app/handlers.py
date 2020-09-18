@@ -27,7 +27,7 @@ class Handler:
         force_update: bool = False,
     ) -> pd.DataFrame:
         """Возвращает DataFrame по наименованию таблицы."""
-        command = events.UpdatedDfRequired(table_name, force_update)
+        command = events.GetDataFrame(table_name, force_update)
         result_dict = self._run_commands([command])
         return result_dict[table_name]
 
@@ -39,11 +39,9 @@ class Handler:
         """Возвращает несколько DataFrame из одной группы."""
         table_names = [outer.TableName(group, name) for name in names]
 
-        commands: List[events.AbstractEvent] = [
-            events.UpdatedDfRequired(table_name) for table_name in table_names
-        ]
+        commands: List[events.Command] = [events.GetDataFrame(table_name) for table_name in table_names]
         result_dict = self._run_commands(commands)
         return tuple(result_dict[name] for name in table_names)
 
-    def _run_commands(self, commands: List[events.AbstractEvent]) -> Dict[outer.TableName, pd.DataFrame]:
+    def _run_commands(self, commands: List[events.Command]) -> Dict[outer.TableName, pd.DataFrame]:
         return self._loop.run_until_complete(self._bus.handle_events(commands))

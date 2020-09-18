@@ -1,21 +1,12 @@
 """Группа операций с таблицами, в конце которой осуществляется сохранение изменных данных."""
 import asyncio
 import contextlib
-import types
-from typing import AsyncIterator, Awaitable, Dict, Final, List
+from typing import AsyncIterator, Dict, List
 
 import pandas as pd
 
-from poptimizer.data.domain import events, repo, services
+from poptimizer.data.domain import events, factories, model, repo
 from poptimizer.data.ports import outer
-
-EVENT_HANDLERS: Final = types.MappingProxyType(
-    {
-        events.UpdatedDfRequired: services.select_update_type,
-        events.UpdateWithHelperRequired: services.update_with_helper,
-        events.UpdateWithTimestampRequired: services.update_with_timestamp,
-    },
-)
 
 
 @contextlib.asynccontextmanager
@@ -33,9 +24,28 @@ async def unit_of_work(
         await store.commit()
 
 
-async def _create_task(coro: Awaitable[None], events_queue: events.EventsQueue) -> None:
-    task = asyncio.create_task(coro)
-    task.add_done_callback(lambda _: events_queue.task_done())
+async def _load_or_create_table(
+    table_name: outer.TableName,
+    store: repo.Repo,
+) -> model.Table:
+    async with store:
+        if (table := await store.get_table(table_name)) is None:
+            table = factories.create_table(table_name)
+            store.add_table(table)
+        return table
+
+
+async def _handle_one_command(
+    event: events.Command,
+    store: repo.Repo,
+    queue: events.EventsQueue,
+) -> None:
+    """Обрабатывает одно событие и добавляет в очередь дочерние события."""
+    table = None
+    if (table_name := event.table_required) is not None:
+        table = await _load_or_create_table(table_name, store)
+    await event.handle_event(queue, table)
+    queue.task_done()
 
 
 async def _queue_processor(
@@ -46,20 +56,14 @@ async def _queue_processor(
     events_results: Dict[outer.TableName, pd.DataFrame] = {}
     n_results = events_queue.qsize()
     while len(events_results) < n_results:
-
         event = await events_queue.get()
-        if (event_handler := EVENT_HANDLERS.get(type(event))) is not None:
-            coro = event_handler(events_queue, store, event)
-            await _create_task(coro, events_queue)
-            continue
-
         if isinstance(event, events.Result):
-            events_results[event.table_name] = event.df
+            events_results[event.name] = event.df
             events_queue.task_done()
-            continue
-
-        raise outer.DataError("Неизвестный тип события")
-
+        elif isinstance(event, events.Command):
+            asyncio.create_task(_handle_one_command(event, store, events_queue))
+        else:
+            raise outer.DataError("Неизвестный тип события")
     return events_results
 
 
@@ -72,7 +76,7 @@ class EventsBus:
 
     async def handle_events(
         self,
-        events_list: List[events.AbstractEvent],
+        events_list: List[events.Command],
     ) -> Dict[outer.TableName, pd.DataFrame]:
         """Обработка сообщения и следующих за ним."""
         events_queue: events.EventsQueue = asyncio.Queue()

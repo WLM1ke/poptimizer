@@ -55,13 +55,13 @@ POTENTIAL_TRADING_DAY_CASES = (
 def test_trading_day_potential_end(now, end, monkeypatch):
     """Тестирование двух краевых случаев на стыке потенциального окончания торгового дня."""
     monkeypatch.setattr(services, "datetime", FakeDateTime(now))
-    assert services._trading_day_potential_end() == end
+    assert services.trading_day_potential_end() == end
 
 
 def test_day_real_end():
     """Тест на окончание реального торгового дня."""
     df = pd.DataFrame([datetime(2020, 9, 11)], columns=["till"])
-    assert services._trading_day_real_end(df) == datetime(2020, 9, 11, 21, 45)
+    assert services.trading_day_real_end(df) == datetime(2020, 9, 11, 21, 45)
 
 
 MAIN_HELPER = outer.TableName(outer.TRADING_DATES, outer.TRADING_DATES)
@@ -81,4 +81,4 @@ HELPER_NAME_CASES = (
 @pytest.mark.parametrize("name, answer", HELPER_NAME_CASES)
 def test_get_helper_name(name, answer):
     """Тесты для всех групп таблиц."""
-    assert services._get_helper_name(name) == answer
+    assert services.get_helper_name(name) == answer

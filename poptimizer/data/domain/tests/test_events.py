@@ -15,24 +15,24 @@ FAKE_END_OF_TRADING_DAY = datetime(2020, 9, 15, 15, 58)
 GET_DATA_FRAME_CASES = (
     (
         (USUAL_NAME, True),
-        events.UpdateWithTimestampRequired,
+        events.UpdateTable,
         USUAL_NAME,
         "_end_of_trading_day",
         None,
     ),
     (
         (USUAL_NAME, False),
-        events.UpdateWithHelperRequired,
+        events.GetEndOfTradingDay,
         HELPER_NAME,
         "_table_name",
         USUAL_NAME,
     ),
     (
         (HELPER_NAME, False),
-        events.UpdateWithTimestampRequired,
+        events.UpdateTable,
         HELPER_NAME,
         "_end_of_trading_day",
-        services._trading_day_potential_end(),
+        services.trading_day_potential_end(),
     ),
 )
 
@@ -57,7 +57,7 @@ async def test_get_data_frame(
     """
     queue = asyncio.Queue()
 
-    event = events.UpdatedDfRequired(*event_args)
+    event = events.GetDataFrame(*event_args)
     assert event.table_required is None
 
     await event.handle_event(queue, None)
@@ -76,15 +76,15 @@ async def test_end_of_trading_day(monkeypatch, mocker):
     mocker_table = mocker.AsyncMock()
     queue = asyncio.Queue()
 
-    event = events.UpdateWithHelperRequired(USUAL_NAME, HELPER_NAME)
+    event = events.GetEndOfTradingDay(USUAL_NAME, HELPER_NAME)
     assert event.table_required is HELPER_NAME
 
     await event.handle_event(queue, mocker_table)
     assert queue.qsize() == 1
-    mocker_table.update.assert_called_once_with(services._trading_day_potential_end())
+    mocker_table.update.assert_called_once_with(services.trading_day_potential_end())
 
     child_event = await queue.get()
-    assert isinstance(child_event, events.UpdateWithTimestampRequired)
+    assert isinstance(child_event, events.UpdateTable)
     assert child_event.table_required == USUAL_NAME
 
     assert child_event._end_of_trading_day == FAKE_END_OF_TRADING_DAY
@@ -95,7 +95,7 @@ async def test_end_of_trading_day_raises():
     """Исключение при попытке обработки без таблицы."""
     queue = asyncio.Queue()
 
-    event = events.UpdateWithHelperRequired(USUAL_NAME, HELPER_NAME)
+    event = events.GetEndOfTradingDay(USUAL_NAME, HELPER_NAME)
     with pytest.raises(outer.DataError, match="Нужна таблица"):
         await event.handle_event(queue, None)
 
@@ -106,7 +106,7 @@ async def test_update_table(mocker):
     mocker_table = mocker.AsyncMock()
     queue = asyncio.Queue()
 
-    event = events.UpdateWithTimestampRequired(USUAL_NAME, FAKE_END_OF_TRADING_DAY)
+    event = events.UpdateTable(USUAL_NAME, FAKE_END_OF_TRADING_DAY)
     assert event.table_required is USUAL_NAME
 
     await event.handle_event(queue, mocker_table)
@@ -124,6 +124,6 @@ async def test_update_table_raises():
     """Исключение при попытке обработки без таблицы."""
     queue = asyncio.Queue()
 
-    event = events.UpdateWithTimestampRequired(USUAL_NAME, FAKE_END_OF_TRADING_DAY)
+    event = events.UpdateTable(USUAL_NAME, FAKE_END_OF_TRADING_DAY)
     with pytest.raises(outer.DataError, match="Нужна таблица"):
         await event.handle_event(queue, None)
