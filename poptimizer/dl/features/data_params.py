@@ -10,7 +10,7 @@ from poptimizer import data_old
 # Доля дней относимых к тренировочному периоду
 from poptimizer.data.views import moex
 
-FORECAST_DAYS = 2
+FORECAST_DAYS = 3
 
 
 def div_price_train_size(
