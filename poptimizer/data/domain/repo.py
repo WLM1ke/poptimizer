@@ -44,24 +44,47 @@ class Repo(AsyncContextManager["Repo"]):
 
         await self._session.commit(dirty)
 
-    async def get_table(self, table_name: outer.TableName) -> Optional[model.Table]:
+    async def get_table(self, table_name: outer.TableName) -> model.Table:
         """Берет таблицу из репозитория."""
+        table = await self._load_table(table_name)
+        self._seen.add(table)
+        return table
+
+    async def _load_table(self, table_name: outer.TableName) -> model.Table:
+        """Загрузка таблицы.
+
+        - Синхронно загружается из identity map
+        - Если отсутствует, то асинхронно загружается из базы или создается новая
+        - Из-за асинхронности вновь проверяется наличие в identity map
+        - При отсутствии происходит обновление identity map
+        """
         if (table_old := self._identity_map.get(table_name)) is not None:
-            self._seen.add(table_old)
             return table_old
 
+        table = await self._load_or_create(table_name)
+
+        if (table_old := self._identity_map.get(table_name)) is not None:
+            return table_old
+
+        self._save_identity_and_timestamp(table)
+
+        return table
+
+    async def _load_or_create(self, table_name: outer.TableName) -> model.Table:
+        """Загружает из базы, а в случае отсутствия создается пустая таблица."""
         if (table_tuple := await self._session.get(table_name)) is None:
             table = factories.create_table(table_name)
         else:
             table = factories.recreate_table(table_tuple)
+        return table
 
-        if (table_old := self._identity_map.get(table_name)) is not None:
-            self._seen.add(table_old)
-            return table_old
+    def _save_identity_and_timestamp(self, table: model.Table) -> None:
+        """Сохраняет в identity map и отметку времени на момент сохранения.
 
+        Используются слабые ссылки и файнализаторы для автоматического освобождения памяти в случае,
+        если таблица больше не используется.
+        """
+        table_name = table.name
         self._identity_map[table_name] = table
         self._timestamps[table_name] = table.timestamp
         weakref.finalize(table, self._timestamps.pop, table_name)
-        self._seen.add(table)
-
-        return table
