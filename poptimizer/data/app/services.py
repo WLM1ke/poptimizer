@@ -1,27 +1,11 @@
 """Группа операций с таблицами, в конце которой осуществляется сохранение изменных данных."""
 import asyncio
-import contextlib
-from typing import AsyncIterator, Dict, List
+from typing import Dict, List
 
 import pandas as pd
 
 from poptimizer.data.domain import events, repo
 from poptimizer.data.ports import outer
-
-
-@contextlib.asynccontextmanager
-async def unit_of_work(
-    db_session: outer.AbstractDBSession,
-) -> AsyncIterator[repo.Repo]:
-    """Одна транзакция в базу данных.
-
-    Контекстный менеджер, возвращающий Репо для транзакций.
-    """
-    store = repo.Repo(db_session)
-    try:
-        yield store
-    finally:
-        await store.commit()
 
 
 async def _handle_one_command(
@@ -30,7 +14,7 @@ async def _handle_one_command(
     queue: events.EventsQueue,
 ) -> None:
     """Обрабатывает одно событие и добавляет в очередь дочерние события."""
-    async with unit_of_work(db_session) as store:
+    async with repo.Repo(db_session) as store:
         table = None
         if (table_name := event.table_required) is not None:
             table = await store.get_table(table_name)
