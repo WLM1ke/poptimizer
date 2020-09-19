@@ -1,69 +1,55 @@
 """Реализация репозиторий с таблицами."""
-import asyncio
+import weakref
 from datetime import datetime
-from types import TracebackType
-from typing import AsyncContextManager, Dict, NamedTuple, Optional, Type
+from typing import Dict, MutableMapping, Optional, Set
 
 from poptimizer.data.domain import factories, model
 from poptimizer.data.ports import outer
 
 
-class TimedTable(NamedTuple):
-    """Таблица и момент времени на момент загрузки или создания."""
-
-    table: model.Table
-    timestamp: Optional[datetime]
-
-
-class Repo(AsyncContextManager[None]):
+class Repo:
     """Класс репозитория для хранения таблиц.
 
     Контекстный менеджер обеспечивающий блокировку для проведения атомарных операций по добавлению и
     извлечению таблиц.
     """
 
+    _identity_map: MutableMapping[outer.TableName, model.Table] = weakref.WeakValueDictionary()
+    _timestamps: Dict[outer.TableName, Optional[datetime]] = {}
+
     def __init__(self, db_session: outer.AbstractDBSession) -> None:
         """Сохраняются ссылки на таблицы, которые были добавлены или взяты из репозитория."""
         self._session = db_session
-        self._seen: Dict[outer.TableName, TimedTable] = {}
-        self._seen_loc = asyncio.Lock()
-
-    async def __aenter__(self) -> None:
-        """Возвращает репо с таблицами."""
-        await self._seen_loc.acquire()
-
-    async def __aexit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
-    ) -> None:
-        """Сохраняет изменные данные в базу данных."""
-        self._seen_loc.release()
-
-    def add_table(self, table: model.Table) -> None:
-        """Добавляет таблицу в репозиторий."""
-        self._seen[table.name] = TimedTable(table, None)
+        self._seen: Set[outer.TableName] = set()
 
     async def get_table(self, table_name: outer.TableName) -> Optional[model.Table]:
         """Берет таблицу из репозитория."""
-        if (timed_table := self._seen.get(table_name)) is not None:
-            return timed_table.table
+        self._seen.add(table_name)
+
+        if (table_old := self._identity_map.get(table_name)) is not None:
+            return table_old
 
         if (table_tuple := await self._session.get(table_name)) is None:
-            return None
+            table = factories.create_table(table_name)
+        else:
+            table = factories.recreate_table(table_tuple)
 
-        table = factories.recreate_table(table_tuple)
-        self._seen[table.name] = TimedTable(table, table.timestamp)
+        if (table_old := self._identity_map.get(table_name)) is not None:
+            return table_old
+
+        self._identity_map[table_name] = table
+        self._timestamps[table_name] = table.timestamp
+        weakref.finalize(table, self._timestamps.pop, table_name)
 
         return table
 
     async def commit(self) -> None:
         """Сохраняет изменения в базу данных."""
-        async with self._seen_loc:
-            for_commit = (
-                factories.convent_to_tuple(table)
-                for table, timestamp in self._seen.values()
-                if timestamp != table.timestamp
-            )
-            await self._session.commit(for_commit)
+        dirty = []
+        for table_name in self._seen:
+            table = self._identity_map[table_name]
+            if self._timestamps[table_name] != table.timestamp:
+                dirty.append(factories.convent_to_tuple(table))
+                self._timestamps[table_name] = table.timestamp
+
+        await self._session.commit(dirty)

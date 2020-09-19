@@ -5,7 +5,7 @@ from typing import AsyncIterator, Dict, List
 
 import pandas as pd
 
-from poptimizer.data.domain import events, factories, model, repo
+from poptimizer.data.domain import events, repo
 from poptimizer.data.ports import outer
 
 
@@ -24,33 +24,23 @@ async def unit_of_work(
         await store.commit()
 
 
-async def _load_or_create_table(
-    table_name: outer.TableName,
-    store: repo.Repo,
-) -> model.Table:
-    async with store:
-        if (table := await store.get_table(table_name)) is None:
-            table = factories.create_table(table_name)
-            store.add_table(table)
-        return table
-
-
 async def _handle_one_command(
     event: events.Command,
-    store: repo.Repo,
+    db_session: outer.AbstractDBSession,
     queue: events.EventsQueue,
 ) -> None:
     """Обрабатывает одно событие и добавляет в очередь дочерние события."""
-    table = None
-    if (table_name := event.table_required) is not None:
-        table = await _load_or_create_table(table_name, store)
-    await event.handle_event(queue, table)
-    queue.task_done()
+    async with unit_of_work(db_session) as store:
+        table = None
+        if (table_name := event.table_required) is not None:
+            table = await store.get_table(table_name)
+        await event.handle_event(queue, table)
+        queue.task_done()
 
 
 async def _queue_processor(
     events_queue: events.EventsQueue,
-    store: repo.Repo,
+    db_session: outer.AbstractDBSession,
 ) -> Dict[outer.TableName, pd.DataFrame]:
     """Вытягивает сообщения из очереди событий и запускает их обработку."""
     events_results: Dict[outer.TableName, pd.DataFrame] = {}
@@ -61,7 +51,7 @@ async def _queue_processor(
             events_results[event.name] = event.df
             events_queue.task_done()
         elif isinstance(event, events.Command):
-            asyncio.create_task(_handle_one_command(event, store, events_queue))
+            asyncio.create_task(_handle_one_command(event, db_session, events_queue))
         else:
             raise outer.DataError("Неизвестный тип события")
     return events_results
@@ -83,7 +73,6 @@ class EventsBus:
         for event in events_list:
             await events_queue.put(event)
 
-        async with unit_of_work(self._db_session) as store:
-            processor_task = asyncio.create_task(_queue_processor(events_queue, store))
-            await events_queue.join()
+        processor_task = asyncio.create_task(_queue_processor(events_queue, self._db_session))
+        await events_queue.join()
         return processor_task.result()
