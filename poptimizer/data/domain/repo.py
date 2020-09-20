@@ -11,8 +11,9 @@ from poptimizer.data.ports import outer
 class Repo(AsyncContextManager["Repo"]):
     """Класс репозитория для хранения таблиц.
 
-    Контекстный менеджер обеспечивающий блокировку для проведения атомарных операций по добавлению и
-    извлечению таблиц.
+    Контекстный менеджер обеспечивающий сохранение измененных таблиц. С помощью identity_map
+    обеспечивается корректная обработка запроса одной и той же таблицы из разных репо при их
+    асинхронной обработке.
     """
 
     _identity_map: MutableMapping[outer.TableName, model.Table] = weakref.WeakValueDictionary()
@@ -55,7 +56,7 @@ class Repo(AsyncContextManager["Repo"]):
 
         - Синхронно загружается из identity map
         - Если отсутствует, то асинхронно загружается из базы или создается новая
-        - Из-за асинхронности вновь проверяется наличие в identity map
+        - Из-за асинхронности снова проверяется наличие в identity map
         - При отсутствии происходит обновление identity map
         """
         if (table_old := self._identity_map.get(table_name)) is not None:
