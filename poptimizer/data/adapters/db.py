@@ -1,6 +1,6 @@
 """Реализации сессий доступа к базе данных."""
 import asyncio
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, Optional, Tuple, Union
 
 import pandas as pd
 from motor import motor_asyncio
@@ -12,10 +12,10 @@ from poptimizer.data.ports import outer
 MISC = "misc"
 
 
-def _collection_and_name(table: outer.TableTuple) -> Tuple[str, str]:
+def _collection_and_name(table_name: Union[outer.TableTuple, outer.TableName]) -> Tuple[str, str]:
     """Формирует название коллекции и имя документа."""
-    collection: str = table.group
-    name = table.name
+    collection: str = table_name.group
+    name = table_name.name
     if collection == name:
         collection = MISC
     return collection, name
@@ -25,7 +25,7 @@ class MongoDBSession(outer.AbstractDBSession):
     """Реализация сессии с хранением в MongoDB.
 
     При совпадении id и группы данные записываются в специальную коллекцию, в ином случае в коллекцию
-    группы.
+    группы таблицы.
     """
 
     def __init__(self, db: motor_asyncio.AsyncIOMotorDatabase) -> None:
@@ -35,17 +35,14 @@ class MongoDBSession(outer.AbstractDBSession):
 
     async def get(self, table_name: outer.TableName) -> Optional[outer.TableTuple]:
         """Извлекает документ из коллекции."""
-        group, name = table_name
-        collection: str = group
-        if collection == name:
-            collection = MISC
+        collection, name = _collection_and_name(table_name)
         doc = await self._db[collection].find_one({"_id": name})
 
         if doc is None:
             return None
 
         df = pd.DataFrame(**doc["data"])
-        return outer.TableTuple(group=group, name=name, df=df, timestamp=doc["timestamp"])
+        return outer.TableTuple(*table_name, df=df, timestamp=doc["timestamp"])
 
     async def commit(self, tables_vars: Iterable[outer.TableTuple]) -> None:
         """Записывает данные в MongoDB."""
