@@ -11,7 +11,7 @@ SOURCE_DB = "source"
 SOURCE_COLLECTION = "dividends"
 
 
-class DividendsLoader(logger.LoggerMixin, outer.AbstractLoader):
+class DividendsLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
     """Обновление данных из базы данных, заполняемой в ручную."""
 
     async def get(self, table_name: outer.TableName) -> pd.DataFrame:

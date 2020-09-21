@@ -102,7 +102,7 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
     return columns
 
 
-class ConomyLoader(logger.LoggerMixin, outer.AbstractLoader):
+class ConomyLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
     """Обновление для таблиц с дивидендами на https://www.conomy.ru/."""
 
     async def get(self, table_name: outer.TableName) -> pd.DataFrame:

@@ -64,7 +64,7 @@ def _clean_up(df: pd.DataFrame) -> pd.DataFrame:
     return df.to_frame(col.CPI)
 
 
-class CPILoader(logger.LoggerMixin, outer.AbstractLoader):
+class CPILoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
     """Обновление данных инфляции с https://rosstat.gov.ru."""
 
     async def get(self, table_name: outer.TableName) -> pd.DataFrame:

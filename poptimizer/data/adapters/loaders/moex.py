@@ -16,7 +16,7 @@ from poptimizer.data.ports import col, outer
 MOEX_TZ = timezone("Europe/Moscow")
 
 
-class SecuritiesLoader(logger.LoggerMixin, outer.AbstractLoader):
+class SecuritiesLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
     """Информация о всех торгующихся акциях."""
 
     def __init__(self) -> None:
@@ -46,7 +46,7 @@ class SecuritiesLoader(logger.LoggerMixin, outer.AbstractLoader):
             return self._securities_cache
 
 
-class IndexLoader(logger.LoggerMixin, outer.AbstractIncrementalLoader):
+class IndexLoader(logger.LoaderLoggerMixin, outer.AbstractIncrementalLoader):
     """Котировки индекса полной доходности с учетом российских налогов - MCFTRR."""
 
     async def get(
@@ -103,7 +103,7 @@ async def _download_many(http_session: aiohttp.ClientSession, aliases: List[str]
     return df.groupby("begin", as_index=False).last()
 
 
-class QuotesLoader(logger.LoggerMixin, outer.AbstractIncrementalLoader):
+class QuotesLoader(logger.LoaderLoggerMixin, outer.AbstractIncrementalLoader):
     """Котировки акций."""
 
     def __init__(self, securities_loader: SecuritiesLoader) -> None:

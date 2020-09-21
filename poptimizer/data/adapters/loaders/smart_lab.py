@@ -32,7 +32,7 @@ def get_col_desc() -> List[parser.ColDesc]:
     return [ticker, date, div]
 
 
-class SmartLabLoader(logger.LoggerMixin, outer.AbstractLoader):
+class SmartLabLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
     """Обновление данных с https://www.smart-lab.ru."""
 
     async def get(self, table_name: outer.TableName) -> pd.DataFrame:

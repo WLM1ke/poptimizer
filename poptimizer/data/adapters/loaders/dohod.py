@@ -29,7 +29,7 @@ def get_col_desc(ticker: str) -> List[parser.ColDesc]:
     return [date_col, div_col]
 
 
-class DohodLoader(logger.LoggerMixin, outer.AbstractLoader):
+class DohodLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
     """Обновление данных с https://dohod.ru."""
 
     async def get(self, table_name: outer.TableName) -> pd.DataFrame:

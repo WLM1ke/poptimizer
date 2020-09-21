@@ -10,7 +10,7 @@ from poptimizer.data.config import resources
 from poptimizer.data.ports import outer
 
 
-class TradingDatesLoader(logger.LoggerMixin, outer.AbstractLoader):
+class TradingDatesLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
     """Обновление для таблиц с диапазоном доступных торговых дат."""
 
     def __init__(self) -> None:
