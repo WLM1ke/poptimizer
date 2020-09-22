@@ -6,7 +6,8 @@ import aiohttp
 from motor import motor_asyncio
 
 # Пул с асинхронными http-соединениями
-AIOHTTP_SESSION = aiohttp.ClientSession()
+_CONN = aiohttp.TCPConnector(limit=20)
+AIOHTTP_SESSION = aiohttp.ClientSession(connector=_CONN)
 
 
 def get_aiohttp_session() -> aiohttp.ClientSession:
