@@ -1,6 +1,6 @@
 """Загрузка данных с https://www.conomy.ru/."""
 from contextlib import asynccontextmanager
-from typing import List, cast
+from typing import cast
 
 import pandas as pd
 import pyppeteer
@@ -8,7 +8,7 @@ from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
 from poptimizer.data.adapters import logger
-from poptimizer.data.adapters.loaders import parser
+from poptimizer.data.adapters.html import description, parser
 from poptimizer.data.ports import col, outer
 
 # Параметры поиска страницы эмитента
@@ -74,29 +74,29 @@ def is_common(ticker: str) -> bool:
     raise outer.DataError(f"Некорректный тикер {ticker}")
 
 
-def get_col_desc(ticker: str) -> List[parser.ColDesc]:
+def get_col_desc(ticker: str) -> parser.Descriptions:
     """Формирует список с описанием необходимых столбцов."""
-    date = parser.ColDesc(
+    date = description.ColDesc(
         num=5,
         raw_name=("E", "Дата закрытия реестра акционеров", "Под выплату дивидендов"),
         name=col.DATE,
-        parser_func=parser.date_parser,
+        parser_func=description.date_parser,
     )
     columns = [date]
     if is_common(ticker):
-        common = parser.ColDesc(
+        common = description.ColDesc(
             num=7,
             raw_name=("G", "Размер дивидендов", "АОИ"),
             name=ticker,
-            parser_func=parser.div_parser,
+            parser_func=description.div_parser,
         )
         columns.append(common)
         return columns
-    preferred = parser.ColDesc(
+    preferred = description.ColDesc(
         num=8,
         raw_name=("H", "Размер дивидендов", "АПИ"),
         name=ticker,
-        parser_func=parser.div_parser,
+        parser_func=description.div_parser,
     )
     columns.append(preferred)
     return columns
@@ -111,8 +111,7 @@ class ConomyLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
 
         html = await get_html(ticker)
         cols_desc = get_col_desc(ticker)
-        table = parser.HTMLTable(html, TABLE_INDEX, cols_desc)
-        df = table.get_df()
+        df = parser.get_df_from_html(html, TABLE_INDEX, cols_desc)
         df = df.loc[df.index.dropna()]
         df = df.sort_index(axis=0)
         return df.groupby(lambda date: date).sum()

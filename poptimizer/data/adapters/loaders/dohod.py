@@ -1,10 +1,8 @@
 """Обновление данных с https://dohod.ru."""
-from typing import List
-
 import pandas as pd
 
 from poptimizer.data.adapters import logger
-from poptimizer.data.adapters.loaders import parser
+from poptimizer.data.adapters.html import description, parser
 from poptimizer.data.ports import col, outer
 
 # Параметры парсинга сайта
@@ -12,19 +10,19 @@ URL = "https://www.dohod.ru/ik/analytics/dividend/"
 TABLE_INDEX = 2
 
 
-def get_col_desc(ticker: str) -> List[parser.ColDesc]:
+def get_col_desc(ticker: str) -> parser.Descriptions:
     """Формирует список с описанием нужных столбцов."""
-    date_col = parser.ColDesc(
+    date_col = description.ColDesc(
         num=0,
         raw_name=("Дата закрытия реестра",),
         name=col.DATE,
-        parser_func=parser.date_parser,
+        parser_func=description.date_parser,
     )
-    div_col = parser.ColDesc(
+    div_col = description.ColDesc(
         num=2,
         raw_name=("Дивиденд (руб.)",),
         name=ticker,
-        parser_func=parser.div_parser,
+        parser_func=description.div_parser,
     )
     return [date_col, div_col]
 
@@ -37,8 +35,7 @@ class DohodLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
         ticker = self._log_and_validate_group(table_name, outer.DOHOD)
 
         cols_desc = get_col_desc(ticker)
-        html = await parser.get_html(f"{URL}{ticker.lower()}")
-        table = parser.HTMLTable(html, TABLE_INDEX, cols_desc)
-        df = table.get_df()
+        url = f"{URL}{ticker.lower()}"
+        df = await parser.get_df_from_url(url, TABLE_INDEX, cols_desc)
         df = df.sort_index(axis=0)
         return df.groupby(lambda date: date).sum()
