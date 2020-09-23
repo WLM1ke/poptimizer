@@ -30,7 +30,7 @@ def _get_table_from_html(html: str, table_num: int) -> str:
         table = soup.find_all("table")[table_num]
     except IndexError:
         raise outer.DataError(f"На странице нет таблицы {table_num}")
-    return f"html{table}/html"
+    return f"<html>{table}</html>"
 
 
 def _get_raw_df(table: str, cols_desc: Descriptions) -> pd.DataFrame:
