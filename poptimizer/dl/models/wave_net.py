@@ -212,7 +212,9 @@ class WaveNet(nn.Module):
         )
 
         self.blocks = nn.ModuleList()
-        blocks = int(np.log2(history_days - 1)) + 1
+        blocks = 1
+        if history_days is not None:
+            blocks = int(np.log2(history_days - 1)) + 1
         for block in range(blocks):
             self.blocks.append(
                 Block(
