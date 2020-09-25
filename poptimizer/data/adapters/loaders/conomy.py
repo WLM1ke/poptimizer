@@ -112,6 +112,6 @@ class ConomyLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
         html = await get_html(ticker)
         cols_desc = get_col_desc(ticker)
         df = parser.get_df_from_html(html, TABLE_INDEX, cols_desc)
-        df = df.loc[df.index.dropna()]
+        df = df.dropna()
         df = df.sort_index(axis=0)
         return df.groupby(lambda date: date).sum()
