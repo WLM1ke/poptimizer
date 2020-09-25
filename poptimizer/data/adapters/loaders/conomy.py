@@ -28,7 +28,7 @@ PREFERRED_TICKER_ENDING = "P"
 
 
 @asynccontextmanager
-async def get_browser() -> Browser:
+async def _get_browser() -> Browser:
     """Асинхронный браузер с автоматическим закрытием после использования."""
     browser = await pyppeteer.launch()
     try:
@@ -37,7 +37,7 @@ async def get_browser() -> Browser:
         await browser.close()
 
 
-async def load_ticker_page(page: Page, ticker: str) -> None:
+async def _load_ticker_page(page: Page, ticker: str) -> None:
     """Вводит в поле поиска тикер и переходит на страницу с информацией по эмитенту."""
     await page.goto(SEARCH_URL)
     await page.waitForXPath(SEARCH_FIELD)
@@ -46,7 +46,7 @@ async def load_ticker_page(page: Page, ticker: str) -> None:
     await element.press("Enter")
 
 
-async def load_dividends_table(page: Page) -> None:
+async def _load_dividends_table(page: Page) -> None:
     """Выбирает на странице эмитента меню дивиденды и дожидается загрузки таблиц с ними."""
     await page.waitForXPath(DIVIDENDS_MENU)
     element, *_ = await page.xpath(DIVIDENDS_MENU)
@@ -54,17 +54,17 @@ async def load_dividends_table(page: Page) -> None:
     await page.waitForXPath(DIVIDENDS_TABLE)
 
 
-async def get_html(ticker: str) -> str:
+async def _get_html(ticker: str) -> str:
     """Возвращает html-код страницы с данными по дивидендам с сайта https://www.conomy.ru/."""
-    async with get_browser() as browser:
+    async with _get_browser() as browser:
         page = await browser.newPage()
-        await load_ticker_page(page, ticker)
-        await load_dividends_table(page)
+        await _load_ticker_page(page, ticker)
+        await _load_dividends_table(page)
         html = await page.content()
         return cast(str, html)
 
 
-def is_common(ticker: str) -> bool:
+def _is_common(ticker: str) -> bool:
     """Определяет является ли акция обыкновенной."""
     if len(ticker) == COMMON_TICKER_LENGTH:
         return True
@@ -74,7 +74,7 @@ def is_common(ticker: str) -> bool:
     raise outer.DataError(f"Некорректный тикер {ticker}")
 
 
-def get_col_desc(ticker: str) -> parser.Descriptions:
+def _get_col_desc(ticker: str) -> parser.Descriptions:
     """Формирует список с описанием необходимых столбцов."""
     date = description.ColDesc(
         num=5,
@@ -83,7 +83,8 @@ def get_col_desc(ticker: str) -> parser.Descriptions:
         parser_func=description.date_parser,
     )
     columns = [date]
-    if is_common(ticker):
+
+    if _is_common(ticker):
         common = description.ColDesc(
             num=7,
             raw_name=("G", "Размер дивидендов", "АОИ"),
@@ -92,6 +93,7 @@ def get_col_desc(ticker: str) -> parser.Descriptions:
         )
         columns.append(common)
         return columns
+
     preferred = description.ColDesc(
         num=8,
         raw_name=("H", "Размер дивидендов", "АПИ"),
@@ -109,8 +111,8 @@ class ConomyLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
         """Получение дивидендов для заданного тикера."""
         ticker = self._log_and_validate_group(table_name, outer.CONOMY)
 
-        html = await get_html(ticker)
-        cols_desc = get_col_desc(ticker)
+        html = await _get_html(ticker)
+        cols_desc = _get_col_desc(ticker)
         df = parser.get_df_from_html(html, TABLE_INDEX, cols_desc)
         df = df.dropna()
         df = df.sort_index(axis=0)
