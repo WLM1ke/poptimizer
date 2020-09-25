@@ -149,7 +149,6 @@ class WaveNet(nn.Module):
         self,
         features_description: Dict[str, Tuple[FeatureType, int]],
         start_bn: bool,
-        embedding_dim: int,
         sub_blocks: int,
         kernels: int,
         gate_channels: int,
@@ -162,8 +161,6 @@ class WaveNet(nn.Module):
             Описание признаков.
         :param start_bn:
             Нужно ли производить BN для входящих численных значений.
-        :param embedding_dim:
-            Размерность эмбединга для категориальных признаков.
         :param sub_blocks:
             Количество маленьких блоков в блоке.
         :param kernels:
@@ -192,21 +189,20 @@ class WaveNet(nn.Module):
                 history_days = size
             if feature_type is FeatureType.EMBEDDING_SEQUENCE:
                 self.embedding_seq_dict[key] = nn.Embedding(
-                    num_embeddings=size, embedding_dim=embedding_dim
+                    num_embeddings=size, embedding_dim=residual_channels
                 )
             if feature_type is FeatureType.EMBEDDING:
-                self.embedding_dict[key] = nn.Embedding(num_embeddings=size, embedding_dim=embedding_dim)
+                self.embedding_dict[key] = nn.Embedding(
+                    num_embeddings=size, embedding_dim=residual_channels
+                )
 
         if start_bn:
             self.bn = nn.BatchNorm1d(sequence_count)
         else:
             self.bn = nn.Identity()
 
-        if not (self.embedding_seq_dict or self.embedding_dict):
-            embedding_dim = 0
-
         self.start_conv = nn.Conv1d(
-            in_channels=sequence_count + embedding_dim,
+            in_channels=sequence_count,
             out_channels=residual_channels,
             kernel_size=1,
         )
@@ -242,38 +238,33 @@ class WaveNet(nn.Module):
         ->sequence-+
         ->........-+
         ->sequence-+-nb-+
-                        +-start-Block-|-Block-|-...-Block-|-final_skip-|
-        ->embedding-----+             |-skips-+-...-skips-+-skips------+-relu-end-relu-|-output_m->
+                        +-start-Block-+-|-Block-|-...-Block-|-final_skip-|
+        ->embedding-------------------+ |-skips-+-...-skips-+-skips------+-relu-end-relu-|-output_m->
         ->........------+                                                     |--------|
         ->embedding-----+                                                     |-output_s-softplus->
         """
+        y = torch.zeros(1, 1, 1, dtype=torch.float)
+
         y_seq = []
 
         for key, (feature_type, _) in self._features_description.items():
             if feature_type is FeatureType.SEQUENCE:
                 y_seq.append(batch[key])
 
-        y = torch.stack(y_seq, dim=1)
-        y = self.bn(y)
-
-        batch_size, _, length = y.shape
-
-        y_emb = torch.zeros(batch_size, 1, length, dtype=torch.float)
+        if y_seq:
+            y = torch.stack(y_seq, dim=1)
+            y = self.bn(y)
+            y = self.start_conv(y)
 
         for key, (feature_type, _) in self._features_description.items():
             if feature_type is FeatureType.EMBEDDING_SEQUENCE:
                 emb_seq = self.embedding_seq_dict[key](batch[key])
                 emb_seq = emb_seq.permute((0, 2, 1))
-                y_emb = emb_seq + y_emb
+                y = emb_seq + y
             if feature_type is FeatureType.EMBEDDING:
                 emb = self.embedding_dict[key](batch[key])
                 emb = emb.unsqueeze(2)
-                y_emb = emb + y_emb
-
-        if self.embedding_seq_dict or self.embedding_dict:
-            y = torch.cat([y, y_emb], dim=1)
-
-        y = self.start_conv(y)
+                y = emb + y
 
         skips = torch.tensor(0.0, dtype=torch.float)
 

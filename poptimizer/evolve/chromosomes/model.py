@@ -9,14 +9,6 @@ START_BN = GeneParams(
     path=("model", "start_bn"),
     phenotype_function=lambda x: x > 0,
 )
-EMBEDDING_DIM = GeneParams(
-    name="embedding_dim",
-    default_range=(4.1, 4.9),
-    lower_bound=1.0,
-    upper_bound=None,
-    path=("model", "embedding_dim"),
-    phenotype_function=int,
-)
 KERNELS = GeneParams(
     name="kernels",
     default_range=(2.1, 2.9),
@@ -72,7 +64,6 @@ class Model(Chromosome):
 
     _GENES = (
         START_BN,
-        EMBEDDING_DIM,
         KERNELS,
         SUB_BLOCKS,
         GATE_CHANNELS,
