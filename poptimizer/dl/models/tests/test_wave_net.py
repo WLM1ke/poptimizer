@@ -21,7 +21,6 @@ DATA_PARAMS = {
 }
 NET_PARAMS = {
     "start_bn": True,
-    "embedding_dim": 5,
     "kernels": 3,
     "sub_blocks": 1,
     "gate_channels": 16,
@@ -60,7 +59,10 @@ def test_block():
 @pytest.fixture(scope="module", name="loader")
 def make_data_loader():
     return data_loader.DescribedDataLoader(
-        ("MTSS", "BANE"), pd.Timestamp("2020-03-20"), DATA_PARAMS, data_params.TrainParams,
+        ("MTSS", "BANE"),
+        pd.Timestamp("2020-03-20"),
+        DATA_PARAMS,
+        data_params.TrainParams,
     )
 
 
@@ -122,7 +124,10 @@ DATA_PARAMS_NO_EMB = {
 @pytest.fixture(scope="module", name="loader_no_emb")
 def make_data_loader_no_emb():
     return data_loader.DescribedDataLoader(
-        ("MTSS", "BANE"), pd.Timestamp("2020-03-20"), DATA_PARAMS_NO_EMB, data_params.TrainParams,
+        ("MTSS", "BANE"),
+        pd.Timestamp("2020-03-20"),
+        DATA_PARAMS_NO_EMB,
+        data_params.TrainParams,
     )
 
 
