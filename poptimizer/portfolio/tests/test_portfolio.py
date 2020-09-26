@@ -9,7 +9,10 @@ from poptimizer.portfolio import portfolio
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO
 
 PARAMS = dict(
-    date="2018-03-19", cash=1000, positions=dict(GAZP=6820, VSMO=145, TTLK=1_230_000), value=3_699_111,
+    date="2018-03-19",
+    cash=1000,
+    positions=dict(GAZP=6820, VSMO=145, TTLK=1_230_000),
+    value=3_699_111,
 )
 
 
@@ -50,12 +53,18 @@ def test_portfolio_wrong_date():
     assert "Для даты 2018-12-09 отсутствуют исторические котировки" == str(error.value)
 
 
+def fake_securities_with_reg_number():
+    return pd.Index(["SBER", "SBERP"])
+
+
 def test_portfolio_add_tickers(monkeypatch, port, capsys):
     monkeypatch.setattr(portfolio, "MAX_TRADE", 7)
+    monkeypatch.setattr(portfolio.moex, "securities_with_reg_number", fake_securities_with_reg_number)
     port.add_tickers()
     captured = capsys.readouterr()
     assert "ДЛЯ ДОБАВЛЕНИЯ" in captured.out
     assert "SBER" in captured.out
+    assert "SBERP" in captured.out
 
 
 def test_load_from_yaml(monkeypatch):
