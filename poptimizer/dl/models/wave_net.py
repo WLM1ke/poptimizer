@@ -201,11 +201,12 @@ class WaveNet(nn.Module):
         else:
             self.bn = nn.Identity()
 
-        self.start_conv = nn.Conv1d(
-            in_channels=sequence_count,
-            out_channels=residual_channels,
-            kernel_size=1,
-        )
+        if history_days is not None:
+            self.start_conv = nn.Conv1d(
+                in_channels=sequence_count,
+                out_channels=residual_channels,
+                kernel_size=1,
+            )
 
         self.blocks = nn.ModuleList()
         blocks = 1
