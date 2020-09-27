@@ -1,6 +1,24 @@
-from poptimizer.evolve import chromosomes
-from poptimizer.evolve.chromosomes import chromosome
+import pytest
+
+from poptimizer.evolve import chromosomes, genotype
+from poptimizer.evolve.chromosomes import chromosome, data
 from poptimizer.evolve.genotype import Genotype
+
+FAKE_GENES = (
+    data.BATCH_SIZE,
+    data.HISTORY_DAYS,
+    data.TICKER_ON,
+    data.DAY_OF_YEAR_ON,
+    data.PRICES_ON,
+    data.DIVIDENDS_ON,
+    data.TURNOVER_ON,
+    data.AVERAGE_TURNOVER_ON,
+)
+
+
+@pytest.fixture(scope="function", autouse=True)
+def patch_features(monkeypatch):
+    monkeypatch.setattr(genotype.ALL_CHROMOSOMES_TYPES[0], "_GENES", FAKE_GENES)
 
 
 def test_get_phenotype():
