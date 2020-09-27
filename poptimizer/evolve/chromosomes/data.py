@@ -33,6 +33,14 @@ DAY_OF_YEAR_ON = GeneParams(
     path=("data", "features", "DayOfYear", "on"),
     phenotype_function=lambda x: x > 0,
 )
+DAY_OF_PERIOD_ON = GeneParams(
+    name="day_of_period_on",
+    default_range=(-1.0, 0.0),
+    lower_bound=None,
+    upper_bound=None,
+    path=("data", "features", "DayOfPeriod", "on"),
+    phenotype_function=lambda x: x > 0,
+)
 PRICES_ON = GeneParams(
     name="prices_on",
     default_range=(0.0, 1.0),
@@ -75,6 +83,7 @@ class Data(Chromosome):
         HISTORY_DAYS,
         TICKER_ON,
         DAY_OF_YEAR_ON,
+        DAY_OF_PERIOD_ON,
         PRICES_ON,
         DIVIDENDS_ON,
         TURNOVER_ON,
