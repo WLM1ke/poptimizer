@@ -3,20 +3,29 @@ from poptimizer.data.domain import entity
 
 
 class Entity(entity.BaseEntity):
-    def __init__(self, x):
+    """Тестовая реализация сущности доменной области."""
+
+    def __init__(self, attr_value):
+        """Хранит один атрибут, создающийся при инициализации."""
         super().__init__()
-        self.x = x
+        self.test_attr = attr_value
 
 
 def test_entity():
-    obj = Entity(4)
+    """Проверка отслеживания изменения состояния.
 
-    assert not obj.is_dirty()
+    - чистый после создания
+    - грязный после изменения атрибута
+    - чистый после очистки состояния
+    """
+    test_odj = Entity(4)
 
-    obj.x = 5
+    assert not test_odj.is_dirty()
 
-    assert obj.is_dirty()
+    test_odj.test_attr = 5
 
-    obj.clear()
+    assert test_odj.is_dirty()
 
-    assert not obj.is_dirty()
+    test_odj.clear()
+
+    assert not test_odj.is_dirty()
