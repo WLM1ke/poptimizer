@@ -51,20 +51,19 @@ async def test_repo_loads_concurrent_identity():
 async def test_repo_free_identity_map_and_timestamps():
     """Освобождение ресурсов после окончания использования таблицы и репо."""
     assert not repo.Repo._identity_map
-    assert not repo.Repo._timestamps
 
     store = repo.Repo(FakeSession())
     table = await store.get_table(TABLE_NAME)
 
-    assert all([repo.Repo._identity_map, repo.Repo._timestamps])
+    assert repo.Repo._identity_map
 
     del table  # noqa: WPS420
 
-    assert all([repo.Repo._identity_map, repo.Repo._timestamps])
+    assert repo.Repo._identity_map
 
     del store  # noqa: WPS420
 
-    assert not any([repo.Repo._identity_map, repo.Repo._timestamps])
+    assert not repo.Repo._identity_map
 
 
 @pytest.mark.asyncio

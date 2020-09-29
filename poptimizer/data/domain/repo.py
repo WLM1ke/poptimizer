@@ -1,8 +1,7 @@
 """Реализация репозиторий с таблицами."""
 import weakref
-from datetime import datetime
 from types import TracebackType
-from typing import AsyncContextManager, Dict, MutableMapping, Optional, Set, Type
+from typing import AsyncContextManager, MutableMapping, Optional, Set, Type
 
 from poptimizer.data.domain import factories, model
 from poptimizer.data.ports import outer
@@ -17,7 +16,6 @@ class Repo(AsyncContextManager["Repo"]):
     """
 
     _identity_map: MutableMapping[outer.TableName, model.Table] = weakref.WeakValueDictionary()
-    _timestamps: Dict[outer.TableName, Optional[datetime]] = {}
 
     def __init__(self, db_session: outer.AbstractDBSession) -> None:
         """Сохраняются ссылки на таблицы, которые были добавлены или взяты из репозитория."""
@@ -37,11 +35,9 @@ class Repo(AsyncContextManager["Repo"]):
         """Сохраняет изменные данные в базу данных."""
         dirty = []
         for seen_table in self._seen:
-            table_name = seen_table.name
-            table = self._identity_map[table_name]
-            if self._timestamps[table_name] != table.timestamp:
-                dirty.append(factories.convent_to_tuple(table))
-                self._timestamps[table_name] = table.timestamp
+            if seen_table.is_dirty():
+                dirty.append(factories.convent_to_tuple(seen_table))
+                seen_table.clear()
 
         await self._session.commit(dirty)
 
@@ -67,7 +63,7 @@ class Repo(AsyncContextManager["Repo"]):
         if (table_old := self._identity_map.get(table_name)) is not None:
             return table_old
 
-        self._save_identity_and_timestamp(table)
+        self._identity_map[table_name] = table
 
         return table
 
@@ -78,14 +74,3 @@ class Repo(AsyncContextManager["Repo"]):
         else:
             table = factories.recreate_table(table_tuple)
         return table
-
-    def _save_identity_and_timestamp(self, table: model.Table) -> None:
-        """Сохраняет в identity map и отметку времени на момент сохранения.
-
-        Используются слабые ссылки и файнализаторы для автоматического освобождения памяти в случае,
-        если таблица больше не используется.
-        """
-        table_name = table.name
-        self._identity_map[table_name] = table
-        self._timestamps[table_name] = table.timestamp
-        weakref.finalize(table, self._timestamps.pop, table_name)
