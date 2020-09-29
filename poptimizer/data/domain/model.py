@@ -6,6 +6,7 @@ from typing import NamedTuple, Optional
 
 import pandas as pd
 
+from poptimizer.data.domain import entity
 from poptimizer.data.ports import outer
 from poptimizer.data.ports.outer import Loaders
 
@@ -78,7 +79,7 @@ def _check_index(check: IndexChecks, index: pd.Index) -> None:
         raise outer.DataError("Индекс не возрастает")
 
 
-class Table:
+class Table(entity.BaseEntity):
     """Класс таблицы с данными."""
 
     def __init__(
@@ -101,6 +102,7 @@ class Table:
         :param timestamp:
             Момент последнего обновления.
         """
+        super().__init__()
         self._name = name
         self._loader = desc.loader
         self._index_checks = desc.index_checks
