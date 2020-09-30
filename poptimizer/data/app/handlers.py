@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 
 import pandas as pd
 
-from poptimizer.data.app import services
+from poptimizer.data.app import event_bus
 from poptimizer.data.domain import events
 from poptimizer.data.ports import outer
 
@@ -19,7 +19,7 @@ class Handler:
     ):
         """Создает шину сообщений и просмотрщик данных."""
         self._loop = loop
-        self._bus = services.EventsBus(db_session)
+        self._bus = event_bus.EventBus(db_session)
 
     def get_df(
         self,
