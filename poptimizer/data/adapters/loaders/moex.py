@@ -1,7 +1,7 @@
 """Загрузка данных с MOEX."""
 import asyncio
-import datetime
-from typing import List, Optional, cast
+from datetime import datetime, timedelta
+from typing import List, Optional
 
 import aiohttp
 import aiomoex
@@ -14,6 +14,8 @@ from poptimizer.data.ports import col, outer
 
 # Часовой пояс MOEX
 MOEX_TZ = timezone("Europe/Moscow")
+# Наименование столбцов в загружаемых котировках
+OCHLV_COL = ("begin", "open", "close", "high", "low", "value")
 
 
 class SecuritiesLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
@@ -78,8 +80,8 @@ def _previous_day_in_moscow() -> str:
 
     Необходим для ограничения скачивания промежуточных свечек в последний день.
     """
-    date = datetime.datetime.now(MOEX_TZ)
-    date += datetime.timedelta(days=-1)
+    date = datetime.now(MOEX_TZ)
+    date += timedelta(days=-1)
     return str(date.date())
 
 
@@ -90,13 +92,16 @@ async def _find_aliases(http_session: aiohttp.ClientSession, reg_num: str) -> Li
 
 
 async def _download_many(http_session: aiohttp.ClientSession, aliases: List[str]) -> pd.DataFrame:
-    """Загрузка нескольких рядов котировок."""
+    """Загрузка нескольких рядов котировок.
+
+    Если пересекаются по времени, то берется ряд с максимальным оборотом.
+    """
     json_all_aliases = []
     for ticker in aliases:
         json = await aiomoex.get_market_candles(http_session, ticker, end=_previous_day_in_moscow())
         json_all_aliases.extend(json)
 
-    df = pd.DataFrame(columns=["open", "close", "high", "low", "value", "volume", "begin", "end"])
+    df = pd.DataFrame(columns=OCHLV_COL)
     if json_all_aliases:
         df = df.append(json_all_aliases)
         df = df.sort_values(by=["begin", "value"])
@@ -107,7 +112,7 @@ class QuotesLoader(logger.LoaderLoggerMixin, outer.AbstractIncrementalLoader):
     """Котировки акций."""
 
     def __init__(self, securities_loader: SecuritiesLoader) -> None:
-        """Для загрузки нужны данные регистрационных номерах."""
+        """Для загрузки нужны данные о регистрационных номерах."""
         super().__init__()
         self._securities_loader = securities_loader
 
@@ -121,9 +126,7 @@ class QuotesLoader(logger.LoaderLoggerMixin, outer.AbstractIncrementalLoader):
 
         http_session = resources.get_aiohttp_session()
         if last_index is None:
-            reg_num = await self._get_reg_num(ticker)
-            aliases = await _find_aliases(http_session, reg_num)
-            df = await _download_many(http_session, aliases)
+            df = await self._first_load(http_session, ticker)
         else:
             json = await aiomoex.get_market_candles(
                 http_session,
@@ -133,7 +136,7 @@ class QuotesLoader(logger.LoaderLoggerMixin, outer.AbstractIncrementalLoader):
             )
             df = pd.DataFrame(json)
 
-        df = df[["begin", "open", "close", "high", "low", "value"]]
+        df = df[list(OCHLV_COL)]
         df.columns = [
             col.DATE,
             col.OPEN,
@@ -145,8 +148,10 @@ class QuotesLoader(logger.LoaderLoggerMixin, outer.AbstractIncrementalLoader):
         df[col.DATE] = pd.to_datetime(df[col.DATE])
         return df.set_index(col.DATE)
 
-    async def _get_reg_num(self, ticker: str) -> str:
-        """Регистрационный номер акции."""
+    async def _first_load(self, http_session: aiohttp.ClientSession, ticker: str) -> pd.DataFrame:
+        """Первая загрузка - поиск старых тикеров по регистрационному номеру и объединение рядов."""
         table_name = outer.TableName(outer.SECURITIES, outer.SECURITIES)
         df = await self._securities_loader.get(table_name)
-        return cast(str, df.at[ticker, col.REG_NUMBER])
+        reg_num = df.at[ticker, col.REG_NUMBER]
+        aliases = await _find_aliases(http_session, reg_num)
+        return await _download_many(http_session, aliases)
