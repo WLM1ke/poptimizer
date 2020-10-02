@@ -5,6 +5,7 @@ import torch
 
 from poptimizer.dl.features.data_params import DataParams
 from poptimizer.dl.features.feature import Feature, FeatureType
+from poptimizer.config import DEVICE
 
 
 class Ticker(Feature):
@@ -14,7 +15,7 @@ class Ticker(Feature):
         super().__init__(ticker, params)
         tickers = params.tickers
         self._num_tickers = len(tickers)
-        self._idx = torch.tensor(tickers.index(ticker), dtype=torch.long)
+        self._idx = torch.tensor(tickers.index(ticker), dtype=torch.long, device=DEVICE)
 
     def __getitem__(self, item: int) -> torch.Tensor:
         return self._idx

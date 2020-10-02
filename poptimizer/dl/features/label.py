@@ -5,6 +5,7 @@ import torch
 
 from poptimizer.dl.features import data_params
 from poptimizer.dl.features.feature import Feature, FeatureType
+from poptimizer.config import DEVICE
 
 
 class Label(Feature):
@@ -12,9 +13,9 @@ class Label(Feature):
 
     def __init__(self, ticker: str, params: data_params.DataParams):
         super().__init__(ticker, params)
-        div = torch.tensor(params.div(ticker).values, dtype=torch.float)
+        div = torch.tensor(params.div(ticker).values, dtype=torch.float, device=DEVICE)
         self.cum_div = torch.cumsum(div, dim=0)
-        self.price = torch.tensor(params.price(ticker).values, dtype=torch.float)
+        self.price = torch.tensor(params.price(ticker).values, dtype=torch.float, device=DEVICE)
         self.history_days = params.history_days
 
     def __getitem__(self, item: int) -> torch.Tensor:

@@ -15,6 +15,7 @@ from poptimizer.config import POptimizerError, YEAR_IN_TRADING_DAYS
 from poptimizer.dl import data_loader, models
 from poptimizer.dl.features import data_params
 from poptimizer.dl.forecast import Forecast
+from poptimizer.config import DEVICE
 
 # Ограничение на минимальный размер правдоподобия
 LOW_LLH = -100
@@ -112,7 +113,7 @@ class Model:
             raise TooLongHistoryError
 
         model = self.get_model(loader)
-
+        model.to(DEVICE)
         loss_fn = normal_llh
 
         llh_sum = 0.0
@@ -188,6 +189,7 @@ class Model:
         )
 
         model = self._make_untrained_model(loader)
+        model.to(DEVICE)
         optimizer = optim.AdamW(model.parameters(), **phenotype["optimizer"])
 
         steps_per_epoch = len(loader)
@@ -247,6 +249,7 @@ class Model:
         )
 
         model = self.get_model(loader, False)
+        model.to(DEVICE)
 
         m_list = []
         s_list = []
