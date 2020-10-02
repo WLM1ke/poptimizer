@@ -7,6 +7,7 @@ import torch
 from poptimizer.data.views import moex
 from poptimizer.dl.features.data_params import DataParams
 from poptimizer.dl.features.feature import Feature, FeatureType
+from poptimizer.config import DEVICE
 
 # Ключ для хранения данных оборота в кеше параметров данных
 TURNOVER = "turnover"
@@ -27,7 +28,7 @@ class Turnover(Feature):
         turnover = turnover[ticker]
         price = params.price(ticker)
         turnover = turnover.reindex(price.index, axis=0)
-        turnover = torch.tensor(turnover.values, dtype=torch.float)
+        turnover = torch.tensor(turnover.values, dtype=torch.float, device=DEVICE)
         self.turnover = torch.log1p(turnover)
         self.history_days = params.history_days
 
@@ -61,7 +62,7 @@ class AverageTurnover(Feature):
 
         price = params.price(ticker)
         turnover = turnover.reindex(price.index, axis=0)
-        self.turnover = torch.tensor(turnover.values, dtype=torch.float)
+        self.turnover = torch.tensor(turnover.values, dtype=torch.float, device=DEVICE)
         self.history_days = params.history_days
 
     def __getitem__(self, item: int) -> torch.Tensor:
