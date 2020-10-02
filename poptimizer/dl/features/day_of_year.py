@@ -5,6 +5,7 @@ import torch
 
 from poptimizer.dl.features.data_params import DataParams
 from poptimizer.dl.features.feature import Feature, FeatureType
+from poptimizer.config import DEVICE
 
 
 class DayOfYear(Feature):
@@ -18,7 +19,7 @@ class DayOfYear(Feature):
         super().__init__(ticker, params)
 
         day_of_year = params.price(ticker).index.dayofyear - 1
-        self.day_of_year = torch.tensor(day_of_year, dtype=torch.long)
+        self.day_of_year = torch.tensor(day_of_year, dtype=torch.long, device=DEVICE)
 
         self.history_days = params.history_days
 
