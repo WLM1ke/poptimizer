@@ -259,8 +259,8 @@ class Model:
                 m, s = model(batch)
                 m_list.append(m)
                 s_list.append(s)
-        m_forecast = torch.cat(m_list, dim=0).numpy().flatten()
-        s_forecast = torch.cat(s_list, dim=0).numpy().flatten()
+        m_forecast = torch.cat(m_list, dim=0).cpu().numpy().flatten()
+        s_forecast = torch.cat(s_list, dim=0).cpu().numpy().flatten()
 
         history_days = self._phenotype["data"]["history_days"]
 
