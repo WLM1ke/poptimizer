@@ -1,4 +1,4 @@
-"""Запросы таблиц."""
+"""Обработчик запросов на получение данных из таблиц."""
 import asyncio
 from typing import Dict, List, Tuple
 
@@ -38,7 +38,6 @@ class Handler:
     ) -> Tuple[pd.DataFrame, ...]:
         """Возвращает несколько DataFrame из одной группы."""
         table_names = [outer.TableName(group, name) for name in names]
-
         commands: List[events.Command] = [events.GetDataFrame(table_name) for table_name in table_names]
         result_dict = self._run_commands(commands)
         return tuple(result_dict[name] for name in table_names)
