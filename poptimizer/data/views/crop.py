@@ -1,4 +1,7 @@
-"""Запросы содержащие обрезку по первоначальной дате - для внутреннего использования."""
+"""Запросы содержащие обрезку по первоначальной дате.
+
+Промежуточные запросы для унифицированного представления данных.
+"""
 import functools
 from typing import List, Tuple
 
@@ -44,7 +47,7 @@ def cpi() -> pd.Series:
     return df.loc[start_date:, col.CPI]  # type: ignore
 
 
-def index() -> pd.DataFrame:
+def index() -> pd.Series:
     """Загрузка данных по индексу полной доходности с учетом российских налогов - MCFTRR."""
     table_name = outer.TableName(outer.INDEX, outer.INDEX)
     requests_handler = bootstrap.get_handler()
