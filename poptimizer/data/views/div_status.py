@@ -73,4 +73,5 @@ def dividends_validation(ticker: str) -> None:
 
     df = smart_lab()
     df = df.loc[df.index == ticker]
-    _compare("smart-lab.ru", df_div, df.set_index(col.DATE))
+    df = df.set_index(col.DATE)
+    _compare("smart-lab.ru", df_div, df)
