@@ -5,6 +5,7 @@ import torch
 
 from poptimizer.dl.features.data_params import DataParams
 from poptimizer.dl.features.feature import Feature, FeatureType
+from poptimizer.config import DEVICE
 
 
 class DayOfPeriod(Feature):
@@ -20,7 +21,7 @@ class DayOfPeriod(Feature):
         self.history_days = params.history_days
 
     def __getitem__(self, item: int) -> torch.Tensor:
-        return torch.arange(self.history_days)
+        return torch.arange(self.history_days, device=DEVICE)
 
     @property
     def type_and_size(self) -> Tuple[FeatureType, int]:
