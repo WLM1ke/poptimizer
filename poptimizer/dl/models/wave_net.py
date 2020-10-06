@@ -6,6 +6,7 @@ import torch
 from torch import nn
 
 from poptimizer.dl.features import FeatureType
+from poptimizer.config import DEVICE
 
 
 class SubBlock(nn.Module):
@@ -244,7 +245,7 @@ class WaveNet(nn.Module):
         ->........------+                                                     |--------|
         ->embedding-----+                                                     |-output_s-softplus->
         """
-        y = torch.zeros(1, 1, 1, dtype=torch.float)
+        y = torch.zeros(1, 1, 1, dtype=torch.float, device=DEVICE)
 
         y_seq = []
 
