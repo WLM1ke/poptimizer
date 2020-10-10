@@ -10,7 +10,7 @@ def cpi(date: pd.Timestamp) -> pd.Series:
     return df.loc[:date]
 
 
-def index(last_date: pd.Timestamp) -> pd.DataFrame:
+def index(last_date: pd.Timestamp) -> pd.Series:
     """Загрузка данных по индексу полной доходности с учетом российских налогов - MCFTRR.
 
     :param last_date:
