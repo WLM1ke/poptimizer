@@ -29,6 +29,7 @@ requests
 aiohttp
 pyppeteer
 certifi
+dateparser
 
 # Операции с сабпроцессами
 psutil
