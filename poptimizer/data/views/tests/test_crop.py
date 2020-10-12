@@ -4,7 +4,6 @@ import datetime
 import pandas as pd
 import pytest
 
-from poptimizer import config
 from poptimizer.data.config import bootstrap
 from poptimizer.data.ports import col
 from poptimizer.data.views import crop
@@ -80,7 +79,7 @@ def test_dividends_all(date, ticker, div):
     assert df.index[0] == pd.Timestamp("2015-05-25")
     assert df.index[-1] >= pd.Timestamp("2020-09-08")
 
-    div_after_tax = div * config.AFTER_TAX
+    div_after_tax = div * bootstrap.get_after_tax_rate()
     assert df.loc[date, ticker] == pytest.approx(div_after_tax)
 
 

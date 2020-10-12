@@ -49,7 +49,13 @@ def dividends_all(tickers: Tuple[str, ...]) -> pd.DataFrame:
     :return:
         Дивиденды.
     """
-    dfs = [dividends(ticker) for ticker in tickers]
+    group: outer.GroupName = outer.DIVIDENDS
+    requests_handler = bootstrap.get_handler()
+    dfs = requests_handler.get_dfs(group, tickers)
+
+    start_date = bootstrap.get_start_date()
+    dfs = [df.loc[start_date:] for df in dfs]  # type: ignore
+
     df = pd.concat(dfs, axis=1)
     df = df.reindex(columns=tickers)
     df = df.fillna(0, axis=0)
