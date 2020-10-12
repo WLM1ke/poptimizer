@@ -75,7 +75,7 @@ def test_wave_net_bn(loader):
     batch2["DayOfYear"] = batch2["DayOfYear"][50:, :]
     batch2["Ticker"] = batch2["Ticker"][50:]
 
-    net = wave_net.WaveNet(loader.features_description, **NET_PARAMS)
+    net = wave_net.WaveNet(loader.history_days, loader.features_description, **NET_PARAMS)
     net.eval()
     m1, s1 = net(batch)
     m2, s2 = net(batch2)
@@ -100,7 +100,7 @@ def test_wave_net_no_bn(loader):
     batch2["Ticker"] = batch2["Ticker"][:40]
 
     NET_PARAMS["start_bn"] = False
-    net = wave_net.WaveNet(loader.features_description, **NET_PARAMS)
+    net = wave_net.WaveNet(loader.history_days, loader.features_description, **NET_PARAMS)
     m1, s1 = net(batch)
     m2, s2 = net(batch2)
 
@@ -138,7 +138,7 @@ def test_wave_net_no_embedding(loader_no_emb):
     batch2["Prices"] = batch2["Prices"][60:, :]
     batch2["Dividends"] = batch2["Dividends"][60:, :]
 
-    net = wave_net.WaveNet(loader_no_emb.features_description, **NET_PARAMS)
+    net = wave_net.WaveNet(loader_no_emb.history_days, loader_no_emb.features_description, **NET_PARAMS)
     net.eval()
     m1, s1 = net(batch)
     m2, s2 = net(batch2)
