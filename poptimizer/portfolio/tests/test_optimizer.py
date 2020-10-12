@@ -40,23 +40,23 @@ def test_best_combination(opt, monkeypatch):
 
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (3, 7)
-    assert list(df.columns) == ["SELL", "Q_SELL", "BUY", "Q_BUY", "GRAD_DIFF", "TURNOVER", "ADJ_P_VALUE"]
+    assert list(df.columns) == ["SELL", "Q_SELL", "BUY", "Q_BUY", "GRAD_DIFF", "TURNOVER", "P_VALUE"]
 
     wilcoxon = stats.wilcoxon([1] * 20, alternative="greater", correction=True)[1] * 17
 
-    assert df.loc[1, "SELL"] == "MTSS"
-    assert df.loc[1, "BUY"] == "CHEP"
-    assert df.loc[1, "ADJ_P_VALUE"] == pytest.approx(wilcoxon)
-
     wilcoxon /= opt.portfolio.turnover_factor["KZOS"]
+
+    assert df.loc[1, "SELL"] == "MTSS"
+    assert df.loc[1, "BUY"] == "KZOS"
+    assert df.loc[1, "P_VALUE"] == pytest.approx(wilcoxon)
 
     assert df.loc[2, "SELL"] == "RTKMP"
     assert df.loc[2, "BUY"] == "KZOS"
-    assert df.loc[2, "ADJ_P_VALUE"] == pytest.approx(wilcoxon)
+    assert df.loc[2, "P_VALUE"] == pytest.approx(wilcoxon)
 
     assert df.loc[3, "SELL"] == "TRCN"
     assert df.loc[3, "BUY"] == "KZOS"
-    assert df.loc[3, "ADJ_P_VALUE"] == pytest.approx(wilcoxon)
+    assert df.loc[3, "P_VALUE"] == pytest.approx(wilcoxon)
 
 
 def test_str(opt):

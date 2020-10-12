@@ -8,6 +8,7 @@ from scipy import stats
 
 from poptimizer import config
 from poptimizer.config import MAX_TRADE
+from poptimizer.dl.features.data_params import FORECAST_DAYS
 from poptimizer.portfolio import metrics
 from poptimizer.portfolio.portfolio import Portfolio, CASH, PORTFOLIO
 
@@ -17,7 +18,7 @@ TRADES = 5
 P_VALUE = 0.05
 
 # Издержки в годовом выражении для двух операций
-COSTS = (config.YEAR_IN_TRADING_DAYS * 2) * (0.025 / 100) * 0.04
+COSTS = (config.YEAR_IN_TRADING_DAYS * 2 / FORECAST_DAYS) * (0.025 / 100) * 0.18
 
 
 class Optimizer:
@@ -95,8 +96,8 @@ class Optimizer:
         """
         rez = self._wilcoxon_tests()
 
-        rez = pd.DataFrame(list(rez), columns=["SELL", "BUY", "GRAD_DIFF", "TURNOVER", "ADJ_P_VALUE"])
-        rez = rez.sort_values("ADJ_P_VALUE").drop_duplicates(subset="SELL")
+        rez = pd.DataFrame(list(rez), columns=["SELL", "BUY", "GRAD_DIFF", "TURNOVER", "P_VALUE"])
+        rez = rez.sort_values("GRAD_DIFF", ascending=False).drop_duplicates(subset="SELL")
         rez.index = pd.RangeIndex(start=1, stop=len(rez) + 1)
 
         return self._add_sell_buy_quantity(rez)
@@ -124,10 +125,10 @@ class Optimizer:
             _, alfa = stats.wilcoxon(diff, alternative="greater", correction=True)
 
             turnover = turnover_all[buy]
-            alfa *= trials / turnover
+            alfa *= trials
 
-            if not (alfa > P_VALUE):
-                yield [sell, buy, diff.median(), turnover, alfa]
+            if not (alfa > P_VALUE * turnover):
+                yield [sell, buy, diff.median() * turnover, turnover, alfa / turnover]
 
     def _add_sell_buy_quantity(self, rez: pd.DataFrame) -> pd.DataFrame:
         """Добавляет колонки с объемами покупки и продажи.
@@ -155,4 +156,4 @@ class Optimizer:
         rez["Q_BUY"] = 0
         rez["Q_BUY"] = rez["BUY"].apply(lambda ticker: buy_size[ticker])
 
-        return rez[["SELL", "Q_SELL", "BUY", "Q_BUY", "GRAD_DIFF", "TURNOVER", "ADJ_P_VALUE"]]
+        return rez[["SELL", "Q_SELL", "BUY", "Q_BUY", "GRAD_DIFF", "TURNOVER", "P_VALUE"]]
