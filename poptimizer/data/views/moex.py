@@ -19,12 +19,12 @@ def last_history_date() -> pd.Timestamp:
     return df.loc[0, "till"]
 
 
-def securities_with_reg_number() -> pd.Index:
-    """Все акции с регистрационным номером."""
+def securities() -> pd.Index:
+    """Все акции."""
     table_name = outer.TableName(outer.SECURITIES, outer.SECURITIES)
     requests_handler = bootstrap.get_handler()
     df = requests_handler.get_df(table_name)
-    return df.dropna(axis=0).index
+    return df.index
 
 
 def lot_size(tickers: Tuple[str, ...]) -> pd.Series:

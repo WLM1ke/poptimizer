@@ -171,7 +171,7 @@ class Portfolio:
 
     def add_tickers(self) -> NoReturn:
         """Претенденты для добавления."""
-        all_tickers = moex.securities_with_reg_number()
+        all_tickers = moex.securities()
         last_turnover = self._median_turnover(tuple(all_tickers))
         minimal_turnover = self.value[PORTFOLIO] * MAX_TRADE
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]

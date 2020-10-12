@@ -17,12 +17,12 @@ def test_last_history_date():
 
 
 def test_securities_with_reg_number():
-    """Проверка типа, количества и отсутствия ДР."""
-    securities = moex.securities_with_reg_number()
+    """Проверка типа, количества и присутствия ДР."""
+    securities = moex.securities()
     assert isinstance(securities, pd.Index)
-    assert securities.size >= 248
-    assert "AGRO" not in securities
-    assert "YNDX" not in securities
+    assert securities.size >= 263
+    assert "AGRO" in securities
+    assert "YNDX" in securities
     assert "BANEP" in securities
 
 
