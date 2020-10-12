@@ -16,7 +16,7 @@ def last_history_date() -> pd.Timestamp:
     table_name = outer.TableName(outer.TRADING_DATES, outer.TRADING_DATES)
     requests_handler = bootstrap.get_handler()
     df = requests_handler.get_df(table_name)
-    return pd.Timestamp(df.loc[0, "till"])
+    return df.loc[0, "till"]
 
 
 def securities_with_reg_number() -> pd.Index:
@@ -87,24 +87,6 @@ def turnovers(tickers: Tuple[str, ...], last_date: pd.Timestamp) -> pd.DataFrame
     return df.fillna(0, axis=0)
 
 
-def _dividends_all(tickers: Tuple[str, ...]) -> pd.DataFrame:
-    """Дивиденды по заданным тикерам после уплаты налогов.
-
-    Значения для дат, в которые нет дивидендов у данного тикера (есть у какого-то другого),
-    заполняются 0.
-
-    :param tickers:
-        Тикеры, для которых нужна информация.
-    :return:
-        Дивиденды.
-    """
-    dfs = [crop.dividends(ticker) for ticker in tickers]
-    df = pd.concat(dfs, axis=1)
-    df = df.reindex(columns=tickers)
-    df = df.fillna(0, axis=0)
-    return df.mul(bootstrap.get_after_tax_rate())
-
-
 def _t2_shift(date: pd.Timestamp, index: pd.DatetimeIndex) -> pd.Timestamp:
     """Рассчитывает эксдивидендную дату для режима T-2 на основании даты закрытия реестра.
 
@@ -134,7 +116,7 @@ def div_and_prices(
     Данные обрезаются с учетом установки о начале статистики.
     """
     price = prices(tickers, last_date)
-    div = _dividends_all(tickers)
+    div = crop.dividends_all(tickers)
     div.index = div.index.map(functools.partial(_t2_shift, index=price.index))
     # Может образоваться несколько одинаковых дат, если часть дивидендов приходится на выходные
     div = div.groupby(by=lambda date: date).sum()

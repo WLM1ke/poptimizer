@@ -38,6 +38,24 @@ def dividends(ticker: str, force_update: bool = False) -> pd.DataFrame:
     return df.loc[start_date:]  # type: ignore
 
 
+def dividends_all(tickers: Tuple[str, ...]) -> pd.DataFrame:
+    """Дивиденды по заданным тикерам после уплаты налогов.
+
+    Значения для дат, в которые нет дивидендов у данного тикера (есть у какого-то другого),
+    заполняются 0.
+
+    :param tickers:
+        Тикеры, для которых нужна информация.
+    :return:
+        Дивиденды.
+    """
+    dfs = [dividends(ticker) for ticker in tickers]
+    df = pd.concat(dfs, axis=1)
+    df = df.reindex(columns=tickers)
+    df = df.fillna(0, axis=0)
+    return df.mul(bootstrap.get_after_tax_rate())
+
+
 def cpi() -> pd.Series:
     """Потребительская инфляция."""
     table_name = outer.TableName(outer.CPI, outer.CPI)
