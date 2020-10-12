@@ -17,8 +17,7 @@ class OneTickerDataset(data.Dataset):
     def __init__(self, ticker: str, params: features.DataParams):
         self.len = params.len(ticker)
         self.features = [
-            getattr(features, feat_name)(ticker, params)
-            for feat_name in params.get_all_feat()
+            getattr(features, feat_name)(ticker, params) for feat_name in params.get_all_feat()
         ]
 
     def __getitem__(self, item) -> Dict[str, Union[Tensor, List[Tensor]]]:
@@ -74,8 +73,14 @@ class DescribedDataLoader(data.DataLoader):
             num_workers=0,  # Загрузка в отдельном потоке - увеличение потоков не докидывает
         )
         self._features_description = data_sets[0].features_description
+        self._history_days = params.history_days
 
     @property
     def features_description(self) -> Dict[str, Tuple[features.FeatureType, int]]:
         """Словарь с описанием всех признаков."""
         return self._features_description
+
+    @property
+    def history_days(self) -> int:
+        """Количество дней в истории."""
+        return self._history_days

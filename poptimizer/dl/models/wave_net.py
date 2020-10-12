@@ -148,6 +148,7 @@ class WaveNet(nn.Module):
 
     def __init__(
         self,
+        history_days: int,
         features_description: Dict[str, Tuple[FeatureType, int]],
         start_bn: bool,
         sub_blocks: int,
@@ -158,6 +159,8 @@ class WaveNet(nn.Module):
         end_channels: int,
     ) -> None:
         """
+        :param history_days:
+            Количество дней в истории.
         :param features_description:
             Описание признаков.
         :param start_bn:
@@ -180,14 +183,12 @@ class WaveNet(nn.Module):
         self._features_description = features_description
 
         sequence_count = 0
-        history_days = None
         self.embedding_dict = nn.ModuleDict()
         self.embedding_seq_dict = nn.ModuleDict()
 
         for key, (feature_type, size) in features_description.items():
             if feature_type is FeatureType.SEQUENCE:
                 sequence_count += 1
-                history_days = size
             if feature_type is FeatureType.EMBEDDING_SEQUENCE:
                 self.embedding_seq_dict[key] = nn.Embedding(
                     num_embeddings=size, embedding_dim=residual_channels
@@ -202,7 +203,7 @@ class WaveNet(nn.Module):
         else:
             self.bn = nn.Identity()
 
-        if history_days is not None:
+        if sequence_count:
             self.start_conv = nn.Conv1d(
                 in_channels=sequence_count,
                 out_channels=residual_channels,
@@ -210,9 +211,7 @@ class WaveNet(nn.Module):
             )
 
         self.blocks = nn.ModuleList()
-        blocks = 1
-        if history_days is not None:
-            blocks = int(np.log2(history_days - 1)) + 1
+        blocks = int(np.log2(history_days - 1)) + 1
         for block in range(blocks):
             self.blocks.append(
                 Block(

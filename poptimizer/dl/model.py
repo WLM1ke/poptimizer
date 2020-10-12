@@ -170,7 +170,7 @@ class Model:
     ) -> nn.Module:
         """Создает модель с не обученными весами."""
         model_type = getattr(models, self._phenotype["type"])
-        model = model_type(loader.features_description, **self._phenotype["model"])
+        model = model_type(loader.history_days, loader.features_description, **self._phenotype["model"])
 
         if verbose:
             modules = sum(1 for _ in model.modules())
