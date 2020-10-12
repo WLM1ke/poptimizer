@@ -28,7 +28,7 @@ class SecuritiesLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
         self._cache_lock = asyncio.Lock()
 
     async def get(self, table_name: outer.TableName) -> pd.DataFrame:
-        """Получение списка торгуемых акций с регистрационным номером и размером лота."""
+        """Получение списка торгуемых акций с ISIN и размером лота."""
         name = self._log_and_validate_group(table_name, outer.SECURITIES)
         if name != outer.SECURITIES:
             raise outer.DataError(f"Некорректное имя таблицы для обновления {table_name}")
@@ -38,11 +38,11 @@ class SecuritiesLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
                 self._logger.info(f"Загрузка из кэша {table_name}")
                 return self._securities_cache
 
-            columns = ("SECID", "REGNUMBER", "LOTSIZE")
+            columns = ("SECID", "ISIN", "LOTSIZE")
             http_session = resources.get_aiohttp_session()
             json = await aiomoex.get_board_securities(http_session, columns=columns)
             df = pd.DataFrame(json)
-            df.columns = [col.TICKER, col.REG_NUMBER, col.LOT_SIZE]
+            df.columns = [col.TICKER, col.ISIN, col.LOT_SIZE]
             self._securities_cache = df.set_index(col.TICKER)
 
             return self._securities_cache
@@ -85,10 +85,10 @@ def _previous_day_in_moscow() -> str:
     return str(date.date())
 
 
-async def _find_aliases(http_session: aiohttp.ClientSession, reg_num: str) -> List[str]:
+async def _find_aliases(http_session: aiohttp.ClientSession, isin: str) -> List[str]:
     """Ищет все тикеры с эквивалентным регистрационным номером."""
-    json = await aiomoex.find_securities(http_session, reg_num)
-    return [row["secid"] for row in json if row["regnumber"] == reg_num]
+    json = await aiomoex.find_securities(http_session, isin, columns=("secid", "isin"))
+    return [row["secid"] for row in json if row["isin"] == isin]
 
 
 async def _download_many(http_session: aiohttp.ClientSession, aliases: List[str]) -> pd.DataFrame:
@@ -149,9 +149,9 @@ class QuotesLoader(logger.LoaderLoggerMixin, outer.AbstractIncrementalLoader):
         return df.set_index(col.DATE)
 
     async def _first_load(self, http_session: aiohttp.ClientSession, ticker: str) -> pd.DataFrame:
-        """Первая загрузка - поиск старых тикеров по регистрационному номеру и объединение рядов."""
+        """Первая загрузка - поиск старых тикеров по ISIN и объединение рядов."""
         table_name = outer.TableName(outer.SECURITIES, outer.SECURITIES)
         df = await self._securities_loader.get(table_name)
-        reg_num = df.at[ticker, col.REG_NUMBER]
+        reg_num = df.at[ticker, col.ISIN]
         aliases = await _find_aliases(http_session, reg_num)
         return await _download_many(http_session, aliases)

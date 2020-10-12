@@ -42,7 +42,7 @@ async def test_securities_loader(mocker):
 
     df_rez = await loader.get(table_name)
 
-    assert df_rez.columns.tolist() == [col.REG_NUMBER, col.LOT_SIZE]
+    assert df_rez.columns.tolist() == [col.ISIN, col.LOT_SIZE]
     assert df_rez.index.tolist() == ["GAZP"]
     assert df_rez.values.tolist() == [["abc", 12]]
 
@@ -104,9 +104,9 @@ def test_previous_day_in_moscow(mocker):
 async def test_find_aliases(mocker):
     """Загрузка альтернативных тикеров в виде массива."""
     json = [
-        {"secid": "OGKB", "regnumber": "1-02-65105-D"},
-        {"secid": "OGK2", "regnumber": "1-02-65105-D"},
-        {"secid": "OGK2-001D", "regnumber": "1-02-65105-D-001D"},
+        {"secid": "OGKB", "isin": "1-02-65105-D"},
+        {"secid": "OGK2", "isin": "1-02-65105-D"},
+        {"secid": "OGK2-001D", "isin": "1-02-65105-D-001D"},
     ]
     mocker.patch.object(moex.aiomoex, "find_securities", return_value=json)
     session = resources.get_aiohttp_session()
