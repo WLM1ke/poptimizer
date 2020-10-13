@@ -1,13 +1,19 @@
-"""Конфигурация внешних ресурсов приложения."""
+"""Конфигурация общих внешних ресурсов приложения."""
 import asyncio
 import atexit
+from typing import Final
 
 import aiohttp
 from motor import motor_asyncio
 
 # Пул с асинхронными http-соединениями
-_CONN = aiohttp.TCPConnector(limit=20)
-AIOHTTP_SESSION = aiohttp.ClientSession(connector=_CONN)
+_POOL_SIZE = 20
+_CONN = aiohttp.TCPConnector(limit=_POOL_SIZE)
+AIOHTTP_SESSION: Final = aiohttp.ClientSession(connector=_CONN)
+
+# Асинхронный клиент для MongoDB
+_MONGO_URI = "mongodb://localhost:27017"
+MONGO_CLIENT: Final = motor_asyncio.AsyncIOMotorClient(_MONGO_URI, tz_aware=False)
 
 
 def get_aiohttp_session() -> aiohttp.ClientSession:
@@ -15,20 +21,15 @@ def get_aiohttp_session() -> aiohttp.ClientSession:
     return AIOHTTP_SESSION
 
 
-# Настройки MongoDB
-_MONGO_URI = "mongodb://localhost:27017"
-MONGO_CLIENT = motor_asyncio.AsyncIOMotorClient(_MONGO_URI, tz_aware=False)
-
-
 def get_mongo_client() -> motor_asyncio.AsyncIOMotorClient:
     """Асинхронный клиент для работы с MongoDB."""
     return MONGO_CLIENT
 
 
-def clean_up() -> None:
+def _clean_up() -> None:
     """Закрывает клиентскую сессию aiohttp."""
     loop = asyncio.get_event_loop()
     loop.run_until_complete(AIOHTTP_SESSION.close())
 
 
-atexit.register(clean_up)
+atexit.register(_clean_up)
