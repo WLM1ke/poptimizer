@@ -10,13 +10,7 @@ from poptimizer.data.config import resources
 # Настройки обработчика запросов к приложению
 _DB_SESSION = db.MongoDBSession(resources.MONGO_CLIENT["data_new"])
 _LOOP = asyncio.get_event_loop()
-HANDLER = handlers.Handler(_LOOP, _DB_SESSION)
-
-
-def get_handler() -> handlers.Handler:
-    """Обработчик запросов к приложению."""
-    return HANDLER
-
+HANDLER: Final = handlers.Handler(_LOOP, _DB_SESSION)
 
 # Параметры представления конечных данных
 # До 2015 года не у всех бумаг был режим T+2
@@ -24,14 +18,18 @@ def get_handler() -> handlers.Handler:
 _START_YEAR = 2015
 START_DATE: Final = datetime.date(_START_YEAR, 1, 1)
 
+# Параметры налогов
+TAX = 0.13
+
+
+def get_handler() -> handlers.Handler:
+    """Обработчик запросов к приложению."""
+    return HANDLER
+
 
 def get_start_date() -> datetime.date:
     """Начальная дата для данных."""
     return START_DATE
-
-
-# Параметры налогов
-TAX = 0.13
 
 
 def get_after_tax_rate() -> float:
