@@ -19,7 +19,7 @@ _START_YEAR = 2015
 START_DATE: Final = datetime.date(_START_YEAR, 1, 1)
 
 # Параметры налогов
-TAX = 0.13
+TAX: Final = 0.13
 
 
 def get_handler() -> handlers.Handler:
