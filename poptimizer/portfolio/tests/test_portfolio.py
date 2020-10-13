@@ -36,7 +36,8 @@ def test_portfolio(monkeypatch, port):
         port.weight,
         [0.257_950_085_844_95, 0.050_708_129_601_95, 0.691_071_449_329_312, 0.000_270_335_223_788, 1],
     )
-    assert np.allclose(port.turnover_factor, [0.999_963, 0, 0.883_289, 1, 1])
+    print(port.turnover_factor)
+    assert np.allclose(port.turnover_factor, [1.000000, 0.999963, 1.000000, 0.000000, 0.883244])
 
 
 def test_portfolio_wrong_value():
@@ -59,7 +60,7 @@ def fake_securities_with_reg_number():
 
 def test_portfolio_add_tickers(monkeypatch, port, capsys):
     monkeypatch.setattr(portfolio, "MAX_TRADE", 7)
-    monkeypatch.setattr(portfolio.moex, "securities_with_reg_number", fake_securities_with_reg_number)
+    monkeypatch.setattr(portfolio.moex, "securities", fake_securities_with_reg_number)
     port.add_tickers()
     captured = capsys.readouterr()
     assert "ДЛЯ ДОБАВЛЕНИЯ" in captured.out
