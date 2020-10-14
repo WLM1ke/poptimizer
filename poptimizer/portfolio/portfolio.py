@@ -52,7 +52,12 @@ class Portfolio:
             )
 
     def __str__(self) -> str:
-        blocks = [f"ПОРТФЕЛЬ - {self._date.date()}", self._positions_stats(), f"{self._main_info_df()}"]
+        blocks = [
+            f"ПОРТФЕЛЬ - {self._date.date()}",
+            self._positions_stats(),
+            f"{self._main_info_df()}",
+            self._least_liquid_pos(),
+        ]
         return "\n\n".join(blocks)
 
     def _main_info_df(self) -> pd.DataFrame:
@@ -78,6 +83,11 @@ class Portfolio:
             weights = weights / sum_w
             blocks.append(f"Эффективных позиций - {int(1 / (weights ** 2).sum())}")
         return "\n".join(blocks)
+
+    def _least_liquid_pos(self) -> str:
+        """Наименее ликвидная позиция по соотношению размера и дневного оборота."""
+        result = self.value / self._median_turnover(tuple(self.index[:-2]))
+        return f"НАИМЕНЕЕ ЛИКВИДНАЯ ПОЗИЦИЯ:\n{result.idxmax()} - {result.max():.0%}"
 
     @property
     def date(self) -> pd.Timestamp:
