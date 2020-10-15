@@ -2,7 +2,7 @@
 import asyncio
 import atexit
 import pathlib
-from typing import Final
+from typing import Final, Optional
 
 import aiohttp
 import psutil
@@ -21,11 +21,19 @@ _MONGO_URI = "mongodb://localhost:27017"
 MONGO_CLIENT: Final = motor_asyncio.AsyncIOMotorClient(_MONGO_URI, tz_aware=False)
 
 
+def _find_running_mongo_db() -> Optional[psutil.Process]:
+    """Проверяет наличие запущенной MongoDB и возвращает ее процесс."""
+    for process in psutil.process_iter(attrs=["name"]):
+        if "mongod" == process.name():
+            return process
+    return None
+
+
 def start_mongo_server() -> psutil.Process:
     """Запуск сервера MongoDB."""
-    for process in psutil.process_iter(attrs=["name"]):
-        if "mongod" in process.info["name"]:
-            return process
+    if process := _find_running_mongo_db():
+        return process
+
     MONGO_PATH.mkdir(parents=True, exist_ok=True)
     mongo_server = [
         "mongod",
