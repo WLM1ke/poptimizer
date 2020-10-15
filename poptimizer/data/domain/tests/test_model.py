@@ -42,13 +42,16 @@ class TestLoader(outer.AbstractLoader):
 class TestIncrementalLoader(outer.AbstractIncrementalLoader):
     """Тестовая реализация инкрементального загрузчика данных."""
 
+    def __init__(self, df=DF_INCREMENTAL_LOADER):
+        self.df = df
+
     async def get(
         self,
         table_name: outer.TableName,
         last_index: Optional[str] = None,
     ) -> pd.DataFrame:
         """Получить обновление."""
-        return DF_INCREMENTAL_LOADER
+        return self.df
 
 
 @pytest.fixture(scope="function", name="empty_table")
@@ -116,6 +119,7 @@ PREPARE_DF_CASES = (
     (TABLE_NAME, pd.DataFrame(), TestIncrementalLoader(), DF_INCREMENTAL_LOADER),
     (TABLE_NAME, DF, TestLoader(), DF_LOADER),
     (TABLE_NAME, DF, TestIncrementalLoader(), DF_RESULT),
+    (TABLE_NAME, DF, TestIncrementalLoader(pd.DataFrame()), DF),
 )
 
 
@@ -124,8 +128,8 @@ PREPARE_DF_CASES = (
 async def test_prepare_df(name, df, loader, df_result):
     """Обработка различных вариантов обновления.
 
-    Существует 3 случая обновления полностью - при отсутствии данных, при пустых данных и для данных
-    обновляемых только полностью.
+    Существует 4 случая обновления полностью - при отсутствии данных, при пустых данных, для данных
+    обновляемых только полностью и обновляемых полностью с пустым ответом.
 
     Один вариант инкрементального обновления - должны присутствовать не пустые предыдущие данные и
     поддерживаться инкрементальное обновление.

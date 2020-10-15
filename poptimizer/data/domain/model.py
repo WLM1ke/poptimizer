@@ -53,7 +53,11 @@ async def _prepare_df(
         return await loader.get(name)
 
     date = df.index[-1].date()
+
     df_new = await loader.get(name, str(date))
+
+    if df_new.empty:
+        return df
     return pd.concat([df.iloc[:-1], df_new], axis=0)
 
 
