@@ -38,25 +38,6 @@ DIV_DATA_URL = {
 }
 
 
-def start_mongo_server() -> psutil.Process:
-    """Запуск сервера MongoDB."""
-    for process in psutil.process_iter(attrs=["name"]):
-        if "mongod" in process.info["name"]:
-            # logging.info("Локальный сервер MongoDB уже работает")
-            return process
-    # logging.info("Запускается локальный сервер MongoDB")
-    config.MONGO_PATH.mkdir(parents=True, exist_ok=True)
-    mongo_server = [
-        "mongod",
-        "--dbpath",
-        config.MONGO_PATH,
-        "--directoryperdb",
-        "--bind_ip",
-        "localhost",
-    ]
-    return psutil.Popen(mongo_server, stdout=subprocess.DEVNULL)
-
-
 def restore_dump(client: pymongo.MongoClient, http_session: requests.Session) -> None:
     """Осуществляет восстановление данных по дивидендам."""
     if not config.MONGO_DUMP.exists():
@@ -73,9 +54,7 @@ def restore_dump(client: pymongo.MongoClient, http_session: requests.Session) ->
         mongo_restore = ["mongorestore", config.MONGO_DUMP]
         process = psutil.Popen(mongo_restore)
         status = process.wait()
-        logging.info(
-            f"Восстановление данных с дивидендами завершен со статусом {status}"
-        )
+        logging.info(f"Восстановление данных с дивидендами завершен со статусом {status}")
 
 
 def start_mongo_client(http_session: requests.Session) -> pymongo.MongoClient:
@@ -121,21 +100,16 @@ def clean_up(client: pymongo.MongoClient, http_session: requests.Session) -> Non
     # logging.info("Сессия для обновления данных по интернет закрыта")
 
 
-def start_and_setup_clean_up() -> Tuple[
-    psutil.Process, pymongo.MongoClient, requests.Session
-]:
+def start_and_setup_clean_up() -> Tuple[pymongo.MongoClient, requests.Session]:
     """Запуск сервера и клиента MongoDB и соединения с интернетом.
 
     Регистрация процедуры отключения клиента и закрытия соединения.
     Сервер не отключается.
     """
-    server = start_mongo_server()
     http_session = start_http_session()
     client = start_mongo_client(http_session)
-    atexit.register(
-        functools.partial(clean_up, client=client, http_session=http_session)
-    )
-    return server, client, http_session
+    atexit.register(functools.partial(clean_up, client=client, http_session=http_session))
+    return client, http_session
 
 
-MONGO_PROCESS, MONGO_CLIENT, HTTP_SESSION = start_and_setup_clean_up()
+MONGO_CLIENT, HTTP_SESSION = start_and_setup_clean_up()
