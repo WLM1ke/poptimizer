@@ -134,7 +134,8 @@ class QuotesLoader(logger.LoaderLoggerMixin, outer.AbstractIncrementalLoader):
                 start=last_index,
                 end=_previous_day_in_moscow(),
             )
-            df = pd.DataFrame(json)
+            df = pd.DataFrame(columns=OCHLV_COL)
+            df = df.append(json)
 
         df = df[list(OCHLV_COL)]
         df.columns = [

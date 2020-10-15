@@ -252,3 +252,27 @@ async def test_loader_not_first_load(mocker):
         2,
         9,
     ]
+
+
+@pytest.mark.asyncio
+async def test_regression_loader_not_first_load_empty(mocker):
+    """Регрессионный тест на загрузку пустого DataFrame с нужными столбцами.
+
+    Очень специфическая ошибка для тикеров, которые торговались, потом сменили тикер и перестали
+    торговаться - KSGR.
+    """
+    fake_securities_loader = mocker.AsyncMock()
+    mocker.patch.object(moex.aiomoex, "get_market_candles", return_value=[])
+
+    loader = moex.QuotesLoader(fake_securities_loader)
+    table_name = outer.TableName(outer.QUOTES, "AKRN")
+    df_rez = await loader.get(table_name, "2011-09-28")
+
+    assert df_rez.empty
+    assert df_rez.columns.tolist() == [
+        col.OPEN,
+        col.CLOSE,
+        col.HIGH,
+        col.LOW,
+        col.TURNOVER,
+    ]
