@@ -44,8 +44,6 @@ def test_best_combination(opt, monkeypatch):
 
     wilcoxon = stats.wilcoxon([1] * 20, alternative="greater", correction=True)[1] * 17
 
-    wilcoxon /= opt.portfolio.turnover_factor["KZOS"]
-
     assert df.loc[1, "SELL"] == "MTSS"
     assert df.loc[1, "BUY"] == "KZOS"
     assert df.loc[1, "P_VALUE"] == pytest.approx(wilcoxon)
