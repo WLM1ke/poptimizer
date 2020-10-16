@@ -8,7 +8,7 @@ from poptimizer.data.app import handlers
 from poptimizer.data.config import mongo_server, resources
 
 # Настройки обработчика запросов к приложению
-_DB_SESSION = db.MongoDBSession(resources.MONGO_CLIENT["data_new"])
+_DB_SESSION = db.MongoDBSession(resources.MONGO_CLIENT["data"])
 HANDLER: Final = handlers.Handler(asyncio.get_event_loop(), _DB_SESSION)
 
 # Параметры представления конечных данных
