@@ -6,7 +6,7 @@ from pymongo.collection import Collection
 
 from poptimizer.config import POptimizerError
 from poptimizer.evolve.genotype import Genotype
-from poptimizer.store.mongo import DB, MONGO_CLIENT
+from poptimizer.store.database import DB, MONGO_CLIENT
 
 # Коллекция для хранения моделей
 _COLLECTION = MONGO_CLIENT[DB]["models"]

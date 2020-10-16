@@ -27,18 +27,8 @@ REPORTS_PATH = pathlib.Path(__file__).parents[1] / "reports"
 # Путь к директории с портфелями
 PORT_PATH = pathlib.Path(__file__).parents[1] / "portfolio"
 
-# Путь к MongoDB и dump с данными по дивидендам
-MONGO_DUMP = pathlib.Path(__file__).parents[1] / "dump"
-
 # Количество торговых дней в году
 YEAR_IN_TRADING_DAYS = 12 * 21
-
-# Множитель, для переходя к после налоговым значениям
-AFTER_TAX = 1 - 0.13
-
-# База дивидендов содержит данные с начала 2010 года
-# Постепенно срок будет сдвигаться к началу режима TQBR для корректного учета сдвига T+2
-STATS_START = pd.Timestamp("2015-01-15")
 
 # Максимальный объем одной торговой операции в долях портфеля
 MAX_TRADE = 1 / 100

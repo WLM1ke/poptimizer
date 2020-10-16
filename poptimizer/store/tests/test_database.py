@@ -4,7 +4,7 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 
 from poptimizer.store import database
-from poptimizer.store.mongo import MONGO_CLIENT
+from poptimizer.store.database import MONGO_CLIENT
 
 
 @pytest.fixture(scope="module", autouse=True)

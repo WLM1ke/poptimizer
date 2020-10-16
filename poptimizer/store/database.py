@@ -2,12 +2,15 @@
 import pickle
 from typing import Any
 
+import pymongo
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 
-from poptimizer.store import mongo
-from poptimizer.store.mongo import DB, MISC
+# Старые настройки по MongoDB
+MONGO_CLIENT = pymongo.MongoClient("localhost", 27017, tz_aware=False)
+DB = "data"
+MISC = "misc"
 
 # Ключ для сохранения данных в формате pickle
 PICKLE = "pickle"
@@ -27,7 +30,7 @@ class MongoDB:
         self,
         collection: str = MISC,
         db: str = DB,
-        client: MongoClient = mongo.MONGO_CLIENT,
+        client: MongoClient = MONGO_CLIENT,
     ):
         self._collection = client[db][collection]
 

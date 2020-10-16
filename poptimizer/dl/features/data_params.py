@@ -5,8 +5,6 @@ from typing import Generator, Tuple
 
 import pandas as pd
 
-from poptimizer import data_old
-
 # Доля дней относимых к тренировочному периоду
 from poptimizer.data.views import moex
 
