@@ -43,8 +43,7 @@ positions:
   KZOSP: 0
   LIFE: 0
   LKOH: 0
-  LNZL: 0
-  LNZLP: 0
+  LNTA: 0
   LSNG: 0
   LSNGP: 0
   LSRG: 0
@@ -61,6 +60,7 @@ positions:
   MRKZ: 0
   MSNG: 0
   MSRS: 0
+  MSTT: 0
   MTLR: 0
   MTLRP: 0
   MTSS: 0
@@ -77,6 +77,7 @@ positions:
   PIKK: 0
   PMSBP: 0
   PLZL: 0
+  POGR: 0
   RASP: 0
   RBCM: 0
   RGSS: 0
