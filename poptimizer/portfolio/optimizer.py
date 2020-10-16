@@ -18,7 +18,7 @@ TRADES = 5
 P_VALUE = 0.05
 
 # Издержки в годовом выражении для двух операций
-COSTS = (config.YEAR_IN_TRADING_DAYS * 2 / FORECAST_DAYS) * (0.025 / 100) * 0.18
+COSTS = (config.YEAR_IN_TRADING_DAYS * 2 / FORECAST_DAYS) * (0.025 / 100) * 0.21
 
 
 class Optimizer:
@@ -128,7 +128,7 @@ class Optimizer:
             alfa *= trials
 
             if not (alfa > P_VALUE * turnover):
-                yield [sell, buy, diff.median() * turnover, turnover, alfa / turnover]
+                yield [sell, buy, diff.median() * turnover, turnover, alfa]
 
     def _add_sell_buy_quantity(self, rez: pd.DataFrame) -> pd.DataFrame:
         """Добавляет колонки с объемами покупки и продажи.

@@ -19,17 +19,15 @@ reportlab
 matplotlib
 
 # MongoDB
+pymongo
 motor
 
 # Web
-apimoex
 aiomoex
 beautifulsoup4
-requests
 aiohttp
 pyppeteer
 certifi
-dateparser
 
 # Операции с сабпроцессами
 psutil
