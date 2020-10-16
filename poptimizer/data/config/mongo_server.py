@@ -67,7 +67,7 @@ async def _download_dump(http_session: aiohttp.ClientSession) -> None:
         path = MONGO_DUMP / SOURCE_DB
         path.mkdir(parents=True)
         for name, url in DIV_DATA_URL:
-            async with http_session.get(url, stream=True) as respond:
+            async with http_session.get(url) as respond:
                 with open(path / name, "wb") as fin:
                     fin.write(await respond.read())
         logging.info("Файлы с данными о дивидендах загружены")
