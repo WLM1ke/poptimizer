@@ -5,12 +5,11 @@ from typing import Final
 
 from poptimizer.data.adapters import db
 from poptimizer.data.app import handlers
-from poptimizer.data.config import resources
+from poptimizer.data.config import mongo_server, resources
 
 # Настройки обработчика запросов к приложению
 _DB_SESSION = db.MongoDBSession(resources.MONGO_CLIENT["data_new"])
-_LOOP = asyncio.get_event_loop()
-HANDLER: Final = handlers.Handler(_LOOP, _DB_SESSION)
+HANDLER: Final = handlers.Handler(asyncio.get_event_loop(), _DB_SESSION)
 
 # Параметры представления конечных данных
 # До 2015 года не у всех бумаг был режим T+2
@@ -35,3 +34,6 @@ def get_start_date() -> datetime.date:
 def get_after_tax_rate() -> float:
     """1 минус ставка налога."""
     return 1 - TAX
+
+
+mongo_server.prepare_mongo_db_server()
