@@ -27,12 +27,12 @@ class TradingDatesLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
 
         async with self._cache_lock:
             if self._dates_cache is not None:
-                self._logger.info(f"Загрузка из кэша {table_name}")
+                self._logger.log(f"Загрузка из кэша {table_name}")
                 return self._dates_cache
 
             session = resources.get_aiohttp_session()
             json = await aiomoex.get_board_dates(session, board="TQBR", market="shares", engine="stock")
             self._dates_cache = pd.DataFrame(json, dtype="datetime64[ns]")
-            self._logger.info(f"Последняя дата с историей: {json[0]['till']}")
+            self._logger.log(f"Последняя дата с историей: {json[0]['till']}")
 
             return self._dates_cache

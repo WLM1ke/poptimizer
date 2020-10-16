@@ -50,7 +50,7 @@ class MongoDBSession(outer.AbstractDBSession):
 
         for table in tables_vars:
             collection, name = _collection_and_name(table)
-            self._logger.info(f"Сохранение {collection}.{name}")
+            self._logger.log(f"Сохранение {collection}.{name}")
 
             aw_update = self._db[collection].replace_one(
                 filter={"_id": name},

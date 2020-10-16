@@ -44,10 +44,9 @@ def test_index(date, index):
     df = reports.index(pd.Timestamp("2020-10-09"))
 
     assert isinstance(df, pd.Series)
-    assert df.index.is_monotonic_increasing
+    assert df.index.is_monotonic_increasing and df.name == col.CLOSE
 
     assert df.index[0] >= bootstrap.get_start_date()
     assert df.index[-1] == pd.Timestamp("2020-10-09")
-    assert df.name == col.CLOSE
 
     assert df.loc[date] == pytest.approx(index)

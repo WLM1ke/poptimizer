@@ -43,6 +43,7 @@ class TestIncrementalLoader(outer.AbstractIncrementalLoader):
     """Тестовая реализация инкрементального загрузчика данных."""
 
     def __init__(self, df=DF_INCREMENTAL_LOADER):
+        """Выдаваемое загрузчиком значение."""
         self.df = df
 
     async def get(

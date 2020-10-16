@@ -14,7 +14,7 @@ async def test_async_logger(caplog):
     caplog.set_level(logging.INFO)
 
     async_logger = logger.AsyncLogger("test_name")
-    async_logger.info("test_message")
+    async_logger.log("test_message")
 
     await asyncio.sleep(0.01)
 

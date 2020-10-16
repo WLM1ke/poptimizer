@@ -35,7 +35,7 @@ class SecuritiesLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
 
         async with self._cache_lock:
             if self._securities_cache is not None:
-                self._logger.info(f"Загрузка из кэша {table_name}")
+                self._logger.log(f"Загрузка из кэша {table_name}")
                 return self._securities_cache
 
             columns = ("SECID", "ISIN", "LOTSIZE")

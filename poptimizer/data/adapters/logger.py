@@ -9,9 +9,10 @@ class AsyncLogger:
     """Асинхронное логирование в отдельном потоке."""
 
     def __init__(self, name: str) -> None:
+        """Инициализация логгера."""
         self._logger = logging.getLogger(name)
 
-    def info(self, message: str) -> None:
+    def log(self, message: str) -> None:
         """Создает асинхронную задачу по логгированию."""
         asyncio.create_task(self._logging_task(message))
 
@@ -37,5 +38,5 @@ class LoaderLoggerMixin:
         group, name = table_name
         if group != loader_group:
             raise outer.DataError(f"Некорректное имя таблицы для обновления {table_name}")
-        self._logger.info(f"Загрузка {table_name}")
+        self._logger.log(f"Загрузка {table_name}")
         return name
