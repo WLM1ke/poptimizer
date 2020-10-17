@@ -12,18 +12,13 @@ if TYPE_CHECKING:
 else:
     FutureEvent = asyncio.Future
 PendingTasks = Set[FutureEvent]
+ResultsDict = Dict[outer.TableName, pd.DataFrame]
 
 
-async def _handle_one_command(
-    db_session: outer.AbstractDBSession,
-    event: events.Command,
-) -> events.AbstractEvent:
-    """Обрабатывает одно событие и помечает его сделанным."""
-    async with repo.Repo(db_session) as store:
-        table = None
-        if (table_name := event.table_required) is not None:
-            table = await store.get_table(table_name)
-        return await event.handle_event(table)
+def _gather_results(events_results: ResultsDict, event: events.AbstractEvent) -> None:
+    """Добавляет результаты."""
+    if isinstance(event, events.Result):
+        events_results[event.name] = event.df
 
 
 class EventBus:
@@ -36,22 +31,33 @@ class EventBus:
     async def handle_events(
         self,
         events_list: List[events.Command],
-    ) -> Dict[outer.TableName, pd.DataFrame]:
+    ) -> ResultsDict:
         """Обработка сообщения и следующих за ним."""
         pending: PendingTasks = {self._create_task(event) for event in events_list}
-        events_results: Dict[outer.TableName, pd.DataFrame] = {}
+        events_results: ResultsDict = {}
         while pending:
             done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
 
             for task in done:
                 event = task.result()
-                if isinstance(event, events.Command):
-                    pending.add(self._create_task(event))
-                elif isinstance(event, events.Result):
-                    events_results[event.name] = event.df
+                self._add_pending(pending, event)
+                _gather_results(events_results, event)
 
         return events_results
 
+    def _add_pending(self, pending: PendingTasks, event: events.AbstractEvent) -> None:
+        """Добавляет новые задания по обработке событий."""
+        if isinstance(event, events.Command):
+            pending.add(self._create_task(event))
+
+    async def _handle_one_command(self, event: events.Command) -> events.AbstractEvent:
+        """Обрабатывает одно событие и помечает его сделанным."""
+        async with repo.Repo(self._db_session) as store:
+            table = None
+            if (table_name := event.table_required) is not None:
+                table = await store.get_table(table_name)
+            return await event.handle_event(table)
+
     def _create_task(self, event: events.Command) -> FutureEvent:
         """Создает задание для команды."""
-        return asyncio.create_task(_handle_one_command(self._db_session, event))
+        return asyncio.create_task(self._handle_one_command(event))

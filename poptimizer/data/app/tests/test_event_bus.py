@@ -5,7 +5,6 @@ import pytest
 
 from poptimizer.data.app import event_bus
 from poptimizer.data.domain import events
-from poptimizer.data.ports import outer
 
 EVENT_CASES = (
     None,
@@ -17,22 +16,34 @@ EVENT_CASES = (
 @pytest.mark.asyncio
 async def test_handle_one_command(mocker, table_name):
     """Обработка событий с загрузкой и без загрузки таблицы."""
-    fake_db_session = mocker.sentinel
-    fake_queue = mocker.Mock()
     fake_event = mocker.AsyncMock()
     fake_event.table_required = table_name
 
     fake_repo = mocker.patch.object(event_bus.repo, "Repo").return_value
     fake_repo = fake_repo.__aenter__.return_value  # noqa: WPS609
 
-    await event_bus._handle_one_command(fake_db_session, fake_queue, fake_event)
+    bus = event_bus.EventBus(mocker.sentinel)
+    new_event = await bus._handle_one_command(fake_event)
 
     table = None
     if table_name is not None:
         table = fake_repo.get_table.return_value
 
-    fake_event.handle_event.assert_called_once_with(fake_queue, table)
-    fake_queue.task_done.assert_called_once_with()
+    fake_event.handle_event.assert_called_once_with(table)
+    assert new_event is fake_event.handle_event.return_value
+
+
+@pytest.mark.asyncio
+async def test_event_bus_create_task(mocker):
+    """Метод создания задач возвращает корректно созданное задание по обработке события."""
+    fake_event = mocker.sentinel
+    fake_task = mocker.patch.object(event_bus.asyncio, "create_task").return_value
+
+    bus = event_bus.EventBus(mocker.sentinel)
+    fake_handle_one_command = mocker.patch.object(bus, "_handle_one_command")
+
+    assert bus._create_task(fake_event) is fake_task
+    fake_handle_one_command.assert_called_once_with(fake_event)
 
 
 RESULT_MOCK = mock.Mock()
@@ -40,62 +51,45 @@ RESULT_MOCK.__class__ = events.Result
 COMMAND_MOCK = mock.Mock()
 COMMAND_MOCK.__class__ = events.Command
 
-TYPE_CASE = (
-    (RESULT_MOCK, True, False),
-    (COMMAND_MOCK, False, False),
-    (object(), False, True),
+RESULT_CASE = (
+    (RESULT_MOCK, True),
+    (COMMAND_MOCK, False),
 )
 
 
-@pytest.mark.parametrize("event, check_rez, raises", TYPE_CASE)
+@pytest.mark.parametrize("event, check_rez", RESULT_CASE)
 @pytest.mark.asyncio
-async def test_dispatch_event(mocker, event, check_rez, raises):
-    """Обработка двух типов событий и выбрасование исключения на непонятном событии."""
-    fake_db_session = mocker.sentinel
-    fake_queue = mocker.AsyncMock()
-    fake_queue.get.return_value = event
+async def test_gather_results(event, check_rez):
+    """Обработка сбора результатов."""
+    events_results = {}
+    event_bus._gather_results(events_results, event)
 
-    if raises:
-        with pytest.raises(outer.DataError, match="Неизвестный тип события"):
-            await event_bus._dispatch_event(fake_db_session, fake_queue)
-        return
-
-    rez = await event_bus._dispatch_event(fake_db_session, fake_queue)
-
-    fake_queue.get.assert_called_once_with()
     if check_rez:
-        fake_queue.task_done.assert_called_once_with()
-        assert rez == (event.name, event.df)
+        assert len(events_results) == 1
+        assert events_results == {event.name: event.df}
     else:
-        assert rez is None
+        assert not events_results
 
 
+COMMAND_CASE = (
+    (RESULT_MOCK, False),
+    (COMMAND_MOCK, True),
+)
+
+
+@pytest.mark.parametrize("event, check_com", COMMAND_CASE)
 @pytest.mark.asyncio
-async def test_queue_processor(mocker):
-    """Процессор дожидается получения нужного количества результатов."""
-    fake_db_session = mocker.sentinel
-    fake_queue = mocker.Mock()
-    fake_queue.qsize.return_value = 2
+async def test_add_pending(mocker, event, check_com):
+    """Обработка добавления нового задания."""
+    bus = event_bus.EventBus(mocker.sentinel)
+    fake_create_task = mocker.patch.object(bus, "_create_task")
 
-    side_effect = [None, ("a", "b"), None, ("c", "d")]
-    mocker.patch.object(event_bus, "_dispatch_event", side_effect=side_effect)
+    pending = set()
+    bus._add_pending(pending, event)
 
-    assert await event_bus._queue_processor(fake_db_session, fake_queue) == {"a": "b", "c": "d"}
-
-
-@pytest.mark.asyncio
-async def test_event_bus(mocker):
-    """Обработчик кладет все задания в очередь, завершает ее работу и возвращает результат задания."""
-    fake_db_session = mocker.sentinel
-    fake_queue = mocker.patch.object(
-        event_bus.asyncio,
-        "Queue",
-        return_value=mocker.AsyncMock(),
-    ).return_value
-    fake_task = mocker.patch.object(event_bus.asyncio, "create_task").return_value
-
-    bus = event_bus.EventBus(fake_db_session)
-    assert await bus.handle_events(list(range(5))) == fake_task.result.return_value
-
-    assert fake_queue.put.call_count == 5
-    fake_queue.join.assert_called_once_with()
+    if check_com:
+        fake_create_task.assert_called_once_with(event)
+        assert len(pending) == 1
+        assert pending == {fake_create_task.return_value}
+    else:
+        assert not pending
