@@ -1,5 +1,4 @@
 """Тесты событий, связанных с обновлением таблиц."""
-import asyncio
 from datetime import datetime
 
 import pytest
@@ -55,15 +54,11 @@ async def test_get_data_frame(
     - обновление с помощью вспомогательной таблицы
     - обновление без вспомогательной таблицы
     """
-    queue = asyncio.Queue()
-
     event = events.GetDataFrame(*event_args)
     assert event.table_required is None
 
-    await event.handle_event(queue, None)
-    assert queue.qsize() == 1
+    child_event = await event.handle_event(None)
 
-    child_event = await queue.get()
     assert isinstance(child_event, child_type)
     assert child_event.table_required == child_name
     assert getattr(child_event, child_attr) == child_value
@@ -74,16 +69,13 @@ async def test_end_of_trading_day(monkeypatch, mocker):
     """Обновляет вспомогательную таблицу и не добавляет новые событие по обновлению основной таблицы."""
     monkeypatch.setattr(services, "trading_day_real_end", lambda _: FAKE_END_OF_TRADING_DAY)
     mocker_table = mocker.AsyncMock()
-    queue = asyncio.Queue()
 
     event = events.GetEndOfTradingDay(USUAL_NAME, HELPER_NAME)
     assert event.table_required is HELPER_NAME
 
-    await event.handle_event(queue, mocker_table)
-    assert queue.qsize() == 1
+    child_event = await event.handle_event(mocker_table)
     mocker_table.update.assert_called_once_with(services.trading_day_potential_end())
 
-    child_event = await queue.get()
     assert isinstance(child_event, events.UpdateTable)
     assert child_event.table_required == USUAL_NAME
 
@@ -93,27 +85,22 @@ async def test_end_of_trading_day(monkeypatch, mocker):
 @pytest.mark.asyncio
 async def test_end_of_trading_day_raises():
     """Исключение при попытке обработки без таблицы."""
-    queue = asyncio.Queue()
-
     event = events.GetEndOfTradingDay(USUAL_NAME, HELPER_NAME)
     with pytest.raises(outer.DataError, match="Нужна таблица"):
-        await event.handle_event(queue, None)
+        await event.handle_event(None)
 
 
 @pytest.mark.asyncio
 async def test_update_table(mocker):
     """Обновляет таблицу и не добавляет новые события."""
     mocker_table = mocker.AsyncMock()
-    queue = asyncio.Queue()
 
     event = events.UpdateTable(USUAL_NAME, FAKE_END_OF_TRADING_DAY)
     assert event.table_required is USUAL_NAME
 
-    await event.handle_event(queue, mocker_table)
-    assert queue.qsize() == 1
+    child_event = await event.handle_event(mocker_table)
     mocker_table.update.assert_called_once_with(FAKE_END_OF_TRADING_DAY)
 
-    child_event = await queue.get()
     assert isinstance(child_event, events.Result)
     assert child_event.name is mocker_table.name
     assert child_event.df is mocker_table.df
@@ -122,8 +109,6 @@ async def test_update_table(mocker):
 @pytest.mark.asyncio
 async def test_update_table_raises():
     """Исключение при попытке обработки без таблицы."""
-    queue = asyncio.Queue()
-
     event = events.UpdateTable(USUAL_NAME, FAKE_END_OF_TRADING_DAY)
     with pytest.raises(outer.DataError, match="Нужна таблица"):
-        await event.handle_event(queue, None)
+        await event.handle_event(None)
