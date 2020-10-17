@@ -31,10 +31,9 @@ class Command(AbstractEvent):
     @abc.abstractmethod
     async def handle_event(
         self,
-        queue: EventsQueue,
         table: Optional[model.Table],
-    ) -> None:
-        """Обрабатывает событие и добавляет новые события в очередь."""
+    ) -> AbstractEvent:
+        """Обрабатывает событие и возвращает новое событие при наличии."""
 
 
 class GetDataFrame(Command):
@@ -52,9 +51,8 @@ class GetDataFrame(Command):
 
     async def handle_event(
         self,
-        queue: EventsQueue,
         table: Optional[model.Table],
-    ) -> None:
+    ) -> AbstractEvent:
         """Осуществляет выбор варианта обновления.
 
         - Принудительное
@@ -65,12 +63,12 @@ class GetDataFrame(Command):
         force = self._force
 
         if force:
-            await queue.put(UpdateTable(table_name))
+            return UpdateTable(table_name)
         elif (helper_name := services.get_helper_name(self._table_name)) is None:
             end_of_trading_day = services.trading_day_potential_end()
-            await queue.put(UpdateTable(table_name, end_of_trading_day))
-        else:
-            await queue.put(GetEndOfTradingDay(table_name, helper_name))
+            return UpdateTable(table_name, end_of_trading_day)
+
+        return GetEndOfTradingDay(table_name, helper_name)
 
 
 class GetEndOfTradingDay(Command):
@@ -89,16 +87,15 @@ class GetEndOfTradingDay(Command):
 
     async def handle_event(
         self,
-        queue: EventsQueue,
         table: Optional[model.Table],
-    ) -> None:
+    ) -> AbstractEvent:
         """Узнает окончание рабочего дня и запрашивает обновление."""
         if table is None:
             raise outer.DataError("Нужна таблица")
         end_of_trading_day = services.trading_day_potential_end()
         await table.update(end_of_trading_day)
         end_of_trading_day = services.trading_day_real_end(table.df)
-        await queue.put(UpdateTable(self._table_name, end_of_trading_day))
+        return UpdateTable(self._table_name, end_of_trading_day)
 
 
 class UpdateTable(Command):
@@ -121,9 +118,8 @@ class UpdateTable(Command):
 
     async def handle_event(
         self,
-        queue: EventsQueue,
         table: Optional[model.Table],
-    ) -> None:
+    ) -> AbstractEvent:
         """Обновляет таблицу и публикует результат.
 
         При отсутствии даты принудительно, а при наличии с учетом необходимости.
@@ -131,7 +127,7 @@ class UpdateTable(Command):
         if table is None:
             raise outer.DataError("Нужна таблица")
         await table.update(self._end_of_trading_day)
-        await queue.put(Result(table.name, table.df))
+        return Result(table.name, table.df)
 
 
 class Result(AbstractEvent):
