@@ -1,14 +1,17 @@
 """Шина событий по обновлению таблиц и получению из них данных."""
 import asyncio
-from asyncio import Future
-from typing import Dict, List, Set
+from typing import TYPE_CHECKING, Dict, List, Set
 
 import pandas as pd
 
 from poptimizer.data.domain import events, repo
 from poptimizer.data.ports import outer
 
-PendingTasks = Set[Future[events.AbstractEvent]]
+if TYPE_CHECKING:
+    FutureEvent = asyncio.Future[events.AbstractEvent]
+else:
+    FutureEvent = asyncio.Future
+PendingTasks = Set[FutureEvent]
 
 
 async def _handle_one_command(
@@ -49,6 +52,6 @@ class EventBus:
 
         return events_results
 
-    def _create_task(self, event: events.Command) -> asyncio.Future[events.AbstractEvent]:
+    def _create_task(self, event: events.Command) -> FutureEvent:
         """Создает задание для команды."""
         return asyncio.create_task(_handle_one_command(self._db_session, event))
