@@ -3,7 +3,7 @@ from poptimizer.evolve.chromosomes import data, chromosome
 
 def test_init_no_data():
     chromo = data.Data({})
-    assert len(chromo.data) == 9
+    assert len(chromo.data) == 10
     assert 128.1 < chromo.data["batch_size"] < 128.9
     assert 252.1 < chromo.data["history_days"] < 252.9
     assert 0.0 < chromo.data["ticker_on"] < 1.0
@@ -13,11 +13,12 @@ def test_init_no_data():
     assert 0.0 < chromo.data["dividends_on"] < 1.0
     assert 0.0 < chromo.data["average_turnover_on"] < 1.0
     assert 0.0 < chromo.data["turnover_on"] < 1.0
+    assert -1.0 < chromo.data["rvi_on"] < 0.0
 
 
 def test_init_some_data():
     chromo = data.Data(dict(history_days=40))
-    assert len(chromo.data) == 9
+    assert len(chromo.data) == 10
     assert 128.1 < chromo.data["batch_size"] < 128.9
     assert chromo.data["history_days"] == 40
     assert 0.0 < chromo.data["ticker_on"] < 1.0
@@ -27,6 +28,7 @@ def test_init_some_data():
     assert 0.0 < chromo.data["dividends_on"] < 1.0
     assert 0.0 < chromo.data["average_turnover_on"] < 1.0
     assert 0.0 < chromo.data["turnover_on"] < 1.0
+    assert -1.0 < chromo.data["rvi_on"] < 0.0
 
 
 def test_init_all_data():
@@ -41,9 +43,10 @@ def test_init_all_data():
             dividends_on=-2,
             average_turnover_on=0,
             turnover_on=1,
+            rvi_on=7,
         )
     )
-    assert len(chromo.data) == 9
+    assert len(chromo.data) == 10
     assert chromo.data["batch_size"] == 10
     assert chromo.data["history_days"] == 40
     assert chromo.data["ticker_on"] == -1
@@ -52,6 +55,7 @@ def test_init_all_data():
     assert chromo.data["dividends_on"] == -2
     assert chromo.data["average_turnover_on"] == 0
     assert chromo.data["turnover_on"] == 1
+    assert chromo.data["rvi_on"] == 7
 
 
 def test_setup_phenotype():
@@ -65,6 +69,7 @@ def test_setup_phenotype():
         dividends_on=-2,
         average_turnover_on=0,
         turnover_on=-1,
+        rvi_on=-8,
     )
     chromo = data.Data(chromosome_data)
     base_phenotype = dict(model="Test_Model")
@@ -82,6 +87,7 @@ def test_setup_phenotype():
                 Dividends=dict(on=False),
                 AverageTurnover=dict(on=False),
                 Turnover=dict(on=False),
+                RVI=dict(on=False),
             ),
         ),
     )
@@ -90,7 +96,7 @@ def test_setup_phenotype():
 
 def test_make_child(monkeypatch):
     monkeypatch.setattr(
-        chromosome.random, "rand", lambda _: (0.89, 0.91, 0.89, 0.89, 0.89, 0.89, 0.91, 0.89, 0.91)
+        chromosome.random, "rand", lambda _: (0.89, 0.91, 0.89, 0.89, 0.89, 0.89, 0.91, 0.89, 0.91, 0.89)
     )
 
     parent = data.Data(
@@ -104,6 +110,7 @@ def test_make_child(monkeypatch):
             dividends_on=1,
             average_turnover_on=1,
             turnover_on=1,
+            rvi_on=-8,
         )
     )
     base = data.Data(
@@ -117,6 +124,7 @@ def test_make_child(monkeypatch):
             dividends_on=1,
             average_turnover_on=4,
             turnover_on=6,
+            rvi_on=-6,
         )
     )
     diff1 = data.Data(
@@ -130,6 +138,7 @@ def test_make_child(monkeypatch):
             dividends_on=2,
             average_turnover_on=0,
             turnover_on=0,
+            rvi_on=0,
         )
     )
     diff2 = data.Data(
@@ -143,13 +152,14 @@ def test_make_child(monkeypatch):
             dividends_on=7,
             average_turnover_on=3,
             turnover_on=4,
+            rvi_on=1,
         )
     )
 
     child = parent.make_child(base, diff1, diff2)
 
     assert isinstance(child, data.Data)
-    assert len(child.data) == 9
+    assert len(child.data) == 10
 
     assert child.data["batch_size"] == 30 + 0.8 * (20 - 10)
     assert child.data["history_days"] == 20
@@ -160,3 +170,4 @@ def test_make_child(monkeypatch):
     assert child.data["dividends_on"] == 1
     assert child.data["turnover_on"] == 6 + 0.8 * (0 - 4)
     assert child.data["average_turnover_on"] == 1
+    assert child.data["rvi_on"] == -6 + 0.8 * (0 - 1)
