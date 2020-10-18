@@ -1,4 +1,4 @@
-"""Информация для отчетов."""
+"""Индексы потребительских цен и MOEX."""
 import pandas as pd
 
 from poptimizer.data.views import crop
@@ -10,7 +10,7 @@ def cpi(date: pd.Timestamp) -> pd.Series:
     return df.loc[:date]
 
 
-def index(last_date: pd.Timestamp) -> pd.Series:
+def mcftrr(last_date: pd.Timestamp) -> pd.Series:
     """Загрузка данных по индексу полной доходности с учетом российских налогов - MCFTRR.
 
     :param last_date:
@@ -19,4 +19,10 @@ def index(last_date: pd.Timestamp) -> pd.Series:
         История цен закрытия индекса.
     """
     df = crop.index()
+    return df.loc[:last_date]
+
+
+def rvi(last_date: pd.Timestamp) -> pd.Series:
+    """Индекс волатильности RVI."""
+    df = crop.index("RVI")
     return df.loc[:last_date]

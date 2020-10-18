@@ -20,7 +20,7 @@ SMART_LAB: Final = "smart_lab"
 DIVIDENDS: Final = "dividends"
 CPI: Final = "CPI"
 SECURITIES: Final = "securities"
-INDEX: Final = "index"
+INDEX: Final = "indexes"
 QUOTES: Final = "quotes"
 
 GroupName = Literal[
