@@ -73,6 +73,14 @@ AVERAGE_TURNOVER_ON = GeneParams(
     path=("data", "features", "AverageTurnover", "on"),
     phenotype_function=lambda x: x > 0,
 )
+RVI_ON = GeneParams(
+    name="rvi_on",
+    default_range=(-1.0, 0.0),
+    lower_bound=None,
+    upper_bound=None,
+    path=("data", "features", "RVI", "on"),
+    phenotype_function=lambda x: x > 0,
+)
 
 
 class Data(Chromosome):
@@ -88,4 +96,5 @@ class Data(Chromosome):
         DIVIDENDS_ON,
         TURNOVER_ON,
         AVERAGE_TURNOVER_ON,
+        RVI_ON,
     )
