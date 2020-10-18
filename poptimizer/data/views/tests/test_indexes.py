@@ -1,10 +1,10 @@
-"""Тесты представлений данных для отчетов."""
+"""Тесты различных индексов."""
 import pandas as pd
 import pytest
 
+from poptimizer.data.views import indexes
 from poptimizer.data.config import bootstrap
 from poptimizer.data.ports import col
-from poptimizer.data.views import reports
 
 CPI_CASES = (
     ("2020-09-30", 0.9993),
@@ -19,7 +19,7 @@ CPI_CASES = (
 @pytest.mark.parametrize("date, cpi", CPI_CASES)
 def test_cpi(date, cpi):
     """Проверка, что первые и последние данные обрезаны корректно и значения совпадают."""
-    df = reports.cpi(pd.Timestamp("2020-10-10"))
+    df = indexes.cpi(pd.Timestamp("2020-10-10"))
 
     assert isinstance(df, pd.Series)
     assert df.index.is_monotonic_increasing
@@ -39,14 +39,35 @@ INDEX_CASES = (
 
 
 @pytest.mark.parametrize("date, index", INDEX_CASES)
-def test_index(date, index):
+def test_mcftrr(date, index):
     """Проверка, что первые данные обрезаны."""
-    df = reports.index(pd.Timestamp("2020-10-09"))
+    df = indexes.mcftrr(pd.Timestamp("2020-10-09"))
 
     assert isinstance(df, pd.Series)
     assert df.index.is_monotonic_increasing and df.name == col.CLOSE
 
     assert df.index[0] >= bootstrap.get_start_date()
     assert df.index[-1] == pd.Timestamp("2020-10-09")
+
+    assert df.loc[date] == pytest.approx(index)
+
+
+RVI_CASES = (
+    ("2015-01-05", 74.3),
+    ("2020-03-18", 118.24),
+    ("2020-10-16", 27.35),
+)
+
+
+@pytest.mark.parametrize("date, index", RVI_CASES)
+def test_rvi(date, index):
+    """Проверка, что первые данные обрезаны."""
+    df = indexes.rvi(pd.Timestamp("2020-10-16"))
+
+    assert isinstance(df, pd.Series)
+    assert df.index.is_monotonic_increasing and df.name == col.CLOSE
+
+    assert df.index[0] >= bootstrap.get_start_date()
+    assert df.index[-1] == pd.Timestamp("2020-10-16")
 
     assert df.loc[date] == pytest.approx(index)
