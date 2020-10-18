@@ -15,7 +15,6 @@ from poptimizer.data.ports import col, outer
 NAMES_CASES = (
     (moex.SecuritiesLoader(), outer.TableName(outer.SECURITIES, "test")),
     (moex.SecuritiesLoader(), outer.TableName(outer.QUOTES, outer.SECURITIES)),
-    (moex.IndexLoader(), outer.TableName(outer.INDEX, "test")),
     (moex.IndexLoader(), outer.TableName(outer.QUOTES, outer.INDEX)),
     (moex.QuotesLoader(moex.SecuritiesLoader()), outer.TableName(outer.SECURITIES, "AKRN")),
 )
