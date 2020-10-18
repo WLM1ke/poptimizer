@@ -71,9 +71,9 @@ def cpi() -> pd.Series:
     return df.loc[start_date:, col.CPI]  # type: ignore
 
 
-def index() -> pd.Series:
+def index(ticker: str = "MCFTRR") -> pd.Series:
     """Загрузка данных по индексу полной доходности с учетом российских налогов - MCFTRR."""
-    table_name = outer.TableName(outer.INDEX, outer.INDEX)
+    table_name = outer.TableName(outer.INDEX, ticker)
     requests_handler = bootstrap.get_handler()
     df = requests_handler.get_df(table_name)
     start_date = bootstrap.get_start_date()

@@ -58,13 +58,11 @@ class IndexLoader(logger.LoaderLoggerMixin, outer.AbstractIncrementalLoader):
     ) -> pd.DataFrame:
         """Получение цен закрытия индекса MCFTRR."""
         name = self._log_and_validate_group(table_name, outer.INDEX)
-        if name != outer.INDEX:
-            raise outer.DataError(f"Некорректное имя таблицы для обновления {table_name}")
         http_session = resources.get_aiohttp_session()
         json = await aiomoex.get_board_history(
             session=http_session,
             start=last_index,
-            security=outer.INDEX,
+            security=name,
             columns=("TRADEDATE", "CLOSE"),
             board="RTSI",
             market="index",
