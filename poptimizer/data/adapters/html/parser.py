@@ -12,7 +12,7 @@ from poptimizer.data.ports import outer
 Descriptions = List[description.ColDesc]
 
 
-async def _get_html(url: str) -> str:
+async def get_html(url: str) -> str:
     """Загружает html-код страницы."""
     session = resources.get_aiohttp_session()
     async with session.get(url) as respond:
@@ -80,5 +80,5 @@ def get_df_from_html(html: str, table_num: int, cols_desc: Descriptions) -> pd.D
 
 async def get_df_from_url(url: str, table_num: int, cols_desc: Descriptions) -> pd.DataFrame:
     """Загружает таблицу по URL и форматирует ее в соответствии с описанием."""
-    html = await _get_html(url)
+    html = await get_html(url)
     return get_df_from_html(html, table_num, cols_desc)

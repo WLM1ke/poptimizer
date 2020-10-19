@@ -28,7 +28,7 @@ async def test_get_html(mocker):
     """Получение html-странички."""
     fake_get_aiohttp_session = mocker.patch.object(resources, "get_aiohttp_session")
 
-    html = await parser._get_html(BAD_URL)
+    html = await parser.get_html(BAD_URL)
 
     fake_get_aiohttp_session.assert_called_once_with()
 
@@ -54,7 +54,7 @@ async def test_get_html_raise(mocker):
     respond.raise_for_status = mocker.Mock(side_effect=aiohttp.ClientResponseError("", ""))
 
     with pytest.raises(outer.DataError, match=f"Данные {BAD_URL} не загружены"):
-        await parser._get_html(BAD_URL)
+        await parser.get_html(BAD_URL)
 
 
 HTML = "<html><table> a </table><table> b </table></html>"

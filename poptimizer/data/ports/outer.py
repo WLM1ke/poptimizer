@@ -17,6 +17,7 @@ TRADING_DATES: Final = "trading_dates"
 CONOMY: Final = "conomy"
 DOHOD: Final = "dohod"
 SMART_LAB: Final = "smart_lab"
+BCS: Final = "bcs"
 DIVIDENDS: Final = "dividends"
 CPI: Final = "CPI"
 SECURITIES: Final = "securities"
@@ -28,6 +29,7 @@ GroupName = Literal[
     "conomy",
     "dohod",
     "smart_lab",
+    "bcs",
     "dividends",
     "CPI",
     "securities",
