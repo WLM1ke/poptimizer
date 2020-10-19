@@ -175,7 +175,7 @@ def test_get_df_from_html(mocker):
 @pytest.mark.asyncio
 async def test_get_df_from_url(mocker):
     """Тестирование последовательности вызовов."""
-    fake_get_html = mocker.patch.object(parser, "_get_html")
+    fake_get_html = mocker.patch.object(parser, "get_html")
     fake_get_df_from_html = mocker.patch.object(parser, "get_df_from_html")
 
     df_rez = await parser.get_df_from_url("test_url", 3, [DESC_MULTI_HEADER])
