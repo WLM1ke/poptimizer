@@ -9,6 +9,8 @@ DIV_CASES = (
     ("SBER", ("2015-06-15", 0.45)),
     ("SBERP", ("2016-06-14", 1.97)),
     ("CHMF", ("2018-06-19", 27.72 + 38.32)),
+    ("CHMF", ("2018-06-19", 27.72 + 38.32)),
+    ("TRNFP", ("2020-10-20", 11612.2)),
 )
 
 
@@ -16,6 +18,20 @@ DIV_CASES = (
 def test_conomy(ticker, div_data):
     """Проверка, что первые дивиденды после даты обрезки."""
     df = div.conomy(ticker)
+
+    assert isinstance(df, pd.DataFrame)
+    assert df.index.is_monotonic_increasing
+    assert df.index[0] >= bootstrap.get_start_date()
+    assert df.columns.tolist() == [ticker]
+
+    date, div_value = div_data
+    assert df.loc[date, ticker] == div_value
+
+
+@pytest.mark.parametrize("ticker, div_data", DIV_CASES)
+def test_bcs(ticker, div_data):
+    """Проверка, что первые дивиденды после даты обрезки."""
+    df = div.bcs(ticker)
 
     assert isinstance(df, pd.DataFrame)
     assert df.index.is_monotonic_increasing
