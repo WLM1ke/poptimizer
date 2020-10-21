@@ -2,6 +2,7 @@
 from types import MappingProxyType
 
 from poptimizer.data.adapters.loaders import (
+    bcs,
     conomy,
     cpi,
     dividends,
@@ -21,6 +22,11 @@ _TRADING_DATES = model.TableDescription(
 )
 _CONOMY = model.TableDescription(
     loader=conomy.ConomyLoader(),
+    index_checks=model.IndexChecks.UNIQUE_ASCENDING,
+    validate=False,
+)
+_BCS = model.TableDescription(
+    loader=bcs.BCS(),
     index_checks=model.IndexChecks.UNIQUE_ASCENDING,
     validate=False,
 )
@@ -64,6 +70,7 @@ _TABLES_REGISTRY = MappingProxyType(
     {
         outer.TRADING_DATES: _TRADING_DATES,
         outer.CONOMY: _CONOMY,
+        outer.BCS: _BCS,
         outer.DOHOD: _DOHOD,
         outer.SMART_LAB: _SMART_LAB,
         outer.DIVIDENDS: _DIVIDENDS,
