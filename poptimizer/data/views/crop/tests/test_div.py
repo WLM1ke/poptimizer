@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.data.config import bootstrap
-from poptimizer.data.views import crop
+from poptimizer.data.views.crop import div
 
 DIV_CASES = (
     ("SBER", ("2015-06-15", 0.45)),
@@ -15,35 +15,35 @@ DIV_CASES = (
 @pytest.mark.parametrize("ticker, div_data", DIV_CASES)
 def test_conomy(ticker, div_data):
     """Проверка, что первые дивиденды после даты обрезки."""
-    df = crop.conomy(ticker)
+    df = div.conomy(ticker)
 
     assert isinstance(df, pd.DataFrame)
     assert df.index.is_monotonic_increasing
     assert df.index[0] >= bootstrap.get_start_date()
     assert df.columns.tolist() == [ticker]
 
-    date, div = div_data
-    assert df.loc[date, ticker] == div
+    date, div_value = div_data
+    assert df.loc[date, ticker] == div_value
 
 
 @pytest.mark.parametrize("ticker, div_data", DIV_CASES)
 def test_dohod(ticker, div_data):
     """Проверка, что первые дивиденды после даты обрезки."""
-    df = crop.dohod(ticker)
+    df = div.dohod(ticker)
 
     assert isinstance(df, pd.DataFrame)
     assert df.index.is_monotonic_increasing
     assert df.index[0] >= bootstrap.get_start_date()
     assert df.columns.tolist() == [ticker]
 
-    date, div = div_data
-    assert df.loc[date, ticker] == div
+    date, div_value = div_data
+    assert df.loc[date, ticker] == div_value
 
 
 @pytest.mark.parametrize("ticker, div_data", DIV_CASES)
 def test_dividends(ticker, div_data):
     """Проверка, что первые дивиденды после даты обрезки."""
-    df = crop.dividends(ticker)
+    df = div.dividends(ticker)
 
     assert isinstance(df, pd.DataFrame)
     assert df.index.is_monotonic_increasing
@@ -51,8 +51,8 @@ def test_dividends(ticker, div_data):
     assert df.index[0] >= bootstrap.get_start_date()
     assert df.columns.tolist() == [ticker]
 
-    date, div = div_data
-    assert df.loc[date, ticker] == div
+    date, div_value = div_data
+    assert df.loc[date, ticker] == div_value
 
 
 DIVIDENDS_CASES = (
@@ -65,10 +65,10 @@ DIVIDENDS_CASES = (
 )
 
 
-@pytest.mark.parametrize("date, ticker, div", DIVIDENDS_CASES)
-def test_dividends_all(date, ticker, div):
+@pytest.mark.parametrize("date, ticker, div_value", DIVIDENDS_CASES)
+def test_dividends_all(date, ticker, div_value):
     """Тесты на размер результата и для выборочных значений и заполнение пропусков."""
-    df = crop.dividends_all(("CHMF", "GMKN"))
+    df = div.dividends_all(("CHMF", "GMKN"))
 
     assert len(df) > 30
     assert list(df.columns) == ["CHMF", "GMKN"]
@@ -76,5 +76,5 @@ def test_dividends_all(date, ticker, div):
     assert df.index[0] == pd.Timestamp("2015-05-25")
     assert df.index[-1] >= pd.Timestamp("2020-09-08")
 
-    div_after_tax = div * bootstrap.get_after_tax_rate()
+    div_after_tax = div_value * bootstrap.get_after_tax_rate()
     assert df.loc[date, ticker] == pytest.approx(div_after_tax)

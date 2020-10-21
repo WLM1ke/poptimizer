@@ -6,7 +6,7 @@ import pytest
 
 from poptimizer.data.config import bootstrap
 from poptimizer.data.ports import col
-from poptimizer.data.views import crop
+from poptimizer.data.views.crop import not_div
 
 CPI_CASES = (
     ("2018-11-30", 1.005),
@@ -20,7 +20,7 @@ CPI_CASES = (
 @pytest.mark.parametrize("date, cpi", CPI_CASES)
 def test_cpi(date, cpi):
     """Проверка, что первые данные обрезаны и их нужное количество."""
-    df = crop.cpi()
+    df = not_div.cpi()
 
     assert isinstance(df, pd.Series)
     assert df.index.is_monotonic_increasing
@@ -46,7 +46,7 @@ INDEX_CASES = (
 @pytest.mark.parametrize("date, index", INDEX_CASES)
 def test_index(date, index):
     """Проверка, что первые данные обрезаны."""
-    df = crop.index()
+    df = not_div.index()
 
     assert isinstance(df, pd.Series)
     assert df.index.is_monotonic_increasing
@@ -67,7 +67,7 @@ QUOTES_CASES = (
 @pytest.mark.parametrize("tickers, pos, loc, quote", QUOTES_CASES)
 def test_quotes(tickers, pos, loc, quote):
     """Проверка, что первые данные обрезаны."""
-    dfs = crop.quotes(tickers)
+    dfs = not_div.quotes(tickers)
 
     assert len(dfs) == len(tickers)
     df = dfs[pos]
