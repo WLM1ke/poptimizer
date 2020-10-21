@@ -20,6 +20,15 @@ def conomy(ticker: str) -> pd.DataFrame:
     return df.loc[start_date:]  # type: ignore
 
 
+def bcs(ticker: str) -> pd.DataFrame:
+    """Информация по дивидендам с bcs-express.ru."""
+    table_name = outer.TableName(outer.BCS, ticker)
+    requests_handler = bootstrap.get_handler()
+    df = requests_handler.get_df(table_name)
+    start_date = bootstrap.get_start_date()
+    return df.loc[start_date:]  # type: ignore
+
+
 def dohod(ticker: str) -> pd.DataFrame:
     """Информация по дивидендам с dohod.ru."""
     table_name = outer.TableName(outer.DOHOD, ticker)
