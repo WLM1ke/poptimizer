@@ -6,7 +6,7 @@ import pandas as pd
 
 from poptimizer.data.config import bootstrap
 from poptimizer.data.ports import col, outer
-from poptimizer.data.views import crop
+from poptimizer.data.views.crop import div
 
 
 def smart_lab() -> pd.DataFrame:
@@ -27,14 +27,14 @@ def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
         Список новых тикеров.
     """
     status = []
-    for ticker, date, div in smart_lab().itertuples():
+    for ticker, date, div_value in smart_lab().itertuples():
         if ticker not in tickers:
             continue
 
-        df = crop.dividends(ticker)
+        df = div.dividends(ticker)
         if date not in df.index:
             status.append(ticker)
-        elif not np.isclose(df.loc[date, ticker], div):
+        elif not np.isclose(df.loc[date, ticker], div_value):
             status.append(ticker)
 
     if status:
@@ -66,10 +66,10 @@ def dividends_validation(ticker: str) -> None:
     :param ticker:
         Тикер.
     """
-    df_div = crop.dividends(ticker, force_update=True)
+    df_div = div.dividends(ticker, force_update=True)
 
-    _compare("dohod.ru", df_div, crop.dohod(ticker))
-    _compare("conomy.ru", df_div, crop.conomy(ticker))
+    _compare("dohod.ru", df_div, div.dohod(ticker))
+    _compare("conomy.ru", df_div, div.conomy(ticker))
 
     df = smart_lab()
     df = df.loc[df.index == ticker]

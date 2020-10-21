@@ -3,6 +3,7 @@ import pandas as pd
 
 from poptimizer.data.ports import col
 from poptimizer.data.views import div_status
+from poptimizer.data.views.crop import div
 
 
 def test_smart_lab():
@@ -31,7 +32,7 @@ PLZL_DF = pd.DataFrame([4], columns=["PLZL"], index=["2020-10-02"])
 def test_new_on_smart_lab(mocker, capsys):
     """Различные варианты включения и не включения в статус."""
     mocker.patch.object(div_status, "smart_lab", return_value=SMART_LAB_DF)
-    mocker.patch.object(div_status.crop, "dividends", side_effect=[PLZL_DF, KZOS_DF, TTLK_DF])
+    mocker.patch.object(div, "dividends", side_effect=[PLZL_DF, KZOS_DF, TTLK_DF])
 
     assert div_status.new_on_smart_lab(("TTLK", "KZOS", "PLZL")) == ["PLZL", "KZOS"]
     captured = capsys.readouterr()
@@ -68,10 +69,10 @@ def test_compare(capsys):
 
 def test_dividends_validation(mocker):
     """Проверка количества запросов необходимой информации."""
-    fake_dividends = mocker.patch.object(div_status.crop, "dividends")
+    fake_dividends = mocker.patch.object(div, "dividends")
     fake_compare = mocker.patch.object(div_status, "_compare")
-    fake_dohod = mocker.patch.object(div_status.crop, "dohod")
-    fake_conomy = mocker.patch.object(div_status.crop, "conomy")
+    fake_dohod = mocker.patch.object(div, "dohod")
+    fake_conomy = mocker.patch.object(div, "conomy")
     fake_smart_lab = mocker.patch.object(div_status, "smart_lab")
 
     div_status.dividends_validation("TEST")

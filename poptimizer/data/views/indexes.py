@@ -1,12 +1,12 @@
 """Индексы потребительских цен и MOEX."""
 import pandas as pd
 
-from poptimizer.data.views import crop
+from poptimizer.data.views.crop import not_div
 
 
 def cpi(date: pd.Timestamp) -> pd.Series:
     """Потребительская инфляция."""
-    df = crop.cpi()
+    df = not_div.cpi()
     return df.loc[:date]
 
 
@@ -18,11 +18,11 @@ def mcftrr(last_date: pd.Timestamp) -> pd.Series:
     :return:
         История цен закрытия индекса.
     """
-    df = crop.index()
+    df = not_div.index()
     return df.loc[:last_date]
 
 
 def rvi(last_date: pd.Timestamp) -> pd.Series:
     """Индекс волатильности RVI."""
-    df = crop.index("RVI")
+    df = not_div.index("RVI")
     return df.loc[:last_date]

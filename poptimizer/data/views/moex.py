@@ -8,7 +8,7 @@ from pandas.tseries import offsets
 
 from poptimizer.data.config import bootstrap
 from poptimizer.data.ports import col, outer
-from poptimizer.data.views import crop
+from poptimizer.data.views.crop import div, not_div
 
 
 def last_history_date() -> pd.Timestamp:
@@ -54,7 +54,7 @@ def prices(tickers: Tuple[str, ...], last_date: pd.Timestamp) -> pd.DataFrame:
     :return:
         Цены закрытия.
     """
-    quotes_list = crop.quotes(tickers)
+    quotes_list = not_div.quotes(tickers)
     df = pd.concat(
         [df[col.CLOSE] for df in quotes_list],
         axis=1,
@@ -77,7 +77,7 @@ def turnovers(tickers: Tuple[str, ...], last_date: pd.Timestamp) -> pd.DataFrame
     :return:
         Обороты.
     """
-    quotes_list = crop.quotes(tickers)
+    quotes_list = not_div.quotes(tickers)
     df = pd.concat(
         [df[col.TURNOVER] for df in quotes_list],
         axis=1,
@@ -116,8 +116,8 @@ def div_and_prices(
     Данные обрезаются с учетом установки о начале статистики.
     """
     price = prices(tickers, last_date)
-    div = crop.dividends_all(tickers)
-    div.index = div.index.map(functools.partial(_t2_shift, index=price.index))
+    div_data = div.dividends_all(tickers)
+    div_data.index = div_data.index.map(functools.partial(_t2_shift, index=price.index))
     # Может образоваться несколько одинаковых дат, если часть дивидендов приходится на выходные
-    div = div.groupby(by=lambda date: date).sum()
-    return div.reindex(index=price.index, fill_value=0), price
+    div_data = div_data.groupby(by=lambda date: date).sum()
+    return div_data.reindex(index=price.index, fill_value=0), price
