@@ -1,6 +1,7 @@
 """Тесты для загрузки с https://www.conomy.ru/."""
 import pandas as pd
 import pytest
+from pyppeteer import errors
 
 from poptimizer.data.adapters.loaders import conomy
 from poptimizer.data.ports import outer
@@ -122,3 +123,14 @@ async def test_conomy_loader(mocker):
     loader = conomy.ConomyLoader()
     table_name = outer.TableName(outer.CONOMY, "BELU")
     pd.testing.assert_frame_equal(await loader.get(table_name), DF_REZ)
+
+
+@pytest.mark.asyncio
+async def test_conomy_loader_web_error(mocker):
+    """Регрессионный тест на ошибку в загрузке данных."""
+    mocker.patch.object(conomy, "_get_html", side_effect=errors.TimeoutError)
+
+    loader = conomy.ConomyLoader()
+    table_name = outer.TableName(outer.CONOMY, "BELU")
+    df = await loader.get(table_name)
+    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["BELU"]))

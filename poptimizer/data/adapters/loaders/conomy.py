@@ -4,6 +4,7 @@ from typing import cast
 
 import pandas as pd
 import pyppeteer
+from pyppeteer import errors
 from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
@@ -111,7 +112,10 @@ class ConomyLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
         """Получение дивидендов для заданного тикера."""
         ticker = self._log_and_validate_group(table_name, outer.CONOMY)
 
-        html = await _get_html(ticker)
+        try:
+            html = await _get_html(ticker)
+        except errors.TimeoutError:
+            return pd.DataFrame(columns=[ticker])
         cols_desc = _get_col_desc(ticker)
         df = parser.get_df_from_html(html, TABLE_INDEX, cols_desc)
         df = df.dropna()
