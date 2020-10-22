@@ -2,7 +2,6 @@
 import math
 from typing import Final, List, Tuple
 
-import numpy as np
 import pandas as pd
 
 from poptimizer.data.config import bootstrap
@@ -38,7 +37,7 @@ def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
         df = div.dividends(ticker)
         if date not in df.index:
             status.append(ticker)
-        elif not np.isclose(df.loc[date, ticker], div_value):
+        elif not math.isclose(df.loc[date, ticker], div_value, rel_tol=RET_TOL):
             status.append(ticker)
 
     if status:
