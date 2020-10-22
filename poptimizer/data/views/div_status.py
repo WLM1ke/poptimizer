@@ -1,4 +1,5 @@
 """Информация о актуальности данных по дивидендам."""
+import math
 from typing import List, Tuple
 
 import numpy as np
@@ -44,13 +45,20 @@ def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
     return status
 
 
+def _row_comp(row: pd.Series) -> bool:
+    """Сравнение двух значений дивидендов."""
+    return math.isclose(row.iloc[0], row.iloc[1])
+
+
 def _compare(source_name: str, df_local: pd.DataFrame, df_source: pd.DataFrame) -> pd.DataFrame:
     """Сравнивает данные по дивидендам из двух источников."""
     df = pd.concat([df_local, df_source], axis="columns")
     df.columns = ["LOCAL", "SOURCE"]
     df["STATUS"] = "ERROR"
-    equal_div = np.isclose(df.iloc[:, 0], df.iloc[:, 1])
-    df.loc[equal_div, "STATUS"] = ""
+
+    if not df.empty:
+        equal_div = df.apply(_row_comp, axis=1)
+        df.loc[equal_div, "STATUS"] = ""
 
     print(f"\nСРАВНЕНИЕ ЛОКАЛЬНЫХ ДАННЫХ С {source_name}\n\n{df}")  # noqa: WPS421
 

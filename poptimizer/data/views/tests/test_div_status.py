@@ -67,6 +67,43 @@ def test_compare(capsys):
     assert "test_name" in captured.out
 
 
+def test_compare_all_empty(capsys):
+    """Регрессионный тест на ошибку в сравнении пустых DataFrame."""
+    df = div_status._compare(
+        "all_empty",
+        pd.DataFrame(columns=[1]),
+        pd.DataFrame(columns=[2]),
+    )
+
+    pd.testing.assert_frame_equal(
+        df,
+        pd.DataFrame(columns=["LOCAL", "SOURCE", "STATUS"]),
+    )
+    captured = capsys.readouterr()
+    assert "all_empty" in captured.out
+
+
+def test_compare_with_empty(capsys):
+    """Регрессионный тест на ошибку в сравнении с пустым DataFrame."""
+    df = div_status._compare(
+        "with_empty",
+        pd.DataFrame([1, 2]),
+        pd.DataFrame(columns=[1]),
+    )
+
+    pd.testing.assert_frame_equal(
+        df,
+        pd.DataFrame(
+            [[1, None, "ERROR"], [2, None, "ERROR"]],
+            columns=["LOCAL", "SOURCE", "STATUS"],
+            index=[0, 1],
+        ),
+        check_index_type=False,
+    )
+    captured = capsys.readouterr()
+    assert "with_empty" in captured.out
+
+
 def test_dividends_validation(mocker):
     """Проверка количества запросов необходимой информации."""
     fake_dividends = mocker.patch.object(div, "dividends")
