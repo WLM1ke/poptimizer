@@ -13,7 +13,13 @@
 
 * Возможность анализа всех акций, обращающихся на MOEX
 * База данных дивидендов с 2015г по ~100 наиболее ликвидным акциям
-* Возможность сверки базы данных дивидендов с информацией на сайтах `www.dohod.ru <https://www.dohod.ru/ik/analytics/dividend>`_, `www.conomy.ru <https://www.conomy.ru/dates-close/dates-close2>`_ и `www.smart-lab.ru <https://smart-lab.ru/dividends/index/order_by_yield/desc/>`_
+* Возможность сверки базы данных дивидендов с информацией на сайтах:
+
+ - `www.dohod.ru <https://www.dohod.ru/ik/analytics/dividend>`_
+ - `www.conomy.ru <https://www.conomy.ru/dates-close/dates-close2>`_
+ - `bcs-express.ru <https://bcs-express.ru/dividednyj-kalendar>`_
+ - `www.smart-lab.ru <https://smart-lab.ru/dividends/index/order_by_yield/desc/>`_
+
 
 Прогнозирование параметров активов
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
