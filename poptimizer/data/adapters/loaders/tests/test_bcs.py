@@ -19,6 +19,18 @@ async def test_get_rows(mocker):
     fake_get_html.assert_called_once_with("https://bcs-express.ru/kotirovki-i-grafiki/TEST")
 
 
+@pytest.mark.asyncio
+async def test_get_rows_no_div_table(mocker):
+    """Регрессионный тест на случай отсутствия таблицы."""
+    mocker.patch.object(bcs.parser, "get_html")
+    fake_bs = mocker.patch.object(bcs.bs4, "BeautifulSoup").return_value
+    fake_bs.find.return_value = None
+
+    rows = await bcs._get_rows("TEST")
+    assert isinstance(rows, list)
+    assert not rows
+
+
 TEST_ROWS = (
     (
         """<div class="dividends-table__row _item">
@@ -98,6 +110,17 @@ async def test_bcs(mocker):
     df_rez = pd.DataFrame([200.0, 10805.95], columns=["TEST"], index=index)
 
     pd.testing.assert_frame_equal(df, df_rez)
+
+
+@pytest.mark.asyncio
+async def test_bcs_empty(mocker):
+    """Регрессионный тест для случая отсутствия данных на html-странице."""
+    mocker.patch.object(bcs, "_get_rows", return_value=[])
+
+    table = outer.TableName(outer.BCS, "TEST")
+    df = await bcs.BCS().get(table)
+
+    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["TEST"], dtype="float64"))
 
 
 @pytest.mark.asyncio

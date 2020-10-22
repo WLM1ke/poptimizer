@@ -24,6 +24,8 @@ async def _get_rows(ticker: str) -> List[bs4.BeautifulSoup]:
     html = await parser.get_html(URL + ticker)
     soup = bs4.BeautifulSoup(html, "lxml")
     div_table = soup.find(DIV_TAG, {CLASS_TAG: "dividends-table js-div-table"})
+    if div_table is None:
+        return []
     rows = div_table.find_all(DIV_TAG, {CLASS_TAG: "dividends-table__row _item"})
     return cast(List[bs4.BeautifulSoup], rows)
 
@@ -55,8 +57,7 @@ class BCS(logger.LoaderLoggerMixin, outer.AbstractLoader):
         rows = await _get_rows(ticker)
         div_data = [(_parse_date(row), _parse_div(row)) for row in rows]
 
-        df = pd.DataFrame(data=div_data)
-        df.columns = [col.DATE, ticker]
+        df = pd.DataFrame(data=div_data, columns=[col.DATE, ticker])
         df = df.set_index(col.DATE)
         df = df.sort_index(axis=0)
         return df.groupby(lambda date: date).sum()
