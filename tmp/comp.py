@@ -15,6 +15,7 @@ def comp(ticker):
     df_conomy = div.conomy(ticker)
 
     df = pd.concat([df_dohod, df_bcs, df_conomy], axis=1).median(axis=1).loc[:DATE]
+    df = df[df != 0]
 
     return _compare(ticker, df_div, df)
 
