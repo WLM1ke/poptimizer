@@ -1,6 +1,6 @@
 """Информация о актуальности данных по дивидендам."""
 import math
-from typing import List, Tuple
+from typing import Final, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -8,6 +8,9 @@ import pandas as pd
 from poptimizer.data.config import bootstrap
 from poptimizer.data.ports import col, outer
 from poptimizer.data.views.crop import div
+
+# Точность сравнения дивидендов
+RET_TOL: Final = 1e-3
 
 
 def smart_lab() -> pd.DataFrame:
@@ -45,9 +48,9 @@ def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
     return status
 
 
-def _row_comp(row: pd.Series) -> bool:
+def _row_comp(row: pd.Series, rel_tol: float = 1e-3) -> bool:
     """Сравнение двух значений дивидендов."""
-    return math.isclose(row.iloc[0], row.iloc[1])
+    return math.isclose(row.iloc[0], row.iloc[1], rel_tol=rel_tol)
 
 
 def _compare(source_name: str, df_local: pd.DataFrame, df_source: pd.DataFrame) -> pd.DataFrame:
