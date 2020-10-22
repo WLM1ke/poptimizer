@@ -36,3 +36,14 @@ async def test_loader(mocker):
     loader = dohod.DohodLoader()
     table_name = outer.TableName(outer.DOHOD, "BELU")
     pd.testing.assert_frame_equal(await loader.get(table_name), DF_REZ)
+
+
+@pytest.mark.asyncio
+async def test_loader_web_error(mocker):
+    """Регрессионный тест при ошибке загрузки данных из интернета."""
+    mocker.patch.object(dohod.parser, "get_df_from_url", side_effect=outer.DataError())
+
+    loader = dohod.DohodLoader()
+    table_name = outer.TableName(outer.DOHOD, "BELU")
+    df = await loader.get(table_name)
+    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["BELU"]))

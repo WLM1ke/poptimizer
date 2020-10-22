@@ -36,6 +36,9 @@ class DohodLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
 
         cols_desc = get_col_desc(ticker)
         url = f"{URL}{ticker.lower()}"
-        df = await parser.get_df_from_url(url, TABLE_INDEX, cols_desc)
+        try:
+            df = await parser.get_df_from_url(url, TABLE_INDEX, cols_desc)
+        except outer.DataError:
+            return pd.DataFrame(columns=[ticker])
         df = df.sort_index(axis=0)
         return df.groupby(lambda date: date).sum()
