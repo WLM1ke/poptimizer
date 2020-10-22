@@ -71,14 +71,17 @@ def test_dividends_validation(mocker):
     """Проверка количества запросов необходимой информации."""
     fake_dividends = mocker.patch.object(div, "dividends")
     fake_compare = mocker.patch.object(div_status, "_compare")
-    fake_dohod = mocker.patch.object(div, "dohod")
-    fake_conomy = mocker.patch.object(div, "conomy")
-    fake_smart_lab = mocker.patch.object(div_status, "smart_lab")
+    fake_sources = [
+        mocker.patch.object(div, "dohod"),
+        mocker.patch.object(div, "conomy"),
+        mocker.patch.object(div, "bcs"),
+        mocker.patch.object(div_status, "smart_lab"),
+    ]
 
     div_status.dividends_validation("TEST")
 
     assert fake_dividends.call_count == 1
-    assert fake_compare.call_count == 3
-    assert fake_dohod.call_count == 1
-    assert fake_conomy.call_count == 1
-    assert fake_smart_lab.call_count == 1
+    assert fake_compare.call_count == len(fake_sources)
+
+    for source in fake_sources:
+        assert source.call_count == 1
