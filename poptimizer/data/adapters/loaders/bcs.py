@@ -34,7 +34,7 @@ def _parse_date(row: bs4.BeautifulSoup) -> Optional[datetime]:
     """Парсит даты из строки таблицы."""
     soup = row.find(DIV_TAG, {CLASS_TAG: DATE_TAG_RE}, string=DATE_PATTERN)
     if soup:
-        return datetime.strptime(soup.string, "%d.%m.%Y")  # noqa: WPS323
+        return datetime.strptime(soup.string.strip(), "%d.%m.%Y")  # noqa: WPS323
     return None
 
 
