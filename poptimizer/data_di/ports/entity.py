@@ -1,6 +1,9 @@
 """Доменные сущности."""
 import abc
-from typing import Iterator, List, TypeVar
+from datetime import datetime
+from typing import Iterator, List, Optional, TypeVar
+
+import pandas as pd
 
 from poptimizer.data_di.ports import events
 
@@ -23,14 +26,6 @@ class BaseID:
         self._id = _id
 
 
-class TableID(BaseID):
-    """Идентификатор таблиц."""
-
-    def __init__(self, group: str, name: str):
-        """Инициализирует базовый класс."""
-        super().__init__(DB, group, name)
-
-
 class AbstractEntity(abc.ABC):
     """Абстрактный класс сущности.
 
@@ -38,9 +33,9 @@ class AbstractEntity(abc.ABC):
     автоматического статуса изменений.
     """
 
-    def __init__(self, _id: BaseID) -> None:
+    def __init__(self, id_: BaseID) -> None:
         """Формирует список событий и отметку об изменениях."""
-        self._id = _id
+        self._id = id_
         self._events: List[events.AbstractEvent] = []
         self._dirty = False
 
@@ -71,3 +66,46 @@ class AbstractEntity(abc.ABC):
     def _record_event(self, event: events.AbstractEvent) -> None:
         """Добавляет новое событие."""
         self._events.append(event)
+
+
+class TableID(BaseID):
+    """Идентификатор таблиц."""
+
+    def __init__(self, group: str, name: str):
+        """Инициализирует базовый класс."""
+        super().__init__(DB, group, name)
+
+
+class BaseTable(AbstractEntity):
+    """Базовая таблица.
+
+    Хранит время последнего обновления и DataFrame.
+    """
+
+    def __init__(
+        self,
+        id_: TableID,
+        df: Optional[pd.DataFrame],
+        timestamp: Optional[datetime],
+    ) -> None:
+        """Сохраняет необходимые данные."""
+        super().__init__(id_)
+        self._df = df
+        self._timestamp = timestamp
+
+    @property
+    def df(self) -> Optional[pd.DataFrame]:
+        """Таблица с данными."""
+        if (df := self._df) is None:
+            return None
+        return df.copy()
+
+    @property
+    def timestamp(self) -> Optional[datetime]:
+        """Момент последнего обновления таблицы."""
+        return self._timestamp
+
+    def _update(self, df_new: pd.DataFrame) -> None:
+        """Обновляет значение и изменяет текущую дату."""
+        self._timestamp = datetime.utcnow()
+        self._df = df_new
