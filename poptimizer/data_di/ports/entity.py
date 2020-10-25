@@ -2,7 +2,7 @@
 import abc
 import asyncio
 from datetime import datetime
-from typing import Generic, Iterator, List, Optional, TypeVar
+from typing import Dict, Generic, Iterator, List, Optional, TypeVar
 
 import pandas as pd
 
@@ -10,8 +10,6 @@ from poptimizer.data_di.ports import events
 
 # База данных для хранения информации
 DB = "data"
-
-AttrValues = TypeVar("AttrValues")
 
 
 class BaseID:
@@ -27,7 +25,10 @@ class BaseID:
         self._id = _id
 
 
-class AbstractEntity(abc.ABC):
+AttrValues = TypeVar("AttrValues")
+
+
+class BaseEntity(Generic[AttrValues]):
     """Абстрактный класс сущности.
 
     Обязательно имеет поле и идентификатором, механизм сохранения и извлечения событий и
@@ -38,12 +39,12 @@ class AbstractEntity(abc.ABC):
         """Формирует список событий и отметку об изменениях."""
         self._id = id_
         self._events: List[events.AbstractEvent] = []
-        self._dirty = False
+        self._changed_state: Dict[str, AttrValues] = {}
 
     def __setattr__(self, key: str, attr_value: AttrValues) -> None:
         """Сохраняет изменное значение."""
-        if key in vars(self) and not self._dirty:  # noqa: WPS421
-            super().__setattr__("_dirty", True)  # noqa: WPS425
+        if key in vars(self):  # noqa: WPS421
+            self._changed_state[key] = attr_value
         super().__setattr__(key, attr_value)
 
     @property
@@ -51,13 +52,13 @@ class AbstractEntity(abc.ABC):
         """Уникальный идентификатор сущности."""
         return self._id
 
-    def clear(self) -> None:
-        """Сбрасывает отметку изменения."""
-        self._dirty = False
+    def changed_state(self) -> Dict[str, AttrValues]:
+        """Показывает измененные атрибуты."""
+        return {**self._changed_state}
 
-    def is_dirty(self) -> bool:
-        """Показывает был ли изменен объект с момента создания."""
-        return self._dirty
+    def clear(self) -> None:
+        """Сбрасывает изменения."""
+        self._changed_state.clear()
 
     def pop_event(self) -> Iterator[events.AbstractEvent]:
         """Возвращает события возникшие в за время существования сущности."""
@@ -76,7 +77,7 @@ class TableID(BaseID):
 Event = TypeVar("Event", bound=events.AbstractEvent)
 
 
-class BaseTable(Generic[Event], AbstractEntity):
+class BaseTable(Generic[Event, AttrValues], BaseEntity[AttrValues]):
     """Базовая таблица.
 
     Хранит время последнего обновления и DataFrame.
