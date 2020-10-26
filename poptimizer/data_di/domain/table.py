@@ -13,7 +13,15 @@ from poptimizer.data_di.shared import entity, events
 _PACKAGE: Final = "data"
 
 
-class NotUpdatedTableError(config.POptimizerError):
+class TableNewDataMismatchError(config.POptimizerError):
+    """Новые данные не соответствуют старым данным таблицы."""
+
+
+class TableIndexError(config.POptimizerError):
+    """Ошибка в индексе таблицы."""
+
+
+class TableNeverUpdatedError(config.POptimizerError):
     """Недопустимая операция с не обновленной таблицей."""
 
 
@@ -63,7 +71,7 @@ class AbstractTable(Generic[InEvent, OutEvent], entity.BaseEntity[TableAttrValue
             if self._update_cond(event):
                 df_new = await self._prepare_df(event)
 
-                self._validate_data_and_index(df_new)
+                self._validate_new_df(df_new)
 
                 self._timestamp = datetime.utcnow()
                 self._df = df_new
@@ -78,7 +86,7 @@ class AbstractTable(Generic[InEvent, OutEvent], entity.BaseEntity[TableAttrValue
         """Новое значение DataFrame."""
 
     @abc.abstractmethod
-    def _validate_data_and_index(self, df_new: pd.DataFrame) -> None:
+    def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Проверка корректности новых данных в сравнении со старыми."""
 
     @abc.abstractmethod
