@@ -5,9 +5,10 @@ from typing import Optional
 import pandas as pd
 
 from poptimizer.data_di.domain import events, ports, table, update
+from poptimizer.data_di.shared.events import AbstractEvent
 
 
-class TradingDates(table.AbstractTable[events.AppStarted, events.TradingDayEnded]):
+class TradingDates(table.AbstractTable):
     """Таблица с данными о торговых днях.
 
     Обрабатывает событие начала работы приложения.
@@ -25,11 +26,11 @@ class TradingDates(table.AbstractTable[events.AppStarted, events.TradingDayEnded
         super().__init__(id_, df, timestamp)
         self._gateway = gateway
 
-    def _update_cond(self, event: events.AppStarted) -> bool:
+    def _update_cond(self, event: AbstractEvent) -> bool:
         """Обновляет, если последняя дата обновления после потенциального окончания торгового дня."""
         return update.trading_day_potential_end_policy(self._timestamp)
 
-    async def _prepare_df(self, event: events.AppStarted) -> pd.DataFrame:
+    async def _prepare_df(self, event: AbstractEvent) -> pd.DataFrame:
         """Загружает новый DataFrame."""
         return await self._gateway.get()
 
