@@ -4,8 +4,7 @@ from typing import Final
 import aiohttp
 import injector
 
-from poptimizer.data.adapters import logger
-from poptimizer.data_di.adapters import http
+from poptimizer.data_di.adapters import http, logger
 
 POOL_SIZE: Final = 20
 
