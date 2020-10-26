@@ -1,8 +1,10 @@
 """Доменные события и их обработчики."""
 import abc
+import dataclasses
 from typing import Generic, TypeVar
 
 
+@dataclasses.dataclass(frozen=True)
 class AbstractEvent(abc.ABC):
     """Абстрактный тип события."""
 
