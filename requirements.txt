@@ -29,8 +29,11 @@ aiohttp
 pyppeteer
 certifi
 
-# Операции с сабпроцессами
+# Операции с процессами
 psutil
+
+# Внедрение зависимостей
+injector
 
 # Yaml
 pyyaml
