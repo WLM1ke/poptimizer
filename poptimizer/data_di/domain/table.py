@@ -2,15 +2,19 @@
 import abc
 import asyncio
 from datetime import datetime
-from typing import Generic, List, Optional, TypeVar, Union
+from typing import Final, Generic, Optional, TypeVar, Union
 
 import pandas as pd
 
-from poptimizer.data_di.shared import events
-from poptimizer.data_di.shared import entity
+from poptimizer import config
+from poptimizer.data_di.shared import entity, events
 
 # Наименование пакета по сбору таблиц
-PACKAGE = "data"
+_PACKAGE: Final = "data"
+
+
+class NotUpdatedTableError(config.POptimizerError):
+    """Недопустимая операция с не обновленной таблицей."""
 
 
 class TableID(entity.BaseID):
@@ -18,14 +22,15 @@ class TableID(entity.BaseID):
 
     def __init__(self, group: str, name: str):
         """Инициализирует базовый класс."""
-        super().__init__(PACKAGE, group, name)
+        super().__init__(_PACKAGE, group, name)
 
 
 TableAttrValues = Union[pd.DataFrame, datetime]
-Event = TypeVar("Event", bound=events.AbstractEvent)
+InEvent = TypeVar("InEvent", bound=events.AbstractEvent)
+OutEvent = TypeVar("OutEvent", bound=events.AbstractEvent)
 
 
-class BaseTable(Generic[Event], entity.BaseEntity[TableAttrValues]):
+class AbstractTable(Generic[InEvent, OutEvent], entity.BaseEntity[TableAttrValues]):
     """Базовая таблица.
 
     Хранит время последнего обновления и DataFrame.
@@ -52,7 +57,7 @@ class BaseTable(Generic[Event], entity.BaseEntity[TableAttrValues]):
             return None
         return df.copy()
 
-    async def handle_event(self, event: Event) -> None:
+    async def handle_event(self, event: InEvent) -> None:
         """Обновляет значение, изменяет текущую дату и добавляет связанные с этим события."""
         async with self._df_lock:
             if self._update_cond(event):
@@ -62,14 +67,14 @@ class BaseTable(Generic[Event], entity.BaseEntity[TableAttrValues]):
 
                 self._timestamp = datetime.utcnow()
                 self._df = df_new
-                self._events.extend(self._new_events())
+                self._events.append(self._new_events())
 
     @abc.abstractmethod
-    def _update_cond(self, event: Event) -> bool:
+    def _update_cond(self, event: InEvent) -> bool:
         """Условие обновления."""
 
     @abc.abstractmethod
-    async def _prepare_df(self, event: Event) -> pd.DataFrame:
+    async def _prepare_df(self, event: InEvent) -> pd.DataFrame:
         """Новое значение DataFrame."""
 
     @abc.abstractmethod
@@ -77,6 +82,5 @@ class BaseTable(Generic[Event], entity.BaseEntity[TableAttrValues]):
         """Проверка корректности новых данных в сравнении со старыми."""
 
     @abc.abstractmethod
-    def _new_events(self) -> List[events.AbstractEvent]:
+    def _new_events(self) -> OutEvent:
         """События, которые нужно создать по результатам обновления."""
-        return []
