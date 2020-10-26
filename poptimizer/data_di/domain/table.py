@@ -2,7 +2,7 @@
 import abc
 import asyncio
 from datetime import datetime
-from typing import Final, Generic, Optional, TypeVar, Union
+from typing import Final, Optional, Union
 
 import pandas as pd
 
@@ -34,11 +34,9 @@ class TableID(entity.BaseID):
 
 
 TableAttrValues = Union[pd.DataFrame, datetime]
-InEvent = TypeVar("InEvent", bound=events.AbstractEvent)
-OutEvent = TypeVar("OutEvent", bound=events.AbstractEvent)
 
 
-class AbstractTable(Generic[InEvent, OutEvent], entity.BaseEntity[TableAttrValues]):
+class AbstractTable(entity.BaseEntity[TableAttrValues]):
     """Базовая таблица.
 
     Хранит время последнего обновления и DataFrame.
@@ -65,7 +63,7 @@ class AbstractTable(Generic[InEvent, OutEvent], entity.BaseEntity[TableAttrValue
             return None
         return df.copy()
 
-    async def handle_event(self, event: InEvent) -> None:
+    async def handle_event(self, event: events.AbstractEvent) -> None:
         """Обновляет значение, изменяет текущую дату и добавляет связанные с этим события."""
         async with self._df_lock:
             if self._update_cond(event):
@@ -78,11 +76,11 @@ class AbstractTable(Generic[InEvent, OutEvent], entity.BaseEntity[TableAttrValue
                 self._events.append(self._new_events())
 
     @abc.abstractmethod
-    def _update_cond(self, event: InEvent) -> bool:
+    def _update_cond(self, event: events.AbstractEvent) -> bool:
         """Условие обновления."""
 
     @abc.abstractmethod
-    async def _prepare_df(self, event: InEvent) -> pd.DataFrame:
+    async def _prepare_df(self, event: events.AbstractEvent) -> pd.DataFrame:
         """Новое значение DataFrame."""
 
     @abc.abstractmethod
@@ -90,5 +88,5 @@ class AbstractTable(Generic[InEvent, OutEvent], entity.BaseEntity[TableAttrValue
         """Проверка корректности новых данных в сравнении со старыми."""
 
     @abc.abstractmethod
-    def _new_events(self) -> OutEvent:
+    def _new_events(self) -> events.AbstractEvent:
         """События, которые нужно создать по результатам обновления."""
