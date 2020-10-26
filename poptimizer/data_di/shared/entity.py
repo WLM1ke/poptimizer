@@ -5,16 +5,28 @@ from poptimizer.data_di.shared import events
 
 
 class BaseID:
-    """Базовый идентификатор доменного сущности.
+    """Базовый идентификатор доменного сущности."""
 
-    Реализует необходимую логику для удобства сохранения в MongoDB.
-    """
-
-    def __init__(self, db: str, collection: str, _id: str):
+    def __init__(self, package: str, group: str, name: str):
         """Сохраняет необходимую информацию."""
-        self._db = db
-        self._collection = collection
-        self._id = _id
+        self._package = package
+        self._group = group
+        self._id = name
+
+    @property
+    def package(self) -> str:
+        """Пакет/доменная область, к которой относится сущность."""
+        return self._package
+
+    @property
+    def group(self) -> str:
+        """Группа/класс сущности."""
+        return self._group
+
+    @property
+    def name(self) -> str:
+        """Имя/идентификатор внутри группы/класса."""
+        return self._id
 
 
 AttrValues = TypeVar("AttrValues")
