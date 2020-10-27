@@ -2,7 +2,7 @@
 import abc
 import asyncio
 from datetime import datetime
-from typing import Final, Optional, Union
+from typing import Dict, Final, Optional, Union
 
 import pandas as pd
 
@@ -90,3 +90,15 @@ class AbstractTable(entity.BaseEntity[TableAttrValues]):
     @abc.abstractmethod
     def _new_events(self) -> events.AbstractEvent:
         """События, которые нужно создать по результатам обновления."""
+
+
+class AbstractDBSession(abc.ABC):
+    """Сессия работы с базой данных."""
+
+    @abc.abstractmethod
+    async def get(self, id_: TableID) -> Optional[Dict[str, TableAttrValues]]:
+        """Получает данные из хранилища."""
+
+    @abc.abstractmethod
+    async def commit(self, id_: TableID, tables_vars: Dict[str, TableAttrValues]) -> None:
+        """Сохраняет данные таблиц."""
