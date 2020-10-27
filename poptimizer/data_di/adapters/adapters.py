@@ -5,7 +5,7 @@ import aiohttp
 import injector
 from motor import motor_asyncio
 
-from poptimizer.data_di.adapters import http, logger, mongo
+from poptimizer.data_di.adapters import http, logger
 
 # Размер пула http-соединений - при большем размере многие сайты ругаются
 POOL_SIZE: Final = 20
@@ -21,4 +21,7 @@ class Adapters(injector.Module):
         """Построение конфигурация внешней инфраструктуры."""
         binder.bind(aiohttp.ClientSession, to=http.session_factory(POOL_SIZE))
         binder.bind(logger.AsyncLogger, to=logger.AsyncLogger("GateWays"))
-        binder.bind(motor_asyncio.AsyncIOMotorClient, to=mongo.client_factory(MONGO_URI))
+        binder.bind(
+            motor_asyncio.AsyncIOMotorClient,
+            to=motor_asyncio.AsyncIOMotorClient(MONGO_URI, tz_aware=False),
+        )
