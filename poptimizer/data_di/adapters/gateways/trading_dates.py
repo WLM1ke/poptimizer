@@ -1,4 +1,6 @@
 """Загрузка таблицы с диапазоном торговых дат."""
+from typing import Type
+
 import aiohttp
 import aiomoex
 import pandas as pd
@@ -11,9 +13,13 @@ from poptimizer.data_di.ports import gateways
 class TradingDatesGateway(gateways.AbstractGateway):
     """Обновление для таблиц с диапазоном доступных торговых дат."""
 
-    def __init__(self, session: Inject[aiohttp.ClientSession], logger: Inject[AsyncLogger]) -> None:
+    def __init__(
+        self,
+        session: Inject[aiohttp.ClientSession],
+        logger: Inject[Type[AsyncLogger]],
+    ) -> None:
         """Кэшируются данные, чтобы сократить количество обращений к серверу MOEX."""
-        self._logger = logger
+        self._logger = logger(self.__class__.__name__)
         self._session = session
 
     async def get(self) -> pd.DataFrame:
