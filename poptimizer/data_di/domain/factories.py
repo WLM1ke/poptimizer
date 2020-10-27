@@ -5,7 +5,7 @@ import pandas as pd
 from injector import Inject
 
 from poptimizer.data_di.adapters.gateways.trading_dates import TradingDatesGateway
-from poptimizer.data_di.domain import table
+from poptimizer.data_di.ports import table
 from poptimizer.data_di.domain.trading_dates import TradingDates
 
 

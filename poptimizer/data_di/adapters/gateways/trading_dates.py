@@ -5,10 +5,10 @@ import pandas as pd
 from injector import Inject
 
 from poptimizer.data_di.adapters.logger import AsyncLogger
-from poptimizer.data_di.domain import ports
+from poptimizer.data_di.ports import gateways
 
 
-class TradingDatesGateway(ports.AbstractGateway):
+class TradingDatesGateway(gateways.AbstractGateway):
     """Обновление для таблиц с диапазоном доступных торговых дат."""
 
     def __init__(self, session: Inject[aiohttp.ClientSession], logger: Inject[AsyncLogger]) -> None:

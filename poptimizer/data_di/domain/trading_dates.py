@@ -4,7 +4,8 @@ from typing import Optional
 
 import pandas as pd
 
-from poptimizer.data_di.domain import events, ports, table, update
+from poptimizer.data_di.domain import events, update
+from poptimizer.data_di.ports import gateways, table
 from poptimizer.data_di.shared.events import AbstractEvent
 
 
@@ -20,7 +21,7 @@ class TradingDates(table.AbstractTable):
         id_: table.TableID,
         df: Optional[pd.DataFrame],
         timestamp: Optional[datetime],
-        gateway: ports.AbstractGateway,
+        gateway: gateways.AbstractGateway,
     ):
         """Использует gateway для загрузки обновленных данных."""
         super().__init__(id_, df, timestamp)
