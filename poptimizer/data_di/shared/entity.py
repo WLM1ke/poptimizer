@@ -1,4 +1,5 @@
 """Доменные сущности."""
+import abc
 from typing import Dict, Generic, Iterator, List, TypeVar
 
 from poptimizer.data_di.shared import events
@@ -68,3 +69,15 @@ class BaseEntity(Generic[AttrValues]):
         """Возвращает события возникшие в за время существования сущности."""
         while self._events:
             yield self._events.pop()
+
+
+class AbstractDBSession(Generic[AttrValues], abc.ABC):
+    """Сессия работы с базой данных."""
+
+    @abc.abstractmethod
+    async def get(self, id_: BaseID) -> Dict[str, AttrValues]:
+        """Получает данные из хранилища."""
+
+    @abc.abstractmethod
+    async def commit(self, tables_vars: Dict[str, AttrValues]) -> None:
+        """Сохраняет данные таблиц."""
