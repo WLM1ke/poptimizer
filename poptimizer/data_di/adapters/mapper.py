@@ -1,5 +1,5 @@
 """Преобразования типов во время загрузки данных  из MongoDB."""
-from typing import Any, Callable, Dict, NamedTuple, Optional, Tuple
+from typing import Any, Callable, Dict, Final, NamedTuple, Optional, Tuple
 
 import pandas as pd
 
@@ -47,7 +47,7 @@ class Mapper:
 
 
 # Описание мэппинга данных в MongoDB
-DATA_MAPPING = (
+DATA_MAPPING: Final = (
     Desc(
         field_name="_df",
         doc_name="data",
