@@ -18,7 +18,7 @@ class Desc(NamedTuple):
 class Mapper:
     """Преобразует данные."""
 
-    def __init__(self, desc_list: Tuple[Desc]) -> None:  # type: ignore
+    def __init__(self, desc_list: Tuple[Desc, ...]) -> None:  # type: ignore
         """Сохраняет описание кодировки."""
         self._to_doc = {desc.field_name: desc for desc in desc_list}
         self._from_doc = {desc.doc_name: desc for desc in desc_list}
