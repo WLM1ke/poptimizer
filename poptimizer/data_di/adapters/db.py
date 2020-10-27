@@ -43,7 +43,8 @@ class MongoDBSession(tables.AbstractDBSession):
     async def get(self, id_: entity.ID) -> Optional[Dict[str, tables.TableAttrValues]]:
         """Извлекает документ из коллекции."""
         db, collection, name = _collection_and_name(id_)
-        doc = await self._client[db][collection].find_one({"_id": name})
+        db_collection = self._client[db][collection]
+        doc = await db_collection.find_one({"_id": name}, projection={"_id": False})
 
         if doc is None:
             return None

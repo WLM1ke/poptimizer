@@ -11,6 +11,7 @@ class Desc(NamedTuple):
 
     field_name: str
     doc_name: str
+    factory_name: str
     encoder: Optional[Callable[[tables.TableAttrValues], Any]] = None  # type: ignore
     decoder: Optional[Callable[[Any], tables.TableAttrValues]] = None  # type: ignore
 
@@ -42,7 +43,7 @@ class Mapper:
             desc = desc_dict[name]
             if desc.decoder:
                 attr_value = desc.decoder(attr_value)
-            attr_dict[desc.field_name] = attr_value
+            attr_dict[desc.factory_name] = attr_value
         return attr_dict
 
 
@@ -51,11 +52,13 @@ DATA_MAPPING: Final = (
     Desc(
         field_name="_df",
         doc_name="data",
+        factory_name="df",
         encoder=lambda df: df.to_dict("split"),  # type: ignore
         decoder=lambda doc_df: pd.DataFrame(**doc_df),
     ),
     Desc(
         field_name="_timestamp",
         doc_name="timestamp",
+        factory_name="timestamp",
     ),
 )
