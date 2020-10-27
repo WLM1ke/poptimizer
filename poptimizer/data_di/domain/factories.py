@@ -1,12 +1,14 @@
 """Фабрики по созданию таблиц и их сериализации."""
 from datetime import datetime
+from typing import Optional
 
 import pandas as pd
 from injector import Inject
 
 from poptimizer.data_di.adapters.gateways.trading_dates import TradingDatesGateway
-from poptimizer.data_di.ports import table
+from poptimizer.data_di.ports import tables
 from poptimizer.data_di.domain.trading_dates import TradingDates
+from poptimizer.data_di.shared import entity
 
 
 class TablesFactory:
@@ -21,18 +23,12 @@ class TablesFactory:
             "trading_dates": (TradingDates, trading_dates_gateway),
         }
 
-    def create_new_table(self, table_id: table.TableID) -> table.AbstractTable:
-        """Создает пустую новую таблицу."""
-        group = table_id.group
-        table_type, *gateways = self._table_types_mapping[group]
-        return table_type(table_id, None, None, *gateways)
-
-    def recreate_table(
+    def create_table(
         self,
-        table_id: table.TableID,
-        df: pd.DataFrame,
-        timestamp: datetime,
-    ) -> table.AbstractTable:
+        table_id: entity.ID,
+        df: Optional[pd.DataFrame] = None,
+        timestamp: Optional[datetime] = None,
+    ) -> tables.AbstractTable:
         """Создает таблицу на основе данных и обновляет ее."""
         group = table_id.group
         table_type, *gateways = self._table_types_mapping[group]

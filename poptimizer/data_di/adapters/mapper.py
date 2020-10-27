@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, Final, NamedTuple, Optional, Tuple
 
 import pandas as pd
 
-from poptimizer.data_di.ports import table
+from poptimizer.data_di.ports import tables
 
 
 class Desc(NamedTuple):
@@ -11,8 +11,8 @@ class Desc(NamedTuple):
 
     field_name: str
     doc_name: str
-    encoder: Optional[Callable[[table.TableAttrValues], Any]] = None  # type: ignore
-    decoder: Optional[Callable[[Any], table.TableAttrValues]] = None  # type: ignore
+    encoder: Optional[Callable[[tables.TableAttrValues], Any]] = None  # type: ignore
+    decoder: Optional[Callable[[Any], tables.TableAttrValues]] = None  # type: ignore
 
 
 class Mapper:
@@ -23,7 +23,7 @@ class Mapper:
         self._to_doc = {desc.field_name: desc for desc in desc_list}
         self._from_doc = {desc.doc_name: desc for desc in desc_list}
 
-    def encode(self, attr_dict: Dict[str, table.TableAttrValues]) -> Dict[str, Any]:  # type: ignore
+    def encode(self, attr_dict: Dict[str, tables.TableAttrValues]) -> Dict[str, Any]:  # type: ignore
         """Кодирует данные в совместимый с MongoDB формат."""
         desc_dict = self._to_doc
         mongo_dict = {}
@@ -34,7 +34,7 @@ class Mapper:
             mongo_dict[desc.doc_name] = attr_value
         return mongo_dict
 
-    def decode(self, mongo_dict: Dict[str, Any]) -> Dict[str, table.TableAttrValues]:  # type: ignore
+    def decode(self, mongo_dict: Dict[str, Any]) -> Dict[str, tables.TableAttrValues]:  # type: ignore
         """Декодирует данные из формата MongoDB формат атрибутов модели."""
         desc_dict = self._from_doc
         attr_dict = {}

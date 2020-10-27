@@ -5,11 +5,11 @@ from typing import Optional
 import pandas as pd
 
 from poptimizer.data_di.domain import events, update
-from poptimizer.data_di.ports import gateways, table
+from poptimizer.data_di.ports import gateways, tables
 from poptimizer.data_di.shared.events import AbstractEvent
 
 
-class TradingDates(table.AbstractTable):
+class TradingDates(tables.AbstractTable):
     """Таблица с данными о торговых днях.
 
     Обрабатывает событие начала работы приложения.
@@ -18,7 +18,7 @@ class TradingDates(table.AbstractTable):
 
     def __init__(
         self,
-        id_: table.TableID,
+        id_: tables.TableID,
         df: Optional[pd.DataFrame],
         timestamp: Optional[datetime],
         gateway: gateways.AbstractGateway,
@@ -38,13 +38,13 @@ class TradingDates(table.AbstractTable):
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Проверка корректности индекса и заголовков."""
         if df_new.index.tolist() != [0]:
-            raise table.TableIndexError()
+            raise tables.TableIndexError()
         if df_new.columns.tolist() != ["from", "till"]:
-            raise table.TableIndexError()
+            raise tables.TableIndexError()
 
     def _new_events(self) -> events.TradingDayEnded:
         """Событие окончания торгового дня."""
         if (df := self._df) is None:
-            raise table.TableNeverUpdatedError(self._id)
+            raise tables.TableNeverUpdatedError(self._id)
         last_trading_day = df.loc[0, "till"]
         return events.TradingDayEnded(last_trading_day.date())

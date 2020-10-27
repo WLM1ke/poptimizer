@@ -2,15 +2,12 @@
 import abc
 import asyncio
 from datetime import datetime
-from typing import Dict, Final, Optional, Union
+from typing import Dict, Optional, Union
 
 import pandas as pd
 
 from poptimizer import config
 from poptimizer.data_di.shared import entity, events
-
-# Наименование пакета по сбору таблиц
-_PACKAGE: Final = "data"
 
 
 class TableNewDataMismatchError(config.POptimizerError):
@@ -23,14 +20,6 @@ class TableIndexError(config.POptimizerError):
 
 class TableNeverUpdatedError(config.POptimizerError):
     """Недопустимая операция с не обновленной таблицей."""
-
-
-class TableID(entity.BaseID):
-    """Идентификатор таблиц."""
-
-    def __init__(self, group: str, name: str):
-        """Инициализирует базовый класс."""
-        super().__init__(_PACKAGE, group, name)
 
 
 TableAttrValues = Union[pd.DataFrame, datetime]
@@ -46,7 +35,7 @@ class AbstractTable(entity.BaseEntity[TableAttrValues]):
 
     def __init__(
         self,
-        id_: TableID,
+        id_: entity.ID,
         df: Optional[pd.DataFrame],
         timestamp: Optional[datetime],
     ) -> None:
@@ -96,9 +85,9 @@ class AbstractDBSession(abc.ABC):
     """Сессия работы с базой данных."""
 
     @abc.abstractmethod
-    async def get(self, id_: TableID) -> Optional[Dict[str, TableAttrValues]]:
+    async def get(self, id_: entity.ID) -> Optional[Dict[str, TableAttrValues]]:
         """Получает данные из хранилища."""
 
     @abc.abstractmethod
-    async def commit(self, id_: TableID, tables_vars: Dict[str, TableAttrValues]) -> None:
+    async def commit(self, id_: entity.ID, tables_vars: Dict[str, TableAttrValues]) -> None:
         """Сохраняет данные таблиц."""

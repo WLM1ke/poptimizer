@@ -6,13 +6,14 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from poptimizer.data_di.adapters.logger import AsyncLogger
 from poptimizer.data_di.adapters.mapper import Mapper
-from poptimizer.data_di.ports import table
+from poptimizer.data_di.ports import tables
+from poptimizer.data_di.shared import entity
 
 # Коллекция для одиночный записей
 MISC = "misc"
 
 
-def _collection_and_name(table_name: table.TableID) -> Tuple[str, str, str]:
+def _collection_and_name(table_name: entity.ID) -> Tuple[str, str, str]:
     """Формирует название базы, коллекции и имя документа."""
     collection = table_name.group
     name = table_name.name
@@ -21,7 +22,7 @@ def _collection_and_name(table_name: table.TableID) -> Tuple[str, str, str]:
     return table_name.package, collection, name
 
 
-class MongoDBSession(table.AbstractDBSession):
+class MongoDBSession(tables.AbstractDBSession):
     """Реализация сессии с хранением в MongoDB.
 
     При совпадении id и группы данные записываются в специальную коллекцию, в ином случае в коллекцию
@@ -39,7 +40,7 @@ class MongoDBSession(table.AbstractDBSession):
         self._mapper = mapper
         self._client = client
 
-    async def get(self, id_: table.TableID) -> Optional[Dict[str, table.TableAttrValues]]:
+    async def get(self, id_: entity.ID) -> Optional[Dict[str, tables.TableAttrValues]]:
         """Извлекает документ из коллекции."""
         db, collection, name = _collection_and_name(id_)
         doc = await self._client[db][collection].find_one({"_id": name})
@@ -49,7 +50,7 @@ class MongoDBSession(table.AbstractDBSession):
 
         return self._mapper.decode(doc)
 
-    async def commit(self, id_: table.TableID, tables_vars: Dict[str, table.TableAttrValues]) -> None:
+    async def commit(self, id_: entity.ID, tables_vars: Dict[str, tables.TableAttrValues]) -> None:
         """Записывает данные в MongoDB."""
         self._logger.log(f"Сохранение {id_}")
 

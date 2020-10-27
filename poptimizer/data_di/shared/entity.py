@@ -1,32 +1,17 @@
 """Доменные сущности."""
+import dataclasses
 from typing import Dict, Generic, Iterator, List, TypeVar
 
 from poptimizer.data_di.shared import events
 
 
-class BaseID:
+@dataclasses.dataclass(frozen=True)
+class ID:
     """Базовый идентификатор доменного сущности."""
 
-    def __init__(self, package: str, group: str, name: str):
-        """Сохраняет необходимую информацию."""
-        self._package = package
-        self._group = group
-        self._id = name
-
-    @property
-    def package(self) -> str:
-        """Пакет/доменная область, к которой относится сущность."""
-        return self._package
-
-    @property
-    def group(self) -> str:
-        """Группа/класс сущности."""
-        return self._group
-
-    @property
-    def name(self) -> str:
-        """Имя/идентификатор внутри группы/класса."""
-        return self._id
+    package: str
+    group: str
+    name: str
 
 
 AttrValues = TypeVar("AttrValues")
@@ -39,7 +24,7 @@ class BaseEntity(Generic[AttrValues]):
     автоматического статуса изменений.
     """
 
-    def __init__(self, id_: BaseID) -> None:
+    def __init__(self, id_: ID) -> None:
         """Формирует список событий и отметку об изменениях."""
         self._id = id_
         self._events: List[events.AbstractEvent] = []
@@ -52,7 +37,7 @@ class BaseEntity(Generic[AttrValues]):
         super().__setattr__(key, attr_value)
 
     @property
-    def id_(self) -> BaseID:
+    def id_(self) -> ID:
         """Уникальный идентификатор сущности."""
         return self._id
 
