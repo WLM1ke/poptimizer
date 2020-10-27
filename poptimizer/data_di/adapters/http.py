@@ -11,7 +11,7 @@ def _clean_up(session: aiohttp.ClientSession) -> None:
     loop.run_until_complete(session.close())
 
 
-def http_session_factory(pool_size: int) -> aiohttp.ClientSession:
+def session_factory(pool_size: int) -> aiohttp.ClientSession:
     """Клиентская сессия aiohttp."""
     connector = aiohttp.TCPConnector(limit=pool_size)
     session = aiohttp.ClientSession(connector=connector)

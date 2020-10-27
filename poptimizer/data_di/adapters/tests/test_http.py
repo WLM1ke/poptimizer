@@ -4,9 +4,9 @@ import aiohttp
 from poptimizer.data_di.adapters import http
 
 
-def test_get_aiohttp_session():
+def test_session_factory():
     """Проверка, что http-сессия является асинхронной."""
-    assert isinstance(http.http_session_factory(10), aiohttp.ClientSession)
+    assert isinstance(http.session_factory(10), aiohttp.ClientSession)
 
 
 def test_clean_up(mocker):
