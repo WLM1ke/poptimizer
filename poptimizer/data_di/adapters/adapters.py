@@ -3,10 +3,15 @@ from typing import Final
 
 import aiohttp
 import injector
+from motor import motor_asyncio
 
-from poptimizer.data_di.adapters import http, logger
+from poptimizer.data_di.adapters import http, logger, mongo
 
+# Размер пула http-соединений - при большем размере многие сайты ругаются
 POOL_SIZE: Final = 20
+
+# Ссылка на локальный MongoDB сервер
+MONGO_URI: Final = "mongodb://localhost:27017"
 
 
 class Adapters(injector.Module):
@@ -14,5 +19,6 @@ class Adapters(injector.Module):
 
     def configure(self, binder: injector.Binder) -> None:
         """Построение конфигурация внешней инфраструктуры."""
-        binder.bind(aiohttp.ClientSession, to=http.http_session_factory(POOL_SIZE))
+        binder.bind(aiohttp.ClientSession, to=http.session_factory(POOL_SIZE))
         binder.bind(logger.AsyncLogger, to=logger.AsyncLogger("GateWays"))
+        binder.bind(motor_asyncio.AsyncIOMotorClient, to=mongo.client_factory(MONGO_URI))
