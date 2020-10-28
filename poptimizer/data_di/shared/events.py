@@ -16,5 +16,5 @@ class AbstractHandler(Generic[Event], abc.ABC):
     """Абстрактный тип обработчика событий."""
 
     @abc.abstractmethod
-    def handle_event(self, event: Event) -> None:
+    async def handle_event(self, event: Event) -> None:
         """Обрабатывает событие."""
