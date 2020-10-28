@@ -1,5 +1,5 @@
 """Преобразования типов во время загрузки данных  из MongoDB."""
-from typing import Any, Callable, Dict, Final, NamedTuple, Optional, Tuple
+from typing import Any, Callable, Dict, Final, NamedTuple, Optional, Tuple, cast
 
 import pandas as pd
 
@@ -12,19 +12,19 @@ class Desc(NamedTuple):
     field_name: str
     doc_name: str
     factory_name: str
-    encoder: Optional[Callable[[tables.TableAttrValues], Any]] = None  # type: ignore
-    decoder: Optional[Callable[[Any], tables.TableAttrValues]] = None  # type: ignore
+    encoder: Optional[Callable] = None  # type: ignore
+    decoder: Optional[Callable] = None  # type: ignore
 
 
 class Mapper:
     """Преобразует данные."""
 
-    def __init__(self, desc_list: Tuple[Desc, ...]) -> None:  # type: ignore
+    def __init__(self, desc_list: Tuple[Desc, ...]) -> None:
         """Сохраняет описание кодировки."""
         self._to_doc = {desc.field_name: desc for desc in desc_list}
         self._from_doc = {desc.doc_name: desc for desc in desc_list}
 
-    def encode(self, attr_dict: Dict[str, tables.TableAttrValues]) -> Dict[str, Any]:  # type: ignore
+    def encode(self, attr_dict: tables.TableDict) -> Dict[str, Any]:  # type: ignore
         """Кодирует данные в совместимый с MongoDB формат."""
         desc_dict = self._to_doc
         mongo_dict = {}
@@ -35,7 +35,7 @@ class Mapper:
             mongo_dict[desc.doc_name] = attr_value
         return mongo_dict
 
-    def decode(self, mongo_dict: Dict[str, Any]) -> Dict[str, tables.TableAttrValues]:  # type: ignore
+    def decode(self, mongo_dict: Dict[str, Any]) -> tables.TableDict:  # type: ignore
         """Декодирует данные из формата MongoDB формат атрибутов модели."""
         desc_dict = self._from_doc
         attr_dict = {}
@@ -44,7 +44,7 @@ class Mapper:
             if desc.decoder:
                 attr_value = desc.decoder(attr_value)
             attr_dict[desc.factory_name] = attr_value
-        return attr_dict
+        return cast(tables.TableDict, attr_dict)
 
 
 # Описание мэппинга данных в MongoDB
@@ -53,7 +53,7 @@ DATA_MAPPING: Final = (
         field_name="_df",
         doc_name="data",
         factory_name="df",
-        encoder=lambda df: df.to_dict("split"),  # type: ignore
+        encoder=lambda df: df.to_dict("split"),
         decoder=lambda doc_df: pd.DataFrame(**doc_df),
     ),
     Desc(
