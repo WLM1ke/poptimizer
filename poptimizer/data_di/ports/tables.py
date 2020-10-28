@@ -1,13 +1,18 @@
 """Основной объект доменной модели - таблица."""
 import abc
 import asyncio
+import dataclasses
 from datetime import datetime
-from typing import Dict, Optional, Union
+from typing import Final, Generic, List, Optional, TypedDict, TypeVar
 
 import pandas as pd
 
 from poptimizer import config
 from poptimizer.data_di.shared import entity, events
+from poptimizer.data_di.shared.entity import ID
+
+# Наименование корневого пакета всех таблиц
+TABLES_PACKAGE: Final = "data"
 
 
 class TableNewDataMismatchError(config.POptimizerError):
@@ -22,7 +27,11 @@ class TableNeverUpdatedError(config.POptimizerError):
     """Недопустимая операция с не обновленной таблицей."""
 
 
-TableAttrValues = Union[pd.DataFrame, datetime]
+@dataclasses.dataclass(frozen=True)
+class TableID(ID):
+    """ID таблицы - с фиксированным наименованием пакета."""
+
+    package: str = dataclasses.field(default=TABLES_PACKAGE, init=False)
 
 
 class AbstractTable(entity.BaseEntity[TableAttrValues]):
