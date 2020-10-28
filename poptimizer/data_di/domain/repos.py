@@ -2,7 +2,7 @@
 import asyncio
 import weakref
 from types import TracebackType
-from typing import AsyncContextManager, MutableMapping, Optional, Set, Type
+from typing import AsyncContextManager, Iterator, MutableMapping, Optional, Set, Type
 
 from injector import Inject
 
@@ -11,6 +11,11 @@ from poptimizer.data_di.domain import events, factories
 from poptimizer.data_di.shared import entity, mapper
 
 PACKAGE = "data"
+
+
+def create_id(group: str, name: str) -> entity.ID:
+    """Создает ID."""
+    return entity.ID(PACKAGE, group, name)
 
 
 class WrongTableIDError(config.POptimizerError):
@@ -93,3 +98,7 @@ class Repo(AsyncContextManager["Repo"]):
         if (doc := await self._session.get(table_id)) is None:
             doc = {}
         return self._factory.create_table(table_id, **doc)
+
+    def seen(self) -> Iterator[events.AllTablesTypes]:
+        """Выдает виденные за время работы таблицы."""
+        yield from self._seen
