@@ -1,6 +1,6 @@
 """Доменные сущности."""
 import dataclasses
-from typing import Dict, Generic, Iterator, List, TypeVar
+from typing import Any, Dict, Iterator, List
 
 from poptimizer.data_di.shared import events
 
@@ -14,10 +14,7 @@ class ID:
     name: str
 
 
-AttrValues = TypeVar("AttrValues")
-
-
-class BaseEntity(Generic[AttrValues]):
+class BaseEntity:
     """Абстрактный класс сущности.
 
     Обязательно имеет поле и идентификатором, механизм сохранения и извлечения событий и
@@ -28,9 +25,9 @@ class BaseEntity(Generic[AttrValues]):
         """Формирует список событий и отметку об изменениях."""
         self._id = id_
         self._events: List[events.AbstractEvent] = []
-        self._changed_state: Dict[str, AttrValues] = {}
+        self._changed_state: Dict[str, Any] = {}  # type: ignore
 
-    def __setattr__(self, key: str, attr_value: AttrValues) -> None:
+    def __setattr__(self, key: str, attr_value: Any) -> None:  # type: ignore
         """Сохраняет изменное значение."""
         if key in vars(self):  # noqa: WPS421
             self._changed_state[key] = attr_value
@@ -41,7 +38,7 @@ class BaseEntity(Generic[AttrValues]):
         """Уникальный идентификатор сущности."""
         return self._id
 
-    def changed_state(self) -> Dict[str, AttrValues]:
+    def changed_state(self) -> Dict[str, Any]:  # type: ignore
         """Показывает измененные атрибуты."""
         return {**self._changed_state}
 
