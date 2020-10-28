@@ -3,12 +3,12 @@ import abc
 import asyncio
 import dataclasses
 from datetime import datetime
-from typing import Final, Generic, List, Optional, TypedDict, TypeVar
+from typing import Final, Generic, List, Optional, TypeVar
 
 import pandas as pd
 
 from poptimizer import config
-from poptimizer.data_di.shared import entity, events
+from poptimizer.data_di.shared import entity
 from poptimizer.data_di.shared.entity import ID
 
 # Наименование корневого пакета всех таблиц
@@ -34,7 +34,7 @@ class TableID(ID):
     package: str = dataclasses.field(default=TABLES_PACKAGE, init=False)
 
 
-Event = TypeVar("Event", bound=events.AbstractEvent)
+Event = TypeVar("Event", bound=entity.AbstractEvent)
 
 
 class AbstractTable(Generic[Event], entity.BaseEntity):
@@ -89,24 +89,5 @@ class AbstractTable(Generic[Event], entity.BaseEntity):
         """Проверка корректности новых данных в сравнении со старыми."""
 
     @abc.abstractmethod
-    def _new_events(self) -> List[events.AbstractEvent]:
+    def _new_events(self) -> List[entity.AbstractEvent]:
         """События, которые нужно создать по результатам обновления."""
-
-
-class TableDict(TypedDict, total=False):
-    """Словарь с полями таблицы."""
-
-    _df: pd.DataFrame
-    _timestamp: datetime
-
-
-class AbstractDBSession(abc.ABC):
-    """Сессия работы с базой данных."""
-
-    @abc.abstractmethod
-    async def get(self, id_: TableID) -> Optional[TableDict]:
-        """Получает данные из хранилища."""
-
-    @abc.abstractmethod
-    async def commit(self, id_: TableID, tables_vars: TableDict) -> None:
-        """Сохраняет данные таблиц."""
