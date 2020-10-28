@@ -34,7 +34,10 @@ class TableID(ID):
     package: str = dataclasses.field(default=TABLES_PACKAGE, init=False)
 
 
-class AbstractTable(entity.BaseEntity[TableAttrValues]):
+Event = TypeVar("Event", bound=events.AbstractEvent)
+
+
+class AbstractTable(Generic[Event], entity.BaseEntity):
     """Базовая таблица.
 
     Хранит время последнего обновления и DataFrame.
@@ -44,7 +47,7 @@ class AbstractTable(entity.BaseEntity[TableAttrValues]):
 
     def __init__(
         self,
-        id_: entity.ID,
+        id_: TableID,
         df: Optional[pd.DataFrame],
         timestamp: Optional[datetime],
     ) -> None:
@@ -61,7 +64,7 @@ class AbstractTable(entity.BaseEntity[TableAttrValues]):
             return None
         return df.copy()
 
-    async def handle_event(self, event: events.AbstractEvent) -> None:
+    async def handle_event(self, event: Event) -> None:
         """Обновляет значение, изменяет текущую дату и добавляет связанные с этим события."""
         async with self._df_lock:
             if self._update_cond(event):
@@ -71,14 +74,14 @@ class AbstractTable(entity.BaseEntity[TableAttrValues]):
 
                 self._timestamp = datetime.utcnow()
                 self._df = df_new
-                self._events.append(self._new_events())
+                self._events.extend(self._new_events())
 
     @abc.abstractmethod
-    def _update_cond(self, event: events.AbstractEvent) -> bool:
+    def _update_cond(self, event: Event) -> bool:
         """Условие обновления."""
 
     @abc.abstractmethod
-    async def _prepare_df(self, event: events.AbstractEvent) -> pd.DataFrame:
+    async def _prepare_df(self, event: Event) -> pd.DataFrame:
         """Новое значение DataFrame."""
 
     @abc.abstractmethod
@@ -86,7 +89,7 @@ class AbstractTable(entity.BaseEntity[TableAttrValues]):
         """Проверка корректности новых данных в сравнении со старыми."""
 
     @abc.abstractmethod
-    def _new_events(self) -> events.AbstractEvent:
+    def _new_events(self) -> List[events.AbstractEvent]:
         """События, которые нужно создать по результатам обновления."""
 
 
