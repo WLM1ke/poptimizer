@@ -93,13 +93,20 @@ class AbstractTable(Generic[Event], entity.BaseEntity):
         """События, которые нужно создать по результатам обновления."""
 
 
+class TableDict(TypedDict, total=False):
+    """Словарь с полями таблицы."""
+
+    _df: pd.DataFrame
+    _timestamp: datetime
+
+
 class AbstractDBSession(abc.ABC):
     """Сессия работы с базой данных."""
 
     @abc.abstractmethod
-    async def get(self, id_: entity.ID) -> Optional[Dict[str, TableAttrValues]]:
+    async def get(self, id_: TableID) -> Optional[TableDict]:
         """Получает данные из хранилища."""
 
     @abc.abstractmethod
-    async def commit(self, id_: entity.ID, tables_vars: Dict[str, TableAttrValues]) -> None:
+    async def commit(self, id_: TableID, tables_vars: TableDict) -> None:
         """Сохраняет данные таблиц."""
