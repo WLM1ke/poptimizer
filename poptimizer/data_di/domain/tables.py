@@ -1,18 +1,13 @@
 """Основной объект доменной модели - таблица."""
 import abc
 import asyncio
-import dataclasses
 from datetime import datetime
-from typing import Final, Generic, List, Optional, TypeVar
+from typing import Generic, List, Optional, TypeVar
 
 import pandas as pd
 
 from poptimizer import config
 from poptimizer.data_di.shared import entity
-from poptimizer.data_di.shared.entity import AbstractEvent, ID
-
-# Наименование корневого пакета всех таблиц
-TABLES_PACKAGE: Final = "data"
 
 
 class TableNewDataMismatchError(config.POptimizerError):
@@ -27,14 +22,7 @@ class TableNeverUpdatedError(config.POptimizerError):
     """Недопустимая операция с не обновленной таблицей."""
 
 
-@dataclasses.dataclass(frozen=True)
-class TableID(ID):
-    """ID таблицы - с фиксированным наименованием пакета."""
-
-    package: str = dataclasses.field(default=TABLES_PACKAGE, init=False)
-
-
-Event = TypeVar("Event", bound=AbstractEvent)
+Event = TypeVar("Event", bound=entity.AbstractEvent)
 
 
 class AbstractTable(Generic[Event], entity.BaseEntity):
@@ -47,7 +35,7 @@ class AbstractTable(Generic[Event], entity.BaseEntity):
 
     def __init__(
         self,
-        id_: TableID,
+        id_: entity.ID,
         df: Optional[pd.DataFrame],
         timestamp: Optional[datetime],
     ) -> None:
@@ -89,5 +77,5 @@ class AbstractTable(Generic[Event], entity.BaseEntity):
         """Проверка корректности новых данных в сравнении со старыми."""
 
     @abc.abstractmethod
-    def _new_events(self) -> List[AbstractEvent]:
+    def _new_events(self) -> List[entity.AbstractEvent]:
         """События, которые нужно создать по результатам обновления."""

@@ -4,8 +4,8 @@ from typing import Callable, NamedTuple, Optional, Tuple, Type
 from motor.motor_asyncio import AsyncIOMotorClient
 
 import poptimizer.data_di
-from poptimizer.data_di.shared.logger import AsyncLogger
 from poptimizer.data_di.shared import entity
+from poptimizer.data_di.shared.logger import AsyncLogger
 
 # Коллекция для сохранения объектов из групп с одним объектом
 MISC = "misc"

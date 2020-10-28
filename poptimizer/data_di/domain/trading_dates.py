@@ -6,6 +6,7 @@ import pandas as pd
 
 from poptimizer.data_di.domain import events, tables, update
 from poptimizer.data_di.ports import gateways
+from poptimizer.data_di.shared import entity
 
 
 class TradingDates(tables.AbstractTable[events.AppStarted]):
@@ -17,7 +18,7 @@ class TradingDates(tables.AbstractTable[events.AppStarted]):
 
     def __init__(
         self,
-        id_: tables.TableID,
+        id_: entity.ID,
         df: Optional[pd.DataFrame],
         timestamp: Optional[datetime],
         gateway: gateways.AbstractGateway,
@@ -41,7 +42,7 @@ class TradingDates(tables.AbstractTable[events.AppStarted]):
         if df_new.columns.tolist() != ["from", "till"]:
             raise tables.TableIndexError()
 
-    def _new_events(self) -> List[tables.AbstractEvent]:
+    def _new_events(self) -> List[entity.AbstractEvent]:
         """Событие окончания торгового дня."""
         if (df := self._df) is None:
             raise tables.TableNeverUpdatedError(self._id)

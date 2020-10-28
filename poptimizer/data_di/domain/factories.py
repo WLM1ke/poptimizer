@@ -1,13 +1,14 @@
 """Фабрики по созданию таблиц и их сериализации."""
 from datetime import datetime
-from typing import Optional
+from typing import Optional, cast
 
 import pandas as pd
 from injector import Inject
 
 from poptimizer.data_di.adapters.gateways.trading_dates import TradingDatesGateway
-from poptimizer.data_di.domain import tables
+from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.trading_dates import TradingDates
+from poptimizer.data_di.shared import entity
 
 
 class TablesFactory:
@@ -22,9 +23,9 @@ class TablesFactory:
 
     def create_table(
         self,
-        table_id: tables.TableID,
+        table_id: entity.ID,
         df: Optional[pd.DataFrame] = None,
         timestamp: Optional[datetime] = None,
-    ) -> TradingDates:
+    ) -> events.AllTablesTypes:
         """Создает таблицу на основе данных и обновляет ее."""
-        return TradingDates(table_id, df, timestamp, self._gateway)
+        return cast(events.AllTablesTypes, TradingDates(table_id, df, timestamp, self._gateway))
