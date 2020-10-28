@@ -9,7 +9,7 @@ import pandas as pd
 
 from poptimizer import config
 from poptimizer.data_di.shared import entity
-from poptimizer.data_di.shared.entity import ID
+from poptimizer.data_di.shared.entity import AbstractEvent, ID
 
 # Наименование корневого пакета всех таблиц
 TABLES_PACKAGE: Final = "data"
@@ -34,7 +34,7 @@ class TableID(ID):
     package: str = dataclasses.field(default=TABLES_PACKAGE, init=False)
 
 
-Event = TypeVar("Event", bound=entity.AbstractEvent)
+Event = TypeVar("Event", bound=AbstractEvent)
 
 
 class AbstractTable(Generic[Event], entity.BaseEntity):
@@ -89,5 +89,5 @@ class AbstractTable(Generic[Event], entity.BaseEntity):
         """Проверка корректности новых данных в сравнении со старыми."""
 
     @abc.abstractmethod
-    def _new_events(self) -> List[entity.AbstractEvent]:
+    def _new_events(self) -> List[AbstractEvent]:
         """События, которые нужно создать по результатам обновления."""

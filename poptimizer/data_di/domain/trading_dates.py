@@ -4,8 +4,8 @@ from typing import List, Optional
 
 import pandas as pd
 
-from poptimizer.data_di.domain import events, update
-from poptimizer.data_di.ports import gateways, tables
+from poptimizer.data_di.domain import events, tables, update
+from poptimizer.data_di.ports import gateways
 
 
 class TradingDates(tables.AbstractTable[events.AppStarted]):
@@ -17,7 +17,7 @@ class TradingDates(tables.AbstractTable[events.AppStarted]):
 
     def __init__(
         self,
-        id_: tables.ID,
+        id_: tables.TableID,
         df: Optional[pd.DataFrame],
         timestamp: Optional[datetime],
         gateway: gateways.AbstractGateway,
@@ -41,7 +41,7 @@ class TradingDates(tables.AbstractTable[events.AppStarted]):
         if df_new.columns.tolist() != ["from", "till"]:
             raise tables.TableIndexError()
 
-    def _new_events(self) -> List[events.AbstractEvent]:
+    def _new_events(self) -> List[tables.AbstractEvent]:
         """Событие окончания торгового дня."""
         if (df := self._df) is None:
             raise tables.TableNeverUpdatedError(self._id)
