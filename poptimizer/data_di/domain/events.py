@@ -2,11 +2,11 @@
 import dataclasses
 import datetime
 
-from poptimizer.data_di.shared import events
+from poptimizer.data_di.shared.events import AbstractEvent
 
 
 @dataclasses.dataclass(frozen=True)
-class AppStarted(events.AbstractEvent):
+class AppStarted(AbstractEvent):
     """Начало работы приложения.
 
     Обработчики данного события должны осуществить всю необходимую инициализацию.
@@ -19,7 +19,7 @@ class AppStarted(events.AbstractEvent):
 
 
 @dataclasses.dataclass(frozen=True)
-class TradingDayEnded(events.AbstractEvent):
+class TradingDayEnded(AbstractEvent):
     """Произошло окончание очередного торгового дня."""
 
     date: datetime.date
