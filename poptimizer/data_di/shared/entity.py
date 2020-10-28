@@ -1,8 +1,23 @@
-"""Доменные сущности."""
+"""Базовые классы доменных событий и объектов."""
+import abc
 import dataclasses
-from typing import Any, Dict, Iterator, List
+from typing import Any, Dict, Generic, Iterator, List, TypeVar
 
-from poptimizer.data_di.shared import events
+
+@dataclasses.dataclass(frozen=True)
+class AbstractEvent(abc.ABC):
+    """Абстрактный тип события."""
+
+
+Event = TypeVar("Event", bound=AbstractEvent)
+
+
+class AbstractHandler(Generic[Event], abc.ABC):
+    """Абстрактный тип обработчика событий."""
+
+    @abc.abstractmethod
+    async def handle_event(self, event: Event) -> None:
+        """Обрабатывает событие."""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -12,6 +27,9 @@ class ID:
     package: str
     group: str
     name: str
+
+
+StateDict = Dict[str, Any]  # type: ignore
 
 
 class BaseEntity:
@@ -24,8 +42,8 @@ class BaseEntity:
     def __init__(self, id_: ID) -> None:
         """Формирует список событий и отметку об изменениях."""
         self._id = id_
-        self._events: List[events.AbstractEvent] = []
-        self._changed_state: Dict[str, Any] = {}  # type: ignore
+        self._events: List[AbstractEvent] = []
+        self._changed_state: StateDict = {}
 
     def __setattr__(self, key: str, attr_value: Any) -> None:  # type: ignore
         """Сохраняет изменное значение."""
@@ -38,15 +56,15 @@ class BaseEntity:
         """Уникальный идентификатор сущности."""
         return self._id
 
-    def changed_state(self) -> Dict[str, Any]:  # type: ignore
+    def changed_state(self) -> StateDict:
         """Показывает измененные атрибуты."""
-        return {**self._changed_state}
+        return self._changed_state
 
     def clear(self) -> None:
         """Сбрасывает изменения."""
         self._changed_state.clear()
 
-    def pop_event(self) -> Iterator[events.AbstractEvent]:
+    def pop_event(self) -> Iterator[AbstractEvent]:
         """Возвращает события возникшие в за время существования сущности."""
         while self._events:
             yield self._events.pop()
