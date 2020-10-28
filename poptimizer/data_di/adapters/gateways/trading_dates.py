@@ -6,8 +6,8 @@ import aiomoex
 import pandas as pd
 from injector import Inject
 
-from poptimizer.data_di.adapters.logger import AsyncLogger
 from poptimizer.data_di.ports import gateways
+from poptimizer.data_di.shared import logger
 
 
 class TradingDatesGateway(gateways.AbstractGateway):
@@ -16,10 +16,10 @@ class TradingDatesGateway(gateways.AbstractGateway):
     def __init__(
         self,
         session: Inject[aiohttp.ClientSession],
-        logger: Inject[Type[AsyncLogger]],
+        logger_type: Inject[Type[logger.AsyncLogger]],
     ) -> None:
         """Кэшируются данные, чтобы сократить количество обращений к серверу MOEX."""
-        self._logger = logger(self.__class__.__name__)
+        self._logger = logger_type(self.__class__.__name__)
         self._session = session
 
     async def get(self) -> pd.DataFrame:
