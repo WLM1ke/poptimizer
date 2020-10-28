@@ -13,7 +13,7 @@ class AppStartedHandler(entity.AbstractHandler[events.AppStarted]):
         self._repo = repo
 
     async def handle_event(self, event: events.AppStarted) -> None:
-        """ """
-        table_id = repos.create_id("trading_date", "trading_date")
+        """Обновляет таблицу с торговыми днями."""
+        table_id = repos.create_id("trading_date")
         table = await self._repo.get_table(table_id)
         await table.handle_event(event)

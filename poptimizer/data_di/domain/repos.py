@@ -13,8 +13,10 @@ from poptimizer.data_di.shared import entity, mapper
 PACKAGE = "data"
 
 
-def create_id(group: str, name: str) -> entity.ID:
+def create_id(group: str, name: Optional[str] = None) -> entity.ID:
     """Создает ID."""
+    if name is None:
+        name = group
     return entity.ID(PACKAGE, group, name)
 
 
@@ -65,6 +67,10 @@ class Repo(AsyncContextManager["Repo"]):
 
         await asyncio.gather(*dirty)
 
+    def seen(self) -> Iterator[events.AllTablesTypes]:
+        """Выдает виденные за время работы таблицы."""
+        yield from self._seen
+
     async def get_table(self, table_id: entity.ID) -> events.AllTablesTypes:
         """Берет таблицу из репозитория."""
         if table_id.package != PACKAGE:
@@ -98,7 +104,3 @@ class Repo(AsyncContextManager["Repo"]):
         if (doc := await self._session.get(table_id)) is None:
             doc = {}
         return self._factory.create_table(table_id, **doc)
-
-    def seen(self) -> Iterator[events.AllTablesTypes]:
-        """Выдает виденные за время работы таблицы."""
-        yield from self._seen
