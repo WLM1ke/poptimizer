@@ -1,7 +1,6 @@
 """Базовые классы для сохранения доменных объектов в MongoDB."""
 from typing import Callable, NamedTuple, Optional, Tuple, Type
 
-from injector import Inject
 from motor.motor_asyncio import AsyncIOMotorClient
 
 import poptimizer.data_di
@@ -70,9 +69,9 @@ class MongoDBSession:
 
     def __init__(
         self,
-        client: Inject[AsyncIOMotorClient],
-        mapper: Inject[Mapper],
-        logger_type: Inject[Type[AsyncLogger]],
+        client: AsyncIOMotorClient,
+        mapper: Mapper,
+        logger_type: Type[AsyncLogger],
     ) -> None:
         """Получает ссылку на базу данных."""
         self._logger = logger_type(self.__class__.__name__)
