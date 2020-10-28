@@ -1,5 +1,5 @@
 """Реализации сессий доступа к базе данных."""
-from typing import Dict, Optional, Tuple, Type
+from typing import Optional, Tuple, Type
 
 from injector import Inject
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -40,7 +40,7 @@ class MongoDBSession(tables.AbstractDBSession):
         self._mapper = mapper
         self._client = client
 
-    async def get(self, id_: entity.ID) -> Optional[Dict[str, tables.TableAttrValues]]:
+    async def get(self, id_: entity.ID) -> Optional[tables.TableDict]:
         """Извлекает документ из коллекции."""
         db, collection, name = _collection_and_name(id_)
         db_collection = self._client[db][collection]
@@ -51,7 +51,7 @@ class MongoDBSession(tables.AbstractDBSession):
 
         return self._mapper.decode(doc)
 
-    async def commit(self, id_: entity.ID, tables_vars: Dict[str, tables.TableAttrValues]) -> None:
+    async def commit(self, id_: entity.ID, tables_vars: tables.TableDict) -> None:
         """Записывает данные в MongoDB."""
         self._logger.log(f"Сохранение {id_}")
 
