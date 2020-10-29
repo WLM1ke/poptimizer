@@ -30,7 +30,6 @@ class AbstractTable(Generic[Event], entity.BaseEntity):
 
     Хранит время последнего обновления и DataFrame.
     Умеет обрабатывать связанное с ней событие.
-    Имеет атрибут для получение значения таблицы в виде DataFrame.
     """
 
     def __init__(
@@ -44,13 +43,6 @@ class AbstractTable(Generic[Event], entity.BaseEntity):
         self._df = df
         self._timestamp = timestamp
         self._df_lock = asyncio.Lock()
-
-    @property
-    def df(self) -> Optional[pd.DataFrame]:
-        """Таблица с данными."""
-        if (df := self._df) is None:
-            return None
-        return df.copy()
 
     async def handle_event(self, event: Event) -> List[entity.AbstractEvent]:
         """Обновляет значение, изменяет текущую дату и добавляет связанные с этим события."""
