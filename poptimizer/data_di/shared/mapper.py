@@ -4,7 +4,7 @@ from typing import Callable, NamedTuple, Optional, Tuple, Type
 from motor.motor_asyncio import AsyncIOMotorClient
 
 import poptimizer.data_di
-from poptimizer.data_di.shared import entity
+from poptimizer.data_di.shared import entities
 from poptimizer.data_di.shared.logger import AsyncLogger
 
 # Коллекция для сохранения объектов из групп с одним объектом
@@ -29,7 +29,7 @@ class Mapper:
         self._to_doc = {desc.field_name: desc for desc in desc_list}
         self._from_doc = {desc.doc_name: desc for desc in desc_list}
 
-    def encode(self, attr_dict: entity.StateDict) -> entity.StateDict:
+    def encode(self, attr_dict: entities.StateDict) -> entities.StateDict:
         """Кодирует данные в совместимый с MongoDB формат."""
         desc_dict = self._to_doc
         mongo_dict = {}
@@ -40,7 +40,7 @@ class Mapper:
             mongo_dict[desc.doc_name] = attr_value
         return mongo_dict
 
-    def decode(self, mongo_dict: entity.StateDict) -> entity.StateDict:
+    def decode(self, mongo_dict: entities.StateDict) -> entities.StateDict:
         """Декодирует данные из формата MongoDB формат атрибутов модели."""
         desc_dict = self._from_doc
         attr_dict = {}
@@ -52,7 +52,7 @@ class Mapper:
         return attr_dict
 
 
-def _collection_and_name(table_name: entity.ID) -> Tuple[str, str, str]:
+def _collection_and_name(table_name: entities.ID) -> Tuple[str, str, str]:
     """Формирует название базы, коллекции и имя документа."""
     collection = table_name.group
     name = table_name.name
@@ -78,7 +78,7 @@ class MongoDBSession:
         self._mapper = mapper
         self._client = client
 
-    async def get(self, id_: entity.ID) -> Optional[poptimizer.data_di.shared.entity.StateDict]:
+    async def get(self, id_: entities.ID) -> Optional[poptimizer.data_di.shared.entities.StateDict]:
         """Извлекает документ из коллекции."""
         db, collection, name = _collection_and_name(id_)
         db_collection = self._client[db][collection]
@@ -91,17 +91,19 @@ class MongoDBSession:
 
     async def commit(
         self,
-        id_: entity.ID,
-        tables_vars: poptimizer.data_di.shared.entity.StateDict,
+        entity: entities.BaseEntity,
     ) -> None:
         """Записывает данные в MongoDB."""
+        id_ = entity.id_
         self._logger.log(f"Сохранение {id_}")
 
         db, collection, name = _collection_and_name(id_)
-        doc = self._mapper.encode(tables_vars)
+        if entity_state := entity.changed_state():
+            entity.clear()
+            doc = self._mapper.encode(entity_state)
 
-        await self._client[db][collection].replace_one(
-            filter={"_id": name},
-            replacement=dict(_id=name, **doc),
-            upsert=True,
-        )
+            await self._client[db][collection].replace_one(
+                filter={"_id": name},
+                replacement=dict(_id=name, **doc),
+                upsert=True,
+            )

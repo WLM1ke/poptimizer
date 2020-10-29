@@ -4,7 +4,7 @@ import datetime
 from typing import Union
 
 from poptimizer.data_di.domain import tables
-from poptimizer.data_di.shared.entity import AbstractEvent
+from poptimizer.data_di.shared.entities import AbstractEvent
 
 
 @dataclasses.dataclass(frozen=True)

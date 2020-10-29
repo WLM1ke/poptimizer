@@ -8,7 +8,7 @@ from injector import Inject
 from poptimizer.data_di.adapters.gateways.trading_dates import TradingDatesGateway
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.trading_dates import TradingDates
-from poptimizer.data_di.shared import entity
+from poptimizer.data_di.shared import entities
 
 
 class TablesFactory:
@@ -23,7 +23,7 @@ class TablesFactory:
 
     def create_table(
         self,
-        table_id: entity.ID,
+        table_id: entities.ID,
         df: Optional[pd.DataFrame] = None,
         timestamp: Optional[datetime] = None,
     ) -> events.AllTablesTypes:

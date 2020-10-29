@@ -8,16 +8,16 @@ from injector import Inject
 
 from poptimizer import config
 from poptimizer.data_di.domain import events, factories
-from poptimizer.data_di.shared import entity, mapper
+from poptimizer.data_di.shared import entities, mapper
 
 PACKAGE = "data"
 
 
-def create_id(group: str, name: Optional[str] = None) -> entity.ID:
+def create_id(group: str, name: Optional[str] = None) -> entities.ID:
     """Создает ID."""
     if name is None:
         name = group
-    return entity.ID(PACKAGE, group, name)
+    return entities.ID(PACKAGE, group, name)
 
 
 class WrongTableIDError(config.POptimizerError):
@@ -33,7 +33,7 @@ class Repo(AsyncContextManager["Repo"]):
     """
 
     _identity_map: MutableMapping[
-        entity.ID,
+        entities.ID,
         events.AllTablesTypes,
     ] = weakref.WeakValueDictionary()
 
@@ -61,9 +61,7 @@ class Repo(AsyncContextManager["Repo"]):
         dirty = []
         commit = self._session.commit
         for seen_table in self._seen:
-            if doc := seen_table.changed_state():
-                dirty.append(commit(seen_table.id_, doc))
-                seen_table.clear()
+            dirty.append(commit(seen_table))
 
         await asyncio.gather(*dirty)
 
@@ -71,7 +69,7 @@ class Repo(AsyncContextManager["Repo"]):
         """Выдает виденные за время работы таблицы."""
         yield from self._seen
 
-    async def get_table(self, table_id: entity.ID) -> events.AllTablesTypes:
+    async def get_table(self, table_id: entities.ID) -> events.AllTablesTypes:
         """Берет таблицу из репозитория."""
         if table_id.package != PACKAGE:
             raise WrongTableIDError(table_id)
@@ -79,7 +77,7 @@ class Repo(AsyncContextManager["Repo"]):
         self._seen.add(table)
         return table
 
-    async def _load_table(self, table_id: entity.ID) -> events.AllTablesTypes:
+    async def _load_table(self, table_id: entities.ID) -> events.AllTablesTypes:
         """Загрузка таблицы.
 
         - Синхронно загружается из identity map
@@ -99,7 +97,7 @@ class Repo(AsyncContextManager["Repo"]):
 
         return table
 
-    async def _load_or_create(self, table_id: entity.ID) -> events.AllTablesTypes:
+    async def _load_or_create(self, table_id: entities.ID) -> events.AllTablesTypes:
         """Загружает из базы, а в случае отсутствия создается пустая таблица."""
         if (doc := await self._session.get(table_id)) is None:
             doc = {}

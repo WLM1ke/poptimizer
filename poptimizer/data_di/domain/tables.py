@@ -7,7 +7,7 @@ from typing import Generic, List, Optional, TypeVar
 import pandas as pd
 
 from poptimizer import config
-from poptimizer.data_di.shared import entity
+from poptimizer.data_di.shared import entities
 
 
 class TableNewDataMismatchError(config.POptimizerError):
@@ -22,10 +22,10 @@ class TableNeverUpdatedError(config.POptimizerError):
     """Недопустимая операция с не обновленной таблицей."""
 
 
-Event = TypeVar("Event", bound=entity.AbstractEvent)
+Event = TypeVar("Event", bound=entities.AbstractEvent)
 
 
-class AbstractTable(Generic[Event], entity.BaseEntity):
+class AbstractTable(Generic[Event], entities.BaseEntity):
     """Базовая таблица.
 
     Хранит время последнего обновления и DataFrame.
@@ -34,7 +34,7 @@ class AbstractTable(Generic[Event], entity.BaseEntity):
 
     def __init__(
         self,
-        id_: entity.ID,
+        id_: entities.ID,
         df: Optional[pd.DataFrame],
         timestamp: Optional[datetime],
     ) -> None:
@@ -44,7 +44,7 @@ class AbstractTable(Generic[Event], entity.BaseEntity):
         self._timestamp = timestamp
         self._df_lock = asyncio.Lock()
 
-    async def handle_event(self, event: Event) -> List[entity.AbstractEvent]:
+    async def handle_event(self, event: Event) -> List[entities.AbstractEvent]:
         """Обновляет значение, изменяет текущую дату и добавляет связанные с этим события."""
         async with self._df_lock:
             if self._update_cond(event):
@@ -70,5 +70,5 @@ class AbstractTable(Generic[Event], entity.BaseEntity):
         """Проверка корректности новых данных в сравнении со старыми."""
 
     @abc.abstractmethod
-    def _new_events(self) -> List[entity.AbstractEvent]:
+    def _new_events(self) -> List[entities.AbstractEvent]:
         """События, которые нужно создать по результатам обновления."""
