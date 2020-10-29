@@ -52,7 +52,7 @@ class AbstractTable(Generic[Event], entity.BaseEntity):
             return None
         return df.copy()
 
-    async def handle_event(self, event: Event) -> None:
+    async def handle_event(self, event: Event) -> List[entity.AbstractEvent]:
         """Обновляет значение, изменяет текущую дату и добавляет связанные с этим события."""
         async with self._df_lock:
             if self._update_cond(event):
@@ -62,7 +62,8 @@ class AbstractTable(Generic[Event], entity.BaseEntity):
 
                 self._timestamp = datetime.utcnow()
                 self._df = df_new
-                self._events.extend(self._new_events())
+                return self._new_events()
+            return []
 
     @abc.abstractmethod
     def _update_cond(self, event: Event) -> bool:
