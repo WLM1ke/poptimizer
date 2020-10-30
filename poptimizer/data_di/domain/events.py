@@ -1,9 +1,7 @@
 """События связанные с таблицами."""
 import dataclasses
 import datetime
-from typing import Union
 
-from poptimizer.data_di.domain import tables
 from poptimizer.data_di.shared.entities import AbstractEvent
 
 
@@ -25,7 +23,3 @@ class TradingDayEnded(AbstractEvent):
     """Произошло окончание очередного торгового дня."""
 
     date: datetime.date
-
-
-AllEventsTypes = Union[AppStarted, TradingDayEnded]
-AllTablesTypes = tables.AbstractTable[AllEventsTypes]
