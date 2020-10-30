@@ -1,7 +1,7 @@
 """Базовые классы доменных событий и объектов."""
 import abc
 import dataclasses
-from typing import Any, Dict, Generic, Iterator, List, TypeVar
+from typing import Any, Dict, Generic, List, TypeVar
 
 
 @dataclasses.dataclass(frozen=True)
