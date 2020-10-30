@@ -1,9 +1,11 @@
 """Таблица с торговыми датами."""
 from datetime import datetime
-from typing import List, Optional
+from typing import ClassVar, List, Optional
 
 import pandas as pd
+from injector import Inject
 
+from poptimizer.data_di.adapters.gateways.trading_dates import TradingDatesGateway
 from poptimizer.data_di.domain import events, tables, update
 from poptimizer.data_di.ports import gateways
 from poptimizer.data_di.shared import entities
@@ -48,3 +50,25 @@ class TradingDates(tables.AbstractTable[events.AppStarted]):
             raise tables.TableNeverUpdatedError(self._id)
         last_trading_day = df.loc[0, "till"]
         return [events.TradingDayEnded(last_trading_day.date())]
+
+
+class TablesFactory(tables.AbstractTableFactory[events.AppStarted]):
+    """Фабрика создания таблиц."""
+
+    _group: ClassVar[str] = "trading_dates"
+
+    def __init__(
+        self,
+        trading_dates_gateway: Inject[TradingDatesGateway],
+    ) -> None:
+        """Сохраняет нужный gateway."""
+        self._gateway = trading_dates_gateway
+
+    def _create_table(
+        self,
+        table_id: entities.ID,
+        df: Optional[pd.DataFrame] = None,
+        timestamp: Optional[datetime] = None,
+    ) -> tables.AbstractTable[events.AppStarted]:
+        """Создает таблицу определенного типа."""
+        return TradingDates(table_id, df, timestamp, self._gateway)
