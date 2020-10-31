@@ -15,7 +15,7 @@ class AsyncLogger(Generic[ObjectType]):
 
     def __init__(self) -> None:
         """Инициализация логгера."""
-        self._logger: logging.Logger = logging.getLogger()
+        self._logger = logging.getLogger()
 
     def __set_name__(self, owner: Type[ObjectType], name: str) -> None:
         """Создает логгер с именем класса, где он является атрибутом."""
