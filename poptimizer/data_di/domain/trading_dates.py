@@ -55,7 +55,7 @@ class TradingDates(tables.AbstractTable[events.AppStarted]):
 class TablesFactory(tables.AbstractTableFactory[events.AppStarted]):
     """Фабрика создания таблиц."""
 
-    _group: ClassVar[str] = "trading_dates"
+    group: ClassVar[str] = "trading_dates"
 
     def __init__(
         self,
