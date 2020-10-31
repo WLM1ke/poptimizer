@@ -90,7 +90,7 @@ class WrongTableIDError(config.POptimizerError):
 class AbstractTableFactory(Generic[Event], abc.ABC):
     """Фабрика по созданию таблиц определенного типа."""
 
-    _group: ClassVar[str]
+    group: ClassVar[str]
 
     def create_table(
         self,
@@ -101,7 +101,7 @@ class AbstractTableFactory(Generic[Event], abc.ABC):
         """Создает таблицу определенного типа и проверяет корректность группы таблицы."""
         if table_id.package != PACKAGE:
             raise WrongTableIDError(table_id)
-        if table_id.group != self._group:
+        if table_id.group != self.group:
             raise WrongTableIDError(table_id)
         return self._create_table(table_id, df, timestamp)
 
