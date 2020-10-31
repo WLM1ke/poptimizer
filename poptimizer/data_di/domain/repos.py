@@ -1,14 +1,22 @@
 """Реализация репозиторий с таблицами."""
 import weakref
-from typing import Generic, MutableMapping, Set, TypeVar
+from typing import List, MutableMapping, Set
 
+import injector
+
+from poptimizer import config
 from poptimizer.data_di.domain import tables
 from poptimizer.data_di.shared import entities, mapper
 
-Event = TypeVar("Event", bound=entities.AbstractEvent)
+AnyTableFactory = tables.AbstractTableFactory[entities.AbstractEvent]
+AnyTable = tables.AbstractTable[entities.AbstractEvent]
 
 
-class Repo(Generic[Event]):
+class NoFactoryError(config.POptimizerError):
+    """Отсутствует фабрика для группы таблиц."""
+
+
+class Repo:
     """Класс репозитория для хранения таблиц.
 
     Контекстный менеджер обеспечивающий сохранение измененных таблиц. С помощью identity_map
@@ -18,30 +26,30 @@ class Repo(Generic[Event]):
 
     _identity_map: MutableMapping[
         entities.ID,
-        tables.AbstractTable[Event],
+        AnyTable,
     ] = weakref.WeakValueDictionary()
 
     def __init__(
         self,
-        db_session: mapper.MongoDBSession,
-        factory: tables.AbstractTableFactory[Event],
+        db_session: injector.Inject[mapper.MongoDBSession],
+        factories: injector.Inject[List[AnyTableFactory]],
     ) -> None:
         """Сохраняются ссылки на таблицы, которые были добавлены или взяты из репозитория."""
         self._session = db_session
-        self._factory = factory
-        self._seen: Set[tables.AbstractTable[Event]] = set()
+        self._factories = {factory.group: factory for factory in factories}
+        self._seen: Set[AnyTable] = set()
 
-    def seen(self) -> Set[tables.AbstractTable[Event]]:
+    def seen(self) -> Set[AnyTable]:
         """Возвращает виденные таблицы."""
         return self._seen
 
-    async def get_table(self, table_id: entities.ID) -> tables.AbstractTable[Event]:
+    async def get_table(self, table_id: entities.ID) -> AnyTable:
         """Берет таблицу из репозитория."""
         table = await self._load_table(table_id)
         self._seen.add(table)
         return table
 
-    async def _load_table(self, table_id: entities.ID) -> tables.AbstractTable[Event]:
+    async def _load_table(self, table_id: entities.ID) -> AnyTable:
         """Загрузка таблицы.
 
         - Синхронно загружается из identity map
@@ -61,8 +69,13 @@ class Repo(Generic[Event]):
 
         return table
 
-    async def _load_or_create(self, table_id: entities.ID) -> tables.AbstractTable[Event]:
+    async def _load_or_create(self, table_id: entities.ID) -> AnyTable:
         """Загружает из базы, а в случае отсутствия создается пустая таблица."""
         if (doc := await self._session.get(table_id)) is None:
             doc = {}
-        return self._factory.create_table(table_id, **doc)
+        group = table_id.group
+        try:
+            factory = self._factories[group]
+        except KeyError:
+            raise NoFactoryError(table_id)
+        return factory.create_table(table_id, **doc)
