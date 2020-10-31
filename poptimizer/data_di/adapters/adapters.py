@@ -37,6 +37,7 @@ class Adapters(injector.Module):
     """Конфигурация внешней инфраструктуры."""
 
     @injector.provider
+    @injector.singleton
     def logger_type(self) -> Type[logger.AsyncLogger]:
         """Предоставляет класс асинхронного логгера."""
         return logger.AsyncLogger

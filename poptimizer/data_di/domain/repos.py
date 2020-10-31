@@ -2,7 +2,7 @@
 import weakref
 from typing import List, MutableMapping, Set
 
-import injector
+from injector import Inject
 
 from poptimizer import config
 from poptimizer.data_di.domain import tables
@@ -31,8 +31,8 @@ class Repo:
 
     def __init__(
         self,
-        db_session: injector.Inject[mapper.MongoDBSession],
-        factories: injector.Inject[List[AnyTableFactory]],
+        db_session: mapper.MongoDBSession,
+        factories: List[AnyTableFactory],
     ) -> None:
         """Сохраняются ссылки на таблицы, которые были добавлены или взяты из репозитория."""
         self._session = db_session
@@ -79,3 +79,20 @@ class Repo:
         except KeyError:
             raise NoFactoryError(table_id)
         return factory.create_table(table_id, **doc)
+
+
+class ReposFactory:
+    """Фабрика по созданию репо."""
+
+    def __init__(
+        self,
+        db_session: Inject[mapper.MongoDBSession],
+        factories: Inject[List[AnyTableFactory]],
+    ) -> None:
+        """Сохраняет для создания репо."""
+        self._session = db_session
+        self._factories = factories
+
+    def __call__(self) -> Repo:
+        """Создает новое репо."""
+        return Repo(self._session, self._factories)
