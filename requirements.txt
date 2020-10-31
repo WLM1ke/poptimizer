@@ -32,9 +32,6 @@ certifi
 # Операции с процессами
 psutil
 
-# Внедрение зависимостей
-injector
-
 # Yaml
 pyyaml
 
