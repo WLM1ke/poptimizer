@@ -1,7 +1,7 @@
 """Базовые классы доменных событий и объектов."""
 import abc
 import dataclasses
-from typing import Dict, Generic, List, Optional, TypeVar
+from typing import Dict, Generic, List, TypeVar
 
 
 @dataclasses.dataclass(frozen=True)
@@ -78,5 +78,5 @@ class AbstractRepo(Generic[EntityType], abc.ABC):
     """Абстрактный репозиторий."""
 
     @abc.abstractmethod
-    async def get(self, id_: ID) -> Optional[EntityType]:
+    async def get(self, id_: ID) -> EntityType:
         """Получить доменный объект по ID."""
