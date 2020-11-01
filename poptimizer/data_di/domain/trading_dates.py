@@ -1,6 +1,5 @@
 """Таблица с торговыми датами."""
-from datetime import datetime
-from typing import ClassVar, List, Optional
+from typing import ClassVar, Final, List
 
 import pandas as pd
 
@@ -16,17 +15,8 @@ class TradingDates(tables.AbstractTable[events.AppStarted]):
     Инициирует событие в случае окончания очередного торгового дня.
     """
 
-    _group: ClassVar[str] = "trading_dates"
-    _gateway = trading_dates.TradingDatesGateway()
-
-    def __init__(
-        self,
-        id_: domain.ID,
-        df: Optional[pd.DataFrame],
-        timestamp: Optional[datetime],
-    ):
-        """Использует gateway для загрузки обновленных данных."""
-        super().__init__(id_, df, timestamp)
+    group: ClassVar[str] = "trading_dates"
+    _gateway: Final = trading_dates.TradingDatesGateway()
 
     def _update_cond(self, event: events.AppStarted) -> bool:
         """Обновляет, если последняя дата обновления после потенциального окончания торгового дня."""

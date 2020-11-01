@@ -64,13 +64,14 @@ class BaseEntity:
 
 
 EntityType = TypeVar("EntityType", bound=BaseEntity)
+MongoDict = TypeVar("MongoDict")
 
 
-class AbstractFactory(Generic[EntityType], abc.ABC):
+class AbstractFactory(Generic[EntityType, MongoDict], abc.ABC):
     """Абстрактная фабрика по созданию доменных объектов."""
 
     @abc.abstractmethod
-    def __call__(self, id_: ID, sate_dict: StateDict) -> EntityType:
+    def __call__(self, id_: ID, mongo_dict: MongoDict) -> EntityType:
         """Создает доменные объекты."""
 
 

@@ -45,18 +45,18 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
     Умеет обрабатывать связанное с ней событие.
     """
 
-    _group: ClassVar[str]
+    group: ClassVar[str]
 
     def __init__(
         self,
         id_: domain.ID,
-        df: Optional[pd.DataFrame],
-        timestamp: Optional[datetime],
+        df: Optional[pd.DataFrame] = None,
+        timestamp: Optional[datetime] = None,
     ) -> None:
         """Сохраняет необходимые данные."""
         if id_.package != PACKAGE:
             raise WrongTableIDError(id_)
-        if id_.group != self._group:
+        if id_.group != self.group:
             raise WrongTableIDError(id_)
         super().__init__(id_)
 
