@@ -1,7 +1,7 @@
 """Базовые классы доменных событий и объектов."""
 import abc
 import dataclasses
-from typing import Any, Dict, Generic, List, TypeVar
+from typing import Dict, Generic, List, Optional, TypeVar
 
 
 @dataclasses.dataclass(frozen=True)
@@ -29,7 +29,7 @@ class ID:
     name: str
 
 
-StateDict = Dict[str, Any]  # type: ignore
+StateDict = Dict[str, object]
 
 
 class BaseEntity:
@@ -43,7 +43,7 @@ class BaseEntity:
         self._id = id_
         self._changed_state: StateDict = {}
 
-    def __setattr__(self, key: str, attr_value: Any) -> None:  # type: ignore
+    def __setattr__(self, key: str, attr_value: object) -> None:
         """Сохраняет изменное значение."""
         if key in vars(self):  # noqa: WPS421
             self._changed_state[key] = attr_value
@@ -61,3 +61,22 @@ class BaseEntity:
     def clear(self) -> None:
         """Сбрасывает изменения."""
         self._changed_state.clear()
+
+
+EntityType = TypeVar("EntityType", bound=BaseEntity)
+
+
+class AbstractFactory(Generic[EntityType], abc.ABC):
+    """Абстрактная фабрика по созданию доменных объектов."""
+
+    @abc.abstractmethod
+    def __call__(self, id_: ID, sate_dict: StateDict) -> EntityType:
+        """Создает доменные объекты."""
+
+
+class AbstractRepo(Generic[EntityType], abc.ABC):
+    """Абстрактный репозиторий."""
+
+    @abc.abstractmethod
+    async def get(self, id_: ID) -> Optional[EntityType]:
+        """Получить доменный объект по ID."""
