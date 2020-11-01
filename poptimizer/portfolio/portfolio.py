@@ -167,11 +167,13 @@ class Portfolio:
         """Понижающий коэффициент для акций с малым объемом оборотов относительно открытой позиции."""
         last_turnover = self._median_turnover(tuple(self.index[:-2]))
         result = (self.value / last_turnover).reindex(self.index)
-        pos_inc = max(self.value[CASH], self.value[PORTFOLIO] * MAX_TRADE)
-        result = 1 - (self.value + pos_inc) / (last_turnover * result.max())
-        result[[CASH, PORTFOLIO]] = [1, 1]
-        result.name = "TURNOVER"
+        last_turnover = last_turnover * result.max() - self.value
+        result = last_turnover / (self.value[PORTFOLIO] * MAX_TRADE)
         result[result < 0] = 0
+        max_factor = result.sum()
+        result[CASH] = max_factor
+        result[PORTFOLIO] = max_factor
+        result.name = "TURNOVER"
         return result
 
     def _median_turnover(self, tickers) -> pd.Series:

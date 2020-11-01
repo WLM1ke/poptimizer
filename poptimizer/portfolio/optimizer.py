@@ -124,11 +124,16 @@ class Optimizer:
             diff = all_gradients.loc[buy] - all_gradients.loc[sell] - COSTS
             _, alfa = stats.wilcoxon(diff, alternative="greater", correction=True)
 
-            turnover = turnover_all[buy]
             alfa *= trials
 
-            if not (alfa > P_VALUE * turnover):
-                yield [sell, buy, diff.median() * turnover, turnover, alfa]
+            if alfa < P_VALUE and turnover_all[buy] > 1:
+                yield [
+                    sell,
+                    buy,
+                    diff.median(),
+                    turnover_all[buy],
+                    alfa,
+                ]
 
     def _add_sell_buy_quantity(self, rez: pd.DataFrame) -> pd.DataFrame:
         """Добавляет колонки с объемами покупки и продажи.
