@@ -7,16 +7,20 @@ from typing import ClassVar, Generic, List, Optional, TypeVar
 import pandas as pd
 
 from poptimizer import config
-from poptimizer.data_di.shared import entities
+from poptimizer.data_di.shared import domain
 
 PACKAGE = "data"
 
 
-def create_id(group: str, name: Optional[str] = None) -> entities.ID:
+def create_id(group: str, name: Optional[str] = None) -> domain.ID:
     """Создает ID таблицы."""
     if name is None:
         name = group
-    return entities.ID(PACKAGE, group, name)
+    return domain.ID(PACKAGE, group, name)
+
+
+class WrongTableIDError(config.POptimizerError):
+    """Не соответствие группы таблицы и ее класса."""
 
 
 class TableNewDataMismatchError(config.POptimizerError):
@@ -31,29 +35,36 @@ class TableNeverUpdatedError(config.POptimizerError):
     """Недопустимая операция с не обновленной таблицей."""
 
 
-Event = TypeVar("Event", bound=entities.AbstractEvent)
+Event = TypeVar("Event", bound=domain.AbstractEvent)
 
 
-class AbstractTable(Generic[Event], entities.BaseEntity):
+class AbstractTable(Generic[Event], domain.BaseEntity):
     """Базовая таблица.
 
     Хранит время последнего обновления и DataFrame.
     Умеет обрабатывать связанное с ней событие.
     """
 
+    group: ClassVar[str]
+
     def __init__(
         self,
-        id_: entities.ID,
+        id_: domain.ID,
         df: Optional[pd.DataFrame],
         timestamp: Optional[datetime],
     ) -> None:
         """Сохраняет необходимые данные."""
+        if id_.package != PACKAGE:
+            raise WrongTableIDError(id_)
+        if id_.group != self.group:
+            raise WrongTableIDError(id_)
         super().__init__(id_)
+
         self._df = df
         self._timestamp = timestamp
         self._df_lock = asyncio.Lock()
 
-    async def handle_event(self, event: Event) -> List[entities.AbstractEvent]:
+    async def handle_event(self, event: Event) -> List[domain.AbstractEvent]:
         """Обновляет значение, изменяет текущую дату и добавляет связанные с этим события."""
         async with self._df_lock:
             if self._update_cond(event):
@@ -79,37 +90,5 @@ class AbstractTable(Generic[Event], entities.BaseEntity):
         """Проверка корректности новых данных в сравнении со старыми."""
 
     @abc.abstractmethod
-    def _new_events(self) -> List[entities.AbstractEvent]:
+    def _new_events(self) -> List[domain.AbstractEvent]:
         """События, которые нужно создать по результатам обновления."""
-
-
-class WrongTableIDError(config.POptimizerError):
-    """Не соответствие группы таблицы и ее класса."""
-
-
-class AbstractTableFactory(Generic[Event], abc.ABC):
-    """Фабрика по созданию таблиц определенного типа."""
-
-    group: ClassVar[str]
-
-    def create_table(
-        self,
-        table_id: entities.ID,
-        df: Optional[pd.DataFrame] = None,
-        timestamp: Optional[datetime] = None,
-    ) -> AbstractTable[Event]:
-        """Создает таблицу определенного типа и проверяет корректность группы таблицы."""
-        if table_id.package != PACKAGE:
-            raise WrongTableIDError(table_id)
-        if table_id.group != self.group:
-            raise WrongTableIDError(table_id)
-        return self._create_table(table_id, df, timestamp)
-
-    @abc.abstractmethod
-    def _create_table(
-        self,
-        table_id: entities.ID,
-        df: Optional[pd.DataFrame] = None,
-        timestamp: Optional[datetime] = None,
-    ) -> AbstractTable[Event]:
-        """Создает таблицу определенного типа."""
