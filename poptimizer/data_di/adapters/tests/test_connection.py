@@ -6,7 +6,7 @@ from poptimizer.data_di.adapters import connection
 
 def test_session_factory():
     """Проверка, что http-сессия является асинхронной."""
-    assert isinstance(connection.session_factory(10), aiohttp.ClientSession)
+    assert isinstance(connection._session_factory(10), aiohttp.ClientSession)
 
 
 def test_clean_up(mocker):

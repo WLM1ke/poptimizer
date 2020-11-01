@@ -3,6 +3,7 @@ import aiohttp
 import aiomoex
 import pandas as pd
 
+from poptimizer.data_di.adapters import connection
 from poptimizer.data_di.shared import adapters
 
 
@@ -13,7 +14,7 @@ class TradingDatesGateway:
 
     def __init__(
         self,
-        session: aiohttp.ClientSession,
+        session: aiohttp.ClientSession = connection.HTTP_SESSION,
     ) -> None:
         """Сохраняет http-сессию."""
         self._session = session
