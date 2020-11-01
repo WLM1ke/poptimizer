@@ -1,25 +1,21 @@
 """Загрузка таблицы с диапазоном торговых дат."""
-from typing import Type
-
 import aiohttp
 import aiomoex
 import pandas as pd
-from injector import Inject
 
-from poptimizer.data_di.ports import gateways
-from poptimizer.data_di.shared import logger
+from poptimizer.data_di.shared import adapters
 
 
-class TradingDatesGateway(gateways.AbstractGateway):
+class TradingDatesGateway:
     """Обновление для таблиц с диапазоном доступных торговых дат."""
+
+    _logger = adapters.AsyncLogger()
 
     def __init__(
         self,
-        session: Inject[aiohttp.ClientSession],
-        logger_type: Inject[Type[logger.AsyncLogger]],
+        session: aiohttp.ClientSession,
     ) -> None:
-        """Кэшируются данные, чтобы сократить количество обращений к серверу MOEX."""
-        self._logger = logger_type(self.__class__.__name__)
+        """Сохраняет http-сессию."""
         self._session = session
 
     async def get(self) -> pd.DataFrame:
