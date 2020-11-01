@@ -56,7 +56,7 @@ class BaseEntity:
 
     def changed_state(self) -> StateDict:
         """Показывает измененные атрибуты."""
-        return self._changed_state
+        return self._changed_state.copy()
 
     def clear(self) -> None:
         """Сбрасывает изменения."""
