@@ -45,7 +45,7 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
     Умеет обрабатывать связанное с ней событие.
     """
 
-    group: ClassVar[str]
+    _group: ClassVar[str]
 
     def __init__(
         self,
@@ -56,7 +56,7 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
         """Сохраняет необходимые данные."""
         if id_.package != PACKAGE:
             raise WrongTableIDError(id_)
-        if id_.group != self.group:
+        if id_.group != self._group:
             raise WrongTableIDError(id_)
         super().__init__(id_)
 
