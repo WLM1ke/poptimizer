@@ -37,7 +37,7 @@ EntityType = TypeVar("EntityType", bound=entities.BaseEntity)
 
 
 class Mapper(Generic[EntityType], abc.ABC):
-    """Преобразует данные словаря состояния в документ MongoDB и аргументы фабричного метода объекта."""
+    """Сохраняет и загружает доменные объекты из MongoDB."""
 
     logger: aiologger.AsyncLogger["Mapper[EntityType]"]
     desc_list: ClassVar[Tuple[Desc, ...]]
@@ -47,10 +47,10 @@ class Mapper(Generic[EntityType], abc.ABC):
     ] = weakref.WeakValueDictionary()
 
     def __init__(self, client: AsyncIOMotorClient) -> None:
-        """Создает словари для кодирования и декодирования."""
+        """Сохраняет соединение с MongoDB."""
         self._client = client
 
-    async def get(self, id_: entities.ID) -> Optional[EntityType]:
+    async def get(self, id_: entities.ID) -> EntityType:
         """Загружает доменный объект из базы."""
         if (table_old := self._identity_map.get(id_)) is not None:
             return table_old
@@ -68,21 +68,21 @@ class Mapper(Generic[EntityType], abc.ABC):
         self,
         entity: EntityType,
     ) -> None:
-        """Записывает данные в MongoDB."""
+        """Записывает изменения доменного объекта в MongoDB."""
         id_ = entity.id_
         self.logger.log(f"Сохранение {id_}")
 
         db, collection, name = _collection_and_name(id_)
-        mongo_dict = self._encode(entity)
 
-        await self._client[db][collection].replace_one(
-            filter={"_id": name},
-            replacement=dict(_id=name, **mongo_dict),
-            upsert=True,
-        )
+        if mongo_dict := self._encode(entity):
+            await self._client[db][collection].replace_one(
+                filter={"_id": name},
+                replacement=dict(_id=name, **mongo_dict),
+                upsert=True,
+            )
 
     async def _load_or_create(self, id_: entities.ID) -> EntityType:
-        """Загружает из базы, а в случае отсутствия создается пустая таблица."""
+        """Загружает из MongoDB, а в случае отсутствия создается пустой объект."""
         db, collection, name = _collection_and_name(id_)
         db_collection = self._client[db][collection]
         mongo_dict = await db_collection.find_one({"_id": name}, projection={"_id": False})
@@ -94,9 +94,10 @@ class Mapper(Generic[EntityType], abc.ABC):
 
     def _encode(self, entity: EntityType) -> entities.StateDict:
         """Кодирует данные в совместимый с MongoDB формат."""
-        if entity_state := entity.changed_state():
-            entity.clear()
+        if not (entity_state := entity.changed_state()):
+            return {}
 
+        entity.clear()
         sentinel = object()
         for desc in self.desc_list:
             if (field_value := entity_state.pop(desc.field_name, sentinel)) is sentinel:
@@ -108,9 +109,11 @@ class Mapper(Generic[EntityType], abc.ABC):
         return entity_state
 
     def _decode(self, id_: entities.ID, mongo_dict: entities.StateDict) -> EntityType:
-        """Декодирует данные из формата MongoDB формат атрибутов модели."""
+        """Декодирует данные из формата MongoDB формат атрибутов модели и создает объект."""
+        sentinel = object()
         for desc in self.desc_list:
-            field_value = mongo_dict.pop(desc.doc_name)
+            if (field_value := mongo_dict.pop(desc.field_name, sentinel)) is sentinel:
+                continue
             if desc.decoder:
                 field_value = desc.decoder(field_value)
             mongo_dict[desc.factory_name] = field_value
@@ -118,4 +121,4 @@ class Mapper(Generic[EntityType], abc.ABC):
 
     @abc.abstractmethod
     def _factory(self, id_: entities.ID, sate_dict: entities.StateDict) -> EntityType:
-        """Создает объекты сущности."""
+        """Создает доменные объекты."""
