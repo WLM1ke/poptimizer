@@ -48,8 +48,8 @@ class Desc(NamedTuple):
     field_name: str
     doc_name: str
     factory_name: str
-    encoder: Optional[Callable[[object], object]] = None
-    decoder: Optional[Callable[[object], object]] = None
+    encoder: Optional[Callable[[typing.Any], typing.Any]] = None  # type: ignore
+    decoder: Optional[Callable[[typing.Any], typing.Any]] = None  # type: ignore
 
 
 def _collection_and_name(table_name: domain.ID) -> Tuple[str, str, str]:
@@ -67,8 +67,6 @@ EntityType = TypeVar("EntityType", bound=domain.BaseEntity)
 class Mapper(typing.Generic[EntityType]):
     """Сохраняет и загружает доменные объекты из MongoDB."""
 
-    _desc_list: ClassVar[Tuple[Desc, ...]]
-    _factory: ClassVar[domain.AbstractFactory[EntityType]]
     _identity_map: ClassVar[
         MutableMapping[
             domain.ID,
@@ -77,9 +75,16 @@ class Mapper(typing.Generic[EntityType]):
     ] = weakref.WeakValueDictionary()
     _logger: ClassVar[AsyncLogger]
 
-    def __init__(self, client: motor_asyncio.AsyncIOMotorClient) -> None:
+    def __init__(  # type: ignore
+        self,
+        client: motor_asyncio.AsyncIOMotorClient,
+        desc_list: Tuple[Desc, ...],
+        factory: domain.AbstractFactory[EntityType],
+    ) -> None:
         """Сохраняет соединение с MongoDB."""
         self._client = client
+        self._desc_list = desc_list
+        self._factory = factory
 
     async def get(self, id_: domain.ID) -> EntityType:
         """Загружает доменный объект из базы."""
