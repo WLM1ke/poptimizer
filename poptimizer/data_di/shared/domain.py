@@ -9,17 +9,6 @@ class AbstractEvent(abc.ABC):
     """Абстрактный тип события."""
 
 
-Event = TypeVar("Event", bound=AbstractEvent)
-
-
-class AbstractHandler(Generic[Event], abc.ABC):
-    """Абстрактный тип обработчика событий."""
-
-    @abc.abstractmethod
-    async def handle_event(self, event: Event) -> List[AbstractEvent]:
-        """Обрабатывает событие и возвращает список новых порожденных событий."""
-
-
 @dataclasses.dataclass(frozen=True)
 class ID:
     """Базовый идентификатор доменного сущности."""
@@ -81,3 +70,15 @@ class AbstractRepo(Generic[EntityType], abc.ABC):
     @abc.abstractmethod
     async def get(self, id_: ID) -> EntityType:
         """Получить доменный объект по ID."""
+
+
+class AbstractHandler(Generic[EntityType], abc.ABC):
+    """Абстрактный тип обработчика событий."""
+
+    @abc.abstractmethod
+    async def handle_event(
+        self,
+        event: AbstractEvent,
+        repo: AbstractRepo[EntityType],
+    ) -> List[AbstractEvent]:
+        """Обрабатывает событие и возвращает список новых порожденных событий."""

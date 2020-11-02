@@ -1,7 +1,8 @@
-"""Unit of Work."""
+"""Unit of Work and EventBus."""
 import asyncio
+import typing
 from types import TracebackType
-from typing import AsyncContextManager, Optional, Set, Type, TypeVar, cast
+from typing import AsyncContextManager, Callable, Generic, List, Optional, Set, Type, TypeVar
 
 from poptimizer.data_di.shared import adapters, domain
 
@@ -22,7 +23,7 @@ class UoW(AsyncContextManager[domain.AbstractRepo[EntityType]]):
 
     async def __aenter__(self) -> domain.AbstractRepo[EntityType]:
         """Возвращает репо с таблицами."""
-        return cast(domain.AbstractRepo[EntityType], self)
+        return typing.cast(domain.AbstractRepo[EntityType], self)
 
     async def get(self, id_: domain.ID) -> Optional[EntityType]:
         """Загружает доменный объект из базы."""
@@ -39,3 +40,48 @@ class UoW(AsyncContextManager[domain.AbstractRepo[EntityType]]):
         """Сохраняет изменные доменные объекты в MongoDB."""
         commit = self._mapper.commit
         await asyncio.gather(*[commit(entity) for entity in self._seen])
+
+
+if typing.TYPE_CHECKING:
+    FutureEvent = asyncio.Future[List[domain.AbstractEvent]]
+else:
+    FutureEvent = asyncio.Future
+PendingTasks = Set[FutureEvent]
+
+
+class EventBus(Generic[EntityType]):
+    """Шина для обработки событий."""
+
+    _logger = adapters.AsyncLogger()
+
+    def __init__(
+        self,
+        uow_factory: Callable[[], UoW[EntityType]],
+        event_handler: domain.AbstractHandler[EntityType],
+    ):
+        """Для работы нужна фабрика транзакций и обработчик событий."""
+        self._uow_factory = uow_factory
+        self._event_handler = event_handler
+
+    async def handle_event(
+        self,
+        event: domain.AbstractEvent,
+    ) -> None:
+        """Обработка сообщения и следующих за ним."""
+        pending: PendingTasks = self._create_tasks([event])
+        while pending:
+            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+
+            for task in done:
+                pending |= self._create_tasks(task.result())
+
+    def _create_tasks(self, events: List[domain.AbstractEvent]) -> Set[FutureEvent]:
+        """Создает задание для событий."""
+        return {asyncio.create_task(self._handle_one_command(event)) for event in events}
+
+    async def _handle_one_command(self, event: domain.AbstractEvent) -> List[domain.AbstractEvent]:
+        """Обрабатывает одно событие и помечает его сделанным."""
+        self._logger.log(f"Обработка события {event}")
+
+        async with self._uow_factory() as repo:
+            return await self._event_handler.handle_event(repo, event)
