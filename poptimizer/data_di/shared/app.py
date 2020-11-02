@@ -25,7 +25,7 @@ class UoW(AsyncContextManager[domain.AbstractRepo[EntityType]]):
         """Возвращает репо с таблицами."""
         return typing.cast(domain.AbstractRepo[EntityType], self)
 
-    async def get(self, id_: domain.ID) -> Optional[EntityType]:
+    async def get(self, id_: domain.ID) -> EntityType:
         """Загружает доменный объект из базы."""
         entity = await self._mapper.get(id_)
         self._seen.add(entity)
@@ -84,4 +84,4 @@ class EventBus(Generic[EntityType]):
         self._logger.log(f"Обработка события {event}")
 
         async with self._uow_factory() as repo:
-            return await self._event_handler.handle_event(repo, event)
+            return await self._event_handler.handle_event(event, repo)
