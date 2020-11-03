@@ -63,7 +63,14 @@ class EventBus(Generic[EntityType]):
         self._uow_factory = uow_factory
         self._event_handler = event_handler
 
-    async def handle_event(
+    def handle_event(
+        self,
+        event: domain.AbstractEvent,
+    ) -> None:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._handle_event(event))
+
+    async def _handle_event(
         self,
         event: domain.AbstractEvent,
     ) -> None:
