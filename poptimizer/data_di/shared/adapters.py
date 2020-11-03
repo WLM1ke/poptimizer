@@ -147,7 +147,7 @@ class Mapper(typing.Generic[EntityType]):
         """Декодирует данные из формата MongoDB формат атрибутов модели и создает объект."""
         sentinel = object()
         for desc in self._desc_list:
-            if (field_value := mongo_dict.pop(desc.field_name, sentinel)) is sentinel:
+            if (field_value := mongo_dict.pop(desc.doc_name, sentinel)) is sentinel:
                 continue
             if desc.decoder:
                 field_value = desc.decoder(field_value)
