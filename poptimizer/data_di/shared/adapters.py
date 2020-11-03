@@ -73,7 +73,7 @@ class Mapper(typing.Generic[EntityType]):
             EntityType,
         ]
     ] = weakref.WeakValueDictionary()
-    _logger: ClassVar[AsyncLogger]
+    _logger = AsyncLogger()
 
     def __init__(  # type: ignore
         self,
