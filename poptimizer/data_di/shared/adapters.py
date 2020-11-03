@@ -106,11 +106,10 @@ class Mapper(typing.Generic[EntityType]):
     ) -> None:
         """Записывает изменения доменного объекта в MongoDB."""
         id_ = entity.id_
-        self._logger.log(f"Сохранение {id_}")
-
         db, collection, name = _collection_and_name(id_)
 
         if mongo_dict := self._encode(entity):
+            self._logger.log(f"Сохранение {id_}")
             await self._client[db][collection].replace_one(
                 filter={"_id": name},
                 replacement=dict(_id=name, **mongo_dict),

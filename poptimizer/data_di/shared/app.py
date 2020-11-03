@@ -88,7 +88,7 @@ class EventBus(Generic[EntityType]):
 
     async def _handle_one_command(self, event: domain.AbstractEvent) -> List[domain.AbstractEvent]:
         """Обрабатывает одно событие и помечает его сделанным."""
-        self._logger.log(f"Обработка события {event}")
+        self._logger.log(event)
 
         async with self._uow_factory() as repo:
             return await self._event_handler.handle_event(event, repo)
