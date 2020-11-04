@@ -24,7 +24,7 @@ class TradingDates(tables.AbstractTable[events.AppStarted]):
 
     async def _prepare_df(self, event: events.AppStarted) -> pd.DataFrame:
         """Загружает новый DataFrame."""
-        return await self._gateway.get()
+        return await self._gateway()
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Проверка корректности индекса и заголовков."""
