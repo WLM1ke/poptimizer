@@ -9,11 +9,11 @@ from poptimizer.data_di.domain import securities, tables, trading_dates
 from poptimizer.data_di.shared import domain
 
 AnyTable = tables.AbstractTable[domain.AbstractEvent]
-AllTableType = Tuple[Type[tables.AbstractTable[domain.AbstractEvent]], ...]
+AllTableTypes = Tuple[Type[tables.AbstractTable[domain.AbstractEvent]], ...]
 
 
-_TABLE_TYPES: Final[AllTableType] = cast(
-    AllTableType,
+_TABLE_TYPES: Final[AllTableTypes] = cast(
+    AllTableTypes,
     (trading_dates.TradingDates, securities.Securities),
 )
 
