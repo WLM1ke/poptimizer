@@ -1,4 +1,4 @@
-"""Базовые классы доменных событий и объектов."""
+"""Базовые классы доменной области."""
 import abc
 import dataclasses
 from typing import Dict, Generic, List, TypeVar
