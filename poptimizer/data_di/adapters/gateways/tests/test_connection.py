@@ -1,7 +1,7 @@
 """Тесты для создания http-соединения."""
 import aiohttp
 
-from poptimizer.data_di.adapters import connection
+from poptimizer.data_di.adapters.gateways import connection
 
 
 def test_session_factory():
