@@ -65,7 +65,7 @@ class TradingDates(tables.AbstractTable[events.AppStarted]):
         if df_new.columns.tolist() != ["from", "till"]:
             raise tables.TableIndexError()
 
-    def _new_events(self) -> List[domain.AbstractEvent]:
+    def _new_events(self, event: events.AppStarted) -> List[domain.AbstractEvent]:
         """Событие окончания торгового дня."""
         if (df := self._df) is None:
             raise tables.TableNeverUpdatedError(self._id)

@@ -74,7 +74,7 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
 
                 self._timestamp = datetime.utcnow()
                 self._df = df_new
-                return self._new_events()
+                return self._new_events(event)
             return []
 
     @abc.abstractmethod
@@ -90,5 +90,5 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
         """Проверка корректности новых данных в сравнении со старыми."""
 
     @abc.abstractmethod
-    def _new_events(self) -> List[domain.AbstractEvent]:
+    def _new_events(self, event: Event) -> List[domain.AbstractEvent]:
         """События, которые нужно создать по результатам обновления."""
