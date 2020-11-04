@@ -5,10 +5,10 @@ from typing import Final, Mapping, Type, cast
 
 import pandas as pd
 
-from poptimizer.data_di.domain import tables, trading_dates
+from poptimizer.data_di.domain import securities, tables, trading_dates
 from poptimizer.data_di.shared import domain
 
-_TABLE_TYPES: Final = (trading_dates.TradingDates,)
+_TABLE_TYPES: Final = (trading_dates.TradingDates, securities.Securities)
 
 
 AnyTable = tables.AbstractTable[domain.AbstractEvent]
