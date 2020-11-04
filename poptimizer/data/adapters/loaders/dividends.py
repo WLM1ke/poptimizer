@@ -4,7 +4,8 @@ import pymongo
 
 from poptimizer.data.adapters import logger
 from poptimizer.data.config import resources
-from poptimizer.data.ports import col, outer
+from poptimizer.data.ports import outer
+from poptimizer.data_di.shared import col
 
 # Где хранятся данные о дивидендах
 SOURCE_DB = "source"

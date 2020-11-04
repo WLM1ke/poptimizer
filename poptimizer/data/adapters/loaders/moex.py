@@ -10,7 +10,8 @@ from pytz import timezone
 
 from poptimizer.data.adapters import logger
 from poptimizer.data.config import resources
-from poptimizer.data.ports import col, outer
+from poptimizer.data.ports import outer
+from poptimizer.data_di.shared import col
 
 # Часовой пояс MOEX
 MOEX_TZ = timezone("Europe/Moscow")
@@ -35,7 +36,7 @@ class SecuritiesLoader(logger.LoaderLoggerMixin, outer.AbstractLoader):
 
         async with self._cache_lock:
             if self._securities_cache is not None:
-                self._logger.log(f"Загрузка из кэша {table_name}")
+                self._logger.__call__(f"Загрузка из кэша {table_name}")
                 return self._securities_cache
 
             columns = ("SECID", "ISIN", "LOTSIZE")

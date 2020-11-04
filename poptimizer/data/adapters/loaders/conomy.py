@@ -10,7 +10,8 @@ from pyppeteer.page import Page
 
 from poptimizer.data.adapters import logger
 from poptimizer.data.adapters.html import description, parser
-from poptimizer.data.ports import col, outer
+from poptimizer.data.ports import outer
+from poptimizer.data_di.shared import col
 
 # Параметры поиска страницы эмитента
 SEARCH_URL = "https://www.conomy.ru/search"

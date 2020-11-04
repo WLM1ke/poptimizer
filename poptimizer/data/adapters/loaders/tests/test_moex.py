@@ -8,7 +8,8 @@ import pytest
 
 from poptimizer.data.adapters.loaders import moex
 from poptimizer.data.config import resources
-from poptimizer.data.ports import col, outer
+from poptimizer.data.ports import outer
+from poptimizer.data_di.shared import col
 
 # flake8: noqa
 

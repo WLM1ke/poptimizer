@@ -3,7 +3,8 @@ import pandas as pd
 import pytest
 
 from poptimizer.data.adapters.loaders import cpi
-from poptimizer.data.ports import col, outer
+from poptimizer.data.ports import outer
+from poptimizer.data_di.shared import col
 
 
 @pytest.mark.asyncio

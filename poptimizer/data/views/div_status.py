@@ -5,7 +5,8 @@ from typing import Callable, Final, List, Tuple
 import pandas as pd
 
 from poptimizer.data.config import bootstrap
-from poptimizer.data.ports import col, outer
+from poptimizer.data.ports import outer
+from poptimizer.data_di.shared import col
 from poptimizer.data.views.crop import div
 
 # Точность сравнения дивидендов

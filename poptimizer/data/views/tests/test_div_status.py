@@ -1,7 +1,7 @@
 """Тесты для проверки статуса дивидендов."""
 import pandas as pd
 
-from poptimizer.data.ports import col
+from poptimizer.data_di.shared import col
 from poptimizer.data.views import div_status
 from poptimizer.data.views.crop import div
 

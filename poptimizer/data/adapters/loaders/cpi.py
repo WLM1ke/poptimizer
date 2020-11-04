@@ -6,7 +6,8 @@ import pandas as pd
 
 from poptimizer.data.adapters import logger
 from poptimizer.data.config import resources
-from poptimizer.data.ports import col, outer
+from poptimizer.data.ports import outer
+from poptimizer.data_di.shared import col
 
 # Параметры загрузки валидации данных
 START_URL = "https://rosstat.gov.ru/price"
