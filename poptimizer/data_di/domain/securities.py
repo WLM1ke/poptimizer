@@ -8,7 +8,7 @@ from poptimizer.data_di.domain import events, tables
 from poptimizer.data_di.shared import domain
 
 
-class TradingDates(tables.AbstractTable[events.TradingDayEndedTQBR]):
+class Securities(tables.AbstractTable[events.TradingDayEndedTQBR]):
     """Таблица с данными о торгуемых бумагах.
 
     Обрабатывает событие об окончании торгов в режиме TQBR.
