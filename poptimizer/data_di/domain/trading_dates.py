@@ -3,7 +3,7 @@ from typing import ClassVar, Final, List
 
 import pandas as pd
 
-from poptimizer.data_di.adapters.gateways import trading_dates
+from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events, tables, update
 from poptimizer.data_di.shared import domain
 
@@ -16,7 +16,7 @@ class TradingDates(tables.AbstractTable[events.AppStarted]):
     """
 
     group: ClassVar[str] = "trading_dates"
-    _gateway: Final = trading_dates.TradingDatesGateway()
+    _gateway: Final = moex.TradingDatesGateway()
 
     def _update_cond(self, event: events.AppStarted) -> bool:
         """Обновляет, если последняя дата обновления после потенциального окончания торгового дня."""
