@@ -26,7 +26,7 @@ class Securities(tables.AbstractTable[events.TradingDayEndedTQBR]):
         """Загружает новый DataFrame."""
         return await self._gateway()
 
-    def _validate_new_df(self, df_new: pd.TradingDayEndedTQBR) -> None:
+    def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
         if df_new.index.is_monotonic_increasing:
             raise tables.TableIndexError("Индекс не возрастающий")
