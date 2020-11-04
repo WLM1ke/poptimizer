@@ -24,6 +24,10 @@ class AsyncLogger:
         """Инициализация логгера."""
         self._logger = logging.getLogger()
 
+    def __call__(self, message: str) -> None:
+        """Создает асинхронную задачу по логгированию."""
+        asyncio.create_task(self._logging_task(message))
+
     def __set_name__(self, owner: Type[object], name: str) -> None:
         """Создает логгер с именем класса, где он является атрибутом."""
         self._logger = logging.getLogger(owner.__name__)
@@ -31,10 +35,6 @@ class AsyncLogger:
     def __get__(self, instance: object, owner: Type[object]) -> "AsyncLogger":
         """Возвращает себя при обращении к атрибуту."""
         return self
-
-    def log(self, message: str) -> None:
-        """Создает асинхронную задачу по логгированию."""
-        asyncio.create_task(self._logging_task(message))
 
     async def _logging_task(self, message: str) -> None:
         """Задание по логгированию."""
@@ -109,7 +109,7 @@ class Mapper(typing.Generic[EntityType]):
         db, collection, name = _collection_and_name(id_)
 
         if mongo_dict := self._encode(entity):
-            self._logger.log(f"Сохранение {id_}")
+            self._logger(f"Сохранение {id_}")
             await self._client[db][collection].replace_one(
                 filter={"_id": name},
                 replacement=dict(_id=name, **mongo_dict),
