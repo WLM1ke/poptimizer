@@ -1,25 +1,28 @@
 """Фабрика для создания таблиц."""
 import types
 from datetime import datetime
-from typing import Final, Mapping, Type, cast
+from typing import Final, Tuple, Type, cast
 
 import pandas as pd
 
 from poptimizer.data_di.domain import securities, tables, trading_dates
 from poptimizer.data_di.shared import domain
 
-_TABLE_TYPES: Final = (trading_dates.TradingDates, securities.Securities)
-
-
 AnyTable = tables.AbstractTable[domain.AbstractEvent]
-Registry = Mapping[str, Type[AnyTable]]
+AllTableType = Tuple[Type[tables.AbstractTable[domain.AbstractEvent]], ...]
+
+
+_TABLE_TYPES: Final[AllTableType] = cast(
+    AllTableType,
+    (trading_dates.TradingDates, securities.Securities),
+)
 
 
 class TablesFactory(domain.AbstractFactory[AnyTable]):
     """Фабрика, создающая все таблицы."""
 
-    _types_mapping: Final[Registry] = types.MappingProxyType(
-        {type_.group: cast(Type[AnyTable], type_) for type_ in _TABLE_TYPES},
+    _types_mapping: Final = types.MappingProxyType(
+        {type_.group: type_ for type_ in _TABLE_TYPES},
     )
 
     def __call__(
