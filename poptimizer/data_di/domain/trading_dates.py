@@ -1,11 +1,39 @@
 """Таблица с торговыми датами."""
+from datetime import datetime, timedelta, timezone
 from typing import ClassVar, Final, List
 
 import pandas as pd
 
 from poptimizer.data_di.adapters.gateways import moex
-from poptimizer.data_di.domain import events, tables, update
+from poptimizer.data_di.domain import events, tables
 from poptimizer.data_di.shared import domain
+
+# Часовой пояс MOEX
+_MOEX_TZ: Final = timezone(timedelta(hours=3))
+
+# Торги заканчиваются в 24.00, но данные публикуются 00.45
+_END_HOUR: Final = 0
+_END_MINUTE: Final = 45
+
+
+def _to_utc_naive(date: datetime) -> datetime:
+    """Переводит дату в UTC и делает ее наивной."""
+    date = date.astimezone(timezone.utc)
+    return date.replace(tzinfo=None)
+
+
+def _trading_day_potential_end() -> datetime:
+    """Возможный конец последнего торгового дня UTC."""
+    now = datetime.now(_MOEX_TZ)
+    end_of_trading = now.replace(
+        hour=_END_HOUR,
+        minute=_END_MINUTE,
+        second=0,
+        microsecond=0,
+    )
+    if end_of_trading > now:
+        end_of_trading -= timedelta(days=1)
+    return _to_utc_naive(end_of_trading)
 
 
 class TradingDates(tables.AbstractTable[events.AppStarted]):
@@ -20,7 +48,11 @@ class TradingDates(tables.AbstractTable[events.AppStarted]):
 
     def _update_cond(self, event: events.AppStarted) -> bool:
         """Обновляет, если последняя дата обновления после потенциального окончания торгового дня."""
-        return update.trading_day_potential_end_policy(self._timestamp)
+        if self._timestamp is None:
+            return True
+        if _trading_day_potential_end() > self._timestamp:
+            return True
+        return False
 
     async def _prepare_df(self, event: events.AppStarted) -> pd.DataFrame:
         """Загружает новый DataFrame."""
