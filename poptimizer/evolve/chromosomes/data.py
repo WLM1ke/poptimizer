@@ -81,6 +81,14 @@ RVI_ON = GeneParams(
     path=("data", "features", "RVI", "on"),
     phenotype_function=lambda x: x > 0,
 )
+MCFTRR_ON = GeneParams(
+    name="mcftrr_on",
+    default_range=(-1.0, 0.0),
+    lower_bound=None,
+    upper_bound=None,
+    path=("data", "features", "MCFTRR", "on"),
+    phenotype_function=lambda x: x > 0,
+)
 
 
 class Data(Chromosome):
@@ -97,4 +105,5 @@ class Data(Chromosome):
         TURNOVER_ON,
         AVERAGE_TURNOVER_ON,
         RVI_ON,
+        MCFTRR_ON,
     )
