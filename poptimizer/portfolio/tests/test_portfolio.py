@@ -37,7 +37,9 @@ def test_portfolio(monkeypatch, port):
         [0.257_950_085_844_95, 0.050_708_129_601_95, 0.691_071_449_329_312, 0.000_270_335_223_788, 1],
     )
     print(port.turnover_factor)
-    assert np.allclose(port.turnover_factor, [1.000000, 0.999963, 1.000000, 0.000000, 0.883244])
+    assert np.allclose(
+        port.turnover_factor, [706072.825562, 705549.808259, 706072.825562, 0.000000, 523.017303]
+    )
 
 
 def test_portfolio_wrong_value():
