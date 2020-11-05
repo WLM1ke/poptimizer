@@ -1,4 +1,4 @@
-"""Базовые классы для сохранения доменных объектов в MongoDB."""
+"""Базовые классы взаимодействия с внешней инфраструктурой."""
 import asyncio
 import logging
 import typing
@@ -6,6 +6,7 @@ import weakref
 from typing import Callable, ClassVar, MutableMapping, NamedTuple, Optional, Tuple, Type, TypeVar
 
 from motor import motor_asyncio
+from pymongo.collection import Collection
 
 from poptimizer.data_di.shared import domain
 
@@ -52,15 +53,6 @@ class Desc(NamedTuple):
     decoder: Optional[Callable[[typing.Any], typing.Any]] = None  # type: ignore
 
 
-def _collection_and_name(table_name: domain.ID) -> Tuple[str, str, str]:
-    """Формирует название базы, коллекции и имя документа."""
-    collection = table_name.group
-    name = table_name.name
-    if collection == name:
-        collection = MISC
-    return table_name.package, collection, name
-
-
 EntityType = TypeVar("EntityType", bound=domain.BaseEntity)
 
 
@@ -81,7 +73,7 @@ class Mapper(typing.Generic[EntityType]):
         desc_list: Tuple[Desc, ...],
         factory: domain.AbstractFactory[EntityType],
     ) -> None:
-        """Сохраняет соединение с MongoDB."""
+        """Сохраняет соединение с MongoDB и информацию для мэппинга объектов."""
         self._client = client
         self._desc_list = desc_list
         self._factory = factory
@@ -105,22 +97,31 @@ class Mapper(typing.Generic[EntityType]):
         entity: EntityType,
     ) -> None:
         """Записывает изменения доменного объекта в MongoDB."""
-        id_ = entity.id_
-        db, collection, name = _collection_and_name(id_)
-
         if mongo_dict := self._encode(entity):
+            id_ = entity.id_
             self._logger(f"Сохранение {id_}")
-            await self._client[db][collection].replace_one(
+            collection, name = self._get_collection_and_id(id_)
+            await collection.replace_one(
                 filter={"_id": name},
                 replacement=dict(_id=name, **mongo_dict),
                 upsert=True,
             )
 
+    def _get_collection_and_id(self, id_: domain.ID) -> Tuple[Collection, str]:
+        """Коллекцию и ID документа.
+
+        При совпадении названия группы и имени выбирает специальную коллекцию для одиночных записей.
+        """
+        collection = id_.group
+        name = id_.name
+        if collection == name:
+            collection = MISC
+        return self._client[id_.package][collection], name
+
     async def _load_or_create(self, id_: domain.ID) -> EntityType:
         """Загружает из MongoDB, а в случае отсутствия создается пустой объект."""
-        db, collection, name = _collection_and_name(id_)
-        db_collection = self._client[db][collection]
-        mongo_dict = await db_collection.find_one({"_id": name}, projection={"_id": False})
+        collection, name = self._get_collection_and_id(id_)
+        mongo_dict = await collection.find_one({"_id": name}, projection={"_id": False})
 
         if mongo_dict is None:
             mongo_dict = {}
