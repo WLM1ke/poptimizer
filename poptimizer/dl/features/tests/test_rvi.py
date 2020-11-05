@@ -38,7 +38,6 @@ class TestRVI:
         assert torch.tensor(35.95).allclose(feature[61][0])
         assert torch.tensor(38.81).allclose(feature[61][4])
         assert torch.tensor(37.79).allclose(feature[61][7])
-        assert torch.tensor(37.79).allclose(feature[61][7])
 
     def test_type_and_size(self, feature):
         assert feature.type_and_size == (FeatureType.SEQUENCE, 8)
