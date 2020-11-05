@@ -5,6 +5,7 @@ from poptimizer.dl.features.day_of_year import DayOfYear
 from poptimizer.dl.features.dividends import Dividends
 from poptimizer.dl.features.feature import FeatureType
 from poptimizer.dl.features.label import Label
+from poptimizer.dl.features.mcftrr import MCFTRR
 from poptimizer.dl.features.prices import Prices
 from poptimizer.dl.features.rvi import RVI
 from poptimizer.dl.features.ticker import Ticker
