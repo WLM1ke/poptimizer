@@ -25,14 +25,6 @@ WEIGHT_DECAY = chromosome.GeneParams(
     path=("optimizer", "weight_decay"),
     phenotype_function=float,
 )
-AMSGRAD = chromosome.GeneParams(
-    name="amsgrad",
-    default_range=(0.0, 1.0),
-    lower_bound=None,
-    upper_bound=None,
-    path=("optimizer", "amsgrad"),
-    phenotype_function=lambda x: x > 0,
-)
 
 
 class Optimizer(chromosome.Chromosome):
@@ -42,5 +34,4 @@ class Optimizer(chromosome.Chromosome):
         BETA2,  # Бета2 - значение Бета1 переписывается One cycle learning rate policy
         EPS,  # Корректировка для численной стабильности
         WEIGHT_DECAY,  # L2 регуляризация
-        AMSGRAD,  # Нужно ли использовать AMSGrad
     )
