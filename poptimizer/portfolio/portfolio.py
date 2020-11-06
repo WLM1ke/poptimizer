@@ -10,10 +10,18 @@ import yaml
 from poptimizer import config
 from poptimizer.config import POptimizerError, MAX_TRADE
 from poptimizer.data.views import moex
+from poptimizer.dl.features import data_params
+from poptimizer.store import database
 
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
-TURNOVER_DAYS = 113
+TURNOVER_DAYS = database.MONGO_CLIENT["data"]["models"].find_one(
+    {},
+    projection={"_id": False, "genotype.Data.history_days": True},
+    sort=[("genotype.Data.history_days", -1)],
+)
+TURNOVER_DAYS = TURNOVER_DAYS["genotype"]["Data"]["history_days"]
+TURNOVER_DAYS = (int(TURNOVER_DAYS) + data_params.FORECAST_DAYS * 2) * 2
 
 
 class Portfolio:
