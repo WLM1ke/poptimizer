@@ -24,7 +24,7 @@ class Securities(tables.AbstractTable[events.TradingDayEndedTQBR]):
 
     async def _prepare_df(self, event: events.TradingDayEndedTQBR) -> pd.DataFrame:
         """Загружает новый DataFrame."""
-        return await self._gateway()
+        return await self._gateway.get()
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""

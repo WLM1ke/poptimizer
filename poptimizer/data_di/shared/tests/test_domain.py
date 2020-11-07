@@ -15,17 +15,21 @@ class Entity(domain.BaseEntity):
 
 @pytest.fixture(scope="module", name="entity")
 def create_entity():
+    """Создает доменный объект для тестов."""
     id_ = domain.ID("a", "b", "c")
     return Entity(id_, 42)
 
 
 def test_new_entity(entity):
+    """Только созданный доменный объект имеет пустое изменное состояние."""
     assert entity.id_ == domain.ID("a", "b", "c")
     assert entity.test_attr == 42
-    assert entity.changed_state() == {}
+    assert isinstance(entity.changed_state(), dict)
+    assert not entity.changed_state()
 
 
 def test_changed_entity(entity):
+    """Проверка отслеживания изменения состояния."""
     entity.test_attr = 44
 
     assert entity.id_ == domain.ID("a", "b", "c")
@@ -34,8 +38,10 @@ def test_changed_entity(entity):
 
 
 def test_cleared_entity(entity):
+    """Проверка пустого измененного состояния после очистки."""
     entity.clear()
 
     assert entity.id_ == domain.ID("a", "b", "c")
     assert entity.test_attr == 44
-    assert entity.changed_state() == {}
+    assert isinstance(entity.changed_state(), dict)
+    assert not entity.changed_state()

@@ -19,7 +19,7 @@ class TradingDatesGateway:
         """Сохраняет http-сессию."""
         self._session = session
 
-    async def __call__(self) -> pd.DataFrame:
+    async def get(self) -> pd.DataFrame:
         """Получение обновленных данных о доступном диапазоне торговых дат."""
         self._logger("Загрузка данных по торговым дням")
         json = await aiomoex.get_board_dates(
@@ -43,7 +43,7 @@ class SecuritiesGateway:
         """Сохраняет http-сессию."""
         self._session = session
 
-    async def __call__(self) -> pd.DataFrame:
+    async def get(self) -> pd.DataFrame:
         """Получение списка торгуемых акций с ISIN и размером лота."""
         self._logger("Загрузка данных по торгуемым бумагам")
 

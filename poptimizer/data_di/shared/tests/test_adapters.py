@@ -82,7 +82,7 @@ async def test_commit(mocker, mapper):
     mapper._get_collection_and_id.assert_called_once_with(TEST_ID)
     fake_collection._encode.replace_one(
         filter={"_id": "c"},
-        replacement=dict(_id="c", df="value"),
+        replacement={"_id": "c", "df": "value"},
         upsert=True,
     )
 
