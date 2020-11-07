@@ -20,8 +20,11 @@ TURNOVER_DAYS = database.MONGO_CLIENT["data"]["models"].find_one(
     projection={"_id": False, "genotype.Data.history_days": True},
     sort=[("genotype.Data.history_days", -1)],
 )
-TURNOVER_DAYS = TURNOVER_DAYS["genotype"]["Data"]["history_days"]
-TURNOVER_DAYS = (int(TURNOVER_DAYS) + data_params.FORECAST_DAYS * 2) * 2
+try:
+    TURNOVER_DAYS = TURNOVER_DAYS["genotype"]["Data"]["history_days"]
+    TURNOVER_DAYS = (int(TURNOVER_DAYS) + data_params.FORECAST_DAYS * 2) * 2
+except TypeError:
+    TURNOVER_DAYS = int(1 / config.MAX_TRADE)
 
 
 class Portfolio:
