@@ -39,6 +39,13 @@ class GradientsError(ModelError):
     """
 
 
+class TooLargeModelError(ModelError):
+    """Слишком большая модель.
+
+    Модель с 2 млн параметров не может быть сохранена.
+    """
+
+
 def normal_llh(
     output: Tuple[torch.Tensor, torch.Tensor], batch: Dict[str, torch.Tensor]
 ) -> Tuple[torch.Tensor, int, torch.Tensor]:
@@ -177,6 +184,8 @@ class Model:
             print(f"Количество слоев - {modules}")
             params = sum(tensor.numel() for tensor in model.parameters())
             print(f"Количество параметров - {params}")
+            if params > 2e6:
+                raise TooLargeModelError()
 
         return model
 
