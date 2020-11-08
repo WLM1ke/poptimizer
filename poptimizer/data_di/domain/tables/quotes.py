@@ -28,12 +28,15 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
     async def _prepare_df(self, event: events.TickerTraded) -> pd.DataFrame:
         """Загружает новый DataFrame.
 
-        - Если данные отсутствуют, то загружается информация для всех тикеров таким же ISIN,
-        а для параллельных торгов выбирается тикер с максимальным объемом
-        - Для не пустых старых данных загрузка ведется с последней присутствующей даты
-        - Если новые данные пустые (бывает для давно не торгующейся бумаги, которая раньше
-        торговалась под другим тикером), то возвращаются старые данные
-        - При наличие старых и новых данных, они склеиваются
+        Если данные отсутствуют, то загружается информация для всех тикеров таким же ISIN,
+        а для параллельных торгов выбирается тикер с максимальным объемом.
+
+        Для не пустых старых данных загрузка ведется с последней присутствующей даты.
+
+        Если новые данные пустые (бывает для давно не торгующейся бумаги, которая раньше
+        торговалась под другим тикером), то возвращаются старые данные.
+
+        При наличие старых и новых данных, они склеиваются.
         """
         tickers = [event.ticker]
         start_date = None
@@ -45,8 +48,12 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
 
         last_date = str(event.date)
 
-        coro = [self._quotes.get(ticker, start_date, last_date) for ticker in tickers]
-        df_new = pd.concat(await asyncio.gather(*coro), axis=0)
+        df_new = pd.concat(
+            await asyncio.gather(
+                *[self._quotes.get(ticker, start_date, last_date) for ticker in tickers],
+            ),
+            axis=0,
+        )
 
         if len(tickers) > 1:
             df_new = df_new.sort_values(by=[col.DATE, col.TURNOVER])
