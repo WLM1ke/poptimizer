@@ -5,7 +5,7 @@ from typing import Final, Tuple, Type, cast
 
 import pandas as pd
 
-from poptimizer.data_di.domain.tables import base, securities, trading_dates
+from poptimizer.data_di.domain.tables import base, quotes, securities, trading_dates
 from poptimizer.data_di.shared import domain
 
 AnyTable = base.AbstractTable[domain.AbstractEvent]
@@ -14,7 +14,7 @@ AllTableTypes = Tuple[Type[AnyTable], ...]
 
 _TABLE_TYPES: Final[AllTableTypes] = cast(
     AllTableTypes,
-    (trading_dates.TradingDates, securities.Securities),
+    (trading_dates.TradingDates, securities.Securities, quotes.Quotes),
 )
 
 
@@ -22,7 +22,7 @@ class TablesFactory(domain.AbstractFactory[AnyTable]):
     """Фабрика, создающая все таблицы."""
 
     _types_mapping: Final = types.MappingProxyType(
-        {type_.group: type_ for type_ in _TABLE_TYPES},
+        {cast(str, type_.group): type_ for type_ in _TABLE_TYPES},
     )
 
     def __call__(
