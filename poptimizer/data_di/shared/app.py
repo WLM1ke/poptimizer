@@ -9,7 +9,7 @@ from poptimizer.data_di.shared import adapters, domain
 EntityType = TypeVar("EntityType", bound=domain.BaseEntity)
 
 
-class UoW(AsyncContextManager[domain.AbstractRepo[EntityType]]):
+class UoW(AsyncContextManager[domain.AbstractRepo[EntityType]], domain.AbstractRepo[EntityType]):
     """Контекстный менеджер транзакции.
 
     Предоставляет интерфейс репо, хранит загруженные доменные объекты и сохраняет их при выходе из
@@ -23,7 +23,7 @@ class UoW(AsyncContextManager[domain.AbstractRepo[EntityType]]):
 
     async def __aenter__(self) -> domain.AbstractRepo[EntityType]:
         """Возвращает репо с таблицами."""
-        return typing.cast(domain.AbstractRepo[EntityType], self)
+        return self
 
     async def get(self, id_: domain.ID) -> EntityType:
         """Загружает доменный объект из базы."""
