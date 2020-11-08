@@ -26,28 +26,39 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
         return True
 
     async def _prepare_df(self, event: events.TickerTraded) -> pd.DataFrame:
-        """Загружает новый DataFrame."""
+        """Загружает новый DataFrame.
+
+        - Если данные отсутствуют, то загружается информация для всех тикеров таким же ISIN,
+        а для параллельных торгов выбирается тикер с максимальным объемом
+        - Для не пустых старых данных загрузка ведется с последней присутствующей даты
+        - Если новые данные пустые (бывает для давно не торгующейся бумаги, которая раньше
+        торговалась под другим тикером), то возвращаются старые данные
+        - При наличие старых и новых данных, они склеиваются
+        """
         tickers = [event.ticker]
         start_date = None
 
-        if self._df is None:
+        if (df := self._df) is None:
             tickers = await self._aliases.get(event.isin)
-        else:
-            start_date = str(self._df.index[-1].date())
+        elif not df.empty:
+            start_date = str(df.index[-1].date())
 
         last_date = str(event.date)
 
-        coro = [await self._quotes.get(ticker, start_date, last_date) for ticker in tickers]
-        df = pd.concat(await asyncio.gather(*coro), axis=0)
+        coro = [self._quotes.get(ticker, start_date, last_date) for ticker in tickers]
+        df_new = pd.concat(await asyncio.gather(*coro), axis=0)
 
         if len(tickers) > 1:
-            df = df.sort_values(by=[col.DATE, col.TURNOVER])
-            df = df.groupby(col.DATE).last()
+            df_new = df_new.sort_values(by=[col.DATE, col.TURNOVER])
+            df_new = df_new.groupby(col.DATE).last()
 
-        if self._df is None:
+        if df is None:
+            return df_new
+
+        if df_new.empty:
             return df
 
-        return pd.concat([self._df.iloc[:-1], df], axis=0)
+        return pd.concat([df.iloc[:-1], df_new], axis=0)
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
@@ -57,9 +68,9 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
 
         df_new_val = df_new.reindex(df_old.index)
         try:
-            pd.testing.assert_frame_equal(df_new_val, df_old)
+            pd.testing.assert_frame_equal(df_new_val, df_old, check_dtype=False)
         except AssertionError:
-            raise base.TableNewDataMismatchError()
+            raise base.TableNewDataMismatchError(self.id_)
 
     def _new_events(self, event: events.TickerTraded) -> List[domain.AbstractEvent]:
         """Обновление котировок не порождает события."""
