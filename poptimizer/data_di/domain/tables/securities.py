@@ -29,10 +29,7 @@ class Securities(base.AbstractTable[events.TradingDayEndedTQBR]):
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
-        if not df_new.index.is_monotonic_increasing:
-            raise base.TableIndexError("Индекс не возрастающий")
-        if not df_new.index.is_unique:
-            raise base.TableIndexError("Индекс не уникальный")
+        base.check_unique_increasing_index(df_new)
 
     def _new_events(self, event: events.TradingDayEndedTQBR) -> List[domain.AbstractEvent]:
         """События факта торговли конкретных бумаг."""

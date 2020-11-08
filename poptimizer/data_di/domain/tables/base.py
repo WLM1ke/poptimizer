@@ -117,3 +117,12 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
     @abc.abstractmethod
     def _new_events(self, event: Event) -> List[domain.AbstractEvent]:
         """События, которые нужно создать по результатам обновления."""
+
+
+def check_unique_increasing_index(df: pd.DataFrame) -> None:
+    """Тестирует индекс на уникальность и возрастание."""
+    index = df.index
+    if not index.is_monotonic_increasing:
+        raise TableIndexError("Индекс не возрастающий")
+    if not index.is_unique:
+        raise TableIndexError("Индекс не уникальный")
