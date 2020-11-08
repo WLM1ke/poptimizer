@@ -6,7 +6,7 @@ import pandas as pd
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base
-from poptimizer.data_di.shared import domain
+from poptimizer.data_di.shared import col, domain
 
 
 class Securities(base.AbstractTable[events.TradingDayEndedTQBR]):
@@ -41,4 +41,11 @@ class Securities(base.AbstractTable[events.TradingDayEndedTQBR]):
 
         trading_date = event.date
 
-        return [events.TickerTraded(ticker, trading_date) for ticker in df.index]
+        return [
+            events.TickerTraded(
+                ticker,
+                df.at[ticker, col.ISIN],
+                trading_date,
+            )
+            for ticker in df.index
+        ]

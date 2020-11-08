@@ -37,4 +37,5 @@ class TickerTraded(domain.AbstractEvent):
     """Тикер торговался в указанный день."""
 
     ticker: str
+    isin: str
     date: datetime.date
