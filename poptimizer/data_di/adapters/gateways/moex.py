@@ -66,8 +66,8 @@ class QuotesGateway(BaseGateway):
     async def get(
         self,
         ticker: str,
+        start_date: Optional[str],
         last_date: str,
-        start_date: Optional[str] = None,
     ) -> pd.DataFrame:
         """Получение котировок акций в формате OCHLV."""
         json = await aiomoex.get_market_candles(
@@ -76,9 +76,10 @@ class QuotesGateway(BaseGateway):
             start=start_date,
             end=last_date,
         )
-        df = pd.DataFrame(columns=("begin", "open", "close", "high", "low", "value"))
-        if json:
-            df = pd.DataFrame(json)
+
+        df = pd.DataFrame(columns=("begin", "open", "close", "high", "low", "value", "end", "volume"))
+        df = df.append(json)
+        df = df.drop(["end", "volume"], axis=1)
 
         df.columns = [
             col.DATE,
