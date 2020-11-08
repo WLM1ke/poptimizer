@@ -2,7 +2,7 @@
 import abc
 import asyncio
 from datetime import datetime
-from typing import ClassVar, Generic, List, Optional, TypeVar
+from typing import ClassVar, Final, Generic, List, Literal, Optional, TypeVar
 
 import pandas as pd
 
@@ -37,6 +37,31 @@ class TableNeverUpdatedError(config.POptimizerError):
 
 Event = TypeVar("Event", bound=domain.AbstractEvent)
 
+# Наименования групп таблиц
+TRADING_DATES: Final = "trading_dates"
+CONOMY: Final = "conomy"
+DOHOD: Final = "dohod"
+SMART_LAB: Final = "smart_lab"
+BCS: Final = "bcs"
+DIVIDENDS: Final = "dividends"
+CPI: Final = "CPI"
+SECURITIES: Final = "securities"
+INDEX: Final = "indexes"
+QUOTES: Final = "quotes"
+
+GroupName = Literal[
+    "trading_dates",
+    "conomy",
+    "dohod",
+    "smart_lab",
+    "bcs",
+    "dividends",
+    "CPI",
+    "securities",
+    "MCFTRR",
+    "quotes",
+]
+
 
 class AbstractTable(Generic[Event], domain.BaseEntity):
     """Базовая таблица.
@@ -45,7 +70,7 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
     Умеет обрабатывать связанное с ней событие.
     """
 
-    group: ClassVar[str]
+    group: ClassVar[GroupName]
 
     def __init__(
         self,

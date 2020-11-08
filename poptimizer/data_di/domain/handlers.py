@@ -3,7 +3,7 @@ import functools
 from typing import List
 
 from poptimizer import config
-from poptimizer.data_di.domain import events, securities, tables, trading_dates
+from poptimizer.data_di.domain import events, tables
 from poptimizer.data_di.shared import domain
 
 
@@ -30,7 +30,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[tables.AbstractTable[domain
         repo: domain.AbstractRepo[tables.AbstractTable[domain.AbstractEvent]],
     ) -> List[domain.AbstractEvent]:
         """Обновляет таблицу с торговыми днями."""
-        table_id = tables.create_id(trading_dates.TradingDates.group)
+        table_id = tables.create_id(tables.TRADING_DATES)
         table = await repo.get(table_id)
         return await table.handle_event(event)
 
@@ -50,7 +50,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[tables.AbstractTable[domain
         repo: domain.AbstractRepo[tables.AbstractTable[domain.AbstractEvent]],
     ) -> List[domain.AbstractEvent]:
         """Обновляет таблицу с торгуемыми бумагами в режиме TQBR."""
-        table_id = tables.create_id(securities.Securities.group)
+        table_id = tables.create_id(tables.SECURITIES)
         table = await repo.get(table_id)
         return await table.handle_event(event)
 
