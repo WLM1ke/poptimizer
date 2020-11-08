@@ -5,10 +5,10 @@ from typing import Final, Tuple, Type, cast
 
 import pandas as pd
 
-from poptimizer.data_di.domain import securities, tables, trading_dates
+from poptimizer.data_di.domain.tables import base, securities, trading_dates
 from poptimizer.data_di.shared import domain
 
-AnyTable = tables.AbstractTable[domain.AbstractEvent]
+AnyTable = base.AbstractTable[domain.AbstractEvent]
 AllTableTypes = Tuple[Type[AnyTable], ...]
 
 
@@ -33,7 +33,7 @@ class TablesFactory(domain.AbstractFactory[AnyTable]):
         """Загружает таблицу по ID."""
         group = id_.group
         if (table_type := self._types_mapping.get(group)) is None:
-            raise tables.WrongTableIDError(id_)
+            raise base.WrongTableIDError(id_)
 
         df = cast(pd.DataFrame, mongo_dict.get("df"))
         timestamp = cast(datetime, mongo_dict.get("timestamp"))

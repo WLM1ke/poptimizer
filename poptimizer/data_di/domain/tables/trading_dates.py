@@ -5,7 +5,8 @@ from typing import ClassVar, Final, List
 import pandas as pd
 
 from poptimizer.data_di.adapters.gateways import moex
-from poptimizer.data_di.domain import events, tables
+from poptimizer.data_di.domain import events
+from poptimizer.data_di.domain.tables import base
 from poptimizer.data_di.shared import domain
 
 # Часовой пояс MOEX
@@ -36,14 +37,14 @@ def _trading_day_potential_end() -> datetime:
     return _to_utc_naive(end_of_trading)
 
 
-class TradingDates(tables.AbstractTable[events.AppStarted]):
+class TradingDates(base.AbstractTable[events.AppStarted]):
     """Таблица с данными о торговых днях.
 
     Обрабатывает событие начала работы приложения.
     Инициирует событие в случае окончания очередного торгового дня.
     """
 
-    group: ClassVar[tables.GroupName] = "trading_dates"
+    group: ClassVar[base.GroupName] = "trading_dates"
     _gateway: Final = moex.TradingDatesGateway()
 
     def _update_cond(self, event: events.AppStarted) -> bool:
@@ -61,13 +62,13 @@ class TradingDates(tables.AbstractTable[events.AppStarted]):
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Проверка корректности индекса и заголовков."""
         if df_new.index.tolist() != [0]:
-            raise tables.TableIndexError()
+            raise base.TableIndexError()
         if df_new.columns.tolist() != ["from", "till"]:
-            raise tables.TableIndexError()
+            raise base.TableIndexError()
 
     def _new_events(self, event: events.AppStarted) -> List[domain.AbstractEvent]:
         """Событие окончания торгового дня."""
         if (df := self._df) is None:
-            raise tables.TableNeverUpdatedError(self._id)
+            raise base.TableNeverUpdatedError(self._id)
         last_trading_day = df.loc[0, "till"]
         return [events.TradingDayEnded(last_trading_day.date())]
