@@ -12,7 +12,7 @@ from poptimizer.data_di.shared import domain
 class Indexes(base.AbstractTable[events.IndexCalculated]):
     """Таблица с индексами на закрытие торгового дня."""
 
-    group: ClassVar[base.GroupName] = "quotes"
+    group: ClassVar[base.GroupName] = base.INDEX
     _gateway: Final = moex.IndexesGateway()
 
     def _update_cond(self, event: events.IndexCalculated) -> bool:
@@ -27,7 +27,7 @@ class Indexes(base.AbstractTable[events.IndexCalculated]):
 
         last_date = str(event.date)
 
-        df_new = self._gateway.get(event.ticker, start_date, last_date)
+        df_new = await self._gateway.get(event.ticker, start_date, last_date)
 
         if df is None:
             return df_new
