@@ -19,7 +19,7 @@ def create_id(group: str, name: Optional[str] = None) -> domain.ID:
     return domain.ID(PACKAGE, group, name)
 
 
-class WrongTableIDError(config.POptimizerError):
+class TableIWrongDError(config.POptimizerError):
     """Не соответствие группы таблицы и ее класса."""
 
 
