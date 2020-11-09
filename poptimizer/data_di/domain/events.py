@@ -39,3 +39,11 @@ class TickerTraded(domain.AbstractEvent):
     ticker: str
     isin: str
     date: datetime.date
+
+
+@dataclasses.dataclass(frozen=True)
+class IndexCalculated(domain.AbstractEvent):
+    """Биржа пересчитала значение индекса в связи с окончанием торгового дня."""
+
+    ticker: str
+    date: datetime.date

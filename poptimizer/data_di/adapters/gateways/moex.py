@@ -37,7 +37,7 @@ class TradingDatesGateway(BaseGateway):
         return pd.DataFrame(json, dtype="datetime64[ns]")
 
 
-class IndexGateway(BaseGateway):
+class IndexesGateway(BaseGateway):
     """Котировки различных индексов на MOEX."""
 
     _logger = adapters.AsyncLogger()
