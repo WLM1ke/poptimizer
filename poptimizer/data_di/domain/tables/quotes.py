@@ -6,7 +6,7 @@ import pandas as pd
 
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
-from poptimizer.data_di.domain.tables import base
+from poptimizer.data_di.domain.tables import base, checks
 from poptimizer.data_di.shared import col, domain
 
 
@@ -69,15 +69,8 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
-        base.check_unique_increasing_index(df_new)
-        if (df_old := self._df) is None:
-            return
-
-        df_new_val = df_new.reindex(df_old.index)
-        try:
-            pd.testing.assert_frame_equal(df_new_val, df_old, check_dtype=False)
-        except AssertionError:
-            raise base.TableNewDataMismatchError(self.id_)
+        checks.unique_increasing_index(df_new)
+        checks.df_data(self._df, df_new)
 
     def _new_events(self, event: events.TickerTraded) -> List[domain.AbstractEvent]:
         """Обновление котировок не порождает события."""

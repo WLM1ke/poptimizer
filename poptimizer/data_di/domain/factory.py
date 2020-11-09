@@ -33,7 +33,7 @@ class TablesFactory(domain.AbstractFactory[AnyTable]):
         """Загружает таблицу по ID."""
         group = id_.group
         if (table_type := self._types_mapping.get(group)) is None:
-            raise base.WrongTableIDError(id_)
+            raise base.TableIWrongDError(id_)
 
         df = cast(pd.DataFrame, mongo_dict.get("df"))
         timestamp = cast(datetime, mongo_dict.get("timestamp"))

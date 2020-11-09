@@ -5,7 +5,7 @@ import pandas as pd
 
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
-from poptimizer.data_di.domain.tables import base
+from poptimizer.data_di.domain.tables import base, checks
 from poptimizer.data_di.shared import col, domain
 
 
@@ -29,7 +29,7 @@ class Securities(base.AbstractTable[events.TradingDayEndedTQBR]):
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
-        base.check_unique_increasing_index(df_new)
+        checks.unique_increasing_index(df_new)
 
     def _new_events(self, event: events.TradingDayEndedTQBR) -> List[domain.AbstractEvent]:
         """События факта торговли конкретных бумаг."""

@@ -80,9 +80,9 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
     ) -> None:
         """Сохраняет необходимые данные."""
         if id_.package != PACKAGE:
-            raise WrongTableIDError(id_)
+            raise TableIWrongDError(id_)
         if id_.group != self.group:
-            raise WrongTableIDError(id_)
+            raise TableIWrongDError(id_)
         super().__init__(id_)
 
         self._df = df
@@ -117,12 +117,3 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
     @abc.abstractmethod
     def _new_events(self, event: Event) -> List[domain.AbstractEvent]:
         """События, которые нужно создать по результатам обновления."""
-
-
-def check_unique_increasing_index(df: pd.DataFrame) -> None:
-    """Тестирует индекс на уникальность и возрастание."""
-    index = df.index
-    if not index.is_monotonic_increasing:
-        raise TableIndexError("Индекс не возрастающий")
-    if not index.is_unique:
-        raise TableIndexError("Индекс не уникальный")
