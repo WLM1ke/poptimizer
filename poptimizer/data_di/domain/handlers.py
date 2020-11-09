@@ -41,8 +41,12 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
         event: events.TradingDayEnded,
         _: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
     ) -> List[domain.AbstractEvent]:
-        """Создает событие об окончании торгового дня в режиме TQBR."""
-        return [events.TradingDayEndedTQBR(event.date)]
+        """Создает события, связанные с обновлением данных в конце торгового дня."""
+        return [
+            events.TradingDayEndedTQBR(event.date),
+            events.IndexCalculated("MCFTRR", event.date),
+            events.IndexCalculated("RVI", event.date),
+        ]
 
     @handle_event.register
     async def trading_day_ended_tqbr(
@@ -63,6 +67,18 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
     ) -> List[domain.AbstractEvent]:
         """Обновляет таблицу с котировками."""
         table_id = base.create_id(base.QUOTES, event.ticker)
+        table = await repo.get(table_id)
+        await table.handle_event(event)
+        return []
+
+    @handle_event.register
+    async def index_calculated(
+        self,
+        event: events.IndexCalculated,
+        repo: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
+    ) -> List[domain.AbstractEvent]:
+        """Обновляет таблицу с котировками."""
+        table_id = base.create_id(base.INDEX, event.ticker)
         table = await repo.get(table_id)
         await table.handle_event(event)
         return []
