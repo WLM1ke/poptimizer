@@ -16,7 +16,7 @@ class Securities(base.AbstractTable[events.TradingDayEndedTQBR]):
     Инициирует события о торговле конкретными бумагами.
     """
 
-    group: ClassVar[base.GroupName] = "securities"
+    group: ClassVar[base.GroupName] = base.SECURITIES
     _gateway: Final = moex.SecuritiesGateway()
 
     def _update_cond(self, event: events.TradingDayEndedTQBR) -> bool:

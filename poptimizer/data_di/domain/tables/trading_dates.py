@@ -44,7 +44,7 @@ class TradingDates(base.AbstractTable[events.AppStarted]):
     Инициирует событие в случае окончания очередного торгового дня.
     """
 
-    group: ClassVar[base.GroupName] = "trading_dates"
+    group: ClassVar[base.GroupName] = base.TRADING_DATES
     _gateway: Final = moex.TradingDatesGateway()
 
     def _update_cond(self, event: events.AppStarted) -> bool:

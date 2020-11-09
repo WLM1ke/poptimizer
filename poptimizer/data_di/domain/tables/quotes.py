@@ -17,7 +17,7 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
     При обновлении добавляются только данные актуального тикера.
     """
 
-    group: ClassVar[base.GroupName] = "quotes"
+    group: ClassVar[base.GroupName] = base.QUOTES
     _aliases: Final = moex.AliasesGateway()
     _quotes: Final = moex.QuotesGateway()
 
