@@ -37,6 +37,34 @@ class TradingDatesGateway(BaseGateway):
         return pd.DataFrame(json, dtype="datetime64[ns]")
 
 
+class IndexGateway(BaseGateway):
+    """Котировки различных индексов на MOEX."""
+
+    _logger = adapters.AsyncLogger()
+
+    async def get(
+        self,
+        ticker: str,
+        start_date: Optional[str],
+        last_date: str,
+    ) -> pd.DataFrame:
+        """Получение значений индекса на закрытие для диапазона дат."""
+        self._logger(f"{ticker}({start_date}, {last_date})")
+        json = await aiomoex.get_board_history(
+            session=self._session,
+            start=start_date,
+            end=last_date,
+            security=ticker,
+            columns=("TRADEDATE", "CLOSE"),
+            board="RTSI",
+            market="index",
+        )
+        df = pd.DataFrame(json)
+        df.columns = [col.DATE, col.CLOSE]
+        df[col.DATE] = pd.to_datetime(df[col.DATE])
+        return df.set_index(col.DATE)
+
+
 class SecuritiesGateway(BaseGateway):
     """Информация о всех торгующихся акциях."""
 
