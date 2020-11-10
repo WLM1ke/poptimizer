@@ -1,7 +1,6 @@
 """Загрузка различных данных с MOEX."""
 from typing import List, Optional
 
-import aiohttp
 import aiomoex
 import pandas as pd
 
@@ -9,18 +8,7 @@ from poptimizer.data_di.adapters.gateways import connection
 from poptimizer.data_di.shared import adapters, col
 
 
-class BaseGateway:
-    """Базовый шлюз."""
-
-    def __init__(
-        self,
-        session: aiohttp.ClientSession = connection.HTTP_SESSION,
-    ) -> None:
-        """Сохраняет http-сессию."""
-        self._session = session
-
-
-class TradingDatesGateway(BaseGateway):
+class TradingDatesGateway(connection.BaseGateway):
     """Обновление для таблиц с диапазоном доступных торговых дат."""
 
     _logger = adapters.AsyncLogger()
@@ -37,7 +25,7 @@ class TradingDatesGateway(BaseGateway):
         return pd.DataFrame(json, dtype="datetime64[ns]")
 
 
-class IndexesGateway(BaseGateway):
+class IndexesGateway(connection.BaseGateway):
     """Котировки различных индексов на MOEX."""
 
     _logger = adapters.AsyncLogger()
@@ -65,7 +53,7 @@ class IndexesGateway(BaseGateway):
         return df.set_index(col.DATE)
 
 
-class SecuritiesGateway(BaseGateway):
+class SecuritiesGateway(connection.BaseGateway):
     """Информация о всех торгующихся акциях."""
 
     _logger = adapters.AsyncLogger()
@@ -81,7 +69,7 @@ class SecuritiesGateway(BaseGateway):
         return df.set_index(col.TICKER)
 
 
-class AliasesGateway(BaseGateway):
+class AliasesGateway(connection.BaseGateway):
     """Ищет все тикеры с эквивалентным регистрационным номером."""
 
     _logger = adapters.AsyncLogger()
@@ -93,7 +81,7 @@ class AliasesGateway(BaseGateway):
         return [row["secid"] for row in json if row["isin"] == isin]
 
 
-class QuotesGateway(BaseGateway):
+class QuotesGateway(connection.BaseGateway):
     """Загружает котировки акций."""
 
     _logger = adapters.AsyncLogger()

@@ -6,7 +6,7 @@ import aiohttp
 import pandas as pd
 
 from poptimizer import config
-from poptimizer.data_di.adapters.gateways import moex
+from poptimizer.data_di.adapters.gateways import connection
 from poptimizer.data_di.shared import adapters, col
 
 # Параметры загрузки валидации данных
@@ -89,7 +89,7 @@ def _clean_up(df: pd.DataFrame) -> pd.DataFrame:
     return df.to_frame(col.CPI)
 
 
-class CPIGateway(moex.BaseGateway):
+class CPIGateway(connection.BaseGateway):
     """Обновление данных инфляции с https://rosstat.gov.ru."""
 
     _logger = adapters.AsyncLogger()

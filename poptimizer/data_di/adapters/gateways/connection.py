@@ -24,3 +24,14 @@ def _session_factory(pool_size: int) -> aiohttp.ClientSession:
 
 
 HTTP_SESSION: Final = _session_factory(_POOL_SIZE)
+
+
+class BaseGateway:
+    """Базовый шлюз."""
+
+    def __init__(
+        self,
+        session: aiohttp.ClientSession = HTTP_SESSION,
+    ) -> None:
+        """Сохраняет http-сессию."""
+        self._session = session
