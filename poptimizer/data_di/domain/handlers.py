@@ -46,6 +46,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
             events.TradingDayEndedTQBR(event.date),
             events.IndexCalculated("MCFTRR", event.date),
             events.IndexCalculated("RVI", event.date),
+            events.CPIPublished(),
         ]
 
     @handle_event.register
@@ -68,8 +69,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
         """Обновляет таблицу с котировками."""
         table_id = base.create_id(base.QUOTES, event.ticker)
         table = await repo.get(table_id)
-        await table.handle_event(event)
-        return []
+        return await table.handle_event(event)
 
     @handle_event.register
     async def index_calculated(
@@ -80,5 +80,15 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
         """Обновляет таблицу с котировками."""
         table_id = base.create_id(base.INDEX, event.ticker)
         table = await repo.get(table_id)
-        await table.handle_event(event)
-        return []
+        return await table.handle_event(event)
+
+    @handle_event.register
+    async def cpi_published(
+        self,
+        event: events.CPIPublished,
+        repo: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
+    ) -> List[domain.AbstractEvent]:
+        """Обновляет таблицу с котировками."""
+        table_id = base.create_id(base.CPI, base.CPI)
+        table = await repo.get(table_id)
+        return await table.handle_event(event)
