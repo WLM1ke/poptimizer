@@ -3,8 +3,14 @@ import re
 from datetime import datetime
 from typing import Callable, NamedTuple, Optional, Tuple, Union
 
+from poptimizer import config
+
 DIV_PATTERN = r".*\d"
 DATE_PATTERN = r"\d{2}\.\d{2}\.\d{4}"
+
+
+class ParserError(config.POptimizerError):
+    """Ошибки в парсинге html-таблиц."""
 
 
 ParserFunc = Callable[[str], Union[None, float, datetime]]
