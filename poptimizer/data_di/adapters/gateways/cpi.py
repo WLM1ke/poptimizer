@@ -13,8 +13,8 @@ from poptimizer.data_di.shared import adapters, col
 START_URL = "https://rosstat.gov.ru/price"
 URL_CORE = "https://rosstat.gov.ru/storage/mediabank/"
 URL_END = "/Индексы%20потребительских%20цен%20по%20Российской%20Федерации.html"
-CPI_PATTERN = re.compile("([a-zA-Z]+)/Индексы")
-FILE_PATTERN = re.compile("https://rosstat.gov.ru/storage/mediabank/[a-zA-Z]+/i_ipc.xlsx")
+CPI_PATTERN = re.compile("([a-zA-Z0-9]+)/Индексы")
+FILE_PATTERN = re.compile("https://rosstat.gov.ru/storage/mediabank/[a-zA-Z0-9]+/i_ipc.xlsx")
 END_OF_JAN = 31
 PARSING_PARAMETERS = types.MappingProxyType(
     {

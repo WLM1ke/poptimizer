@@ -13,8 +13,8 @@ from poptimizer.data_di.shared import col
 START_URL = "https://rosstat.gov.ru/price"
 URL_CORE = "https://rosstat.gov.ru/storage/mediabank/"
 URL_END = "/Индексы%20потребительских%20цен%20по%20Российской%20Федерации.html"
-CPI_PATTERN = re.compile("([a-zA-Z]+)/Индексы")
-FILE_PATTERN = re.compile("https://rosstat.gov.ru/storage/mediabank/[a-zA-Z]+/i_ipc.xlsx")
+CPI_PATTERN = re.compile("([a-zA-Z0-9]+)/Индексы")
+FILE_PATTERN = re.compile("https://rosstat.gov.ru/storage/mediabank/[a-zA-Z0-9]+/i_ipc.xlsx")
 END_OF_JAN = 31
 PARSING_PARAMETERS = dict(sheet_name="ИПЦ", header=3, skiprows=[4], skipfooter=3, index_col=0)
 NUM_OF_MONTH = 12
@@ -28,6 +28,7 @@ async def _get_cpi_url(session: aiohttp.ClientSession) -> str:
         html = await resp.text()
     if match := re.search(CPI_PATTERN, html):
         url_code = match.group(1)
+        print(url_code)
         return f"{URL_CORE}{url_code}{URL_END}"
     raise outer.DataError("На странице отсутствует ссылка на страницу с потребительской инфляцией")
 
