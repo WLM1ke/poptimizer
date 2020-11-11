@@ -9,7 +9,7 @@ from poptimizer.data_di.shared import adapters
 
 # Асинхронный клиент для MongoDB
 _MONGO_URI = "mongodb://localhost:27017"
-_MONGO_CLIENT: Final = motor_asyncio.AsyncIOMotorClient(_MONGO_URI, tz_aware=False)
+MONGO_CLIENT: Final = motor_asyncio.AsyncIOMotorClient(_MONGO_URI, tz_aware=False)
 
 _DATA_DESCRIPTION: Final = (
     adapters.Desc(
@@ -28,7 +28,7 @@ _DATA_DESCRIPTION: Final = (
 
 
 MAPPER: Final = adapters.Mapper(
-    _MONGO_CLIENT,
+    MONGO_CLIENT,
     _DATA_DESCRIPTION,
     factory.TablesFactory(),
 )
