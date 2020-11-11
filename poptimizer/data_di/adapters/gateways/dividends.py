@@ -24,6 +24,8 @@ class DividendsGateway:
 
     async def get(self, ticker: str) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
+        self._logger(ticker)
+
         docs_cursor = self._collection.aggregate(
             [
                 {"$match": {"ticker": ticker}},
