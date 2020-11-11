@@ -5,7 +5,15 @@ from typing import Final, Tuple, Type, cast
 
 import pandas as pd
 
-from poptimizer.data_di.domain.tables import base, cpi, indexes, quotes, securities, trading_dates
+from poptimizer.data_di.domain.tables import (
+    base,
+    cpi,
+    dividends,
+    indexes,
+    quotes,
+    securities,
+    trading_dates,
+)
 from poptimizer.data_di.shared import domain
 
 AnyTable = base.AbstractTable[domain.AbstractEvent]
@@ -14,7 +22,14 @@ AllTableTypes = Tuple[Type[AnyTable], ...]
 
 _TABLE_TYPES: Final[AllTableTypes] = cast(
     AllTableTypes,
-    (trading_dates.TradingDates, securities.Securities, quotes.Quotes, indexes.Indexes, cpi.CPI),
+    (
+        trading_dates.TradingDates,
+        securities.Securities,
+        quotes.Quotes,
+        indexes.Indexes,
+        cpi.CPI,
+        dividends.Dividends,
+    ),
 )
 
 

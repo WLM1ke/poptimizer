@@ -46,8 +46,6 @@ class DividendsObsoleted(domain.AbstractEvent):
     """Данные по дивидендам устарели."""
 
     ticker: str
-    isin: str
-    date: datetime.date
 
 
 @dataclasses.dataclass(frozen=True)
