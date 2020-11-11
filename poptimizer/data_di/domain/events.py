@@ -50,5 +50,5 @@ class IndexCalculated(domain.AbstractEvent):
 
 
 @dataclasses.dataclass(frozen=True)
-class CPIPublished(domain.AbstractEvent):
+class CPIObsoleted(domain.AbstractEvent):
     """ФСГС возможно опубликовала новое значение CPI."""

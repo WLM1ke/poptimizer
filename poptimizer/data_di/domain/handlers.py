@@ -46,7 +46,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
             events.TradingDayEndedTQBR(event.date),
             events.IndexCalculated("MCFTRR", event.date),
             events.IndexCalculated("RVI", event.date),
-            events.CPIPublished(),
+            events.CPIObsoleted(),
         ]
 
     @handle_event.register
@@ -85,7 +85,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
     @handle_event.register
     async def cpi_published(
         self,
-        event: events.CPIPublished,
+        event: events.CPIObsoleted,
         repo: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
     ) -> List[domain.AbstractEvent]:
         """Обновляет таблицу с котировками."""
