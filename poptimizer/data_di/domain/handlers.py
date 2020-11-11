@@ -70,7 +70,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
         table_id = base.create_id(base.QUOTES, event.ticker)
         table = await repo.get(table_id)
         new_events = await table.handle_event(event)
-        new_events.append(events.DividendsObsoleted(event.ticker))
+        new_events.append(events.DividendsObsoleted(base.DIVIDENDS, event.ticker))
         return new_events
 
     @handle_event.register
@@ -80,7 +80,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
         repo: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
     ) -> List[domain.AbstractEvent]:
         """Обновляет таблицу с дивидендами."""
-        table_id = base.create_id(base.DIVIDENDS, event.ticker)
+        table_id = base.create_id(event.group, event.ticker)
         table = await repo.get(table_id)
         return await table.handle_event(event)
 

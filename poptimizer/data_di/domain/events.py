@@ -45,6 +45,7 @@ class TickerTraded(domain.AbstractEvent):
 class DividendsObsoleted(domain.AbstractEvent):
     """Данные по дивидендам устарели."""
 
+    group: str
     ticker: str
 
 
