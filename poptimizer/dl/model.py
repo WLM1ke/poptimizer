@@ -46,6 +46,10 @@ class TooLargeModelError(ModelError):
     """
 
 
+class DegeneratedModelError(ModelError):
+    """В модели отключены все признаки."""
+
+
 def normal_llh(
     output: Tuple[torch.Tensor, torch.Tensor], batch: Dict[str, torch.Tensor]
 ) -> Tuple[torch.Tensor, int, torch.Tensor]:
@@ -196,6 +200,9 @@ class Model:
         loader = data_loader.DescribedDataLoader(
             self._tickers, self._end, phenotype["data"], data_params.TrainParams
         )
+
+        if len(loader.features_description) == 1:
+            raise DegeneratedModelError()
 
         model = self._make_untrained_model(loader)
         model.to(DEVICE)
