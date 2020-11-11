@@ -39,11 +39,7 @@ def create_mapper(mocker):
         adapters.Desc("dd", "dd", "dd"),
         adapters.Desc("ff", "ff", "ff"),
     )
-    return adapters.Mapper(
-        mocker.AsyncMock(),
-        desc,
-        mocker.MagicMock(),
-    )
+    return adapters.Mapper(desc, mocker.MagicMock(), mocker.AsyncMock())
 
 
 async def fake_load_or_create(_):

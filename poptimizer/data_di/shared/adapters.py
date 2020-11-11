@@ -3,12 +3,16 @@ import asyncio
 import logging
 import typing
 import weakref
-from typing import Callable, ClassVar, MutableMapping, NamedTuple, Optional, Tuple, Type, TypeVar
+from typing import Callable, ClassVar, Final, MutableMapping, NamedTuple, Optional, Tuple, Type, TypeVar
 
 from motor import motor_asyncio
 from pymongo.collection import Collection
 
 from poptimizer.data_di.shared import domain
+
+# Асинхронный клиент для MongoDB
+_MONGO_URI = "mongodb://localhost:27017"
+MONGO_CLIENT: Final = motor_asyncio.AsyncIOMotorClient(_MONGO_URI, tz_aware=False)
 
 # Коллекция для сохранения объектов из групп с одним объектом
 MISC = "misc"
@@ -67,11 +71,11 @@ class Mapper(typing.Generic[EntityType]):
     ] = weakref.WeakValueDictionary()
     _logger = AsyncLogger()
 
-    def __init__(  # type: ignore
+    def __init__(
         self,
-        client: motor_asyncio.AsyncIOMotorClient,
         desc_list: Tuple[Desc, ...],
         factory: domain.AbstractFactory[EntityType],
+        client: motor_asyncio.AsyncIOMotorClient = MONGO_CLIENT,
     ) -> None:
         """Сохраняет соединение с MongoDB и информацию для мэппинга объектов."""
         self._client = client
