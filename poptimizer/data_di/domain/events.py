@@ -42,6 +42,15 @@ class TickerTraded(domain.AbstractEvent):
 
 
 @dataclasses.dataclass(frozen=True)
+class DividendsObsoleted(domain.AbstractEvent):
+    """Данные по дивидендам устарели."""
+
+    ticker: str
+    isin: str
+    date: datetime.date
+
+
+@dataclasses.dataclass(frozen=True)
 class IndexCalculated(domain.AbstractEvent):
     """Биржа пересчитала значение индекса в связи с окончанием торгового дня."""
 
