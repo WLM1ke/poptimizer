@@ -2,6 +2,8 @@
 import dataclasses
 import datetime
 
+import pandas as pd
+
 from poptimizer.data_di.shared import domain
 
 
@@ -40,3 +42,11 @@ class IndexCalculated(domain.AbstractEvent):
 
     ticker: str
     date: datetime.date
+
+
+@dataclasses.dataclass(frozen=True)
+class DivExpected(domain.AbstractEvent):
+    """Ожидаются дивиденды для тикера."""
+
+    ticker: str
+    df: pd.DataFrame
