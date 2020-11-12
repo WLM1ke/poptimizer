@@ -63,7 +63,7 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
         new_events: List[domain.AbstractEvent] = []
 
         for ticker in div_tickers:
-            df_div = df[df == ticker]
+            df_div = df[df.index == ticker]
             df_div = df_div.set_index(col.DATE)
             df_div = df_div[[col.DIVIDENDS]]
             df_div.columns = ["SmartLab"]
