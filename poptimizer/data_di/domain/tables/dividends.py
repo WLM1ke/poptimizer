@@ -9,17 +9,17 @@ from poptimizer.data_di.domain.tables import base, checks
 from poptimizer.data_di.shared import domain
 
 
-class Dividends(base.AbstractTable[events.DividendsObsoleted]):
+class Dividends(base.AbstractTable[events.TickerTraded]):
     """Таблица с основной версией дивидендов."""
 
     group: ClassVar[base.GroupName] = base.DIVIDENDS
     _gateway: ClassVar = dividends.DividendsGateway()
 
-    def _update_cond(self, event: events.DividendsObsoleted) -> bool:
+    def _update_cond(self, event: events.TickerTraded) -> bool:
         """Если дивиденды устарели, требуется обязательное обновление."""
         return True
 
-    async def _prepare_df(self, event: events.DividendsObsoleted) -> pd.DataFrame:
+    async def _prepare_df(self, event: events.TickerTraded) -> pd.DataFrame:
         """Загружает новый DataFrame полностью."""
         return await self._gateway.get(event.ticker)
 
@@ -27,7 +27,7 @@ class Dividends(base.AbstractTable[events.DividendsObsoleted]):
         """Индекс должен быть уникальным и возрастающим."""
         checks.unique_increasing_index(df_new)
 
-    def _new_events(self, event: events.DividendsObsoleted) -> List[domain.AbstractEvent]:
+    def _new_events(self, event: events.TickerTraded) -> List[domain.AbstractEvent]:
         """Обновление дивидендов не порождает события."""
         return []
 
