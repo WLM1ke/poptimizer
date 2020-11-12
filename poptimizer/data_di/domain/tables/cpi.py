@@ -1,4 +1,5 @@
 """Таблица с индексом потребительской инфляции."""
+from datetime import timedelta
 from typing import ClassVar, Final, List
 
 import pandas as pd
@@ -16,8 +17,17 @@ class CPI(base.AbstractTable[events.TradingDayEnded]):
     _gateway: Final = cpi.CPIGateway()
 
     def _update_cond(self, event: events.TradingDayEnded) -> bool:
-        """После окончания торгового дня можно проверять наличие новых данных по инфляции."""
-        return True
+        """Инфляция обновляется при отсутствии или окончание очередного месяца."""
+        if (df := self._df) is None:
+            return True
+
+        last_cpi_month = df.index[-1].month
+        last_full_month = (event.date.replace(day=1) - timedelta(days=-1)).month
+
+        if last_cpi_month != last_full_month:
+            return True
+
+        return False
 
     async def _prepare_df(self, event: events.TradingDayEnded) -> pd.DataFrame:
         """Загружает новый DataFrame."""
