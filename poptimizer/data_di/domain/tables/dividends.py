@@ -1,9 +1,11 @@
 """Таблицы с дивидендами."""
-from typing import ClassVar, Final, List
+import types
+from datetime import datetime, timedelta
+from typing import ClassVar, Final, List, Mapping
 
 import pandas as pd
 
-from poptimizer.data_di.adapters.gateways import dividends, smart_lab
+from poptimizer.data_di.adapters.gateways import bcs, connection, conomy, dividends, dohod, smart_lab
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base, checks
 from poptimizer.data_di.shared import col, domain
@@ -68,3 +70,46 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
             new_events.append(events.DivExpected(ticker, df_div))
 
         return new_events
+
+
+class DivExt(base.AbstractTable[events.DivExpected]):
+    """Таблица со сводными данными по дивидендам из внешних источников."""
+
+    group: ClassVar[base.GroupName] = base.DIV_EXT
+    _gateways_dict: Final[Mapping[str, connection.DivGateway]] = types.MappingProxyType(
+        {
+            "Dohod": dohod.DohodGateway(),
+            "Conomy": conomy.ConomyGateway(),
+            "BCS": bcs.BCSGateway(),
+        },
+    )
+
+    def _update_cond(self, event: events.DivExpected) -> bool:
+        """Если данные отсутствуют, то их надо загрузить, а так же обновить раз в неделю."""
+        if (timestamp := self._timestamp) is None:
+            return self._df is None
+
+        if datetime.utcnow() - timestamp > timedelta(days=7):
+            return True
+
+        return False
+
+    async def _prepare_df(self, event: events.DivExpected) -> pd.DataFrame:
+        """Загружает данные из всех источников и рассчитывает медиану."""
+        dfs = [event.df]
+        for name, gateway in self._gateways_dict.items():
+            df = await gateway.get(event.ticker)
+            df.columns = [name]
+            dfs.append(df)
+
+        df = pd.concat(dfs, axis=1)
+        df["MEDIAN"] = df.median(axis=1)
+        return df
+
+    def _validate_new_df(self, df_new: pd.DataFrame) -> None:
+        """Индекс должен быть уникальным и возрастающим."""
+        checks.unique_increasing_index(df_new)
+
+    def _new_events(self, event: events.DivExpected) -> List[domain.AbstractEvent]:
+        """Обновление дивидендов не порождает события."""
+        return []

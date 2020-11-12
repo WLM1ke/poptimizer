@@ -39,11 +39,9 @@ Event = TypeVar("Event", bound=domain.AbstractEvent)
 
 # Наименования групп таблиц
 TRADING_DATES: Final = "trading_dates"
-CONOMY: Final = "conomy"
-DOHOD: Final = "dohod"
 SMART_LAB: Final = "smart_lab"
-BCS: Final = "bcs"
 DIVIDENDS: Final = "dividends"
+DIV_EXT: Final = "div_ext"
 CPI: Final = "CPI"
 SECURITIES: Final = "securities"
 INDEX: Final = "indexes"
@@ -51,11 +49,9 @@ QUOTES: Final = "quotes"
 
 GroupName = Literal[
     "trading_dates",
-    "conomy",
-    "dohod",
     "smart_lab",
-    "bcs",
     "dividends",
+    "div_ext",
     "CPI",
     "securities",
     "indexes",

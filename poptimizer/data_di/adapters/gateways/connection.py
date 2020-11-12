@@ -1,9 +1,11 @@
 """Фабрика для асинхронного http-соединения."""
+import abc
 import asyncio
 import atexit
 from typing import Final
 
 import aiohttp
+import pandas as pd
 
 # Размер пула http-соединений - при большем размере многие сайты ругаются
 _POOL_SIZE = 20
@@ -35,3 +37,11 @@ class BaseGateway:
     ) -> None:
         """Сохраняет http-сессию."""
         self._session = session
+
+
+class DivGateway(BaseGateway):
+    """Базовый шлюз."""
+
+    @abc.abstractmethod
+    async def get(self, ticker: str) -> pd.DataFrame:
+        """Дивиденды для данного тикера."""

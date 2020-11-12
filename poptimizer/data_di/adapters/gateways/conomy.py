@@ -106,7 +106,7 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
     return columns
 
 
-class ConomyGateway(connection.BaseGateway):
+class ConomyGateway(connection.DivGateway):
     """Обновление для таблиц с дивидендами на https://www.conomy.ru/."""
 
     _logger = adapters.AsyncLogger()
