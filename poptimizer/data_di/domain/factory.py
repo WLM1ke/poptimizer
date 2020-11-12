@@ -29,7 +29,7 @@ _TABLE_TYPES: Final[AllTableTypes] = cast(
         indexes.Indexes,
         cpi.CPI,
         dividends.Dividends,
-        dividends.Conomy,
+        dividends.SmartLab,
     ),
 )
 

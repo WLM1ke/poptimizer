@@ -33,7 +33,10 @@ class Dividends(base.AbstractTable[events.TickerTraded]):
 
 
 class SmartLab(base.AbstractTable[events.TradingDayEnded]):
-    """Таблица с ожидаемыми дивидендами со https://www.smart-lab.ru."""
+    """Таблица с ожидаемыми дивидендами со https://www.smart-lab.ru.
+
+    Создает события с новыми дивидендами.
+    """
 
     group: ClassVar[base.GroupName] = base.SMART_LAB
     _gateway: Final = smart_lab.SmartLabGateway()

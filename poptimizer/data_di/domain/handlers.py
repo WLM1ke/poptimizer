@@ -41,19 +41,22 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
         event: events.TradingDayEnded,
         repo: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
     ) -> List[domain.AbstractEvent]:
-        """Создает события, связанные с обновлением данных в конце торгового дня."""
+        """Запускает обновление необходимых таблиц в конце торгового дня."""
         new_events: List[domain.AbstractEvent] = [
             events.IndexCalculated("MCFTRR", event.date),
             events.IndexCalculated("RVI", event.date),
         ]
 
-        table_id = base.create_id(base.CPI)
-        table = await repo.get(table_id)
-        new_events.extend(await table.handle_event(event))
+        table_groups = [
+            base.CPI,
+            base.SECURITIES,
+            base.SMART_LAB,
+        ]
 
-        table_id = base.create_id(base.SECURITIES)
-        table = await repo.get(table_id)
-        new_events.extend(await table.handle_event(event))
+        for group in table_groups:
+            table_id = base.create_id(group)
+            table = await repo.get(table_id)
+            new_events.extend(await table.handle_event(event))
 
         return new_events
 
@@ -66,13 +69,12 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
         """Обновляет таблицы с котировками и дивидендами."""
         new_events = []
 
-        table_id = base.create_id(base.QUOTES, event.ticker)
-        table = await repo.get(table_id)
-        new_events.extend(await table.handle_event(event))
+        table_groups = [base.QUOTES, base.DIVIDENDS]
 
-        table_id = base.create_id(base.DIVIDENDS, event.ticker)
-        table = await repo.get(table_id)
-        new_events.extend(await table.handle_event(event))
+        for group in table_groups:
+            table_id = base.create_id(group, event.ticker)
+            table = await repo.get(table_id)
+            new_events.extend(await table.handle_event(event))
 
         return new_events
 
@@ -82,7 +84,17 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
         event: events.IndexCalculated,
         repo: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
     ) -> List[domain.AbstractEvent]:
-        """Обновляет таблицу с котировками."""
+        """Обновляет таблицу с котировками индексов."""
         table_id = base.create_id(base.INDEX, event.ticker)
         table = await repo.get(table_id)
         return await table.handle_event(event)
+
+    @handle_event.register
+    async def div_expected(
+        self,
+        event: events.DivExpected,
+        repo: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
+    ) -> List[domain.AbstractEvent]:
+        """Обновляет таблицу с котировками."""
+        print(event)
+        return []
