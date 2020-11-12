@@ -39,15 +39,20 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
     async def trading_day_ended(
         self,
         event: events.TradingDayEnded,
-        _: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
+        repo: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
     ) -> List[domain.AbstractEvent]:
         """Создает события, связанные с обновлением данных в конце торгового дня."""
-        return [
-            events.TradingDayEndedTQBR(event.date),
-            events.IndexCalculated("MCFTRR", event.date),
-            events.IndexCalculated("RVI", event.date),
-            events.CPIObsoleted(),
-        ]
+        table_id = base.create_id(base.CPI, base.CPI)
+        table = await repo.get(table_id)
+        new_events = await table.handle_event(event)
+        new_events.extend(
+            [
+                events.TradingDayEndedTQBR(event.date),
+                events.IndexCalculated("MCFTRR", event.date),
+                events.IndexCalculated("RVI", event.date),
+            ]
+        )
+        return new_events
 
     @handle_event.register
     async def trading_day_ended_tqbr(
@@ -92,16 +97,5 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
     ) -> List[domain.AbstractEvent]:
         """Обновляет таблицу с котировками."""
         table_id = base.create_id(base.INDEX, event.ticker)
-        table = await repo.get(table_id)
-        return await table.handle_event(event)
-
-    @handle_event.register
-    async def cpi_published(
-        self,
-        event: events.CPIObsoleted,
-        repo: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
-    ) -> List[domain.AbstractEvent]:
-        """Обновляет таблицу с котировками."""
-        table_id = base.create_id(base.CPI, base.CPI)
         table = await repo.get(table_id)
         return await table.handle_event(event)

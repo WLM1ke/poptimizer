@@ -55,8 +55,3 @@ class IndexCalculated(domain.AbstractEvent):
 
     ticker: str
     date: datetime.date
-
-
-@dataclasses.dataclass(frozen=True)
-class CPIObsoleted(domain.AbstractEvent):
-    """ФСГС возможно опубликовала новое значение CPI."""
