@@ -42,28 +42,20 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
         repo: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
     ) -> List[domain.AbstractEvent]:
         """Создает события, связанные с обновлением данных в конце торгового дня."""
-        table_id = base.create_id(base.CPI, base.CPI)
-        table = await repo.get(table_id)
-        new_events = await table.handle_event(event)
-        new_events.extend(
-            [
-                events.TradingDayEndedTQBR(event.date),
-                events.IndexCalculated("MCFTRR", event.date),
-                events.IndexCalculated("RVI", event.date),
-            ]
-        )
-        return new_events
+        new_events: List[domain.AbstractEvent] = [
+            events.IndexCalculated("MCFTRR", event.date),
+            events.IndexCalculated("RVI", event.date),
+        ]
 
-    @handle_event.register
-    async def trading_day_ended_tqbr(
-        self,
-        event: events.TradingDayEndedTQBR,
-        repo: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
-    ) -> List[domain.AbstractEvent]:
-        """Обновляет таблицу с торгуемыми бумагами в режиме TQBR."""
+        table_id = base.create_id(base.CPI)
+        table = await repo.get(table_id)
+        new_events.extend(await table.handle_event(event))
+
         table_id = base.create_id(base.SECURITIES)
         table = await repo.get(table_id)
-        return await table.handle_event(event)
+        new_events.extend(await table.handle_event(event))
+
+        return new_events
 
     @handle_event.register
     async def ticker_traded(

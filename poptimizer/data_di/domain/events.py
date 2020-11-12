@@ -26,13 +26,6 @@ class TradingDayEnded(domain.AbstractEvent):
 
 
 @dataclasses.dataclass(frozen=True)
-class TradingDayEndedTQBR(domain.AbstractEvent):
-    """Произошло окончание очередного торгового дня в режиме TQBR."""
-
-    date: datetime.date
-
-
-@dataclasses.dataclass(frozen=True)
 class TickerTraded(domain.AbstractEvent):
     """Тикер торговался в указанный день."""
 
