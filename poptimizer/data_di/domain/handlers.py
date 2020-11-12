@@ -96,5 +96,6 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
         repo: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
     ) -> List[domain.AbstractEvent]:
         """Обновляет таблицу с котировками."""
-        print(event)
-        return []
+        table_id = base.create_id(base.DIV_EXT, event.ticker)
+        table = await repo.get(table_id)
+        return await table.handle_event(event)
