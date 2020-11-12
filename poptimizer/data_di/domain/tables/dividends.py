@@ -16,8 +16,8 @@ class Dividends(base.AbstractTable[events.TickerTraded]):
     _gateway: ClassVar = dividends.DividendsGateway()
 
     def _update_cond(self, event: events.TickerTraded) -> bool:
-        """Если дивиденды устарели, требуется обязательное обновление."""
-        return True
+        """Если дивиденды отсутствуют, то их надо загрузить."""
+        return self._df is None
 
     async def _prepare_df(self, event: events.TickerTraded) -> pd.DataFrame:
         """Загружает новый DataFrame полностью."""
@@ -30,10 +30,3 @@ class Dividends(base.AbstractTable[events.TickerTraded]):
     def _new_events(self, event: events.TickerTraded) -> List[domain.AbstractEvent]:
         """Обновление дивидендов не порождает события."""
         return []
-
-
-class Conomy(Dividends):
-    """Дивиденды с сайта conomy.ru."""
-
-    group: ClassVar[base.GroupName] = base.CONOMY
-    _gateway: ClassVar = conomy.ConomyGateway()
