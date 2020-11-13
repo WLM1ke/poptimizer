@@ -37,7 +37,7 @@ class Indexes(base.AbstractTable[events.IndexCalculated]):
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим, а данные совпадать."""
         checks.unique_increasing_index(df_new)
-        checks.df_data(self._df, df_new)
+        checks.df_data(self.id_, self._df, df_new)
 
     def _new_events(self, event: events.IndexCalculated) -> List[domain.AbstractEvent]:
         """Обновление индекса не порождает события."""

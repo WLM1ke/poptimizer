@@ -2,6 +2,7 @@
 import pandas as pd
 
 from poptimizer.data_di.domain.tables import base
+from poptimizer.data_di.shared import domain
 
 
 def unique_increasing_index(df: pd.DataFrame) -> None:
@@ -13,7 +14,7 @@ def unique_increasing_index(df: pd.DataFrame) -> None:
         raise base.TableIndexError("Индекс не уникальный")
 
 
-def df_data(df_old: pd.DataFrame, df_new: pd.DataFrame) -> None:
+def df_data(id_: domain.ID, df_old: pd.DataFrame, df_new: pd.DataFrame) -> None:
     """Сравнивает новые данные со старыми для старого индекса."""
     if df_old is None:
         return
@@ -22,4 +23,4 @@ def df_data(df_old: pd.DataFrame, df_new: pd.DataFrame) -> None:
     try:
         pd.testing.assert_frame_equal(df_new_val, df_old, check_dtype=False)
     except AssertionError:
-        raise base.TableNewDataMismatchError()
+        raise base.TableNewDataMismatchError(id_)
