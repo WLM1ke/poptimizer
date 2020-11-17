@@ -6,6 +6,7 @@ import pandas as pd
 from motor import motor_asyncio
 
 from poptimizer import config
+from poptimizer.data_di.shared import adapters
 
 
 class NoDFError(config.POptimizerError):
@@ -26,6 +27,8 @@ class Viewer:
         name: str,
     ) -> pd.DataFrame:
         """Возвращает DataFrame по наименованию."""
+        if group == name:
+            group = adapters.MISC
         return self._loop.run_until_complete(self._query(group, name))
 
     def get_dfs(
