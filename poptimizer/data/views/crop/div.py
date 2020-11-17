@@ -4,6 +4,7 @@ from typing import Tuple
 import pandas as pd
 
 from poptimizer.data_di.app import bootstrap, viewers
+from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base
 
 
@@ -22,6 +23,9 @@ def dividends(
     viewer: viewers.Viewer = bootstrap.VIEWER,
 ) -> pd.DataFrame:
     """Дивиденды для данного тикера."""
+    if force_update:
+        command = events.UpdateDivCommand(ticker)
+        bootstrap.BUS.handle_event(command)
     df = viewer.get_df(base.DIVIDENDS, ticker)
     return df.loc[bootstrap.START_DATE :]  # type: ignore
 
