@@ -8,14 +8,10 @@ from poptimizer.data.app import handlers
 from poptimizer.data.config import mongo_server, resources
 
 # Настройки обработчика запросов к приложению
+from poptimizer.data_di.app.bootstrap import START_DATE
+
 _DB_SESSION = db.MongoDBSession(resources.MONGO_CLIENT["data"])
 HANDLER: Final = handlers.Handler(asyncio.get_event_loop(), _DB_SESSION)
-
-# Параметры представления конечных данных
-# До 2015 года не у всех бумаг был режим T+2
-# У некоторых бумаг происходило слияние без изменения тикера (IRAO)
-_START_YEAR = 2015
-START_DATE: Final = datetime.date(_START_YEAR, 1, 1)
 
 # Параметры налогов
 TAX: Final = 0.13
