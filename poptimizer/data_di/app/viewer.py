@@ -6,11 +6,6 @@ import pandas as pd
 from motor import motor_asyncio
 
 from poptimizer import config
-from poptimizer.data_di.domain.tables import base
-from poptimizer.data_di.shared import adapters
-
-# База данных с таблицами
-_DB = adapters.MONGO_CLIENT[base.PACKAGE]
 
 
 class NoDFError(config.POptimizerError):
@@ -20,7 +15,7 @@ class NoDFError(config.POptimizerError):
 class Viewer:
     """Показывает данные из таблиц."""
 
-    def __init__(self, db: motor_asyncio.AsyncIOMotorDatabase = _DB):
+    def __init__(self, db: motor_asyncio.AsyncIOMotorDatabase):
         """Сохраняет ссылку на базу в MongoDB."""
         self._db = db
         self._loop = asyncio.get_event_loop()
