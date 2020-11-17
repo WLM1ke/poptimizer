@@ -17,6 +17,10 @@ _DB = adapters.MONGO_CLIENT[base.PACKAGE]
 _START_YEAR = 2015
 START_DATE: Final = datetime.date(_START_YEAR, 1, 1)
 
+# Параметры налогов
+TAX: Final = 0.13
+AFTER_TAX: Final = 1 - TAX
+
 
 def start_app() -> viewers.Viewer:
     """Создает шину сообщений и инициирует обработку сообщения начала работы приложения."""

@@ -8,13 +8,10 @@ from poptimizer.data.app import handlers
 from poptimizer.data.config import mongo_server, resources
 
 # Настройки обработчика запросов к приложению
-from poptimizer.data_di.app.bootstrap import START_DATE
+from poptimizer.data_di.app.bootstrap import START_DATE, TAX
 
 _DB_SESSION = db.MongoDBSession(resources.MONGO_CLIENT["data"])
 HANDLER: Final = handlers.Handler(asyncio.get_event_loop(), _DB_SESSION)
-
-# Параметры налогов
-TAX: Final = 0.13
 
 
 def get_handler() -> handlers.Handler:
