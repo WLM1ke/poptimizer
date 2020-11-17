@@ -1,7 +1,7 @@
 """Таблицы с дивидендами."""
 import types
 from datetime import datetime, timedelta
-from typing import ClassVar, Final, List, Mapping
+from typing import ClassVar, Final, List, Mapping, Union
 
 import pandas as pd
 
@@ -10,18 +10,20 @@ from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base, checks
 from poptimizer.data_di.shared import col, domain
 
+DivEvents = Union[events.TickerTraded, events.UpdateDivCommand]
 
-class Dividends(base.AbstractTable[events.TickerTraded]):
+
+class Dividends(base.AbstractTable[DivEvents]):
     """Таблица с основной версией дивидендов."""
 
     group: ClassVar[base.GroupName] = base.DIVIDENDS
     _gateway: Final = dividends.DividendsGateway()
 
-    def _update_cond(self, event: events.TickerTraded) -> bool:
+    def _update_cond(self, event: DivEvents) -> bool:
         """Если дивиденды отсутствуют, то их надо загрузить."""
-        return self._df is None
+        return self._df is None or isinstance(event, events.UpdateDivCommand)
 
-    async def _prepare_df(self, event: events.TickerTraded) -> pd.DataFrame:
+    async def _prepare_df(self, event: DivEvents) -> pd.DataFrame:
         """Загружает новый DataFrame полностью."""
         return await self._gateway.get(event.ticker)
 
@@ -29,7 +31,7 @@ class Dividends(base.AbstractTable[events.TickerTraded]):
         """Индекс должен быть уникальным и возрастающим."""
         checks.unique_increasing_index(df_new)
 
-    def _new_events(self, event: events.TickerTraded) -> List[domain.AbstractEvent]:
+    def _new_events(self, event: DivEvents) -> List[domain.AbstractEvent]:
         """Обновление дивидендов не порождает события."""
         return []
 

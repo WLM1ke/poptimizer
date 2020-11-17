@@ -99,3 +99,14 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
         table_id = base.create_id(base.DIV_EXT, event.ticker)
         table = await repo.get(table_id)
         return await table.handle_event(event)
+
+    @handle_event.register
+    async def update_div(
+        self,
+        event: events.UpdateDivCommand,
+        repo: domain.AbstractRepo[base.AbstractTable[domain.AbstractEvent]],
+    ) -> List[domain.AbstractEvent]:
+        """Обновляет таблицы с котировками и дивидендами."""
+        table_id = base.create_id(base.DIVIDENDS, event.ticker)
+        table = await repo.get(table_id)
+        return await table.handle_event(event)

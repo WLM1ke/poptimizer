@@ -50,3 +50,10 @@ class DivExpected(domain.AbstractEvent):
 
     ticker: str
     df: pd.DataFrame = dataclasses.field(repr=False)
+
+
+@dataclasses.dataclass(frozen=True)
+class UpdateDivCommand(domain.AbstractEvent):
+    """Команда обновить дивиденды."""
+
+    ticker: str
