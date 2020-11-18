@@ -6,39 +6,27 @@ import numpy as np
 import pandas as pd
 from pandas.tseries import offsets
 
-from poptimizer.data.config import bootstrap
-from poptimizer.data.ports import outer
-from poptimizer.data_di.shared import col
 from poptimizer.data.views.crop import div, not_div
+from poptimizer.data_di.app import bootstrap, viewers
+from poptimizer.data_di.domain.tables import base
+from poptimizer.data_di.shared import col
 
 
-def last_history_date() -> pd.Timestamp:
+def last_history_date(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Timestamp:
     """Последняя доступная дата исторических котировок."""
-    table_name = outer.TableName(outer.TRADING_DATES, outer.TRADING_DATES)
-    requests_handler = bootstrap.get_handler()
-    df = requests_handler.get_df(table_name)
+    df = viewer.get_df(base.TRADING_DATES, base.TRADING_DATES)
     return df.loc[0, "till"]
 
 
-def securities() -> pd.Index:
+def securities(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Index:
     """Все акции."""
-    table_name = outer.TableName(outer.SECURITIES, outer.SECURITIES)
-    requests_handler = bootstrap.get_handler()
-    df = requests_handler.get_df(table_name)
+    df = viewer.get_df(base.SECURITIES, base.SECURITIES)
     return df.index
 
 
-def lot_size(tickers: Tuple[str, ...]) -> pd.Series:
-    """Информация о размере лотов для тикеров.
-
-    :param tickers:
-        Перечень тикеров, для которых нужна информация.
-    :return:
-        Информация о размере лотов.
-    """
-    table_name = outer.TableName(outer.SECURITIES, outer.SECURITIES)
-    requests_handler = bootstrap.get_handler()
-    df = requests_handler.get_df(table_name)
+def lot_size(tickers: Tuple[str, ...], viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Series:
+    """Информация о размере лотов для тикеров."""
+    df = viewer.get_df(base.SECURITIES, base.SECURITIES)
     return df.loc[list(tickers), col.LOT_SIZE]
 
 
