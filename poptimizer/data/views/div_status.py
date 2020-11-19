@@ -4,10 +4,10 @@ from typing import Callable, Final, List, Tuple
 
 import pandas as pd
 
-from poptimizer.data.config import bootstrap
-from poptimizer.data.ports import outer
-from poptimizer.data_di.shared import col
 from poptimizer.data.views.crop import div
+from poptimizer.data_di.app import bootstrap, viewers
+from poptimizer.data_di.domain.tables import base
+from poptimizer.data_di.shared import col
 
 # Точность сравнения дивидендов
 RET_TOL: Final = 1e-3
@@ -15,11 +15,10 @@ RET_TOL: Final = 1e-3
 DivSource = Callable[[str], pd.DataFrame]
 
 
-def _smart_lab_all() -> pd.DataFrame:
+def _smart_lab_all(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.DataFrame:
     """Информация по дивидендам с smart-lab.ru."""
-    table_name = outer.TableName(outer.SMART_LAB, outer.SMART_LAB)
-    requests_handler = bootstrap.get_handler()
-    return requests_handler.get_df(table_name)
+    df = viewer.get_df(base.SMART_LAB, base.SMART_LAB)
+    return df.loc[bootstrap.START_DATE :, col.CPI]  # type: ignore
 
 
 def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
@@ -50,15 +49,6 @@ def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
     return status
 
 
-def smart_lab(ticker: str) -> pd.Series:
-    """Возвращает данные со SmartLab для определенного тикера."""
-    df = _smart_lab_all()
-    df = df.loc[df.index == ticker]
-    df = df.set_index(col.DATE)
-    df.columns = [ticker]
-    return df
-
-
 def _row_comp(row: pd.Series, rel_tol: float = 1e-3) -> bool:
     """Сравнение двух значений дивидендов."""
     return math.isclose(row.iloc[0], row.iloc[1], rel_tol=rel_tol)
@@ -76,27 +66,18 @@ def _compare(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def dividends_validation(
-    ticker: str,
-    sources: Tuple[DivSource, ...] = (div.dohod, div.conomy, div.bcs, smart_lab),
-) -> None:
+def dividends_validation(ticker: str) -> None:
     """Проверяет корректности данных о дивидендах для тикера.
 
-    Сравнивает основные данные по дивидендам с альтернативными источниками и распечатывает результаты
+    Сравнивает основные данные по дивидендам с альтернативными источниками и распечатывает результаты.
     """
-    dfs = pd.concat([func(ticker) for func in sources], axis=1)
-    dfs.columns = [func.__name__ for func in sources]
-    dfs.index = dfs.index.astype("datetime64[ns]")
-
-    median = dfs.median(axis=1)
-    median.name = "MEDIAN"
+    div_ex = div.div_ext(ticker)
 
     df_local = div.dividends(ticker, force_update=True)
     df_local.columns = ["LOCAL"]
 
-    df_comp = _compare(median, df_local)
-
-    df_comp = pd.concat([dfs, df_comp], axis=1)
+    df_comp = _compare(div_ex.iloc[:, -1:], df_local)
+    df_comp = pd.concat([div_ex.iloc[:, :-1], df_comp], axis=1)
 
     comp_str = f"\nСравнение интернет источников с локальными данными - {ticker}\n\n{df_comp}"
     print(comp_str)  # noqa: WPS421
