@@ -17,8 +17,7 @@ DivSource = Callable[[str], pd.DataFrame]
 
 def _smart_lab_all(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.DataFrame:
     """Информация по дивидендам с smart-lab.ru."""
-    df = viewer.get_df(base.SMART_LAB, base.SMART_LAB)
-    return df.loc[bootstrap.START_DATE :, col.CPI]  # type: ignore
+    return viewer.get_df(base.SMART_LAB, base.SMART_LAB)
 
 
 def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
