@@ -3,7 +3,7 @@ import asyncio
 import logging
 import typing
 import weakref
-from typing import Callable, ClassVar, Final, MutableMapping, NamedTuple, Optional, Tuple, Type, TypeVar
+from typing import Callable, ClassVar, MutableMapping, NamedTuple, Optional, Tuple, Type, TypeVar
 
 from motor import motor_asyncio
 from pymongo.collection import Collection
@@ -12,10 +12,10 @@ from poptimizer.data_di.shared import domain
 
 # Асинхронный клиент для MongoDB
 _MONGO_URI = "mongodb://localhost:27017"
-MONGO_CLIENT: Final = motor_asyncio.AsyncIOMotorClient(_MONGO_URI, tz_aware=False)
+MONGO_CLIENT: typing.Final = motor_asyncio.AsyncIOMotorClient(_MONGO_URI, tz_aware=False)
 
 # Коллекция для сохранения объектов из групп с одним объектом
-MISC = "misc"
+MISC: typing.Final = "misc"
 
 
 class AsyncLogger:

@@ -1,6 +1,6 @@
 """Шина событий."""
 import datetime
-from typing import Final, Tuple
+from typing import Final
 
 from poptimizer.data_di.adapters import odm
 from poptimizer.data_di.app import viewers
@@ -9,7 +9,7 @@ from poptimizer.data_di.domain.tables import base
 from poptimizer.data_di.shared import adapters, app, domain
 
 # База данных с таблицами
-_DB = adapters.MONGO_CLIENT[base.PACKAGE]
+_DB: Final = adapters.MONGO_CLIENT[base.PACKAGE]
 
 # Параметры представления конечных данных
 # До 2015 года не у всех бумаг был режим T+2
@@ -22,7 +22,7 @@ TAX: Final = 0.13
 AFTER_TAX: Final = 1 - TAX
 
 
-def start_app() -> Tuple[app.EventBus[base.AbstractTable[domain.AbstractEvent]], viewers.Viewer]:
+def start_app() -> app.EventBus[base.AbstractTable[domain.AbstractEvent]]:
     """Создает шину сообщений и инициирует обработку сообщения начала работы приложения."""
     bus = app.EventBus(
         lambda: app.UoW(odm.MAPPER),
@@ -30,7 +30,8 @@ def start_app() -> Tuple[app.EventBus[base.AbstractTable[domain.AbstractEvent]],
     )
     event = events.AppStarted()
     bus.handle_event(event)
-    return bus, viewers.Viewer(_DB)
+    return bus
 
 
-BUS, VIEWER = start_app()
+BUS: Final = start_app()
+VIEWER: Final = viewers.Viewer(_DB)
