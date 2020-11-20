@@ -7,7 +7,7 @@ import bs4
 import pandas as pd
 
 from poptimizer.data_di.adapters.gateways import connection
-from poptimizer.data_di.adapters.html import parser
+from poptimizer.data_di.adapters.html import description, parser
 from poptimizer.data_di.shared import adapters, col
 
 URL = "https://bcs-express.ru/kotirovki-i-grafiki/"
@@ -38,13 +38,16 @@ def _parse_date(row: bs4.BeautifulSoup) -> Optional[datetime]:
     return None
 
 
-def _parse_div(row: bs4.BeautifulSoup) -> float:
+def _parse_div(row: bs4.BeautifulSoup) -> Optional[float]:
     """Парсит дивиденды из строки таблицы."""
     soup = row.find(DIV_TAG, {CLASS_TAG: DIV_TAG_RE})
     div_string = soup.string
     div_string = div_string.replace(",", ".")
     div_string = div_string.replace(" ", "")
-    return float(div_string)
+    try:
+        return float(div_string)
+    except ValueError:
+        return None
 
 
 class BCSGateway(connection.DivGateway):
@@ -56,7 +59,11 @@ class BCSGateway(connection.DivGateway):
         """Получение дивидендов для заданного тикера."""
         self._logger(ticker)
 
-        rows = await _get_rows(ticker)
+        try:
+            rows = await _get_rows(ticker)
+        except description.ParserError:
+            return pd.DataFrame(columns=[ticker])
+
         div_data = [(_parse_date(row), _parse_div(row)) for row in rows]
 
         df = pd.DataFrame(data=div_data, columns=[col.DATE, ticker])
