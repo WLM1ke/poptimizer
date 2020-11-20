@@ -1,11 +1,10 @@
 """Загрузка данных с https://www.conomy.ru/."""
-from contextlib import asynccontextmanager
-from typing import cast
+import asyncio
+from typing import Optional, cast
 
 import pandas as pd
 import pyppeteer
-from pyppeteer import errors
-from pyppeteer.browser import Browser
+from pyppeteer import browser, errors
 from pyppeteer.page import Page
 
 from poptimizer import config
@@ -29,14 +28,23 @@ COMMON_TICKER_LENGTH = 4
 PREFERRED_TICKER_ENDING = "P"
 
 
-@asynccontextmanager
-async def _get_browser() -> Browser:
-    """Асинхронный браузер с автоматическим закрытием после использования."""
-    browser = await pyppeteer.launch()
-    try:
-        yield browser
-    finally:
-        await browser.close()
+class Browser:
+    """Headless браузер, который запускается по необходимости."""
+
+    def __init__(self) -> None:
+        """Создает переменную для хранения браузера."""
+        self._browser: Optional[browser.Browser] = None
+        self._lock = asyncio.Lock()
+
+    async def get(self) -> browser.Browser:
+        """Создает при необходимости и возвращает браузер."""
+        async with self._lock:
+            if self._browser is None:
+                self._browser = await pyppeteer.launch(autoClose=True)
+        return self._browser
+
+
+BROWSER = Browser()
 
 
 async def _load_ticker_page(page: Page, ticker: str) -> None:
@@ -58,12 +66,13 @@ async def _load_dividends_table(page: Page) -> None:
 
 async def _get_html(ticker: str) -> str:
     """Возвращает html-код страницы с данными по дивидендам с сайта https://www.conomy.ru/."""
-    async with _get_browser() as browser:
-        page = await browser.newPage()
-        await _load_ticker_page(page, ticker)
-        await _load_dividends_table(page)
-        html = await page.content()
-        return cast(str, html)
+    br = await BROWSER.get()
+    page = await br.newPage()
+    await _load_ticker_page(page, ticker)
+    await _load_dividends_table(page)
+    html = await page.content()
+    await page.close()
+    return cast(str, html)
 
 
 def _is_common(ticker: str) -> bool:
