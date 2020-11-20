@@ -1,5 +1,6 @@
 cash: 0
 positions:
+  ABRD: 0
   AFKS: 0
   AFLT: 0
   AKRN: 0
@@ -81,7 +82,6 @@ positions:
   PMSBP: 0
   PLZL: 0
   POGR: 0
-  RASP: 0
   RBCM: 0
   RGSS: 0
   RNFT: 0
@@ -119,4 +119,5 @@ positions:
   VSMO: 0
   VTBR: 0
   YAKG: 0
+  YNDX: 0
   ZILL: 0
