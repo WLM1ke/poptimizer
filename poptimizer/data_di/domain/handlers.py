@@ -2,6 +2,8 @@
 import functools
 from typing import List
 
+import pandas as pd
+
 from poptimizer import config
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base
@@ -109,4 +111,6 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
         """Обновляет таблицы с котировками и дивидендами."""
         table_id = base.create_id(base.DIVIDENDS, event.ticker)
         table = await repo.get(table_id)
-        return await table.handle_event(event)
+        new_events = await table.handle_event(event)
+        new_events.append(events.DivExpected(event.ticker, pd.DataFrame(columns=["SmartLab"])))
+        return new_events

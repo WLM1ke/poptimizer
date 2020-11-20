@@ -70,10 +70,10 @@ def dividends_validation(ticker: str) -> None:
 
     Сравнивает основные данные по дивидендам с альтернативными источниками и распечатывает результаты.
     """
-    div_ex = div.div_ext(ticker)
-
     df_local = div.dividends(ticker, force_update=True)
     df_local.columns = ["LOCAL"]
+
+    div_ex = div.div_ext(ticker)
 
     df_comp = _compare(div_ex.iloc[:, -1:], df_local)
     df_comp = pd.concat([div_ex.iloc[:, :-1], df_comp], axis=1)
