@@ -65,7 +65,7 @@ class Evolution:
                 weakest = child
 
             weakest = weakest.find_weaker()
-            print("Более слабый и наиболее медленный - удаляю:")
+            print("Наиболее медленный - удаляю:")
             self._eval_and_print(weakest, tickers, end)
             weakest.die()
 

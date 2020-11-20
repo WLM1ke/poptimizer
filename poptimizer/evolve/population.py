@@ -25,7 +25,10 @@ class Organism:
     """
 
     def __init__(
-        self, *, _id: Optional[bson.ObjectId] = None, genotype: Optional[Genotype] = None,
+        self,
+        *,
+        _id: Optional[bson.ObjectId] = None,
+        genotype: Optional[Genotype] = None,
     ):
         self._data = store.Doc(id_=_id, genotype=genotype)
 
@@ -88,15 +91,18 @@ class Organism:
         return llh
 
     def find_weaker(self) -> "Organism":
-        """Находит организм с llh меньше или равное своему и максимальным временем обучения.
+        """Находит организм с наименьшим llh.
 
-        Может найти самого себя.
+        В оборе участвуют только организмы с таким же набором тикеров и датой обновления. Может найти
+        самого себя.
         """
         data = self._data
         collection = store.get_collection()
-        filter_ = dict(llh={"$lte": data.llh}, tickers=data.tickers)
+        filter_ = dict(tickers=data.tickers, date=data.date)
         id_dict = collection.find_one(
-            filter=filter_, projection=["_id"], sort=[("timer", pymongo.DESCENDING)]
+            filter=filter_,
+            projection=["_id"],
+            sort=[("llh", pymongo.ASCENDING)],
         )
         return Organism(**id_dict)
 
