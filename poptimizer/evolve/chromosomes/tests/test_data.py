@@ -3,7 +3,7 @@ from poptimizer.evolve.chromosomes import data, chromosome
 
 def test_init_no_data():
     chromo = data.Data({})
-    assert len(chromo.data) == 11
+    assert len(chromo.data) == 12
     assert 128.1 < chromo.data["batch_size"] < 128.9
     assert 252.1 < chromo.data["history_days"] < 252.9
     assert 0.0 < chromo.data["ticker_on"] < 1.0
@@ -15,11 +15,12 @@ def test_init_no_data():
     assert 0.0 < chromo.data["turnover_on"] < 1.0
     assert -1.0 < chromo.data["rvi_on"] < 0.0
     assert -1.0 < chromo.data["mcftrr_on"] < 0.0
+    assert -1.0 < chromo.data["imoex_on"] < 0.0
 
 
 def test_init_some_data():
     chromo = data.Data(dict(history_days=40))
-    assert len(chromo.data) == 11
+    assert len(chromo.data) == 12
     assert 128.1 < chromo.data["batch_size"] < 128.9
     assert chromo.data["history_days"] == 40
     assert 0.0 < chromo.data["ticker_on"] < 1.0
@@ -30,6 +31,8 @@ def test_init_some_data():
     assert 0.0 < chromo.data["average_turnover_on"] < 1.0
     assert 0.0 < chromo.data["turnover_on"] < 1.0
     assert -1.0 < chromo.data["rvi_on"] < 0.0
+    assert -1.0 < chromo.data["mcftrr_on"] < 0.0
+    assert -1.0 < chromo.data["imoex_on"] < 0.0
 
 
 def test_init_all_data():
@@ -45,9 +48,11 @@ def test_init_all_data():
             average_turnover_on=0,
             turnover_on=1,
             rvi_on=7,
+            mcftrr_on=8,
+            imoex_on=9,
         )
     )
-    assert len(chromo.data) == 11
+    assert len(chromo.data) == 12
     assert chromo.data["batch_size"] == 10
     assert chromo.data["history_days"] == 40
     assert chromo.data["ticker_on"] == -1
@@ -57,6 +62,8 @@ def test_init_all_data():
     assert chromo.data["average_turnover_on"] == 0
     assert chromo.data["turnover_on"] == 1
     assert chromo.data["rvi_on"] == 7
+    assert chromo.data["mcftrr_on"] == 8
+    assert chromo.data["imoex_on"] == 9
 
 
 def test_setup_phenotype():
@@ -90,6 +97,7 @@ def test_setup_phenotype():
                 Turnover=dict(on=False),
                 RVI=dict(on=False),
                 MCFTRR=dict(on=False),
+                IMOEX=dict(on=False),
             ),
         ),
     )
@@ -161,7 +169,7 @@ def test_make_child(monkeypatch):
     child = parent.make_child(base, diff1, diff2)
 
     assert isinstance(child, data.Data)
-    assert len(child.data) == 11
+    assert len(child.data) == 12
 
     assert child.data["batch_size"] == 30 + 0.8 * (20 - 10)
     assert child.data["history_days"] == 20
