@@ -22,6 +22,18 @@ def mcftrr(last_date: pd.Timestamp) -> pd.Series:
     return df.loc[:last_date]
 
 
+def imoex(last_date: pd.Timestamp) -> pd.Series:
+    """Загрузка данных по основному индексу MOEX - IMOEX.
+
+    :param last_date:
+        Последняя дата котировок.
+    :return:
+        История цен закрытия индекса.
+    """
+    df = not_div.index("IMOEX")
+    return df.loc[:last_date]
+
+
 def rvi(last_date: pd.Timestamp) -> pd.Series:
     """Индекс волатильности RVI."""
     df = not_div.index("RVI")
