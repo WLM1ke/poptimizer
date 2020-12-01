@@ -46,6 +46,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[base.AbstractTable[domain.A
         """Запускает обновление необходимых таблиц в конце торгового дня."""
         new_events: List[domain.AbstractEvent] = [
             events.IndexCalculated("MCFTRR", event.date),
+            events.IndexCalculated("IMOEX", event.date),
             events.IndexCalculated("RVI", event.date),
         ]
 

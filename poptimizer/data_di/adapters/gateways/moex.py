@@ -38,13 +38,12 @@ class IndexesGateway(connection.BaseGateway):
     ) -> pd.DataFrame:
         """Получение значений индекса на закрытие для диапазона дат."""
         self._logger(f"{ticker}({start_date}, {last_date})")
-        json = await aiomoex.get_board_history(
+        json = await aiomoex.get_market_history(
             session=self._session,
             start=start_date,
             end=last_date,
             security=ticker,
             columns=("TRADEDATE", "CLOSE"),
-            board="RTSI",
             market="index",
         )
         df = pd.DataFrame(json)
