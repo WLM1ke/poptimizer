@@ -25,13 +25,6 @@ class ModelError(POptimizerError):
     """Базовая ошибка модели."""
 
 
-class TooShortHistoryError(ModelError):
-    """Слишком коротка история признаков.
-
-    Отсутствуют история для всех тикеров - нужно сократить историю.
-    """
-
-
 class TooLongHistoryError(ModelError):
     """Слишком длинная история признаков.
 
@@ -124,9 +117,6 @@ class Model:
         loader = data_loader.DescribedDataLoader(
             self._tickers, self._end, self._phenotype["data"], data_params.TestParams
         )
-
-        if loader.history_days < 3:
-            raise TooShortHistoryError
 
         n_tickers = len(self._tickers)
         days, rez = divmod(len(loader.dataset), n_tickers)
