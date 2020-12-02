@@ -4,6 +4,7 @@ from poptimizer.dl.features.day_of_period import DayOfPeriod
 from poptimizer.dl.features.day_of_year import DayOfYear
 from poptimizer.dl.features.dividends import Dividends
 from poptimizer.dl.features.feature import FeatureType
+from poptimizer.dl.features.imoex import IMOEX
 from poptimizer.dl.features.label import Label
 from poptimizer.dl.features.mcftrr import MCFTRR
 from poptimizer.dl.features.prices import Prices
