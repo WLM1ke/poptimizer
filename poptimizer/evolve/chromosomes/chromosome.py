@@ -128,8 +128,8 @@ class Chromosome(UserDict):
                 key = gene.name
                 value = base[key] + (diff1[key] - diff2[key]) * factor
                 if gene.lower_bound is not None and value < gene.lower_bound:
-                    value = (base[key] + gene.lower_bound) / 2
+                    value = gene.lower_bound + (gene.lower_bound - value)
                 if gene.upper_bound is not None and value > gene.upper_bound:
-                    value = (base[key] + gene.upper_bound) / 2
+                    value = gene.upper_bound - (value - gene.upper_bound)
                 child[key] = value
         return child
