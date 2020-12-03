@@ -2,7 +2,7 @@
 import pandas as pd
 
 from poptimizer.data_di.domain.tables import base
-from poptimizer.data_di.shared import domain
+from poptimizer.shared import domain
 
 
 def unique_increasing_index(df: pd.DataFrame) -> None:

@@ -4,7 +4,7 @@ import pytest
 
 from poptimizer.data.adapters.loaders import dividends
 from poptimizer.data.ports import outer
-from poptimizer.data_di.shared import col
+from poptimizer.shared import col
 
 
 @pytest.mark.asyncio

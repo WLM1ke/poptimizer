@@ -3,7 +3,8 @@ import pandas as pd
 import pymongo
 from motor import motor_asyncio
 
-from poptimizer.data_di.shared import adapters, col
+from poptimizer.shared import adapters
+from poptimizer.shared import col
 
 # Где хранятся данные о дивидендах
 SOURCE_DB = "source"

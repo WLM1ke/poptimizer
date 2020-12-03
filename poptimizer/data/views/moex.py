@@ -9,7 +9,7 @@ from pandas.tseries import offsets
 from poptimizer.data.views.crop import div, not_div
 from poptimizer.data_di.app import bootstrap, viewers
 from poptimizer.data_di.domain.tables import base
-from poptimizer.data_di.shared import col
+from poptimizer.shared import col
 
 
 def last_history_date(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Timestamp:

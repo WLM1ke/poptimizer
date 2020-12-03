@@ -4,7 +4,7 @@ import typing
 from types import TracebackType
 from typing import AsyncContextManager, Callable, Generic, List, Optional, Set, Type, TypeVar
 
-from poptimizer.data_di.shared import adapters, domain
+from poptimizer.shared import adapters, domain
 
 EntityType = TypeVar("EntityType", bound=domain.BaseEntity)
 

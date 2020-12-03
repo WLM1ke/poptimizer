@@ -5,7 +5,7 @@ import random
 
 import pytest
 
-from poptimizer.data_di.shared import adapters, domain
+from poptimizer.shared import adapters, domain
 
 TEST_ID = domain.ID("a", "b", "c")
 TEST_ENTITY = domain.BaseEntity(TEST_ID)

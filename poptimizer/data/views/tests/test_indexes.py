@@ -4,7 +4,7 @@ import pytest
 
 from poptimizer.data.views import indexes
 from poptimizer.data.config import bootstrap
-from poptimizer.data_di.shared import col
+from poptimizer.shared import col
 
 CPI_CASES = (
     ("2020-09-30", 0.9993),

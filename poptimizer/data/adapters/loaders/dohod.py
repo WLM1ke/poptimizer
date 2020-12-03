@@ -4,7 +4,7 @@ import pandas as pd
 from poptimizer.data.adapters import logger
 from poptimizer.data.adapters.html import description, parser
 from poptimizer.data.ports import outer
-from poptimizer.data_di.shared import col
+from poptimizer.shared import col
 
 # Параметры парсинга сайта
 URL = "https://www.dohod.ru/ik/analytics/dividend/"

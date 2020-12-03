@@ -1,7 +1,7 @@
 """Тесты базовых классов доменной модели."""
 import pytest
 
-from poptimizer.data_di.shared import domain
+from poptimizer.shared import domain
 
 
 class Entity(domain.BaseEntity):

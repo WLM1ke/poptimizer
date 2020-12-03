@@ -1,7 +1,7 @@
 """Тесты для общих классов слоя приложения."""
 import pytest
 
-from poptimizer.data_di.shared import app
+from poptimizer.shared import app
 
 
 @pytest.mark.asyncio

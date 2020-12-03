@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.data.config import bootstrap
-from poptimizer.data_di.shared import col
+from poptimizer.shared import col
 from poptimizer.data.views.crop import not_div
 
 CPI_CASES = (

@@ -4,7 +4,7 @@ import datetime
 
 import pandas as pd
 
-from poptimizer.data_di.shared import domain
+from poptimizer.shared import domain
 
 
 @dataclasses.dataclass(frozen=True)

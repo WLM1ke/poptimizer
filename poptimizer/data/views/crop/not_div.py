@@ -6,7 +6,7 @@ import pandas as pd
 
 from poptimizer.data_di.app import bootstrap, viewers
 from poptimizer.data_di.domain.tables import base
-from poptimizer.data_di.shared import col
+from poptimizer.shared import col
 
 
 def cpi(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Series:

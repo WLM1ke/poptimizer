@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.data_di.adapters.gateways import moex
-from poptimizer.data_di.shared import col
+from poptimizer.shared import col
 
 
 @pytest.mark.asyncio

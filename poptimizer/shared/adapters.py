@@ -8,7 +8,7 @@ from typing import Callable, ClassVar, MutableMapping, NamedTuple, Optional, Tup
 from motor import motor_asyncio
 from pymongo.collection import Collection
 
-from poptimizer.data_di.shared import domain
+from poptimizer.shared import domain
 
 # Асинхронный клиент для MongoDB
 _MONGO_URI = "mongodb://localhost:27017"

@@ -5,7 +5,7 @@ import pandas as pd
 
 from poptimizer.data_di.adapters import mongo_server
 from poptimizer.data_di.domain import factory
-from poptimizer.data_di.shared import adapters
+from poptimizer.shared import adapters
 
 _DATA_DESCRIPTION: Final = (
     adapters.Desc(

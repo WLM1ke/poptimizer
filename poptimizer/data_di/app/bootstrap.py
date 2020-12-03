@@ -6,7 +6,8 @@ from poptimizer.data_di.adapters import odm
 from poptimizer.data_di.app import viewers
 from poptimizer.data_di.domain import events, handlers
 from poptimizer.data_di.domain.tables import base
-from poptimizer.data_di.shared import adapters, app, domain
+from poptimizer.shared import adapters, domain
+from poptimizer.shared import app
 
 # База данных с таблицами
 _DB: Final = adapters.MONGO_CLIENT[base.PACKAGE]

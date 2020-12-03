@@ -7,7 +7,7 @@ import pandas as pd
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base
-from poptimizer.data_di.shared import domain
+from poptimizer.shared import domain
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = timezone(timedelta(hours=3))

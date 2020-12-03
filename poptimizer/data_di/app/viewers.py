@@ -6,7 +6,7 @@ import pandas as pd
 from motor import motor_asyncio
 
 from poptimizer import config
-from poptimizer.data_di.shared import adapters
+from poptimizer.shared import adapters
 
 
 class NoDFError(config.POptimizerError):

@@ -7,7 +7,6 @@ import pandas as pd
 from poptimizer.data.views.crop import div
 from poptimizer.data_di.app import bootstrap, viewers
 from poptimizer.data_di.domain.tables import base
-from poptimizer.data_di.shared import col
 
 # Точность сравнения дивидендов
 RET_TOL: Final = 1e-3

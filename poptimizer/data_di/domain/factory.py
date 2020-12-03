@@ -14,7 +14,7 @@ from poptimizer.data_di.domain.tables import (
     securities,
     trading_dates,
 )
-from poptimizer.data_di.shared import domain
+from poptimizer.shared import domain
 
 AnyTable = base.AbstractTable[domain.AbstractEvent]
 AllTableTypes = Tuple[Type[AnyTable], ...]

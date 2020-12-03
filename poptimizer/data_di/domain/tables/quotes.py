@@ -7,7 +7,8 @@ import pandas as pd
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base, checks
-from poptimizer.data_di.shared import col, domain
+from poptimizer.shared import domain
+from poptimizer.shared import col
 
 
 class Quotes(base.AbstractTable[events.TickerTraded]):
