@@ -33,6 +33,7 @@ class TickerTraded(domain.AbstractEvent):
 
     ticker: str
     isin: str
+    market: str
     date: datetime.date
 
 

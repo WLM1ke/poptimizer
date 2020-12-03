@@ -6,8 +6,7 @@ import pandas as pd
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base, checks
-from poptimizer.shared import domain
-from poptimizer.shared import col
+from poptimizer.shared import col, domain
 
 
 class Securities(base.AbstractTable[events.TradingDayEnded]):
@@ -26,7 +25,9 @@ class Securities(base.AbstractTable[events.TradingDayEnded]):
 
     async def _prepare_df(self, event: events.TradingDayEnded) -> pd.DataFrame:
         """Загружает новый DataFrame."""
-        return await self._gateway.get()
+        df = await self._gateway.get(market="shares", board="TQBR")
+        df[col.MARKET] = "shares"
+        return df
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
@@ -43,6 +44,7 @@ class Securities(base.AbstractTable[events.TradingDayEnded]):
             events.TickerTraded(
                 ticker,
                 df.at[ticker, col.ISIN],
+                df.at[ticker, col.MARKET],
                 trading_date,
             )
             for ticker in df.index

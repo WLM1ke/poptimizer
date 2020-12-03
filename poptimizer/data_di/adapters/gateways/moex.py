@@ -58,12 +58,17 @@ class SecuritiesGateway(connection.BaseGateway):
 
     _logger = adapters.AsyncLogger()
 
-    async def get(self) -> pd.DataFrame:
+    async def get(self, market: str, board: str) -> pd.DataFrame:
         """Получение списка торгуемых акций с ISIN и размером лота."""
         self._logger("Загрузка данных по торгуемым бумагам")
 
         columns = ("SECID", "ISIN", "LOTSIZE")
-        json = await aiomoex.get_board_securities(self._session, columns=columns)
+        json = await aiomoex.get_board_securities(
+            self._session,
+            market=market,
+            board=board,
+            columns=columns,
+        )
         df = pd.DataFrame(json)
         df.columns = [col.TICKER, col.ISIN, col.LOT_SIZE]
         return df.set_index(col.TICKER)
