@@ -5,8 +5,7 @@ import aiomoex
 import pandas as pd
 
 from poptimizer.data_di.adapters.gateways import connection
-from poptimizer.shared import adapters
-from poptimizer.shared import col
+from poptimizer.shared import adapters, col
 
 
 class TradingDatesGateway(connection.BaseGateway):
@@ -94,6 +93,7 @@ class QuotesGateway(connection.BaseGateway):
     async def get(
         self,
         ticker: str,
+        market: str,
         start_date: Optional[str],
         last_date: str,
     ) -> pd.DataFrame:
@@ -102,6 +102,7 @@ class QuotesGateway(connection.BaseGateway):
         json = await aiomoex.get_market_candles(
             self._session,
             ticker,
+            market=market,
             start=start_date,
             end=last_date,
         )

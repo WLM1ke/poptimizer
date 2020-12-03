@@ -7,8 +7,7 @@ import pandas as pd
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base, checks
-from poptimizer.shared import domain
-from poptimizer.shared import col
+from poptimizer.shared import col, domain
 
 
 class Quotes(base.AbstractTable[events.TickerTraded]):
@@ -51,7 +50,7 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
 
         df_new = pd.concat(
             await asyncio.gather(
-                *[self._quotes.get(ticker, start_date, last_date) for ticker in tickers],
+                *[self._quotes.get(ticker, event.market, start_date, last_date) for ticker in tickers],
             ),
             axis=0,
         )
