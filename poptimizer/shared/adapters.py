@@ -77,7 +77,7 @@ class Mapper(typing.Generic[EntityType]):
         factory: domain.AbstractFactory[EntityType],
         client: motor_asyncio.AsyncIOMotorClient = MONGO_CLIENT,
     ) -> None:
-        """Сохраняет соединение с MongoDB и информацию для мэппинга объектов."""
+        """Сохраняет соединение с MongoDB, информацию для мэппинга объектов и фабрику."""
         self._client = client
         self._desc_list = desc_list
         self._factory = factory
