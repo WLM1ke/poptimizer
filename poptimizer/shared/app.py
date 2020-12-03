@@ -67,7 +67,7 @@ class EventBus(Generic[EntityType]):
         self,
         event: domain.AbstractEvent,
     ) -> None:
-        """Обработка сообщения."""
+        """Обработка события."""
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self._handle_event(event))
 
@@ -75,7 +75,7 @@ class EventBus(Generic[EntityType]):
         self,
         event: domain.AbstractEvent,
     ) -> None:
-        """Асинхронная обработка сообщения и следующих за ним."""
+        """Асинхронная обработка события и следующих за ним."""
         pending: PendingTasks = self._create_tasks([event])
         while pending:
             done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
@@ -84,7 +84,7 @@ class EventBus(Generic[EntityType]):
                 pending |= self._create_tasks(task.result())
 
     def _create_tasks(self, events: List[domain.AbstractEvent]) -> Set[FutureEvent]:
-        """Создает задание для событий."""
+        """Создает задания для событий."""
         return {asyncio.create_task(self._handle_one_command(event)) for event in events}
 
     async def _handle_one_command(self, event: domain.AbstractEvent) -> List[domain.AbstractEvent]:
