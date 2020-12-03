@@ -11,7 +11,7 @@ class AbstractEvent(abc.ABC):
 
 @dataclasses.dataclass(frozen=True)
 class ID:
-    """Базовый идентификатор доменного сущности."""
+    """Базовый идентификатор доменного объекта."""
 
     package: str
     group: str
@@ -28,7 +28,7 @@ class BaseEntity:
     """
 
     def __init__(self, id_: ID) -> None:
-        """Формирует список событий и отметку об изменениях."""
+        """Сохраняет ID и словарь изменений."""
         self._id = id_
         self._changed_state: StateDict = {}
 
@@ -40,7 +40,7 @@ class BaseEntity:
 
     @property
     def id_(self) -> ID:
-        """Уникальный идентификатор сущности."""
+        """Уникальный идентификатор доменного объекта."""
         return self._id
 
     def changed_state(self) -> StateDict:
