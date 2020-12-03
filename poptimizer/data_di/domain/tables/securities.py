@@ -8,6 +8,13 @@ from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base, checks
 from poptimizer.shared import col, domain
 
+# Перечень рынков и режимов торгов, для которых загружаются списки доступных бумаг
+MARKETS_BOARDS: Final = (
+    ("shares", "TQBR"),
+    ("shares", "TQTF"),
+    ("foreignshares", "FQBR"),
+)
+
 
 class Securities(base.AbstractTable[events.TradingDayEnded]):
     """Таблица с данными о торгуемых бумагах.
@@ -25,9 +32,14 @@ class Securities(base.AbstractTable[events.TradingDayEnded]):
 
     async def _prepare_df(self, event: events.TradingDayEnded) -> pd.DataFrame:
         """Загружает новый DataFrame."""
-        df = await self._gateway.get(market="shares", board="TQBR")
-        df[col.MARKET] = "shares"
-        return df
+        dfs = []
+        for market, board in MARKETS_BOARDS:
+            df = await self._gateway.get(market=market, board=board)
+            df[col.MARKET] = market
+            dfs.append(df)
+
+        df_all = pd.concat(dfs, axis=0)
+        return df_all.sort_index(axis=0)
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
