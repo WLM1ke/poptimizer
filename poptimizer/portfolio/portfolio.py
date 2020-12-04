@@ -21,8 +21,8 @@ TURNOVER_DAYS = database.MONGO_CLIENT["data"]["models"].find_one(
     sort=[("genotype.Data.history_days", -1)],
 )
 try:
-    TURNOVER_DAYS = TURNOVER_DAYS["genotype"]["Data"]["history_days"]
-    TURNOVER_DAYS = (int(TURNOVER_DAYS) + data_params.FORECAST_DAYS * 2) * 2
+    MAX_HISTORY = int(TURNOVER_DAYS["genotype"]["Data"]["history_days"])
+    TURNOVER_DAYS = (MAX_HISTORY + data_params.FORECAST_DAYS * 2) * 2
 except TypeError:
     TURNOVER_DAYS = int(1 / config.MAX_TRADE)
 
@@ -206,6 +206,20 @@ class Portfolio:
         last_turnover = last_turnover.sort_values(ascending=False).astype("int")
 
         print(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{last_turnover}")
+
+        returns_new = self.norm_ret(tuple(index))
+        returns_old = self.norm_ret(tuple(self.index[:-2]))
+        corr_max = (returns_new.T @ returns_old / MAX_HISTORY).max(axis=1).sort_values()
+
+        print(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{last_turnover}\n{corr_max}")
+
+    def norm_ret(self, tickers):
+        div, p1 = moex.div_and_prices(tickers, self.date)
+        p0 = p1.shift(1)
+        returns_new = (p1 + div) / p0
+        returns_new = returns_new.iloc[-MAX_HISTORY:]
+        returns_new = (returns_new - returns_new.mean(axis=0)) / returns_new.std(axis=0, ddof=0)
+        return returns_new
 
 
 def load_from_yaml(date: Union[str, pd.Timestamp]) -> Portfolio:
