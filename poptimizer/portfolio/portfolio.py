@@ -205,8 +205,6 @@ class Portfolio:
         last_turnover = last_turnover.reindex(index)
         last_turnover = last_turnover.sort_values(ascending=False).astype("int")
 
-        print(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{last_turnover}")
-
         returns_new = self.norm_ret(tuple(index))
         returns_old = self.norm_ret(tuple(self.index[:-2]))
         corr_max = (returns_new.T @ returns_old / MAX_HISTORY).max(axis=1).sort_values()
