@@ -12,7 +12,7 @@ from poptimizer.reports.pdf_style import (
 
 # Доля левой части блока - используется для таблицы движения средств
 # В правой расположена таблица дивидендов
-LEFT_PART_OF_BLOCK = 0.55
+LEFT_PART_OF_BLOCK = 0.67
 
 
 def get_last_values(df: pd.DataFrame):
