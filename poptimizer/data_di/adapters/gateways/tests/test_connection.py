@@ -1,18 +1,19 @@
 """Тесты для создания http-соединения."""
 import aiohttp
 
+import poptimizer.shared.connections
 from poptimizer.data_di.adapters.gateways import connection
 
 
 def test_session_factory():
     """Проверка, что http-сессия является асинхронной."""
-    assert isinstance(connection._session_factory(10), aiohttp.ClientSession)
+    assert isinstance(poptimizer.shared.connections._session_factory(10), aiohttp.ClientSession)
 
 
 def test_clean_up(mocker):
     """Проверка закрытия http-сессии."""
     fake_session = mocker.AsyncMock()
 
-    connection._clean_up(fake_session)
+    poptimizer.shared.connections._clean_up(fake_session)
 
     fake_session.close.assert_called_once()

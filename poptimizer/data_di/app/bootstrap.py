@@ -2,6 +2,7 @@
 import datetime
 from typing import Final
 
+import poptimizer.shared.connections
 from poptimizer.data_di.adapters import odm
 from poptimizer.data_di.app import viewers
 from poptimizer.data_di.domain import events, handlers
@@ -10,7 +11,7 @@ from poptimizer.shared import adapters, domain
 from poptimizer.shared import app
 
 # База данных с таблицами
-_DB: Final = adapters.MONGO_CLIENT[base.PACKAGE]
+_DB: Final = poptimizer.shared.connections.MONGO_CLIENT[base.PACKAGE]
 
 # Параметры представления конечных данных
 # До 2015 года не у всех бумаг был режим T+2

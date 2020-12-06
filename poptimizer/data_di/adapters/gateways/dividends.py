@@ -3,6 +3,7 @@ import pandas as pd
 import pymongo
 from motor import motor_asyncio
 
+import poptimizer.shared.connections
 from poptimizer.shared import adapters
 from poptimizer.shared import col
 
@@ -18,7 +19,7 @@ class DividendsGateway:
 
     def __init__(
         self,
-        mongo_client: motor_asyncio.AsyncIOMotorClient = adapters.MONGO_CLIENT,
+        mongo_client: motor_asyncio.AsyncIOMotorClient = poptimizer.shared.connections.MONGO_CLIENT,
     ):
         """Сохраняет коллекцию для доступа к первоисточнику дивидендов."""
         self._collection = mongo_client[SOURCE_DB][SOURCE_COLLECTION]
