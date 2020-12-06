@@ -8,11 +8,7 @@ from typing import Callable, ClassVar, MutableMapping, NamedTuple, Optional, Tup
 from motor import motor_asyncio
 from pymongo.collection import Collection
 
-from poptimizer.shared import domain
-
-# Асинхронный клиент для MongoDB
-_MONGO_URI = "mongodb://localhost:27017"
-MONGO_CLIENT: typing.Final = motor_asyncio.AsyncIOMotorClient(_MONGO_URI, tz_aware=False)
+from poptimizer.shared import connections, domain
 
 # Коллекция для сохранения объектов из групп с одним объектом
 MISC: typing.Final = "misc"
@@ -75,7 +71,7 @@ class Mapper(typing.Generic[EntityType]):
         self,
         desc_list: Tuple[Desc, ...],
         factory: domain.AbstractFactory[EntityType],
-        client: motor_asyncio.AsyncIOMotorClient = MONGO_CLIENT,
+        client: motor_asyncio.AsyncIOMotorClient = connections.MONGO_CLIENT,
     ) -> None:
         """Сохраняет соединение с MongoDB, информацию для мэппинга объектов и фабрику."""
         self._client = client
