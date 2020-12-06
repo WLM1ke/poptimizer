@@ -6,7 +6,7 @@ import bs4
 import pandas as pd
 
 import poptimizer.shared.connections
-from poptimizer.data_di.adapters.gateways import connection
+from poptimizer.data_di.adapters.gateways import base
 from poptimizer.data_di.adapters.html import description
 
 Descriptions = List[description.ColDesc]

@@ -6,7 +6,7 @@ from typing import List, Optional, cast
 import bs4
 import pandas as pd
 
-from poptimizer.data_di.adapters.gateways import connection
+from poptimizer.data_di.adapters.gateways import base
 from poptimizer.data_di.adapters.html import description, parser
 from poptimizer.shared import adapters
 from poptimizer.shared import col
@@ -51,7 +51,7 @@ def _parse_div(row: bs4.BeautifulSoup) -> Optional[float]:
         return None
 
 
-class BCSGateway(connection.DivGateway):
+class BCSGateway(base.DivGateway):
     """Обновление данных с https://bcs-express.ru."""
 
     _logger = adapters.AsyncLogger()

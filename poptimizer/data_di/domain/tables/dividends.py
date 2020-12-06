@@ -5,7 +5,7 @@ from typing import ClassVar, Final, List, Mapping, Union
 
 import pandas as pd
 
-from poptimizer.data_di.adapters.gateways import bcs, connection, conomy, dividends, dohod, smart_lab
+from poptimizer.data_di.adapters.gateways import bcs, base, conomy, dividends, dohod, smart_lab
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base, checks
 from poptimizer.shared import domain
@@ -79,7 +79,7 @@ class DivExt(base.AbstractTable[events.DivExpected]):
     """Таблица со сводными данными по дивидендам из внешних источников."""
 
     group: ClassVar[base.GroupName] = base.DIV_EXT
-    _gateways_dict: Final[Mapping[str, connection.DivGateway]] = types.MappingProxyType(
+    _gateways_dict: Final[Mapping[str, base.DivGateway]] = types.MappingProxyType(
         {
             "Dohod": dohod.DohodGateway(),
             "Conomy": conomy.ConomyGateway(),

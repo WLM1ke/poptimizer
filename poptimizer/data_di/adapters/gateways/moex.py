@@ -4,11 +4,11 @@ from typing import List, Optional
 import aiomoex
 import pandas as pd
 
-from poptimizer.data_di.adapters.gateways import connection
+from poptimizer.data_di.adapters.gateways import base
 from poptimizer.shared import adapters, col
 
 
-class TradingDatesGateway(connection.BaseGateway):
+class TradingDatesGateway(base.BaseGateway):
     """Обновление для таблиц с диапазоном доступных торговых дат."""
 
     _logger = adapters.AsyncLogger()
@@ -25,7 +25,7 @@ class TradingDatesGateway(connection.BaseGateway):
         return pd.DataFrame(json, dtype="datetime64[ns]")
 
 
-class IndexesGateway(connection.BaseGateway):
+class IndexesGateway(base.BaseGateway):
     """Котировки различных индексов на MOEX."""
 
     _logger = adapters.AsyncLogger()
@@ -52,7 +52,7 @@ class IndexesGateway(connection.BaseGateway):
         return df.set_index(col.DATE)
 
 
-class SecuritiesGateway(connection.BaseGateway):
+class SecuritiesGateway(base.BaseGateway):
     """Информация о всех торгующихся акциях."""
 
     _logger = adapters.AsyncLogger()
@@ -73,7 +73,7 @@ class SecuritiesGateway(connection.BaseGateway):
         return df.set_index(col.TICKER)
 
 
-class AliasesGateway(connection.BaseGateway):
+class AliasesGateway(base.BaseGateway):
     """Ищет все тикеры с эквивалентным регистрационным номером."""
 
     _logger = adapters.AsyncLogger()
@@ -85,7 +85,7 @@ class AliasesGateway(connection.BaseGateway):
         return [row["secid"] for row in json if row["isin"] == isin]
 
 
-class QuotesGateway(connection.BaseGateway):
+class QuotesGateway(base.BaseGateway):
     """Загружает котировки акций."""
 
     _logger = adapters.AsyncLogger()

@@ -8,7 +8,7 @@ from pyppeteer import browser, errors
 from pyppeteer.page import Page
 
 from poptimizer import config
-from poptimizer.data_di.adapters.gateways import connection
+from poptimizer.data_di.adapters.gateways import base
 from poptimizer.data_di.adapters.html import description, parser
 from poptimizer.shared import adapters
 from poptimizer.shared import col
@@ -116,7 +116,7 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
     return columns
 
 
-class ConomyGateway(connection.DivGateway):
+class ConomyGateway(base.DivGateway):
     """Обновление для таблиц с дивидендами на https://www.conomy.ru/."""
 
     _logger = adapters.AsyncLogger()

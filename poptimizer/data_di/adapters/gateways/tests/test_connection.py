@@ -2,7 +2,7 @@
 import aiohttp
 
 import poptimizer.shared.connections
-from poptimizer.data_di.adapters.gateways import connection
+from poptimizer.data_di.adapters.gateways import base
 
 
 def test_session_factory():
