@@ -2,16 +2,14 @@
 import datetime
 from typing import Final
 
-import poptimizer.shared.connections
 from poptimizer.data_di.adapters import odm
 from poptimizer.data_di.app import viewers
-from poptimizer.data_di.domain import events, handlers
+from poptimizer.data_di.domain import events, factory, handlers
 from poptimizer.data_di.domain.tables import base
-from poptimizer.shared import adapters, domain
-from poptimizer.shared import app
+from poptimizer.shared import adapters, app, connections, domain
 
 # База данных с таблицами
-_DB: Final = poptimizer.shared.connections.MONGO_CLIENT[base.PACKAGE]
+_DB: Final = connections.MONGO_CLIENT[base.PACKAGE]
 
 # Параметры представления конечных данных
 # До 2015 года не у всех бумаг был режим T+2
@@ -26,8 +24,9 @@ AFTER_TAX: Final = 1 - TAX
 
 def start_app() -> app.EventBus[base.AbstractTable[domain.AbstractEvent]]:
     """Создает шину сообщений и инициирует обработку сообщения начала работы приложения."""
+    mapper = adapters.Mapper(odm.DATA_DESCRIPTION, factory.TablesFactory())
     bus = app.EventBus(
-        lambda: app.UoW(odm.MAPPER),
+        lambda: app.UoW(mapper),
         handlers.EventHandlersDispatcher(),
     )
     event = events.AppStarted()
