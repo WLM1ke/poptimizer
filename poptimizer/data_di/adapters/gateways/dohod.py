@@ -1,7 +1,7 @@
 """Обновление данных с https://dohod.ru."""
 import pandas as pd
 
-from poptimizer.data_di.adapters.gateways import base
+from poptimizer.data_di.adapters.gateways import gateways
 from poptimizer.data_di.adapters.html import description, parser
 from poptimizer.shared import adapters
 from poptimizer.shared import col
@@ -28,7 +28,7 @@ def get_col_desc(ticker: str) -> parser.Descriptions:
     return [date_col, div_col]
 
 
-class DohodGateway(base.DivGateway):
+class DohodGateway(gateways.DivGateway):
     """Обновление данных с https://dohod.ru."""
 
     _logger = adapters.AsyncLogger()

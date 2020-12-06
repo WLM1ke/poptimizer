@@ -6,7 +6,7 @@ import aiohttp
 import pandas as pd
 
 from poptimizer import config
-from poptimizer.data_di.adapters.gateways import base
+from poptimizer.data_di.adapters.gateways import gateways
 from poptimizer.shared import adapters
 from poptimizer.shared import col
 
@@ -90,7 +90,7 @@ def _clean_up(df: pd.DataFrame) -> pd.DataFrame:
     return df.to_frame(col.CPI)
 
 
-class CPIGateway(base.BaseGateway):
+class CPIGateway(gateways.BaseGateway):
     """Обновление данных инфляции с https://rosstat.gov.ru."""
 
     _logger = adapters.AsyncLogger()
