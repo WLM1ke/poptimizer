@@ -9,7 +9,7 @@ import psutil
 from motor import motor_asyncio
 
 # Настройки сервера MongoDB
-_MONGO_PATH: Final = pathlib.Path(__file__).parents[3] / "db"
+_MONGO_PATH: Final = pathlib.Path(__file__).parents[2] / "db"
 _MONGO_URI: Final = "mongodb://localhost:27017"
 
 # Размер пула http-соединений - при большем размере многие сайты ругаются
