@@ -2,7 +2,6 @@
 import asyncio
 import logging
 import pathlib
-from typing import Optional
 
 import aiohttp
 import psutil
@@ -10,8 +9,7 @@ from motor import motor_asyncio
 
 from poptimizer.data.config import resources
 
-# Путь к MongoDB и dump с данными по дивидендам
-MONGO_PATH = pathlib.Path(__file__).parents[3] / "db"
+# Путь к dump с данными по дивидендам
 MONGO_DUMP = pathlib.Path(__file__).parents[3] / "dump"
 
 # Ссылки на данные по дивидендам в интернете
@@ -33,31 +31,6 @@ COLLECTION = "dividends"
 # ID и ключ документа с информацией о количестве документов с дивидендами
 ID = "count"
 KEY = "dividends"
-
-
-def _find_running_mongo_db() -> Optional[psutil.Process]:
-    """Проверяет наличие запущенной MongoDB и возвращает ее процесс."""
-    for process in psutil.process_iter(attrs=["name"]):
-        if process.name() == "mongod":
-            return process
-    return None
-
-
-def start_mongo_server() -> psutil.Process:
-    """Запуск сервера MongoDB."""
-    if process := _find_running_mongo_db():
-        return process
-
-    MONGO_PATH.mkdir(parents=True, exist_ok=True)
-    mongo_server = [
-        "mongod",
-        "--dbpath",
-        MONGO_PATH,
-        "--directoryperdb",
-        "--bind_ip",
-        "localhost",
-    ]
-    return psutil.Popen(mongo_server)
 
 
 async def _download_dump(http_session: aiohttp.ClientSession) -> None:
@@ -107,8 +80,6 @@ def prepare_mongo_db_server() -> None:
     loop = asyncio.get_event_loop()
     mongo = resources.get_mongo_client()
     http = resources.get_aiohttp_session()
-
-    start_mongo_server()
 
     loop.run_until_complete(_download_dump(http))
     loop.run_until_complete(_restore_dump(mongo))
