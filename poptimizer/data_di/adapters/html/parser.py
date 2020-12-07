@@ -5,15 +5,15 @@ import aiohttp
 import bs4
 import pandas as pd
 
-import poptimizer.shared.connections
-from poptimizer.data_di.adapters.gateways import gateways
 from poptimizer.data_di.adapters.html import description
+from poptimizer.shared import connections
 
 Descriptions = List[description.ColDesc]
 
 
 async def get_html(
-    url: str, session: aiohttp.ClientSession = poptimizer.shared.connections.HTTP_SESSION
+    url: str,
+    session: aiohttp.ClientSession = connections.HTTP_SESSION,
 ) -> str:
     """Загружает html-код страницы."""
     async with session.get(url) as respond:
