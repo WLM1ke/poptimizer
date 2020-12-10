@@ -47,8 +47,6 @@ class Evolution:
             population.print_stat()
             print()
 
-            parent_fitness = self._eval_and_print(parent, tickers, end)
-
             child = parent.make_child()
             print("Потомок:")
             child_fitness = self._eval_and_print(child, tickers, end)
@@ -58,12 +56,8 @@ class Evolution:
             if population.count() <= self._max_population:
                 continue
 
-            weakest = parent
-            if parent_fitness > child_fitness:
-                weakest = child
-
-            weakest = weakest.find_weaker()
-            print("Наиболее медленный - удаляю:")
+            weakest = child.find_weaker()
+            print("Наиболее слабый - удаляю:")
             self._eval_and_print(weakest, tickers, end)
             weakest.die()
 
