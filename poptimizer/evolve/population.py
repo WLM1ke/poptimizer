@@ -98,6 +98,17 @@ class Organism:
         """
         data = self._data
         collection = store.get_collection()
+
+        filter_ = dict(llh={"$gte": data.timer}, tickers=data.tickers)
+        id_dict = collection.find_one(
+            filter=filter_,
+            projection=["_id"],
+            sort=[("llh", pymongo.ASCENDING)],
+        )
+        org = Organism(**id_dict)
+        if self.id != org.id:
+            return org
+
         filter_ = dict(tickers=data.tickers, date=data.date)
         id_dict = collection.find_one(
             filter=filter_,
