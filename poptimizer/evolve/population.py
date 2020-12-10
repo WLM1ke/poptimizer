@@ -99,7 +99,7 @@ class Organism:
         data = self._data
         collection = store.get_collection()
 
-        filter_ = dict(llh={"$gte": data.timer}, tickers=data.tickers)
+        filter_ = dict(timer={"$gte": data.timer}, tickers=data.tickers, date=data.date)
         id_dict = collection.find_one(
             filter=filter_,
             projection=["_id"],
