@@ -38,18 +38,16 @@ class Evolution:
         end = portfolio.date
 
         self._setup()
+        self._eval_exiting(portfolio)
 
         count = population.count()
 
         for step, parent in enumerate(population.get_all_organisms(), 1):
-            print(f"***{end.date()}: Шаг эпохи - {step}/{count}***")
+            print(f"***{end.date()}: Шаг размножения - {step}/{count}***")
             population.print_stat()
             print()
 
-            print("Родитель:")
             parent_fitness = self._eval_and_print(parent, tickers, end)
-            if parent_fitness is None:
-                continue
 
             child = parent.make_child()
             print("Потомок:")
@@ -68,6 +66,38 @@ class Evolution:
             print("Наиболее медленный - удаляю:")
             self._eval_and_print(weakest, tickers, end)
             weakest.die()
+
+    def _setup(self) -> NoReturn:
+        """Создает популяцию из организмов по умолчанию.
+
+        Если организмов меньше 4 - минимальное количество для осуществления эволюции.
+        """
+        count = population.count()
+        print(f"Имеется {count} организмов из {self._max_population}")
+        print()
+
+        if count < 4:
+            for i in range(1, self._max_population - count + 1):
+                print(f"Создаю базовые генотипы - {i}/{self._max_population - count}")
+                organism = population.create_new_organism()
+                print(organism)
+                print()
+
+    def _eval_exiting(self, portfolio: Portfolio) -> None:
+        """Оценивает существующих."""
+        tickers = tuple(portfolio.index[:-2])
+        end = portfolio.date
+        count = population.count()
+
+        for step, parent in enumerate(population.get_all_organisms(), 1):
+            print(f"***{end.date()}: Шаг переоценки существующих организмов - {step}/{count}***")
+            population.print_stat()
+            print()
+
+            print("Родитель:")
+            parent_fitness = self._eval_and_print(parent, tickers, end)
+            if parent_fitness is None:
+                continue
 
     @staticmethod
     def _eval_and_print(
@@ -92,19 +122,3 @@ class Evolution:
             print(f"Timer: {organism.timer / 10 ** 9:.0f}")
             print()
             return fitness
-
-    def _setup(self) -> NoReturn:
-        """Создает популяцию из организмов по умолчанию.
-
-        Если организмов меньше 4 - минимальное количество для осуществления эволюции.
-        """
-        count = population.count()
-        print(f"Имеется {count} организмов из {self._max_population}")
-        print()
-
-        if count < 4:
-            for i in range(1, self._max_population - count + 1):
-                print(f"Создаю базовые генотипы - {i}/{self._max_population - count}")
-                organism = population.create_new_organism()
-                print(organism)
-                print()
