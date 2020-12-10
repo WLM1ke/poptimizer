@@ -8,8 +8,7 @@ import pandas as pd
 
 from poptimizer.data_di.adapters.gateways import gateways
 from poptimizer.data_di.adapters.html import description, parser
-from poptimizer.shared import adapters
-from poptimizer.shared import col
+from poptimizer.shared import adapters, col
 
 URL = "https://bcs-express.ru/kotirovki-i-grafiki/"
 DATE_TAG_RE = re.compile(".*_close-date.*")
