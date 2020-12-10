@@ -1,4 +1,4 @@
-"""Фабрика для асинхронного http-соединения."""
+"""Базовые классы шлюзов."""
 import abc
 
 import aiohttp
@@ -7,7 +7,7 @@ import pandas as pd
 from poptimizer.shared import connections
 
 
-class BaseGateway:
+class BaseGateway(abc.ABC):
     """Базовый шлюз."""
 
     def __init__(
@@ -19,7 +19,7 @@ class BaseGateway:
 
 
 class DivGateway(BaseGateway):
-    """Базовый шлюз."""
+    """Базовый шлюз для дивидендов."""
 
     @abc.abstractmethod
     async def get(self, ticker: str) -> pd.DataFrame:
