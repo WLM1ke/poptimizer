@@ -1,32 +1,31 @@
 """Загрузка данных с https://www.conomy.ru/."""
 import asyncio
-from typing import Optional, cast
+import contextlib
+from typing import Final, Optional, cast
 
 import pandas as pd
 import pyppeteer
 from pyppeteer import browser, errors
 from pyppeteer.page import Page
 
-from poptimizer import config
 from poptimizer.data_di.adapters.gateways import gateways
 from poptimizer.data_di.adapters.html import description, parser
-from poptimizer.shared import adapters
-from poptimizer.shared import col
+from poptimizer.shared import adapters, col
 
 # Параметры поиска страницы эмитента
-SEARCH_URL = "https://www.conomy.ru/search"
-SEARCH_FIELD = '//*[@id="issuer_search"]'
+SEARCH_URL: Final = "https://www.conomy.ru/search"
+SEARCH_FIELD: Final = '//*[@id="issuer_search"]'
 
 # Параметры поиска данных по дивидендам
-DIVIDENDS_MENU = '//*[@id="page-wrapper"]/div/nav/ul/li[5]/a'
-DIVIDENDS_TABLE = '//*[@id="page-container"]/div[2]/div/div[1]'
+DIVIDENDS_MENU: Final = '//*[@id="page-wrapper"]/div/nav/ul/li[5]/a'
+DIVIDENDS_TABLE: Final = '//*[@id="page-container"]/div[2]/div/div[1]'
 
 # Номер таблицы на html-странице и строки с заголовком
-TABLE_INDEX = 1
+TABLE_INDEX: Final = 1
 
 # Параметры проверки обыкновенная акция или привилегированная
-COMMON_TICKER_LENGTH = 4
-PREFERRED_TICKER_ENDING = "P"
+COMMON_TICKER_LENGTH: Final = 4
+PREFERRED_TICKER_ENDING: Final = "P"
 
 
 class Browser:
@@ -37,15 +36,25 @@ class Browser:
         self._browser: Optional[browser.Browser] = None
         self._lock = asyncio.Lock()
 
-    async def get(self) -> browser.Browser:
-        """Создает при необходимости и возвращает браузер."""
+    @contextlib.asynccontextmanager
+    async def get_page(self) -> Page:
+        """Контекстный менеджер, закрывающий страницу."""
+        chromium = await self._load_browser()
+        page = await chromium.newPage()
+        try:
+            yield page
+        finally:
+            await page.close()
+
+    async def _load_browser(self) -> browser.Browser:
+        """При необходимости загружает браузер и возвращает его."""
         async with self._lock:
             if self._browser is None:
                 self._browser = await pyppeteer.launch(autoClose=True)
         return self._browser
 
 
-BROWSER = Browser()
+BROWSER: Final = Browser()
 
 
 async def _load_ticker_page(page: Page, ticker: str) -> None:
@@ -67,13 +76,10 @@ async def _load_dividends_table(page: Page) -> None:
 
 async def _get_html(ticker: str) -> str:
     """Возвращает html-код страницы с данными по дивидендам с сайта https://www.conomy.ru/."""
-    br = await BROWSER.get()
-    page = await br.newPage()
-    await _load_ticker_page(page, ticker)
-    await _load_dividends_table(page)
-    html = await page.content()
-    await page.close()
-    return cast(str, html)
+    async with BROWSER.get_page() as page:
+        await _load_ticker_page(page, ticker)
+        await _load_dividends_table(page)
+        return cast(str, await page.content())
 
 
 def _is_common(ticker: str) -> bool:
@@ -83,7 +89,7 @@ def _is_common(ticker: str) -> bool:
     elif len(ticker) == COMMON_TICKER_LENGTH + 1:
         if ticker[COMMON_TICKER_LENGTH] == PREFERRED_TICKER_ENDING:
             return False
-    raise config.POptimizerError(f"Некорректный тикер {ticker}")
+    raise description.ParserError(f"Некорректный тикер {ticker}")
 
 
 def _get_col_desc(ticker: str) -> parser.Descriptions:
@@ -132,5 +138,4 @@ class ConomyGateway(gateways.DivGateway):
         cols_desc = _get_col_desc(ticker)
         df = parser.get_df_from_html(html, TABLE_INDEX, cols_desc)
         df = df.dropna()
-        df = df.sort_index(axis=0)
-        return df.groupby(lambda date: date).sum()
+        return self._sort_and_agg(df)
