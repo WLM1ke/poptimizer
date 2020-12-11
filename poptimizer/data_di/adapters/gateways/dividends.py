@@ -1,43 +1,36 @@
-"""Загрузка данных по дивидендам."""
+"""Загрузка основных данных по дивидендам."""
 import pandas as pd
-import pymongo
-from motor import motor_asyncio
+from pymongo import collection
 
-import poptimizer.shared.connections
-from poptimizer.shared import adapters
-from poptimizer.shared import col
+from poptimizer.data_di.adapters.gateways import gateways
+from poptimizer.shared import adapters, connections
 
 # Где хранятся данные о дивидендах
-SOURCE_DB = "source"
-SOURCE_COLLECTION = "dividends"
+DIV_COL = connections.MONGO_CLIENT["source"]["dividends"]
 
 
-class DividendsGateway:
+class DividendsGateway(gateways.DivGateway):
     """Обновление данных из базы данных, заполняемой в ручную."""
 
     _logger = adapters.AsyncLogger()
 
     def __init__(
         self,
-        mongo_client: motor_asyncio.AsyncIOMotorClient = poptimizer.shared.connections.MONGO_CLIENT,
+        div_col: collection.Collection = DIV_COL,
     ):
         """Сохраняет коллекцию для доступа к первоисточнику дивидендов."""
-        self._collection = mongo_client[SOURCE_DB][SOURCE_COLLECTION]
+        super().__init__()
+        self._collection = div_col
 
     async def get(self, ticker: str) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
         self._logger(ticker)
 
-        docs_cursor = self._collection.aggregate(
-            [
-                {"$match": {"ticker": ticker}},
-                {"$project": {"date": True, "dividends": True}},
-                {"$group": {"_id": "$date", ticker: {"$sum": "$dividends"}}},
-                {"$sort": {"_id": pymongo.ASCENDING}},
-            ],
+        docs_cursor = self._collection.find(
+            {"ticker": ticker},
+            projection={"_id": False, "date": True, "dividends": True},
         )
         json = await docs_cursor.to_list(length=None)
-        df = pd.DataFrame(json, columns=["_id", ticker])
-
-        df.columns = [col.DATE, ticker]
-        return df.set_index(col.DATE)
+        df = pd.DataFrame.from_records(json, index="date")
+        df.columns = [ticker]
+        return self._sort_and_agg(df)
