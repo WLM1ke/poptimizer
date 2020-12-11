@@ -68,5 +68,5 @@ class BCSGateway(gateways.DivGateway):
 
         df = pd.DataFrame(data=div_data, columns=[col.DATE, ticker])
         df = df.set_index(col.DATE)
-        df = df.sort_index(axis=0)
-        return df.groupby(lambda date: date).sum()
+
+        return self._sort_and_agg(df)

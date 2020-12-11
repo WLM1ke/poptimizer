@@ -3,8 +3,7 @@ import pandas as pd
 
 from poptimizer.data_di.adapters.gateways import gateways
 from poptimizer.data_di.adapters.html import description, parser
-from poptimizer.shared import adapters
-from poptimizer.shared import col
+from poptimizer.shared import adapters, col
 
 # Параметры парсинга сайта
 URL = "https://www.dohod.ru/ik/analytics/dividend/"
@@ -43,5 +42,5 @@ class DohodGateway(gateways.DivGateway):
             df = await parser.get_df_from_url(url, TABLE_INDEX, cols_desc)
         except description.ParserError:
             return pd.DataFrame(columns=[ticker])
-        df = df.sort_index(axis=0)
+
         return df.groupby(lambda date: date).sum()

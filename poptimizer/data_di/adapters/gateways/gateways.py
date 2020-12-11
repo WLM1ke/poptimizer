@@ -24,3 +24,8 @@ class DivGateway(BaseGateway):
     @abc.abstractmethod
     async def get(self, ticker: str) -> pd.DataFrame:
         """Дивиденды для данного тикера."""
+
+    def _sort_and_agg(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Сортировка и агрегация по индексу."""
+        df = df.sort_index(axis=0)
+        return df.groupby(lambda date: date).sum()
