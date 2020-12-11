@@ -10,6 +10,7 @@ import pymongo
 from poptimizer.config import POptimizerError
 from poptimizer.dl import Model, Forecast
 from poptimizer.evolve import store
+from poptimizer.evolve.chromosomes.chromosome import MUTATION_FACTOR
 from poptimizer.evolve.genotype import Genotype
 
 
@@ -121,10 +122,10 @@ class Organism:
         """Организм удаляется из популяции."""
         self._data.delete()
 
-    def make_child(self) -> "Organism":
+    def make_child(self, factor: float = MUTATION_FACTOR) -> "Organism":
         """Создает новый организм с помощью дифференциальной мутации."""
         genotypes = [organism.genotype for organism in _sample_organism(3)]
-        child_genotype = self.genotype.make_child(*genotypes)
+        child_genotype = self.genotype.make_child(*genotypes, factor)
         return Organism(genotype=child_genotype)
 
     def forecast(self, tickers: Tuple[str, ...], end: pd.Timestamp) -> Forecast:

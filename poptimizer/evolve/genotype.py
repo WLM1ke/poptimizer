@@ -7,6 +7,8 @@ from poptimizer.dl import PhenotypeData
 from poptimizer.evolve import chromosomes
 
 # База для формирования фенотипа
+from poptimizer.evolve.chromosomes.chromosome import MUTATION_FACTOR
+
 BASE_PHENOTYPE = {
     "type": "WaveNet",
     "data": {"features": {"Label": {"on": True}}},
@@ -59,9 +61,15 @@ class Genotype(UserDict):
             chromosome.change_phenotype(phenotype)
         return phenotype
 
-    def make_child(self, base: "Genotype", diff1: "Genotype", diff2: "Genotype") -> "Genotype":
+    def make_child(
+        self,
+        base: "Genotype",
+        diff1: "Genotype",
+        diff2: "Genotype",
+        factor: float = MUTATION_FACTOR,
+    ) -> "Genotype":
         """Реализует мутацию в рамках дифференциальной эволюции."""
         child = copy.deepcopy(self)
         for key in child:
-            child[key] = self[key].make_child(base[key], diff1[key], diff2[key])
+            child[key] = self[key].make_child(base[key], diff1[key], diff2[key], factor)
         return child

@@ -5,6 +5,7 @@ import pandas as pd
 
 from poptimizer.dl import ModelError
 from poptimizer.evolve import population
+from poptimizer.evolve.chromosomes.chromosome import MUTATION_FACTOR
 from poptimizer.portfolio.portfolio import Portfolio
 
 # Максимальная популяция
@@ -42,21 +43,29 @@ class Evolution:
 
         count = population.count()
 
+        factor = MUTATION_FACTOR
+
         for step, parent in enumerate(population.get_all_organisms(), 1):
             print(f"***{end.date()}: Шаг размножения - {step}/{count}***")
             population.print_stat()
+            print(f"Фактор - {factor:.2%}")
             print()
 
-            child = parent.make_child()
+            child = parent.make_child(factor)
             print("Потомок:")
             child_fitness = self._eval_and_print(child, tickers, end)
             if child_fitness is None:
+                factor *= MUTATION_FACTOR
                 continue
 
             if population.count() <= self._max_population:
                 continue
 
             weakest = child.find_weaker()
+
+            if weakest.id == child.id:
+                factor *= MUTATION_FACTOR
+
             print("Наиболее слабый - удаляю:")
             self._eval_and_print(weakest, tickers, end)
             weakest.die()
