@@ -13,12 +13,23 @@ FOOTER = "+добавить дивиденды"
 
 def get_col_desc() -> parser.Descriptions:
     """Формирует список с описанием нужных столбцов."""
-    ticker = description.ColDesc(num=1, raw_name=("Тикер",), name=col.TICKER, parser_func=None)
+    ticker = description.ColDesc(
+        num=1,
+        raw_name=("Тикер",),
+        name=col.TICKER,
+        parser_func=None,
+    )
     date = description.ColDesc(
-        num=9, raw_name=("дата отсечки",), name=col.DATE, parser_func=description.date_parser,
+        num=9,
+        raw_name=("дата отсечки",),
+        name=col.DATE,
+        parser_func=description.date_parser,
     )
     div = description.ColDesc(
-        num=5, raw_name=("дивиденд,руб",), name=col.DIVIDENDS, parser_func=description.div_parser,
+        num=5,
+        raw_name=("дивиденд,руб",),
+        name=col.DIVIDENDS,
+        parser_func=description.div_parser,
     )
     return [ticker, date, div]
 
