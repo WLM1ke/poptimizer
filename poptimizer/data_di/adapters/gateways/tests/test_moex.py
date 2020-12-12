@@ -29,7 +29,7 @@ async def test_trading_dates_gateway(mocker):
 async def test_index_gateway(mocker):
     """Форматирование загруженных данных по индексу акциям."""
     df = pd.DataFrame([{"dd": "2020-09-29", "vv": 3000.0}])
-    outer_call = mocker.patch.object(moex.aiomoex, "get_board_history", return_value=df)
+    outer_call = mocker.patch.object(moex.aiomoex, "get_market_history", return_value=df)
     fake_session = mocker.Mock()
 
     loader = moex.IndexesGateway(fake_session)
@@ -42,7 +42,6 @@ async def test_index_gateway(mocker):
         end="end",
         security="INDEX",
         columns=("TRADEDATE", "CLOSE"),
-        board="RTSI",
         market="index",
     )
 
@@ -60,13 +59,18 @@ async def test_securities_gateway(mocker):
 
     loader = moex.SecuritiesGateway(fake_session)
 
-    df_rez = await loader.get()
+    df_rez = await loader.get("m1", "b1")
 
     assert df_rez.columns.tolist() == [col.ISIN, col.LOT_SIZE]
     assert df_rez.index.tolist() == ["GAZP"]
     assert df_rez.values.tolist() == [["abc", 12]]
 
-    outer_call.assert_called_once_with(fake_session, columns=("SECID", "ISIN", "LOTSIZE"))
+    outer_call.assert_called_once_with(
+        fake_session,
+        market="m1",
+        board="b1",
+        columns=("SECID", "ISIN", "LOTSIZE"),
+    )
 
 
 @pytest.mark.asyncio
@@ -119,7 +123,7 @@ async def test_quotes_gateway(mocker):
 
     loader = moex.QuotesGateway(fake_session)
 
-    df_rez = await loader.get("TICKER", "start", "end")
+    df_rez = await loader.get("TICKER", "m2", "start", "end")
 
     assert df_rez.columns.tolist() == [
         col.OPEN,
@@ -140,6 +144,7 @@ async def test_quotes_gateway(mocker):
     outer_call.assert_called_once_with(
         fake_session,
         "TICKER",
+        market="m2",
         start="start",
         end="end",
     )
@@ -158,7 +163,7 @@ async def test_quotes_gateway_regression_empty_json(mocker):
 
     loader = moex.QuotesGateway(fake_session)
 
-    df_rez = await loader.get("TICKER", "start", "end")
+    df_rez = await loader.get("TICKER", "m3", "start", "end")
 
     assert df_rez.empty
     assert df_rez.columns.tolist() == [
