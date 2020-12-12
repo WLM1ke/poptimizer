@@ -3,8 +3,7 @@ import pandas as pd
 
 from poptimizer import config
 from poptimizer.data_di.adapters.html import description, parser
-from poptimizer.shared import adapters
-from poptimizer.shared import col
+from poptimizer.shared import adapters, col
 
 # Параметры парсинга сайта
 URL = "https://smart-lab.ru/dividends/index/order_by_cut_off_date/asc/"
