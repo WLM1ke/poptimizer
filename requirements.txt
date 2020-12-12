@@ -13,7 +13,6 @@ tqdm
 
 # pdf и xls
 openpyxl
-xlrd
 lxml
 reportlab
 matplotlib

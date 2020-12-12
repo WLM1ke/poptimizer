@@ -26,6 +26,7 @@ def read_data(report_name: str):
         header=0,
         index_col=0,
         converters={"Date": pd.to_datetime},
+        engine="openpyxl",
     )
     return data
 
