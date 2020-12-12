@@ -31,6 +31,10 @@ class DividendsGateway(gateways.DivGateway):
             projection={"_id": False, "date": True, "dividends": True},
         )
         json = await docs_cursor.to_list(length=None)
+
+        if not json:
+            return pd.DataFrame(columns=[ticker])
+
         df = pd.DataFrame.from_records(json, index="date")
         df.columns = [ticker]
         return self._sort_and_agg(df)
