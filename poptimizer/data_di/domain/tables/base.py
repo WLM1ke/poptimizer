@@ -7,7 +7,7 @@ from typing import ClassVar, Generic, List, Optional, TypeVar
 import pandas as pd
 
 from poptimizer import config
-from poptimizer.data_di.ports import GroupName
+from poptimizer.data_di import ports
 from poptimizer.shared import domain
 
 PACKAGE = "data"
@@ -46,7 +46,7 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
     Умеет обрабатывать связанное с ней событие.
     """
 
-    group: ClassVar[GroupName]
+    group: ClassVar[ports.GroupName]
 
     def __init__(
         self,
@@ -66,7 +66,11 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
         self._df_lock = asyncio.Lock()
 
     async def handle_event(self, event: Event) -> List[domain.AbstractEvent]:
-        """Обновляет значение, изменяет текущую дату и добавляет связанные с этим события."""
+        """Обновляет значение и сохраняет дату изменения.
+
+        Входящее событие должно содержать необходимые данные для осуществления обновления. По
+        результатам обновления могут создавать дочерние события.
+        """
         async with self._df_lock:
             if self._update_cond(event):
                 df_new = await self._prepare_df(event)
