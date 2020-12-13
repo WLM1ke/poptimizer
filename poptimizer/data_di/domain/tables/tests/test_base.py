@@ -96,3 +96,49 @@ async def test_update_table(table, mocker):
     fake_new_df = table._prepare_df.return_value
     assert table._df is fake_new_df
     table._validate_new_df.assert_called_once_with(fake_new_df)
+
+
+INDEX_CASES = (
+    (pd.DataFrame(index=[3, 2, 1]), True),
+    (pd.DataFrame(index=[1, 2, 2]), True),
+    (pd.DataFrame(index=[1, 2, 3]), False),
+)
+
+
+@pytest.mark.parametrize("df, raises", INDEX_CASES)
+def test_check_unique_increasing_index(df, raises):
+    """Проверка возможных случаев проверки индекса."""
+    if raises:
+        with pytest.raises(base.TableIndexError):
+            base.check_unique_increasing_index(df)
+    else:
+        base.check_unique_increasing_index(df)
+
+
+DFS_CASES = (
+    (
+        pd.DataFrame([1, 2]),
+        pd.DataFrame([1, 1, 3]),
+        True,
+    ),
+    (
+        pd.DataFrame([1, 2]),
+        pd.DataFrame([1, 2, 3]),
+        False,
+    ),
+    (
+        None,
+        pd.DataFrame([1, 2, 3]),
+        False,
+    ),
+)
+
+
+@pytest.mark.parametrize("df_old, df_new, raises", DFS_CASES)
+def test_check_dfs_mismatch(df_old, df_new, raises):
+    """Проверка возможных случаев стыков DataFrame."""
+    if raises:
+        with pytest.raises(base.TableNewDataMismatchError):
+            base.check_dfs_mismatch("", df_old, df_new)
+    else:
+        base.check_dfs_mismatch("", df_old, df_new)
