@@ -5,10 +5,10 @@ from typing import ClassVar, Final, List, Mapping, Union
 
 import pandas as pd
 
-import poptimizer.data_di.ports
+from poptimizer.data_di import ports
 from poptimizer.data_di.adapters.gateways import bcs, conomy, dividends, dohod, gateways, smart_lab
 from poptimizer.data_di.domain import events
-from poptimizer.data_di.domain.tables import base, checks
+from poptimizer.data_di.domain.tables import base
 from poptimizer.shared import col, domain
 
 DivEvents = Union[events.TickerTraded, events.UpdateDivCommand]
@@ -17,7 +17,7 @@ DivEvents = Union[events.TickerTraded, events.UpdateDivCommand]
 class Dividends(base.AbstractTable[DivEvents]):
     """Таблица с основной версией дивидендов."""
 
-    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.DIVIDENDS
+    group: ClassVar[ports.GroupName] = ports.DIVIDENDS
     _gateway: Final = dividends.DividendsGateway()
 
     def _update_cond(self, event: DivEvents) -> bool:
@@ -30,7 +30,7 @@ class Dividends(base.AbstractTable[DivEvents]):
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
-        checks.unique_increasing_index(df_new)
+        base.check_unique_increasing_index(df_new)
 
     def _new_events(self, event: DivEvents) -> List[domain.AbstractEvent]:
         """Обновление дивидендов не порождает события."""
@@ -43,7 +43,7 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
     Создает события с новыми дивидендами.
     """
 
-    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.SMART_LAB
+    group: ClassVar[ports.GroupName] = ports.SMART_LAB
     _gateway: Final = smart_lab.SmartLabGateway()
 
     def _update_cond(self, event: events.TradingDayEnded) -> bool:
@@ -59,9 +59,7 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
 
     def _new_events(self, event: events.TradingDayEnded) -> List[domain.AbstractEvent]:
         """Создает события о новых дивидендах."""
-        if (df := self._df) is None:
-            raise base.TableNeverUpdatedError(self._id)
-
+        df: pd.DataFrame = self._df
         div_tickers = set(df.index)
         new_events: List[domain.AbstractEvent] = []
 
@@ -78,7 +76,7 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
 class DivExt(base.AbstractTable[events.DivExpected]):
     """Таблица со сводными данными по дивидендам из внешних источников."""
 
-    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.DIV_EXT
+    group: ClassVar[ports.GroupName] = ports.DIV_EXT
     _gateways_dict: Final[Mapping[str, gateways.DivGateway]] = types.MappingProxyType(
         {
             "Dohod": dohod.DohodGateway(),
@@ -111,7 +109,7 @@ class DivExt(base.AbstractTable[events.DivExpected]):
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
-        checks.unique_increasing_index(df_new)
+        base.check_unique_increasing_index(df_new)
 
     def _new_events(self, event: events.DivExpected) -> List[domain.AbstractEvent]:
         """Обновление дивидендов не порождает события."""

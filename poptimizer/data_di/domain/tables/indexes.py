@@ -3,17 +3,17 @@ from typing import ClassVar, Final, List
 
 import pandas as pd
 
-import poptimizer.data_di.ports
+from poptimizer.data_di import ports
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
-from poptimizer.data_di.domain.tables import base, checks
+from poptimizer.data_di.domain.tables import base
 from poptimizer.shared import domain
 
 
 class Indexes(base.AbstractTable[events.IndexCalculated]):
     """Таблица с индексами на закрытие торгового дня."""
 
-    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.INDEX
+    group: ClassVar[ports.GroupName] = ports.INDEX
     _gateway: Final = moex.IndexesGateway()
 
     def _update_cond(self, event: events.IndexCalculated) -> bool:
@@ -37,8 +37,8 @@ class Indexes(base.AbstractTable[events.IndexCalculated]):
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим, а данные совпадать."""
-        checks.unique_increasing_index(df_new)
-        checks.df_data(self.id_, self._df, df_new)
+        base.check_unique_increasing_index(df_new)
+        base.check_dfs_mismatch(self.id_, self._df, df_new)
 
     def _new_events(self, event: events.IndexCalculated) -> List[domain.AbstractEvent]:
         """Обновление индекса не порождает события."""

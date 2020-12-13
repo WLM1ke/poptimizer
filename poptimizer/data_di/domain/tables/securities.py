@@ -3,10 +3,10 @@ from typing import ClassVar, Final, List
 
 import pandas as pd
 
-import poptimizer.data_di.ports
+from poptimizer.data_di import ports
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
-from poptimizer.data_di.domain.tables import base, checks
+from poptimizer.data_di.domain.tables import base
 from poptimizer.shared import col, domain
 
 # Перечень рынков и режимов торгов, для которых загружаются списки доступных бумаг
@@ -24,7 +24,7 @@ class Securities(base.AbstractTable[events.TradingDayEnded]):
     Инициирует события о торговле конкретными бумагами.
     """
 
-    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.SECURITIES
+    group: ClassVar[ports.GroupName] = ports.SECURITIES
     _gateway: Final = moex.SecuritiesGateway()
 
     def _update_cond(self, event: events.TradingDayEnded) -> bool:
@@ -44,13 +44,11 @@ class Securities(base.AbstractTable[events.TradingDayEnded]):
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
-        checks.unique_increasing_index(df_new)
+        base.check_unique_increasing_index(df_new)
 
     def _new_events(self, event: events.TradingDayEnded) -> List[domain.AbstractEvent]:
         """События факта торговли конкретных бумаг."""
-        if (df := self._df) is None:
-            raise base.TableNeverUpdatedError(self._id)
-
+        df: pd.DataFrame = self._df
         trading_date = event.date
 
         return [

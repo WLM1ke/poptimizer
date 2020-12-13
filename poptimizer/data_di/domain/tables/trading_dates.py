@@ -69,7 +69,6 @@ class TradingDates(base.AbstractTable[events.AppStarted]):
 
     def _new_events(self, event: events.AppStarted) -> List[domain.AbstractEvent]:
         """Событие окончания торгового дня."""
-        if (df := self._df) is None:
-            raise base.TableNeverUpdatedError(self._id)
+        df: pd.DataFrame = self._df
         last_trading_day = df.loc[0, "till"]
         return [events.TradingDayEnded(last_trading_day.date())]

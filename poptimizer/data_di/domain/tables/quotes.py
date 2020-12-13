@@ -4,10 +4,10 @@ from typing import ClassVar, Final, List
 
 import pandas as pd
 
-import poptimizer.data_di.ports
+from poptimizer.data_di import ports
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
-from poptimizer.data_di.domain.tables import base, checks
+from poptimizer.data_di.domain.tables import base
 from poptimizer.shared import col, domain
 
 
@@ -18,7 +18,7 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
     При обновлении добавляются только данные актуального тикера.
     """
 
-    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.QUOTES
+    group: ClassVar[ports.GroupName] = ports.QUOTES
     _aliases: Final = moex.AliasesGateway()
     _quotes: Final = moex.QuotesGateway()
 
@@ -70,8 +70,8 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
-        checks.unique_increasing_index(df_new)
-        checks.df_data(self.id_, self._df, df_new)
+        base.check_unique_increasing_index(df_new)
+        base.check_dfs_mismatch(self.id_, self._df, df_new)
 
     def _new_events(self, event: events.TickerTraded) -> List[domain.AbstractEvent]:
         """Обновление котировок не порождает события."""

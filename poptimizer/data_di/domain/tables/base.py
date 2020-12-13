@@ -24,18 +24,6 @@ class TableWrongIDError(config.POptimizerError):
     """Не соответствие группы таблицы и ее класса."""
 
 
-class TableNewDataMismatchError(config.POptimizerError):
-    """Новые данные не соответствуют старым данным таблицы."""
-
-
-class TableIndexError(config.POptimizerError):
-    """Ошибка в индексе таблицы."""
-
-
-class TableNeverUpdatedError(config.POptimizerError):
-    """Недопустимая операция с не обновленной таблицей."""
-
-
 Event = TypeVar("Event", bound=domain.AbstractEvent)
 
 
@@ -97,3 +85,32 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
     @abc.abstractmethod
     def _new_events(self, event: Event) -> List[domain.AbstractEvent]:
         """События, которые нужно создать по результатам обновления."""
+
+
+class TableIndexError(config.POptimizerError):
+    """Ошибка в индексе таблицы."""
+
+
+def check_unique_increasing_index(df: pd.DataFrame) -> None:
+    """Тестирует индекс на уникальность и возрастание."""
+    index = df.index
+    if not index.is_monotonic_increasing:
+        raise TableIndexError("Индекс не возрастающий")
+    if not index.is_unique:
+        raise TableIndexError("Индекс не уникальный")
+
+
+class TableNewDataMismatchError(config.POptimizerError):
+    """Новые данные не соответствуют старым данным таблицы."""
+
+
+def check_dfs_mismatch(id_: domain.ID, df_old: pd.DataFrame, df_new: pd.DataFrame) -> None:
+    """Сравнивает новые данные со старыми для старого индекса."""
+    if df_old is None:
+        return
+
+    df_new_val = df_new.reindex(df_old.index)
+    try:
+        pd.testing.assert_frame_equal(df_new_val, df_old, check_dtype=False)
+    except AssertionError:
+        raise TableNewDataMismatchError(id_)
