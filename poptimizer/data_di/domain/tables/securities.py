@@ -3,6 +3,7 @@ from typing import ClassVar, Final, List
 
 import pandas as pd
 
+import poptimizer.data_di.ports
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base, checks
@@ -23,7 +24,7 @@ class Securities(base.AbstractTable[events.TradingDayEnded]):
     Инициирует события о торговле конкретными бумагами.
     """
 
-    group: ClassVar[base.GroupName] = base.SECURITIES
+    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.SECURITIES
     _gateway: Final = moex.SecuritiesGateway()
 
     def _update_cond(self, event: events.TradingDayEnded) -> bool:

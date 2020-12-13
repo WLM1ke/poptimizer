@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from pandas.tseries import offsets
 
+import poptimizer.data_di.ports
 from poptimizer.data.views.crop import div, not_div
 from poptimizer.data_di.app import bootstrap, viewers
 from poptimizer.data_di.domain.tables import base
@@ -14,19 +15,19 @@ from poptimizer.shared import col
 
 def last_history_date(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Timestamp:
     """Последняя доступная дата исторических котировок."""
-    df = viewer.get_df(base.TRADING_DATES, base.TRADING_DATES)
+    df = viewer.get_df(poptimizer.data_di.ports.TRADING_DATES, poptimizer.data_di.ports.TRADING_DATES)
     return df.loc[0, "till"]
 
 
 def securities(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Index:
     """Все акции."""
-    df = viewer.get_df(base.SECURITIES, base.SECURITIES)
+    df = viewer.get_df(poptimizer.data_di.ports.SECURITIES, poptimizer.data_di.ports.SECURITIES)
     return df.index
 
 
 def lot_size(tickers: Tuple[str, ...], viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Series:
     """Информация о размере лотов для тикеров."""
-    df = viewer.get_df(base.SECURITIES, base.SECURITIES)
+    df = viewer.get_df(poptimizer.data_di.ports.SECURITIES, poptimizer.data_di.ports.SECURITIES)
     return df.loc[list(tickers), col.LOT_SIZE]
 
 

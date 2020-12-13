@@ -3,6 +3,7 @@ from typing import ClassVar, Final, List
 
 import pandas as pd
 
+import poptimizer.data_di.ports
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base, checks
@@ -12,7 +13,7 @@ from poptimizer.shared import domain
 class Indexes(base.AbstractTable[events.IndexCalculated]):
     """Таблица с индексами на закрытие торгового дня."""
 
-    group: ClassVar[base.GroupName] = base.INDEX
+    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.INDEX
     _gateway: Final = moex.IndexesGateway()
 
     def _update_cond(self, event: events.IndexCalculated) -> bool:

@@ -4,6 +4,7 @@ from typing import ClassVar, Final, List
 
 import pandas as pd
 
+import poptimizer.data_di.ports
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base, checks
@@ -17,7 +18,7 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
     При обновлении добавляются только данные актуального тикера.
     """
 
-    group: ClassVar[base.GroupName] = base.QUOTES
+    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.QUOTES
     _aliases: Final = moex.AliasesGateway()
     _quotes: Final = moex.QuotesGateway()
 

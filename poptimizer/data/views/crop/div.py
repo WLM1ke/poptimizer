@@ -3,6 +3,7 @@ from typing import Tuple
 
 import pandas as pd
 
+import poptimizer.data_di.ports
 from poptimizer.data_di.app import bootstrap, viewers
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base
@@ -13,7 +14,7 @@ def div_ext(
     viewer: viewers.Viewer = bootstrap.VIEWER,
 ) -> pd.DataFrame:
     """Сводная информация из внешних источников по дивидендам."""
-    df = viewer.get_df(base.DIV_EXT, ticker)
+    df = viewer.get_df(poptimizer.data_di.ports.DIV_EXT, ticker)
     return df.loc[bootstrap.START_DATE :]  # type: ignore
 
 
@@ -26,7 +27,7 @@ def dividends(
     if force_update:
         command = events.UpdateDivCommand(ticker)
         bootstrap.BUS.handle_event(command)
-    df = viewer.get_df(base.DIVIDENDS, ticker)
+    df = viewer.get_df(poptimizer.data_di.ports.DIVIDENDS, ticker)
     return df.loc[bootstrap.START_DATE :]  # type: ignore
 
 
@@ -39,7 +40,7 @@ def dividends_all(
     Значения для дат, в которые нет дивидендов у данного тикера (есть у какого-то другого),
     заполняются 0.
     """
-    dfs = viewer.get_dfs(base.DIVIDENDS, tickers)
+    dfs = viewer.get_dfs(poptimizer.data_di.ports.DIVIDENDS, tickers)
     dfs = [df.loc[bootstrap.START_DATE :] for df in dfs]  # type: ignore
 
     df = pd.concat(dfs, axis=1)

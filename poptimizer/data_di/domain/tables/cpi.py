@@ -4,6 +4,7 @@ from typing import ClassVar, Final, List
 
 import pandas as pd
 
+import poptimizer.data_di.ports
 from poptimizer.data_di.adapters.gateways import cpi
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base, checks
@@ -13,7 +14,7 @@ from poptimizer.shared import domain
 class CPI(base.AbstractTable[events.TradingDayEnded]):
     """Таблица с индексами на закрытие торгового дня."""
 
-    group: ClassVar[base.GroupName] = base.CPI
+    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.CPI
     _gateway: Final = cpi.CPIGateway()
 
     def _update_cond(self, event: events.TradingDayEnded) -> bool:

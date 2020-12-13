@@ -5,6 +5,7 @@ from typing import ClassVar, Final, List, Mapping, Union
 
 import pandas as pd
 
+import poptimizer.data_di.ports
 from poptimizer.data_di.adapters.gateways import bcs, conomy, dividends, dohod, gateways, smart_lab
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base, checks
@@ -16,7 +17,7 @@ DivEvents = Union[events.TickerTraded, events.UpdateDivCommand]
 class Dividends(base.AbstractTable[DivEvents]):
     """Таблица с основной версией дивидендов."""
 
-    group: ClassVar[base.GroupName] = base.DIVIDENDS
+    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.DIVIDENDS
     _gateway: Final = dividends.DividendsGateway()
 
     def _update_cond(self, event: DivEvents) -> bool:
@@ -42,7 +43,7 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
     Создает события с новыми дивидендами.
     """
 
-    group: ClassVar[base.GroupName] = base.SMART_LAB
+    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.SMART_LAB
     _gateway: Final = smart_lab.SmartLabGateway()
 
     def _update_cond(self, event: events.TradingDayEnded) -> bool:
@@ -77,7 +78,7 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
 class DivExt(base.AbstractTable[events.DivExpected]):
     """Таблица со сводными данными по дивидендам из внешних источников."""
 
-    group: ClassVar[base.GroupName] = base.DIV_EXT
+    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.DIV_EXT
     _gateways_dict: Final[Mapping[str, gateways.DivGateway]] = types.MappingProxyType(
         {
             "Dohod": dohod.DohodGateway(),

@@ -4,6 +4,7 @@ from typing import ClassVar, Final, List
 
 import pandas as pd
 
+import poptimizer.data_di.ports
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base
@@ -44,7 +45,7 @@ class TradingDates(base.AbstractTable[events.AppStarted]):
     Инициирует событие в случае окончания очередного торгового дня.
     """
 
-    group: ClassVar[base.GroupName] = base.TRADING_DATES
+    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.TRADING_DATES
     _gateway: Final = moex.TradingDatesGateway()
 
     def _update_cond(self, event: events.AppStarted) -> bool:

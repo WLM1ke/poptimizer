@@ -2,11 +2,12 @@
 import abc
 import asyncio
 from datetime import datetime
-from typing import ClassVar, Final, Generic, List, Literal, Optional, TypeVar
+from typing import ClassVar, Generic, List, Optional, TypeVar
 
 import pandas as pd
 
 from poptimizer import config
+from poptimizer.data_di.ports import GroupName
 from poptimizer.shared import domain
 
 PACKAGE = "data"
@@ -19,7 +20,7 @@ def create_id(group: str, name: Optional[str] = None) -> domain.ID:
     return domain.ID(PACKAGE, group, name)
 
 
-class TableIWrongDError(config.POptimizerError):
+class TableWrongIDError(config.POptimizerError):
     """Не соответствие группы таблицы и ее класса."""
 
 
@@ -36,27 +37,6 @@ class TableNeverUpdatedError(config.POptimizerError):
 
 
 Event = TypeVar("Event", bound=domain.AbstractEvent)
-
-# Наименования групп таблиц
-TRADING_DATES: Final = "trading_dates"
-SMART_LAB: Final = "smart_lab"
-DIVIDENDS: Final = "dividends"
-DIV_EXT: Final = "div_ext"
-CPI: Final = "CPI"
-SECURITIES: Final = "securities"
-INDEX: Final = "indexes"
-QUOTES: Final = "quotes"
-
-GroupName = Literal[
-    "trading_dates",
-    "smart_lab",
-    "dividends",
-    "div_ext",
-    "CPI",
-    "securities",
-    "indexes",
-    "quotes",
-]
 
 
 class AbstractTable(Generic[Event], domain.BaseEntity):
@@ -76,9 +56,9 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
     ) -> None:
         """Сохраняет необходимые данные."""
         if id_.package != PACKAGE:
-            raise TableIWrongDError(id_)
+            raise TableWrongIDError(id_)
         if id_.group != self.group:
-            raise TableIWrongDError(id_)
+            raise TableWrongIDError(id_)
         super().__init__(id_)
 
         self._df = df

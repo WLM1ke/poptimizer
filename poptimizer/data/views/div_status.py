@@ -4,6 +4,7 @@ from typing import Callable, Final, List, Tuple
 
 import pandas as pd
 
+import poptimizer.data_di.ports
 from poptimizer.data.views.crop import div
 from poptimizer.data_di.app import bootstrap, viewers
 from poptimizer.data_di.domain.tables import base
@@ -16,7 +17,7 @@ DivSource = Callable[[str], pd.DataFrame]
 
 def _smart_lab_all(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.DataFrame:
     """Информация по дивидендам с smart-lab.ru."""
-    return viewer.get_df(base.SMART_LAB, base.SMART_LAB)
+    return viewer.get_df(poptimizer.data_di.ports.SMART_LAB, poptimizer.data_di.ports.SMART_LAB)
 
 
 def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:
