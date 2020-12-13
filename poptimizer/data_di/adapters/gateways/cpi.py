@@ -59,7 +59,11 @@ async def _load_xlsx(session: aiohttp.ClientSession) -> pd.DataFrame:
     file_url = await _get_xlsx_url(session)
     async with session.get(file_url) as resp:
         xls_file = await resp.read()
-    return pd.read_excel(xls_file, **PARSING_PARAMETERS)
+    return pd.read_excel(
+        xls_file,
+        **PARSING_PARAMETERS,
+        engine="openpyxl",
+    )
 
 
 def _validate(df: pd.DataFrame) -> None:
