@@ -71,7 +71,7 @@ class TradingDates(base.AbstractTable[events.AppStarted]):
         return await self._gateway.get()
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
-        """Проверка корректности индекса и заголовков ."""
+        """Проверка корректности индекса и заголовков - потом сохраняет старые данные."""
         if df_new.index.tolist() != [0]:
             raise base.TableIndexError()
         if df_new.columns.tolist() != ["from", "till"]:
