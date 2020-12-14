@@ -12,18 +12,18 @@ from poptimizer.shared import domain
 
 
 class CPI(base.AbstractTable[events.TradingDayEnded]):
-    """Таблица с индексами на закрытие торгового дня."""
+    """Таблица с потребительской инфляцией."""
 
     group: ClassVar[ports.GroupName] = ports.CPI
     _gateway: Final = cpi.CPIGateway()
 
     def _update_cond(self, event: events.TradingDayEnded) -> bool:
-        """Инфляция обновляется при отсутствии или окончание очередного месяца."""
+        """Инфляция обновляется при отсутствии или окончании очередного месяца."""
         if (df := self._df) is None:
             return True
 
         last_cpi_month = df.index[-1].month
-        last_full_month = (event.date.replace(day=1) - timedelta(days=-1)).month
+        last_full_month = (event.date.replace(day=1) - timedelta(days=1)).month
 
         if last_cpi_month != last_full_month:
             return True
