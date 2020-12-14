@@ -1,10 +1,10 @@
 """Таблица с торговыми датами."""
 from datetime import datetime, timedelta, timezone
-from typing import ClassVar, Final, List
+from typing import ClassVar, Final, List, Optional
 
 import pandas as pd
 
-import poptimizer.data_di.ports
+from poptimizer.data_di import ports
 from poptimizer.data_di.adapters.gateways import moex
 from poptimizer.data_di.domain import events
 from poptimizer.data_di.domain.tables import base
@@ -45,8 +45,18 @@ class TradingDates(base.AbstractTable[events.AppStarted]):
     Инициирует событие в случае окончания очередного торгового дня.
     """
 
-    group: ClassVar[poptimizer.data_di.ports.GroupName] = poptimizer.data_di.ports.TRADING_DATES
+    group: ClassVar[ports.GroupName] = ports.TRADING_DATES
     _gateway: Final = moex.TradingDatesGateway()
+
+    def __init__(
+        self,
+        id_: domain.ID,
+        df: Optional[pd.DataFrame] = None,
+        timestamp: Optional[datetime] = None,
+    ) -> None:
+        """Сохраняет необходимые данные и кэширует старое значение."""
+        super().__init__(id_, df, timestamp)
+        self._last_trading_day_old: Optional[datetime] = None
 
     def _update_cond(self, event: events.AppStarted) -> bool:
         """Обновляет, если последняя дата обновления после потенциального окончания торгового дня."""
@@ -61,14 +71,19 @@ class TradingDates(base.AbstractTable[events.AppStarted]):
         return await self._gateway.get()
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
-        """Проверка корректности индекса и заголовков."""
+        """Проверка корректности индекса и заголовков ."""
         if df_new.index.tolist() != [0]:
             raise base.TableIndexError()
         if df_new.columns.tolist() != ["from", "till"]:
             raise base.TableIndexError()
 
+        if (df := self._df) is not None:
+            self._last_trading_day_old = df.loc[0, "till"]
+
     def _new_events(self, event: events.AppStarted) -> List[domain.AbstractEvent]:
         """Событие окончания торгового дня."""
         df: pd.DataFrame = self._df
         last_trading_day = df.loc[0, "till"]
-        return [events.TradingDayEnded(last_trading_day.date())]
+        if last_trading_day != self._last_trading_day_old:
+            return [events.TradingDayEnded(last_trading_day.date())]
+        return []
