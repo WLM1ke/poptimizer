@@ -56,11 +56,9 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
             axis=0,
         )
 
-        if len(tickers) > 1:
+        if df is None:
             df_new = df_new.sort_values(by=[col.DATE, col.TURNOVER])
             df_new = df_new.groupby(col.DATE).last()
-
-        if df is None:
             return df_new
 
         if df_new.empty:
