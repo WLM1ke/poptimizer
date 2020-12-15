@@ -1,5 +1,6 @@
 """Загрузка данных с https://www.conomy.ru/."""
 import asyncio
+import atexit
 import contextlib
 from typing import Final, Optional, cast
 
@@ -50,8 +51,15 @@ class Browser:
         """При необходимости загружает браузер и возвращает его."""
         async with self._lock:
             if self._browser is None:
-                self._browser = await pyppeteer.launch(autoClose=True)
+                self._browser = await pyppeteer.launch(autoClose=False)
+                atexit.register(self._close)
         return self._browser
+
+    def _close(self) -> None:
+        """Закрывает браузер."""
+        if self._browser is not None:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(self._browser.close())
 
 
 BROWSER: Final = Browser()
