@@ -1,4 +1,5 @@
 """Таблица с торгуемыми бумагами."""
+import asyncio
 from typing import ClassVar, Final, List
 
 import pandas as pd
@@ -20,8 +21,8 @@ MARKETS_BOARDS: Final = (
 class Securities(base.AbstractTable[events.TradingDayEnded]):
     """Таблица с данными о торгуемых бумагах.
 
-    Обрабатывает событие об окончании торгов в режиме TQBR.
-    Инициирует события о торговле конкретными бумагами.
+    Обрабатывает событие об окончании торгового дня.
+    Инициирует события о торговле конкретными бумагами для трех режимов торгов.
     """
 
     group: ClassVar[ports.GroupName] = ports.SECURITIES
@@ -33,14 +34,16 @@ class Securities(base.AbstractTable[events.TradingDayEnded]):
 
     async def _prepare_df(self, event: events.TradingDayEnded) -> pd.DataFrame:
         """Загружает новый DataFrame."""
-        dfs = []
-        for market, board in MARKETS_BOARDS:
-            df = await self._gateway.get(market=market, board=board)
-            df[col.MARKET] = market
-            dfs.append(df)
-
+        aws = [self._load_and_format_df(market, board) for market, board in MARKETS_BOARDS]
+        dfs = await asyncio.gather(*aws)
         df_all = pd.concat(dfs, axis=0)
         return df_all.sort_index(axis=0)
+
+    async def _load_and_format_df(self, market: str, board: str) -> pd.DataFrame:
+        """Загружает данные о торгуемых бумагах и добавляет информацию о рынке."""
+        df = await self._gateway.get(market=market, board=board)
+        df[col.MARKET] = market
+        return df
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
