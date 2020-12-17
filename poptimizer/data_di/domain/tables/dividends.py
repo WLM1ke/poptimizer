@@ -21,7 +21,7 @@ class Dividends(base.AbstractTable[DivEvents]):
     _gateway: Final = dividends.DividendsGateway()
 
     def _update_cond(self, event: DivEvents) -> bool:
-        """Если дивиденды отсутствуют, то их надо загрузить."""
+        """Если дивиденды отсутствуют и поступила команда обновления, то их надо загрузить."""
         return self._df is None or isinstance(event, events.UpdateDivCommand)
 
     async def _prepare_df(self, event: DivEvents) -> pd.DataFrame:
@@ -88,7 +88,7 @@ class DivExt(base.AbstractTable[events.DivExpected]):
     def _update_cond(self, event: events.DivExpected) -> bool:
         """Если данные отсутствуют, то их надо загрузить, а так же обновить раз в неделю."""
         if (timestamp := self._timestamp) is None:
-            return self._df is None
+            return True
 
         if datetime.utcnow() - timestamp > timedelta(days=7):
             return True
@@ -98,8 +98,9 @@ class DivExt(base.AbstractTable[events.DivExpected]):
     async def _prepare_df(self, event: events.DivExpected) -> pd.DataFrame:
         """Загружает данные из всех источников и рассчитывает медиану."""
         dfs = [event.df]
+        ticker = event.ticker
         for name, gateway in self._gateways_dict.items():
-            df = await gateway.get(event.ticker)
+            df = await gateway.get(ticker)
             df.columns = [name]
             dfs.append(df)
 
