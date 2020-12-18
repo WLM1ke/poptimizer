@@ -20,7 +20,7 @@ AnyTable = base.AbstractTable[domain.AbstractEvent]
 AllTableTypes = Tuple[Type[AnyTable], ...]
 
 
-_TABLE_TYPES: Final[AllTableTypes] = cast(
+_TABLE_TYPES: Final = cast(
     AllTableTypes,
     (
         trading_dates.TradingDates,
@@ -47,7 +47,7 @@ class TablesFactory(domain.AbstractFactory[AnyTable]):
         id_: domain.ID,
         mongo_dict: domain.StateDict,
     ) -> AnyTable:
-        """Загружает таблицу по ID."""
+        """Создает таблицу по ID и словарю состояния."""
         group = id_.group
         if (table_type := self._types_mapping.get(group)) is None:
             raise base.TableWrongIDError(id_)
