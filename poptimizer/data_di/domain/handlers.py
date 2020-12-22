@@ -84,7 +84,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):
         table_groups = [ports.QUOTES, ports.DIVIDENDS]
         table_ids = [base.create_id(group) for group in table_groups]
         aws = [_load_by_id_and_handle_event(repo, id_, event) for id_ in table_ids]
-        return [itertools.chain.from_iterable(await asyncio.gather(*aws))]
+        return list(itertools.chain.from_iterable(await asyncio.gather(*aws)))
 
     @handle_event.register
     async def index_calculated(
@@ -102,7 +102,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):
         event: events.DivExpected,
         repo: AnyTableRepo,
     ) -> List[domain.AbstractEvent]:
-        """Обновляет таблицу с котировками."""
+        """Обновляет таблицу с внешними дивидендами."""
         table_id = base.create_id(ports.DIV_EXT, event.ticker)
         return await _load_by_id_and_handle_event(repo, table_id, event)
 
@@ -114,6 +114,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):
     ) -> List[domain.AbstractEvent]:
         """Обновляет таблицы с котировками и дивидендами."""
         table_id = base.create_id(ports.DIVIDENDS, event.ticker)
-        new_events = await _load_by_id_and_handle_event(repo, table_id, event)
-        new_events.append(events.DivExpected(event.ticker, pd.DataFrame(columns=["SmartLab"])))
-        return new_events
+        return [
+            events.DivExpected(event.ticker, pd.DataFrame(columns=["SmartLab"])),
+            *await _load_by_id_and_handle_event(repo, table_id, event),
+        ]
