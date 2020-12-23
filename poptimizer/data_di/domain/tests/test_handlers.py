@@ -80,13 +80,20 @@ async def test_ticker_traded(mocker):
     dispatcher = handlers.EventHandlersDispatcher()
     event = events.TickerTraded("ticker", "ISIN", "M1", date(2020, 12, 22))
     fake_repo = mocker.Mock()
-    mocker.patch.object(
+    fake_load_by_id_and_handle_event = mocker.patch.object(
         handlers,
         "_load_by_id_and_handle_event",
         side_effect=[["aa"], ["bb", "cc"]],
     )
 
     assert await dispatcher.handle_event(event, fake_repo) == ["aa", "bb", "cc"]
+
+    fake_load_by_id_and_handle_event.assert_has_calls(
+        [
+            mocker.call(fake_repo, base.create_id(ports.QUOTES, "ticker"), event),
+            mocker.call(fake_repo, base.create_id(ports.DIVIDENDS, "ticker"), event),
+        ]
+    )
 
 
 @pytest.mark.asyncio

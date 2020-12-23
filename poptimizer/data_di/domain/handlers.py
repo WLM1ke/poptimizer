@@ -82,7 +82,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):
     ) -> List[domain.AbstractEvent]:
         """Обновляет таблицы с котировками и дивидендами."""
         table_groups = [ports.QUOTES, ports.DIVIDENDS]
-        table_ids = [base.create_id(group) for group in table_groups]
+        table_ids = [base.create_id(group, event.ticker) for group in table_groups]
         aws = [_load_by_id_and_handle_event(repo, id_, event) for id_ in table_ids]
         return list(itertools.chain.from_iterable(await asyncio.gather(*aws)))
 
