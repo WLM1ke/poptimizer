@@ -1,6 +1,6 @@
 """Показывает данные из таблиц."""
 import asyncio
-from typing import Tuple
+from typing import List, Tuple
 
 import pandas as pd
 
@@ -33,7 +33,7 @@ class Viewer:
         self,
         group: str,
         names: Tuple[str, ...],
-    ) -> Tuple[pd.DataFrame, ...]:
+    ) -> List[pd.DataFrame]:
         """Возвращает несколько DataFrame из одной группы."""
         tasks = [self._query(group, name) for name in names]
         return self._loop.run_until_complete(asyncio.gather(*tasks))
