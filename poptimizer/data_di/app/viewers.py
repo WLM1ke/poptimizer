@@ -3,10 +3,10 @@ import asyncio
 from typing import Tuple
 
 import pandas as pd
-from motor import motor_asyncio
 
 from poptimizer import config
-from poptimizer.shared import adapters
+from poptimizer.data_di.domain.tables import base
+from poptimizer.shared import adapters, domain
 
 
 class NoDFError(config.POptimizerError):
@@ -16,9 +16,9 @@ class NoDFError(config.POptimizerError):
 class Viewer:
     """Показывает данные из таблиц."""
 
-    def __init__(self, db: motor_asyncio.AsyncIOMotorDatabase):
-        """Сохраняет ссылку на базу в MongoDB."""
-        self._db = db
+    def __init__(self, mapper: adapters.Mapper[base.AbstractTable[domain.AbstractEvent]]) -> None:
+        """Сохраняет ссылку на mapper."""
+        self._mapper = mapper
         self._loop = asyncio.get_event_loop()
 
     def get_df(
@@ -27,8 +27,6 @@ class Viewer:
         name: str,
     ) -> pd.DataFrame:
         """Возвращает DataFrame по наименованию."""
-        if group == name:
-            group = adapters.MISC
         return self._loop.run_until_complete(self._query(group, name))
 
     def get_dfs(
@@ -46,8 +44,10 @@ class Viewer:
         name: str,
     ) -> pd.DataFrame:
         """Выполняет асинхронный запрос."""
-        doc = await self._db[group].find_one(filter={"_id": name})
-        if doc is None:
+        id_ = base.create_id(group, name)
+        doc = await self._mapper.get_doc(id_)
+
+        if (df_data := doc.get("data")) is None:
             raise NoDFError(group, name)
 
-        return pd.DataFrame(**doc["data"])
+        return pd.DataFrame(**df_data)
