@@ -83,7 +83,8 @@ class Mapper(typing.Generic[EntityType]):
         if (table_old := self._identity_map.get(id_)) is not None:
             return table_old
 
-        table = await self._load_or_create(id_)
+        mongo_dict = await self.get_doc(id_)
+        table = self._decode(id_, mongo_dict)
 
         if (table_old := self._identity_map.get(id_)) is not None:
             return table_old
@@ -91,6 +92,14 @@ class Mapper(typing.Generic[EntityType]):
         self._identity_map[id_] = table
 
         return table
+
+    async def get_doc(self, id_: domain.ID) -> domain.StateDict:
+        """Запрашивает документ по ID.
+
+        При отсутствии возвращает пустой словарь.
+        """
+        collection, name = self._get_collection_and_id(id_)
+        return await collection.find_one({"_id": name}, projection={"_id": False}) or {}
 
     async def commit(
         self,
@@ -117,16 +126,6 @@ class Mapper(typing.Generic[EntityType]):
         if collection == name:
             collection = MISC
         return self._client[id_.package][collection], name
-
-    async def _load_or_create(self, id_: domain.ID) -> EntityType:
-        """Загружает из MongoDB, а в случае отсутствия создается пустой объект."""
-        collection, name = self._get_collection_and_id(id_)
-        mongo_dict = await collection.find_one({"_id": name}, projection={"_id": False})
-
-        if mongo_dict is None:
-            mongo_dict = {}
-
-        return self._decode(id_, mongo_dict)
 
     def _encode(self, entity: EntityType) -> domain.StateDict:
         """Кодирует данные в совместимый с MongoDB формат."""

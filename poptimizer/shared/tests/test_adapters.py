@@ -42,17 +42,24 @@ def create_mapper(mocker):
     return adapters.Mapper(desc, mocker.MagicMock(), mocker.AsyncMock())
 
 
-async def fake_load_or_create(_):
-    """Возвращает объект со случайной задержкой."""
+async def fake_get_doc(_):
+    """Возвращает пустой словарь со случайной задержкой."""
     await asyncio.sleep(random.random())  # noqa: S311
-    return domain.BaseEntity(TEST_ID)
+    return {}
+
+
+class FakeDecode:
+    """Декодер для тестов."""
+
+    def __init__(self, first, second):
+        """Создает объекты по двум аргументам."""
 
 
 @pytest.mark.asyncio
-async def test_get_concurrent_identity(mocker, mapper):
+async def test_get_concurrent_identity(mapper):
     """При конкурентном доступе возвращается один и тот же объект."""
-    mocker.patch.object(mapper, "_load_or_create", fake_load_or_create)
-
+    mapper.get_doc = fake_get_doc
+    mapper._decode = FakeDecode
     object_gets = [mapper.get(TEST_ID) for _ in range(100)]
     first, *others = await asyncio.gather(*object_gets)
 
@@ -62,6 +69,34 @@ async def test_get_concurrent_identity(mocker, mapper):
         assert first is loaded_objects
 
     assert last is first
+
+
+@pytest.mark.asyncio
+async def test_get_doc(mocker, mapper):
+    """Загрузка документа."""
+    fake_collection = mocker.AsyncMock()
+    mocker.patch.object(mapper, "_get_collection_and_id", return_value=(fake_collection, "name"))
+    fake_collection.find_one.return_value = mocker.sentinel
+
+    assert await mapper.get_doc(TEST_ID) is mocker.sentinel
+
+    mapper._get_collection_and_id.assert_called_once_with(TEST_ID)
+    fake_collection.find_one.assert_called_once_with({"_id": "name"}, projection={"_id": False})
+
+
+@pytest.mark.asyncio
+async def test_get_doc_for_none_doc(mocker, mapper):
+    """Создание пустого словаря при отсутствии документа."""
+    fake_collection = mocker.AsyncMock()
+    mocker.patch.object(mapper, "_get_collection_and_id", return_value=(fake_collection, "name"))
+    fake_collection.find_one.return_value = None
+
+    rez = await mapper.get_doc(TEST_ID)
+    assert isinstance(rez, dict)
+    assert not rez
+
+    mapper._get_collection_and_id.assert_called_once_with(TEST_ID)
+    fake_collection.find_one.assert_called_once_with({"_id": "name"}, projection={"_id": False})
 
 
 @pytest.mark.asyncio
@@ -114,35 +149,6 @@ def test_get_collection_and_id(mapper, id_, rez):
     db.return_value.__getitem__.assert_called_once_with(rez[1])
     assert db.return_value.__getitem__.return_value == collection
     assert name == rez[2]
-
-
-@pytest.mark.asyncio
-async def test_load_or_create(mocker, mapper):
-    """Загрузка объекта."""
-    fake_collection = mocker.AsyncMock()
-    mocker.patch.object(mapper, "_get_collection_and_id", return_value=(fake_collection, "name"))
-    mocker.patch.object(mapper, "_decode", return_value=mocker.sentinel)
-
-    assert await mapper._load_or_create(TEST_ID) is mocker.sentinel
-
-    mapper._get_collection_and_id.assert_called_once_with(TEST_ID)
-    fake_collection.find_one.assert_called_once_with({"_id": "name"}, projection={"_id": False})
-    mapper._decode.assert_called_once_with(TEST_ID, fake_collection.find_one.return_value)
-
-
-@pytest.mark.asyncio
-async def test_load_or_create_new_object(mocker, mapper):
-    """Создание объекта."""
-    fake_collection = mocker.AsyncMock()
-    fake_collection.find_one.return_value = None
-    mocker.patch.object(mapper, "_get_collection_and_id", return_value=(fake_collection, "name"))
-    mocker.patch.object(mapper, "_decode", return_value=mocker.sentinel)
-
-    assert await mapper._load_or_create(TEST_ID) is mocker.sentinel
-
-    mapper._get_collection_and_id.assert_called_once_with(TEST_ID)
-    fake_collection.find_one.assert_called_once_with({"_id": "name"}, projection={"_id": False})
-    mapper._decode.assert_called_once_with(TEST_ID, {})
 
 
 def test_encode_no_change(mapper):
