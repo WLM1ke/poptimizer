@@ -98,7 +98,7 @@ class Optimizer:
 
         rez = pd.DataFrame(list(rez), columns=["SELL", "BUY", "GRAD_DIFF", "TURNOVER", "P_VALUE"])
         rez["SORT"] = rez["GRAD_DIFF"] * rez["TURNOVER"]
-        rez = rez.sort_values("SORT", ascending=False).drop_duplicates(subset="SELL")
+        rez = rez.sort_values("SORT", ascending=False)
         rez.drop("SORT", axis=1)
         rez.index = pd.RangeIndex(start=1, stop=len(rez) + 1)
 
