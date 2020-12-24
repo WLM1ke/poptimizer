@@ -2,8 +2,7 @@ import datetime
 
 import pytest
 
-
-from poptimizer.data.config import bootstrap
+from poptimizer.data.app import bootstrap
 
 
 @pytest.fixture(scope="function", autouse=True)
