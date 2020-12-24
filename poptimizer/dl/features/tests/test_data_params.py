@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from poptimizer.data.config import bootstrap
+from poptimizer.data.app import bootstrap
 from poptimizer.dl.features import data_params
 
 TICKERS = ("CBOM", "DSKY", "IRKT")

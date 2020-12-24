@@ -2,10 +2,8 @@
 import pandas as pd
 import pytest
 
-from poptimizer.data.config import bootstrap
+from poptimizer.data.app import bootstrap
 from poptimizer.data.views import moex
-
-AFTER_TAX = bootstrap.get_after_tax_rate()
 
 
 def test_last_history_date():
@@ -107,7 +105,7 @@ def test_t2_shift(date, t2):
 
 DIV_PRICE_CASES = (
     (0, "2020-10-01", "SBERP", 0),
-    (0, "2020-10-02", "SBERP", 18.7 * AFTER_TAX),
+    (0, "2020-10-02", "SBERP", 18.7 * bootstrap.AFTER_TAX),
     (0, "2020-10-05", "SBERP", 0),
     (1, "2019-09-13", "LSRG", 754),
     (1, "2019-09-12", "KZOS", 96.1),
