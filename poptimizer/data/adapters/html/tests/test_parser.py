@@ -4,8 +4,6 @@ import pandas as pd
 import pytest
 
 from poptimizer.data.adapters.html import description, parser
-from poptimizer.data.config import resources
-from poptimizer.data.ports import outer
 
 BAD_URL = "https://www.dohod.ru/wrong"
 
@@ -26,13 +24,10 @@ DESC_MULTI_HEADER = description.ColDesc(
 @pytest.mark.asyncio
 async def test_get_html(mocker):
     """Получение html-странички."""
-    fake_get_aiohttp_session = mocker.patch.object(resources, "get_aiohttp_session")
+    fake_session = mocker.MagicMock()
 
-    html = await parser.get_html(BAD_URL)
+    html = await parser.get_html(BAD_URL, fake_session)
 
-    fake_get_aiohttp_session.assert_called_once_with()
-
-    fake_session = fake_get_aiohttp_session.return_value
     fake_session.get.assert_called_once_with(BAD_URL)
 
     context_mng = fake_session.get.return_value
@@ -47,14 +42,13 @@ async def test_get_html(mocker):
 @pytest.mark.asyncio
 async def test_get_html_raise(mocker):
     """Сообщение об ошибке при некорректном URL."""
-    fake_get_aiohttp_session = mocker.patch.object(resources, "get_aiohttp_session")
-    fake_session = fake_get_aiohttp_session.return_value
+    fake_session = mocker.MagicMock()
     context_mng = fake_session.get.return_value
     respond = context_mng.__aenter__.return_value  # noqa: WPS609
     respond.raise_for_status = mocker.Mock(side_effect=aiohttp.ClientResponseError("", ""))
 
-    with pytest.raises(outer.DataError, match=f"Данные {BAD_URL} не загружены"):
-        await parser.get_html(BAD_URL)
+    with pytest.raises(description.ParserError, match=f"Данные {BAD_URL} не загружены"):
+        await parser.get_html(BAD_URL, fake_session)
 
 
 HTML = "<html><table> a </table><table> b </table></html>"
@@ -68,7 +62,7 @@ def test_get_table_from_html():
 
 def test_get_table_from_html_raises():
     """Исключение при отсутствии необходимой таблицы."""
-    with pytest.raises(outer.DataError, match="На странице нет таблицы 2"):
+    with pytest.raises(description.ParserError, match="На странице нет таблицы 2"):
         assert parser._get_table_from_html(HTML, 2)
 
 
@@ -124,7 +118,7 @@ HEADER_CASES = (
 def test_validate_header(columns, cols_desc, raises):
     """Комбинация корректных/ошибочных заголовков в одну/несколько строк."""
     if raises:
-        with pytest.raises(outer.DataError, match="Неверный заголовок:"):
+        with pytest.raises(description.ParserError, match="Неверный заголовок:"):
             parser._validate_header(columns, cols_desc)
     else:
         parser._validate_header(columns, cols_desc)

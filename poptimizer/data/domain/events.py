@@ -1,149 +1,60 @@
-"""События, связанные с обновлением таблиц."""
-import abc
-import asyncio
-from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+"""События связанные с таблицами."""
+import dataclasses
+import datetime
 
 import pandas as pd
 
-from poptimizer.data.domain import model, services
-from poptimizer.data.ports import outer
+from poptimizer.shared import domain
 
 
-class AbstractEvent(abc.ABC):
-    """Абстрактный класс события."""
+@dataclasses.dataclass(frozen=True)
+class AppStarted(domain.AbstractEvent):
+    """Начало работы приложения.
+
+    Обработчики данного события должны осуществить всю необходимую инициализацию.
+    """
+
+    timestamp: datetime.datetime = dataclasses.field(
+        init=False,
+        default_factory=datetime.datetime.utcnow,
+    )
 
 
-if TYPE_CHECKING:
-    EventsQueue = asyncio.Queue[AbstractEvent]
-else:
-    EventsQueue = asyncio.Queue
+@dataclasses.dataclass(frozen=True)
+class TradingDayEnded(domain.AbstractEvent):
+    """Произошло окончание очередного торгового дня."""
+
+    date: datetime.date
 
 
-class Command(AbstractEvent):
-    """Абстрактный класс команды."""
+@dataclasses.dataclass(frozen=True)
+class TickerTraded(domain.AbstractEvent):
+    """Тикер торговался в указанный день."""
 
-    @property
-    @abc.abstractmethod
-    def table_required(self) -> Optional[outer.TableName]:
-        """Перечень таблиц, которые нужны обработчику события."""
-
-    @abc.abstractmethod
-    async def handle_event(
-        self,
-        table: Optional[model.Table],
-    ) -> AbstractEvent:
-        """Обрабатывает событие и возвращает новое событие при наличии."""
+    ticker: str
+    isin: str
+    market: str
+    date: datetime.date
 
 
-class GetDataFrame(Command):
-    """Команда обновить DataFrame."""
+@dataclasses.dataclass(frozen=True)
+class IndexCalculated(domain.AbstractEvent):
+    """Биржа пересчитала значение индекса в связи с окончанием торгового дня."""
 
-    def __init__(self, table_name: outer.TableName, force: bool = False):
-        """Обновление может быть принудительным или по необходимости."""
-        super().__init__()
-        self._table_name = table_name
-        self._force = force
-
-    @property
-    def table_required(self) -> Optional[outer.TableName]:
-        """Не требуется таблица."""
-
-    async def handle_event(
-        self,
-        table: Optional[model.Table],
-    ) -> AbstractEvent:
-        """Осуществляет выбор варианта обновления.
-
-        - Принудительное
-        - С помощью даты
-        - С помощью вспомогательной таблицы
-        """
-        table_name = self._table_name
-        force = self._force
-
-        if force:
-            return UpdateTable(table_name)
-        elif (helper_name := services.get_helper_name(self._table_name)) is None:
-            end_of_trading_day = services.trading_day_potential_end()
-            return UpdateTable(table_name, end_of_trading_day)
-
-        return GetEndOfTradingDay(table_name, helper_name)
+    ticker: str
+    date: datetime.date
 
 
-class GetEndOfTradingDay(Command):
-    """Узнает время окончания последних торгов."""
+@dataclasses.dataclass(frozen=True)
+class DivExpected(domain.AbstractEvent):
+    """Ожидаются дивиденды для тикера."""
 
-    def __init__(self, table_name: outer.TableName, helper_name: outer.TableName):
-        """Хранит название обновляемой таблицы и вспомогательной таблицы с датами торгов."""
-        super().__init__()
-        self._table_name = table_name
-        self._helper_name = helper_name
-
-    @property
-    def table_required(self) -> Optional[outer.TableName]:
-        """Нужна вспомогательная таблица."""
-        return self._helper_name
-
-    async def handle_event(
-        self,
-        table: Optional[model.Table],
-    ) -> AbstractEvent:
-        """Узнает окончание рабочего дня и запрашивает обновление."""
-        if table is None:
-            raise outer.DataError("Нужна таблица")
-        end_of_trading_day = services.trading_day_potential_end()
-        await table.update(end_of_trading_day)
-        end_of_trading_day = services.trading_day_real_end(table.df)
-        return UpdateTable(self._table_name, end_of_trading_day)
+    ticker: str
+    df: pd.DataFrame = dataclasses.field(repr=False)
 
 
-class UpdateTable(Command):
-    """Команда обновить таблицу с учетом последней торговой даты."""
+@dataclasses.dataclass(frozen=True)
+class UpdateDivCommand(domain.AbstractEvent):
+    """Команда обновить дивиденды."""
 
-    def __init__(
-        self,
-        table_name: outer.TableName,
-        end_of_trading_day: Optional[datetime] = None,
-    ) -> None:
-        """Обновляет таблицу с учетом конца торгового дня, а при отсутствии принудительно."""
-        super().__init__()
-        self._table_names = table_name
-        self._end_of_trading_day = end_of_trading_day
-
-    @property
-    def table_required(self) -> outer.TableName:
-        """Для обновления таблицы требуется ее загрузка."""
-        return self._table_names
-
-    async def handle_event(
-        self,
-        table: Optional[model.Table],
-    ) -> AbstractEvent:
-        """Обновляет таблицу и публикует результат.
-
-        При отсутствии даты принудительно, а при наличии с учетом необходимости.
-        """
-        if table is None:
-            raise outer.DataError("Нужна таблица")
-        await table.update(self._end_of_trading_day)
-        return Result(table.name, table.df)
-
-
-class Result(AbstractEvent):
-    """Событие с результатом выполнения команды."""
-
-    def __init__(self, name: outer.TableName, df: pd.DataFrame):
-        """Имя и DataFrame с результатом."""
-        self._name = name
-        self._df = df
-
-    @property
-    def name(self) -> outer.TableName:
-        """Имя таблицы."""
-        return self._name
-
-    @property
-    def df(self) -> pd.DataFrame:
-        """Результат в виде DataFrame."""
-        return self._df
+    ticker: str

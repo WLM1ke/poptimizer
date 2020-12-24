@@ -1,10 +1,16 @@
 """Описание колонок для парсера html-таблиц."""
 import re
 from datetime import datetime
-from typing import Callable, NamedTuple, Optional, Tuple, Union
+from typing import Callable, Final, NamedTuple, Optional, Tuple, Union
 
-DIV_PATTERN = r".*\d"
-DATE_PATTERN = r"\d{2}\.\d{2}\.\d{4}"
+from poptimizer import config
+
+DIV_PATTERN: Final = r".*\d"
+DATE_PATTERN: Final = r"\d{2}\.\d{2}\.\d{4}"
+
+
+class ParserError(config.POptimizerError):
+    """Ошибки в парсинге html-таблиц."""
 
 
 ParserFunc = Callable[[str], Union[None, float, datetime]]
@@ -17,7 +23,7 @@ class ColDesc(NamedTuple):
     заголовках и преобразования из строк в нужный формат.
 
     - num: номер столбца
-    - raw_name: часть исходного наименования
+    - raw_name: часть исходного наименования для валидации
     - name: целевое наименование столбца
     - parser_func: функция для парсинга значений
     """

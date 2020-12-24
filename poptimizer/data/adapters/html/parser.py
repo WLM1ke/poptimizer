@@ -6,20 +6,21 @@ import bs4
 import pandas as pd
 
 from poptimizer.data.adapters.html import description
-from poptimizer.data.config import resources
-from poptimizer.data.ports import outer
+from poptimizer.shared import connections
 
 Descriptions = List[description.ColDesc]
 
 
-async def get_html(url: str) -> str:
+async def get_html(
+    url: str,
+    session: aiohttp.ClientSession = connections.HTTP_SESSION,
+) -> str:
     """Загружает html-код страницы."""
-    session = resources.get_aiohttp_session()
     async with session.get(url) as respond:
         try:
             respond.raise_for_status()
         except aiohttp.ClientResponseError:
-            raise outer.DataError(f"Данные {url} не загружены")
+            raise description.ParserError(f"Данные {url} не загружены")
         return await respond.text()
 
 
@@ -29,7 +30,7 @@ def _get_table_from_html(html: str, table_num: int) -> str:
     try:
         table = soup.find_all("table")[table_num]
     except IndexError:
-        raise outer.DataError(f"На странице нет таблицы {table_num}")
+        raise description.ParserError(f"На странице нет таблицы {table_num}")
     return f"<html>{table}</html>"
 
 
@@ -58,7 +59,7 @@ def _validate_header(columns: pd.Index, cols_desc: Descriptions) -> None:
         raw_name = desc.raw_name
         if all(part in name for part, name in zip(raw_name, header)):
             continue
-        raise outer.DataError(f"Неверный заголовок: {desc.raw_name} не входит в {header}")
+        raise description.ParserError(f"Неверный заголовок: {desc.raw_name} не входит в {header}")
 
 
 def _get_selected_col(df: pd.DataFrame, cols_desc: Descriptions) -> pd.DataFrame:
