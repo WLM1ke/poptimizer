@@ -6,8 +6,7 @@ import pytest
 
 from poptimizer.data import ports
 from poptimizer.data.domain import events
-from poptimizer.data.domain.tables import base
-from poptimizer.data.domain.tables import trading_dates
+from poptimizer.data.domain.tables import base, trading_dates
 
 UTC_NAIVE_CASES = (
     (

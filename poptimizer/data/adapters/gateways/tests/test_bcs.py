@@ -6,13 +6,13 @@ import pandas as pd
 import pytest
 
 from poptimizer.data.adapters.gateways import bcs
-from poptimizer.data.adapters.html import description
+from poptimizer.data.adapters.html import description, parser
 
 
 @pytest.mark.asyncio
 async def test_get_rows(mocker):
     """Запрос отправляется на корректный адрес."""
-    fake_get_html = mocker.patch.object(poptimizer.data.adapters.html.parser, "get_html")
+    fake_get_html = mocker.patch.object(parser, "get_html")
     fake_bs = mocker.patch.object(bcs.bs4, "BeautifulSoup").return_value
 
     assert await bcs._get_rows("TEST") is fake_bs.find.return_value.find_all.return_value
@@ -22,7 +22,7 @@ async def test_get_rows(mocker):
 @pytest.mark.asyncio
 async def test_get_rows_no_div_table(mocker):
     """Регрессионный тест на случай отсутствия таблицы."""
-    mocker.patch.object(poptimizer.data.adapters.html.parser, "get_html")
+    mocker.patch.object(parser, "get_html")
     fake_bs = mocker.patch.object(bcs.bs4, "BeautifulSoup").return_value
     fake_bs.find.return_value = None
 

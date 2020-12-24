@@ -4,9 +4,9 @@ from typing import Callable, Final, List, Tuple
 
 import pandas as pd
 
-import poptimizer.data.ports
-from poptimizer.data.views.crop import div
+from poptimizer.data import ports
 from poptimizer.data.app import bootstrap, viewers
+from poptimizer.data.views.crop import div
 
 # Точность сравнения дивидендов
 RET_TOL: Final = 1e-3
@@ -16,7 +16,7 @@ DivSource = Callable[[str], pd.DataFrame]
 
 def _smart_lab_all(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.DataFrame:
     """Информация по дивидендам с smart-lab.ru."""
-    return viewer.get_df(poptimizer.data.ports.SMART_LAB, poptimizer.data.ports.SMART_LAB)
+    return viewer.get_df(ports.SMART_LAB, ports.SMART_LAB)
 
 
 def new_on_smart_lab(tickers: Tuple[str, ...]) -> List[str]:

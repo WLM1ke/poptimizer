@@ -4,8 +4,7 @@ from typing import Final, Tuple
 
 from poptimizer.data.adapters import odm
 from poptimizer.data.app import viewers
-from poptimizer.data.domain import events
-from poptimizer.data.domain import factory, handlers
+from poptimizer.data.domain import events, factory, handlers
 from poptimizer.data.domain.tables import base
 from poptimizer.shared import adapters, app, domain
 

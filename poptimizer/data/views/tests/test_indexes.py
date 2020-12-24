@@ -2,8 +2,8 @@
 import pandas as pd
 import pytest
 
+from poptimizer.data.app import bootstrap
 from poptimizer.data.views import indexes
-from poptimizer.data.config import bootstrap
 from poptimizer.shared import col
 
 CPI_CASES = (

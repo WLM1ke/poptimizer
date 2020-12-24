@@ -5,8 +5,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.data import ports
-from poptimizer.data.domain import events
-from poptimizer.data.domain import handlers
+from poptimizer.data.domain import events, handlers
 from poptimizer.data.domain.tables import base
 from poptimizer.shared import domain
 
@@ -93,7 +92,7 @@ async def test_ticker_traded(mocker):
         [
             mocker.call(fake_repo, base.create_id(ports.QUOTES, "ticker"), event),
             mocker.call(fake_repo, base.create_id(ports.DIVIDENDS, "ticker"), event),
-        ]
+        ],
     )
 
 

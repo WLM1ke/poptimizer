@@ -5,7 +5,7 @@ from pyppeteer import errors
 from pyppeteer.page import Page
 
 from poptimizer.data.adapters.gateways import conomy
-from poptimizer.data.adapters.html import description
+from poptimizer.data.adapters.html import description, parser
 
 
 @pytest.mark.asyncio
@@ -119,7 +119,7 @@ async def test_conomy_gateway(mocker):
     """Группировка и сортировка полученных данных."""
     mocker.patch.object(conomy, "_get_html")
     mocker.patch.object(conomy, "_get_col_desc")
-    mocker.patch.object(poptimizer.data.adapters.html.parser, "get_df_from_html", return_value=DF)
+    mocker.patch.object(parser, "get_df_from_html", return_value=DF)
 
     gateway = conomy.ConomyGateway()
     pd.testing.assert_frame_equal(await gateway.get("BELU"), DF_REZ)

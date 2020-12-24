@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.data.adapters.gateways import dohod
-from poptimizer.data.adapters.html import description
+from poptimizer.data.adapters.html import description, parser
 
 DF = pd.DataFrame(
     [[4.0], [1.0], [2.0]],
@@ -20,7 +20,7 @@ DF_REZ = pd.DataFrame(
 @pytest.mark.asyncio
 async def test_loader(mocker):
     """Группировка и сортировка полученных данных."""
-    mocker.patch.object(poptimizer.data.adapters.html.parser, "get_df_from_url", return_value=DF)
+    mocker.patch.object(parser, "get_df_from_url", return_value=DF)
 
     loader = dohod.DohodGateway()
     pd.testing.assert_frame_equal(await loader.get("BELU"), DF_REZ)
@@ -29,9 +29,7 @@ async def test_loader(mocker):
 @pytest.mark.asyncio
 async def test_loader_web_error(mocker):
     """Регрессионный тест при ошибке загрузки данных из интернета."""
-    mocker.patch.object(
-        poptimizer.data.adapters.html.parser, "get_df_from_url", side_effect=description.ParserError()
-    )
+    mocker.patch.object(parser, "get_df_from_url", side_effect=description.ParserError())
 
     loader = dohod.DohodGateway()
     df = await loader.get("BELU")

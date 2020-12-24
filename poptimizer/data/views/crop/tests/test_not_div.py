@@ -4,9 +4,9 @@ import datetime
 import pandas as pd
 import pytest
 
-from poptimizer.data.config import bootstrap
-from poptimizer.shared import col
+from poptimizer.data.app import bootstrap
 from poptimizer.data.views.crop import not_div
+from poptimizer.shared import col
 
 CPI_CASES = (
     ("2018-11-30", 1.005),

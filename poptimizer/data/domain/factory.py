@@ -12,8 +12,8 @@ from poptimizer.data.domain.tables import (
     indexes,
     quotes,
     securities,
+    trading_dates,
 )
-from poptimizer.data.domain.tables import trading_dates
 from poptimizer.shared import domain
 
 AnyTable = base.AbstractTable[domain.AbstractEvent]

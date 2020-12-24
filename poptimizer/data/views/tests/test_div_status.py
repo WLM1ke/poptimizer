@@ -1,9 +1,9 @@
 """Тесты для проверки статуса дивидендов."""
 import pandas as pd
 
-from poptimizer.shared import col
 from poptimizer.data.views import div_status
 from poptimizer.data.views.crop import div
+from poptimizer.shared import col
 
 
 def test_smart_lab_all():
