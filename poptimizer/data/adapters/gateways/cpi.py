@@ -23,6 +23,7 @@ PARSING_PARAMETERS = types.MappingProxyType(
         "skiprows": [4],
         "skipfooter": 3,
         "index_col": 0,
+        "engine": "openpyxl",
     },
 )
 NUM_OF_MONTH = 12
@@ -62,7 +63,6 @@ async def _load_xlsx(session: aiohttp.ClientSession) -> pd.DataFrame:
     return pd.read_excel(
         xls_file,
         **PARSING_PARAMETERS,
-        engine="openpyxl",
     )
 
 
