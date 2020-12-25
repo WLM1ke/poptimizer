@@ -5,7 +5,6 @@ import pandas as pd
 
 from poptimizer.data import ports
 from poptimizer.data.app import bootstrap, viewers
-from poptimizer.data.domain import events
 
 
 def div_ext(
@@ -19,13 +18,9 @@ def div_ext(
 
 def dividends(
     ticker: str,
-    force_update: bool = False,
     viewer: viewers.Viewer = bootstrap.VIEWER,
 ) -> pd.DataFrame:
     """Дивиденды для данного тикера."""
-    if force_update:
-        command = events.UpdateDivCommand(ticker)
-        bootstrap.BUS.handle_event(command)
     df = viewer.get_df(ports.DIVIDENDS, ticker)
     return df.loc[bootstrap.START_DATE :]  # type: ignore
 

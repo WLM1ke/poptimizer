@@ -6,6 +6,7 @@ import pandas as pd
 
 from poptimizer.data import ports
 from poptimizer.data.app import bootstrap, viewers
+from poptimizer.data.domain import events
 from poptimizer.data.views.crop import div
 
 # Точность сравнения дивидендов
@@ -67,9 +68,13 @@ def _compare(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
 def dividends_validation(ticker: str) -> None:
     """Проверяет корректности данных о дивидендах для тикера.
 
-    Сравнивает основные данные по дивидендам с альтернативными источниками и распечатывает результаты.
+    Запускает принудительное обновление, сравнивает основные данные по дивидендам с альтернативными
+    источниками и распечатывает результаты.
     """
-    df_local = div.dividends(ticker, force_update=True)
+    command = events.UpdateDivCommand(ticker)
+    bootstrap.BUS.handle_event(command)
+
+    df_local = div.dividends(ticker)
     df_local.columns = ["LOCAL"]
 
     div_ex = div.div_ext(ticker)
