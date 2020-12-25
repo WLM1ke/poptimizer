@@ -3,7 +3,25 @@ import pandas as pd
 import pytest
 
 from poptimizer.data.app import bootstrap
+from poptimizer.data.domain import events
 from poptimizer.data.views.crop import div
+
+
+def test_div_ext():
+    """Информации о внешних дивидендах содержит медианное значение и корректно обрезается.
+
+    Перед тестом подается команда загрузки, так как данные могут отсутствовать.
+    """
+    command = events.UpdateDivCommand("AKRN")
+    bootstrap.BUS.handle_event(command)
+
+    df = div.div_ext("AKRN")
+
+    assert df.columns.tolist() == ["SmartLab", "Dohod", "Conomy", "BCS", "MEDIAN"]
+    assert df.index[0] >= bootstrap.START_DATE
+    assert df.loc["2015-06-02", "MEDIAN"] == pytest.approx(139)
+    assert df.loc["2020-06-09", "MEDIAN"] == pytest.approx(275)
+
 
 DIV_CASES = (
     ("SBER", ("2015-06-15", 0.45)),
@@ -15,48 +33,6 @@ DIV_CASES = (
 
 
 @pytest.mark.parametrize("ticker, div_data", DIV_CASES)
-def test_conomy(ticker, div_data):
-    """Проверка, что первые дивиденды после даты обрезки."""
-    df = div.conomy(ticker)
-
-    assert isinstance(df, pd.DataFrame)
-    assert df.index.is_monotonic_increasing
-    assert df.index[0] >= bootstrap.get_start_date()
-    assert df.columns.tolist() == [ticker]
-
-    date, div_value = div_data
-    assert df.loc[date, ticker] == div_value
-
-
-@pytest.mark.parametrize("ticker, div_data", DIV_CASES)
-def test_bcs(ticker, div_data):
-    """Проверка, что первые дивиденды после даты обрезки."""
-    df = div.bcs(ticker)
-
-    assert isinstance(df, pd.DataFrame)
-    assert df.index.is_monotonic_increasing
-    assert df.index[0] >= bootstrap.get_start_date()
-    assert df.columns.tolist() == [ticker]
-
-    date, div_value = div_data
-    assert df.loc[date, ticker] == div_value
-
-
-@pytest.mark.parametrize("ticker, div_data", DIV_CASES)
-def test_dohod(ticker, div_data):
-    """Проверка, что первые дивиденды после даты обрезки."""
-    df = div.dohod(ticker)
-
-    assert isinstance(df, pd.DataFrame)
-    assert df.index.is_monotonic_increasing
-    assert df.index[0] >= bootstrap.get_start_date()
-    assert df.columns.tolist() == [ticker]
-
-    date, div_value = div_data
-    assert df.loc[date, ticker] == div_value
-
-
-@pytest.mark.parametrize("ticker, div_data", DIV_CASES)
 def test_dividends(ticker, div_data):
     """Проверка, что первые дивиденды после даты обрезки."""
     df = div.dividends(ticker)
@@ -64,7 +40,7 @@ def test_dividends(ticker, div_data):
     assert isinstance(df, pd.DataFrame)
     assert df.index.is_monotonic_increasing
 
-    assert df.index[0] >= bootstrap.get_start_date()
+    assert df.index[0] >= bootstrap.START_DATE
     assert df.columns.tolist() == [ticker]
 
     date, div_value = div_data
@@ -92,5 +68,5 @@ def test_dividends_all(date, ticker, div_value):
     assert df.index[0] == pd.Timestamp("2015-05-25")
     assert df.index[-1] >= pd.Timestamp("2020-09-08")
 
-    div_after_tax = div_value * bootstrap.get_after_tax_rate()
+    div_after_tax = div_value * bootstrap.AFTER_TAX
     assert df.loc[date, ticker] == pytest.approx(div_after_tax)
