@@ -15,16 +15,16 @@ from poptimizer.store import database
 
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
-TURNOVER_DAYS = database.MONGO_CLIENT["data"]["models"].find_one(
+MAX_HISTORY = database.MONGO_CLIENT["data"]["models"].find_one(
     {},
     projection={"_id": False, "genotype.Data.history_days": True},
     sort=[("genotype.Data.history_days", -1)],
 )
 try:
-    MAX_HISTORY = int(TURNOVER_DAYS["genotype"]["Data"]["history_days"])
-    TURNOVER_DAYS = (MAX_HISTORY + data_params.FORECAST_DAYS * 2) * 2
+    MAX_HISTORY = int(MAX_HISTORY["genotype"]["Data"]["history_days"])
+    ADD_DAYS = (MAX_HISTORY + data_params.FORECAST_DAYS * 2) * 2
 except TypeError:
-    TURNOVER_DAYS = int(1 / config.MAX_TRADE)
+    ADD_DAYS = int(1 / config.MAX_TRADE)
 
 
 class Portfolio:
@@ -97,7 +97,7 @@ class Portfolio:
 
     def _least_liquid_pos(self) -> str:
         """Наименее ликвидная позиция по соотношению размера и дневного оборота."""
-        result = self.value / self._median_turnover(tuple(self.index[:-2]))
+        result = self.value / self._median_turnover(tuple(self.index[:-2]), MAX_HISTORY)
         return f"НАИМЕНЕЕ ЛИКВИДНАЯ ПОЗИЦИЯ:\n{result.idxmax()} - {result.max():.0%}"
 
     @property
@@ -176,7 +176,7 @@ class Portfolio:
     @property
     def turnover_factor(self) -> pd.Series:
         """Понижающий коэффициент для акций с малым объемом оборотов относительно открытой позиции."""
-        last_turnover = self._median_turnover(tuple(self.index[:-2]))
+        last_turnover = self._median_turnover(tuple(self.index[:-2]), MAX_HISTORY)
         result = (self.value / last_turnover).reindex(self.index)
         last_turnover = last_turnover * result.max() - self.value
         result = last_turnover / (self.value[PORTFOLIO] * MAX_TRADE)
@@ -187,17 +187,17 @@ class Portfolio:
         result.name = "TURNOVER"
         return result
 
-    def _median_turnover(self, tickers) -> pd.Series:
+    def _median_turnover(self, tickers, days) -> pd.Series:
         """Медианный оборот за несколько последних дней."""
         last_turnover = moex.turnovers(tickers, self.date)
-        last_turnover = last_turnover.iloc[-TURNOVER_DAYS:]
+        last_turnover = last_turnover.iloc[-days:]
         last_turnover = last_turnover.median(axis=0)
         return last_turnover
 
     def add_tickers(self) -> NoReturn:
         """Претенденты для добавления."""
         all_tickers = moex.securities()
-        last_turnover = self._median_turnover(tuple(all_tickers))
+        last_turnover = self._median_turnover(tuple(all_tickers), ADD_DAYS)
         minimal_turnover = self.value[PORTFOLIO] * MAX_TRADE
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]
 
