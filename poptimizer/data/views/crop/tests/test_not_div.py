@@ -26,12 +26,12 @@ def test_cpi(date, cpi):
     assert df.index.is_monotonic_increasing
 
     today = datetime.date.today()
-    start = bootstrap.get_start_date()
+    start = bootstrap.START_DATE
     months = (today.year - start.year) * 12
     months += today.month - start.month
 
     assert months - 1 <= len(df) <= months
-    assert df.index[0] >= bootstrap.get_start_date()
+    assert df.index[0] >= bootstrap.START_DATE
     assert df.loc[date] == pytest.approx(cpi)
 
 
@@ -50,7 +50,7 @@ def test_index(date, index):
 
     assert isinstance(df, pd.Series)
     assert df.index.is_monotonic_increasing
-    assert df.index[0] >= bootstrap.get_start_date()
+    assert df.index[0] >= bootstrap.START_DATE
     assert df.name == col.CLOSE
     assert df.loc[date] == pytest.approx(index)
 
@@ -73,7 +73,7 @@ def test_quotes(tickers, pos, loc, quote):
     df = dfs[pos]
 
     assert df.index.is_monotonic_increasing
-    assert df.index[0] >= bootstrap.get_start_date()
+    assert df.index[0] >= bootstrap.START_DATE
     columns = [col.OPEN, col.CLOSE, col.HIGH, col.LOW, col.TURNOVER]
     assert df.columns.tolist() == columns
     assert df.loc[loc] == pytest.approx(quote)
