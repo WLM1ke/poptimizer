@@ -24,7 +24,7 @@ def test_cpi(date, cpi):
     assert isinstance(df, pd.Series)
     assert df.index.is_monotonic_increasing
 
-    assert df.index[0] >= bootstrap.get_start_date()
+    assert df.index[0] >= bootstrap.START_DATE
     assert df.index[-1] == pd.Timestamp("2020-09-30")
 
     assert df.loc[date] == pytest.approx(cpi)
@@ -46,7 +46,7 @@ def test_mcftrr(date, index):
     assert isinstance(df, pd.Series)
     assert df.index.is_monotonic_increasing and df.name == col.CLOSE
 
-    assert df.index[0] >= bootstrap.get_start_date()
+    assert df.index[0] >= bootstrap.START_DATE
     assert df.index[-1] == pd.Timestamp("2020-10-09")
 
     assert df.loc[date] == pytest.approx(index)
@@ -67,7 +67,7 @@ def test_rvi(date, index):
     assert isinstance(df, pd.Series)
     assert df.index.is_monotonic_increasing and df.name == col.CLOSE
 
-    assert df.index[0] >= bootstrap.get_start_date()
+    assert df.index[0] >= bootstrap.START_DATE
     assert df.index[-1] == pd.Timestamp("2020-10-16")
 
     assert df.loc[date] == pytest.approx(index)
