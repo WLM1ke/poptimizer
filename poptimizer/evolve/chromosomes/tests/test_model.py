@@ -90,7 +90,7 @@ def test_make_child_lower_upper_bound(monkeypatch):
 
     assert child.data["start_bn"] == 1.9 + (0.5 - 0.1) * 0.8
     assert child.data["kernels"] == 10
-    assert child.data["sub_blocks"] == (2 + 1) / 2
+    assert child.data["sub_blocks"] == 1 - (2 + (1 - 10) * 0.8 - 1)
     assert child.data["gate_channels"] == 2
     assert child.data["residual_channels"] == 3
     assert child.data["skip_channels"] == 4
