@@ -142,16 +142,16 @@ def create_div_ext_table():
 
 
 DIV_EXT_UPDATE_CASES = (
-    (None, True),
-    (datetime.utcnow() - timedelta(days=7, seconds=1), True),
-    (datetime.utcnow() - timedelta(days=7, seconds=-1), False),
+    (lambda : None, True),
+    (lambda : datetime.utcnow() - timedelta(days=7, seconds=1), True),
+    (lambda : datetime.utcnow() - timedelta(days=7, seconds=-1), False),
 )
 
 
-@pytest.mark.parametrize("timestamp, rez", DIV_EXT_UPDATE_CASES)
-def test_update_cond_div_ext(div_ext_table, timestamp, rez):
+@pytest.mark.parametrize("timestamp_func, rez", DIV_EXT_UPDATE_CASES)
+def test_update_cond_div_ext(div_ext_table, timestamp_func, rez):
     """Если дата обновления отсутствует или прошло 7 дней, то их надо загрузить."""
-    div_ext_table._timestamp = timestamp
+    div_ext_table._timestamp = timestamp_func()
 
     assert div_ext_table._update_cond(object()) is rez
 
