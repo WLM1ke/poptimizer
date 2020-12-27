@@ -110,7 +110,7 @@ def test_make_child(monkeypatch):
     assert isinstance(child, Genotype)
     assert child.data == {
         "Data": {
-            "batch_size": (2 + 1) / 2,
+            "batch_size": 1 - (2 + (1 - 4) * 0.8 - 1),
             "history_days": 4,
             "ticker_on": 3 + (3 - 1) * 0.8,
             "day_of_year_on": 7 + (3 - 8) * 0.8,
