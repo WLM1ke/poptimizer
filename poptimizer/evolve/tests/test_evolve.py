@@ -36,7 +36,7 @@ class FakeOrganism:
     def die(self):
         self._population.kill(self)
 
-    def make_child(self):
+    def make_child(self, _):
         return FakeOrganism(self._child_fitness, self._child_timer, None, None, self._population)
 
 
@@ -99,7 +99,7 @@ def test_setup_not_needed(monkeypatch):
 
 
 # noinspection DuplicatedCode
-def test_evolve_parent_win(monkeypatch):
+def test_evolve_parent(monkeypatch):
     organisms_params = [(4, 1, 3, 2), (4, 1, 3, 2), (5, 1, 4, 2), (4, 1, 3, 2)]
     new_organisms_params = []
     fake_population = FakePopulation(organisms_params, new_organisms_params)
@@ -111,22 +111,6 @@ def test_evolve_parent_win(monkeypatch):
     ev.evolve(port)
     assert fake_population.count() == 4
     assert list(fake_population._organisms) == population_ids
-
-
-# noinspection DuplicatedCode
-def test_evolve_parent_loose(monkeypatch):
-    organisms_params = [(4, 1, 3, 2), (4, 1, 3, 2), (5, 1, 4, 2), (3, 1, 4, 2)]
-    new_organisms_params = []
-    fake_population = FakePopulation(organisms_params, new_organisms_params)
-    monkeypatch.setattr(evolve, "population", fake_population)
-    population_ids = list(fake_population._organisms)
-    ev = evolve.Evolution(4)
-    assert fake_population.count() == 4
-    port = Portfolio(pd.Timestamp("2020-04-19"), 0, dict(AKRN=0))
-    ev.evolve(port)
-    assert fake_population.count() == 4
-    assert list(fake_population._organisms)[:-1] == population_ids[:-1]
-    assert list(fake_population._organisms)[-1] != population_ids[-1]
 
 
 class BadFakeOrganism:
