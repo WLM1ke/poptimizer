@@ -1,5 +1,6 @@
 """Тесты для проверки статуса дивидендов."""
 import pandas as pd
+import pytest
 
 from poptimizer.data.views import div_status
 from poptimizer.data.views.crop import div
@@ -40,22 +41,12 @@ def test_new_on_smart_lab(mocker, capsys):
 
 
 def test_new_on_smart_lab_no_output(mocker, capsys):
-    """Не печатается результат при пустом статусе."""
-    mocker.patch.object(div_status, "smart_lab", return_value=SMART_LAB_DF)
-
-    assert not div_status.new_on_smart_lab(())
-    captured = capsys.readouterr()
-    assert not captured.out
-
-
-def test_smart_lab(mocker):
-    """Проверка типа и значения результата."""
+    """Не печатается результат, если по запрашиваемым тикерам нет обновления."""
     mocker.patch.object(div_status, "_smart_lab_all", return_value=SMART_LAB_DF)
 
-    df = div_status.smart_lab("TTLK")
-
-    assert isinstance(df, pd.DataFrame)
-    pd.testing.assert_frame_equal(df, TTLK_DF, check_names=False)
+    assert not div_status.new_on_smart_lab(("GAZP",))
+    captured = capsys.readouterr()
+    assert not captured.out
 
 
 def test_compare(capsys):
@@ -105,24 +96,12 @@ def test_compare_with_empty(capsys):
     )
 
 
-def test_dividends_validation(mocker):
-    """Проверка количества запросов необходимой информации."""
-    mocker.patch.object(div_status, "pd")
-    fake_dividends = mocker.patch.object(div, "dividends")
-    fake_compare = mocker.patch.object(div_status, "_compare")
-    fake_sources = [
-        mocker.patch.object(div, "dohod"),
-        mocker.patch.object(div, "conomy"),
-        mocker.patch.object(div, "bcs"),
-        mocker.patch.object(div_status, "smart_lab"),
-    ]
-    for source in fake_sources:
-        source.__name__ = ""  # noqa: WPS125
+def test_dividends_validation():
+    """Наличие столбцов со сравнением и данных."""
+    df = div_status.dividends_validation("IRGZ")
 
-    div_status.dividends_validation("TEST", fake_sources)
-
-    assert fake_dividends.call_count == 1
-    assert fake_compare.call_count == 1
-
-    for test_source in fake_sources:
-        assert test_source.call_count == 1
+    assert isinstance(df, pd.DataFrame)
+    assert df.columns.tolist() == ["SmartLab", "Dohod", "Conomy", "BCS", "MEDIAN", "LOCAL", "STATUS"]
+    assert df.loc["2015-06-11", "MEDIAN"] == pytest.approx(0.53)
+    assert df.loc["2016-06-18", "LOCAL"] == pytest.approx(0.53)
+    assert df.loc["2016-06-18", "STATUS"] == ""

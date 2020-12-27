@@ -65,7 +65,7 @@ def _compare(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def dividends_validation(ticker: str) -> None:
+def dividends_validation(ticker: str) -> pd.DataFrame:
     """Проверяет корректности данных о дивидендах для тикера.
 
     Запускает принудительное обновление, сравнивает основные данные по дивидендам с альтернативными
@@ -84,3 +84,5 @@ def dividends_validation(ticker: str) -> None:
 
     comp_str = f"\nСравнение интернет источников с локальными данными - {ticker}\n\n{df_comp}"
     print(comp_str)  # noqa: WPS421
+
+    return df_comp
