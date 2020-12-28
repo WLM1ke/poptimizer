@@ -24,6 +24,7 @@ try:
     MAX_HISTORY = int(MAX_HISTORY["genotype"]["Data"]["history_days"])
     ADD_DAYS = (MAX_HISTORY + data_params.FORECAST_DAYS * 2) * 2
 except TypeError:
+    MAX_HISTORY = int(1 / config.MAX_TRADE)
     ADD_DAYS = int(1 / config.MAX_TRADE)
 
 
