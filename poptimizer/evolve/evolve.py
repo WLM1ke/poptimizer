@@ -63,9 +63,6 @@ class Evolution:
 
             weakest = child.find_weaker()
 
-            if weakest.id == child.id:
-                factor *= MUTATION_FACTOR
-
             print("Наиболее слабый - удаляю:")
             self._eval_and_print(weakest, tickers, end)
             weakest.die()
