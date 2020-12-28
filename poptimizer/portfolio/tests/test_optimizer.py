@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 from scipy import stats
 
-from poptimizer.portfolio import Portfolio, optimizer
+from poptimizer.portfolio import Portfolio, optimizer, portfolio
 
 
 class FakeMetricsResample:
@@ -36,6 +36,8 @@ def test_trials(opt):
 
 def test_best_combination(opt, monkeypatch):
     monkeypatch.setattr(optimizer, "COSTS", 0)
+    monkeypatch.setattr(portfolio, "MAX_HISTORY", 100)
+    monkeypatch.setattr(portfolio, "ADD_DAYS", 100)
     df = opt.best_combination
 
     assert isinstance(df, pd.DataFrame)
@@ -48,12 +50,12 @@ def test_best_combination(opt, monkeypatch):
     assert df.loc[1, "BUY"] == "KZOS"
     assert df.loc[1, "P_VALUE"] == pytest.approx(wilcoxon)
 
-    assert df.loc[2, "SELL"] == "MTSS"
-    assert df.loc[2, "BUY"] == "RTKMP"
+    assert df.loc[2, "SELL"] == "RTKMP"
+    assert df.loc[2, "BUY"] == "KZOS"
     assert df.loc[2, "P_VALUE"] == pytest.approx(wilcoxon)
 
-    assert df.loc[3, "SELL"] == "RTKMP"
-    assert df.loc[3, "BUY"] == "KZOS"
+    assert df.loc[3, "SELL"] == "MTSS"
+    assert df.loc[3, "BUY"] == "RTKMP"
     assert df.loc[3, "P_VALUE"] == pytest.approx(wilcoxon)
 
 
