@@ -14,6 +14,7 @@ def read_test_df():
         header=0,
         index_col=0,
         converters={"Date": pd.to_datetime},
+        engine="openpyxl",
     )[-63:-2]
 
 
