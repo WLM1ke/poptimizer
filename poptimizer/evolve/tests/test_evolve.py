@@ -39,6 +39,10 @@ class FakeOrganism:
     def make_child(self, _):
         return FakeOrganism(self._child_fitness, self._child_timer, None, None, self._population)
 
+    @property
+    def id(self):
+        return object()
+
 
 class FakePopulation:
     def __init__(self, organisms_params, new_organisms_params):
