@@ -8,7 +8,6 @@ from poptimizer.shared import adapters, col
 URL = "https://smart-lab.ru/dividends/index/order_by_cut_off_date/asc/"
 TABLE_INDEX = 0
 HEADER_SIZE = 1
-FOOTER = "+добавить дивиденды"
 
 
 def get_col_desc() -> parser.Descriptions:
@@ -45,6 +44,4 @@ class SmartLabGateway:
 
         cols_desc = get_col_desc()
         df = await parser.get_df_from_url(URL, TABLE_INDEX, cols_desc)
-        if FOOTER not in df.index[-1]:
-            raise description.ParserError("Некорректная html-таблица")
         return df.dropna()
