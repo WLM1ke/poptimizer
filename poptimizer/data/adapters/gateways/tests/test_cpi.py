@@ -16,7 +16,7 @@ async def test_get_cpi_url(mocker):
 
     fake_session.get.assert_called_once_with(cpi.START_URL)
     fake_re.assert_called_once()
-    fake_re.return_value.group.assert_called_once_with(1)
+    fake_re.return_value.group.assert_called_once_with(0)
 
 
 @pytest.mark.asyncio

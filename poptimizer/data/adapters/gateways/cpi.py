@@ -11,9 +11,8 @@ from poptimizer.shared import adapters, col
 
 # Параметры загрузки валидации данных
 START_URL = "https://rosstat.gov.ru/price"
-URL_CORE = "https://rosstat.gov.ru/storage/mediabank/"
-URL_END = "/Индексы%20потребительских%20цен%20.html"
-CPI_PATTERN = re.compile("([a-zA-Z0-9]+)/Индексы")
+URL_CORE = "https://rosstat.gov.ru/"
+CPI_PATTERN = re.compile("storage/mediabank/[a-zA-Z0-9]+/Индексы потребительских цен.*html")
 FILE_PATTERN = re.compile("https://rosstat.gov.ru/storage/mediabank/[a-zA-Z0-9]+/i_ipc.xlsx")
 END_OF_JAN = 31
 PARSING_PARAMETERS = types.MappingProxyType(
@@ -40,8 +39,8 @@ async def _get_cpi_url(session: aiohttp.ClientSession) -> str:
     async with session.get(START_URL) as resp:
         html = await resp.text()
     if match := re.search(CPI_PATTERN, html):
-        url_code = match.group(1)
-        return f"{URL_CORE}{url_code}{URL_END}"
+        url_code = match.group(0)
+        return f"{URL_CORE}{url_code}"
     raise CPIGatewayError("На странице отсутствует ссылка на страницу с потребительской инфляцией")
 
 
