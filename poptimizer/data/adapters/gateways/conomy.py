@@ -1,7 +1,6 @@
 """Загрузка данных с https://www.conomy.ru/."""
 import asyncio
 import atexit
-import contextlib
 from typing import Final, Optional, cast
 
 import pandas as pd
@@ -37,17 +36,7 @@ class Browser:
         self._browser: Optional[browser.Browser] = None
         self._lock = asyncio.Lock()
 
-    @contextlib.asynccontextmanager
-    async def get_page(self) -> Page:
-        """Контекстный менеджер, закрывающий страницу."""
-        chromium = await self._load_browser()
-        page = await chromium.newPage()
-        try:
-            yield page
-        finally:
-            await page.close()
-
-    async def _load_browser(self) -> browser.Browser:
+    async def get(self) -> browser.Browser:
         """При необходимости загружает браузер и возвращает его."""
         async with self._lock:
             if self._browser is None:
@@ -84,10 +73,11 @@ async def _load_dividends_table(page: Page) -> None:
 
 async def _get_html(ticker: str) -> str:
     """Возвращает html-код страницы с данными по дивидендам с сайта https://www.conomy.ru/."""
-    async with BROWSER.get_page() as page:
-        await _load_ticker_page(page, ticker)
-        await _load_dividends_table(page)
-        return cast(str, await page.content())
+    chromium = await BROWSER.get()
+    page = await chromium.newPage()
+    await _load_ticker_page(page, ticker)
+    await _load_dividends_table(page)
+    return cast(str, await page.content())
 
 
 def _is_common(ticker: str) -> bool:

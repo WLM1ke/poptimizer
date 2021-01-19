@@ -2,30 +2,16 @@
 import pandas as pd
 import pytest
 from pyppeteer import errors
-from pyppeteer.page import Page
 
 from poptimizer.data.adapters.gateways import conomy
 from poptimizer.data.adapters.html import description, parser
 
 
 @pytest.mark.asyncio
-async def test_browser_close_page(mocker):
-    """Браузер закрывает открываемые страницы."""
-    br = conomy.Browser()
-
-    async with br.get_page() as page:
-        assert isinstance(page, Page)
-        assert not page.isClosed()
-
-    assert page.isClosed()  # noqa: WPS441
-
-
-@pytest.mark.asyncio
-async def test_browser_loads_once(mocker):
+async def test_browser_loads_once():
     """Браузер загружается однажды."""
-    br = conomy.Browser()
-
-    assert await br._load_browser() is await br._load_browser()
+    browser = conomy.Browser()
+    assert await browser.get() is await browser.get()
 
 
 @pytest.mark.asyncio
@@ -58,9 +44,12 @@ async def test_load_dividends_table(mocker):
 @pytest.mark.asyncio
 async def test_get_html(mocker):
     """Последовательный переход и загрузка html с дивидендами."""
-    fake_browser = mocker.patch.object(conomy, "BROWSER")
-    ctx_mng = fake_browser.get_page.return_value
-    fake_page = ctx_mng.__aenter__.return_value  # noqa: WPS609
+    fake_browser = mocker.patch.object(
+        conomy,
+        "BROWSER",
+        new=mocker.AsyncMock(),
+    ).get.return_value
+    fake_page = fake_browser.newPage.return_value
     fake_load_ticker_page = mocker.patch.object(conomy, "_load_ticker_page")
     mocker.patch.object(conomy, "_load_dividends_table")
 
