@@ -58,7 +58,7 @@ class Portfolio:
         self._shares[CASH] = cash
         self._shares[PORTFOLIO] = 1
         self._shares.name = "SHARES"
-        if value is not None and not np.isclose(self.value[PORTFOLIO], value):
+        if value is not None and not np.isclose(self.value[PORTFOLIO], value, rtol=2.0e-4):
             raise POptimizerError(
                 f"Введенная стоимость портфеля {value} " f"не равна расчетной {self.value[PORTFOLIO]}"
             )
