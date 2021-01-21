@@ -5,7 +5,7 @@ def test_init_no_data():
     chromo = data.Data({})
     assert len(chromo.data) == 12
     assert 128.1 < chromo.data["batch_size"] < 128.9
-    assert 252.1 < chromo.data["history_days"] < 252.9
+    assert 50.1 < chromo.data["history_days"] < 50.9
     assert 0.0 < chromo.data["ticker_on"] < 1.0
     assert 0.0 < chromo.data["day_of_year_on"] < 1.0
     assert -1.0 < chromo.data["day_of_period_on"] < 0.0

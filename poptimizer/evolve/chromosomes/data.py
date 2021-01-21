@@ -11,7 +11,7 @@ BATCH_SIZE = GeneParams(
 )
 HISTORY_DAYS = GeneParams(
     name="history_days",
-    default_range=(252.1, 252.9),
+    default_range=(50.1, 50.9),
     lower_bound=5,
     upper_bound=None,
     path=("data", "history_days"),
