@@ -180,8 +180,7 @@ class Portfolio:
         last_turnover = self._median_turnover(tuple(self.index[:-2]), MAX_HISTORY)
         result = (self.value / last_turnover).reindex(self.index)
         last_turnover = last_turnover * result.max() - self.value
-        result = last_turnover / (self.value[PORTFOLIO] * MAX_TRADE)
-        result[result < 0] = 0
+        result = last_turnover / self.value[PORTFOLIO]
         max_factor = result.sum()
         result[CASH] = max_factor
         result[PORTFOLIO] = max_factor

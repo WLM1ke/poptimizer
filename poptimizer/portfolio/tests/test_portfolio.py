@@ -36,9 +36,8 @@ def test_portfolio(monkeypatch, port):
         port.weight,
         [0.257_950_085_844_95, 0.050_708_129_601_95, 0.691_071_449_329_312, 0.000_270_335_223_788, 1],
     )
-    print(port.turnover_factor)
     assert np.allclose(
-        port.turnover_factor, [706072.825562, 705549.808259, 706072.825562, 0.000000, 523.017303]
+        port.turnover_factor, [7060.72825562, 7055.49808259, 7060.72825562, 0.000000, 5.23017303]
     )
 
 
