@@ -8,7 +8,7 @@ import pandas as pd
 # Доля дней относимых к тренировочному периоду
 from poptimizer.data.views import moex
 
-FORECAST_DAYS = 16
+FORECAST_DAYS = 17
 
 
 def div_price_train_size(
