@@ -27,6 +27,9 @@ TABLE_INDEX: Final = 1
 COMMON_TICKER_LENGTH: Final = 4
 PREFERRED_TICKER_ENDING: Final = "P"
 
+# Задержка для принудительной остановки Chromium
+CHROMIUM_TIMEOUT = 30
+
 
 class Browser:
     """Headless браузер, который запускается по необходимости."""
@@ -130,8 +133,10 @@ class ConomyGateway(gateways.DivGateway):
         self._logger(ticker)
 
         try:
-            html = await _get_html(ticker)
-        except errors.TimeoutError:
+            # На некоторых компьютерах/операционных системах Chromium перестает реагировать на команды
+            # Поэтому загрузка принудительно приостанавливается
+            html = await asyncio.wait_for(_get_html(ticker), timeout=CHROMIUM_TIMEOUT)
+        except (errors.TimeoutError, asyncio.exceptions.TimeoutError):
             return pd.DataFrame(columns=[ticker])
         cols_desc = _get_col_desc(ticker)
         df = parser.get_df_from_html(html, TABLE_INDEX, cols_desc)
