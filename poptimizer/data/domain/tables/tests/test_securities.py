@@ -9,6 +9,23 @@ from poptimizer.data.domain import events
 from poptimizer.data.domain.tables import base, securities
 from poptimizer.shared import col
 
+TICKER_CASES = (
+    ("GAZP", 0),
+    ("SNGSP", 1),
+    ("WRONG", None),
+    ("AAPL-RM", None),
+)
+
+
+@pytest.mark.parametrize("ticker, answer", TICKER_CASES)
+def test_ticker_type(ticker, answer):
+    """Проверка, что тикер соответствует обыкновенной акции."""
+    if answer is None:
+        with pytest.raises(securities.WrongTickerTypeError, match=ticker):
+            securities._ticker_type(ticker)
+    else:
+        assert securities._ticker_type(ticker) is answer
+
 
 @pytest.fixture(scope="function", name="table")
 def create_table():
@@ -29,11 +46,18 @@ async def test_load_and_format_df(table, mocker):
     fake_gateway.get.return_value = pd.DataFrame([1, 2])
     table._gateway = fake_gateway
 
-    df = await table._load_and_format_df("m1", "b1")
+    df = await table._load_and_format_df(
+        "m1",
+        "b1",
+        lambda index: 1 + index * 2,
+    )
 
     pd.testing.assert_frame_equal(
         df,
-        pd.DataFrame([[1, "m1"], [2, "m1"]], columns=[0, col.MARKET]),
+        pd.DataFrame(
+            [[1, "m1", 1], [2, "m1", 3]],
+            columns=[0, col.MARKET, col.SHARE_TYPE],
+        ),
     )
     fake_gateway.get.assert_called_once_with(market="m1", board="b1")
 
@@ -42,9 +66,9 @@ async def test_load_and_format_df(table, mocker):
 async def test_prepare_df(table, mocker):
     """Данные загружаются объединяются и сортируются."""
     dfs = [
-        pd.DataFrame([1], index=[2]),
-        pd.DataFrame([2], index=[3]),
-        pd.DataFrame([3], index=[1]),
+        pd.DataFrame([1, 4], index=["AKRN", "RTKMP"]),
+        pd.DataFrame([2], index=["FXCN"]),
+        pd.DataFrame([3], index=["AAPL-RM"]),
     ]
     fake_gateway = mocker.AsyncMock()
     fake_gateway.get.side_effect = dfs
@@ -55,9 +79,14 @@ async def test_prepare_df(table, mocker):
     pd.testing.assert_frame_equal(
         df,
         pd.DataFrame(
-            [[3, "foreignshares"], [1, "shares"], [2, "shares"]],
-            index=[1, 2, 3],
-            columns=[0, col.MARKET],
+            [
+                [3, "foreignshares", col.FOREIGN],
+                [1, "shares", col.ORDINARY],
+                [2, "shares", col.ETF],
+                [4, "shares", col.PREFERRED],
+            ],
+            index=["AAPL-RM", "AKRN", "FXCN", "RTKMP"],
+            columns=[0, col.MARKET, col.SHARE_TYPE],
         ),
     )
 
