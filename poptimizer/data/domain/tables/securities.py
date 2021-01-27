@@ -68,7 +68,7 @@ class Securities(base.AbstractTable[events.TradingDayEnded]):
         """Загружает данные о торгуемых бумагах и добавляет информацию о рынке."""
         df = await self._gateway.get(market=market, board=board)
         df[col.MARKET] = market
-        df[col.SHARE_TYPE] = df.index.map(type_func)
+        df[col.TICKER_TYPE] = df.index.map(type_func)
         return df
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:

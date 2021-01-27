@@ -8,7 +8,7 @@ DIVIDENDS: Final = "DIVIDENDS"
 CPI: Final = "CPI"
 ISIN: Final = "ISIN"
 MARKET: Final = "MARKET"
-SHARE_TYPE: Final = "SHARE_TYPE"
+TICKER_TYPE: Final = "TICKER_TYPE"
 LOT_SIZE: Final = "LOT_SIZE"
 OPEN: Final = "OPEN"
 CLOSE: Final = "CLOSE"
@@ -17,7 +17,5 @@ LOW: Final = "LOW"
 TURNOVER: Final = "TURNOVER"
 
 # Типы ценных бумаг
-ORDINARY: Final = 0
-PREFERRED: Final = 1
-FOREIGN: Final = 2
-ETF: Final = 3
+TYPES_N: Final = 4
+ORDINARY, PREFERRED, FOREIGN, ETF = range(TYPES_N)

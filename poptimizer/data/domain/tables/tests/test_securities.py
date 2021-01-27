@@ -56,7 +56,7 @@ async def test_load_and_format_df(table, mocker):
         df,
         pd.DataFrame(
             [[1, "m1", 1], [2, "m1", 3]],
-            columns=[0, col.MARKET, col.SHARE_TYPE],
+            columns=[0, col.MARKET, col.TICKER_TYPE],
         ),
     )
     fake_gateway.get.assert_called_once_with(market="m1", board="b1")
@@ -86,7 +86,7 @@ async def test_prepare_df(table, mocker):
                 [4, "shares", col.PREFERRED],
             ],
             index=["AAPL-RM", "AKRN", "FXCN", "RTKMP"],
-            columns=[0, col.MARKET, col.SHARE_TYPE],
+            columns=[0, col.MARKET, col.TICKER_TYPE],
         ),
     )
 
