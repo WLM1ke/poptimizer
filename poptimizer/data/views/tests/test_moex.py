@@ -24,6 +24,24 @@ def test_securities_with_reg_number():
     assert "BANEP" in securities
 
 
+TYPE_CASES = (
+    ("AKRN", 0),
+    ("RTKMP", 1),
+    ("AMD-RM", 2),
+    ("FXDE", 3),
+)
+
+
+@pytest.mark.parametrize("ticker, type_", TYPE_CASES)
+def test_ticker_types(ticker, type_):
+    """Проверка типа ценной бумаги."""
+    ticker_types = moex.ticker_types()
+
+    assert isinstance(ticker_types, pd.Series)
+    assert len(ticker_types) > 368
+    assert ticker_types[ticker] == type_
+
+
 LOT_CASES = (
     (("AKRN", "KBTK"), (1, 10)),
     (("MTSS", "MOEX", "MRSB"), (10, 10, 10000)),
