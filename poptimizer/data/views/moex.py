@@ -24,6 +24,12 @@ def securities(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Index:
     return df.index
 
 
+def ticker_types(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Series:
+    """Типы ценных бумаг."""
+    df = viewer.get_df(ports.SECURITIES, ports.SECURITIES)
+    return df[col.TICKER_TYPE]
+
+
 def lot_size(tickers: Tuple[str, ...], viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Series:
     """Информация о размере лотов для тикеров."""
     df = viewer.get_df(ports.SECURITIES, ports.SECURITIES)
