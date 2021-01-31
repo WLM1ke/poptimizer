@@ -7,9 +7,10 @@ import numpy as np
 import pandas as pd
 import yaml
 
+import poptimizer.data.views.quotes
 from poptimizer import config
 from poptimizer.config import POptimizerError, MAX_TRADE
-from poptimizer.data.views import moex
+from poptimizer.data.views import listing
 from poptimizer.dl.features import data_params
 from poptimizer.store import database
 
@@ -124,7 +125,7 @@ class Portfolio:
 
         CASH и PORTFOLIO - 1.
         """
-        lot_size = moex.lot_size(tuple(self.index[:-2]))
+        lot_size = listing.lot_size(tuple(self.index[:-2]))
         lot_size = lot_size.reindex(self.index, fill_value=1)
         lot_size.name = "LOT_SIZE"
         return lot_size
@@ -146,7 +147,7 @@ class Portfolio:
 
         CASH - 1 и PORTFOLIO - расчетная стоимость.
         """
-        price = moex.prices(tuple(self.index[:-2]), self.date)
+        price = poptimizer.data.views.quotes.prices(tuple(self.index[:-2]), self.date)
         try:
             price = price.loc[self.date]
         except KeyError:
@@ -189,14 +190,14 @@ class Portfolio:
 
     def _median_turnover(self, tickers, days) -> pd.Series:
         """Медианный оборот за несколько последних дней."""
-        last_turnover = moex.turnovers(tickers, self.date)
+        last_turnover = poptimizer.data.views.quotes.turnovers(tickers, self.date)
         last_turnover = last_turnover.iloc[-days:]
         last_turnover = last_turnover.median(axis=0)
         return last_turnover
 
     def add_tickers(self) -> NoReturn:
         """Претенденты для добавления."""
-        all_tickers = moex.securities()
+        all_tickers = listing.securities()
         last_turnover = self._median_turnover(tuple(all_tickers), ADD_DAYS)
         minimal_turnover = self.value[PORTFOLIO] * MAX_TRADE
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]
@@ -212,7 +213,7 @@ class Portfolio:
         print(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{last_turnover}\n{corr_max}")
 
     def norm_ret(self, tickers):
-        div, p1 = moex.div_and_prices(tickers, self.date)
+        div, p1 = poptimizer.data.views.quotes.div_and_prices(tickers, self.date)
         p0 = p1.shift(1)
         returns_new = (p1 + div) / p0
         returns_new = returns_new.iloc[-MAX_HISTORY:]

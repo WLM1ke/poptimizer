@@ -61,7 +61,7 @@ def fake_securities_with_reg_number():
 
 def test_portfolio_add_tickers(monkeypatch, port, capsys):
     monkeypatch.setattr(portfolio, "MAX_TRADE", 7)
-    monkeypatch.setattr(portfolio.moex, "securities", fake_securities_with_reg_number)
+    monkeypatch.setattr(portfolio.listing, "securities", fake_securities_with_reg_number)
     port.add_tickers()
     captured = capsys.readouterr()
     assert "ДЛЯ ДОБАВЛЕНИЯ" in captured.out

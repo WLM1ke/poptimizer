@@ -4,7 +4,8 @@ from typing import Tuple
 import numpy as np
 import torch
 
-from poptimizer.data.views import moex
+import poptimizer.data.views.quotes
+from poptimizer.data.views import listing
 from poptimizer.dl.features.data_params import DataParams
 from poptimizer.dl.features.feature import Feature, FeatureType
 from poptimizer.config import DEVICE
@@ -22,7 +23,7 @@ class Turnover(Feature):
 
         cache = params.cache
         if (turnover := cache.get(TURNOVER)) is None:
-            turnover = moex.turnovers(params.tickers, params.end)
+            turnover = poptimizer.data.views.quotes.turnovers(params.tickers, params.end)
             cache[TURNOVER] = turnover
 
         turnover = turnover[ticker]
@@ -54,7 +55,7 @@ class AverageTurnover(Feature):
         cache = params.cache
         if (turnover := cache.get(AVERAGE_TURNOVER)) is None:
             if (turnover := cache.get(TURNOVER)) is None:
-                turnover = moex.turnovers(params.tickers, params.end)
+                turnover = poptimizer.data.views.quotes.turnovers(params.tickers, params.end)
                 cache[TURNOVER] = turnover
             turnover = turnover.mean(axis=1)
             turnover = turnover.apply(np.log1p)

@@ -6,7 +6,8 @@ from typing import Generator, Tuple
 import pandas as pd
 
 # Доля дней относимых к тренировочному периоду
-from poptimizer.data.views import moex
+import poptimizer.data.views.quotes
+from poptimizer.data.views import listing
 
 FORECAST_DAYS = 17
 
@@ -15,7 +16,7 @@ def div_price_train_size(
     tickers: Tuple[str, ...], end: pd.Timestamp
 ) -> Tuple[pd.DataFrame, pd.DataFrame, int]:
     """Данные по дивидендам, ценам и количество дней в тренировочном наборе."""
-    div, price = moex.div_and_prices(tickers, end)
+    div, price = poptimizer.data.views.quotes.div_and_prices(tickers, end)
     train_size = len(price) - FORECAST_DAYS
     return div, price, train_size
 
