@@ -12,8 +12,6 @@ from poptimizer.dl.features.data_params import FORECAST_DAYS
 from poptimizer.portfolio import metrics
 from poptimizer.portfolio.portfolio import Portfolio, CASH, PORTFOLIO
 
-# На сколько сделок разбивается операция по покупке/продаже акций
-TRADES = 5
 # Значимость отклонения градиента от нуля
 P_VALUE = 0.05
 
@@ -96,13 +94,22 @@ class Optimizer:
         """
         rez = self._wilcoxon_tests()
 
-        rez = pd.DataFrame(list(rez), columns=["SELL", "BUY", "GRAD_DIFF", "TURNOVER", "P_VALUE"])
-        rez["SORT"] = rez["GRAD_DIFF"] * rez["TURNOVER"]
-        rez = rez.sort_values("SORT", ascending=False)
-        rez.drop("SORT", axis=1)
+        rez = pd.DataFrame(
+            list(rez),
+            columns=[
+                "SELL",
+                "BUY",
+                "BETA_DIFF",
+                "R_DIFF",
+                "TURNOVER",
+                "P_VALUE",
+            ],
+        )
+        rez = rez.sort_values("BETA_DIFF", ascending=False)
+        rez = rez.drop_duplicates("SELL")
         rez.index = pd.RangeIndex(start=1, stop=len(rez) + 1)
 
-        return self._add_sell_buy_quantity(rez)
+        return rez
 
     def _wilcoxon_tests(self) -> Tuple[str, str, float, float]:
         """Осуществляет тестирование всех допустимых пар активов с помощью теста Вилкоксона.
@@ -117,10 +124,17 @@ class Optimizer:
         positions_to_sell = self.portfolio.index[:-2][self.portfolio.shares[:-2] > 0]
         positions_with_cash = self.portfolio.index[:-1]
         all_gradients = self.metrics.all_gradients
+        betas = self.metrics.beta
         trials = self.trials
         turnover_all = self.portfolio.turnover_factor
+        weight = self.portfolio.weight
         for sell, buy in itertools.product(positions_to_sell, positions_with_cash):
+
             if sell == buy or turnover_all[buy] == 0:
+                continue
+
+            factor = turnover_all[buy] - (weight[sell] + weight[CASH])
+            if factor < 0:
                 continue
 
             diff = all_gradients.loc[buy] - all_gradients.loc[sell] - COSTS
@@ -132,35 +146,8 @@ class Optimizer:
                 yield [
                     sell,
                     buy,
+                    betas[sell] - betas[buy],
                     diff.median(),
-                    min(turnover_all[buy], turnover_all[sell]),
+                    factor,
                     alfa,
                 ]
-
-    def _add_sell_buy_quantity(self, rez: pd.DataFrame) -> pd.DataFrame:
-        """Добавляет колонки с объемами покупки и продажи.
-
-        Объем продажи и покупки делится на TRADES операций.
-
-        Объем продажи не может быть больше имеющегося количества и не должен приводить к повышению
-        кэша до MAX_TRADE от размера портфеля.
-
-        Объем покупки равен количеству имеющегося кеша.
-        """
-        portfolio = self.portfolio
-        lot_value_per_trades = (portfolio.price * portfolio.lot_size) * TRADES
-        value = portfolio.value
-
-        max_trade = value[PORTFOLIO] * MAX_TRADE
-        max_trade = value.apply(lambda x: min(x, max(0, max_trade - value[CASH])))
-        sell_size = max_trade / lot_value_per_trades
-        sell_size = sell_size.apply(lambda x: math.ceil(x))
-        rez["Q_SELL"] = 0
-        rez["Q_SELL"] = rez["SELL"].apply(lambda ticker: sell_size[ticker])
-
-        buy_size = value[CASH] / lot_value_per_trades
-        buy_size = buy_size.apply(lambda x: math.ceil(max(0, x)))
-        rez["Q_BUY"] = 0
-        rez["Q_BUY"] = rez["BUY"].apply(lambda ticker: buy_size[ticker])
-
-        return rez[["SELL", "Q_SELL", "BUY", "Q_BUY", "GRAD_DIFF", "TURNOVER", "P_VALUE"]]

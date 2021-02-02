@@ -14,6 +14,11 @@ class FakeMetricsResample:
         grad = dict(CHEP=0.015, KZOS=0.20, MTSS=0.01, RTKMP=0.03, TRCN=0.04, CASH=-0.05, PORTFOLIO=0.0)
         return pd.DataFrame([grad] * 20).T
 
+    @property
+    def beta(self):
+        beta = dict(CHEP=0.1, KZOS=0.5, MTSS=1.0, RTKMP=1.5, TRCN=2.0, CASH=0, PORTFOLIO=1.0)
+        return pd.Series(beta)
+
 
 @pytest.fixture(scope="module", name="opt")
 def make_opt():
@@ -41,22 +46,23 @@ def test_best_combination(opt, monkeypatch):
     df = opt.best_combination
 
     assert isinstance(df, pd.DataFrame)
-    assert df.shape == (5, 7)
-    assert list(df.columns) == ["SELL", "Q_SELL", "BUY", "Q_BUY", "GRAD_DIFF", "TURNOVER", "P_VALUE"]
+    assert df.shape == (2, 6)
+    assert list(df.columns) == [
+        "SELL",
+        "BUY",
+        "BETA_DIFF",
+        "R_DIFF",
+        "TURNOVER",
+        "P_VALUE",
+    ]
 
     wilcoxon = stats.wilcoxon([1] * 20, alternative="greater", correction=True)[1] * 17
 
-    assert df.loc[1, "SELL"] == "MTSS"
+    assert df.loc[1, "SELL"] == "TRCN"
     assert df.loc[1, "BUY"] == "KZOS"
-    assert df.loc[1, "P_VALUE"] == pytest.approx(wilcoxon)
 
-    assert df.loc[2, "SELL"] == "RTKMP"
+    assert df.loc[2, "SELL"] == "MTSS"
     assert df.loc[2, "BUY"] == "KZOS"
-    assert df.loc[2, "P_VALUE"] == pytest.approx(wilcoxon)
-
-    assert df.loc[3, "SELL"] == "MTSS"
-    assert df.loc[3, "BUY"] == "RTKMP"
-    assert df.loc[3, "P_VALUE"] == pytest.approx(wilcoxon)
 
 
 def test_str(opt):
