@@ -193,8 +193,7 @@ class MetricsResample:
         Бумага с максимальным градиентом выбирается с учетом фактора оборота.
         """
         min_grad_ticker = self.gradient.iloc[:-2][self._portfolio.weight.iloc[:-2] > 0].idxmin()
-        factor = self._portfolio.turnover_factor
-        factor[factor > 1] = 1
+        factor = self._portfolio.turnover_factor > 0
         max_grad_ticker = (self.gradient * factor).iloc[:-2].idxmax()
         strings = [
             "\nЭкстремальные градиенты",
