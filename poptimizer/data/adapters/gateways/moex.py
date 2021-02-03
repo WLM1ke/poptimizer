@@ -1,11 +1,14 @@
 """Загрузка различных данных с MOEX."""
-from typing import List, Optional
+from typing import Final, List, Optional
 
 import aiomoex
 import pandas as pd
 
 from poptimizer.data.adapters.gateways import gateways
 from poptimizer.shared import adapters, col
+
+CANDLES_COL: Final = ("begin", "open", "close", "high", "low", "value", "end", "volume")
+CANDLES_DROP: Final = ("end", "volume")
 
 
 class TradingDatesGateway(gateways.BaseGateway):
@@ -109,9 +112,46 @@ class QuotesGateway(gateways.BaseGateway):
             end=last_date,
         )
 
-        df = pd.DataFrame(columns=("begin", "open", "close", "high", "low", "value", "end", "volume"))
+        df = pd.DataFrame(columns=CANDLES_COL)
         df = df.append(json)
-        df = df.drop(["end", "volume"], axis=1)
+        df = df.drop(list(CANDLES_DROP), axis=1)
+
+        df.columns = [
+            col.DATE,
+            col.OPEN,
+            col.CLOSE,
+            col.HIGH,
+            col.LOW,
+            col.TURNOVER,
+        ]
+        df[col.DATE] = pd.to_datetime(df[col.DATE])
+        return df.set_index(col.DATE)
+
+
+class USDGateway(gateways.BaseGateway):
+    """Курс доллара."""
+
+    _logger = adapters.AsyncLogger()
+
+    async def get(
+        self,
+        start_date: Optional[str],
+        last_date: str,
+    ) -> pd.DataFrame:
+        """Получение значений курса для диапазона дат."""
+        self._logger(f"({start_date}, {last_date})")
+        json = await aiomoex.get_market_candles(
+            self._session,
+            "USD000UTSTOM",
+            market="selt",
+            engine="currency",
+            start=start_date,
+            end=last_date,
+        )
+
+        df = pd.DataFrame(columns=CANDLES_COL)
+        df = df.append(json)
+        df = df.drop(list(CANDLES_DROP), axis=1)
 
         df.columns = [
             col.DATE,
