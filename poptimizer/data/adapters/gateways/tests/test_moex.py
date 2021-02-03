@@ -173,3 +173,39 @@ async def test_quotes_gateway_regression_empty_json(mocker):
         col.LOW,
         col.TURNOVER,
     ]
+
+
+@pytest.mark.asyncio
+async def test_usd_gateway(mocker):
+    """Загрузка данных с нужными столбцами."""
+    fake_get_candles = mocker.patch.object(moex.aiomoex, "get_market_candles", return_value=list(JSON))
+    fake_session = mocker.Mock()
+
+    loader = moex.USDGateway(fake_session)
+
+    df_rez = await loader.get("start", "end")
+
+    assert df_rez.columns.tolist() == [
+        col.OPEN,
+        col.CLOSE,
+        col.HIGH,
+        col.LOW,
+        col.TURNOVER,
+    ]
+    assert df_rez.index.tolist() == [
+        pd.Timestamp("2011-09-27"),
+        pd.Timestamp("2011-09-28"),
+    ]
+    assert df_rez[col.CLOSE].tolist() == [
+        2,
+        9,
+    ]
+
+    fake_get_candles.assert_called_once_with(
+        fake_session,
+        "USD000UTSTOM",
+        market="selt",
+        engine="currency",
+        start="start",
+        end="end",
+    )
