@@ -13,6 +13,7 @@ from poptimizer.data.domain.tables import (
     quotes,
     securities,
     trading_dates,
+    usd,
 )
 from poptimizer.shared import domain
 
@@ -31,6 +32,7 @@ _TABLE_TYPES: Final = cast(
         dividends.Dividends,
         dividends.SmartLab,
         dividends.DivExt,
+        usd.USD,
     ),
 )
 
