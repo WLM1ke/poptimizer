@@ -9,14 +9,8 @@ CPI: Final = "CPI"
 SECURITIES: Final = "securities"
 INDEX: Final = "indexes"
 QUOTES: Final = "quotes"
+USD: Final = "usd"
 
 GroupName = Literal[
-    "trading_dates",
-    "smart_lab",
-    "dividends",
-    "div_ext",
-    "CPI",
-    "securities",
-    "indexes",
-    "quotes",
+    "trading_dates", "smart_lab", "dividends", "div_ext", "CPI", "securities", "indexes", "quotes", "usd"
 ]
