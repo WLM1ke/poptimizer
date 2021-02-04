@@ -5,7 +5,7 @@ from poptimizer.data.adapters.html import description, parser
 from poptimizer.shared import adapters, col
 
 # Параметры парсинга сайта
-URL = "https://smart-lab.ru/dividends/index/order_by_yield/desc/?forecasts=1"
+URL = "https://smart-lab.ru/dividends/index/order_by_yield/desc/"
 TABLE_INDEX = 0
 HEADER_SIZE = 1
 
