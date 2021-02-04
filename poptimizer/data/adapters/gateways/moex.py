@@ -1,14 +1,11 @@
 """Загрузка различных данных с MOEX."""
-from typing import Final, List, Optional
+from typing import Dict, List, Optional, Union
 
 import aiomoex
 import pandas as pd
 
 from poptimizer.data.adapters.gateways import gateways
 from poptimizer.shared import adapters, col
-
-CANDLES_COL: Final = ("begin", "open", "close", "high", "low", "value", "end", "volume")
-CANDLES_DROP: Final = ("end", "volume")
 
 
 class TradingDatesGateway(gateways.BaseGateway):
@@ -89,6 +86,25 @@ class AliasesGateway(gateways.BaseGateway):
         return [row["secid"] for row in json if row["isin"] == isin]
 
 
+IISJson = List[Dict[str, Union[str, int, float]]]
+
+
+def _format_candles_df(json: IISJson) -> pd.DataFrame:
+    df = pd.DataFrame(columns=["begin", "open", "close", "high", "low", "value", "end", "volume"])
+    df = df.append(json)
+    df = df.drop(["end", "volume"], axis=1)
+    df.columns = [
+        col.DATE,
+        col.OPEN,
+        col.CLOSE,
+        col.HIGH,
+        col.LOW,
+        col.TURNOVER,
+    ]
+    df[col.DATE] = pd.to_datetime(df[col.DATE])
+    return df.set_index(col.DATE)
+
+
 class QuotesGateway(gateways.BaseGateway):
     """Загружает котировки акций."""
 
@@ -112,20 +128,7 @@ class QuotesGateway(gateways.BaseGateway):
             end=last_date,
         )
 
-        df = pd.DataFrame(columns=CANDLES_COL)
-        df = df.append(json)
-        df = df.drop(list(CANDLES_DROP), axis=1)
-
-        df.columns = [
-            col.DATE,
-            col.OPEN,
-            col.CLOSE,
-            col.HIGH,
-            col.LOW,
-            col.TURNOVER,
-        ]
-        df[col.DATE] = pd.to_datetime(df[col.DATE])
-        return df.set_index(col.DATE)
+        return _format_candles_df(json)
 
 
 class USDGateway(gateways.BaseGateway):
@@ -149,17 +152,4 @@ class USDGateway(gateways.BaseGateway):
             end=last_date,
         )
 
-        df = pd.DataFrame(columns=CANDLES_COL)
-        df = df.append(json)
-        df = df.drop(list(CANDLES_DROP), axis=1)
-
-        df.columns = [
-            col.DATE,
-            col.OPEN,
-            col.CLOSE,
-            col.HIGH,
-            col.LOW,
-            col.TURNOVER,
-        ]
-        df[col.DATE] = pd.to_datetime(df[col.DATE])
-        return df.set_index(col.DATE)
+        return _format_candles_df(json)
