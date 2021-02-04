@@ -16,11 +16,11 @@ class USD(base.AbstractTable[events.TradingDayEnded]):
     group: ClassVar[ports.GroupName] = ports.USD
     _gateway: Final = moex.USDGateway()
 
-    def _update_cond(self, event: events.IndexCalculated) -> bool:
+    def _update_cond(self, event: events.TradingDayEnded) -> bool:
         """Если торговый день окончился, то обязательно требуется обновление."""
         return True
 
-    async def _prepare_df(self, event: events.TickerTraded) -> pd.DataFrame:
+    async def _prepare_df(self, event: events.TradingDayEnded) -> pd.DataFrame:
         """Загружает новый DataFrame."""
         start_date = None
         if (df := self._df) is not None:
@@ -40,6 +40,6 @@ class USD(base.AbstractTable[events.TradingDayEnded]):
         base.check_unique_increasing_index(df_new)
         base.check_dfs_mismatch(self.id_, self._df, df_new)
 
-    def _new_events(self, event: events.TickerTraded) -> List[domain.AbstractEvent]:
+    def _new_events(self, event: events.TradingDayEnded) -> List[domain.AbstractEvent]:
         """Обновление курса не порождает события."""
         return []
