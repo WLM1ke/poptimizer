@@ -99,13 +99,13 @@ class Optimizer:
             columns=[
                 "SELL",
                 "BUY",
-                "BETA_DIFF",
+                "RISK_CON",
                 "R_DIFF",
                 "TURNOVER",
                 "P_VALUE",
             ],
         )
-        rez = rez.sort_values("BETA_DIFF", ascending=False)
+        rez = rez.sort_values(["RISK_CON", "R_DIFF"], ascending=[True, False])
         rez = rez.drop_duplicates("SELL")
         rez.index = pd.RangeIndex(start=1, stop=len(rez) + 1)
 
@@ -133,7 +133,7 @@ class Optimizer:
             if sell == buy or turnover_all[buy] == 0:
                 continue
 
-            factor = turnover_all[buy] - (weight[sell] + weight[CASH])
+            factor = turnover_all[buy] - min(weight[sell] + weight[CASH], MAX_TRADE)
             if factor < 0:
                 continue
 
@@ -146,7 +146,7 @@ class Optimizer:
                 yield [
                     sell,
                     buy,
-                    betas[sell] - betas[buy],
+                    betas[buy] * weight[buy],
                     diff.median(),
                     factor,
                     alfa,
