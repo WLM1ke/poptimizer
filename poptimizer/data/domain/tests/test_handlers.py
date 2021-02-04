@@ -61,7 +61,7 @@ async def test_trading_day_ended(mocker):
     mocker.patch.object(
         handlers,
         "_load_by_id_and_handle_event",
-        side_effect=[["a"], [], ["b", "c"]],
+        side_effect=[["a"], [], ["b", "c"], ["usd"]],
     )
 
     assert await dispatcher.handle_event(event, fake_repo) == [
@@ -71,6 +71,7 @@ async def test_trading_day_ended(mocker):
         "a",
         "b",
         "c",
+        "usd",
     ]
 
 
