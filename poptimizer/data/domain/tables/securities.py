@@ -38,7 +38,7 @@ MARKETS_BOARDS: Final = (
 )
 
 
-class Securities(base.AbstractTable[events.TradingDayEnded]):
+class Securities(base.AbstractTable[events.USDUpdated]):
     """Таблица с данными о торгуемых бумагах.
 
     Обрабатывает событие об окончании торгового дня.
@@ -48,11 +48,11 @@ class Securities(base.AbstractTable[events.TradingDayEnded]):
     group: ClassVar[ports.GroupName] = ports.SECURITIES
     _gateway: Final = moex.SecuritiesGateway()
 
-    def _update_cond(self, event: events.TradingDayEnded) -> bool:
+    def _update_cond(self, event: events.USDUpdated) -> bool:
         """Если торговый день окончился, то обязательно требуется обновление."""
         return True
 
-    async def _prepare_df(self, event: events.TradingDayEnded) -> pd.DataFrame:
+    async def _prepare_df(self, event: events.USDUpdated) -> pd.DataFrame:
         """Загружает новый DataFrame."""
         aws = [self._load_and_format_df(*market_board) for market_board in MARKETS_BOARDS]
         dfs = await asyncio.gather(*aws)
@@ -75,7 +75,7 @@ class Securities(base.AbstractTable[events.TradingDayEnded]):
         """Индекс должен быть уникальным и возрастающим."""
         base.check_unique_increasing_index(df_new)
 
-    def _new_events(self, event: events.TradingDayEnded) -> List[domain.AbstractEvent]:
+    def _new_events(self, event: events.USDUpdated) -> List[domain.AbstractEvent]:
         """События факта торговли конкретных бумаг."""
         df: pd.DataFrame = self._df
         trading_date = event.date
@@ -86,6 +86,7 @@ class Securities(base.AbstractTable[events.TradingDayEnded]):
                 df.at[ticker, col.ISIN],
                 df.at[ticker, col.MARKET],
                 trading_date,
+                event.usd.copy(deep=True),
             )
             for ticker in df.index
         ]
