@@ -41,5 +41,5 @@ class USD(base.AbstractTable[events.TradingDayEnded]):
         base.check_dfs_mismatch(self.id_, self._df, df_new)
 
     def _new_events(self, event: events.TradingDayEnded) -> List[domain.AbstractEvent]:
-        """Обновление курса не порождает события."""
-        return []
+        """Порождает событие об обновлении курса."""
+        return [events.USDUpdated(event.date, self._df.copy(deep=True))]
