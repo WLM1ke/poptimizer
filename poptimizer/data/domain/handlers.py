@@ -31,7 +31,7 @@ async def _load_by_id_and_handle_event(
     return await table.handle_event(event)
 
 
-class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):
+class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
     """Обеспечивает запуск обработчика в соответствии с типом события."""
 
     @functools.singledispatchmethod
@@ -60,7 +60,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):
         repo: AnyTableRepo,
     ) -> List[domain.AbstractEvent]:
         """Запускает обновление необходимых таблиц в конце торгового дня и создает дочерние события."""
-        table_groups = [ports.CPI, ports.SECURITIES, ports.SMART_LAB, ports.USD]
+        table_groups = [ports.CPI, ports.SMART_LAB, ports.USD]
         table_ids = [base.create_id(group) for group in table_groups]
         aws = [_load_by_id_and_handle_event(repo, id_, event) for id_ in table_ids]
         return [
@@ -69,6 +69,16 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):
             events.IndexCalculated("RVI", event.date),
             *itertools.chain.from_iterable(await asyncio.gather(*aws)),
         ]
+
+    @handle_event.register
+    async def usd_traded(
+        self,
+        event: events.USDUpdated,
+        repo: AnyTableRepo,
+    ) -> List[domain.AbstractEvent]:
+        """Запускает обновления перечня торгуемых бумаг."""
+        table_id = base.create_id(ports.SECURITIES)
+        return await _load_by_id_and_handle_event(repo, table_id, event)
 
     @handle_event.register
     async def ticker_traded(
