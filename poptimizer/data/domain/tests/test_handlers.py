@@ -61,7 +61,7 @@ async def test_trading_day_ended(mocker):
     mocker.patch.object(
         handlers,
         "_load_by_id_and_handle_event",
-        side_effect=[["a"], [], ["b", "c"], ["usd"]],
+        side_effect=[["a"], ["b", "c"], ["usd"]],
     )
 
     assert await dispatcher.handle_event(event, fake_repo) == [
@@ -76,10 +76,32 @@ async def test_trading_day_ended(mocker):
 
 
 @pytest.mark.asyncio
+async def test_usd_traded(mocker):
+    """После загрузки курса началось обновление данных о торгуемых бумагах."""
+    dispatcher = handlers.EventHandlersDispatcher()
+    event = events.USDUpdated(date=date(2021, 2, 5), usd=pd.DataFrame)
+    fake_repo = mocker.Mock()
+    fake_loader_and_handler = mocker.patch.object(handlers, "_load_by_id_and_handle_event")
+
+    assert await dispatcher.handle_event(event, fake_repo) is fake_loader_and_handler.return_value
+    fake_loader_and_handler.assert_called_once_with(
+        fake_repo,
+        base.create_id(ports.SECURITIES),
+        event,
+    )
+
+
+@pytest.mark.asyncio
 async def test_ticker_traded(mocker):
     """Для торгуемого тикера должны обновляться котировки и дивиденды."""
     dispatcher = handlers.EventHandlersDispatcher()
-    event = events.TickerTraded("ticker", "ISIN", "M1", date(2020, 12, 22))
+    event = events.TickerTraded(
+        "ticker",
+        "ISIN",
+        "M1",
+        date(2020, 12, 22),
+        pd.DataFrame([1]),
+    )
     fake_repo = mocker.Mock()
     fake_load_by_id_and_handle_event = mocker.patch.object(
         handlers,

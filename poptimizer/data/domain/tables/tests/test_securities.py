@@ -100,7 +100,7 @@ def test_validate_new_df(mocker, table):
     base.check_unique_increasing_index.assert_called_once_with(mocker.sentinel)
 
 
-def test_new_events(table):
+def test_new_events(table, mocker):
     """Создание событий для всех торгуемых тикеров."""
     table._df = pd.DataFrame(
         [["YY", 10, "m2"], ["UU", 100, "m1"]],
@@ -108,9 +108,10 @@ def test_new_events(table):
         index=["GAZP", "AKRN"],
     )
     trading_date = date(2020, 12, 15)
-    event = events.TradingDayEnded(trading_date)
+    fake_usd = mocker.Mock()
+    event = events.USDUpdated(trading_date, fake_usd)
 
     assert table._new_events(event) == [
-        events.TickerTraded("GAZP", "YY", "m2", trading_date),
-        events.TickerTraded("AKRN", "UU", "m1", trading_date),
+        events.TickerTraded("GAZP", "YY", "m2", trading_date, fake_usd.copy.return_value),
+        events.TickerTraded("AKRN", "UU", "m1", trading_date, fake_usd.copy.return_value),
     ]

@@ -79,9 +79,14 @@ def test_validate_new_df(mocker, table):
     base.check_dfs_mismatch.assert_called_once_with(table.id_, None, mocker.sentinel)
 
 
-def test_new_events(table):
-    """Не возвращает новых событий."""
-    new_events = table._new_events(object())
+def test_new_events(table, mocker):
+    """Возвращает событие обновления курса."""
+    table._df = mocker.Mock()
+    new_events = table._new_events(events.TradingDayEnded(date=date(2020, 2, 5)))
 
-    assert isinstance(new_events, list)
-    assert not new_events
+    assert new_events == [
+        events.USDUpdated(
+            date=date(2020, 2, 5),
+            usd=table._df.copy.return_value,
+        ),
+    ]
