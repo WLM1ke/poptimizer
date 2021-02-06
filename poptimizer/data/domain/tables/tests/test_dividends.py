@@ -20,7 +20,7 @@ def create_div_table():
 DIV_UPDATE_CASES = (
     (
         None,
-        events.TickerTraded("TICKER", "ISIN", "M1", date(2020, 12, 17)),
+        events.TickerTraded("TICKER", "ISIN", "M1", date(2020, 12, 17), pd.DataFrame()),
         True,
     ),
     (
@@ -30,7 +30,7 @@ DIV_UPDATE_CASES = (
     ),
     (
         pd.DataFrame(),
-        events.TickerTraded("TICKER", "ISIN", "M1", date(2020, 12, 17)),
+        events.TickerTraded("TICKER", "ISIN", "M1", date(2020, 12, 17), pd.DataFrame()),
         False,
     ),
 )
@@ -49,7 +49,7 @@ async def test_prepare_df(div_table, mocker):
     """Данные загружаются для тикера из события."""
     div_table._gateway = mocker.AsyncMock()
 
-    event = events.TickerTraded("TICKER", "ISIN", "M1", date(2020, 12, 17))
+    event = events.TickerTraded("TICKER", "ISIN", "M1", date(2020, 12, 17), mocker.Mock())
 
     fake_get = div_table._gateway.get
     assert await div_table._prepare_df(event) is fake_get.return_value
@@ -142,9 +142,9 @@ def create_div_ext_table():
 
 
 DIV_EXT_UPDATE_CASES = (
-    (lambda : None, True),
-    (lambda : datetime.utcnow() - timedelta(days=7, seconds=1), True),
-    (lambda : datetime.utcnow() - timedelta(days=7, seconds=-1), False),
+    (lambda: None, True),
+    (lambda: datetime.utcnow() - timedelta(days=7, seconds=1), True),
+    (lambda: datetime.utcnow() - timedelta(days=7, seconds=-1), False),
 )
 
 
