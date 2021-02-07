@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.data.adapters.gateways import dividends
+from poptimizer.shared import col
 
 
 @pytest.mark.asyncio
@@ -12,17 +13,17 @@ async def test_div_gateway(mocker):
     fake_cursor = mocker.AsyncMock()
     fake_collection.find.return_value = fake_cursor
     fake_cursor.to_list.return_value = [
-        {"date": 2, "dividends": 1},
-        {"date": 2, "dividends": 2},
-        {"date": 1, "dividends": 4},
+        {"date": 2, "dividends": 1, "currency": col.RUR},
+        {"date": 2, "dividends": 2, "currency": col.USD},
+        {"date": 1, "dividends": 4, "currency": col.RUR},
     ]
 
     gw = dividends.DividendsGateway(fake_collection)
     df = await gw.get("AKRN")
 
-    assert df.columns.tolist() == ["AKRN"]
-    assert df.index.tolist() == [1, 2]
-    assert df.values.tolist() == [[4], [3]]
+    assert df.columns.tolist() == ["AKRN", col.CURRENCY]
+    assert df.index.tolist() == [2, 2, 1]
+    assert df.values.tolist() == [[1, col.RUR], [2, col.USD], [4, col.RUR]]
 
 
 @pytest.mark.asyncio
@@ -36,4 +37,4 @@ async def test_div_gateway_empty_data(mocker):
     gw = dividends.DividendsGateway(fake_collection)
     df = await gw.get("ISKJ")
 
-    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["ISKJ"]))
+    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["ISKJ", col.CURRENCY]))
