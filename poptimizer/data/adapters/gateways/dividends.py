@@ -2,11 +2,16 @@
 import pandas as pd
 from pymongo import collection
 
+from poptimizer import config
 from poptimizer.data.adapters.gateways import gateways
 from poptimizer.shared import adapters, col, connections
 
 # Где хранятся данные о дивидендах
 DIV_COL = connections.MONGO_CLIENT["source"]["dividends"]
+
+
+class WrongCurrencyError(config.POptimizerError):
+    """Не верное наименование валюты в загруженных данных."""
 
 
 class DividendsGateway(gateways.DivGateway):
@@ -37,4 +42,9 @@ class DividendsGateway(gateways.DivGateway):
 
         df = pd.DataFrame.from_records(json, index="date")
         df.columns = [ticker, col.CURRENCY]
+
+        cur_err = set(df[col.CURRENCY]) - {col.RUR, col.USD}
+        if cur_err:
+            raise WrongCurrencyError(cur_err)
+
         return df.sort_index(axis=0)
