@@ -22,8 +22,12 @@ async def test_div_gateway(mocker):
     df = await gw.get("AKRN")
 
     assert df.columns.tolist() == ["AKRN", col.CURRENCY]
-    assert df.index.tolist() == [2, 2, 1]
-    assert df.values.tolist() == [[1, col.RUR], [2, col.USD], [4, col.RUR]]
+    assert df.index.tolist() == [1, 2, 2]
+    assert df.values.tolist() == [
+        [4, col.RUR],
+        [1, col.RUR],
+        [2, col.USD],
+    ]
 
 
 @pytest.mark.asyncio

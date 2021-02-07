@@ -37,4 +37,4 @@ class DividendsGateway(gateways.DivGateway):
 
         df = pd.DataFrame.from_records(json, index="date")
         df.columns = [ticker, col.CURRENCY]
-        return df
+        return df.sort_index(axis=0)
