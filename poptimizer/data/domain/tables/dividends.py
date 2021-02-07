@@ -26,7 +26,19 @@ class Dividends(base.AbstractTable[DivEvents]):
 
     async def _prepare_df(self, event: DivEvents) -> pd.DataFrame:
         """Загружает новый DataFrame полностью."""
-        return await self._gateway.get(event.ticker)
+        div = await self._gateway.get(event.ticker)
+
+        rate = event.usd[col.CLOSE]
+        rate = rate.reindex(index=div.index, method="ffill")
+
+        div[col.CURRENCY] = rate.mask(
+            div[col.CURRENCY] == col.RUR,
+            1,
+        )
+        div[event.ticker] = div.prod(axis=1)
+        div = div.drop(col.CURRENCY, axis=1)
+
+        return div.groupby(lambda date: date).sum()
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
