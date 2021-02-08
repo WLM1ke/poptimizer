@@ -13,14 +13,14 @@ TABLE_INDEX = 2
 def get_col_desc(ticker: str) -> parser.Descriptions:
     """Формирует список с описанием нужных столбцов."""
     date_col = description.ColDesc(
-        num=0,
+        num=1,
         raw_name=("Дата закрытия реестра",),
         name=col.DATE,
         parser_func=description.date_parser,
     )
     div_col = description.ColDesc(
-        num=2,
-        raw_name=("Дивиденд (руб.)",),
+        num=3,
+        raw_name=("Дивиденд",),
         name=ticker,
         parser_func=description.div_parser,
     )
