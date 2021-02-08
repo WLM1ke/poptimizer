@@ -156,10 +156,16 @@ async def test_update_div(mocker):
     """Требуется обновить таблицу с внутренними и внешними данными по дивидендам."""
     dispatcher = handlers.EventHandlersDispatcher()
     event = events.UpdateDivCommand("TICKER3")
-    fake_repo = mocker.Mock()
+    fake_repo = mocker.AsyncMock()
     mocker.patch.object(handlers, "_load_by_id_and_handle_event", return_value=["event1", "event2"])
 
     first, *other = await dispatcher.handle_event(event, fake_repo)
+
+    handlers._load_by_id_and_handle_event.assert_called_once_with(
+        fake_repo,
+        base.create_id(ports.DIVIDENDS, "TICKER3"),
+        events.UpdateDivCommand("TICKER3", fake_repo.get.return_value.df),
+    )
 
     assert isinstance(first, events.DivExpected)
     assert first.ticker == "TICKER3"

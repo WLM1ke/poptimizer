@@ -1,5 +1,6 @@
 """Обработчики доменных событий."""
 import asyncio
+import dataclasses
 import functools
 import itertools
 from typing import List
@@ -118,9 +119,11 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         event: events.UpdateDivCommand,
         repo: AnyTableRepo,
     ) -> List[domain.AbstractEvent]:
-        """Обновляет таблицы с котировками и дивидендами."""
-        table_id = base.create_id(ports.DIVIDENDS, event.ticker)
+        """Обновляет таблицы с дивидендами."""
+        usd = await repo.get(base.create_id(ports.USD))
+        enriched_event = dataclasses.replace(event, usd=usd.df)
+        dividends_id = base.create_id(ports.DIVIDENDS, event.ticker)
         return [
             events.DivExpected(event.ticker, pd.DataFrame(columns=["SmartLab"])),
-            *await _load_by_id_and_handle_event(repo, table_id, event),
+            *await _load_by_id_and_handle_event(repo, dividends_id, enriched_event),
         ]
