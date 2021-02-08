@@ -37,7 +37,7 @@ def test_div_price_train_size():
     assert price.index[-1] == pd.Timestamp("2020-03-17")
 
     assert price.loc["2010-09-01", "IRKT"] == pytest.approx(8.962)
-    assert div.loc["2014-07-17", "DSKY"] == pytest.approx(1.15 * 0.87)
+    assert div.loc["2014-07-17", "DSKY"] == pytest.approx(0)
     assert price.loc["2020-03-17", "CBOM"] == pytest.approx(5.072)
 
     assert train_size == 2158
