@@ -1,6 +1,7 @@
 """События связанные с таблицами."""
 import dataclasses
 import datetime
+from typing import Optional
 
 import pandas as pd
 
@@ -67,3 +68,4 @@ class UpdateDivCommand(domain.AbstractEvent):
     """Команда обновить дивиденды."""
 
     ticker: str
+    usd: Optional[pd.DataFrame] = dataclasses.field(default=None, repr=False)
