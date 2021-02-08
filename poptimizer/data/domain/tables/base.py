@@ -53,6 +53,11 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
         self._timestamp = timestamp
         self._df_lock = asyncio.Lock()
 
+    @property
+    def df(self) -> pd.DataFrame:
+        """Копия данных."""
+        return self._df.copy(deep=True)
+
     async def handle_event(self, event: Event) -> List[domain.AbstractEvent]:
         """Обновляет значение и сохраняет дату изменения.
 
