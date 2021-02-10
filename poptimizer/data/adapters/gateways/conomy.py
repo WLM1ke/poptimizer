@@ -1,15 +1,13 @@
 """Загрузка данных с https://www.conomy.ru/."""
 import asyncio
-import atexit
-from typing import Final, Optional, cast
+from typing import Final, cast
 
 import pandas as pd
-import pyppeteer
-from pyppeteer import browser, errors
+from pyppeteer import errors
 from pyppeteer.page import Page
 
 from poptimizer.data.adapters.gateways import gateways
-from poptimizer.data.adapters.html import description, parser
+from poptimizer.data.adapters.html import chromium, description, parser
 from poptimizer.shared import adapters, col
 
 # Параметры поиска страницы эмитента
@@ -31,32 +29,6 @@ PREFERRED_TICKER_ENDING: Final = "P"
 CHROMIUM_TIMEOUT = 30
 
 
-class Browser:
-    """Headless браузер, который запускается по необходимости."""
-
-    def __init__(self) -> None:
-        """Создает переменную для хранения браузера."""
-        self._browser: Optional[browser.Browser] = None
-        self._lock = asyncio.Lock()
-
-    async def get(self) -> browser.Browser:
-        """При необходимости загружает браузер и возвращает его."""
-        async with self._lock:
-            if self._browser is None:
-                self._browser = await pyppeteer.launch(autoClose=False)
-                atexit.register(self._close)
-        return self._browser
-
-    def _close(self) -> None:
-        """Закрывает браузер."""
-        if self._browser is not None:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self._browser.close())
-
-
-BROWSER: Final = Browser()
-
-
 async def _load_ticker_page(page: Page, ticker: str) -> None:
     """Вводит в поле поиска тикер и переходит на страницу с информацией по эмитенту."""
     await page.goto(SEARCH_URL)
@@ -74,10 +46,9 @@ async def _load_dividends_table(page: Page) -> None:
     await page.waitForXPath(DIVIDENDS_TABLE)
 
 
-async def _get_html(ticker: str) -> str:
+async def _get_html(ticker: str, browser: chromium.Browser = chromium.BROWSER) -> str:
     """Возвращает html-код страницы с данными по дивидендам с сайта https://www.conomy.ru/."""
-    chromium = await BROWSER.get()
-    page = await chromium.newPage()
+    page = await browser.get_new_page()
     await _load_ticker_page(page, ticker)
     await _load_dividends_table(page)
     return cast(str, await page.content())
