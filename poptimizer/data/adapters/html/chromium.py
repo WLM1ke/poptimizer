@@ -25,7 +25,7 @@ class Browser:
             if self._browser is None:
                 self._browser = await pyppeteer.launch(autoClose=False)
                 atexit.register(self._close)
-        return self._browser.newPage()
+        return await self._browser.newPage()
 
     def _close(self) -> None:
         """Закрывает браузер."""
