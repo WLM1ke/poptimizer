@@ -6,7 +6,9 @@ from typing import Callable, Final, NamedTuple, Optional, Tuple, Union
 from poptimizer import config
 
 DIV_PATTERN: Final = r".*\d"
+DIV_PATTERN_US: Final = r"\$(.*\d)"
 DATE_PATTERN: Final = r"\d{2}\.\d{2}\.\d{4}"
+DATE_PATTERN_US: Final = r"\d{2}\/\d{2}\/\d{4}"
 
 
 class ParserError(config.POptimizerError):
@@ -43,11 +45,31 @@ def date_parser(date: str) -> Optional[datetime]:
     return None
 
 
+def date_parser_us(date: str) -> Optional[datetime]:
+    """Парсинг даты в американском формате."""
+    re_date = re.search(DATE_PATTERN_US, date)
+    if re_date:
+        date_string = re_date.group(0)
+        return datetime.strptime(date_string, "%m/%d/%Y")  # noqa: WPS323
+    return None
+
+
 def div_parser(div: str) -> Optional[float]:
     """Функция парсинга значений в столбце с дивидендами."""
     re_div = re.search(DIV_PATTERN, div)
     if re_div:
         div_string = re_div.group(0)
+        div_string = div_string.replace(",", ".")
+        div_string = div_string.replace(" ", "")
+        return float(div_string)
+    return None
+
+
+def div_parser_us(div: str) -> Optional[float]:
+    """Функция парсинга дивидендов в долларах."""
+    re_div = re.search(DIV_PATTERN_US, div)
+    if re_div:
+        div_string = re_div.group(1)
         div_string = div_string.replace(",", ".")
         div_string = div_string.replace(" ", "")
         return float(div_string)
