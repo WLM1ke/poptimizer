@@ -8,13 +8,6 @@ from poptimizer.data.adapters.html import description, parser
 
 
 @pytest.mark.asyncio
-async def test_browser_loads_once():
-    """Браузер загружается однажды."""
-    browser = conomy.Browser()
-    assert await browser.get() is await browser.get()
-
-
-@pytest.mark.asyncio
 async def test_load_ticker_page(mocker):
     """Переход на страницу с тикером."""
     fake_page = mocker.AsyncMock()
@@ -44,18 +37,17 @@ async def test_load_dividends_table(mocker):
 @pytest.mark.asyncio
 async def test_get_html(mocker):
     """Последовательный переход и загрузка html с дивидендами."""
-    fake_browser = mocker.patch.object(
-        conomy,
-        "BROWSER",
-        new=mocker.AsyncMock(),
-    ).get.return_value
-    fake_page = fake_browser.newPage.return_value
+    fake_browser = mocker.AsyncMock()
     fake_load_ticker_page = mocker.patch.object(conomy, "_load_ticker_page")
-    mocker.patch.object(conomy, "_load_dividends_table")
+    fake_load_dividends_table = mocker.patch.object(conomy, "_load_dividends_table")
 
-    html = await conomy._get_html("UNAC")
+    html = await conomy._get_html("UNAC", fake_browser)
+
+    fake_browser.get_new_page.assert_called_once_with()
+    fake_page = fake_browser.get_new_page.return_value
 
     fake_load_ticker_page.assert_called_once_with(fake_page, "UNAC")
+    fake_load_dividends_table.assert_called_once_with(fake_page)
     assert html is fake_page.content.return_value
 
 
