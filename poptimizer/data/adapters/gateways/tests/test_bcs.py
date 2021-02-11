@@ -7,6 +7,7 @@ import pytest
 
 from poptimizer.data.adapters.gateways import bcs
 from poptimizer.data.adapters.html import description, parser
+from poptimizer.shared import col
 
 
 @pytest.mark.asyncio
@@ -118,7 +119,11 @@ async def test_bcs(mocker):
     df = await bcs.BCSGateway().get("TEST")
 
     index = pd.DatetimeIndex(["2019-06-20", "2019-07-20"])
-    df_rez = pd.DataFrame([200.0, 10805.95], columns=["TEST"], index=index)
+    df_rez = pd.DataFrame(
+        [[200.0, col.RUR], [10805.95, col.RUR]],
+        columns=["TEST", col.CURRENCY],
+        index=index,
+    )
 
     pd.testing.assert_frame_equal(df, df_rez)
 
@@ -130,4 +135,4 @@ async def test_bcs_empty(mocker):
 
     df = await bcs.BCSGateway().get("TEST")
 
-    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["TEST"]))
+    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["TEST", col.CURRENCY]))

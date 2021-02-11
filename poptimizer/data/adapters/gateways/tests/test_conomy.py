@@ -5,6 +5,7 @@ from pyppeteer import errors
 
 from poptimizer.data.adapters.gateways import conomy
 from poptimizer.data.adapters.html import description, parser
+from poptimizer.shared import col
 
 
 @pytest.mark.asyncio
@@ -89,9 +90,9 @@ DF = pd.DataFrame(
     columns=["BELU"],
 )
 DF_REZ = pd.DataFrame(
-    [[3.0], [4.0]],
+    [[3.0, col.RUR], [4.0, col.RUR]],
     index=["2014-11-25", "2020-01-20"],
-    columns=["BELU"],
+    columns=["BELU", col.CURRENCY],
 )
 
 
@@ -113,4 +114,4 @@ async def test_conomy_gateway_web_error(mocker):
 
     gateway = conomy.ConomyGateway()
     df = await gateway.get("BELU")
-    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["BELU"]))
+    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["BELU", col.CURRENCY]))

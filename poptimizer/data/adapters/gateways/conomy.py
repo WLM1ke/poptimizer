@@ -108,8 +108,11 @@ class ConomyGateway(gateways.DivGateway):
             # Поэтому загрузка принудительно приостанавливается
             html = await asyncio.wait_for(_get_html(ticker), timeout=CHROMIUM_TIMEOUT)
         except (errors.TimeoutError, asyncio.exceptions.TimeoutError):
-            return pd.DataFrame(columns=[ticker])
+            return pd.DataFrame(columns=[ticker, col.CURRENCY])
         cols_desc = _get_col_desc(ticker)
         df = parser.get_df_from_html(html, TABLE_INDEX, cols_desc)
         df = df.dropna()
-        return self._sort_and_agg(df)
+
+        df = self._sort_and_agg(df)
+        df[col.CURRENCY] = col.RUR
+        return df

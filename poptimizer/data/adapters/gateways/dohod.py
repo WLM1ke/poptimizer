@@ -41,6 +41,8 @@ class DohodGateway(gateways.DivGateway):
         try:
             df = await parser.get_df_from_url(url, TABLE_INDEX, cols_desc)
         except description.ParserError:
-            return pd.DataFrame(columns=[ticker])
+            return pd.DataFrame(columns=[ticker, col.CURRENCY])
 
-        return df.groupby(lambda date: date).sum()
+        df = self._sort_and_agg(df)
+        df[col.CURRENCY] = col.RUR
+        return df
