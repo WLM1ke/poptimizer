@@ -134,21 +134,11 @@ async def test_prepare_df_smart_lab_table(smart_lab_table, mocker):
 
 
 def test_new_events_smart_lab_table(smart_lab_table):
-    """Создаются события для каждого тикера со сводной информацией о дивидендах."""
-    smart_lab_table._df = pd.DataFrame(
-        [
-            [datetime(2020, 12, 1), 3],
-            [datetime(2020, 12, 2), 2],
-            [datetime(2020, 12, 3), 1],
-        ],
-        index=["AKRN", "CHMF", "CHMF"],
-        columns=[col.DATE, col.DIVIDENDS],
-    )
-
+    """Новые события не создаются."""
     new_events = smart_lab_table._new_events(object())
 
     assert isinstance(new_events, list)
-    assert len(new_events) == 2
+    assert not new_events
 
     answers = {
         "AKRN": pd.DataFrame(

@@ -70,19 +70,8 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
         """Нет проверок."""
 
     def _new_events(self, event: events.TradingDayEnded) -> List[domain.AbstractEvent]:
-        """Создает события о новых дивидендах."""
-        df: pd.DataFrame = self._df
-        div_tickers = set(df.index)
-        new_events: List[domain.AbstractEvent] = []
-
-        for ticker in div_tickers:
-            df_div = df[df.index == ticker]
-            df_div = df_div.set_index(col.DATE)
-            df_div = df_div[[col.DIVIDENDS]]
-            df_div.columns = ["SmartLab"]
-            new_events.append(events.DivExpected(ticker, df_div))
-
-        return new_events
+        """Не порождает событий."""
+        return []
 
 
 class DivExt(base.AbstractTable[events.DivExpected]):
