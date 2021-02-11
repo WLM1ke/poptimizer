@@ -136,38 +136,13 @@ async def test_index_calculated(mocker):
 
 
 @pytest.mark.asyncio
-async def test_div_expected(mocker):
-    """Требуется обновить таблицу с внешними данными по дивидендам."""
-    dispatcher = handlers.EventHandlersDispatcher()
-    event = events.DivExpected("TICKER1", pd.DataFrame())
-    fake_repo = mocker.Mock()
-    fake_loader_and_handler = mocker.patch.object(handlers, "_load_by_id_and_handle_event")
-
-    assert await dispatcher.handle_event(event, fake_repo) is fake_loader_and_handler.return_value
-    fake_loader_and_handler.assert_called_once_with(
-        fake_repo,
-        base.create_id(ports.DIV_EXT, "TICKER1"),
-        event,
-    )
-
-
-@pytest.mark.asyncio
 async def test_update_div(mocker):
     """Требуется обновить таблицу с внутренними и внешними данными по дивидендам."""
     dispatcher = handlers.EventHandlersDispatcher()
     event = events.UpdateDivCommand("TICKER3")
     fake_repo = mocker.AsyncMock()
-    mocker.patch.object(handlers, "_load_by_id_and_handle_event", return_value=["event1", "event2"])
+    mocker.patch.object(handlers, "_load_by_id_and_handle_event", side_effect=[["event1"], ["event2"]])
 
-    first, *other = await dispatcher.handle_event(event, fake_repo)
+    new_events = await dispatcher.handle_event(event, fake_repo)
 
-    handlers._load_by_id_and_handle_event.assert_called_once_with(
-        fake_repo,
-        base.create_id(ports.DIVIDENDS, "TICKER3"),
-        events.UpdateDivCommand("TICKER3", fake_repo.get.return_value.df),
-    )
-
-    assert isinstance(first, events.DivExpected)
-    assert first.ticker == "TICKER3"
-    pd.testing.assert_frame_equal(first.df, pd.DataFrame(columns=["SmartLab"]))
-    assert other == ["event1", "event2"]
+    assert new_events == ["event1", "event2"]

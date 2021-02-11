@@ -188,18 +188,18 @@ def test_update_cond_div_ext(div_ext_table, timestamp_func, rez):
 @pytest.mark.asyncio
 async def test_prepare_df_div_ext(div_ext_table, mocker):
     """Проверка агрегации данных."""
-    event = events.DivExpected(
+    event = events.UpdateDivCommand(
         ticker="GAZP",
-        df=pd.DataFrame(
+        usd=pd.DataFrame(
             [2, 1],
-            columns=["SmartLab"],
+            columns=[col.CLOSE],
             index=[datetime(2020, 12, 4), datetime(2020, 12, 5)],
         ),
     )
     fake_gateway = mocker.AsyncMock()
     fake_gateway.get.return_value = pd.DataFrame(
-        [3, 5],
-        columns=["GAZP"],
+        [[3, col.RUR], [5, col.RUR]],
+        columns=["GAZP", col.CURRENCY],
         index=[datetime(2020, 12, 4), datetime(2020, 12, 5)],
     )
     div_ext_table._gateways_dict = {"S1": fake_gateway}
@@ -209,10 +209,11 @@ async def test_prepare_df_div_ext(div_ext_table, mocker):
     pd.testing.assert_frame_equal(
         df,
         pd.DataFrame(
-            [[2, 3, 2.5], [1, 5, 3.0]],
-            columns=["SmartLab", "S1", "MEDIAN"],
+            [[3, 3], [5, 5]],
+            columns=["S1", "MEDIAN"],
             index=[datetime(2020, 12, 4), datetime(2020, 12, 5)],
         ),
+        check_dtype=False,
     )
 
 

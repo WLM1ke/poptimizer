@@ -5,8 +5,6 @@ import functools
 import itertools
 from typing import List
 
-import pandas as pd
-
 from poptimizer import config
 from poptimizer.data import ports
 from poptimizer.data.domain import events
@@ -104,16 +102,6 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         return await _load_by_id_and_handle_event(repo, table_id, event)
 
     @handle_event.register
-    async def div_expected(
-        self,
-        event: events.DivExpected,
-        repo: AnyTableRepo,
-    ) -> List[domain.AbstractEvent]:
-        """Обновляет таблицу с внешними дивидендами."""
-        table_id = base.create_id(ports.DIV_EXT, event.ticker)
-        return await _load_by_id_and_handle_event(repo, table_id, event)
-
-    @handle_event.register
     async def update_div(
         self,
         event: events.UpdateDivCommand,
@@ -122,8 +110,11 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         """Обновляет таблицы с дивидендами."""
         usd = await repo.get(base.create_id(ports.USD))
         enriched_event = dataclasses.replace(event, usd=usd.df)
-        dividends_id = base.create_id(ports.DIVIDENDS, event.ticker)
+
+        div_id = base.create_id(ports.DIVIDENDS, event.ticker)
+        div_ext_id = base.create_id(ports.DIV_EXT, event.ticker)
+
         return [
-            events.DivExpected(event.ticker, pd.DataFrame(columns=["SmartLab"])),
-            *await _load_by_id_and_handle_event(repo, dividends_id, enriched_event),
+            *await _load_by_id_and_handle_event(repo, div_id, enriched_event),
+            *await _load_by_id_and_handle_event(repo, div_ext_id, enriched_event),
         ]

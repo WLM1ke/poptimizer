@@ -14,6 +14,18 @@ from poptimizer.shared import col, domain
 DivEvents = Union[events.TickerTraded, events.UpdateDivCommand]
 
 
+def _convent_to_rur(div: pd.DataFrame, event: DivEvents) -> pd.DataFrame:
+    rate = event.usd[col.CLOSE]
+    rate = rate.reindex(index=div.index, method="ffill")
+    div[col.CURRENCY] = rate.mask(
+        div[col.CURRENCY] == col.RUR,
+        1,
+    )
+    div[event.ticker] = div.prod(axis=1)
+    div = div.drop(col.CURRENCY, axis=1)
+    return div.groupby(lambda date: date).sum()
+
+
 class Dividends(base.AbstractTable[DivEvents]):
     """Таблица с основной версией дивидендов."""
 
@@ -27,18 +39,7 @@ class Dividends(base.AbstractTable[DivEvents]):
     async def _prepare_df(self, event: DivEvents) -> pd.DataFrame:
         """Загружает новый DataFrame полностью."""
         div = await self._gateway.get(event.ticker)
-
-        rate = event.usd[col.CLOSE]
-        rate = rate.reindex(index=div.index, method="ffill")
-
-        div[col.CURRENCY] = rate.mask(
-            div[col.CURRENCY] == col.RUR,
-            1,
-        )
-        div[event.ticker] = div.prod(axis=1)
-        div = div.drop(col.CURRENCY, axis=1)
-
-        return div.groupby(lambda date: date).sum()
+        return _convent_to_rur(div, event)
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим."""
@@ -74,7 +75,7 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
         return []
 
 
-class DivExt(base.AbstractTable[events.DivExpected]):
+class DivExt(base.AbstractTable[events.UpdateDivCommand]):
     """Таблица со сводными данными по дивидендам из внешних источников."""
 
     group: ClassVar[ports.GroupName] = ports.DIV_EXT
@@ -86,7 +87,7 @@ class DivExt(base.AbstractTable[events.DivExpected]):
         },
     )
 
-    def _update_cond(self, event: events.DivExpected) -> bool:
+    def _update_cond(self, event: events.UpdateDivCommand) -> bool:
         """Если данные отсутствуют, то их надо загрузить, а так же обновить раз в неделю."""
         if (timestamp := self._timestamp) is None:
             return True
@@ -96,12 +97,13 @@ class DivExt(base.AbstractTable[events.DivExpected]):
 
         return False
 
-    async def _prepare_df(self, event: events.DivExpected) -> pd.DataFrame:
+    async def _prepare_df(self, event: events.UpdateDivCommand) -> pd.DataFrame:
         """Загружает данные из всех источников и рассчитывает медиану."""
-        dfs = [event.df]
+        dfs = []
         ticker = event.ticker
         for name, gateway in self._gateways_dict.items():
             df = await gateway.get(ticker)
+            df = _convent_to_rur(df, event)
             df.columns = [name]
             dfs.append(df)
 
@@ -113,6 +115,6 @@ class DivExt(base.AbstractTable[events.DivExpected]):
         """Индекс должен быть уникальным и возрастающим."""
         base.check_unique_increasing_index(df_new)
 
-    def _new_events(self, event: events.DivExpected) -> List[domain.AbstractEvent]:
+    def _new_events(self, event: events.UpdateDivCommand) -> List[domain.AbstractEvent]:
         """Обновление дивидендов не порождает события."""
         return []
