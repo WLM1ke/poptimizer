@@ -76,7 +76,7 @@ class NASDAQGateway(gateways.DivGateway):
         try:
             df = parser.get_df_from_html(html, 0, cols_desc)
         except description.ParserError:
-            return pd.DataFrame(columns=[ticker])
+            return pd.DataFrame(columns=[ticker, col.CURRENCY])
 
         df = df.groupby(lambda date: date).sum()
         df[col.CURRENCY] = col.USD
