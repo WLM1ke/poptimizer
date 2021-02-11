@@ -101,7 +101,7 @@ def test_dividends_validation():
     df = div_status.dividends_validation("IRGZ")
 
     assert isinstance(df, pd.DataFrame)
-    assert df.columns.tolist() == ["SmartLab", "Dohod", "Conomy", "BCS", "MEDIAN", "LOCAL", "STATUS"]
+    assert df.columns.tolist() == ["Dohod", "Conomy", "BCS", "MEDIAN", "LOCAL", "STATUS"]
     assert df.loc["2015-06-11", "MEDIAN"] == pytest.approx(0.53)
     assert df.loc["2016-06-18", "LOCAL"] == pytest.approx(0.53)
     assert df.loc["2016-06-18", "STATUS"] == ""
