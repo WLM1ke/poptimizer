@@ -5,15 +5,29 @@ from typing import ClassVar, Final, List, NamedTuple, Tuple, Union
 import pandas as pd
 
 from poptimizer.data import ports
-from poptimizer.data.adapters.gateways import bcs, conomy, dividends, dohod, gateways, nasdaq, smart_lab
+from poptimizer.data.adapters.gateways import (
+    bcs,
+    conomy,
+    dividends,
+    dohod,
+    finrange,
+    gateways,
+    nasdaq,
+    smart_lab,
+)
 from poptimizer.data.domain import events
 from poptimizer.data.domain.tables import base
 from poptimizer.shared import col, domain
+
+# Типы шлюзов дивидендов
+SHARES = "shares"
+FOREIGN_SHARES = "foreignshares"
 
 DivEvents = Union[events.TickerTraded, events.UpdateDivCommand]
 
 
 def _convent_to_rur(div: pd.DataFrame, event: DivEvents) -> pd.DataFrame:
+    div = div.sort_index(axis=0)
     rate = event.usd[col.CLOSE]
     rate = rate.reindex(index=div.index, method="ffill")
     div[col.CURRENCY] = rate.mask(
@@ -87,10 +101,12 @@ class DivExt(base.AbstractTable[events.UpdateDivCommand]):
 
     group: ClassVar[ports.GroupName] = ports.DIV_EXT
     _gateways: Final[Tuple[GateWayDesc]] = (
-        GateWayDesc("Dohod", "shares", dohod.DohodGateway()),
-        GateWayDesc("Conomy", "shares", conomy.ConomyGateway()),
-        GateWayDesc("BCS", "shares", bcs.BCSGateway()),
-        GateWayDesc("NASDAQ", "foreignshares", nasdaq.NASDAQGateway()),
+        GateWayDesc("Dohod", SHARES, dohod.DohodGateway()),
+        GateWayDesc("Conomy", SHARES, conomy.ConomyGateway()),
+        GateWayDesc("BCS", SHARES, bcs.BCSGateway()),
+        GateWayDesc("NASDAQ", FOREIGN_SHARES, nasdaq.NASDAQGateway()),
+        GateWayDesc("FinRange", SHARES, finrange.FinRangeGateway()),
+        GateWayDesc("FinRange", FOREIGN_SHARES, finrange.FinRangeGateway()),
     )
 
     def _update_cond(self, event: events.UpdateDivCommand) -> bool:
