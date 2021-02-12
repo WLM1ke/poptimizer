@@ -60,4 +60,5 @@ class UpdateDivCommand(domain.AbstractEvent):
     """Команда обновить дивиденды."""
 
     ticker: str
+    market: Optional[str] = dataclasses.field(default=None)
     usd: Optional[pd.DataFrame] = dataclasses.field(default=None, repr=False)
