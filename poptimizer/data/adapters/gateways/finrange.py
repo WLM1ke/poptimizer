@@ -11,17 +11,9 @@ from poptimizer.shared import adapters, col
 # Параметры парсинга
 URL_START = "https://finrange.com/company/"
 URL_END = "/dividends"
+TABLE_XPATH = "//*[@id='filter-3']/div[2]/div[2]/div/table"
 DIV_PATTERN = r".*\d\s\s[$₽]"
 TABLE_NUM = 2
-
-
-def _div_parser(div: str) -> Optional[str]:
-    re_div = re.search(DIV_PATTERN, div)
-    if re_div:
-        div_string = re_div.group(0)
-        div_string = div_string.replace(",", ".")
-        return div_string.replace(" ", "")
-    return None
 
 
 def _prepare_url(ticker: str) -> str:
@@ -30,12 +22,24 @@ def _prepare_url(ticker: str) -> str:
     return "".join([URL_START, ticker, URL_END])
 
 
-async def _load_ticker_page(url: str, browser: chromium.Browser = chromium.BROWSER) -> str:
+async def _get_page_html(url: str, browser: chromium.Browser = chromium.BROWSER) -> str:
     page = await browser.get_new_page()
 
     await page.goto(url)
-    await page.waitForXPath("//*[@id='filter-3']/div[2]/div[2]/div/table")
+    await page.waitForXPath(TABLE_XPATH)
+
     return await page.content()
+
+
+def _div_parser(div: str) -> Optional[str]:
+    re_div = re.search(DIV_PATTERN, div)
+    if re_div:
+        div_string = re_div.group(0)
+        div_string = div_string.replace(",", ".")
+        div_string = div_string.replace(" ", "")
+        div_string = div_string.replace("₽", col.RUR)
+        return div_string.replace("$", col.USD)
+    return None
 
 
 def _get_col_desc(ticker: str) -> parser.Descriptions:
@@ -55,6 +59,14 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
     return [date_col, div_col]
 
 
+def _reformat_df(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
+    ticker_col = df[ticker]
+    df[col.CURRENCY] = ticker_col.str.slice(start=-3)
+    ticker_col = ticker_col.str.slice(stop=-3)
+    df[ticker] = ticker_col.apply(float)
+    return df
+
+
 class FinRangeGateway(gateways.DivGateway):
     """Обновление данных с https://finrange.com/.."""
 
@@ -65,7 +77,7 @@ class FinRangeGateway(gateways.DivGateway):
         self._logger(ticker)
 
         url = _prepare_url(ticker)
-        html = await _load_ticker_page(url)
+        html = await _get_page_html(url)
 
         cols_desc = _get_col_desc(ticker)
 
@@ -74,16 +86,4 @@ class FinRangeGateway(gateways.DivGateway):
         except description.ParserError:
             return pd.DataFrame(columns=[ticker, col.CURRENCY])
 
-        ticker_col = df[ticker]
-        df[col.CURRENCY] = ticker_col.str.slice(start=-1)
-        df[col.CURRENCY] = df[col.CURRENCY].map(
-            {
-                "₽": col.RUR,
-                "$": col.USD,
-            },
-        )
-
-        ticker_col = ticker_col.str.slice(stop=-1)
-        df[ticker] = ticker_col.apply(float)
-
-        return df.sort_index(axis=0)
+        return _reformat_df(df, ticker)
