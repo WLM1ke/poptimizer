@@ -17,7 +17,7 @@ def test_div_ext():
 
     df = div.div_ext("AKRN")
 
-    assert df.columns.tolist() == ["Dohod", "Conomy", "BCS", "MEDIAN"]
+    assert df.columns.tolist() == ["Dohod", "Conomy", "BCS", "FinRange", "MEDIAN"]
     assert df.index[0] >= bootstrap.START_DATE
     assert df.loc["2015-06-02", "MEDIAN"] == pytest.approx(139)
     assert df.loc["2020-06-09", "MEDIAN"] == pytest.approx(275)
