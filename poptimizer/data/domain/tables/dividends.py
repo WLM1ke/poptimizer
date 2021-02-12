@@ -1,12 +1,11 @@
 """Таблицы с дивидендами."""
-import types
 from datetime import datetime, timedelta
-from typing import ClassVar, Final, List, Mapping, Union
+from typing import ClassVar, Final, List, NamedTuple, Tuple, Union
 
 import pandas as pd
 
 from poptimizer.data import ports
-from poptimizer.data.adapters.gateways import bcs, conomy, dividends, dohod, gateways, smart_lab
+from poptimizer.data.adapters.gateways import bcs, conomy, dividends, dohod, gateways, nasdaq, smart_lab
 from poptimizer.data.domain import events
 from poptimizer.data.domain.tables import base
 from poptimizer.shared import col, domain
@@ -75,16 +74,23 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
         return []
 
 
+class GateWayDesc(NamedTuple):
+    """Описание шлюзов для загрузки дивидендов из внешних источников."""
+
+    name: str
+    market: str
+    gw: gateways.DivGateway
+
+
 class DivExt(base.AbstractTable[events.UpdateDivCommand]):
     """Таблица со сводными данными по дивидендам из внешних источников."""
 
     group: ClassVar[ports.GroupName] = ports.DIV_EXT
-    _gateways_dict: Final[Mapping[str, gateways.DivGateway]] = types.MappingProxyType(
-        {
-            "Dohod": dohod.DohodGateway(),
-            "Conomy": conomy.ConomyGateway(),
-            "BCS": bcs.BCSGateway(),
-        },
+    _gateways: Final[Tuple[GateWayDesc]] = (
+        GateWayDesc("Dohod", "shares", dohod.DohodGateway()),
+        GateWayDesc("Conomy", "shares", conomy.ConomyGateway()),
+        GateWayDesc("BCS", "shares", bcs.BCSGateway()),
+        GateWayDesc("NASDAQ", "foreignshares", nasdaq.NASDAQGateway()),
     )
 
     def _update_cond(self, event: events.UpdateDivCommand) -> bool:
@@ -100,9 +106,12 @@ class DivExt(base.AbstractTable[events.UpdateDivCommand]):
     async def _prepare_df(self, event: events.UpdateDivCommand) -> pd.DataFrame:
         """Загружает данные из всех источников и рассчитывает медиану."""
         dfs = []
-        ticker = event.ticker
-        for name, gateway in self._gateways_dict.items():
-            df = await gateway.get(ticker)
+
+        for name, market, gateway in self._gateways:
+            if market != event.market:
+                continue
+
+            df = await gateway.get(event.ticker)
             df = _convent_to_rur(df, event)
             df.columns = [name]
             dfs.append(df)
