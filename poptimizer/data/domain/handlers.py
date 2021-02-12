@@ -9,7 +9,7 @@ from poptimizer import config
 from poptimizer.data import ports
 from poptimizer.data.domain import events
 from poptimizer.data.domain.tables import base
-from poptimizer.shared import domain
+from poptimizer.shared import col, domain
 
 
 class UnknownEventError(config.POptimizerError):
@@ -109,7 +109,13 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
     ) -> List[domain.AbstractEvent]:
         """Обновляет таблицы с дивидендами."""
         usd = await repo.get(base.create_id(ports.USD))
-        enriched_event = dataclasses.replace(event, usd=usd.df)
+        securities = await repo.get(base.create_id(ports.SECURITIES))
+
+        enriched_event = dataclasses.replace(
+            event,
+            market=securities.df.loc[event.ticker, col.MARKET],
+            usd=usd.df,
+        )
 
         div_id = base.create_id(ports.DIVIDENDS, event.ticker)
         div_ext_id = base.create_id(ports.DIV_EXT, event.ticker)
