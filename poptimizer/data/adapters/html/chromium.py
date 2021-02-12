@@ -1,11 +1,21 @@
 """Headless браузер на базе Chromium для доступа к динамическим сайтам."""
 import asyncio
 import atexit
+import types
 from typing import Final, Optional
 
 import pyppeteer
 from pyppeteer import browser
 from pyppeteer.page import Page
+
+# Минимальный заголовок поля в заголовке запроса, чтобы сайты  не игнорировали браузер
+HEADER: Final = types.MappingProxyType(
+    {
+        "accept-language": "",
+        "Connection": "keep-alive",
+        "User-Agent": "",
+    },
+)
 
 
 class Browser:
@@ -25,7 +35,11 @@ class Browser:
             if self._browser is None:
                 self._browser = await pyppeteer.launch(autoClose=False)
                 atexit.register(self._close)
-        return await self._browser.newPage()
+
+        page = await self._browser.newPage()
+        # В заголовке обязательно должны присутствовать определенные элементы - без них не грузятся сайты
+        await page.setExtraHTTPHeaders(HEADER)
+        return page
 
     def _close(self) -> None:
         """Закрывает браузер."""

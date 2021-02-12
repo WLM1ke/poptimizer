@@ -17,7 +17,6 @@ async def test_load_ticker_page(mocker):
     html = await nasdaq._load_ticker_page("qqq", fake_browser)
 
     fake_browser.get_new_page.assert_called_once_with()
-    fake_page.setExtraHTTPHeaders.assert_called_once_with(nasdaq.HEADER)
     fake_page.goto.assert_called_once_with("qqq", options={"timeout": nasdaq.PARTIAL_LOAD_TIMEOUT})
 
     assert html is fake_page.content.return_value
@@ -33,7 +32,6 @@ async def test_load_ticker_page_wait_only_table(mocker):
     html = await nasdaq._load_ticker_page("qqq", fake_browser)
 
     fake_browser.get_new_page.assert_called_once_with()
-    fake_page.setExtraHTTPHeaders.assert_called_once_with(nasdaq.HEADER)
     fake_page.goto.assert_called_once_with("qqq", options={"timeout": nasdaq.PARTIAL_LOAD_TIMEOUT})
     fake_page.waitForXPath.assert_called_once_with(nasdaq.TABLE_XPATH)
 

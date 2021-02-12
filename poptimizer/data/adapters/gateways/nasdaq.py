@@ -1,5 +1,4 @@
 """Обновление данных с https://www.nasdaq.com/."""
-import types
 from typing import Final
 
 import pandas as pd
@@ -8,15 +7,6 @@ from pyppeteer import errors
 from poptimizer.data.adapters.gateways import gateways
 from poptimizer.data.adapters.html import chromium, description, parser
 from poptimizer.shared import adapters, col
-
-# Необходимые поля в заголовке запроса для сайта NASDAQ
-HEADER: Final = types.MappingProxyType(
-    {
-        "accept-language": "",
-        "Connection": "keep-alive",
-        "User-Agent": "",
-    },
-)
 
 # Адрес и xpath таблицы
 URL_START = "https://www.nasdaq.com/market-activity/stocks/"
@@ -47,8 +37,6 @@ def get_col_desc(ticker: str) -> parser.Descriptions:
 async def _load_ticker_page(url: str, browser: chromium.Browser = chromium.BROWSER) -> str:
     """Загружает страницу с таблицей дивидендов."""
     page = await browser.get_new_page()
-    # В заголовке обязательно должны присутствовать определенные элементы - без них не грузится
-    await page.setExtraHTTPHeaders(HEADER)
 
     try:
         # На странице много рекламных банеров, поэтому она практически никогда не загружается полностью
