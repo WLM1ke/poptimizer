@@ -58,13 +58,13 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
         start_date = None
 
         if (df := self._df) is None:
-            tickers = await self._aliases.get(event.isin)
+            tickers = await self._aliases(event.isin)
         elif not df.empty:
             start_date = str(df.index[-1].date())
 
         last_date = str(event.date)
 
-        aws = [self._quotes.get(ticker, event.market, start_date, last_date) for ticker in tickers]
+        aws = [self._quotes(ticker, event.market, start_date, last_date) for ticker in tickers]
 
         return pd.concat(
             await asyncio.gather(*aws),

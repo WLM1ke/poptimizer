@@ -116,7 +116,7 @@ async def test_bcs(mocker):
     rows = [bs4.BeautifulSoup(row_data[0]) for row_data in TEST_ROWS]
     mocker.patch.object(bcs, "_get_rows", return_value=rows)
 
-    df = await bcs.BCSGateway().get("TEST")
+    df = await bcs.BCSGateway().__call__("TEST")
 
     index = pd.DatetimeIndex(["2019-06-20", "2019-07-20"])
     df_rez = pd.DataFrame(
@@ -133,6 +133,6 @@ async def test_bcs_empty(mocker):
     """Регрессионный тест для случая отсутствия данных на html-странице."""
     mocker.patch.object(bcs, "_get_rows", side_effect=description.ParserError)
 
-    df = await bcs.BCSGateway().get("TEST")
+    df = await bcs.BCSGateway().__call__("TEST")
 
     pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["TEST", col.CURRENCY]))

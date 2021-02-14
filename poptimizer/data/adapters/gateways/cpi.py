@@ -97,7 +97,7 @@ class CPIGateway(gateways.BaseGateway):
 
     _logger = adapters.AsyncLogger()
 
-    async def get(self) -> pd.DataFrame:
+    async def __call__(self) -> pd.DataFrame:
         """Получение данных по  инфляции."""
         self._logger("Загрузка инфляции")
 

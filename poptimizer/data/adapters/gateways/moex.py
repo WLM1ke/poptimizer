@@ -13,7 +13,7 @@ class TradingDatesGateway(gateways.BaseGateway):
 
     _logger = adapters.AsyncLogger()
 
-    async def get(self) -> pd.DataFrame:
+    async def __call__(self) -> pd.DataFrame:
         """Получение обновленных данных о доступном диапазоне торговых дат."""
         self._logger("Загрузка данных по торговым дням")
         json = await aiomoex.get_board_dates(
@@ -30,7 +30,7 @@ class IndexesGateway(gateways.BaseGateway):
 
     _logger = adapters.AsyncLogger()
 
-    async def get(
+    async def __call__(
         self,
         ticker: str,
         start_date: Optional[str],
@@ -57,7 +57,7 @@ class SecuritiesGateway(gateways.BaseGateway):
 
     _logger = adapters.AsyncLogger()
 
-    async def get(self, market: str, board: str) -> pd.DataFrame:
+    async def __call__(self, market: str, board: str) -> pd.DataFrame:
         """Получение списка торгуемых акций с ISIN и размером лота."""
         self._logger("Загрузка данных по торгуемым бумагам")
 
@@ -78,7 +78,7 @@ class AliasesGateway(gateways.BaseGateway):
 
     _logger = adapters.AsyncLogger()
 
-    async def get(self, isin: str) -> List[str]:
+    async def __call__(self, isin: str) -> List[str]:
         """Ищет все тикеры с эквивалентным ISIN."""
         self._logger(isin)
 
@@ -121,7 +121,7 @@ class QuotesGateway(gateways.BaseGateway):
 
     _logger = adapters.AsyncLogger()
 
-    async def get(
+    async def __call__(
         self,
         ticker: str,
         market: str,
@@ -147,7 +147,7 @@ class USDGateway(gateways.BaseGateway):
 
     _logger = adapters.AsyncLogger()
 
-    async def get(
+    async def __call__(
         self,
         start_date: Optional[str],
         last_date: str,

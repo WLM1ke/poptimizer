@@ -19,7 +19,7 @@ async def test_div_gateway(mocker):
     ]
 
     gw = dividends.DividendsGateway(fake_collection)
-    df = await gw.get("AKRN")
+    df = await gw.__call__("AKRN")
 
     assert df.columns.tolist() == ["AKRN", col.CURRENCY]
     assert df.index.tolist() == [1, 2, 2]
@@ -42,7 +42,7 @@ async def test_div_gateway_wrong_currency(mocker):
 
     with pytest.raises(expected_exception=dividends.WrongCurrencyError):
         gw = dividends.DividendsGateway(fake_collection)
-        await gw.get("AKRN")
+        await gw.__call__("AKRN")
 
 
 @pytest.mark.asyncio
@@ -54,6 +54,6 @@ async def test_div_gateway_empty_data(mocker):
     fake_cursor.to_list.return_value = []
 
     gw = dividends.DividendsGateway(fake_collection)
-    df = await gw.get("ISKJ")
+    df = await gw.__call__("ISKJ")
 
     pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["ISKJ", col.CURRENCY]))

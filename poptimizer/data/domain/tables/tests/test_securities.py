@@ -43,7 +43,7 @@ def test_update_cond(table):
 async def test_load_and_format_df(table, mocker):
     """Данные загружаются и добавляется колонка с названием рынка."""
     fake_gateway = mocker.AsyncMock()
-    fake_gateway.get.return_value = pd.DataFrame([1, 2])
+    fake_gateway.return_value = pd.DataFrame([1, 2])
     table._gateway = fake_gateway
 
     df = await table._load_and_format_df(
@@ -59,7 +59,7 @@ async def test_load_and_format_df(table, mocker):
             columns=[0, col.MARKET, col.TICKER_TYPE],
         ),
     )
-    fake_gateway.get.assert_called_once_with(market="m1", board="b1")
+    fake_gateway.assert_called_once_with(market="m1", board="b1")
 
 
 @pytest.mark.asyncio
@@ -71,7 +71,7 @@ async def test_prepare_df(table, mocker):
         pd.DataFrame([3], index=["AAPL-RM"]),
     ]
     fake_gateway = mocker.AsyncMock()
-    fake_gateway.get.side_effect = dfs
+    fake_gateway.side_effect = dfs
     table._gateway = fake_gateway
 
     df = await table._prepare_df(object())

@@ -18,4 +18,4 @@ async def test_conomy_gateway(mocker, df_patch, df_res):
     """Проверка нижних ячеек и отбрасывание предварительных данных."""
     mocker.patch.object(parser, "get_df_from_url", return_value=df_patch)
     loader = smart_lab.SmartLabGateway()
-    pd.testing.assert_frame_equal(await loader.get(), df_res)
+    pd.testing.assert_frame_equal(await loader.__call__(), df_res)

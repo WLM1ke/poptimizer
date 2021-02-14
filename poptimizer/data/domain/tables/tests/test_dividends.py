@@ -53,7 +53,7 @@ async def test_prepare_df(div_table, mocker):
     Для задвоенных дат данные группируются и суммируются.
     """
     div_table._gateway = mocker.AsyncMock()
-    div_table._gateway.get.return_value = pd.DataFrame(
+    div_table._gateway.return_value = pd.DataFrame(
         [
             [20, col.RUR],
             [30, col.USD],
@@ -128,9 +128,9 @@ async def test_prepare_df_smart_lab_table(smart_lab_table, mocker):
     """Данные загружаются с помощью шлюза."""
     smart_lab_table._gateway = mocker.AsyncMock()
 
-    fake_get = smart_lab_table._gateway.get
-    assert await smart_lab_table._prepare_df(object()) is fake_get.return_value
-    fake_get.assert_called_once_with()
+    fake_gateway = smart_lab_table._gateway
+    assert await smart_lab_table._prepare_df(object()) is fake_gateway.return_value
+    fake_gateway.assert_called_once_with()
 
 
 def test_new_events_smart_lab_table(smart_lab_table):
@@ -198,7 +198,7 @@ async def test_prepare_df_div_ext(div_ext_table, mocker):
         ),
     )
     fake_gateway = mocker.AsyncMock()
-    fake_gateway.get.return_value = pd.DataFrame(
+    fake_gateway.return_value = pd.DataFrame(
         [[3, col.RUR], [5, col.RUR]],
         columns=["GAZP", col.CURRENCY],
         index=[datetime(2020, 12, 4), datetime(2020, 12, 5)],

@@ -28,8 +28,8 @@ async def test_prepare_df_for_new_table(table, mocker):
     fake_gateway = mocker.AsyncMock()
     table._gateway = fake_gateway
 
-    assert await table._prepare_df(event) == fake_gateway.get.return_value
-    fake_gateway.get.assert_called_once_with(None, "2021-02-03")
+    assert await table._prepare_df(event) == fake_gateway.return_value
+    fake_gateway.assert_called_once_with(None, "2021-02-03")
 
 
 @pytest.mark.asyncio
@@ -37,7 +37,7 @@ async def test_prepare_df_for_update_table(table, mocker):
     """Если таблица c данных, то осуществляется инкрементальная загрузка."""
     event = events.TradingDayEnded(date(2021, 2, 3))
     fake_gateway = mocker.AsyncMock()
-    fake_gateway.get.return_value = pd.DataFrame(
+    fake_gateway.return_value = pd.DataFrame(
         [2, 1],
         index=[
             datetime(2020, 12, 14),
@@ -65,7 +65,7 @@ async def test_prepare_df_for_update_table(table, mocker):
             ],
         ),
     )
-    fake_gateway.get.assert_called_once_with("2020-12-14", "2021-02-03")
+    fake_gateway.assert_called_once_with("2020-12-14", "2021-02-03")
 
 
 def test_validate_new_df(mocker, table):

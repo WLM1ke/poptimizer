@@ -66,7 +66,7 @@ class Securities(base.AbstractTable[events.USDUpdated]):
         type_func: Callable[[str], int],
     ) -> pd.DataFrame:
         """Загружает данные о торгуемых бумагах и добавляет информацию о рынке."""
-        df = await self._gateway.get(market=market, board=board)
+        df = await self._gateway(market=market, board=board)
         df[col.MARKET] = market
         df[col.TICKER_TYPE] = df.index.map(type_func)
         return df

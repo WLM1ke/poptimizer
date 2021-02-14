@@ -140,7 +140,7 @@ async def test_loader(mocker):
 
     loader = cpi.CPIGateway(fake_session)
 
-    assert await loader.get() is fake_clean_up.return_value
+    assert await loader.__call__() is fake_clean_up.return_value
 
     fake_load_xlsx.assert_called_once_with(fake_session)
     fake_validate.assert_called_once_with(fake_load_xlsx.return_value)

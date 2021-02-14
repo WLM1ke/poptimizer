@@ -27,7 +27,7 @@ class DividendsGateway(gateways.DivGateway):
         super().__init__()
         self._collection = div_col
 
-    async def get(self, ticker: str) -> pd.DataFrame:
+    async def __call__(self, ticker: str) -> pd.DataFrame:
         """Получение дивидендов для заданного тикера."""
         self._logger(ticker)
 

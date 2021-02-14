@@ -19,8 +19,8 @@ async def test_load_by_id_and_handle_event(mocker):
 
     rez = await handlers._load_by_id_and_handle_event(fake_repo, fake_id, fake_event)
 
-    fake_repo.get.assert_called_once_with(fake_id)
-    fake_table = fake_repo.get.return_value
+    fake_repo.__call__.assert_called_once_with(fake_id)
+    fake_table = fake_repo.__call__.return_value
     fake_table.handle_event.assert_called_once_with(fake_event)
     assert rez is fake_table.handle_event.return_value
 

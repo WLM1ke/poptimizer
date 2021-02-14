@@ -14,7 +14,7 @@ async def test_trading_dates_gateway(mocker):
     fake_session = mocker.Mock()
 
     gateway = moex.TradingDatesGateway(fake_session)
-    df = await gateway.get()
+    df = await gateway.__call__()
 
     pd.testing.assert_frame_equal(df, pd.DataFrame(json, dtype="datetime64[ns]"))
     outer_call.assert_called_once_with(
@@ -34,7 +34,7 @@ async def test_index_gateway(mocker):
 
     loader = moex.IndexesGateway(fake_session)
 
-    df_rez = await loader.get("INDEX", "start", "end")
+    df_rez = await loader.__call__("INDEX", "start", "end")
 
     outer_call.assert_called_once_with(
         session=fake_session,
@@ -59,7 +59,7 @@ async def test_securities_gateway(mocker):
 
     loader = moex.SecuritiesGateway(fake_session)
 
-    df_rez = await loader.get("m1", "b1")
+    df_rez = await loader.__call__("m1", "b1")
 
     assert df_rez.columns.tolist() == [col.ISIN, col.LOT_SIZE]
     assert df_rez.index.tolist() == ["GAZP"]
@@ -86,7 +86,7 @@ async def test_aliases_gateway(mocker):
 
     loader = moex.AliasesGateway(fake_session)
 
-    assert await loader.get("1-02-65105-D") == ["OGKB", "OGK2"]
+    assert await loader.__call__("1-02-65105-D") == ["OGKB", "OGK2"]
 
     outer_call.assert_called_once_with(fake_session, "1-02-65105-D", columns=("secid", "isin"))
 
@@ -123,7 +123,7 @@ async def test_quotes_gateway(mocker):
 
     loader = moex.QuotesGateway(fake_session)
 
-    df_rez = await loader.get("TICKER", "m2", "start", "end")
+    df_rez = await loader.__call__("TICKER", "m2", "start", "end")
 
     assert df_rez.columns.tolist() == [
         col.OPEN,
@@ -163,7 +163,7 @@ async def test_quotes_gateway_regression_empty_json(mocker):
 
     loader = moex.QuotesGateway(fake_session)
 
-    df_rez = await loader.get("TICKER", "m3", "start", "end")
+    df_rez = await loader.__call__("TICKER", "m3", "start", "end")
 
     assert df_rez.empty
     assert df_rez.columns.tolist() == [
@@ -183,7 +183,7 @@ async def test_usd_gateway(mocker):
 
     loader = moex.USDGateway(fake_session)
 
-    df_rez = await loader.get("start", "end")
+    df_rez = await loader.__call__("start", "end")
 
     assert df_rez.columns.tolist() == [
         col.OPEN,

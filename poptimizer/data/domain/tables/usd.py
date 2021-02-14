@@ -28,7 +28,7 @@ class USD(base.AbstractTable[events.TradingDayEnded]):
 
         last_date = str(event.date)
 
-        df_new = await self._gateway.get(start_date, last_date)
+        df_new = await self._gateway(start_date, last_date)
 
         if df is None:
             return df_new

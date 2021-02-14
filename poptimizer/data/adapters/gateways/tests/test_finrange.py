@@ -65,7 +65,7 @@ async def test_gateway(mocker):
     fake_reformat_df = mocker.patch.object(finrange, "_reformat_df")
 
     gw = finrange.FinRangeGateway()
-    df = await gw.get("AKRN")
+    df = await gw.__call__("AKRN")
 
     fake_get_page_html.assert_called_once_with(finrange._prepare_url("AKRN"))
     fake_get_df_from_html.assert_called_once_with(
@@ -85,6 +85,6 @@ async def test_gateway_error(mocker):
     mocker.patch.object(finrange.parser, "get_df_from_html", side_effect=description.ParserError)
 
     gw = finrange.FinRangeGateway()
-    df = await gw.get("GAZP")
+    df = await gw.__call__("GAZP")
 
     pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["GAZP", col.CURRENCY]))

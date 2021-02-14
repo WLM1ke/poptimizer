@@ -57,7 +57,7 @@ async def test_nasdaq_gateway(mocker):
     mocker.patch.object(nasdaq.parser, "get_df_from_html", return_value=DF)
 
     gateway = nasdaq.NASDAQGateway()
-    pd.testing.assert_frame_equal(await gateway.get("BELU"), DF_REZ)
+    pd.testing.assert_frame_equal(await gateway.__call__("BELU"), DF_REZ)
 
 
 @pytest.mark.asyncio
@@ -68,6 +68,6 @@ async def test_nasdaq_gateway_error(mocker):
 
     gateway = nasdaq.NASDAQGateway()
     pd.testing.assert_frame_equal(
-        await gateway.get("BELU"),
+        await gateway.__call__("BELU"),
         pd.DataFrame(columns=["BELU", col.CURRENCY]),
     )

@@ -28,7 +28,7 @@ class Indexes(base.AbstractTable[events.IndexCalculated]):
 
         last_date = str(event.date)
 
-        df_new = await self._gateway.get(event.ticker, start_date, last_date)
+        df_new = await self._gateway(event.ticker, start_date, last_date)
 
         if df is None:
             return df_new

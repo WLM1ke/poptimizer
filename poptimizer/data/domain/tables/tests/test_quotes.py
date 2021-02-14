@@ -87,7 +87,7 @@ async def test_prepare_df(table, mocker, df, df_new, df_out):
 async def test_load_first(table, mocker):
     """Загрузка данных в первый раз."""
     fake_aliases = mocker.AsyncMock()
-    fake_aliases.get.return_value = ["ALIAS"]
+    fake_aliases.return_value = ["ALIAS"]
     table._aliases = fake_aliases
 
     table._quotes = mocker.AsyncMock()
@@ -103,8 +103,8 @@ async def test_load_first(table, mocker):
     )
 
     assert await table._load_df(event) is quotes.pd.concat.return_value
-    fake_aliases.get.assert_called_once_with("ISIN")
-    table._quotes.get.assert_called_once_with("ALIAS", "M1", None, "2020-12-16")
+    fake_aliases.assert_called_once_with("ISIN")
+    table._quotes.assert_called_once_with("ALIAS", "M1", None, "2020-12-16")
 
 
 @pytest.mark.asyncio
@@ -125,8 +125,8 @@ async def test_load_after_empty(table, mocker):
     )
 
     assert await table._load_df(event) is quotes.pd.concat.return_value
-    assert table._aliases.get.call_count == 0
-    table._quotes.get.assert_called_once_with("TICKER", "M1", None, "2020-12-16")
+    assert table._aliases.call_count == 0
+    table._quotes.assert_called_once_with("TICKER", "M1", None, "2020-12-16")
 
 
 @pytest.mark.asyncio
@@ -150,8 +150,8 @@ async def test_load_after_not_empty(table, mocker):
     )
 
     assert await table._load_df(event) is quotes.pd.concat.return_value
-    assert table._aliases.get.call_count == 0
-    table._quotes.get.assert_called_once_with("TICKER", "M1", "2020-12-11", "2020-12-16")
+    assert table._aliases.call_count == 0
+    table._quotes.assert_called_once_with("TICKER", "M1", "2020-12-11", "2020-12-16")
 
 
 def test_validate_new_df(table, mocker):

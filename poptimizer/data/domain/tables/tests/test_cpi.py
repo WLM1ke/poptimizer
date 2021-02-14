@@ -45,7 +45,7 @@ async def test_prepare_df(mocker):
     fake_gateway = mocker.AsyncMock()
     table._gateway = fake_gateway
 
-    assert await table._prepare_df("") == fake_gateway.get.return_value
+    assert await table._prepare_df("") == fake_gateway.return_value
 
 
 def test_validate_new_df(mocker):

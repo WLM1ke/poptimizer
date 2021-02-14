@@ -28,9 +28,9 @@ async def test_get_html(mocker):
 
     html = await parser.get_html(BAD_URL, fake_session)
 
-    fake_session.get.assert_called_once_with(BAD_URL)
+    fake_session.__call__.assert_called_once_with(BAD_URL)
 
-    context_mng = fake_session.get.return_value
+    context_mng = fake_session.__call__.return_value
     context_mng.__aenter__.assert_called_once()  # noqa: WPS609
 
     respond = context_mng.__aenter__.return_value  # noqa: WPS609
@@ -43,7 +43,7 @@ async def test_get_html(mocker):
 async def test_get_html_raise(mocker):
     """Сообщение об ошибке при некорректном URL."""
     fake_session = mocker.MagicMock()
-    context_mng = fake_session.get.return_value
+    context_mng = fake_session.__call__.return_value
     respond = context_mng.__aenter__.return_value  # noqa: WPS609
     respond.raise_for_status = mocker.Mock(side_effect=aiohttp.ClientResponseError("", ""))
 

@@ -104,7 +104,7 @@ async def test_conomy_gateway(mocker):
     mocker.patch.object(parser, "get_df_from_html", return_value=DF)
 
     gateway = conomy.ConomyGateway()
-    pd.testing.assert_frame_equal(await gateway.get("BELU"), DF_REZ)
+    pd.testing.assert_frame_equal(await gateway.__call__("BELU"), DF_REZ)
 
 
 @pytest.mark.asyncio
@@ -113,5 +113,5 @@ async def test_conomy_gateway_web_error(mocker):
     mocker.patch.object(conomy, "_get_html", side_effect=errors.TimeoutError)
 
     gateway = conomy.ConomyGateway()
-    df = await gateway.get("BELU")
+    df = await gateway.__call__("BELU")
     pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["BELU", col.CURRENCY]))

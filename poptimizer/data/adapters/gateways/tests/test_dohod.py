@@ -24,7 +24,7 @@ async def test_loader(mocker):
     mocker.patch.object(parser, "get_df_from_url", return_value=DF)
 
     loader = dohod.DohodGateway()
-    pd.testing.assert_frame_equal(await loader.get("BELU"), DF_REZ)
+    pd.testing.assert_frame_equal(await loader.__call__("BELU"), DF_REZ)
 
 
 @pytest.mark.asyncio
@@ -33,5 +33,5 @@ async def test_loader_web_error(mocker):
     mocker.patch.object(parser, "get_df_from_url", side_effect=description.ParserError())
 
     loader = dohod.DohodGateway()
-    df = await loader.get("BELU")
+    df = await loader.__call__("BELU")
     pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["BELU", col.CURRENCY]))

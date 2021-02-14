@@ -51,7 +51,7 @@ class Dividends(base.AbstractTable[DivEvents]):
 
     async def _prepare_df(self, event: DivEvents) -> pd.DataFrame:
         """Загружает новый DataFrame полностью."""
-        div = await self._gateway.get(event.ticker)
+        div = await self._gateway(event.ticker)
         return _convent_to_rur(div, event)
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
@@ -78,7 +78,7 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
 
     async def _prepare_df(self, event: events.TradingDayEnded) -> pd.DataFrame:
         """Загружает новый DataFrame полностью."""
-        return await self._gateway.get()
+        return await self._gateway()
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Нет проверок."""
@@ -124,7 +124,7 @@ class DivExt(base.AbstractTable[events.UpdateDivCommand]):
             if market != event.market:
                 continue
 
-            df = await gateway.get(event.ticker)
+            df = await gateway(event.ticker)
             df = _convent_to_rur(df, event)
             df.columns = [name]
             dfs.append(df)
