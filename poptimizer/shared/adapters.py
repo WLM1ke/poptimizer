@@ -39,8 +39,7 @@ class AsyncLogger:
 
     async def _logging_task(self, message: str) -> None:
         """Задание по логгированию."""
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self._logger.info, message)
+        await asyncio.to_thread(self._logger.info, message)
 
 
 class Desc(NamedTuple):
