@@ -1,6 +1,7 @@
 """Таблица с торговыми датами."""
+import zoneinfo
 from datetime import datetime, timedelta, timezone
-from typing import ClassVar, Final, List, Optional
+from typing import ClassVar, Final, Optional
 
 import pandas as pd
 
@@ -11,7 +12,7 @@ from poptimizer.data.domain.tables import base
 from poptimizer.shared import domain
 
 # Часовой пояс MOEX
-_MOEX_TZ: Final = timezone(timedelta(hours=3))
+_MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
 
 # Торги заканчиваются в 24.00, но данные публикуются 00.45
 _END_HOUR: Final = 0
@@ -79,7 +80,7 @@ class TradingDates(base.AbstractTable[events.AppStarted]):
         if (df := self._df) is not None:
             self._last_trading_day_old = df.loc[0, "till"]
 
-    def _new_events(self, event: events.AppStarted) -> List[domain.AbstractEvent]:
+    def _new_events(self, event: events.AppStarted) -> list[domain.AbstractEvent]:
         """Событие окончания торгового дня."""
         df: pd.DataFrame = self._df
         last_trading_day = df.loc[0, "till"]
