@@ -26,7 +26,7 @@ async def _load_by_id_and_handle_event(
     event: domain.AbstractEvent,
 ) -> List[domain.AbstractEvent]:
     """Загружает таблицу и обрабатывает событие."""
-    table = await repo.get(table_id)
+    table = await repo(table_id)
     return await table.handle_event(event)
 
 
@@ -108,8 +108,8 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         repo: AnyTableRepo,
     ) -> List[domain.AbstractEvent]:
         """Обновляет таблицы с дивидендами."""
-        usd = await repo.get(base.create_id(ports.USD))
-        securities = await repo.get(base.create_id(ports.SECURITIES))
+        usd = await repo(base.create_id(ports.USD))
+        securities = await repo(base.create_id(ports.SECURITIES))
 
         enriched_event = dataclasses.replace(
             event,

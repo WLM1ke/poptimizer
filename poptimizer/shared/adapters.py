@@ -77,7 +77,7 @@ class Mapper(Generic[EntityType]):
         self._desc_list = desc_list
         self._factory = factory
 
-    async def get(self, id_: domain.ID) -> EntityType:
+    async def __call__(self, id_: domain.ID) -> EntityType:
         """Загружает доменный объект из базы."""
         if (table_old := self._identity_map.get(id_)) is not None:
             return table_old

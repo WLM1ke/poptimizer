@@ -8,12 +8,12 @@ from poptimizer.shared import app
 async def test_uow_ctx_repo(mocker):
     """Проверка, что в контексте UoW сохраняются загруженные объекты."""
     fake_mapper = mocker.AsyncMock()
-    fake_mapper.get.side_effect = ["first_rez", "second_rez"]
+    fake_mapper.side_effect = ["first_rez", "second_rez"]
     fake_commit = fake_mapper.commit
 
     async with app.UoW(fake_mapper) as repo:
-        assert await repo.get("first") == "first_rez"
-        assert await repo.get("second") == "second_rez"
+        assert await repo("first") == "first_rez"
+        assert await repo("second") == "second_rez"
 
     assert fake_commit.call_count == 2
     assert mocker.call("first_rez") in fake_commit.call_args_list

@@ -67,7 +67,7 @@ class AbstractRepo(Generic[EntityType], abc.ABC):
     """Абстрактный репозиторий."""
 
     @abc.abstractmethod
-    async def get(self, id_: ID) -> EntityType:
+    async def __call__(self, id_: ID) -> EntityType:
         """Получить доменный объект по ID."""
 
 

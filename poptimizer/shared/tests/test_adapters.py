@@ -60,10 +60,10 @@ async def test_get_concurrent_identity(mapper):
     """При конкурентном доступе возвращается один и тот же объект."""
     mapper.get_doc = fake_get_doc
     mapper._decode = FakeDecode
-    object_gets = [mapper.get(TEST_ID) for _ in range(100)]
+    object_gets = [mapper.__call__(TEST_ID) for _ in range(100)]
     first, *others = await asyncio.gather(*object_gets)
 
-    last = await mapper.get(TEST_ID)
+    last = await mapper.__call__(TEST_ID)
 
     for loaded_objects in others:
         assert first is loaded_objects

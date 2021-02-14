@@ -21,15 +21,15 @@ class UoW(AbstractAsyncContextManager[domain.AbstractRepo[EntityType]], domain.A
         self._mapper = mapper
         self._seen: set[EntityType] = set()
 
+    async def __call__(self, id_: domain.ID) -> EntityType:
+        """Загружает доменный объект из базы."""
+        entity = await self._mapper(id_)
+        self._seen.add(entity)
+        return entity
+
     async def __aenter__(self) -> domain.AbstractRepo[EntityType]:
         """Возвращает репо с таблицами."""
         return self
-
-    async def get(self, id_: domain.ID) -> EntityType:
-        """Загружает доменный объект из базы."""
-        entity = await self._mapper.get(id_)
-        self._seen.add(entity)
-        return entity
 
     async def __aexit__(
         self,
