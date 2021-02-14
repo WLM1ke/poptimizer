@@ -1,9 +1,9 @@
 """Базовые классы взаимодействия с внешней инфраструктурой."""
 import asyncio
 import logging
-import typing
 import weakref
-from typing import Callable, ClassVar, MutableMapping, NamedTuple, Optional, Tuple, Type, TypeVar
+from collections import MutableMapping
+from typing import Any, Callable, ClassVar, Final, Generic, NamedTuple, Optional, TypeVar
 
 from motor import motor_asyncio
 from pymongo.collection import Collection
@@ -11,7 +11,7 @@ from pymongo.collection import Collection
 from poptimizer.shared import connections, domain
 
 # Коллекция для сохранения объектов из групп с одним объектом
-MISC: typing.Final = "misc"
+MISC: Final = "misc"
 
 
 class AsyncLogger:
@@ -29,11 +29,11 @@ class AsyncLogger:
         """Создает асинхронную задачу по логгированию."""
         asyncio.create_task(self._logging_task(message))
 
-    def __set_name__(self, owner: Type[object], name: str) -> None:
+    def __set_name__(self, owner: type[object], name: str) -> None:
         """Создает логгер с именем класса, где он является атрибутом."""
         self._logger = logging.getLogger(owner.__name__)
 
-    def __get__(self, instance: object, owner: Type[object]) -> "AsyncLogger":
+    def __get__(self, instance: object, owner: type[object]) -> "AsyncLogger":
         """Возвращает себя при обращении к атрибуту."""
         return self
 
@@ -49,14 +49,14 @@ class Desc(NamedTuple):
     field_name: str
     doc_name: str
     factory_name: str
-    encoder: Optional[Callable[[typing.Any], typing.Any]] = None  # type: ignore
-    decoder: Optional[Callable[[typing.Any], typing.Any]] = None  # type: ignore
+    encoder: Optional[Callable[[Any], Any]] = None  # type: ignore
+    decoder: Optional[Callable[[Any], Any]] = None  # type: ignore
 
 
 EntityType = TypeVar("EntityType", bound=domain.BaseEntity)
 
 
-class Mapper(typing.Generic[EntityType]):
+class Mapper(Generic[EntityType]):
     """Сохраняет и загружает доменные объекты из MongoDB."""
 
     _identity_map: ClassVar[
@@ -69,7 +69,7 @@ class Mapper(typing.Generic[EntityType]):
 
     def __init__(  # type: ignore
         self,
-        desc_list: Tuple[Desc, ...],
+        desc_list: tuple[Desc, ...],
         factory: domain.AbstractFactory[EntityType],
         client: motor_asyncio.AsyncIOMotorClient = connections.MONGO_CLIENT,
     ) -> None:
@@ -116,7 +116,7 @@ class Mapper(typing.Generic[EntityType]):
                 upsert=True,
             )
 
-    def _get_collection_and_id(self, id_: domain.ID) -> Tuple[Collection, str]:
+    def _get_collection_and_id(self, id_: domain.ID) -> tuple[Collection, str]:
         """Коллекцию и ID документа.
 
         При совпадении названия группы и имени выбирает специальную коллекцию для одиночных записей.

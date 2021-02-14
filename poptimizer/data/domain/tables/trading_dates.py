@@ -62,9 +62,8 @@ class TradingDates(base.AbstractTable[events.AppStarted]):
         """Обновляет, если последняя дата обновления после потенциального окончания торгового дня."""
         if self._timestamp is None:
             return True
-        if _trading_day_potential_end() > self._timestamp:
-            return True
-        return False
+
+        return _trading_day_potential_end() > self._timestamp
 
     async def _prepare_df(self, event: events.AppStarted) -> pd.DataFrame:
         """Загружает новый DataFrame."""

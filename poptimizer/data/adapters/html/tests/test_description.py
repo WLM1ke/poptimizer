@@ -1,6 +1,8 @@
 """Тесты для описания колонок."""
 from datetime import datetime
 
+import pytest
+
 from poptimizer.data.adapters.html import description
 
 
@@ -19,14 +21,14 @@ def test_date_parser_us():
 
 def test_div_parser():
     """Парсер для дивидендов."""
-    assert description.div_parser("30,4") == 30.4
-    assert description.div_parser("66.8 (рек.)") == 66.8
-    assert description.div_parser("78,9 (прогноз)") == 78.9
-    assert description.div_parser("2 097") == 2097.0
+    assert description.div_parser("30,4") == pytest.approx(30.4)
+    assert description.div_parser("66.8 (рек.)") == pytest.approx(66.8)
+    assert description.div_parser("78,9 (прогноз)") == pytest.approx(78.9)
+    assert description.div_parser("2 097") == pytest.approx(2097.0)
     assert description.div_parser("-") is None
 
 
 def test_div_parser_us():
     """Парсер для дивидендов в долларах."""
-    assert description.div_parser_us("$0.51") == 0.51
+    assert description.div_parser_us("$0.51") == pytest.approx(0.51)
     assert description.div_parser_us("-") is None

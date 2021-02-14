@@ -82,7 +82,7 @@ async def _dump_dividends_db(client: motor_asyncio.AsyncIOMotorClient) -> None:
     n_docs = await collection.count_documents({})
     div_count = await collection.find_one({"_id": ID})
     if div_count is None or n_docs != div_count[KEY]:
-        logging.info(f"Backup данных с дивидендами {n_docs - 1} документов")
+        logging.info(f"Backup данных с дивидендами {n_docs} документов")
         process = psutil.Popen(["mongodump", "--out", MONGO_DUMP, "--db", SOURCE_DB])
         status = process.wait()
         await collection.replace_one({"_id": ID}, {KEY: n_docs}, upsert=True)

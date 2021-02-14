@@ -90,7 +90,18 @@ IISJson = List[Dict[str, Union[str, int, float]]]
 
 
 def _format_candles_df(json: IISJson) -> pd.DataFrame:
-    df = pd.DataFrame(columns=["begin", "open", "close", "high", "low", "value", "end", "volume"])
+    df = pd.DataFrame(
+        columns=[
+            "begin",
+            "open",
+            "close",
+            "high",
+            "low",
+            "value",
+            "end",
+            "volume",
+        ],
+    )
     df = df.append(json)
     df = df.drop(["end", "volume"], axis=1)
     df.columns = [

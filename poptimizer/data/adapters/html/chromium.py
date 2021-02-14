@@ -4,8 +4,7 @@ import atexit
 import types
 from typing import Final, Optional
 
-import pyppeteer
-from pyppeteer import browser
+from pyppeteer import browser, launch
 from pyppeteer.page import Page
 
 # Минимальный заголовок поля в заголовке запроса, чтобы сайты  не игнорировали браузер
@@ -33,7 +32,7 @@ class Browser:
         """
         async with self._lock:
             if self._browser is None:
-                self._browser = await pyppeteer.launch(autoClose=False)
+                self._browser = await launch(autoClose=False)
                 atexit.register(self._close)
 
         page = await self._browser.newPage()

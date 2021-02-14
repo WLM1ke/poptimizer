@@ -80,7 +80,10 @@ def dividends_validation(ticker: str) -> pd.DataFrame:
     div_ex = div.div_ext(ticker)
 
     df_comp = _compare(div_ex.iloc[:, -1:], df_local)
-    df_comp = pd.concat([div_ex.iloc[:, :-1], df_comp], axis=1)
+    df_comp = pd.concat(
+        [div_ex.iloc[:, :-1], df_comp],
+        axis=1,
+    )
 
     comp_str = f"\nСравнение интернет источников с локальными данными - {ticker}\n\n{df_comp}"
     print(comp_str)  # noqa: WPS421

@@ -114,10 +114,7 @@ class DivExt(base.AbstractTable[events.UpdateDivCommand]):
         if (timestamp := self._timestamp) is None:
             return True
 
-        if datetime.utcnow() - timestamp > timedelta(days=7):
-            return True
-
-        return False
+        return datetime.utcnow() - timestamp > timedelta(days=7)
 
     async def _prepare_df(self, event: events.UpdateDivCommand) -> pd.DataFrame:
         """Загружает данные из всех источников и рассчитывает медиану."""

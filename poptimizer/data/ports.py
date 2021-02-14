@@ -12,5 +12,13 @@ QUOTES: Final = "quotes"
 USD: Final = "usd"
 
 GroupName = Literal[
-    "trading_dates", "smart_lab", "dividends", "div_ext", "CPI", "securities", "indexes", "quotes", "usd"
+    "trading_dates",
+    "smart_lab",
+    "dividends",
+    "div_ext",
+    "CPI",
+    "securities",
+    "indexes",
+    "quotes",
+    "usd",
 ]

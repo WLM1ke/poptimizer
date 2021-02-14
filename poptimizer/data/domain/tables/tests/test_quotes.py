@@ -94,7 +94,13 @@ async def test_load_first(table, mocker):
 
     mocker.patch.object(quotes.pd, "concat")
 
-    event = events.TickerTraded("TICKER", "ISIN", "M1", date(2020, 12, 16), mocker.Mock())
+    event = events.TickerTraded(
+        "TICKER",
+        "ISIN",
+        "M1",
+        date(2020, 12, 16),
+        mocker.Mock(),
+    )
 
     assert await table._load_df(event) is quotes.pd.concat.return_value
     fake_aliases.get.assert_called_once_with("ISIN")
@@ -110,7 +116,13 @@ async def test_load_after_empty(table, mocker):
 
     mocker.patch.object(quotes.pd, "concat")
 
-    event = events.TickerTraded("TICKER", "ISIN", "M1", date(2020, 12, 16), mocker.Mock())
+    event = events.TickerTraded(
+        "TICKER",
+        "ISIN",
+        "M1",
+        date(2020, 12, 16),
+        mocker.Mock(),
+    )
 
     assert await table._load_df(event) is quotes.pd.concat.return_value
     assert table._aliases.get.call_count == 0
@@ -129,7 +141,13 @@ async def test_load_after_not_empty(table, mocker):
 
     mocker.patch.object(quotes.pd, "concat")
 
-    event = events.TickerTraded("TICKER", "ISIN", "M1", date(2020, 12, 16), mocker.Mock())
+    event = events.TickerTraded(
+        "TICKER",
+        "ISIN",
+        "M1",
+        date(2020, 12, 16),
+        mocker.Mock(),
+    )
 
     assert await table._load_df(event) is quotes.pd.concat.return_value
     assert table._aliases.get.call_count == 0
