@@ -2,7 +2,7 @@
 import asyncio
 import logging
 import weakref
-from collections import MutableMapping
+from collections.abc import MutableMapping
 from typing import Any, Callable, ClassVar, Final, Generic, NamedTuple, Optional, TypeVar
 
 from motor import motor_asyncio
