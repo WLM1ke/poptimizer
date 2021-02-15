@@ -55,6 +55,24 @@ def test_index(date, index):
     assert df.loc[date] == pytest.approx(index)
 
 
+USD_CASES = (
+    ("2015-01-05", 60.85),
+    ("2021-02-12", 73.7175),
+)
+
+
+@pytest.mark.parametrize("date, usd", USD_CASES)
+def test_usd(date, usd):
+    """Проверка, что данные обрезаны."""
+    df = not_div.usd()
+
+    assert isinstance(df, pd.Series)
+    assert df.index.is_monotonic_increasing
+    assert df.index[0] >= bootstrap.START_DATE
+    assert df.name == col.CLOSE
+    assert df.loc[date] == pytest.approx(usd)
+
+
 QUOTES_CASES = (
     (("AKRN",), 0, ("2015-06-10", col.TURNOVER), 7227902),
     (("AKRN",), 0, ("2018-09-10", col.CLOSE), 4528),

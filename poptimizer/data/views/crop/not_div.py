@@ -1,6 +1,5 @@
 """Обрезка данных для различных источников кроме дивидендов."""
 import functools
-from typing import List, Tuple
 
 import pandas as pd
 
@@ -24,11 +23,17 @@ def index(
     return df.loc[bootstrap.START_DATE :, col.CLOSE]  # type: ignore
 
 
+def usd(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Series:
+    """Курс доллара."""
+    df = viewer.get_df(ports.USD, ports.USD)
+    return df.loc[bootstrap.START_DATE :, col.CLOSE]  # type: ignore
+
+
 @functools.lru_cache(maxsize=1)
 def quotes(
-    tickers: Tuple[str, ...],
+    tickers: tuple[str, ...],
     viewer: viewers.Viewer = bootstrap.VIEWER,
-) -> List[pd.DataFrame]:
+) -> list[pd.DataFrame]:
     """Информация о котировках для заданных тикеров."""
     dfs = viewer.get_dfs(ports.QUOTES, tickers)
     start_date = bootstrap.START_DATE
