@@ -21,7 +21,11 @@ class IMOEX(Feature):
         super().__init__(ticker, params)
         imoex = indexes.imoex(params.end)
         price = params.price(ticker)
-        imoex = imoex.reindex(price.index, axis=0)
+        imoex = imoex.reindex(
+            price.index,
+            method="ffill",
+            axis=0,
+        )
         self.imoex = torch.tensor(imoex.values, dtype=torch.float, device=DEVICE)
         self.history_days = params.history_days
 

@@ -20,7 +20,11 @@ class MCFTRR(Feature):
         super().__init__(ticker, params)
         mcftrr = indexes.mcftrr(params.end)
         price = params.price(ticker)
-        mcftrr = mcftrr.reindex(price.index, axis=0)
+        mcftrr = mcftrr.reindex(
+            price.index,
+            method="ffill",
+            axis=0,
+        )
         self.mcftrr = torch.tensor(mcftrr.values, dtype=torch.float, device=DEVICE)
         self.history_days = params.history_days
 

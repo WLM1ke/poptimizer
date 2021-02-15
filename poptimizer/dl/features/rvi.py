@@ -20,7 +20,11 @@ class RVI(Feature):
         super().__init__(ticker, params)
         rvi = indexes.rvi(params.end)
         price = params.price(ticker)
-        rvi = rvi.reindex(price.index, axis=0)
+        rvi = rvi.reindex(
+            price.index,
+            method="ffill",
+            axis=0,
+        )
         self.rvi = torch.tensor(rvi.values, dtype=torch.float, device=DEVICE)
         self.history_days = params.history_days
 
