@@ -3,6 +3,7 @@ import re
 from typing import Optional
 
 import pandas as pd
+from pyppeteer import errors
 
 from poptimizer.data.adapters.gateways import gateways
 from poptimizer.data.adapters.html import chromium, description, parser
@@ -26,7 +27,11 @@ async def _get_page_html(url: str, browser: chromium.Browser = chromium.BROWSER)
     page = await browser.get_new_page()
 
     await page.goto(url)
-    await page.waitForXPath(TABLE_XPATH)
+
+    try:
+        await page.waitForXPath(TABLE_XPATH)
+    except errors.TimeoutError:
+        return await page.content()
 
     return await page.content()
 
@@ -63,7 +68,7 @@ def _reformat_df(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
     ticker_col = df[ticker]
     df[col.CURRENCY] = ticker_col.str.slice(start=-3)
     ticker_col = ticker_col.str.slice(stop=-3)
-    df[ticker] = ticker_col.apply(float)
+    df[ticker] = pd.to_numeric(ticker_col)
     return df
 
 
@@ -78,7 +83,6 @@ class FinRangeGateway(gateways.DivGateway):
 
         url = _prepare_url(ticker)
         html = await _get_page_html(url)
-
         cols_desc = _get_col_desc(ticker)
 
         try:
