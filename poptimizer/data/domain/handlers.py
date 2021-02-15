@@ -113,7 +113,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
 
         enriched_event = dataclasses.replace(
             event,
-            market=securities.df.loc[event.ticker, col.MARKET],
+            type_=securities.df.loc[event.ticker, col.TICKER_TYPE],
             usd=usd.df,
         )
 
