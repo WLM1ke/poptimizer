@@ -71,3 +71,24 @@ def test_rvi(date, index):
     assert df.index[-1] == pd.Timestamp("2020-10-16")
 
     assert df.loc[date] == pytest.approx(index)
+
+
+USD_CASES = (
+    ("2021-01-12", 73.54),
+    ("2021-02-12", 73.7175),
+)
+
+
+@pytest.mark.parametrize("date, usd", USD_CASES)
+def test_usd(date, usd):
+    """Проверка, что первые данные обрезаны, а последние соответствуют аргументу."""
+    date = pd.Timestamp(date)
+    df = indexes.usd(date)
+
+    assert isinstance(df, pd.Series)
+    assert df.index.is_monotonic_increasing and df.name == col.CLOSE
+
+    assert df.index[0] >= bootstrap.START_DATE
+    assert df.index[-1] == pd.Timestamp(date)
+
+    assert df.loc[date] == pytest.approx(usd)

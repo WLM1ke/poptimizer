@@ -38,3 +38,9 @@ def rvi(last_date: pd.Timestamp) -> pd.Series:
     """Индекс волатильности RVI."""
     df = not_div.index("RVI")
     return df.loc[:last_date]
+
+
+def usd(last_date: pd.Timestamp) -> pd.Series:
+    """Курс доллара."""
+    df = not_div.usd()
+    return df.loc[:last_date]
