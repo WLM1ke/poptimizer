@@ -4,7 +4,7 @@ import pytest
 from pyppeteer import errors
 
 from poptimizer.data.adapters.gateways import conomy
-from poptimizer.data.adapters.html import description, parser
+from poptimizer.data.adapters.html import parser
 from poptimizer.shared import col
 
 
@@ -50,24 +50,6 @@ async def test_get_html(mocker):
     fake_load_ticker_page.assert_called_once_with(fake_page, "UNAC")
     fake_load_dividends_table.assert_called_once_with(fake_page)
     assert html is fake_page.content.return_value
-
-
-TICKER_CASES = (
-    ("GAZP", True),
-    ("SNGSP", False),
-    ("WRONG", None),
-    ("AAPL-RM", None),
-)
-
-
-@pytest.mark.parametrize("ticker, answer", TICKER_CASES)
-def test_is_common(ticker, answer):
-    """Проверка, что тикер соответствует обыкновенной акции."""
-    if answer is None:
-        with pytest.raises(description.ParserError, match="Некорректный тикер"):
-            conomy._is_common(ticker)
-    else:
-        assert conomy._is_common(ticker) is answer
 
 
 DESC_CASES = (

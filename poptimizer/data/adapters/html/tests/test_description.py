@@ -5,6 +5,23 @@ import pytest
 
 from poptimizer.data.adapters.html import description
 
+TICKER_CASES = (
+    ("GAZP", True),
+    ("SNGSP", False),
+    ("WRONG", None),
+    ("AAPL-RM", None),
+)
+
+
+@pytest.mark.parametrize("ticker, answer", TICKER_CASES)
+def test_is_common(ticker, answer):
+    """Проверка, что тикер соответствует обыкновенной акции."""
+    if answer is None:
+        with pytest.raises(description.ParserError, match="Некорректный тикер"):
+            description.is_common(ticker)
+    else:
+        assert description.is_common(ticker) is answer
+
 
 def test_date_parser():
     """Парсер для дат."""

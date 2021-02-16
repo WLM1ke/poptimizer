@@ -1,9 +1,13 @@
 """Описание колонок для парсера html-таблиц."""
 import re
 from datetime import datetime
-from typing import Callable, Final, NamedTuple, Optional, Tuple, Union
+from typing import Callable, Final, NamedTuple, Optional, Union
 
 from poptimizer import config
+
+# Параметры проверки обыкновенная акция или привилегированная
+COMMON_TICKER_LENGTH: Final = 4
+PREFERRED_TICKER_ENDING: Final = "P"
 
 DIV_PATTERN: Final = r".*\d"
 DIV_PATTERN_US: Final = r"\$(.*\d)"
@@ -13,6 +17,16 @@ DATE_PATTERN_US: Final = r"\d{2}\/\d{2}\/\d{4}"
 
 class ParserError(config.POptimizerError):
     """Ошибки в парсинге html-таблиц."""
+
+
+def is_common(ticker: str) -> bool:
+    """Определяет является ли акция обыкновенной."""
+    if len(ticker) == COMMON_TICKER_LENGTH:
+        return True
+    elif len(ticker) == COMMON_TICKER_LENGTH + 1:
+        if ticker[COMMON_TICKER_LENGTH] == PREFERRED_TICKER_ENDING:
+            return False
+    raise ParserError(f"Некорректный тикер {ticker}")
 
 
 ParserFunc = Callable[[str], Union[None, float, datetime]]
@@ -31,7 +45,7 @@ class ColDesc(NamedTuple):
     """
 
     num: int
-    raw_name: Tuple[str, ...]
+    raw_name: tuple[str, ...]
     name: str
     parser_func: Optional[ParserFunc]
 

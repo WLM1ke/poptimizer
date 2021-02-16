@@ -21,10 +21,6 @@ DIVIDENDS_TABLE: Final = '//*[@id="page-container"]/div[2]/div/div[1]'
 # Номер таблицы на html-странице и строки с заголовком
 TABLE_INDEX: Final = 1
 
-# Параметры проверки обыкновенная акция или привилегированная
-COMMON_TICKER_LENGTH: Final = 4
-PREFERRED_TICKER_ENDING: Final = "P"
-
 # Задержка для принудительной остановки Chromium
 CHROMIUM_TIMEOUT = 30
 
@@ -54,16 +50,6 @@ async def _get_html(ticker: str, browser: chromium.Browser = chromium.BROWSER) -
     return cast(str, await page.content())
 
 
-def _is_common(ticker: str) -> bool:
-    """Определяет является ли акция обыкновенной."""
-    if len(ticker) == COMMON_TICKER_LENGTH:
-        return True
-    elif len(ticker) == COMMON_TICKER_LENGTH + 1:
-        if ticker[COMMON_TICKER_LENGTH] == PREFERRED_TICKER_ENDING:
-            return False
-    raise description.ParserError(f"Некорректный тикер {ticker}")
-
-
 def _get_col_desc(ticker: str) -> parser.Descriptions:
     """Формирует список с описанием необходимых столбцов."""
     date = description.ColDesc(
@@ -74,7 +60,7 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
     )
     columns = [date]
 
-    if _is_common(ticker):
+    if description.is_common(ticker):
         common = description.ColDesc(
             num=7,
             raw_name=("G", "Размер дивидендов", "АОИ"),
