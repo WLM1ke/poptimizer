@@ -11,7 +11,7 @@ PREFERRED_TICKER_ENDING: Final = "P"
 
 DIV_PATTERN: Final = r".*\d"
 DIV_PATTERN_US: Final = r"\$(.*\d)"
-DATE_PATTERN: Final = r"\d{2}\.\d{2}\.\d{4}"
+DATE_PATTERN: Final = r"\d{1,2}\.\d{2}\.\d{4}"
 DATE_PATTERN_US: Final = r"\d{2}\/\d{2}\/\d{4}"
 
 

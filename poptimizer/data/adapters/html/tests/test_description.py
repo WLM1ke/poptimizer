@@ -28,6 +28,7 @@ def test_date_parser():
     assert description.date_parser("-") is None
     assert description.date_parser("30.11.2018 (рек.)") == datetime(2018, 11, 30)
     assert description.date_parser("19.07.2017") == datetime(2017, 7, 19)
+    assert description.date_parser("9.07.2017") == datetime(2017, 7, 9)
 
 
 def test_date_parser_us():
