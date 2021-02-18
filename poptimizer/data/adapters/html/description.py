@@ -3,7 +3,10 @@ import re
 from datetime import datetime
 from typing import Callable, Final, NamedTuple, Optional, Union
 
+import pandas as pd
+
 from poptimizer import config
+from poptimizer.shared import col
 
 # Параметры проверки обыкновенная акция или привилегированная
 COMMON_TICKER_LENGTH: Final = 4
@@ -11,6 +14,7 @@ PREFERRED_TICKER_ENDING: Final = "P"
 
 DIV_PATTERN: Final = r".*\d"
 DIV_PATTERN_US: Final = r"\$(.*\d)"
+DIV_PATTERN_WITH_CUR = r".*\d\s{1,2}[$₽]"
 DATE_PATTERN: Final = r"\d{1,2}\.\d{2}\.\d{4}"
 DATE_PATTERN_US: Final = r"\d{2}\/\d{2}\/\d{4}"
 
@@ -88,3 +92,24 @@ def div_parser_us(div: str) -> Optional[float]:
         div_string = div_string.replace(" ", "")
         return float(div_string)
     return None
+
+
+def div_parser_with_cur(div: str) -> Optional[str]:
+    """Функция парсинга дивидендов с валютой в конце."""
+    re_div = re.search(DIV_PATTERN_WITH_CUR, div)
+    if re_div:
+        div_string = re_div.group(0)
+        div_string = div_string.replace(",", ".")
+        div_string = div_string.replace(" ", "")
+        div_string = div_string.replace("₽", col.RUR)
+        return div_string.replace("$", col.USD)
+    return None
+
+
+def reformat_df_with_cur(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
+    """Разделяет столбец на валюту и значение."""
+    ticker_col = df[ticker]
+    df[col.CURRENCY] = ticker_col.str.slice(start=-3)
+    ticker_col = ticker_col.str.slice(stop=-3).str.strip()  # "27 "
+    df[ticker] = pd.to_numeric(ticker_col)
+    return df

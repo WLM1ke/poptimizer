@@ -1,9 +1,11 @@
 """Тесты для описания колонок."""
 from datetime import datetime
 
+import pandas as pd
 import pytest
 
 from poptimizer.data.adapters.html import description
+from poptimizer.shared import col
 
 TICKER_CASES = (
     ("GAZP", True),
@@ -50,3 +52,21 @@ def test_div_parser_us():
     """Парсер для дивидендов в долларах."""
     assert description.div_parser_us("$0.51") == pytest.approx(0.51)
     assert description.div_parser_us("-") is None
+
+
+def test_div_parser_with_cur():
+    """Преобразование наименования валюты."""
+    assert description.div_parser_with_cur("2 027,5  ₽") == "2027.5RUR"
+    assert description.div_parser_with_cur("2,1  $") == "2.1USD"
+    assert description.div_parser_with_cur("") is None
+
+
+def test_reformat_df():
+    """Данные разносятся на два столбца."""
+    div = pd.DataFrame(["2027.5RUR", "2.1USD", "27 RUR"], columns=["SOME"])
+    div_reformatted = pd.DataFrame(
+        [[2027.5, "RUR"], [2.1, "USD"], [27, "RUR"]],
+        columns=["SOME", col.CURRENCY],
+    )
+
+    pd.testing.assert_frame_equal(description.reformat_df_with_cur(div, "SOME"), div_reformatted)
