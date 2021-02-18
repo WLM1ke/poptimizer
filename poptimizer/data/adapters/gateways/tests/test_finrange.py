@@ -50,36 +50,12 @@ async def test_load_ticker_page_with_error(mocker):
     assert html is fake_page.content.return_value
 
 
-DIV_CASES = (
-    ("2 027,5  ₽", "2027.5RUR"),
-    ("2,1  $", "2.1USD"),
-    ("", None),
-)
-
-
-@pytest.mark.parametrize("div, div_parsed", DIV_CASES)
-def test_div_parser(div, div_parsed):
-    """У иностранных тикеров обрезается окончание."""
-    assert finrange._div_parser(div) == div_parsed
-
-
-def test_reformat_df():
-    """Данные разносятся на два столбца."""
-    div = pd.DataFrame(["2027.5RUR", "2.1USD"], columns=["SOME"])
-    div_reformatted = pd.DataFrame(
-        [[2027.5, "RUR"], [2.1, "USD"]],
-        columns=["SOME", col.CURRENCY],
-    )
-
-    pd.testing.assert_frame_equal(finrange._reformat_df(div, "SOME"), div_reformatted)
-
-
 @pytest.mark.asyncio
 async def test_gateway(mocker):
     """Осуществляется вызов необходимых функций."""
     fake_get_page_html = mocker.patch.object(finrange, "_get_page_html")
     fake_get_df_from_html = mocker.patch.object(finrange.parser, "get_df_from_html")
-    fake_reformat_df = mocker.patch.object(finrange, "_reformat_df")
+    fake_reformat_df = mocker.patch.object(finrange.description, "reformat_df_with_cur")
 
     gw = finrange.FinRangeGateway()
     df = await gw.__call__("AKRN")
