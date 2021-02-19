@@ -1,5 +1,6 @@
 """Базовые классы шлюзов."""
 import abc
+from typing import Optional
 
 import aiohttp
 import pandas as pd
@@ -22,7 +23,7 @@ class DivGateway(BaseGateway):
     """Базовый шлюз для дивидендов."""
 
     @abc.abstractmethod
-    async def __call__(self, ticker: str) -> pd.DataFrame:
+    async def __call__(self, ticker: str) -> Optional[pd.DataFrame]:
         """Дивиденды для данного тикера."""
 
     def _sort_and_agg(self, df: pd.DataFrame) -> pd.DataFrame:

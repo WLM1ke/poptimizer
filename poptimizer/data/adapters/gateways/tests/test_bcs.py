@@ -135,4 +135,4 @@ async def test_bcs_empty(mocker):
 
     df = await bcs.BCSGateway().__call__("TEST")
 
-    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["TEST", col.CURRENCY]))
+    assert df is None

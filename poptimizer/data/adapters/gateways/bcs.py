@@ -1,7 +1,7 @@
 """Загрузка данных по дивидендам с сайта https://bcs-express.ru."""
 import re
 from datetime import datetime
-from typing import List, Optional, cast
+from typing import Optional, cast
 
 import bs4
 import pandas as pd
@@ -19,7 +19,7 @@ DIV_TAG = "div"
 CLASS_TAG = "class"
 
 
-async def _get_rows(ticker: str) -> List[bs4.BeautifulSoup]:
+async def _get_rows(ticker: str) -> list[bs4.BeautifulSoup]:
     """Получает строки таблицы с дивидендами в формате bs4."""
     html = await parser.get_html(URL + ticker)
     soup = bs4.BeautifulSoup(html, "lxml")
@@ -27,7 +27,7 @@ async def _get_rows(ticker: str) -> List[bs4.BeautifulSoup]:
     if div_table is None:
         return []
     rows = div_table.find_all(DIV_TAG, {CLASS_TAG: "dividends-table__row _item"})
-    return cast(List[bs4.BeautifulSoup], rows)
+    return cast(list[bs4.BeautifulSoup], rows)
 
 
 def _parse_date(row: bs4.BeautifulSoup) -> Optional[datetime]:
@@ -55,14 +55,14 @@ class BCSGateway(gateways.DivGateway):
 
     _logger = adapters.AsyncLogger()
 
-    async def __call__(self, ticker: str) -> pd.DataFrame:
+    async def __call__(self, ticker: str) -> Optional[pd.DataFrame]:
         """Получение дивидендов для заданного тикера."""
         self._logger(ticker)
 
         try:
             rows = await _get_rows(ticker)
         except description.ParserError:
-            return pd.DataFrame(columns=[ticker, col.CURRENCY])
+            return None
 
         div_data = [(_parse_date(row), _parse_div(row)) for row in rows]
 
