@@ -34,4 +34,5 @@ async def test_loader_web_error(mocker):
 
     loader = close_reestry.CloseGateway()
     df = await loader("TATN")
-    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["TATN", col.CURRENCY]))
+
+    assert df is None

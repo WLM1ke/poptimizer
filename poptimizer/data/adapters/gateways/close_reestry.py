@@ -58,7 +58,7 @@ class CloseGateway(gateways.DivGateway):
         try:
             df = await parser.get_df_from_url(url, TABLE_INDEX, cols_desc)
         except description.ParserError:
-            return pd.DataFrame(columns=[ticker, col.CURRENCY])
+            return None
 
         df[col.CURRENCY] = col.RUR
         return df
