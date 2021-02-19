@@ -1,17 +1,19 @@
 """Таблицы с дивидендами."""
 from datetime import datetime, timedelta
-from typing import ClassVar, Final, List, NamedTuple, Tuple, Union
+from typing import ClassVar, Final, NamedTuple, Union
 
 import pandas as pd
 
 from poptimizer.data import ports
-from poptimizer.data.adapters.gateways import (
+from poptimizer.data.adapters.gateways import (  # noqa: WPS235
     bcs,
+    close_reestry,
     conomy,
     dividends,
     dohod,
     finrange,
     gateways,
+    invest_mint,
     nasdaq,
     smart_lab,
 )
@@ -19,15 +21,14 @@ from poptimizer.data.domain import events
 from poptimizer.data.domain.tables import base
 from poptimizer.shared import col, domain
 
-# Типы шлюзов дивидендов
-SHARES = "shares"
-FOREIGN_SHARES = "foreignshares"
-
 DivEvents = Union[events.TickerTraded, events.UpdateDivCommand]
 
 
 def _convent_to_rur(div: pd.DataFrame, event: DivEvents) -> pd.DataFrame:
     div = div.sort_index(axis=0)
+    div = div.dropna()
+    div = div[div[event.ticker] != 0]
+
     rate = event.usd[col.CLOSE]
     rate = rate.reindex(index=div.index, method="ffill")
     div[col.CURRENCY] = rate.mask(
@@ -58,7 +59,7 @@ class Dividends(base.AbstractTable[DivEvents]):
         """Индекс должен быть уникальным и возрастающим."""
         base.check_unique_increasing_index(df_new)
 
-    def _new_events(self, event: DivEvents) -> List[domain.AbstractEvent]:
+    def _new_events(self, event: DivEvents) -> list[domain.AbstractEvent]:
         """Обновление дивидендов не порождает события."""
         return []
 
@@ -83,7 +84,7 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Нет проверок."""
 
-    def _new_events(self, event: events.TradingDayEnded) -> List[domain.AbstractEvent]:
+    def _new_events(self, event: events.TradingDayEnded) -> list[domain.AbstractEvent]:
         """Не порождает событий."""
         return []
 
@@ -92,7 +93,7 @@ class GateWayDesc(NamedTuple):
     """Описание шлюзов для загрузки дивидендов из внешних источников."""
 
     name: str
-    market: str
+    type_: int
     gw: gateways.DivGateway
 
 
@@ -100,13 +101,20 @@ class DivExt(base.AbstractTable[events.UpdateDivCommand]):
     """Таблица со сводными данными по дивидендам из внешних источников."""
 
     group: ClassVar[ports.GroupName] = ports.DIV_EXT
-    _gateways: Final[Tuple[GateWayDesc]] = (
-        GateWayDesc("Dohod", SHARES, dohod.DohodGateway()),
-        GateWayDesc("Conomy", SHARES, conomy.ConomyGateway()),
-        GateWayDesc("BCS", SHARES, bcs.BCSGateway()),
-        GateWayDesc("NASDAQ", FOREIGN_SHARES, nasdaq.NASDAQGateway()),
-        GateWayDesc("FinRange", SHARES, finrange.FinRangeGateway()),
-        GateWayDesc("FinRange", FOREIGN_SHARES, finrange.FinRangeGateway()),
+    _gateways: Final[tuple[GateWayDesc]] = (
+        GateWayDesc("Dohod", col.ORDINARY, dohod.DohodGateway()),
+        GateWayDesc("Dohod", col.PREFERRED, dohod.DohodGateway()),
+        GateWayDesc("Conomy", col.ORDINARY, conomy.ConomyGateway()),
+        GateWayDesc("Conomy", col.PREFERRED, conomy.ConomyGateway()),
+        GateWayDesc("BCS", col.ORDINARY, bcs.BCSGateway()),
+        GateWayDesc("BCS", col.PREFERRED, bcs.BCSGateway()),
+        GateWayDesc("NASDAQ", col.FOREIGN, nasdaq.NASDAQGateway()),
+        GateWayDesc("FinRange", col.ORDINARY, finrange.FinRangeGateway()),
+        GateWayDesc("FinRange", col.FOREIGN, finrange.FinRangeGateway()),
+        GateWayDesc("Close", col.ORDINARY, close_reestry.CloseGateway()),
+        GateWayDesc("Close", col.PREFERRED, close_reestry.CloseGateway()),
+        GateWayDesc("InvestMint", col.ORDINARY, invest_mint.InvestMintGateway()),
+        GateWayDesc("InvestMint", col.PREFERRED, invest_mint.InvestMintGateway()),
     )
 
     def _update_cond(self, event: events.UpdateDivCommand) -> bool:
@@ -120,16 +128,19 @@ class DivExt(base.AbstractTable[events.UpdateDivCommand]):
         """Загружает данные из всех источников и рассчитывает медиану."""
         dfs = []
 
-        for name, market, gateway in self._gateways:
-            if market != event.market:
+        for name, type_, gateway in self._gateways:
+            if type_ != event.type_:
                 continue
 
-            df = await gateway(event.ticker)
-            df = _convent_to_rur(df, event)
-            df.columns = [name]
-            dfs.append(df)
+            if (df := await gateway(event.ticker)) is not None:
+                df = _convent_to_rur(df, event)
+                df.columns = [name]
+                dfs.append(df)
 
-        df = pd.concat(dfs, axis=1)
+        df = pd.DataFrame()
+        if dfs:
+            df = pd.concat(dfs, axis=1)
+            df = df.dropna(thresh=2)
         df["MEDIAN"] = df.median(axis=1)
         return df
 
@@ -137,6 +148,6 @@ class DivExt(base.AbstractTable[events.UpdateDivCommand]):
         """Индекс должен быть уникальным и возрастающим."""
         base.check_unique_increasing_index(df_new)
 
-    def _new_events(self, event: events.UpdateDivCommand) -> List[domain.AbstractEvent]:
+    def _new_events(self, event: events.UpdateDivCommand) -> list[domain.AbstractEvent]:
         """Обновление дивидендов не порождает события."""
         return []
