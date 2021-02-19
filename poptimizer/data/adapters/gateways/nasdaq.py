@@ -36,16 +36,15 @@ def get_col_desc(ticker: str) -> parser.Descriptions:
 
 async def _load_ticker_page(url: str, browser: chromium.Browser = chromium.BROWSER) -> str:
     """Загружает страницу с таблицей дивидендов."""
-    page = await browser.get_new_page()
+    async with browser.get_new_page() as page:
+        try:
+            # На странице много рекламных банеров - она практически никогда не загружается полностью
+            # Достаточно немного подождать для частичного перехода, а потом ждать только загрузки таблицы
+            await page.goto(url, options={"timeout": PARTIAL_LOAD_TIMEOUT})
+        except errors.TimeoutError:
+            await page.waitForXPath(TABLE_XPATH)
 
-    try:
-        # На странице много рекламных банеров, поэтому она практически никогда не загружается полностью
-        # Достаточно немного подождать для перехода на страницу, а потом ждать только загрузки таблицы
-        await page.goto(url, options={"timeout": PARTIAL_LOAD_TIMEOUT})
-    except errors.TimeoutError:
-        await page.waitForXPath(TABLE_XPATH)
-
-    return await page.content()
+        return await page.content()
 
 
 class NASDAQGateway(gateways.DivGateway):

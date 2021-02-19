@@ -11,8 +11,8 @@ from poptimizer.shared import col
 @pytest.mark.asyncio
 async def test_load_ticker_page(mocker):
     """Последовательность загрузки страницы, которое завершилось полностью."""
-    fake_browser = mocker.AsyncMock()
-    fake_page = fake_browser.get_new_page.return_value
+    fake_browser = mocker.MagicMock()
+    fake_page = fake_browser.get_new_page.return_value.__aenter__.return_value
 
     html = await nasdaq._load_ticker_page("qqq", fake_browser)
 
@@ -25,8 +25,8 @@ async def test_load_ticker_page(mocker):
 @pytest.mark.asyncio
 async def test_load_ticker_page_wait_only_table(mocker):
     """Последовательность загрузки с ожиданием только таблицы."""
-    fake_browser = mocker.AsyncMock()
-    fake_page = fake_browser.get_new_page.return_value
+    fake_browser = mocker.MagicMock()
+    fake_page = fake_browser.get_new_page.return_value.__aenter__.return_value
     fake_page.goto.side_effect = errors.TimeoutError
 
     html = await nasdaq._load_ticker_page("qqq", fake_browser)
