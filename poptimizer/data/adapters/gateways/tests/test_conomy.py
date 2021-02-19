@@ -38,14 +38,14 @@ async def test_load_dividends_table(mocker):
 @pytest.mark.asyncio
 async def test_get_html(mocker):
     """Последовательный переход и загрузка html с дивидендами."""
-    fake_browser = mocker.AsyncMock()
+    fake_browser = mocker.MagicMock()
     fake_load_ticker_page = mocker.patch.object(conomy, "_load_ticker_page")
     fake_load_dividends_table = mocker.patch.object(conomy, "_load_dividends_table")
 
     html = await conomy._get_html("UNAC", fake_browser)
 
     fake_browser.get_new_page.assert_called_once_with()
-    fake_page = fake_browser.get_new_page.return_value
+    fake_page = fake_browser.get_new_page.return_value.__aenter__.return_value
 
     fake_load_ticker_page.assert_called_once_with(fake_page, "UNAC")
     fake_load_dividends_table.assert_called_once_with(fake_page)

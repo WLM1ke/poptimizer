@@ -44,10 +44,10 @@ async def _load_dividends_table(page: Page) -> None:
 
 async def _get_html(ticker: str, browser: chromium.Browser = chromium.BROWSER) -> str:
     """Возвращает html-код страницы с данными по дивидендам с сайта https://www.conomy.ru/."""
-    page = await browser.get_new_page()
-    await _load_ticker_page(page, ticker)
-    await _load_dividends_table(page)
-    return cast(str, await page.content())
+    async with browser.get_new_page() as page:
+        await _load_ticker_page(page, ticker)
+        await _load_dividends_table(page)
+        return cast(str, await page.content())
 
 
 def _get_col_desc(ticker: str) -> parser.Descriptions:
