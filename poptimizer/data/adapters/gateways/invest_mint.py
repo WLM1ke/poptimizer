@@ -4,6 +4,7 @@ import types
 from datetime import datetime
 from typing import Final, Optional
 
+import bs4
 import pandas as pd
 
 from poptimizer.data.adapters.gateways import gateways
@@ -51,13 +52,32 @@ def get_col_desc(ticker: str) -> parser.Descriptions:
         name=col.DATE,
         parser_func=_date_parser,
     )
+
+    div_col_n = 5
+    if ticker[-3:] == "-RM":
+        div_col_n -= 1
+
     div_col = description.ColDesc(
-        num=5,
+        num=div_col_n,
         raw_name=("Дивиденд",),
         name=ticker,
         parser_func=description.div_parser_with_cur,
     )
     return [date_col, div_col]
+
+
+def _prepare_url(ticker: str) -> str:
+    if ticker[-3:] == "-RM":
+        ticker = ticker[:-3]
+    return f"{URL}{ticker.lower()}"
+
+
+def _find_table_n(html: str) -> int:
+    soup = bs4.BeautifulSoup(html, "lxml")
+    tables = soup.find_all("table")
+    for num, table in enumerate(tables):
+        if "Цена на закрытии" in table.text:
+            return num
 
 
 class InvestMintGateway(gateways.DivGateway):
@@ -70,15 +90,14 @@ class InvestMintGateway(gateways.DivGateway):
         self._logger(ticker)
 
         cols_desc = get_col_desc(ticker)
-        url = f"{URL}{ticker.lower()}"
+        url = _prepare_url(ticker)
+
         try:
             html = await parser.get_html(url)
         except description.ParserError:
             return None
 
-        table_index = 1
-        if "Ближайшие дивиденды неизвестны" in html:
-            table_index = 0
+        table_index = _find_table_n(html)
 
         try:
             df = parser.get_df_from_html(html, table_index, cols_desc)

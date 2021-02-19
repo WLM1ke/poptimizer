@@ -115,6 +115,7 @@ class DivExt(base.AbstractTable[events.UpdateDivCommand]):
         GateWayDesc("Close", col.PREFERRED, close_reestry.CloseGateway()),
         GateWayDesc("InvestMint", col.ORDINARY, invest_mint.InvestMintGateway()),
         GateWayDesc("InvestMint", col.PREFERRED, invest_mint.InvestMintGateway()),
+        GateWayDesc("InvestMint", col.FOREIGN, invest_mint.InvestMintGateway()),
     )
 
     def _update_cond(self, event: events.UpdateDivCommand) -> bool:
