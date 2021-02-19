@@ -67,7 +67,6 @@ async def test_nasdaq_gateway_error(mocker):
     mocker.patch.object(nasdaq.parser, "get_df_from_html", side_effect=description.ParserError)
 
     gateway = nasdaq.NASDAQGateway()
-    pd.testing.assert_frame_equal(
-        await gateway.__call__("BELU"),
-        pd.DataFrame(columns=["BELU", col.CURRENCY]),
-    )
+    df = await gateway("BELU")
+
+    assert df is None
