@@ -190,7 +190,7 @@ async def test_prepare_df_div_ext(div_ext_table, mocker):
     """Проверка агрегации данных."""
     event = events.UpdateDivCommand(
         ticker="GAZP",
-        market="shares",
+        type_=col.ORDINARY,
         usd=pd.DataFrame(
             [2, 1],
             columns=[col.CLOSE],
@@ -204,8 +204,8 @@ async def test_prepare_df_div_ext(div_ext_table, mocker):
         index=[datetime(2020, 12, 4), datetime(2020, 12, 5)],
     )
     div_ext_table._gateways = (
-        dividends.GateWayDesc("Dohod", "shares", fake_gateway),
-        dividends.GateWayDesc("NASDAQ", "foreignshares", fake_gateway),
+        dividends.GateWayDesc("Dohod", col.ORDINARY, fake_gateway),
+        dividends.GateWayDesc("NASDAQ", col.FOREIGN, fake_gateway),
     )
 
     df = await div_ext_table._prepare_df(event)

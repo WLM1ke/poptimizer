@@ -140,7 +140,6 @@ class DivExt(base.AbstractTable[events.UpdateDivCommand]):
         df = pd.DataFrame()
         if dfs:
             df = pd.concat(dfs, axis=1)
-            df = df.dropna(thresh=2)
         df["MEDIAN"] = df.median(axis=1)
         return df
 
