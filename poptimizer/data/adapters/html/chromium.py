@@ -1,6 +1,7 @@
 """Headless браузер на базе Chromium для доступа к динамическим сайтам."""
 import asyncio
 import atexit
+import contextlib
 import types
 from typing import Final, Optional
 
@@ -25,6 +26,7 @@ class Browser:
         self._browser: Optional[browser.Browser] = None
         self._lock = asyncio.Lock()
 
+    @contextlib.asynccontextmanager
     async def get_new_page(self) -> Page:
         """Новая страница headless браузера.
 
@@ -38,7 +40,11 @@ class Browser:
         page = await self._browser.newPage()
         # В заголовке обязательно должны присутствовать определенные элементы - без них не грузятся сайты
         await page.setExtraHTTPHeaders(HEADER)
-        return page
+
+        try:
+            yield page
+        finally:
+            await page.close()
 
     def _close(self) -> None:
         """Закрывает браузер."""

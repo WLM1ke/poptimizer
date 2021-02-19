@@ -20,10 +20,11 @@ def test_browse_close_not_started(browser):
 @pytest.mark.asyncio
 async def test_browser_get_new_page(browser):
     """Браузер выдает разные страницы."""
-    page = await browser.get_new_page()
+    async with browser.get_new_page() as page:
+        assert isinstance(page, Page)
 
-    assert isinstance(page, Page)
-    assert page is not await browser.get_new_page()
+        async with browser.get_new_page() as page2:
+            assert page is not page2
 
 
 def test_browse_closed(browser):
