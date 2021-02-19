@@ -22,16 +22,15 @@ def _prepare_url(ticker: str) -> str:
 
 
 async def _get_page_html(url: str, browser: chromium.Browser = chromium.BROWSER) -> str:
-    page = await browser.get_new_page()
+    async with browser.get_new_page() as page:
+        await page.goto(url)
 
-    await page.goto(url)
+        try:
+            await page.waitForXPath(TABLE_XPATH)
+        except errors.TimeoutError:
+            return await page.content()
 
-    try:
-        await page.waitForXPath(TABLE_XPATH)
-    except errors.TimeoutError:
         return await page.content()
-
-    return await page.content()
 
 
 def _get_col_desc(ticker: str) -> parser.Descriptions:

@@ -22,8 +22,8 @@ def test_prepare_url(ticker, url):
 @pytest.mark.asyncio
 async def test_load_ticker_page(mocker):
     """Загружает страницу и дожидается появления таблицы."""
-    fake_browser = mocker.AsyncMock()
-    fake_page = fake_browser.get_new_page.return_value
+    fake_browser = mocker.MagicMock()
+    fake_page = fake_browser.get_new_page.return_value.__aenter__.return_value
 
     html = await finrange._get_page_html("some_url", fake_browser)
 
@@ -37,8 +37,8 @@ async def test_load_ticker_page(mocker):
 @pytest.mark.asyncio
 async def test_load_ticker_page_with_error(mocker):
     """Если таблицы не удалось дождаться, то возвращается, что есть."""
-    fake_browser = mocker.AsyncMock()
-    fake_page = fake_browser.get_new_page.return_value
+    fake_browser = mocker.MagicMock()
+    fake_page = fake_browser.get_new_page.return_value.__aenter__.return_value
     fake_page.waitForXPath.side_effect = errors.TimeoutError
 
     html = await finrange._get_page_html("some_url", fake_browser)
