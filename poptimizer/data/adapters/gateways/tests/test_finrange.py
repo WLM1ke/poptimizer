@@ -80,4 +80,4 @@ async def test_gateway_error(mocker):
     gw = finrange.FinRangeGateway()
     df = await gw.__call__("GAZP")
 
-    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["GAZP", col.CURRENCY]))
+    assert df is None

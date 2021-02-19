@@ -1,4 +1,5 @@
 """Обновление данных с https://finrange.com/."""
+from typing import Optional
 
 import pandas as pd
 from pyppeteer import errors
@@ -55,7 +56,7 @@ class FinRangeGateway(gateways.DivGateway):
 
     _logger = adapters.AsyncLogger()
 
-    async def __call__(self, ticker: str) -> pd.DataFrame:
+    async def __call__(self, ticker: str) -> Optional[pd.DataFrame]:
         """Получение дивидендов для заданного тикера."""
         self._logger(ticker)
 
@@ -66,6 +67,6 @@ class FinRangeGateway(gateways.DivGateway):
         try:
             df = parser.get_df_from_html(html, TABLE_NUM, cols_desc)
         except description.ParserError:
-            return pd.DataFrame(columns=[ticker, col.CURRENCY])
+            return None
 
         return description.reformat_df_with_cur(df, ticker)
