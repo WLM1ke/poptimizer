@@ -96,4 +96,5 @@ async def test_conomy_gateway_web_error(mocker):
 
     gateway = conomy.ConomyGateway()
     df = await gateway.__call__("BELU")
-    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["BELU", col.CURRENCY]))
+
+    assert df is None

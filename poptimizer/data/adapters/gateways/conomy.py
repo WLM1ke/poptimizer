@@ -1,6 +1,6 @@
 """Загрузка данных с https://www.conomy.ru/."""
 import asyncio
-from typing import Final, cast
+from typing import Final, Optional, cast
 
 import pandas as pd
 from pyppeteer import errors
@@ -85,7 +85,7 @@ class ConomyGateway(gateways.DivGateway):
 
     _logger = adapters.AsyncLogger()
 
-    async def __call__(self, ticker: str) -> pd.DataFrame:
+    async def __call__(self, ticker: str) -> Optional[pd.DataFrame]:
         """Получение дивидендов для заданного тикера."""
         self._logger(ticker)
 
@@ -94,7 +94,8 @@ class ConomyGateway(gateways.DivGateway):
             # Поэтому загрузка принудительно приостанавливается
             html = await asyncio.wait_for(_get_html(ticker), timeout=CHROMIUM_TIMEOUT)
         except (errors.TimeoutError, asyncio.exceptions.TimeoutError):
-            return pd.DataFrame(columns=[ticker, col.CURRENCY])
+            return None
+
         cols_desc = _get_col_desc(ticker)
         df = parser.get_df_from_html(html, TABLE_INDEX, cols_desc)
         df = df.dropna()
