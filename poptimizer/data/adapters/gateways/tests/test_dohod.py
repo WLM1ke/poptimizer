@@ -34,4 +34,5 @@ async def test_loader_web_error(mocker):
 
     loader = dohod.DohodGateway()
     df = await loader.__call__("BELU")
-    pd.testing.assert_frame_equal(df, pd.DataFrame(columns=["BELU", col.CURRENCY]))
+
+    assert df is None

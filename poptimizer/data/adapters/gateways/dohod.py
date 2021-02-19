@@ -1,4 +1,6 @@
 """Обновление данных с https://dohod.ru."""
+from typing import Optional
+
 import pandas as pd
 
 from poptimizer.data.adapters.gateways import gateways
@@ -32,7 +34,7 @@ class DohodGateway(gateways.DivGateway):
 
     _logger = adapters.AsyncLogger()
 
-    async def __call__(self, ticker: str) -> pd.DataFrame:
+    async def __call__(self, ticker: str) -> Optional[pd.DataFrame]:
         """Получение дивидендов для заданного тикера."""
         self._logger(ticker)
 
@@ -41,7 +43,7 @@ class DohodGateway(gateways.DivGateway):
         try:
             df = await parser.get_df_from_url(url, TABLE_INDEX, cols_desc)
         except description.ParserError:
-            return pd.DataFrame(columns=[ticker, col.CURRENCY])
+            return None
 
         df = self._sort_and_agg(df)
         df[col.CURRENCY] = col.RUR
