@@ -1,5 +1,5 @@
 """Обновление данных с https://www.nasdaq.com/."""
-from typing import Final
+from typing import Final, Optional
 
 import pandas as pd
 from pyppeteer import errors
@@ -53,7 +53,7 @@ class NASDAQGateway(gateways.DivGateway):
 
     _logger = adapters.AsyncLogger()
 
-    async def __call__(self, ticker: str) -> pd.DataFrame:
+    async def __call__(self, ticker: str) -> Optional[pd.DataFrame]:
         """Получение дивидендов для заданного тикера."""
         self._logger(ticker)
 
@@ -64,7 +64,7 @@ class NASDAQGateway(gateways.DivGateway):
         try:
             df = parser.get_df_from_html(html, 0, cols_desc)
         except description.ParserError:
-            return pd.DataFrame(columns=[ticker, col.CURRENCY])
+            return None
 
         df = df.groupby(lambda date: date).sum()
         df[col.CURRENCY] = col.USD
