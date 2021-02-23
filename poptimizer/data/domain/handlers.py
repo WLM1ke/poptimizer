@@ -3,7 +3,6 @@ import asyncio
 import dataclasses
 import functools
 import itertools
-from typing import List
 
 from poptimizer import config
 from poptimizer.data import ports
@@ -24,7 +23,7 @@ async def _load_by_id_and_handle_event(
     repo: AnyTableRepo,
     table_id: domain.ID,
     event: domain.AbstractEvent,
-) -> List[domain.AbstractEvent]:
+) -> list[domain.AbstractEvent]:
     """Загружает таблицу и обрабатывает событие."""
     table = await repo(table_id)
     return await table.handle_event(event)
@@ -38,7 +37,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         self,
         event: domain.AbstractEvent,
         repo: AnyTableRepo,
-    ) -> List[domain.AbstractEvent]:
+    ) -> list[domain.AbstractEvent]:
         """Обработчик для отсутствующих событий."""
         raise UnknownEventError(event)
 
@@ -47,7 +46,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         self,
         event: events.AppStarted,
         repo: AnyTableRepo,
-    ) -> List[domain.AbstractEvent]:
+    ) -> list[domain.AbstractEvent]:
         """Обновляет таблицу с торговыми днями."""
         table_id = base.create_id(ports.TRADING_DATES)
         return await _load_by_id_and_handle_event(repo, table_id, event)
@@ -57,9 +56,9 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         self,
         event: events.TradingDayEnded,
         repo: AnyTableRepo,
-    ) -> List[domain.AbstractEvent]:
+    ) -> list[domain.AbstractEvent]:
         """Запускает обновление необходимых таблиц в конце торгового дня и создает дочерние события."""
-        table_groups = [ports.CPI, ports.SMART_LAB, ports.USD]
+        table_groups = [ports.CPI, ports.DIV_NEW, ports.USD]
         table_ids = [base.create_id(group) for group in table_groups]
         aws = [_load_by_id_and_handle_event(repo, id_, event) for id_ in table_ids]
         return [
@@ -74,7 +73,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         self,
         event: events.USDUpdated,
         repo: AnyTableRepo,
-    ) -> List[domain.AbstractEvent]:
+    ) -> list[domain.AbstractEvent]:
         """Запускает обновления перечня торгуемых бумаг."""
         table_id = base.create_id(ports.SECURITIES)
         return await _load_by_id_and_handle_event(repo, table_id, event)
@@ -84,7 +83,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         self,
         event: events.TickerTraded,
         repo: AnyTableRepo,
-    ) -> List[domain.AbstractEvent]:
+    ) -> list[domain.AbstractEvent]:
         """Обновляет таблицы с котировками и дивидендами."""
         table_groups = [ports.QUOTES, ports.DIVIDENDS]
         table_ids = [base.create_id(group, event.ticker) for group in table_groups]
@@ -96,7 +95,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         self,
         event: events.IndexCalculated,
         repo: AnyTableRepo,
-    ) -> List[domain.AbstractEvent]:
+    ) -> list[domain.AbstractEvent]:
         """Обновляет таблицу с котировками индексов."""
         table_id = base.create_id(ports.INDEX, event.ticker)
         return await _load_by_id_and_handle_event(repo, table_id, event)
@@ -106,7 +105,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         self,
         event: events.UpdateDivCommand,
         repo: AnyTableRepo,
-    ) -> List[domain.AbstractEvent]:
+    ) -> list[domain.AbstractEvent]:
         """Обновляет таблицы с дивидендами."""
         usd = await repo(base.create_id(ports.USD))
         securities = await repo(base.create_id(ports.SECURITIES))
