@@ -91,7 +91,7 @@ class DivNew(base.AbstractTable[events.TradingDayEnded]):
 
     def _new_events(self, event: events.TradingDayEnded) -> list[domain.AbstractEvent]:
         """Порождает команды обновить дивиденды."""
-        return [events.UpdateDivCommand(ticker=ticker) for ticker in set(self.df.index)]
+        return []
 
 
 class GateWayDesc(NamedTuple):

@@ -114,7 +114,7 @@ def test_new_events(div_table):
 @pytest.fixture(scope="function", name="smart_lab_table")
 def create_smart_lab_table():
     """Создает пустую таблицу дивидендов со SmartLab для тестов."""
-    id_ = base.create_id(ports.SMART_LAB)
+    id_ = base.create_id(ports.DIV_NEW)
     return dividends.DivNew(id_)
 
 
@@ -136,17 +136,12 @@ async def test_prepare_df_smart_lab_table(smart_lab_table, mocker):
 
 
 def test_new_events_smart_lab_table(smart_lab_table):
-    """Порождаются команды для обновления дивидендов."""
+    """Новые события не создаются."""
     smart_lab_table._df = pd.DataFrame(index=["AKRN", "AKRN", "CHMF"])
     new_events = smart_lab_table._new_events(object())
 
     assert isinstance(new_events, list)
-    assert len(new_events) == 2
-
-    assert set(new_events) == {
-        events.UpdateDivCommand("AKRN"),
-        events.UpdateDivCommand("CHMF"),
-    }
+    assert len(new_events) == 0
 
 
 @pytest.fixture(scope="function", name="div_ext_table")
