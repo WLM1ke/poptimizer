@@ -85,8 +85,8 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
         """Нет проверок."""
 
     def _new_events(self, event: events.TradingDayEnded) -> list[domain.AbstractEvent]:
-        """Не порождает событий."""
-        return []
+        """Порождает команды обновить дивиденды."""
+        return [events.UpdateDivCommand(ticker=ticker) for ticker in set(self.df.index)]
 
 
 class GateWayDesc(NamedTuple):

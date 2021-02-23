@@ -134,33 +134,17 @@ async def test_prepare_df_smart_lab_table(smart_lab_table, mocker):
 
 
 def test_new_events_smart_lab_table(smart_lab_table):
-    """Новые события не создаются."""
+    """Порождаются команды для обновления дивидендов."""
+    smart_lab_table._df = pd.DataFrame(index=["AKRN", "AKRN", "CHMF"])
     new_events = smart_lab_table._new_events(object())
 
     assert isinstance(new_events, list)
-    assert not new_events
+    assert len(new_events) == 2
 
-    answers = {
-        "AKRN": pd.DataFrame(
-            [3],
-            columns=["SmartLab"],
-            index=[datetime(2020, 12, 1)],
-        ),
-        "CHMF": pd.DataFrame(
-            [2, 1],
-            columns=["SmartLab"],
-            index=[datetime(2020, 12, 2), datetime(2020, 12, 3)],
-        ),
+    assert set(new_events) == {
+        events.UpdateDivCommand("AKRN"),
+        events.UpdateDivCommand("CHMF"),
     }
-
-    for new_event in new_events:
-        assert isinstance(new_event, events.DivExpected)
-        ticker = new_event.ticker
-        pd.testing.assert_frame_equal(
-            new_event.df,
-            answers[ticker],
-            check_names=False,
-        )
 
 
 @pytest.fixture(scope="function", name="div_ext_table")
