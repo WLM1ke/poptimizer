@@ -14,6 +14,7 @@ from poptimizer.data.adapters.gateways import (  # noqa: WPS235
     finrange,
     gateways,
     invest_mint,
+    moex_status,
     nasdaq,
     smart_lab,
 )
@@ -64,14 +65,17 @@ class Dividends(base.AbstractTable[DivEvents]):
         return []
 
 
-class SmartLab(base.AbstractTable[events.TradingDayEnded]):
-    """Таблица с ожидаемыми дивидендами со https://www.smart-lab.ru.
+class DivNew(base.AbstractTable[events.TradingDayEnded]):
+    """Таблица с ожидаемыми дивидендами.
+
+     Данные забираются со https://www.smart-lab.ru по российским акциям и с https://www.moex.com/ по
+     иностранным.
 
     Создает события с новыми дивидендами.
     """
 
     group: ClassVar[ports.GroupName] = ports.SMART_LAB
-    _gateway: Final = smart_lab.SmartLabGateway()
+    _gateways: Final = (smart_lab.SmartLabGateway(), moex_status.MOEXStatusGateway())
 
     def _update_cond(self, event: events.TradingDayEnded) -> bool:
         """Если торговый день окончился, всегда обновление."""
@@ -79,7 +83,8 @@ class SmartLab(base.AbstractTable[events.TradingDayEnded]):
 
     async def _prepare_df(self, event: events.TradingDayEnded) -> pd.DataFrame:
         """Загружает новый DataFrame полностью."""
-        return await self._gateway()
+        dfs = [await gw() for gw in self._gateways]
+        return pd.concat(dfs, axis=0)
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Нет проверок."""

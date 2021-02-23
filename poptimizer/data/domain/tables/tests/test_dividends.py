@@ -115,7 +115,7 @@ def test_new_events(div_table):
 def create_smart_lab_table():
     """Создает пустую таблицу дивидендов со SmartLab для тестов."""
     id_ = base.create_id(ports.SMART_LAB)
-    return dividends.SmartLab(id_)
+    return dividends.DivNew(id_)
 
 
 def test_update_cond_smart_lab_table(smart_lab_table):
@@ -125,12 +125,14 @@ def test_update_cond_smart_lab_table(smart_lab_table):
 
 @pytest.mark.asyncio
 async def test_prepare_df_smart_lab_table(smart_lab_table, mocker):
-    """Данные загружаются с помощью шлюза."""
-    smart_lab_table._gateway = mocker.AsyncMock()
+    """Данные из нескольких шлюзов объединяются по оси х."""
+    smart_lab_table._gateways = (
+        mocker.AsyncMock(return_value=pd.DataFrame(index=["T-RM"])),
+        mocker.AsyncMock(return_value=pd.DataFrame(index=["AKRN"])),
+    )
 
-    fake_gateway = smart_lab_table._gateway
-    assert await smart_lab_table._prepare_df(object()) is fake_gateway.return_value
-    fake_gateway.assert_called_once_with()
+    df = await smart_lab_table._prepare_df(object())
+    assert df.index.tolist() == ["T-RM", "AKRN"]
 
 
 def test_new_events_smart_lab_table(smart_lab_table):

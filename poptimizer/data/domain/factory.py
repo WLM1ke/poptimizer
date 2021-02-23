@@ -30,7 +30,7 @@ _TABLE_TYPES: Final = cast(
         indexes.Indexes,
         cpi.CPI,
         dividends.Dividends,
-        dividends.SmartLab,
+        dividends.DivNew,
         dividends.DivExt,
         usd.USD,
     ),
