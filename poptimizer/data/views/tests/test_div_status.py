@@ -35,7 +35,7 @@ def test_new_on_smart_lab(mocker, capsys):
     mocker.patch.object(div_status, "_smart_lab_all", return_value=SMART_LAB_DF)
     mocker.patch.object(div, "dividends", side_effect=[PLZL_DF, KZOS_DF, TTLK_DF])
 
-    assert div_status.new_on_smart_lab(("TTLK", "KZOS", "PLZL")) == ["PLZL", "KZOS"]
+    assert div_status.new_on_smart_lab(("TTLK", "KZOS", "PLZL")) == {"PLZL", "KZOS"}
     captured = capsys.readouterr()
     assert "ДАННЫЕ ПО ДИВИДЕНДАМ ТРЕБУЮТ ОБНОВЛЕНИЯ" in captured.out
 
