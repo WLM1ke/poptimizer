@@ -74,7 +74,7 @@ class DivNew(base.AbstractTable[events.TradingDayEnded]):
     Создает события с новыми дивидендами.
     """
 
-    group: ClassVar[ports.GroupName] = ports.SMART_LAB
+    group: ClassVar[ports.GroupName] = ports.DIV_NEW
     _gateways: Final = (smart_lab.SmartLabGateway(), moex_status.MOEXStatusGateway())
 
     def _update_cond(self, event: events.TradingDayEnded) -> bool:

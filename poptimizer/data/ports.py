@@ -2,7 +2,7 @@
 from typing import Final, Literal
 
 TRADING_DATES: Final = "trading_dates"
-SMART_LAB: Final = "smart_lab"
+DIV_NEW: Final = "div_new"
 DIVIDENDS: Final = "dividends"
 DIV_EXT: Final = "div_ext"
 CPI: Final = "CPI"
@@ -13,7 +13,7 @@ USD: Final = "usd"
 
 GroupName = Literal[
     "trading_dates",
-    "smart_lab",
+    "div_new",
     "dividends",
     "div_ext",
     "CPI",
