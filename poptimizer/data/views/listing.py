@@ -1,5 +1,5 @@
 """Функции предоставления данных о торгуемых бумагах."""
-from typing import Tuple
+import functools
 
 import pandas as pd
 
@@ -14,19 +14,25 @@ def last_history_date(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Timestamp
     return df.loc[0, "till"]
 
 
+@functools.lru_cache(maxsize=1)
+def _securities_info(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.DataFrame:
+    """Сводная информация о торгуемых бумагах - кэшируется при первом вызове."""
+    return viewer.get_df(ports.SECURITIES, ports.SECURITIES)
+
+
 def securities(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Index:
     """Все акции."""
-    df = viewer.get_df(ports.SECURITIES, ports.SECURITIES)
+    df = _securities_info(viewer)
     return df.index
 
 
 def ticker_types(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Series:
     """Типы ценных бумаг."""
-    df = viewer.get_df(ports.SECURITIES, ports.SECURITIES)
+    df = _securities_info(viewer)
     return df[col.TICKER_TYPE]
 
 
-def lot_size(tickers: Tuple[str, ...], viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Series:
+def lot_size(tickers: tuple[str, ...], viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Series:
     """Информация о размере лотов для тикеров."""
-    df = viewer.get_df(ports.SECURITIES, ports.SECURITIES)
+    df = _securities_info(viewer)
     return df.loc[list(tickers), col.LOT_SIZE]
