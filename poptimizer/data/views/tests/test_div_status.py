@@ -7,9 +7,9 @@ from poptimizer.data.views.crop import div
 from poptimizer.shared import col
 
 
-def test_smart_lab_all():
+def test_new_div_all():
     """Проверка типа и структуры результата."""
-    df = div_status._smart_lab_all()
+    df = div_status._new_div_all()
 
     assert isinstance(df, pd.DataFrame)
     assert df.columns.tolist() == [col.DATE, col.DIVIDENDS]
@@ -19,32 +19,34 @@ SMART_LAB_DF = pd.DataFrame(
     [
         ["2020-10-01", 1],
         ["2020-10-02", 2],
+        ["2021-02-27", None],
         ["2020-10-03", 3],
         ["2020-10-04", 4],
     ],
     columns=[col.DATE, col.DIVIDENDS],
-    index=["NKNC", "PLZL", "KZOS", "TTLK"],
+    index=["NKNC", "PLZL", "T-RM", "KZOS", "TTLK"],
 )
 TTLK_DF = pd.DataFrame([4], columns=["TTLK"], index=["2020-10-04"])
+T_DF = pd.DataFrame([6], columns=["T-RM"], index=["2021-02-27"])
 KZOS_DF = pd.DataFrame()
 PLZL_DF = pd.DataFrame([4], columns=["PLZL"], index=["2020-10-02"])
 
 
-def test_new_on_smart_lab(mocker, capsys):
+def test_new_dividends(mocker, capsys):
     """Различные варианты включения и не включения в статус."""
-    mocker.patch.object(div_status, "_smart_lab_all", return_value=SMART_LAB_DF)
-    mocker.patch.object(div, "dividends", side_effect=[PLZL_DF, KZOS_DF, TTLK_DF])
+    mocker.patch.object(div_status, "_new_div_all", return_value=SMART_LAB_DF)
+    mocker.patch.object(div, "dividends", side_effect=[PLZL_DF, T_DF, KZOS_DF, TTLK_DF])
 
-    assert div_status.new_on_smart_lab(("TTLK", "KZOS", "PLZL")) == {"PLZL", "KZOS"}
+    assert div_status.new_dividends(("TTLK", "T-RM", "KZOS", "PLZL")) == {"PLZL", "KZOS"}
     captured = capsys.readouterr()
     assert "ДАННЫЕ ПО ДИВИДЕНДАМ ТРЕБУЮТ ОБНОВЛЕНИЯ" in captured.out
 
 
-def test_new_on_smart_lab_no_output(mocker, capsys):
+def test_new_dividends_no_output(mocker, capsys):
     """Не печатается результат, если по запрашиваемым тикерам нет обновления."""
-    mocker.patch.object(div_status, "_smart_lab_all", return_value=SMART_LAB_DF)
+    mocker.patch.object(div_status, "_new_div_all", return_value=SMART_LAB_DF)
 
-    assert not div_status.new_on_smart_lab(("GAZP",))
+    assert not div_status.new_dividends(("GAZP",))
     captured = capsys.readouterr()
     assert not captured.out
 

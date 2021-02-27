@@ -31,7 +31,7 @@ def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD")):
     print(opt.portfolio)
     print(opt.metrics)
     print(opt)
-    div_status.new_on_smart_lab(tuple(port.index[:-2]))
+    div_status.new_dividends(tuple(port.index[:-2]))
 
 
 if __name__ == "__main__":

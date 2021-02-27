@@ -1,5 +1,6 @@
 """Информация о актуальности данных по дивидендам."""
 import math
+from datetime import datetime
 from typing import Callable, Final
 
 import pandas as pd
@@ -15,13 +16,35 @@ RET_TOL: Final = 1e-3
 DivSource = Callable[[str], pd.DataFrame]
 
 
-def _smart_lab_all(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.DataFrame:
+def _new_div_all(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.DataFrame:
     """Информация по дивидендам с smart-lab.ru."""
     return viewer.get_df(ports.DIV_NEW, ports.DIV_NEW)
 
 
-def new_on_smart_lab(tickers: tuple[str, ...]) -> list[str]:
-    """Список тикеров с новой информацией о дивидендах на SmartLab.
+def _check_div_in_df(
+    ticker: str,
+    date: datetime,
+    div_value: float,
+    df: pd.DataFrame,
+) -> bool:
+    """Проверка наличия дивидендов в DataFrame.
+
+    Должна присутствовать дата и значение для не NaN дивидендов.
+    """
+    if date not in df.index:
+        return False
+
+    if math.isnan(div_value):
+        return True
+
+    return math.isclose(df.loc[date, ticker], div_value, rel_tol=RET_TOL)
+
+
+def new_dividends(tickers: tuple[str, ...]) -> list[str]:
+    """Список тикеров с новой информацией о дивидендах.
+
+    По российским акция используется информация о предстоящих дивидендах со SmartLab, а по иностранным с
+    MOEX.
 
     Выбираются только тикеры из предоставленного списка.
 
@@ -31,14 +54,12 @@ def new_on_smart_lab(tickers: tuple[str, ...]) -> list[str]:
         Список новых тикеров.
     """
     status = set()
-    for ticker, date, div_value in _smart_lab_all().itertuples():
+    for ticker, date, div_value in _new_div_all().itertuples():
         if ticker not in tickers:
             continue
 
         df = div.dividends(ticker)
-        if date not in df.index:
-            status.add(ticker)
-        elif not math.isclose(df.loc[date, ticker], div_value, rel_tol=RET_TOL):
+        if not _check_div_in_df(ticker, date, div_value, df):
             status.add(ticker)
 
     if status:
