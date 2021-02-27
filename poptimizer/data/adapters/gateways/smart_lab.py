@@ -1,7 +1,7 @@
 """Загрузка данных со https://www.smart-lab.ru."""
 import pandas as pd
 
-from poptimizer.data.adapters.html import description, parser
+from poptimizer.data.adapters.html import cell_parser, description, parser
 from poptimizer.shared import adapters, col
 
 # Параметры парсинга сайта
@@ -22,13 +22,13 @@ def get_col_desc() -> parser.Descriptions:
         num=9,
         raw_name=("дата отсечки",),
         name=col.DATE,
-        parser_func=description.date_parser,
+        parser_func=cell_parser.date_ru,
     )
     div = description.ColDesc(
         num=5,
         raw_name=("дивиденд,руб",),
         name=col.DIVIDENDS,
-        parser_func=description.div_parser,
+        parser_func=cell_parser.div_ru,
     )
     return [ticker, date, div]
 

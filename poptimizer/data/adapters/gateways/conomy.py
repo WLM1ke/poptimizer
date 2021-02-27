@@ -7,7 +7,7 @@ from pyppeteer import errors
 from pyppeteer.page import Page
 
 from poptimizer.data.adapters.gateways import gateways
-from poptimizer.data.adapters.html import chromium, description, parser
+from poptimizer.data.adapters.html import cell_parser, chromium, description, parser
 from poptimizer.shared import adapters, col
 
 # Параметры поиска страницы эмитента
@@ -56,7 +56,7 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
         num=5,
         raw_name=("E", "Дата закрытия реестра акционеров", "Под выплату дивидендов"),
         name=col.DATE,
-        parser_func=description.date_parser,
+        parser_func=cell_parser.date_ru,
     )
     columns = [date]
 
@@ -65,7 +65,7 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
             num=7,
             raw_name=("G", "Размер дивидендов", "АОИ"),
             name=ticker,
-            parser_func=description.div_parser,
+            parser_func=cell_parser.div_ru,
         )
         columns.append(common)
         return columns
@@ -74,7 +74,7 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
         num=8,
         raw_name=("H", "Размер дивидендов", "АПИ"),
         name=ticker,
-        parser_func=description.div_parser,
+        parser_func=cell_parser.div_ru,
     )
     columns.append(preferred)
     return columns

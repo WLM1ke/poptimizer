@@ -3,7 +3,7 @@ import aiohttp
 import pandas as pd
 import pytest
 
-from poptimizer.data.adapters.html import description, parser
+from poptimizer.data.adapters.html import cell_parser, description, parser
 
 BAD_URL = "https://www.dohod.ru/wrong"
 
@@ -11,13 +11,13 @@ DESC_SINGLE_HEADER = description.ColDesc(
     num=2,
     raw_name=("(руб.)",),
     name="YAKG",
-    parser_func=description.div_parser,
+    parser_func=cell_parser.div_ru,
 )
 DESC_MULTI_HEADER = description.ColDesc(
     num=1,
     raw_name=("G", "Размер"),
     name="VSMO",
-    parser_func=description.div_parser,
+    parser_func=cell_parser.div_ru,
 )
 
 
@@ -74,7 +74,7 @@ def test_get_raw_df(mocker):
     read_html.assert_called_once_with(
         "test_table",
         header=[0],
-        converters={2: description.div_parser},
+        converters={2: cell_parser.div_ru},
         thousands=" ",
         displayed_only=False,
     )

@@ -4,7 +4,7 @@ from typing import Final, Optional
 
 import pandas as pd
 
-from poptimizer.data.adapters.html import description, parser
+from poptimizer.data.adapters.html import cell_parser, description, parser
 from poptimizer.shared import adapters, col
 
 # Параметры парсинга сайта
@@ -34,7 +34,7 @@ def get_col_desc() -> parser.Descriptions:
         num=2,
         raw_name=("Дата События",),
         name=col.DATE,
-        parser_func=description.date_parser,
+        parser_func=cell_parser.date_ru,
     )
 
     return [ticker, date]

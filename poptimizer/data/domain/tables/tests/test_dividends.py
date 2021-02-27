@@ -141,7 +141,7 @@ def test_new_events_smart_lab_table(smart_lab_table):
     new_events = smart_lab_table._new_events(object())
 
     assert isinstance(new_events, list)
-    assert len(new_events) == 0
+    assert not new_events
 
 
 @pytest.fixture(scope="function", name="div_ext_table")

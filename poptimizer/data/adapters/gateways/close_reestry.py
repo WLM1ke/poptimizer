@@ -4,7 +4,7 @@ from typing import Final, Optional
 import pandas as pd
 
 from poptimizer.data.adapters.gateways import gateways
-from poptimizer.data.adapters.html import description, parser
+from poptimizer.data.adapters.html import cell_parser, description, parser
 from poptimizer.shared import adapters, col
 
 # Параметры парсинга сайта
@@ -19,7 +19,7 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
         num=0,
         raw_name=("Год за который производится выплата",),
         name=col.DATE,
-        parser_func=description.date_parser,
+        parser_func=cell_parser.date_ru,
     )
     columns = [date]
 
@@ -28,7 +28,7 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
             num=1,
             raw_name=("Дивиденд на одну обыкновенную акцию",),
             name=ticker,
-            parser_func=description.div_parser,
+            parser_func=cell_parser.div_ru,
         )
         columns.append(common)
         return columns
@@ -37,7 +37,7 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
         num=2,
         raw_name=("Дивиденд на одну привилегированную акцию",),
         name=ticker,
-        parser_func=description.div_parser,
+        parser_func=cell_parser.div_ru,
     )
     columns.append(preferred)
     return columns

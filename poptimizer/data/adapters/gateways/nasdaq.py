@@ -5,7 +5,7 @@ import pandas as pd
 from pyppeteer import errors
 
 from poptimizer.data.adapters.gateways import gateways
-from poptimizer.data.adapters.html import chromium, description, parser
+from poptimizer.data.adapters.html import cell_parser, chromium, description, parser
 from poptimizer.shared import adapters, col
 
 # Адрес и xpath таблицы
@@ -23,13 +23,13 @@ def get_col_desc(ticker: str) -> parser.Descriptions:
         num=4,
         raw_name=("RECORD DATE",),
         name=col.DATE,
-        parser_func=description.date_parser_us,
+        parser_func=cell_parser.date_us,
     )
     div_col = description.ColDesc(
         num=2,
         raw_name=("CASH AMOUNT",),
         name=ticker,
-        parser_func=description.div_parser_us,
+        parser_func=cell_parser.div_us,
     )
     return [date_col, div_col]
 

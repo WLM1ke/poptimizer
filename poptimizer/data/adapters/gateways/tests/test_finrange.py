@@ -1,11 +1,9 @@
 """Тесты для загрузки с https://finrange.com/."""
-import pandas as pd
 import pytest
 from pyppeteer import errors
 
 from poptimizer.data.adapters.gateways import finrange
 from poptimizer.data.adapters.html import description
-from poptimizer.shared import col
 
 TICKER_CASES = (
     ("AKRN", "https://finrange.com/company/AKRN/dividends"),

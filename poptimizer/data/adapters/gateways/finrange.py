@@ -5,7 +5,7 @@ import pandas as pd
 from pyppeteer import errors
 
 from poptimizer.data.adapters.gateways import gateways
-from poptimizer.data.adapters.html import chromium, description, parser
+from poptimizer.data.adapters.html import cell_parser, chromium, description, parser
 from poptimizer.shared import adapters, col
 
 # Параметры парсинга
@@ -39,13 +39,13 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
         num=1,
         raw_name=("Дата закрытия реестра акционеров",),
         name=col.DATE,
-        parser_func=description.date_parser,
+        parser_func=cell_parser.date_ru,
     )
     div_col = description.ColDesc(
         num=3,
         raw_name=("Дивиденд на акцию",),
         name=ticker,
-        parser_func=description.div_parser_with_cur,
+        parser_func=cell_parser.div_with_cur,
     )
     return [date_col, div_col]
 

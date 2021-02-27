@@ -8,7 +8,7 @@ import bs4
 import pandas as pd
 
 from poptimizer.data.adapters.gateways import gateways
-from poptimizer.data.adapters.html import description, parser
+from poptimizer.data.adapters.html import cell_parser, description, parser
 from poptimizer.shared import adapters, col
 
 # Параметры парсинга сайта
@@ -61,7 +61,7 @@ def get_col_desc(ticker: str) -> parser.Descriptions:
         num=div_col_n,
         raw_name=("Дивиденд",),
         name=ticker,
-        parser_func=description.div_parser_with_cur,
+        parser_func=cell_parser.div_with_cur,
     )
     return [date_col, div_col]
 
