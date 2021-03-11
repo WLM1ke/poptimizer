@@ -1,6 +1,5 @@
 """Функции предоставления данных о котировках."""
 import functools
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -10,8 +9,12 @@ from poptimizer.data.views.crop import div, not_div
 from poptimizer.shared import col
 
 
-@functools.lru_cache(maxsize=1)
-def prices(tickers: Tuple[str, ...], last_date: pd.Timestamp) -> pd.DataFrame:
+@functools.lru_cache(maxsize=4)
+def prices(
+    tickers: tuple[str, ...],
+    last_date: pd.Timestamp,
+    price_type: col.PriceType = col.CLOSE,
+) -> pd.DataFrame:
     """Дневные цены закрытия для указанных тикеров до указанной даты включительно.
 
     Пропуски заполнены предыдущими значениями.
@@ -20,12 +23,14 @@ def prices(tickers: Tuple[str, ...], last_date: pd.Timestamp) -> pd.DataFrame:
         Тикеры, для которых нужна информация.
     :param last_date:
         Последняя дата цен закрытия.
+    :param price_type:
+        Тип цены — по умолчанию цена закрытия.
     :return:
         Цены закрытия.
     """
     quotes_list = not_div.quotes(tickers)
     df = pd.concat(
-        [df[col.CLOSE] for df in quotes_list],
+        [df[price_type] for df in quotes_list],
         axis=1,
     )
     df = df.loc[:last_date]
@@ -34,7 +39,7 @@ def prices(tickers: Tuple[str, ...], last_date: pd.Timestamp) -> pd.DataFrame:
 
 
 @functools.lru_cache(maxsize=1)
-def turnovers(tickers: Tuple[str, ...], last_date: pd.Timestamp) -> pd.DataFrame:
+def turnovers(tickers: tuple[str, ...], last_date: pd.Timestamp) -> pd.DataFrame:
     """Дневные обороты для указанных тикеров до указанной даты включительно.
 
     Пропуски заполнены нулевыми значениями.
@@ -74,10 +79,10 @@ def _t2_shift(date: pd.Timestamp, index: pd.DatetimeIndex) -> pd.Timestamp:
 
 
 def div_and_prices(
-    tickers: Tuple[str, ...],
+    tickers: tuple[str, ...],
     last_date: pd.Timestamp,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Дивиденды на с привязкой к эксдивидендной дате и цены.
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Дивиденды с привязкой к эксдивидендной дате и цены.
 
     Дивиденды на эксдивидендную дату нужны для корректного расчета доходности. Также для многих
     расчетов удобна привязка к торговым дням, а отсечки часто приходятся на выходные.

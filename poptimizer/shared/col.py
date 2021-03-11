@@ -1,5 +1,5 @@
 """Наименование столбцов и константы."""
-from typing import Final
+from typing import Final, Literal
 
 # Наименования столбцов
 DATE: Final = "DATE"
@@ -10,12 +10,14 @@ ISIN: Final = "ISIN"
 MARKET: Final = "MARKET"
 TICKER_TYPE: Final = "TICKER_TYPE"
 LOT_SIZE: Final = "LOT_SIZE"
+TURNOVER: Final = "TURNOVER"
+CURRENCY: Final = "CURRENCY"
+
 OPEN: Final = "OPEN"
 CLOSE: Final = "CLOSE"
 HIGH: Final = "HIGH"
 LOW: Final = "LOW"
-TURNOVER: Final = "TURNOVER"
-CURRENCY: Final = "CURRENCY"
+PriceType = Literal["OPEN", "CLOSE", "HIGH", "LOW"]
 
 # Типы валют
 RUR: Final = "RUR"
