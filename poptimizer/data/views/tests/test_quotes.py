@@ -4,6 +4,7 @@ import pytest
 
 from poptimizer.data.app import bootstrap
 from poptimizer.data.views import quotes
+from poptimizer.shared import col
 
 PRICE_CASES = (
     ("2018-09-10", "AKRN", 4528),
@@ -24,6 +25,26 @@ def test_prices(date, ticker, price):
     assert len(df) > 1452
     assert df.shape[1] == 4
     assert df.index[-1] == pd.Timestamp("2020-10-09")
+    assert df.loc[date, ticker] == pytest.approx(price)
+
+
+TYPED_PRICE_CASES = (
+    ("2018-09-10", "AKRN", col.CLOSE, 4528),
+    ("2021-02-11", "GMKN", col.OPEN, 25366),
+    ("2021-02-12", "GMKN", col.LOW, 24878),
+    ("2021-03-05", "KBTK", col.HIGH, 219.6),
+)
+
+
+@pytest.mark.parametrize("date, ticker, price_type, price", TYPED_PRICE_CASES)
+def test_prices_with_types(date, ticker, price_type, price):
+    """Тесты на тип и размер результата и для выборочных значений и заполнение пропусков."""
+    df = quotes.prices(("AKRN", "GMKN", "KBTK"), pd.Timestamp("2021-03-10"), price_type)
+
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) > 1452
+    assert df.shape[1] == 3
+    assert df.index[-1] == pd.Timestamp("2021-03-10")
     assert df.loc[date, ticker] == pytest.approx(price)
 
 
