@@ -3,7 +3,7 @@ from poptimizer.evolve.chromosomes import data, chromosome
 
 def test_init_no_data():
     chromo = data.Data({})
-    assert len(chromo.data) == 14
+    assert len(chromo.data) == 15
     assert 128.1 < chromo.data["batch_size"] < 128.9
     assert 50.1 < chromo.data["history_days"] < 50.9
     assert 0.0 < chromo.data["ticker_on"] < 1.0
@@ -17,11 +17,13 @@ def test_init_no_data():
     assert -1.0 < chromo.data["mcftrr_on"] < 0.0
     assert -1.0 < chromo.data["imoex_on"] < 0.0
     assert -1.0 < chromo.data["ticker_type_on"] < 0.0
+    assert -1.0 < chromo.data["usd_on"] < 0.0
+    assert -1.0 < chromo.data["open_on"] < 0.0
 
 
 def test_init_some_data():
     chromo = data.Data(dict(history_days=40))
-    assert len(chromo.data) == 14
+    assert len(chromo.data) == 15
     assert 128.1 < chromo.data["batch_size"] < 128.9
     assert chromo.data["history_days"] == 40
     assert 0.0 < chromo.data["ticker_on"] < 1.0
@@ -55,7 +57,7 @@ def test_init_all_data():
             ticker_type_on=5,
         )
     )
-    assert len(chromo.data) == 14
+    assert len(chromo.data) == 15
     assert chromo.data["batch_size"] == 10
     assert chromo.data["history_days"] == 40
     assert chromo.data["ticker_on"] == -1
@@ -104,6 +106,7 @@ def test_setup_phenotype():
                 IMOEX=dict(on=False),
                 TickerType=dict(on=False),
                 USD=dict(on=False),
+                Open=dict(on=False),
             ),
         ),
     )
@@ -175,7 +178,7 @@ def test_make_child(monkeypatch):
     child = parent.make_child(base, diff1, diff2)
 
     assert isinstance(child, data.Data)
-    assert len(child.data) == 14
+    assert len(child.data) == 15
 
     assert child.data["batch_size"] == 30 + 0.8 * (20 - 10)
     assert child.data["history_days"] == 20

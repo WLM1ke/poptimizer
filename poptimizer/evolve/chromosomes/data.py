@@ -113,6 +113,14 @@ USD_ON = GeneParams(
     path=("data", "features", "USD", "on"),
     phenotype_function=lambda x: x > 0,
 )
+OPEN_ON = GeneParams(
+    name="open_on",
+    default_range=(-1.0, 0.0),
+    lower_bound=None,
+    upper_bound=None,
+    path=("data", "features", "Open", "on"),
+    phenotype_function=lambda x: x > 0,
+)
 
 
 class Data(Chromosome):
@@ -133,4 +141,5 @@ class Data(Chromosome):
         IMOEX_ON,
         TICKER_TYPE_ON,
         USD_ON,
+        OPEN_ON,
     )
