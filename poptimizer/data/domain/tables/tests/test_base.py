@@ -51,14 +51,14 @@ class TestTable(base.AbstractTable[TestEvent]):
 def test_wrong_package():
     """Проверка исключения при некорректном указании пакета."""
     id_ = domain.ID("a", "b", "c")
-    with pytest.raises(base.TableWrongIDError):
+    with pytest.raises(base.TableError):
         TestTable(id_)
 
 
 def test_wrong_group():
     """Проверка исключения при некорректном указании группе."""
     id_ = domain.ID(base.PACKAGE, "d", "e")
-    with pytest.raises(base.TableWrongIDError):
+    with pytest.raises(base.TableError):
         TestTable(id_)
 
 

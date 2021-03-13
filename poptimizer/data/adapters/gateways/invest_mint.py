@@ -2,7 +2,7 @@
 import re
 import types
 from datetime import datetime
-from typing import Callable, Final, Optional, Union, cast
+from typing import Final, Optional, cast
 
 import bs4
 import pandas as pd
@@ -61,7 +61,7 @@ def get_col_desc(ticker: str) -> parser.Descriptions:
         num=div_col_n,
         raw_name=("Дивиденд",),
         name=ticker,
-        parser_func=cast(Callable[[str], Union[None, float, datetime]], cell_parser.div_with_cur),
+        parser_func=cast(parser.ParseFuncType, cell_parser.div_with_cur),
     )
     return [date_col, div_col]
 

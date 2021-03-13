@@ -16,7 +16,7 @@ def create_table_factory(mocker):
 def test_wrong_id(table_factory):
     """Исключение при неправильной группе в ID."""
     id_ = base.create_id("group2")
-    with pytest.raises(base.TableWrongIDError):
+    with pytest.raises(base.TableError):
         table_factory(id_, {})
 
 

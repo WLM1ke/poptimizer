@@ -1,7 +1,6 @@
 """Данные о закрытии реестров https://www.moex.com."""
 import re
-from datetime import datetime
-from typing import Callable, Final, Optional, Union, cast
+from typing import Final, Optional, cast
 
 import pandas as pd
 
@@ -30,7 +29,7 @@ def get_col_desc() -> parser.Descriptions:
         num=0,
         raw_name=("Эмитент",),
         name=col.TICKER,
-        parser_func=cast(Callable[[str], Union[None, float, datetime]], _ticker_parser),
+        parser_func=cast(parser.ParseFuncType, _ticker_parser),
     )
     date = description.ColDesc(
         num=2,

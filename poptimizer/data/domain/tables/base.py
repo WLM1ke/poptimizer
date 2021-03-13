@@ -20,15 +20,11 @@ def create_id(group: str, name: Optional[str] = None) -> domain.ID:
     return domain.ID(PACKAGE, group, name)
 
 
-class TableWrongIDError(config.POptimizerError):
+class TableError(config.POptimizerError):
     """Не соответствие группы таблицы и ее класса."""
 
 
 Event = TypeVar("Event", bound=domain.AbstractEvent)
-
-
-class NoDfError(config.POptimizerError):
-    """Попытка прочитать отсутствующий DataFrame."""
 
 
 class AbstractTable(Generic[Event], domain.BaseEntity):
@@ -48,9 +44,9 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
     ) -> None:
         """Сохраняет необходимые данные."""
         if id_.package != PACKAGE:
-            raise TableWrongIDError(id_)
+            raise TableError(id_)
         if id_.group != self.group:
-            raise TableWrongIDError(id_)
+            raise TableError(id_)
         super().__init__(id_)
 
         self._df = df
@@ -62,7 +58,7 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
         """Копия данных."""
         if self._df is not None:
             return self._df.copy(deep=True)
-        raise NoDfError(self.id_)
+        raise TableError(self.id_)
 
     async def handle_event(self, event: Event) -> List[domain.AbstractEvent]:
         """Обновляет значение и сохраняет дату изменения.

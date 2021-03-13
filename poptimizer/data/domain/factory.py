@@ -52,7 +52,7 @@ class TablesFactory(domain.AbstractFactory[AnyTable]):
         """Создает таблицу по ID и словарю состояния."""
         group = id_.group
         if (table_type := self._types_mapping.get(group)) is None:
-            raise base.TableWrongIDError(id_)
+            raise base.TableError(id_)
 
         df = cast(pd.DataFrame, mongo_dict.get("df"))
         timestamp = cast(datetime, mongo_dict.get("timestamp"))

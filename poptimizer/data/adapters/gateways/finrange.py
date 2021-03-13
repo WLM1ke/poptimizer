@@ -1,6 +1,5 @@
 """Обновление данных с https://finrange.com/."""
-from datetime import datetime
-from typing import Callable, Optional, Union, cast
+from typing import Optional, cast
 
 import pandas as pd
 from pyppeteer import errors
@@ -46,7 +45,7 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
         num=3,
         raw_name=("Дивиденд на акцию",),
         name=ticker,
-        parser_func=cast(Callable[[str], Union[None, float, datetime]], cell_parser.div_with_cur),
+        parser_func=cast(parser.ParseFuncType, cell_parser.div_with_cur),
     )
     return [date_col, div_col]
 

@@ -1,5 +1,6 @@
 """Парсер html-таблиц."""
-from typing import List
+from datetime import datetime
+from typing import Callable, List, Union
 
 import aiohttp
 import bs4
@@ -9,6 +10,7 @@ from poptimizer.data.adapters.html import description
 from poptimizer.shared import connections
 
 Descriptions = List[description.ColDesc]
+ParseFuncType = Callable[[str], Union[None, float, datetime]]
 
 
 async def get_html(
