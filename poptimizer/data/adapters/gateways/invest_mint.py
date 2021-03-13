@@ -95,10 +95,9 @@ class InvestMintGateway(gateways.DivGateway):
 
         try:
             html = await parser.get_html(url)
+            table_index = _find_table_n(html)
         except description.ParserError:
             return None
-
-        table_index = _find_table_n(html)
 
         try:
             df = parser.get_df_from_html(html, table_index, cols_desc)

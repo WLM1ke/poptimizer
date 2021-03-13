@@ -27,10 +27,7 @@ DF_REZ = pd.DataFrame(
     index=["2020-01-20", "2014-11-25", "2014-11-25"],
     columns=["BELU", col.CURRENCY],
 )
-CASES = (
-    (DF, "", DF_REZ),
-    (DF, "Ближайшие дивиденды неизвестны", DF_REZ),
-)
+CASES = ((DF, "<table>Цена на закрытии<\table>", DF_REZ),)
 
 
 @pytest.mark.parametrize("df, html, df_rez", CASES)
