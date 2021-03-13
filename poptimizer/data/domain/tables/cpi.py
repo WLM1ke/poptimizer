@@ -1,6 +1,6 @@
 """Таблица с индексом потребительской инфляции."""
 from datetime import timedelta
-from typing import ClassVar, Final, List
+from typing import ClassVar, Final, List, cast
 
 import pandas as pd
 
@@ -25,7 +25,7 @@ class CPI(base.AbstractTable[events.TradingDayEnded]):
         last_cpi_month = df.index[-1].month
         last_full_month = (event.date.replace(day=1) - timedelta(days=1)).month
 
-        return last_cpi_month != last_full_month
+        return cast(bool, last_cpi_month != last_full_month)
 
     async def _prepare_df(self, event: events.TradingDayEnded) -> pd.DataFrame:
         """Загружает новый DataFrame."""

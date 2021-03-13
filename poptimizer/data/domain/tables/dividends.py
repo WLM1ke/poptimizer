@@ -1,6 +1,6 @@
 """Таблицы с дивидендами."""
 from datetime import datetime, timedelta
-from typing import ClassVar, Final, NamedTuple, Union
+from typing import ClassVar, Final, NamedTuple, Union, cast
 
 import pandas as pd
 
@@ -30,7 +30,7 @@ def _convent_to_rur(div: pd.DataFrame, event: DivEvents) -> pd.DataFrame:
     div = div.dropna()
     div = div[div[event.ticker] != 0]
 
-    rate = event.usd[col.CLOSE]
+    rate = cast(pd.DataFrame, event.usd)[col.CLOSE]
     rate = rate.reindex(index=div.index, method="ffill")
     div[col.CURRENCY] = rate.mask(
         div[col.CURRENCY] == col.RUR,
@@ -75,7 +75,10 @@ class DivNew(base.AbstractTable[events.TradingDayEnded]):
     """
 
     group: ClassVar[ports.GroupName] = ports.DIV_NEW
-    _gateways: Final = (smart_lab.SmartLabGateway(), moex_status.MOEXStatusGateway())
+    _gateways: Final = (
+        smart_lab.SmartLabGateway(),
+        moex_status.MOEXStatusGateway(),
+    )
 
     def _update_cond(self, event: events.TradingDayEnded) -> bool:
         """Если торговый день окончился, всегда обновление."""
@@ -106,7 +109,7 @@ class DivExt(base.AbstractTable[events.UpdateDivCommand]):
     """Таблица со сводными данными по дивидендам из внешних источников."""
 
     group: ClassVar[ports.GroupName] = ports.DIV_EXT
-    _gateways: Final[tuple[GateWayDesc]] = (
+    _gateways: Final[tuple[GateWayDesc, ...]] = (
         GateWayDesc("Dohod", col.ORDINARY, dohod.DohodGateway()),
         GateWayDesc("Dohod", col.PREFERRED, dohod.DohodGateway()),
         GateWayDesc("Conomy", col.ORDINARY, conomy.ConomyGateway()),

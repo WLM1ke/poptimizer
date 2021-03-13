@@ -2,7 +2,7 @@
 import re
 import types
 from datetime import datetime
-from typing import Final, Optional
+from typing import Callable, Final, Optional, Union, cast
 
 import bs4
 import pandas as pd
@@ -61,7 +61,7 @@ def get_col_desc(ticker: str) -> parser.Descriptions:
         num=div_col_n,
         raw_name=("Дивиденд",),
         name=ticker,
-        parser_func=cell_parser.div_with_cur,
+        parser_func=cast(Callable[[str], Union[None, float, datetime]], cell_parser.div_with_cur),
     )
     return [date_col, div_col]
 
@@ -78,6 +78,7 @@ def _find_table_n(html: str) -> int:
     for num, table in enumerate(tables):
         if "Цена на закрытии" in table.text:
             return num
+    raise description.ParserError("Таблица не найдена.")
 
 
 class InvestMintGateway(gateways.DivGateway):

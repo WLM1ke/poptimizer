@@ -27,6 +27,10 @@ class TableWrongIDError(config.POptimizerError):
 Event = TypeVar("Event", bound=domain.AbstractEvent)
 
 
+class NoDfError(config.POptimizerError):
+    """Попытка прочитать отсутствующий DataFrame."""
+
+
 class AbstractTable(Generic[Event], domain.BaseEntity):
     """Базовая таблица.
 
@@ -56,7 +60,9 @@ class AbstractTable(Generic[Event], domain.BaseEntity):
     @property
     def df(self) -> pd.DataFrame:
         """Копия данных."""
-        return self._df.copy(deep=True)
+        if self._df is not None:
+            return self._df.copy(deep=True)
+        raise NoDfError(self.id_)
 
     async def handle_event(self, event: Event) -> List[domain.AbstractEvent]:
         """Обновляет значение и сохраняет дату изменения.

@@ -42,4 +42,6 @@ class USD(base.AbstractTable[events.TradingDayEnded]):
 
     def _new_events(self, event: events.TradingDayEnded) -> List[domain.AbstractEvent]:
         """Порождает событие об обновлении курса."""
-        return [events.USDUpdated(event.date, self._df.copy(deep=True))]
+        if self._df is not None:
+            return [events.USDUpdated(event.date, self._df.copy(deep=True))]
+        return []

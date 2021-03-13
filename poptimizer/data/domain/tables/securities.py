@@ -1,6 +1,6 @@
 """Таблица с торгуемыми бумагами."""
 import asyncio
-from typing import Callable, ClassVar, Final, List, Literal
+from typing import Callable, ClassVar, Final
 
 import pandas as pd
 
@@ -20,8 +20,8 @@ class WrongTickerTypeError(config.POptimizerError):
     """Некорректный тикер."""
 
 
-def _ticker_type(ticker: str) -> Literal[0, 1]:
-    """Определяет является ли акция обыкновенной."""
+def _ticker_type(ticker: str) -> int:
+    """Является ли акция обыкновенной."""
     if len(ticker) == COMMON_TICKER_LENGTH:
         return col.ORDINARY
     elif len(ticker) == COMMON_TICKER_LENGTH + 1:
@@ -75,7 +75,7 @@ class Securities(base.AbstractTable[events.USDUpdated]):
         """Индекс должен быть уникальным и возрастающим."""
         base.check_unique_increasing_index(df_new)
 
-    def _new_events(self, event: events.USDUpdated) -> List[domain.AbstractEvent]:
+    def _new_events(self, event: events.USDUpdated) -> list[domain.AbstractEvent]:
         """События факта торговли конкретных бумаг."""
         df: pd.DataFrame = self._df
         trading_date = event.date

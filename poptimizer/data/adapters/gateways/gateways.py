@@ -30,3 +30,11 @@ class DivGateway(BaseGateway):
         """Сортировка и агрегация по индексу."""
         df = df.sort_index(axis=0)
         return df.groupby(lambda date: date).sum()
+
+
+class DivStatusGateway(BaseGateway):
+    """Базовый шлюз для статуса дивидендов."""
+
+    @abc.abstractmethod
+    async def __call__(self) -> Optional[pd.DataFrame]:
+        """Получение ожидаемых дивидендов."""

@@ -1,5 +1,5 @@
 """Обновление данных с https://www.nasdaq.com/."""
-from typing import Final, Optional
+from typing import Final, Optional, cast
 
 import pandas as pd
 from pyppeteer import errors
@@ -44,7 +44,7 @@ async def _load_ticker_page(url: str, browser: chromium.Browser = chromium.BROWS
         except errors.TimeoutError:
             await page.waitForXPath(TABLE_XPATH)
 
-        return await page.content()
+        return cast(str, await page.content())
 
 
 class NASDAQGateway(gateways.DivGateway):

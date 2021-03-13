@@ -1,6 +1,7 @@
 """Загрузка данных со https://www.smart-lab.ru."""
 import pandas as pd
 
+from poptimizer.data.adapters.gateways import gateways
 from poptimizer.data.adapters.html import cell_parser, description, parser
 from poptimizer.shared import adapters, col
 
@@ -33,7 +34,7 @@ def get_col_desc() -> parser.Descriptions:
     return [ticker, date, div]
 
 
-class SmartLabGateway:
+class SmartLabGateway(gateways.DivStatusGateway):
     """Обновление данных с https://www.smart-lab.ru."""
 
     _logger = adapters.AsyncLogger()

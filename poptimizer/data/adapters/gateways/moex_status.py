@@ -1,9 +1,11 @@
 """Данные о закрытии реестров https://www.moex.com."""
 import re
-from typing import Final, Optional
+from datetime import datetime
+from typing import Callable, Final, Optional, Union, cast
 
 import pandas as pd
 
+from poptimizer.data.adapters.gateways import gateways
 from poptimizer.data.adapters.html import cell_parser, description, parser
 from poptimizer.shared import adapters, col
 
@@ -28,7 +30,7 @@ def get_col_desc() -> parser.Descriptions:
         num=0,
         raw_name=("Эмитент",),
         name=col.TICKER,
-        parser_func=_ticker_parser,
+        parser_func=cast(Callable[[str], Union[None, float, datetime]], _ticker_parser),
     )
     date = description.ColDesc(
         num=2,
@@ -40,7 +42,7 @@ def get_col_desc() -> parser.Descriptions:
     return [ticker, date]
 
 
-class MOEXStatusGateway:
+class MOEXStatusGateway(gateways.DivStatusGateway):
     """Данные о закрытии реестров https://www.moex.com.
 
     Загружаются только данные по иностранным бумагам.

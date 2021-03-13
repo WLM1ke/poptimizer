@@ -40,7 +40,7 @@ def _check_div_in_df(
     return math.isclose(df.loc[date, ticker], div_value, rel_tol=RET_TOL)
 
 
-def new_dividends(tickers: tuple[str, ...]) -> list[str]:
+def new_dividends(tickers: tuple[str, ...]) -> set[str]:
     """Список тикеров с новой информацией о дивидендах.
 
     По российским акция используется информация о предстоящих дивидендах со SmartLab, а по иностранным с
