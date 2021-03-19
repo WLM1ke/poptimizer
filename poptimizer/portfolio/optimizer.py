@@ -133,7 +133,7 @@ class Optimizer:
             if sell == buy or turnover_all[buy] == 0:
                 continue
 
-            factor = turnover_all[buy] - min(weight[sell] + weight[CASH], MAX_TRADE)
+            factor = turnover_all[buy] - (weight[sell] + weight[CASH] - weight[buy]) / 2
             if factor < 0:
                 continue
 
@@ -146,7 +146,7 @@ class Optimizer:
                 yield [
                     sell,
                     buy,
-                    betas[buy] * weight[buy],
+                    betas[buy] * weight[buy] - betas[sell] * weight[sell],
                     diff.median(),
                     factor,
                     alfa,
