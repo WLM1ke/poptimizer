@@ -53,7 +53,7 @@ def get_col_desc(ticker: str) -> parser.Descriptions:
         parser_func=_date_parser,
     )
 
-    div_col_n = 5
+    div_col_n = 6
     if ticker[-3:] == "-RM":
         div_col_n -= 1
 

@@ -11,7 +11,9 @@ from poptimizer.shared import adapters, col
 # Адрес и xpath таблицы
 URL_START = "https://www.nasdaq.com/market-activity/stocks/"
 URL_END = "/dividend-history"
-TABLE_XPATH: Final = "/html/body/div[2]/div/main/div[2]/div[4]/div[2]/div/div[2]/div[2]/div[2]/table"
+TABLE_XPATH: Final = (
+    "/html/body/div[2]/div/main/div[2]/div[4]/div[2]/div/div[2]/div[2]/div[2]/table/tbody/tr[3]"
+)
 
 # Задержка для частичной загрузки в микросекундах
 PARTIAL_LOAD_TIMEOUT: Final = 1000
@@ -38,7 +40,7 @@ async def _load_ticker_page(url: str, browser: chromium.Browser = chromium.BROWS
     """Загружает страницу с таблицей дивидендов."""
     async with browser.get_new_page() as page:
         try:
-            # На странице много рекламных банеров - она практически никогда не загружается полностью
+            # На странице много рекламных банеров — она практически никогда не загружается полностью
             # Достаточно немного подождать для частичного перехода, а потом ждать только загрузки таблицы
             await page.goto(url, options={"timeout": PARTIAL_LOAD_TIMEOUT})
         except errors.TimeoutError:
