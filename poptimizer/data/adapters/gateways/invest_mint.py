@@ -95,6 +95,10 @@ class InvestMintGateway(gateways.DivGateway):
 
         try:
             html = await parser.get_html(url)
+        except description.ParserError:
+            return None
+
+        try:
             table_index = _find_table_n(html)
         except description.ParserError:
             return None
