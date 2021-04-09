@@ -7,12 +7,34 @@ from poptimizer.data.views.crop import div
 from poptimizer.shared import col
 
 
-def test_new_div_all():
+def test_new_div_all(mocker):
     """Проверка типа и структуры результата."""
+    fake_raw_df = pd.DataFrame(
+        [
+            ["AKRN", "2020-01-01", 1],
+            ["CHMF", "2020-01-02", 2],
+            ["CHMF", "2020-01-02", 3],
+            ["AKRN", "2020-01-03", 4],
+            ["T-RM", "2020-01-04", None],
+        ],
+        columns=[col.TICKER, col.DATE, col.DIVIDENDS],
+    ).set_index(col.TICKER)
+
+    mocker.patch.object(div_status.bootstrap.VIEWER, "get_df", return_value=fake_raw_df)
+
     df = div_status._new_div_all()
 
-    assert isinstance(df, pd.DataFrame)
-    assert df.columns.tolist() == [col.DATE, col.DIVIDENDS]
+    rez = pd.DataFrame(
+        [
+            ["AKRN", "2020-01-01", 1],
+            ["AKRN", "2020-01-03", 4],
+            ["CHMF", "2020-01-02", 5],
+            ["T-RM", "2020-01-04", None],
+        ],
+        columns=[col.TICKER, col.DATE, col.DIVIDENDS],
+    ).set_index(col.TICKER)
+
+    pd.testing.assert_frame_equal(df, rez)
 
 
 SMART_LAB_DF = pd.DataFrame(

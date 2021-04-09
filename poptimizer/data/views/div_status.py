@@ -11,6 +11,8 @@ from poptimizer.data.domain import events
 from poptimizer.data.views.crop import div
 
 # Точность сравнения дивидендов
+from poptimizer.shared import col
+
 RET_TOL: Final = 1e-3
 
 DivSource = Callable[[str], pd.DataFrame]
@@ -18,7 +20,10 @@ DivSource = Callable[[str], pd.DataFrame]
 
 def _new_div_all(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.DataFrame:
     """Информация по дивидендам с smart-lab.ru."""
-    return viewer.get_df(ports.DIV_NEW, ports.DIV_NEW)
+    raw_data = viewer.get_df(ports.DIV_NEW, ports.DIV_NEW)
+    indexed = raw_data.set_index(col.DATE, append=True)
+    grouped = indexed.groupby(level=[0, 1]).sum(min_count=1)
+    return grouped.reset_index(level=1)
 
 
 def _check_div_in_df(
@@ -37,7 +42,7 @@ def _check_div_in_df(
     if math.isnan(div_value):
         return True
 
-    return math.isclose(df.loc[date, ticker], div_value, rel_tol=RET_TOL)
+    return math.isclose(df.loc[date, ticker], div_value, rel_tol=RET_TOL * 4)
 
 
 def new_dividends(tickers: tuple[str, ...]) -> set[str]:
@@ -69,7 +74,7 @@ def new_dividends(tickers: tuple[str, ...]) -> set[str]:
     return status
 
 
-def _row_comp(row: pd.Series, rel_tol: float = 1e-3) -> bool:
+def _row_comp(row: pd.Series, rel_tol: float = RET_TOL) -> bool:
     """Сравнение двух значений дивидендов."""
     return math.isclose(row.iloc[0], row.iloc[1], rel_tol=rel_tol)
 
