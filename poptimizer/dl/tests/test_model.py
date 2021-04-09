@@ -57,18 +57,6 @@ def test_llh_from_trained_and_reloaded_model(org):
     assert llh == net._eval_llh()
 
 
-def test_raise_gradient_error(org):
-    gen = copy.deepcopy(org.genotype)
-    gen["Scheduler"]["epochs"] /= 10
-    gen["Scheduler"]["max_lr"] = 10
-    phenotype = gen.get_phenotype()
-    net = model.Model(tuple(org._data.tickers), org._data.date, phenotype, None)
-    with pytest.raises(model.ModelError) as error:
-        # noinspection PyStatementEffect
-        net.llh
-    assert issubclass(error.type, model.GradientsError)
-
-
 def test_forecast(org):
     gen = copy.deepcopy(org.genotype)
     gen["Scheduler"]["epochs"] /= 10
