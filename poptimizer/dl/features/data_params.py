@@ -9,7 +9,7 @@ import pandas as pd
 import poptimizer.data.views.quotes
 from poptimizer.data.views import listing
 
-FORECAST_DAYS = 23
+FORECAST_DAYS = 24
 
 
 def div_price_train_size(
