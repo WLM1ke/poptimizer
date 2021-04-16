@@ -133,7 +133,7 @@ class Optimizer:
             if sell == buy or turnover_all[buy] == 0:
                 continue
 
-            factor = turnover_all[buy] - (weight[sell] + weight[CASH] - weight[buy]) / 2
+            factor = turnover_all[buy] - (weight[sell] + weight[CASH])
             if factor < 0:
                 continue
 

@@ -46,7 +46,7 @@ def test_best_combination(opt, monkeypatch):
     df = opt.best_combination
 
     assert isinstance(df, pd.DataFrame)
-    assert df.shape == (3, 6)
+    assert df.shape == (2, 6)
     assert list(df.columns) == [
         "SELL",
         "BUY",
@@ -56,10 +56,10 @@ def test_best_combination(opt, monkeypatch):
         "P_VALUE",
     ]
 
-    assert df.loc[1, "SELL"] == "RTKMP"
+    assert df.loc[1, "SELL"] == "TRCN"
     assert df.loc[1, "BUY"] == "KZOS"
 
-    assert df.loc[2, "SELL"] == "TRCN"
+    assert df.loc[2, "SELL"] == "MTSS"
     assert df.loc[2, "BUY"] == "KZOS"
 
 
