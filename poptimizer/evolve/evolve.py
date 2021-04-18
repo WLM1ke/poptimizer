@@ -9,7 +9,7 @@ from poptimizer.evolve.chromosomes.chromosome import MUTATION_FACTOR
 from poptimizer.portfolio.portfolio import Portfolio
 
 # Максимальная популяция
-MAX_POPULATION = 100
+MAX_POPULATION = 90
 
 
 class Evolution:
