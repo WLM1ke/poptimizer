@@ -42,7 +42,9 @@ def _check_div_in_df(
     if math.isnan(div_value):
         return True
 
-    return math.isclose(df.loc[date, ticker], div_value, rel_tol=RET_TOL * 4)
+    rel_tol = RET_TOL * 4
+
+    return math.isclose(df.loc[date, ticker], div_value, rel_tol=rel_tol)
 
 
 def new_dividends(tickers: tuple[str, ...]) -> set[str]:
