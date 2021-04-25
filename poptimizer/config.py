@@ -1,9 +1,9 @@
 """Основные настраиваемые параметры"""
 import logging
 import pathlib
-import torch
 
 import pandas as pd
+import torch
 
 
 class POptimizerError(Exception):
