@@ -1,4 +1,4 @@
-from poptimizer.evolve.chromosomes import model, chromosome
+from poptimizer.evolve.chromosomes import chromosome, model
 
 
 def test_init_no_data():
