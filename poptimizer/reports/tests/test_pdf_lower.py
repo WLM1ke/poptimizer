@@ -1,6 +1,6 @@
 import pytest
 
-from poptimizer.portfolio import portfolio, PORTFOLIO
+from poptimizer.portfolio import PORTFOLIO, portfolio
 from poptimizer.reports import pdf_lower
 from poptimizer.reports.pdf_lower import OTHER
 

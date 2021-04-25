@@ -8,12 +8,7 @@ from reportlab import platypus
 from reportlab.lib.units import inch
 
 from poptimizer.data.views import indexes
-from poptimizer.reports.pdf_style import (
-    LINE_WIDTH,
-    LINE_COLOR,
-    BlockPosition,
-    BLOCK_HEADER_STYLE,
-)
+from poptimizer.reports.pdf_style import BLOCK_HEADER_STYLE, LINE_COLOR, LINE_WIDTH, BlockPosition
 from poptimizer.reports.pdf_upper import get_investors_names
 
 # Доля левой части блока - используется для таблицы

@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.config import POptimizerError
-from poptimizer.portfolio import portfolio, PORTFOLIO
+from poptimizer.portfolio import PORTFOLIO, portfolio
 from poptimizer.reports import pdf
 
 POSITIONS = dict(MSTT=440, RTKMP=1500, MTSS=140, AKRN=12, MSRS=57000, UPRO=13000, PMSBP=480)

@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 
 from poptimizer.config import REPORTS_PATH, POptimizerError
-from poptimizer.portfolio import Portfolio, PORTFOLIO
-from poptimizer.reports import pdf_style, pdf_upper, pdf_middle, pdf_lower
+from poptimizer.portfolio import PORTFOLIO, Portfolio
+from poptimizer.reports import pdf_lower, pdf_middle, pdf_style, pdf_upper
 
 # Каталог с pdf-отчетами
 PDF_PATH = REPORTS_PATH / "pdf"

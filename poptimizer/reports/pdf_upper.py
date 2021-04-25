@@ -3,12 +3,7 @@
 import pandas as pd
 from reportlab import platypus
 
-from poptimizer.reports.pdf_style import (
-    LINE_WIDTH,
-    LINE_COLOR,
-    BlockPosition,
-    BLOCK_HEADER_STYLE,
-)
+from poptimizer.reports.pdf_style import BLOCK_HEADER_STYLE, LINE_COLOR, LINE_WIDTH, BlockPosition
 
 # Доля левой части блока - используется для таблицы движения средств
 # В правой расположена таблица дивидендов

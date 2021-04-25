@@ -4,7 +4,7 @@ from shutil import copyfile
 import pandas as pd
 import pytest
 
-from poptimizer.reports import simple, pdf
+from poptimizer.reports import pdf, simple
 
 
 @pytest.fixture(scope="module", name="report_path")

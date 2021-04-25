@@ -7,13 +7,13 @@ from reportlab.lib.units import inch
 
 # Количество строк в таблице, которое влезает в блок и нормально выглядит на диаграмме
 import poptimizer.data.views.crop
-from poptimizer.portfolio import Portfolio, PORTFOLIO
+from poptimizer.portfolio import PORTFOLIO, Portfolio
 from poptimizer.reports.pdf_style import (
-    LINE_WIDTH,
-    LINE_COLOR,
-    BOLD_FONT,
-    BlockPosition,
     BLOCK_HEADER_STYLE,
+    BOLD_FONT,
+    LINE_COLOR,
+    LINE_WIDTH,
+    BlockPosition,
 )
 
 MAX_TABLE_ROWS = 9
