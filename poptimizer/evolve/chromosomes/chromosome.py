@@ -60,7 +60,7 @@ class Chromosome(UserDict):
         :param chromosome_data:
             Словарь с описанием хромосомы.
         """
-        super().__init__(self._default_chromosome_data(), **chromosome_data)
+        super().__init__(_default_chromosome_data(self._genes), **chromosome_data)
 
     def change_phenotype(self, phenotype: PhenotypeData) -> None:
         """Меняет фенотип в соответствии со значениями генов хромосомы.
@@ -101,18 +101,18 @@ class Chromosome(UserDict):
             child[key] = _to_bounds(raw_value, gene.lower_bound, gene.upper_bound)
         return child
 
-    @classmethod
-    def _default_chromosome_data(cls) -> ChromosomeData:
-        """Значение хромосомы по умолчанию.
 
-        Используется в случае расширения генотипа - организмы с более узким генотипом получат
-        значения генов по умолчанию с небольшой случайной компонентой для генетического разнообразия и с
-        учетом верхней и нижней границы значения гена.
-        """
-        chromosome_data = {}
-        for gene in cls._genes:
-            chromosome_data[gene.name] = random.uniform(*gene.default_range)
-        return chromosome_data
+def _default_chromosome_data(genes: tuple[GeneParams, ...]) -> ChromosomeData:
+    """Значение хромосомы по умолчанию.
+
+    Используется в случае расширения генотипа — организмы с более узким генотипом получат
+    значения генов по умолчанию с небольшой случайной компонентой для генетического разнообразия и с
+    учетом верхней и нижней границы значения гена.
+    """
+    chromosome_data = {}
+    for gene in genes:
+        chromosome_data[gene.name] = random.uniform(*gene.default_range)
+    return chromosome_data
 
 
 def _to_bounds(raw_value: float, lower_bound: Optional[float], upper_bound: Optional[float]) -> float:
