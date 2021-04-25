@@ -2,15 +2,11 @@
 import copy
 from collections import UserDict
 from dataclasses import dataclass
-from typing import Dict, Any, Callable, Optional, Tuple, NoReturn, ClassVar
+from typing import Any, Callable, ClassVar, Optional
 
 from numpy import random
 
 from poptimizer.dl import PhenotypeData
-
-# Параметры по умолчанию для дифференциальной мутации
-MUTATION_FACTOR = 0.8
-MUTATION_PROBABILITY = 0.9
 
 
 @dataclass(frozen=True)
@@ -22,27 +18,27 @@ class GeneParams:
     используемый для хранения связанных генов).
 
     В хромосоме все гены представлены в виде float - необходимо для реализации дифференциальной эволюции.
-    Набор генов может расширяться, поэтому у гена должен быть интервал значений по умолчанию -
+    Набор генов может расширяться, поэтому у гена должен быть интервал значений по умолчанию —
     будет подставляться случайное значение из этого интервала вместо отсутствующих генов для
     обеспечения генетического разнообразия.
 
     Значение гена может иметь верхнюю и нижнюю границу, которые будут ограничивать мутацию во время
     дифференциальной эволюции.
 
-    В фенотипе значение гена может быть любым типом - для преобразования из float используется
+    В фенотипе значение гена может быть любым типом — для преобразования из float используется
     соответствующая функция.
     """
 
     name: str
-    default_range: Tuple[float, float]
+    default_range: tuple[float, float]
     lower_bound: Optional[float]
     upper_bound: Optional[float]
-    path: Tuple[str, ...]
+    path: tuple[str, ...]
     phenotype_function: Callable[[float], Any]
 
 
 # Представление данных в хромосоме
-ChromosomeData = Dict[str, float]
+ChromosomeData = dict[str, float]
 
 
 class Chromosome(UserDict):
@@ -52,19 +48,58 @@ class Chromosome(UserDict):
     осуществляет их дифференциальную эволюцию.
     """
 
-    _GENES: ClassVar[Tuple[GeneParams, ...]] = tuple()
+    _genes: ClassVar[tuple[GeneParams, ...]] = ()
 
-    def __init__(self, chromosome_data: ChromosomeData) -> NoReturn:
-        """Формирует полное описании хромосомы.
+    def __init__(self, chromosome_data: ChromosomeData) -> None:
+        """Формирует полное описание хромосомы.
 
         В старых версиях генотипа может отсутствовать хромосома или некоторые гены в ней. В место них
         подставляются значения по умолчанию с небольшой случайной составляющей для создания
         генетического разнообразия.
 
         :param chromosome_data:
-            Словарь с описание хромосомы.
+            Словарь с описанием хромосомы.
         """
         super().__init__(self._default_chromosome_data(), **chromosome_data)
+
+    def change_phenotype(self, phenotype: PhenotypeData) -> None:
+        """Меняет фенотип в соответствии со значениями генов хромосомы.
+
+        Значение гена (float) преобразуется в представление необходимое для фенотипа.
+        """
+        for gene in self._genes:
+            node = phenotype
+            for path_key in gene.path[:-1]:
+                node = node.setdefault(path_key, {})
+            value_key = gene.path[-1]
+            node[value_key] = gene.phenotype_function(self[gene.name])
+
+    def make_child(
+        self,
+        parent: "Chromosome",
+        scale: float,
+    ) -> "Chromosome":
+        """Мутация на основе алгоритма дифференциальной эволюции.
+
+        Значение модифицируется на нормальный шум с СКО, равным разнице с другим родителем помноженным на
+        коэффициент. Если мутировавшее значение выходит за границы допустимых значений, то значение
+        отражается от границы.
+
+        :param parent:
+            Хромосома второго родителя, которая используется для расчета разницы значений признаков.
+        :param scale:
+            Фактор масштабирования разницы между родителями.
+        :return:
+            Представление хромосомы потомка в виде словаря.
+        """
+        child = copy.deepcopy(self)
+
+        for gene in self._genes:
+            key = gene.name
+            diff = (child[key] - parent[key]) * scale
+            raw_value = child[key] + diff * random.normal()
+            child[key] = _to_bounds(raw_value, gene.lower_bound, gene.upper_bound)
+        return child
 
     @classmethod
     def _default_chromosome_data(cls) -> ChromosomeData:
@@ -74,62 +109,17 @@ class Chromosome(UserDict):
         значения генов по умолчанию с небольшой случайной компонентой для генетического разнообразия и с
         учетом верхней и нижней границы значения гена.
         """
-        chromosome_data = dict()
-        for gene in cls._GENES:
+        chromosome_data = {}
+        for gene in cls._genes:
             chromosome_data[gene.name] = random.uniform(*gene.default_range)
         return chromosome_data
 
-    def change_phenotype(self, phenotype: PhenotypeData) -> NoReturn:
-        """Меняет фенотип в соответствии со значениями генов хромосомы.
 
-        Значение гена (float) преобразуется в представление необходимое для фенотипа.
-        """
-        for gene in self._GENES:
-            node = phenotype
-            for key in gene.path[:-1]:
-                node = node.setdefault(key, {})
-            key = gene.path[-1]
-            node[key] = gene.phenotype_function(self[gene.name])
-
-    def make_child(
-        self,
-        base: "Chromosome",
-        diff1: "Chromosome",
-        diff2: "Chromosome",
-        factor: float = MUTATION_FACTOR,
-        probability: float = MUTATION_PROBABILITY,
-    ) -> "Chromosome":
-        """Мутация в соответствии с алгоритмом дифференциальной эволюции.
-
-        Если мутировавшее значение выходит за границы допустимых значений - берется среднее значение
-        между текущим  и границей.
-
-        :param base:
-            Базовая хромосома для мутации.
-        :param diff1:
-            Первая хромосома для расчета размера мутации.
-        :param diff2:
-            Вторая хромосома для расчета размера мутации.
-        :param factor:
-            Понижающий коэффициент мутации.
-        :param probability:
-            Вероятность мутации.
-        :return:
-            Представление хромосомы потомка в виде словаря.
-        """
-        child = copy.deepcopy(self)
-        gens = self._GENES
-
-        flags = random.rand(len(gens))
-        flags = map(lambda x: x < probability, flags)
-
-        for flag, gene in zip(flags, gens):
-            if flag:
-                key = gene.name
-                value = base[key] + (diff1[key] - diff2[key]) * factor
-                if gene.lower_bound is not None and value < gene.lower_bound:
-                    value = gene.lower_bound + (gene.lower_bound - value)
-                if gene.upper_bound is not None and value > gene.upper_bound:
-                    value = gene.upper_bound - (value - gene.upper_bound)
-                child[key] = value
-        return child
+def _to_bounds(raw_value: float, lower_bound: Optional[float], upper_bound: Optional[float]) -> float:
+    while True:
+        if lower_bound is not None and raw_value < lower_bound:
+            raw_value = lower_bound + (lower_bound - raw_value)
+        elif upper_bound is not None and raw_value > upper_bound:
+            raw_value = upper_bound - (raw_value - upper_bound)
+        else:
+            return raw_value
