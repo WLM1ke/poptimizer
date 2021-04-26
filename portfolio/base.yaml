@@ -14,6 +14,7 @@ positions:
   BANE: 0
   BANEP: 0
   BELU: 0
+  BIDU-RM: 0
   BIIB-RM: 0
   BMY-RM: 0
   BRZL: 0
@@ -60,6 +61,7 @@ positions:
   LSNGP: 0
   LSRG: 0
   MAGN: 0
+  MAIL: 0
   MDMG: 0
   MGNT: 0
   MGTSP: 0
@@ -89,6 +91,7 @@ positions:
   NVTK: 0
   ORUP: 0
   OGKB: 0
+  OZON: 0
   PHOR: 0
   PIKK: 0
   PMSBP: 0
@@ -124,6 +127,7 @@ positions:
   TGKBP: 0
   TRMK: 0
   TRNFP: 0
+  TSLA-RM: 0
   TTLK: 0
   TWTR-RM: 0
   UBER-RM: 0
