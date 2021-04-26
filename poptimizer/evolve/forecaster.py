@@ -1,6 +1,6 @@
 """Формирует прогноз по всем моделям в популяции."""
 from collections.abc import Iterable
-from typing import Tuple, Iterator
+from typing import Iterator, Tuple
 
 import pandas as pd
 import tqdm

@@ -5,10 +5,10 @@ import numpy as np
 import torch
 
 import poptimizer.data.views.quotes
+from poptimizer.config import DEVICE
 from poptimizer.data.views import listing
 from poptimizer.dl.features.data_params import DataParams
 from poptimizer.dl.features.feature import Feature, FeatureType
-from poptimizer.config import DEVICE
 
 # Ключ для хранения данных оборота в кеше параметров данных
 TURNOVER = "turnover"

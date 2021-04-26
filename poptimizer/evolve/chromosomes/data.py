@@ -1,5 +1,5 @@
 """Гены и хромосома ответственные за параметры данных."""
-from poptimizer.evolve.chromosomes.chromosome import GeneParams, Chromosome
+from poptimizer.evolve.chromosomes.chromosome import Chromosome, GeneParams
 
 BATCH_SIZE = GeneParams(
     name="batch_size",
@@ -126,7 +126,7 @@ OPEN_ON = GeneParams(
 class Data(Chromosome):
     """Хромосома ответственная за параметры данных."""
 
-    _GENES = (
+    _genes = (
         BATCH_SIZE,
         HISTORY_DAYS,
         TICKER_ON,

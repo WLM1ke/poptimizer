@@ -3,10 +3,10 @@ from typing import Tuple
 
 import torch
 
+from poptimizer.config import DEVICE
 from poptimizer.data.views import indexes
 from poptimizer.dl.features.data_params import DataParams
 from poptimizer.dl.features.feature import Feature, FeatureType
-from poptimizer.config import DEVICE
 
 
 class MCFTRR(Feature):

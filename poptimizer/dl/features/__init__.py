@@ -12,5 +12,5 @@ from poptimizer.dl.features.prices import Prices
 from poptimizer.dl.features.rvi import RVI
 from poptimizer.dl.features.ticker import Ticker
 from poptimizer.dl.features.ticker_type import TickerType
-from poptimizer.dl.features.turnover import Turnover, AverageTurnover
+from poptimizer.dl.features.turnover import AverageTurnover, Turnover
 from poptimizer.dl.features.usd import USD

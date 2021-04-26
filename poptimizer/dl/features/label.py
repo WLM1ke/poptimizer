@@ -3,9 +3,9 @@ from typing import Tuple
 
 import torch
 
+from poptimizer.config import DEVICE
 from poptimizer.dl.features import data_params
 from poptimizer.dl.features.feature import Feature, FeatureType
-from poptimizer.config import DEVICE
 
 
 class Label(Feature):

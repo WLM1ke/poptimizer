@@ -1,5 +1,5 @@
 """Доступ к данным для эволюции."""
-from typing import Any, Type, Optional, NoReturn
+from typing import Any, NoReturn, Optional, Type
 
 import bson
 from pymongo.collection import Collection

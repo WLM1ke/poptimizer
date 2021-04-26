@@ -3,7 +3,7 @@ import pytest
 import torch
 
 import poptimizer.data.app.bootstrap
-from poptimizer.dl.features import data_params, FeatureType, ticker
+from poptimizer.dl.features import FeatureType, data_params, ticker
 
 PARAMS = {
     "batch_size": 100,

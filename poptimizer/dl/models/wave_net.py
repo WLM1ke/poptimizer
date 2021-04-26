@@ -1,12 +1,12 @@
 """Модель на основе WaveNet."""
-from typing import Dict, Union, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import torch
 from torch import nn
 
-from poptimizer.dl.features import FeatureType
 from poptimizer.config import DEVICE
+from poptimizer.dl.features import FeatureType
 
 
 class SubBlock(nn.Module):

@@ -1,5 +1,5 @@
 """Формирование примеров для обучения в формате PyTorch."""
-from typing import Dict, Tuple, Type, List, Union, Any
+from typing import Any, Dict, List, Tuple, Type, Union
 
 import pandas as pd
 from torch import Tensor

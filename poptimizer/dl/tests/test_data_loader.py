@@ -3,7 +3,7 @@ import pytest
 import torch
 
 from poptimizer.dl import data_loader
-from poptimizer.dl.features import data_params, FeatureType
+from poptimizer.dl.features import FeatureType, data_params
 from poptimizer.dl.features.data_params import FORECAST_DAYS
 
 PARAMS = {

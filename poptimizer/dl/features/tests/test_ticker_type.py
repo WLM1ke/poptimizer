@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 import torch
 
-from poptimizer.dl.features import data_params, FeatureType, ticker_type
+from poptimizer.dl.features import FeatureType, data_params, ticker_type
 
 PARAMS = {
     "batch_size": 100,

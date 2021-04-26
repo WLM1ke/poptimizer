@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from poptimizer.dl import Forecast
-from poptimizer.evolve import forecaster, store, population
+from poptimizer.evolve import forecaster, population, store
 
 
 @pytest.fixture(scope="module", autouse=True)

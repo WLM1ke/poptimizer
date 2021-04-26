@@ -3,7 +3,7 @@ import pytest
 import torch
 
 import poptimizer.data.app.bootstrap
-from poptimizer.dl.features import data_params, FeatureType, day_of_year
+from poptimizer.dl.features import FeatureType, data_params, day_of_year
 
 PARAMS = {
     "batch_size": 100,

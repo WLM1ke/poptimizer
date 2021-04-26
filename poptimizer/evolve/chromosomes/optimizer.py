@@ -30,7 +30,7 @@ WEIGHT_DECAY = chromosome.GeneParams(
 class Optimizer(chromosome.Chromosome):
     """Хромосома ответственная за параметры оптимизации модели с помощью AdamW."""
 
-    _GENES = (
+    _genes = (
         BETA2,  # Бета2 - значение Бета1 переписывается One cycle learning rate policy
         EPS,  # Корректировка для численной стабильности
         WEIGHT_DECAY,  # L2 регуляризация

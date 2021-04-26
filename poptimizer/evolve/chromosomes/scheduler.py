@@ -70,7 +70,7 @@ FINAL_DIV_FACTOR = chromosome.GeneParams(
 class Scheduler(chromosome.Chromosome):
     """Хромосома ответственная за параметры One cycle learning rate policy."""
 
-    _GENES = (
+    _genes = (
         MAX_LR,  # Максимальная скорость обучения
         EPOCHS,  # Количество эпох обучения
         PCT_START,  # Доля шагов разогрева
