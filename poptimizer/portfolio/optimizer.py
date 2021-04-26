@@ -10,7 +10,7 @@ from poptimizer import config
 from poptimizer.config import MAX_TRADE
 from poptimizer.dl.features.data_params import FORECAST_DAYS
 from poptimizer.portfolio import metrics
-from poptimizer.portfolio.portfolio import Portfolio, CASH, PORTFOLIO
+from poptimizer.portfolio.portfolio import CASH, PORTFOLIO, Portfolio
 
 # Значимость отклонения градиента от нуля
 P_VALUE = 0.05

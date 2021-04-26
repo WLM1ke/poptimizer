@@ -6,7 +6,7 @@ import pandas as pd
 
 from poptimizer import evolve
 from poptimizer.dl import Forecast
-from poptimizer.portfolio.portfolio import Portfolio, CASH, PORTFOLIO
+from poptimizer.portfolio.portfolio import CASH, PORTFOLIO, Portfolio
 
 
 class MetricsSingle:
