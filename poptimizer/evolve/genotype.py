@@ -1,29 +1,31 @@
 """Класс генотипа и операций с ним."""
 import copy
+import types
 from collections import UserDict
-from typing import List, Dict, Type, Optional
+from typing import Optional, Type
 
 from poptimizer.dl import PhenotypeData
 from poptimizer.evolve import chromosomes
 
-# База для формирования фенотипа
-from poptimizer.evolve.chromosomes.chromosome import MUTATION_FACTOR
-
-BASE_PHENOTYPE = {
-    "type": "WaveNet",
-    "data": {"features": {"Label": {"on": True}}},
-}
+# Базовый генотип, к которому добавляются хромосомы
+BASE_PHENOTYPE = types.MappingProxyType(
+    {
+        "type": "WaveNet",
+        "data": {"features": {"Label": {"on": True}}},
+    },
+)
 
 # Все используемые хромосомы
-ALL_CHROMOSOMES_TYPES = [
+ALL_CHROMOSOMES_TYPES = (
     chromosomes.Data,
     chromosomes.Model,
     chromosomes.Optimizer,
     chromosomes.Scheduler,
-]
+)
 
 # Представление данных в генотипе
-GenotypeData = Dict[str, chromosomes.ChromosomeData]
+GenotypeData = dict[str, chromosomes.ChromosomeData]
+GenotypeTypes = list[Type[chromosomes.Chromosome]]
 
 
 class Genotype(UserDict):
@@ -37,25 +39,28 @@ class Genotype(UserDict):
         self,
         genotype_data: GenotypeData = None,
         base_phenotype: Optional[PhenotypeData] = None,
-        all_chromosome_types: Optional[List[Type[chromosomes.Chromosome]]] = None,
+        all_chromosome_types: Optional[GenotypeTypes] = None,
     ):
+        """Инициализирует значения всех генов."""
         super().__init__()
 
         genotype_data = genotype_data or {}
-        all_chromosome_types = all_chromosome_types or ALL_CHROMOSOMES_TYPES
+        all_chromosome_types = all_chromosome_types or list(ALL_CHROMOSOMES_TYPES)
 
         for gen_type in all_chromosome_types:
             key = gen_type.__name__
-            chromosome_data = genotype_data.get(key, dict())
+            chromosome_data = genotype_data.get(key, {})
             self.data[key] = gen_type(chromosome_data)
 
-        self._base_phenotype = base_phenotype or BASE_PHENOTYPE
+        self._base_phenotype = base_phenotype or dict(BASE_PHENOTYPE)
 
     def __str__(self) -> str:
-        return "\n".join(f"{key}: {chromosome}" for key, chromosome in self.items())
+        """Текстовое представление хромосом в отдельных строчках."""
+        text_chromosome = [f"{key}: {chromosome}" for key, chromosome in self.items()]
+        return "\n".join(text_chromosome)
 
     def get_phenotype(self) -> PhenotypeData:
-        """Возвращает фенотип - параметры модели соответствующие набору генов."""
+        """Возвращает фенотип — параметры модели соответствующие набору генов."""
         phenotype = copy.deepcopy(self._base_phenotype)
         for chromosome in self.values():
             chromosome.change_phenotype(phenotype)
@@ -63,13 +68,11 @@ class Genotype(UserDict):
 
     def make_child(
         self,
-        base: "Genotype",
-        diff1: "Genotype",
-        diff2: "Genotype",
-        factor: float = MUTATION_FACTOR,
+        parent: "Genotype",
+        scale: float,
     ) -> "Genotype":
-        """Реализует мутацию в рамках дифференциальной эволюции."""
+        """Реализует мутацию в рамках дифференциальной эволюции отдельных хромосом."""
         child = copy.deepcopy(self)
         for key in child:
-            child[key] = self[key].make_child(base[key], diff1[key], diff2[key], factor)
+            child[key] = self[key].make_child(parent[key], scale)
         return child
