@@ -108,8 +108,8 @@ def _eval_and_print(
     return fitness
 
 
-def _kill_weakest(child):
-    weakest = child.find_weaker()
+def _kill_weakest(organism: population.Organism) -> None:
+    weakest = organism.find_weaker()
     print("Наиболее слабый — удаляю:")
     print(f"Побед - {weakest.wins}")
     print(weakest)
