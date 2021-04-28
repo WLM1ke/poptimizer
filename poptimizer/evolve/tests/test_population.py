@@ -24,7 +24,7 @@ class FakeModel:
     COUNTER = 0
 
     # noinspection PyUnusedLocal
-    def __init__(self, tickers, end, phenotype, pickled_model):
+    def __init__(self, tickers, end, phenotype, pickled_model=None):
         pass
 
     @property
@@ -57,30 +57,21 @@ def test_evaluate_fitness(organism):
     assert fitness == 5
     assert FakeModel.COUNTER == 1
     assert organism.wins == 1
-    assert organism._data.date == pd.Timestamp("2020-04-12")
-    assert organism._data.tickers == ["GAZP", "AKRN"]
-    assert organism._data.model == bytes(6)
-    assert organism._data.timer > 0
+    assert organism._doc.date == pd.Timestamp("2020-04-12")
+    assert organism._doc.tickers == ["GAZP", "AKRN"]
+    assert organism._doc.model == bytes(6)
+    assert organism._doc.timer > 0
 
 
 def test_reload_organism(organism):
     population.Organism(_id=organism.id)
 
-    assert organism._data.llh == 5
-    assert organism._data.date == pd.Timestamp("2020-04-12")
-    assert organism._data.tickers == ["GAZP", "AKRN"]
-    assert organism._data.model == bytes(6)
-    assert organism._data.timer > 0
+    assert organism._doc.llh == 5
+    assert organism._doc.date == pd.Timestamp("2020-04-12")
+    assert organism._doc.tickers == ["GAZP", "AKRN"]
+    assert organism._doc.model == bytes(6)
+    assert organism._doc.timer > 0
     assert organism.wins == 1
-
-
-@pytest.mark.usefixtures("fake_model")
-def test_evaluate_same(organism):
-    fitness = organism.evaluate_fitness(("GAZP", "AKRN"), pd.Timestamp("2020-04-12"))
-
-    assert fitness == 5
-    assert FakeModel.COUNTER == 1
-    assert organism.wins == 2
 
 
 @pytest.mark.usefixtures("fake_model")
@@ -89,7 +80,7 @@ def test_evaluate_new_tickers(organism):
 
     assert fitness == 5
     assert FakeModel.COUNTER == 2
-    assert organism.wins == 3
+    assert organism.wins == 2
 
 
 @pytest.mark.usefixtures("fake_model")
@@ -98,17 +89,17 @@ def test_evaluate_new_timestamp(organism):
 
     assert fitness == 5
     assert FakeModel.COUNTER == 3
-    assert organism.wins == 4
+    assert organism.wins == 3
 
 
 # noinspection PyProtectedMember
 @pytest.fixture()
 def make_weak_organism():
     weak = population.Organism()
-    weak._data.llh = -100
-    weak._data.timer = 100
-    weak._data.date = pd.Timestamp("2020-04-13")
-    weak._data.tickers = ("GAZP", "LKOH")
+    weak._doc.llh = -100
+    weak._doc.timer = 100
+    weak._doc.date = pd.Timestamp("2020-04-13")
+    weak._doc.tickers = ("GAZP", "LKOH")
 
     yield weak
 
@@ -119,8 +110,8 @@ def test_find_weaker(organism):
     found = organism.find_weaker()
 
     assert isinstance(found, population.Organism)
-    assert found._data.llh <= organism._data.llh
-    assert found._data.timer >= organism._data.timer
+    assert found._doc.llh <= organism._doc.llh
+    assert found._doc.timer >= organism._doc.timer
 
 
 def test_die(organism):
@@ -144,7 +135,7 @@ def make_three_and_yield_one_organism():
 
 
 def test_make_child(one_of_three):
-    assert isinstance(one_of_three.make_child(), population.Organism)
+    assert isinstance(one_of_three.make_child(1), population.Organism)
 
 
 def test_raise_forecast_error():
@@ -167,11 +158,11 @@ def test_count():
     assert population.count() == 4
 
     org1 = population.Organism()
-    org1._data.save()
+    org1._doc.save()
     assert population.count() == 5
 
     org2 = population.Organism()
-    org2._data.save()
+    org2._doc.save()
     assert population.count() == 6
 
     org1.die()
