@@ -184,6 +184,7 @@ def get_parent() -> Organism:
         filter={},
         projection=["_id"],
         sort=[
+            ("date", pymongo.ASCENDING),
             ("llh", pymongo.DESCENDING),
         ],
     )
