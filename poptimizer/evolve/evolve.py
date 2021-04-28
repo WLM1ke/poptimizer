@@ -52,6 +52,10 @@ class Evolution:
             print(f"Фактор - {scale:.2%}\n")
 
             parent = population.get_parent()
+            print("Переоцениваю родителя:")
+            if _eval_and_print(parent, tickers, end) is None:
+                scale *= SCALE_DOWN
+                continue
 
             child = parent.make_child(scale)
             print("Потомок:")
@@ -59,14 +63,8 @@ class Evolution:
                 scale *= SCALE_DOWN
                 continue
 
-            if population.count() <= self._max_population:
-                continue
-
-            _kill_weakest(child)
-
-            print("Переоцениваю родителя:")
-            if _eval_and_print(parent, tickers, end) is None:
-                scale *= SCALE_DOWN
+            if population.count() > self._max_population:
+                _kill_weakest(child)
 
     def _setup(self) -> None:
         """Создает популяцию из организмов по умолчанию.
