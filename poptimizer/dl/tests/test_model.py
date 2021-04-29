@@ -13,10 +13,10 @@ def test_normal_llh():
     m = torch.rand((100, 1))
     s = torch.tensor(0.5) + torch.rand((100, 1))
     x = dict(Label=torch.rand((100, 1)))
-    llh, size, llh_all = model.normal_llh((m, s), x)
-    dist = torch.distributions.normal.Normal(m, s)
-    assert llh.allclose(-dist.log_prob(x["Label"]).sum())
-    assert llh_all.allclose(dist.log_prob(x["Label"]))
+    llh, size, llh_all = model.log_normal_llh((m, s), x)
+    dist = torch.distributions.log_normal.LogNormal(m, s)
+    assert llh.allclose(-dist.log_prob(x["Label"] + torch.tensor(1.0)).sum())
+    assert llh_all.allclose(dist.log_prob(x["Label"] + torch.tensor(1.0)))
     assert size == 100
 
 
@@ -42,13 +42,13 @@ def test_llh_from_trained_and_reloaded_model(org):
     gen["Scheduler"]["epochs"] /= 10
     phenotype = gen.get_phenotype()
 
-    net = model.Model(tuple(org._data.tickers), org._data.date, phenotype, None)
+    net = model.Model(tuple(org._doc.tickers), org._doc.date, phenotype, None)
     assert bytes(net) == bytes()
 
     llh = net.llh
     pickled_model = bytes(net)
 
-    net = model.Model(tuple(org._data.tickers), org._data.date, phenotype, pickled_model)
+    net = model.Model(tuple(org._doc.tickers), org._doc.date, phenotype, pickled_model)
     assert llh == net.llh
     assert bytes(net) == pickled_model
 
@@ -61,14 +61,14 @@ def test_forecast(org):
     gen = copy.deepcopy(org.genotype)
     gen["Scheduler"]["epochs"] /= 10
     phenotype = gen.get_phenotype()
-    net = model.Model(tuple(org._data.tickers), org._data.date, phenotype, org._data.model)
+    net = model.Model(tuple(org._doc.tickers), org._doc.date, phenotype, org._doc.model)
     forecast = net.forecast()
 
     assert isinstance(forecast, Forecast)
-    assert forecast.tickers == tuple(org._data.tickers)
-    assert forecast.date == org._data.date
+    assert forecast.tickers == tuple(org._doc.tickers)
+    assert forecast.date == org._doc.date
     assert forecast.history_days == phenotype["data"]["history_days"]
     assert isinstance(forecast.mean, pd.Series)
-    assert forecast.mean.index.tolist() == list(org._data.tickers)
+    assert forecast.mean.index.tolist() == list(org._doc.tickers)
     assert isinstance(forecast.std, pd.Series)
-    assert forecast.std.index.tolist() == list(org._data.tickers)
+    assert forecast.std.index.tolist() == list(org._doc.tickers)
