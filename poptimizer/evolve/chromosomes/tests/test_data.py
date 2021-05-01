@@ -114,14 +114,10 @@ def test_setup_phenotype():
 
 
 def test_make_child(monkeypatch):
-    monkeypatch.setattr(
-        chromosome.random, "rand", lambda _: (0.89, 0.91, 0.89, 0.89, 0.89, 0.89, 0.91, 0.89, 0.91, 0.89)
-    )
-
-    parent = data.Data(
+    base = data.Data(
         dict(
             batch_size=40,
-            history_days=20,
+            history_days=60,
             ticker_on=1,
             day_of_year_on=1,
             day_of_period_on=2,
@@ -132,7 +128,7 @@ def test_make_child(monkeypatch):
             rvi_on=-8,
         )
     )
-    base = data.Data(
+    parent = data.Data(
         dict(
             batch_size=30,
             history_days=50,
@@ -146,47 +142,8 @@ def test_make_child(monkeypatch):
             rvi_on=-6,
         )
     )
-    diff1 = data.Data(
-        dict(
-            batch_size=20,
-            history_days=60,
-            ticker_on=1,
-            day_of_year_on=1,
-            day_of_period_on=1,
-            prices_on=0,
-            dividends_on=2,
-            average_turnover_on=0,
-            turnover_on=0,
-            rvi_on=0,
-        )
-    )
-    diff2 = data.Data(
-        dict(
-            batch_size=10,
-            history_days=70,
-            ticker_on=8,
-            day_of_year_on=0,
-            day_of_period_on=7,
-            prices_on=1,
-            dividends_on=7,
-            average_turnover_on=3,
-            turnover_on=4,
-            rvi_on=1,
-        )
-    )
 
-    child = parent.make_child(base, diff1, diff2)
+    child = base.make_child(parent, 0)
 
     assert isinstance(child, data.Data)
-    assert len(child.data) == 15
-
-    assert child.data["batch_size"] == 30 + 0.8 * (20 - 10)
-    assert child.data["history_days"] == 20
-    assert child.data["ticker_on"] == 2 + 0.8 * (1 - 8)
-    assert child.data["day_of_year_on"] == 6 + 0.8 * (1 - 0)
-    assert child.data["day_of_period_on"] == 7 + 0.8 * (1 - 7)
-    assert child.data["prices_on"] == 8 + 0.8 * (0 - 1)
-    assert child.data["dividends_on"] == 1
-    assert child.data["turnover_on"] == 6 + 0.8 * (0 - 4)
-    assert child.data["average_turnover_on"] == 1
-    assert child.data["rvi_on"] == -6 + 0.8 * (0 - 1)
+    assert base.data == child.data
