@@ -1,56 +1,54 @@
+"""Тесты для key-value хранилища на основе MongoDB."""
 import pytest
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 
 from poptimizer.store import database
-from poptimizer.store.database import MONGO_CLIENT
 
 
 @pytest.fixture(scope="module", autouse=True)
 def drop_test_db():
-    MONGO_CLIENT.drop_database("test")
+    """Создает и удаляет базу для тестирования."""
+    database.MONGO_CLIENT.drop_database("test")
     yield
-    MONGO_CLIENT.drop_database("test")
+    database.MONGO_CLIENT.drop_database("test")
+
+
+def test_mongodb_metadata():
+    """Проверка, что хранилище предоставляет необходимые метаданные о MongoDB."""
+    mongo = database.MongoDB("main", "test")
+
+    assert isinstance(mongo.collection, Collection) and mongo.collection.name == "main"
+    assert isinstance(mongo.db, Database) and mongo.db.name == "test"
+    assert isinstance(mongo.client, MongoClient) and mongo.client is database.MONGO_CLIENT
 
 
 def test_mongodb_valid_data():
+    """Проверка сохранения стандартного для MongoDB документа."""
     mongo = database.MongoDB("main", "test")
 
-    assert isinstance(mongo.collection, Collection)
-    assert mongo.collection.name == "main"
-    assert isinstance(mongo.db, Database)
-    assert mongo.db.name == "test"
-    assert isinstance(mongo.client, MongoClient)
-    assert mongo.client is MONGO_CLIENT
-
-    assert len(mongo) == 0
-    value = dict(q=1, w="text")
-    mongo["key"] = value
-    assert mongo["key"] == value
+    assert not mongo
+    key_value = {"q": 1, "w": "text"}
+    mongo["key"] = key_value
+    assert mongo["key"] == key_value
     assert len(mongo) == 1
 
-    del mongo["key"]
+    del mongo["key"]  # noqa: WPS420
     assert mongo["key"] is None
-    assert len(mongo) == 0
+    assert not mongo
 
 
 def test_mongodb_not_valid_data():
+    """Проверка сохранения нестандартного для MongoDB документа."""
     mongo = database.MongoDB("main", "test")
 
-    assert isinstance(mongo.collection, Collection)
-    assert mongo.collection.name == "main"
-    assert isinstance(mongo.db, Database)
-    assert mongo.db.name == "test"
-    assert isinstance(mongo.client, MongoClient)
-    assert mongo.client is MONGO_CLIENT
-
-    assert len(mongo) == 0
-    value = [dict(q=1, w="text")]
-    mongo["key"] = value
-    assert mongo["key"] == value
+    assert not mongo
+    key_value = [{"q": 1, "w": "text"}]
+    mongo["key2"] = key_value
+    assert mongo["key2"] == key_value
     assert len(mongo) == 1
 
-    del mongo["key"]
-    assert mongo["key"] is None
-    assert len(mongo) == 0
+    del mongo["key2"]  # noqa: WPS420
+    assert mongo["key2"] is None
+    assert not mongo
