@@ -18,10 +18,10 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Количество колонок в распечатках без переноса на несколько страниц
 pd.set_option("display.max_columns", 20)
-pd.set_option("display.max_rows", 160)
+pd.set_option("display.max_rows", 170)
 pd.set_option("display.width", None)
 
-# Путь к директории с отчетам
+# Путь к директории с отчетами
 REPORTS_PATH = pathlib.Path(__file__).parents[1] / "reports"
 
 # Путь к директории с портфелями
