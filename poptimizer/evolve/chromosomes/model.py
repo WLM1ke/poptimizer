@@ -1,5 +1,5 @@
 """Гены и хромосома ответственные за параметры модели."""
-from poptimizer.evolve.chromosomes.chromosome import GeneParams, Chromosome
+from poptimizer.evolve.chromosomes.chromosome import Chromosome, GeneParams
 
 START_BN = GeneParams(
     name="start_bn",
@@ -62,7 +62,7 @@ END_CHANNELS = GeneParams(
 class Model(Chromosome):
     """Хромосома ответственная за параметры модели."""
 
-    _GENES = (
+    _genes = (
         START_BN,
         KERNELS,
         SUB_BLOCKS,
@@ -70,4 +70,5 @@ class Model(Chromosome):
         RESIDUAL_CHANNELS,
         SKIP_CHANNELS,
         END_CHANNELS,
+        # MIXTURE_SIZE,
     )
