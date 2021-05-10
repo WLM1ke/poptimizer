@@ -8,7 +8,7 @@ from poptimizer.evolve import population
 from poptimizer.portfolio.portfolio import Portfolio
 
 # Максимальная популяция
-MAX_POPULATION = 90
+MAX_POPULATION = 80
 
 # Понижение масштаба разницы между родителями
 SCALE_DOWN = 0.9
