@@ -12,11 +12,10 @@ from poptimizer.portfolio.portfolio import CASH, PORTFOLIO, Portfolio
 class MetricsSingle:
     """Реализует основные метрики портфеля для одного прогноза."""
 
-    def __init__(self, portfolio: Portfolio, forecast: Forecast):
+    def __init__(self, portfolio: Portfolio, forecast: Forecast) -> None:
         """Использует прогноз для построения основных метрик позиций портфеля.
 
-        Приближенно максимизируется геометрическая доходность портфеля исходя из прогноза. Для чего
-        рассчитывается ее производные по долям активов в портфеле на основе доходностей, СКО и бет.
+        Максимизирует отношение доходности к СКО портфеля.
 
         :param portfolio:
             Портфель, для которого рассчитываются метрики.
@@ -27,8 +26,10 @@ class MetricsSingle:
         self._forecast = forecast
 
     def __str__(self) -> str:
-        frames = [self.mean, self.std, self.beta, self.r_geom, self.gradient]
+        """Текстовое представление метрик портфеля."""
+        frames = [self.mean, self.std, self.beta, self.sharpe, self.gradient]
         df = pd.concat(frames, axis=1)
+
         return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n\n{df}"
 
     @functools.cached_property
@@ -48,13 +49,14 @@ class MetricsSingle:
 
     @functools.cached_property
     def mean(self) -> pd.Series:
-        """Матожидание доходности по всем позициям портфеля."""
+        """Математическое ожидание доходности по всем позициям портфеля."""
         portfolio = self._portfolio
         mean = self._forecast.mean[portfolio.index[:-2]]
         mean[CASH] = 0
         weighted_mean = mean * portfolio.weight[mean.index]
         mean[PORTFOLIO] = weighted_mean.sum()
         mean.name = "MEAN"
+
         return mean
 
     @functools.cached_property
@@ -69,6 +71,7 @@ class MetricsSingle:
         portfolio_var = weight.reshape(1, -1) @ cov @ weight.reshape(-1, 1)
         std[PORTFOLIO] = portfolio_var.squeeze() ** 0.5
         std.name = "STD"
+
         return std
 
     @functools.cached_property
@@ -83,29 +86,27 @@ class MetricsSingle:
         beta[CASH] = 0
         beta[PORTFOLIO] = 1
         beta.name = "BETA"
+
         return beta
 
     @functools.cached_property
-    def r_geom(self) -> pd.Series:
-        """Приближенная оценка геометрической доходности.
+    def sharpe(self) -> pd.Series:
+        """Отношение доходности и риска портфеля."""
+        sharpe = self.mean / self.std[PORTFOLIO] / self.beta
+        sharpe[CASH] = 0
+        sharpe.name = "SHARPE"
 
-        Для портфеля равна арифметической доходности минус половина квадрата СКО. Для остальных
-        активов рассчитывается как сумма градиента и показателя для портфеля.
-
-        При правильной реализации взвешенная по долям отдельных позиций геометрическая доходность
-        равна значению по портфелю в целом.
-        """
-        jensen_correction = self.std[PORTFOLIO] ** 2 / 2 * (self.beta.mul(2) - 1)
-        r_geom = self.mean.sub(jensen_correction)
-        r_geom.name = "R_GEOM"
-        return r_geom
+        return sharpe
 
     @functools.cached_property
     def gradient(self) -> pd.Series:
-        """Рассчитывает производную приближенного значения геометрической доходности по долям акций.
+        """Производная отношения доходности и риска портфеля по долям позиций.
 
-        В общем случае равна (m - mp) - (b - 1) * sp ** 2, m и mp - доходность актива и портфеля,
-        соответственно, sp - СКО портфеля, b - бета актива.
+        В общем случае равна (m - b * mp) / sp, где:
+
+        - m и mp - доходность актива и портфеля, соответственно,
+        - sp - СКО портфеля,
+        - b - бета актива.
 
         Долю актива с максимальным градиентом необходимо наращивать, а с минимальным сокращать. Так как
         важную роль в градиенте играет бета, то во многих случаях выгодно наращивать долю той бумаги,
@@ -115,17 +116,16 @@ class MetricsSingle:
         портфелю в целом и равен 0.
         """
         mean = self.mean
-        mean_gradient = mean - mean[PORTFOLIO]
-        risk_gradient = self.beta.sub(1) * self.std[PORTFOLIO] ** 2
-        gradient = mean_gradient - risk_gradient
+        gradient = (mean - mean[PORTFOLIO] * self.beta) / self.std[PORTFOLIO]
         gradient.name = "GRAD"
+
         return gradient
 
 
 class MetricsResample:
     """Реализует усредненные метрики портфеля для набора прогнозов."""
 
-    def __init__(self, portfolio: Portfolio):
+    def __init__(self, portfolio: Portfolio) -> None:
         """Использует набор прогнозов для построения основных метрик позиций портфеля.
 
         :param portfolio:
@@ -139,36 +139,95 @@ class MetricsResample:
             self._metrics.append(MetricsSingle(portfolio, forecast))
 
     def __str__(self) -> str:
+        """Текстовое представление информации о метриках портфеля."""
         blocks = [
-            f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n",
+            "\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n",
             self._history_block(),
             self._cor_block(),
             self._shrinkage_block(),
             self._main_block(),
             self._grad_summary(),
         ]
+
         return "\n".join(blocks)
+
+    @functools.cached_property
+    def count(self) -> int:
+        """Количество прогнозов."""
+        return len(self._metrics)
+
+    @functools.cached_property
+    def mean(self) -> pd.Series:
+        """Медиану для всех прогнозов матожидание доходности по позициям портфеля."""
+        mean = pd.concat([metric.mean for metric in self._metrics], axis=1)
+        mean = mean.median(axis=1)
+        mean.name = "MEAN"
+
+        return mean
+
+    @functools.cached_property
+    def std(self) -> pd.Series:
+        """Медиану для всех прогнозов СКО доходности по позициям портфеля."""
+        std = pd.concat([metric.std for metric in self._metrics], axis=1)
+        std = std.median(axis=1)
+        std.name = "STD"
+
+        return std
+
+    @functools.cached_property
+    def beta(self) -> pd.Series:
+        """Медиана для всех прогнозов беты относительно доходности портфеля."""
+        beta = pd.concat([metric.beta for metric in self._metrics], axis=1)
+        beta = beta.median(axis=1)
+        beta.name = "BETA"
+
+        return beta
+
+    @functools.cached_property
+    def shape(self) -> pd.Series:
+        """Медиана для всех прогнозов отношения доходности и риска."""
+        sharpe = pd.concat([metric.sharpe for metric in self._metrics], axis=1)
+        sharpe = sharpe.median(axis=1)
+        sharpe.name = "SHARPE"
+
+        return sharpe
+
+    @functools.cached_property
+    def all_gradients(self) -> pd.DataFrame:
+        """Градиенты всех прогнозов."""
+        return pd.concat([metric.gradient for metric in self._metrics], axis=1)
+
+    @functools.cached_property
+    def gradient(self) -> pd.Series:
+        """Медиана для всех прогнозов производных отношения доходности и риска."""
+        gradient = self.all_gradients.median(axis=1)
+        gradient.name = "GRAD"
+
+        return gradient
 
     def _history_block(self) -> str:
         """Разброс дней истории."""
-        quantile = [0.0, 0.5, 1.0]
-        data = np.quantile(list(met.history_days for met in self._metrics), quantile)
-        data = list(map(lambda x: f"{x:.0f}", data))
-        return f"Дней в истории - ({' <-> '.join(data)})"
+        quantile = [0, 0.5, 1]
+        quantile = np.quantile([met.history_days for met in self._metrics], quantile)
+        quantile = list(map(lambda num: f"{num:.0f}", quantile))
+
+        return f"Дней в истории - ({' <-> '.join(quantile)})"
 
     def _cor_block(self) -> str:
         """Разброс средней корреляции."""
-        quantile = [0.0, 0.5, 1.0]
-        data = np.quantile(list(met.cor for met in self._metrics), quantile)
-        data = list(map(lambda x: f"{x:.2%}", data))
-        return f"Корреляция - ({' <-> '.join(data)})"
+        quantile = [0, 0.5, 1]
+        quantile = np.quantile([met.cor for met in self._metrics], quantile)
+        quantile = list(map(lambda num: f"{num:.2%}", quantile))
+
+        return f"Корреляция - ({' <-> '.join(quantile)})"
 
     def _shrinkage_block(self) -> str:
         """Разброс среднего сжатия."""
-        quantile = [0.0, 0.5, 1.0]
-        data = np.quantile(list(met.shrinkage for met in self._metrics), quantile)
-        data = list(map(lambda x: f"{x:.2%}", data))
-        return f"Сжатие - ({' <-> '.join(data)})"
+        quantile = [0, 0.5, 1]
+        quantile = np.quantile([met.shrinkage for met in self._metrics], quantile)
+        quantile = list(map(lambda num: f"{num:.2%}", quantile))
+
+        return f"Сжатие - ({' <-> '.join(quantile)})"
 
     def _main_block(self) -> str:
         """Основная информация о метриках."""
@@ -176,9 +235,10 @@ class MetricsResample:
             self.mean,
             self.std,
             self.beta,
-            self.r_geom,
+            self.shape,
             self.gradient,
         ]
+
         return f"\n{pd.concat(frames, axis=1)}"
 
     def _grad_summary(self) -> str:
@@ -200,49 +260,5 @@ class MetricsResample:
             f"{min_grad_ticker}: {self.gradient[min_grad_ticker]: .4f}",
             f"{max_grad_ticker}: {self.gradient[max_grad_ticker]: .4f}",
         ]
+
         return "\n".join(strings)
-
-    @functools.cached_property
-    def count(self) -> int:
-        """Количество прогнозов."""
-        return len(self._metrics)
-
-    @functools.cached_property
-    def mean(self) -> pd.Series:
-        """Медиану для всех прогнозов матожидание доходности по позициям портфеля."""
-        mean = pd.concat([metric.mean for metric in self._metrics], axis=1).median(axis=1)
-        mean.name = "MEAN"
-        return mean
-
-    @functools.cached_property
-    def std(self) -> pd.Series:
-        """Медиану для всех прогнозов СКО доходности по позициям портфеля."""
-        std = pd.concat([metric.std for metric in self._metrics], axis=1).median(axis=1)
-        std.name = "STD"
-        return std
-
-    @functools.cached_property
-    def beta(self) -> pd.Series:
-        """Медиану для всех прогнозов беты относительно доходности портфеля."""
-        beta = pd.concat([metric.beta for metric in self._metrics], axis=1).median(axis=1)
-        beta.name = "BETA"
-        return beta
-
-    @functools.cached_property
-    def r_geom(self) -> pd.Series:
-        """Медиану для всех прогнозов приближенные оценки геометрической доходности."""
-        r_geom = pd.concat([metric.r_geom for metric in self._metrics], axis=1).median(axis=1)
-        r_geom.name = "R_GEOM"
-        return r_geom
-
-    @functools.cached_property
-    def all_gradients(self) -> pd.DataFrame:
-        """Градиенты всех прогнозов."""
-        return pd.concat([metric.gradient for metric in self._metrics], axis=1)
-
-    @functools.cached_property
-    def gradient(self) -> pd.Series:
-        """Медиану для всех прогнозов производные приближенного значения геометрической доходности."""
-        gradient = self.all_gradients.median(axis=1)
-        gradient.name = "GRAD"
-        return gradient
