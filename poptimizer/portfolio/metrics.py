@@ -255,10 +255,16 @@ class MetricsResample:
         min_grad_ticker = self.gradient.iloc[:-2][self._portfolio.weight.iloc[:-2] > 0].idxmin()
         factor = self._portfolio.turnover_factor > 0
         max_grad_ticker = (self.gradient * factor).iloc[:-2].idxmax()
+        sharpe = pd.concat([metric.sharpe for metric in self._metrics], axis=1)
+        sharpe = sharpe.loc[PORTFOLIO].quantile(0.05)
+
         strings = [
-            "\nЭкстремальные градиенты",
+            "",
+            "Экстремальные градиенты",
             f"{min_grad_ticker}: {self.gradient[min_grad_ticker]: .4f}",
             f"{max_grad_ticker}: {self.gradient[max_grad_ticker]: .4f}",
+            "",
+            f"Консервативный Шарп портфеля: {sharpe: .4f}",
         ]
 
         return "\n".join(strings)
