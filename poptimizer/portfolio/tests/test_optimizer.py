@@ -56,10 +56,10 @@ def test_best_combination(opt, monkeypatch):
         "P_VALUE",
     ]
 
-    assert df.loc[1, "SELL"] == "TRCN"
+    assert df.loc[1, "SELL"] == "MTSS"
     assert df.loc[1, "BUY"] == "KZOS"
 
-    assert df.loc[2, "SELL"] == "MTSS"
+    assert df.loc[2, "SELL"] == "TRCN"
     assert df.loc[2, "BUY"] == "KZOS"
 
 

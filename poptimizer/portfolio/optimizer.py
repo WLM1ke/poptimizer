@@ -105,7 +105,7 @@ class Optimizer:
                 "P_VALUE",
             ],
         )
-        rez = rez.sort_values(["RISK_CON", "R_DIFF"], ascending=[True, False])
+        rez = rez.sort_values(["R_DIFF"], ascending=[False])
         rez = rez.drop_duplicates("SELL")
         rez.index = pd.RangeIndex(start=1, stop=len(rez) + 1)
 
