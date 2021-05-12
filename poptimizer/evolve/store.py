@@ -1,5 +1,6 @@
 """Доступ к данным для эволюции."""
-from typing import Any, NoReturn, Optional, Type
+import math
+from typing import Any, Optional, Type
 
 import bson
 from pymongo.collection import Collection
@@ -94,7 +95,7 @@ class Doc:
         else:
             self._load(id_)
 
-    def _load(self, id_: bson.ObjectId) -> NoReturn:
+    def _load(self, id_: bson.ObjectId) -> None:
         collection = get_collection()
         doc = collection.find_one({ID: id_})
 
@@ -106,14 +107,14 @@ class Doc:
 
         self._update.clear()
 
-    def save(self) -> NoReturn:
+    def save(self) -> None:
         """Сохраняет измененные значения в MongoDB."""
         collection = get_collection()
         update = self._update
         collection.update_one(filter={ID: self.id}, update={"$set": self._update}, upsert=True)
         update.clear()
 
-    def delete(self) -> NoReturn:
+    def delete(self) -> None:
         """Удаляет документ из базы."""
         collection = get_collection()
         collection.delete_one({ID: self.id})
@@ -122,7 +123,7 @@ class Doc:
     genotype = GenotypeField()
     wins = DefaultField(0)
     model = DefaultField()
-    llh = BaseField()
+    llh = DefaultField(-math.inf)
     date = DefaultField()
     timer = DefaultField(0)
     tickers = DefaultField()

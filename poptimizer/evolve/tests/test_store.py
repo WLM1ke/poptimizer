@@ -1,3 +1,4 @@
+import math
 from types import SimpleNamespace
 
 import bson
@@ -134,9 +135,7 @@ class TestDoc:
         assert doc.wins == 0
         assert doc.model is None
 
-        with pytest.raises(AttributeError) as error:
-            isinstance(doc.llh, bson.ObjectId)
-        assert "object has no attribute 'llh'" in str(error.value)
+        assert doc.llh == -math.inf
 
         assert doc.date is None
         assert doc.timer == 0
@@ -163,9 +162,7 @@ class TestDoc:
         assert doc.wins == 0
         assert doc.model is None
 
-        with pytest.raises(AttributeError) as error:
-            isinstance(doc.llh, bson.ObjectId)
-        assert "object has no attribute 'llh'" in str(error.value)
+        assert doc.llh == -math.inf
 
         assert doc.date is None
         assert doc.timer == 0
