@@ -3,13 +3,11 @@ from typing import Optional
 
 import pandas as pd
 
+from poptimizer.config import MAX_POPULATION
 from poptimizer.data.views import listing
 from poptimizer.dl import ModelError
 from poptimizer.evolve import population
 from poptimizer.portfolio.portfolio import load_from_yaml
-
-# Максимальная популяция
-MAX_POPULATION = 80
 
 # Понижение масштаба разницы между родителями
 SCALE_DOWN = 0.9
