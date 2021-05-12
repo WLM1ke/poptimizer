@@ -1,30 +1,23 @@
-"""Запуск основных операций с помощью CLI:
-
-- эволюции
-- оптимизация
-- проверка статуса дивидендов
-"""
+"""Запуск основных операций с помощью CLI."""
 import typer
 
-from poptimizer.data.views import div_status, listing
+from poptimizer.data.views import div_status
 from poptimizer.evolve import Evolution
 from poptimizer.portfolio import Optimizer, load_from_yaml
 
 
-def evolve():
+def evolve() -> None:
     """Run evolution."""
     ev = Evolution()
-    date = listing.last_history_date()
-    port = load_from_yaml(date)
-    ev.evolve(port)
+    ev.evolve()
 
 
-def dividends(ticker: str):
+def dividends(ticker: str) -> None:
     """Get dividends status."""
     div_status.dividends_validation(ticker)
 
 
-def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD")):
+def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD")) -> None:
     """Optimize portfolio."""
     port = load_from_yaml(date)
     opt = Optimizer(port)
