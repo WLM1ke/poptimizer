@@ -59,7 +59,7 @@ class Organism:
 
     @property
     def llh(self) -> float:
-        """Количество побед."""
+        """LLH OOS."""
         return self._doc.llh
 
     def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp) -> float:
