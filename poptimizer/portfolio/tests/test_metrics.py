@@ -73,11 +73,15 @@ class TestMetricsSingle:
         assert isinstance(sharpe, pd.Series)
         assert sharpe.name == "SHARPE"
         assert len(sharpe) == 5
-        assert sharpe["BSPB"] == pytest.approx(0.928127950961467)
-        assert sharpe["FESH"] == pytest.approx(1.766136658218757)
-        assert sharpe["KZOS"] == pytest.approx(0.29357737864818734)
-        assert sharpe[portfolio.CASH] == pytest.approx(0)
+        assert sharpe["BSPB"] == pytest.approx(0.6939710788551149)
+        assert sharpe["FESH"] == pytest.approx(0.6626088429043288)
+        assert sharpe["KZOS"] == pytest.approx(0.2559425970290602)
+        assert sharpe[portfolio.CASH] == pytest.approx(0.39066912841846535)
         assert sharpe[portfolio.PORTFOLIO] == pytest.approx(0.39066912841846535)
+
+        assert sharpe[portfolio.PORTFOLIO] == pytest.approx(
+            (single._portfolio.weight * sharpe).iloc[:-1].sum(),
+        )
 
     def test_gradient(self, single):
         """Проверка градиентов, в том числе тождества для портфеля."""
@@ -85,9 +89,9 @@ class TestMetricsSingle:
         assert isinstance(gradient, pd.Series)
         assert gradient.name == "GRAD"
         assert len(gradient) == 5
-        assert gradient["BSPB"] == pytest.approx(0.30330195043664954)
-        assert gradient["FESH"] == pytest.approx(0.27193971448586335)
-        assert gradient["KZOS"] == pytest.approx(-0.13472653138940519)
+        assert gradient["BSPB"] == pytest.approx(0.052117053450185746)
+        assert gradient["FESH"] == pytest.approx(0.04672801020463017)
+        assert gradient["KZOS"] == pytest.approx(-0.023150361636221473)
         assert gradient[portfolio.CASH] == pytest.approx(0)
         assert gradient[portfolio.PORTFOLIO] == pytest.approx(0)
 
@@ -184,9 +188,9 @@ class TestMetricsResample:
         assert isinstance(sharpe, pd.Series)
         assert sharpe.name == "SHARPE"
         assert len(sharpe) == 4
-        assert sharpe["BSPB"] == pytest.approx(0.3921053344106651)
-        assert sharpe["FESH"] == pytest.approx(2.1395029799870042)
-        assert sharpe[portfolio.CASH] == pytest.approx(0)
+        assert sharpe["BSPB"] == pytest.approx(0.38480973708170185)
+        assert sharpe["FESH"] == pytest.approx(0.9457347559250273)
+        assert sharpe[portfolio.CASH] == pytest.approx(0.4077787931843436)
         assert sharpe[portfolio.PORTFOLIO] == pytest.approx(0.4077787931843436)
 
     def test_gradient(self, resample):
@@ -195,8 +199,8 @@ class TestMetricsResample:
         assert isinstance(gradient, pd.Series)
         assert gradient.name == "GRAD"
         assert len(gradient) == 4
-        assert gradient["BSPB"] == pytest.approx(-0.022969056102641734)
-        assert gradient["FESH"] == pytest.approx(0.5379559627406836)
+        assert gradient["BSPB"] == pytest.approx(-0.0025756003243595504)
+        assert gradient["FESH"] == pytest.approx(0.060322877262975666)
         assert gradient[portfolio.CASH] == pytest.approx(0)
         assert gradient[portfolio.PORTFOLIO] == 0
 

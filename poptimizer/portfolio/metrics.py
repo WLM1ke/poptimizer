@@ -92,8 +92,7 @@ class MetricsSingle:
     @functools.cached_property
     def sharpe(self) -> pd.Series:
         """Отношение доходности и риска портфеля."""
-        sharpe = self.mean / self.std[PORTFOLIO] / self.beta
-        sharpe[CASH] = 0
+        sharpe = (self.mean + self.mean[PORTFOLIO] * (1 - self.beta)) / self.std[PORTFOLIO]
         sharpe.name = "SHARPE"
 
         return sharpe
@@ -102,21 +101,29 @@ class MetricsSingle:
     def gradient(self) -> pd.Series:
         """Производная отношения доходности и риска портфеля по долям позиций.
 
-        В общем случае равна (m - b * mp) / sp, где:
-
-        - m и mp - доходность актива и портфеля, соответственно,
-        - sp - СКО портфеля,
-        - b - бета актива.
-
         Долю актива с максимальным градиентом необходимо наращивать, а с минимальным сокращать. Так как
         важную роль в градиенте играет бета, то во многих случаях выгодно наращивать долю той бумаги,
         у которой достаточно низкая бета при высокой ожидаемой доходности.
 
         При правильной реализации взвешенный по долям отдельных позиций градиент равен градиенту по
         портфелю в целом и равен 0.
+
+        В общем случае градиент равен (m - b * mp) / sp, где:
+
+        - m и mp - доходность актива и портфеля, соответственно,
+        - sp - СКО портфеля,
+        - b - бета актива.
+
+        Знаменатель не влияет на знак — направление изменения доли актива для увеличения отношения
+        доходность/риск. Числитель формулы имеет размерность доходности и может быть интерпретирован,
+        как превышение доходности актива над SML. Таким образом, использование только числителя
+        позволяет легче учесть издержки для множества прогнозов и не влияет на корректность выводов о
+        требуемом направлении изменения доли актива в портфеле.
+
+        В данной реализации используется только числитель градиента.
         """
         mean = self.mean
-        gradient = (mean - mean[PORTFOLIO] * self.beta) / self.std[PORTFOLIO]
+        gradient = mean - mean[PORTFOLIO] * self.beta
         gradient.name = "GRAD"
 
         return gradient
@@ -252,17 +259,19 @@ class MetricsResample:
         Бумага с минимальным градиентом выбирается среди имеющих не нулевой вес.
         Бумага с максимальным градиентом выбирается с учетом фактора оборота.
         """
-        min_grad_ticker = self.gradient.iloc[:-2][self._portfolio.weight.iloc[:-2] > 0].idxmin()
+        min_grad_ticker = self.shape.iloc[:-2][self._portfolio.weight.iloc[:-2] > 0].idxmin()
+
         factor = self._portfolio.turnover_factor > 0
-        max_grad_ticker = (self.gradient * factor).iloc[:-2].idxmax()
+        max_grad_ticker = (self.shape * factor).iloc[:-2].idxmax()
+
         sharpe = pd.concat([metric.sharpe for metric in self._metrics], axis=1)
         sharpe = sharpe.loc[PORTFOLIO].quantile(0.05)
 
         strings = [
             "",
-            "Экстремальные градиенты",
-            f"{min_grad_ticker}: {self.gradient[min_grad_ticker]: .4f}",
-            f"{max_grad_ticker}: {self.gradient[max_grad_ticker]: .4f}",
+            "Экстремальные Шарп",
+            f"{min_grad_ticker}: {self.shape[min_grad_ticker]: .4f}",
+            f"{max_grad_ticker}: {self.shape[max_grad_ticker]: .4f}",
             "",
             f"Консервативный Шарп портфеля: {sharpe: .4f}",
         ]
