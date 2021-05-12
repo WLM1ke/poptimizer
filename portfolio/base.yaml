@@ -9,9 +9,9 @@ positions:
   ALRS: 0
   AMD-RM: 0
   AMEZ: 0
-  ATVI-RM: 0
   APTK: 0
   AQUA: 0
+  ATVI-RM: 0
   AVGO-RM: 0
   BA-RM: 0
   BANE: 0
@@ -53,8 +53,8 @@ positions:
   HPQ-RM: 0
   HYDR: 0
   INGR: 0
-  IRGZ: 0
   IRAO: 0
+  IRGZ: 0
   IRKT: 0
   ISKJ: 0
   KLSB: 0
@@ -99,13 +99,13 @@ positions:
   NMTP: 0
   NSVZ: 0
   NVTK: 0
-  ORUP: 0
   OGKB: 0
+  ORUP: 0
   OZON: 0
   PHOR: 0
   PIKK: 0
-  PMSBP: 0
   PLZL: 0
+  PMSBP: 0
   POGR: 0
   QCOM-RM: 0
   RASP: 0
@@ -127,25 +127,25 @@ positions:
   SFIN: 0
   SIBN: 0
   SMLT: 0
-  SVAV: 0
   SNGS: 0
   SNGSP: 0
+  SVAV: 0
   T-RM: 0
   TATN: 0
   TATNP: 0
   TGKA: 0
-  TGKD: 0
   TGKB: 0
-  TGKN: 0
   TGKBP: 0
+  TGKD: 0
+  TGKN: 0
   TRMK: 0
   TRNFP: 0
   TSLA-RM: 0
   TTLK: 0
   TWTR-RM: 0
   UBER-RM: 0
-  UNKL: 0
   UNAC: 0
+  UNKL: 0
   UPRO: 0
   USBN: 0
   UWGN: 0
