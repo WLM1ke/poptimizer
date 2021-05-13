@@ -8,7 +8,7 @@ from typing import Optional
 import pandas as pd
 import torch
 import tqdm
-from torch import nn, optim
+from torch import distributions, nn, optim
 
 from poptimizer.config import DEVICE, YEAR_IN_TRADING_DAYS, POptimizerError
 from poptimizer.dl import data_loader, models
@@ -51,14 +51,19 @@ class DegeneratedModelError(ModelError):
     """В модели отключены все признаки."""
 
 
-def log_normal_llh(
-    output: tuple[torch.Tensor, torch.Tensor],
+def log_normal_llh_mix(
+    output: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
     batch: dict[str, torch.Tensor],
 ) -> tuple[torch.Tensor, int, torch.Tensor]:
     """Minus Normal Log Likelihood and batch size."""
-    mean, std = output
-    dist = torch.distributions.log_normal.LogNormal(mean, std)
+    logits, mean, std = output
+
+    weights_dist = distributions.Categorical(logits=logits)
+    comp_dist = distributions.LogNormal(mean, std)
+    dist = distributions.MixtureSameFamily(weights_dist, comp_dist)
+
     llh = dist.log_prob(batch["Label"] + torch.tensor(1.0))
+
     return -llh.sum(), mean.shape[0], llh
 
 
@@ -144,7 +149,7 @@ class Model:
 
         model = self.prepare_model(loader)
         model.to(DEVICE)
-        loss_fn = log_normal_llh
+        loss_fn = log_normal_llh_mix
 
         llh_sum = 0
         weight_sum = 0
@@ -156,8 +161,8 @@ class Model:
             model.eval()
             bars = tqdm.tqdm(loader, file=sys.stdout, desc="~~> Test")
             for batch in bars:
-                mean, std = model(batch)
-                loss, weight, llh = loss_fn((mean, std), batch)
+                out = model(batch)
+                loss, weight, llh = loss_fn(out, batch)
                 llh_sum -= loss.item()
                 weight_sum += weight
                 llh_all.append(llh)
@@ -233,7 +238,7 @@ class Model:
         llh_deque = collections.deque([0], maxlen=steps_per_epoch)
         weight_sum = 0
         weight_deque = collections.deque([0], maxlen=steps_per_epoch)
-        loss_fn = log_normal_llh
+        loss_fn = log_normal_llh_mix
 
         loader = itertools.repeat(loader)
         loader = itertools.chain.from_iterable(loader)
@@ -286,8 +291,12 @@ class Model:
         with torch.no_grad():
             model.eval()
             for batch in loader:
-                mean, std = model(batch)
-                dist = torch.distributions.log_normal.LogNormal(mean, std)
+                logits, mean, std = model(batch)
+
+                weights_dist = distributions.Categorical(logits=logits)
+                comp_dist = distributions.LogNormal(mean, std)
+                dist = distributions.MixtureSameFamily(weights_dist, comp_dist)
+
                 means.append(dist.mean - torch.tensor(1.0))
                 stds.append(dist.variance ** 0.5)
         means = torch.cat(means, dim=0).cpu().numpy().flatten()

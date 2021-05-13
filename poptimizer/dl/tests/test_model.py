@@ -13,7 +13,7 @@ def test_normal_llh():
     m = torch.rand((100, 1))
     s = torch.tensor(0.5) + torch.rand((100, 1))
     x = dict(Label=torch.rand((100, 1)))
-    llh, size, llh_all = model.log_normal_llh((m, s), x)
+    llh, size, llh_all = model.log_normal_llh_mix((m, s), x)
     dist = torch.distributions.log_normal.LogNormal(m, s)
     assert llh.allclose(-dist.log_prob(x["Label"] + torch.tensor(1.0)).sum())
     assert llh_all.allclose(dist.log_prob(x["Label"] + torch.tensor(1.0)))

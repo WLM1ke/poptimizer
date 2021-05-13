@@ -233,13 +233,27 @@ class WaveNet(nn.Module):
         )
 
         self.end_conv = nn.Conv1d(in_channels=skip_channels, out_channels=end_channels, kernel_size=1)
-        self.output_conv_m = nn.Conv1d(in_channels=end_channels, out_channels=1, kernel_size=1)
-        self.output_conv_s = nn.Conv1d(in_channels=end_channels, out_channels=1, kernel_size=1)
+
+        self.output_conv_logits = nn.Conv1d(
+            in_channels=end_channels,
+            out_channels=mixture_size,
+            kernel_size=1,
+        )
+        self.output_conv_m = nn.Conv1d(
+            in_channels=end_channels,
+            out_channels=mixture_size,
+            kernel_size=1,
+        )
+        self.output_conv_s = nn.Conv1d(
+            in_channels=end_channels,
+            out_channels=mixture_size,
+            kernel_size=1,
+        )
         self.output_softplus_s = nn.Softplus()
 
     def forward(
         self, batch: dict[str, Union[torch.Tensor, list[torch.Tensor]]]
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         ->sequence-+
         ->........-+
@@ -285,9 +299,11 @@ class WaveNet(nn.Module):
         y = self.end_conv(y)
         y = torch.relu(y)
 
+        logits = self.output_conv_logits(y)
+
         m = self.output_conv_m(y)
 
         s = self.output_conv_s(y)
         s = self.output_softplus_s(s)
 
-        return m.squeeze(dim=-1), s.squeeze(dim=-1)
+        return logits.permute((0, 2, 1)), m.permute((0, 2, 1)), s.permute((0, 2, 1))
