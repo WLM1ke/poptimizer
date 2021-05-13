@@ -1,16 +1,17 @@
 """Формирует прогноз по всем моделям в популяции."""
 from collections.abc import Iterable
-from typing import Iterator, Tuple
+from typing import Iterator
 
 import pandas as pd
 import tqdm
 
-from poptimizer import store
 from poptimizer.dl import Forecast
 from poptimizer.evolve import population
 from poptimizer.evolve.population import ForecastError
 
 # Ключ для хранений кеша прогноза
+from poptimizer.store import database
+
 FORECAST = "forecast"
 
 
@@ -18,7 +19,9 @@ class Forecasts(Iterable):
     """Прогнозы доходностей и ковариационных матриц для DL-моделей."""
 
     def __init__(
-            self, tickers: Tuple[str, ...], date: pd.Timestamp,
+        self,
+        tickers: tuple[str, ...],
+        date: pd.Timestamp,
     ):
         self._tickers = tickers
         self._date = date
@@ -37,7 +40,7 @@ class Forecasts(Iterable):
         yield from self._forecasts
 
     @property
-    def tickers(self) -> Tuple[str, ...]:
+    def tickers(self) -> tuple[str, ...]:
         """Для каких тикеров составлен прогноз."""
         return self._tickers
 
@@ -47,7 +50,7 @@ class Forecasts(Iterable):
         return self._date
 
 
-def get_forecasts(tickers: Tuple[str, ...], date: pd.Timestamp) -> Forecasts:
+def get_forecasts(tickers: tuple[str, ...], date: pd.Timestamp) -> Forecasts:
     """Создает или загружает закешированный прогноз для набора тикеров на указанную дату.
 
     :param tickers:
@@ -57,7 +60,7 @@ def get_forecasts(tickers: Tuple[str, ...], date: pd.Timestamp) -> Forecasts:
     :return:
         Прогнозная доходность, ковариация и дополнительная информация.
     """
-    mongodb = store.MongoDB()
+    mongodb = database.MongoDB()
 
     forecasts_cache = mongodb[FORECAST]
     if (
