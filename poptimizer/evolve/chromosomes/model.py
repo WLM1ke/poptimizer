@@ -1,20 +1,22 @@
 """Гены и хромосома ответственные за параметры модели."""
 from poptimizer.evolve.chromosomes.chromosome import Chromosome, GeneParams
 
+MODEL_KEY = "model"
+
 START_BN = GeneParams(
     name="start_bn",
-    default_range=(0.0, 1.0),
+    default_range=(0, 1),
     lower_bound=None,
     upper_bound=None,
-    path=("model", "start_bn"),
-    phenotype_function=lambda x: x > 0,
+    path=(MODEL_KEY, "start_bn"),
+    phenotype_function=lambda bn: bn > 0,
 )
 KERNELS = GeneParams(
     name="kernels",
     default_range=(2.1, 2.9),
     lower_bound=1.0,
     upper_bound=None,
-    path=("model", "kernels"),
+    path=(MODEL_KEY, "kernels"),
     phenotype_function=int,
 )
 SUB_BLOCKS = GeneParams(
@@ -22,7 +24,7 @@ SUB_BLOCKS = GeneParams(
     default_range=(1.1, 1.2),
     lower_bound=1.0,
     upper_bound=None,
-    path=("model", "sub_blocks"),
+    path=(MODEL_KEY, "sub_blocks"),
     phenotype_function=int,
 )
 GATE_CHANNELS = GeneParams(
@@ -30,7 +32,7 @@ GATE_CHANNELS = GeneParams(
     default_range=(4.1, 4.9),
     lower_bound=1.0,
     upper_bound=None,
-    path=("model", "gate_channels"),
+    path=(MODEL_KEY, "gate_channels"),
     phenotype_function=int,
 )
 RESIDUAL_CHANNELS = GeneParams(
@@ -38,7 +40,7 @@ RESIDUAL_CHANNELS = GeneParams(
     default_range=(4.1, 4.9),
     lower_bound=1.0,
     upper_bound=None,
-    path=("model", "residual_channels"),
+    path=(MODEL_KEY, "residual_channels"),
     phenotype_function=int,
 )
 SKIP_CHANNELS = GeneParams(
@@ -46,7 +48,7 @@ SKIP_CHANNELS = GeneParams(
     default_range=(4.1, 4.9),
     lower_bound=1.0,
     upper_bound=None,
-    path=("model", "skip_channels"),
+    path=(MODEL_KEY, "skip_channels"),
     phenotype_function=int,
 )
 END_CHANNELS = GeneParams(
@@ -54,7 +56,15 @@ END_CHANNELS = GeneParams(
     default_range=(4.1, 4.9),
     lower_bound=1.0,
     upper_bound=None,
-    path=("model", "end_channels"),
+    path=(MODEL_KEY, "end_channels"),
+    phenotype_function=int,
+)
+MIXTURE_SIZE = GeneParams(
+    name="mixture_size",
+    default_range=(1.1, 1.9),
+    lower_bound=1.0,
+    upper_bound=None,
+    path=(MODEL_KEY, "mixture_size"),
     phenotype_function=int,
 )
 
@@ -70,5 +80,5 @@ class Model(Chromosome):
         RESIDUAL_CHANNELS,
         SKIP_CHANNELS,
         END_CHANNELS,
-        # MIXTURE_SIZE,
+        MIXTURE_SIZE,
     )
