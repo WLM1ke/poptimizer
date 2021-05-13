@@ -1,5 +1,5 @@
 """Модель на основе WaveNet."""
-from typing import Dict, List, Tuple, Union
+from typing import Union
 
 import numpy as np
 import torch
@@ -149,7 +149,7 @@ class WaveNet(nn.Module):
     def __init__(
         self,
         history_days: int,
-        features_description: Dict[str, Tuple[FeatureType, int]],
+        features_description: dict[str, tuple[FeatureType, int]],
         start_bn: bool,
         sub_blocks: int,
         kernels: int,
@@ -157,6 +157,7 @@ class WaveNet(nn.Module):
         residual_channels: int,
         skip_channels: int,
         end_channels: int,
+        mixture_size: int,
     ) -> None:
         """
         :param history_days:
@@ -177,6 +178,10 @@ class WaveNet(nn.Module):
             Количество каналов у скипа.
         :param end_channels:
             Количество каналов, до которого сжимаются скипы перед расчетом финальных значений.
+        :param mixture_size:
+            Количество распределений в смеси. Для каждого распределения формируется три значения —
+            логарифм веса для вероятности, прокси для центрального положения и положительное прокси
+            для масштаба.
         """
         super().__init__()
 
@@ -233,8 +238,8 @@ class WaveNet(nn.Module):
         self.output_softplus_s = nn.Softplus()
 
     def forward(
-        self, batch: Dict[str, Union[torch.Tensor, List[torch.Tensor]]]
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        self, batch: dict[str, Union[torch.Tensor, list[torch.Tensor]]]
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         ->sequence-+
         ->........-+
