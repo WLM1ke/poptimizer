@@ -5,11 +5,10 @@ from typing import Generator, Tuple
 
 import pandas as pd
 
-# Доля дней относимых к тренировочному периоду
 import poptimizer.data.views.quotes
-from poptimizer.data.views import listing
+from poptimizer import config
 
-FORECAST_DAYS = 27
+FORECAST_DAYS = config.FORECAST_DAYS
 
 
 def div_price_train_size(
