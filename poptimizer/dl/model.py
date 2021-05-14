@@ -8,7 +8,7 @@ from typing import Optional
 import pandas as pd
 import torch
 import tqdm
-from torch import distributions, nn, optim
+from torch import nn, optim
 
 from poptimizer.config import DEVICE, YEAR_IN_TRADING_DAYS, POptimizerError
 from poptimizer.dl import data_loader, models
@@ -52,19 +52,14 @@ class DegeneratedModelError(ModelError):
 
 
 def log_normal_llh_mix(
-    output: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+    model: nn.Module,
     batch: dict[str, torch.Tensor],
 ) -> tuple[torch.Tensor, int, torch.Tensor]:
     """Minus Normal Log Likelihood and batch size."""
-    logits, mean, std = output
-
-    weights_dist = distributions.Categorical(logits=logits)
-    comp_dist = distributions.LogNormal(mean, std)
-    dist = distributions.MixtureSameFamily(weights_dist, comp_dist)
-
+    dist = model.dist(batch)
     llh = dist.log_prob(batch["Label"] + torch.tensor(1.0))
 
-    return -llh.sum(), mean.shape[0], llh
+    return -llh.sum(), llh.shape[0], llh
 
 
 class Model:
@@ -161,8 +156,7 @@ class Model:
             model.eval()
             bars = tqdm.tqdm(loader, file=sys.stdout, desc="~~> Test")
             for batch in bars:
-                out = model(batch)
-                loss, weight, llh = loss_fn(out, batch)
+                loss, weight, llh = loss_fn(model, batch)
                 llh_sum -= loss.item()
                 weight_sum += weight
                 llh_all.append(llh)
@@ -249,9 +243,8 @@ class Model:
         llh_min = None
         for batch in bars:
             optimizer.zero_grad()
-            output = model(batch)
 
-            loss, weight, _ = loss_fn(output, batch)
+            loss, weight, _ = loss_fn(model, batch)
 
             llh_sum += -loss.item() - llh_deque[0]
             llh_deque.append(-loss.item())
@@ -291,14 +284,11 @@ class Model:
         with torch.no_grad():
             model.eval()
             for batch in loader:
-                logits, mean, std = model(batch)
-
-                weights_dist = distributions.Categorical(logits=logits)
-                comp_dist = distributions.LogNormal(mean, std)
-                dist = distributions.MixtureSameFamily(weights_dist, comp_dist)
+                dist = model.dist(batch)
 
                 means.append(dist.mean - torch.tensor(1.0))
                 stds.append(dist.variance ** 0.5)
+
         means = torch.cat(means, dim=0).cpu().numpy().flatten()
         stds = torch.cat(stds, dim=0).cpu().numpy().flatten()
 

@@ -3,7 +3,7 @@ from typing import Union
 
 import numpy as np
 import torch
-from torch import nn
+from torch import distributions, nn
 
 from poptimizer.config import DEVICE
 from poptimizer.dl.features import FeatureType
@@ -307,3 +307,13 @@ class WaveNet(nn.Module):
         s = self.output_softplus_s(s)
 
         return logits.permute((0, 2, 1)), m.permute((0, 2, 1)), s.permute((0, 2, 1))
+
+    def dist(
+        self, batch: dict[str, Union[torch.Tensor, list[torch.Tensor]]]
+    ) -> distributions.Distribution:
+        logits, mean, std = self(batch)
+
+        weights_dist = distributions.Categorical(logits=logits)
+        comp_dist = distributions.LogNormal(mean, std)
+
+        return distributions.MixtureSameFamily(weights_dist, comp_dist)
