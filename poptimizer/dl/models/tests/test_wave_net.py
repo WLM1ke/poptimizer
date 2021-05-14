@@ -27,6 +27,7 @@ NET_PARAMS = {
     "residual_channels": 16,
     "skip_channels": 16,
     "end_channels": 16,
+    "mixture_size": 3,
 }
 
 
@@ -77,15 +78,18 @@ def test_wave_net_bn(loader):
 
     net = wave_net.WaveNet(loader.history_days, loader.features_description, **NET_PARAMS)
     net.eval()
-    m1, s1 = net(batch)
-    m2, s2 = net(batch2)
+    l1, m1, s1 = net(batch)
+    l2, m2, s2 = net(batch2)
 
-    assert m1.shape == (100, 1)
-    assert s1.shape == (100, 1)
+    assert l1.shape == (100, 1, 3)
+    assert m1.shape == (100, 1, 3)
+    assert s1.shape == (100, 1, 3)
 
-    assert m2.shape == (50, 1)
-    assert s2.shape == (50, 1)
+    assert l2.shape == (50, 1, 3)
+    assert m2.shape == (50, 1, 3)
+    assert s2.shape == (50, 1, 3)
 
+    assert l2.allclose(l1[50:, :])
     assert m2.allclose(m1[50:, :])
     assert s2.allclose(s1[50:, :])
 
@@ -101,15 +105,18 @@ def test_wave_net_no_bn(loader):
 
     NET_PARAMS["start_bn"] = False
     net = wave_net.WaveNet(loader.history_days, loader.features_description, **NET_PARAMS)
-    m1, s1 = net(batch)
-    m2, s2 = net(batch2)
+    l1, m1, s1 = net(batch)
+    l2, m2, s2 = net(batch2)
 
-    assert m1.shape == (100, 1)
-    assert s1.shape == (100, 1)
+    assert l1.shape == (100, 1, 3)
+    assert m1.shape == (100, 1, 3)
+    assert s1.shape == (100, 1, 3)
 
-    assert m2.shape == (40, 1)
-    assert s2.shape == (40, 1)
+    assert l2.shape == (40, 1, 3)
+    assert m2.shape == (40, 1, 3)
+    assert s2.shape == (40, 1, 3)
 
+    assert l2.allclose(l1[:40, :])
     assert m2.allclose(m1[:40, :])
     assert s2.allclose(s1[:40, :])
 
@@ -140,14 +147,17 @@ def test_wave_net_no_embedding(loader_no_emb):
 
     net = wave_net.WaveNet(loader_no_emb.history_days, loader_no_emb.features_description, **NET_PARAMS)
     net.eval()
-    m1, s1 = net(batch)
-    m2, s2 = net(batch2)
+    l1, m1, s1 = net(batch)
+    l2, m2, s2 = net(batch2)
 
-    assert m1.shape == (100, 1)
-    assert s1.shape == (100, 1)
+    assert l1.shape == (100, 1, 3)
+    assert m1.shape == (100, 1, 3)
+    assert s1.shape == (100, 1, 3)
 
-    assert m2.shape == (40, 1)
-    assert s2.shape == (40, 1)
+    assert l2.shape == (40, 1, 3)
+    assert m2.shape == (40, 1, 3)
+    assert s2.shape == (40, 1, 3)
 
+    assert l2.allclose(l1[60:, :])
     assert m2.allclose(m1[60:, :])
     assert s2.allclose(s1[60:, :])
