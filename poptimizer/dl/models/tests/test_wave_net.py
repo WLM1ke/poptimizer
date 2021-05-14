@@ -3,6 +3,7 @@ import copy
 import pandas as pd
 import pytest
 import torch
+from torch import distributions
 
 from poptimizer.dl import data_loader
 from poptimizer.dl.features import data_params
@@ -161,3 +162,18 @@ def test_wave_net_no_embedding(loader_no_emb):
     assert l2.allclose(l1[60:, :])
     assert m2.allclose(m1[60:, :])
     assert s2.allclose(s1[60:, :])
+
+
+def test_dist(loader):
+    batch = next(iter(loader))
+
+    net = wave_net.WaveNet(loader.history_days, loader.features_description, **NET_PARAMS)
+    dist = net.dist(batch)
+
+    assert isinstance(dist, distributions.MixtureSameFamily)
+
+    assert dist.mean.shape == (100, 1)
+    assert dist.variance.shape == (100, 1)
+
+    llh = dist.log_prob(batch["Label"] + torch.tensor(1.0))
+    assert llh.shape == (100, 1)
