@@ -37,7 +37,7 @@ async def test_handle_raise_on_unknown_event(mocker):
 async def test_handle_app_started(mocker):
     """Обработка события начала приложения обновляет таблицу с торговыми датами."""
     dispatcher = handlers.EventHandlersDispatcher()
-    event = events.AppStarted()
+    event = events.DateCheckRequired()
     fake_repo = mocker.Mock()
     fake_loader_and_handler = mocker.patch.object(handlers, "_load_by_id_and_handle_event")
 

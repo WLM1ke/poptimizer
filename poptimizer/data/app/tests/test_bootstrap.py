@@ -15,5 +15,5 @@ def test_start_app(mocker):
 
     args, kwargs = bus.handle_event.call_args
     assert len(args) == 1
-    assert isinstance(args[0], events.AppStarted)
+    assert isinstance(args[0], events.DateCheckRequired)
     assert not kwargs

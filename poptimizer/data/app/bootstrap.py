@@ -38,7 +38,7 @@ def start_app() -> Tuple[TableBus, viewers.Viewer]:
         lambda: app.UoW(mapper),
         handlers.EventHandlersDispatcher(),
     )
-    event = events.AppStarted()
+    event = events.DateCheckRequired()
     bus.handle_event(event)
 
     return bus, viewers.Viewer(mapper)

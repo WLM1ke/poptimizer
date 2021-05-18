@@ -14,7 +14,7 @@ def last_history_date(
     bus: app.EventBus = bootstrap.BUS,
 ) -> pd.Timestamp:
     """Последняя доступная дата исторических котировок."""
-    event = events.AppStarted()
+    event = events.DateCheckRequired()
     bus.handle_event(event)
     df = viewer.get_df(ports.TRADING_DATES, ports.TRADING_DATES)
     return df.loc[0, "till"]

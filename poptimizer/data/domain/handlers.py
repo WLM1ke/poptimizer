@@ -44,7 +44,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
     @handle_event.register
     async def app_started(
         self,
-        event: events.AppStarted,
+        event: events.DateCheckRequired,
         repo: AnyTableRepo,
     ) -> list[domain.AbstractEvent]:
         """Обновляет таблицу с торговыми днями."""

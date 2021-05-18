@@ -39,7 +39,7 @@ def _trading_day_potential_end() -> datetime:
     return _to_utc_naive(end_of_trading)
 
 
-class TradingDates(base.AbstractTable[events.AppStarted]):
+class TradingDates(base.AbstractTable[events.DateCheckRequired]):
     """Таблица с данными о торговых днях.
 
     Обрабатывает событие начала работы приложения.
@@ -59,14 +59,14 @@ class TradingDates(base.AbstractTable[events.AppStarted]):
         super().__init__(id_, df, timestamp)
         self._last_trading_day_old: Optional[datetime] = None
 
-    def _update_cond(self, event: events.AppStarted) -> bool:
+    def _update_cond(self, event: events.DateCheckRequired) -> bool:
         """Обновляет, если последняя дата обновления после потенциального окончания торгового дня."""
         if self._timestamp is None:
             return True
 
         return _trading_day_potential_end() > self._timestamp
 
-    async def _prepare_df(self, event: events.AppStarted) -> pd.DataFrame:
+    async def _prepare_df(self, event: events.DateCheckRequired) -> pd.DataFrame:
         """Загружает новый DataFrame."""
         return await self._gateway()
 
@@ -80,7 +80,7 @@ class TradingDates(base.AbstractTable[events.AppStarted]):
         if (df := self._df) is not None:
             self._last_trading_day_old = df.loc[0, "till"]
 
-    def _new_events(self, event: events.AppStarted) -> list[domain.AbstractEvent]:
+    def _new_events(self, event: events.DateCheckRequired) -> list[domain.AbstractEvent]:
         """Событие окончания торгового дня."""
         df: pd.DataFrame = self._df
         last_trading_day = df.loc[0, "till"]

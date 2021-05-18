@@ -9,7 +9,7 @@ from poptimizer.shared import domain
 
 
 @dataclasses.dataclass(frozen=True)
-class AppStarted(domain.AbstractEvent):
+class DateCheckRequired(domain.AbstractEvent):
     """Начало работы приложения.
 
     Обработчики данного события должны осуществить всю необходимую инициализацию.
