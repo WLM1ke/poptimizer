@@ -8,6 +8,8 @@ from torch import distributions, nn
 from poptimizer.config import DEVICE
 from poptimizer.dl.features import FeatureType
 
+EPS = torch.tensor(torch.finfo().eps)
+
 
 class SubBlock(nn.Module):
     """Блок с гейтом и остаточным соединением."""
@@ -304,7 +306,7 @@ class WaveNet(nn.Module):
         m = self.output_conv_m(y)
 
         s = self.output_conv_s(y)
-        s = self.output_softplus_s(s)
+        s = self.output_softplus_s(s) + EPS
 
         return logits.permute((0, 2, 1)), m.permute((0, 2, 1)), s.permute((0, 2, 1))
 
