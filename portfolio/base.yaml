@@ -5,6 +5,7 @@ positions:
   ABRD: 0
   AFKS: 0
   AFLT: 0
+  AGRO: 0
   AKRN: 0
   ALRS: 0
   AMD-RM: 0
@@ -32,6 +33,7 @@ positions:
   EELT: 0
   ENPG: 0
   ENRU: 0
+  ETLN: 0
   FB-RM: 0
   FDX-RM: 0
   FEES: 0
@@ -41,6 +43,7 @@ positions:
   FXCN: 0
   FXDE: 0
   FXKZ: 0
+  FXMM: 0
   FXRB: 0
   FXRU: 0
   GAZP: 0
