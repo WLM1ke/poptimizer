@@ -1,4 +1,5 @@
 """Обновление данных с https://закрытияреестров.рф/."""
+import re
 from typing import Final, Optional
 
 import pandas as pd
@@ -11,6 +12,23 @@ from poptimizer.shared import adapters, col
 URL: Final = "https://закрытияреестров.рф/"
 BASE_TICKER_LENGTH: Final = 4
 TABLE_INDEX: Final = 0
+DIV_PATTERN: Final = r"(.*\d)\s(\w{3})"
+
+
+def parser_div(div: str) -> Optional[str]:
+    """Функция парсинга значений в столбце с дивидендами."""
+    re_div = re.search(DIV_PATTERN, div)
+    if re_div:
+        if re_div.group(2) == "руб":
+            currency = col.RUR
+        elif re_div.group(2) == "USD":
+            currency = col.USD
+        else:
+            return None
+        div_string = re_div.group(1) + currency
+        div_string = div_string.replace(",", ".")
+        return div_string.replace(" ", "")
+    return None
 
 
 def _get_col_desc(ticker: str) -> parser.Descriptions:
@@ -26,18 +44,18 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
     if description.is_common(ticker):
         common = description.ColDesc(
             num=1,
-            raw_name=("Дивиденд на одну обыкновенную акцию",),
+            raw_name=("Дивиденд на одну",),
             name=ticker,
-            parser_func=cell_parser.div_ru,
+            parser_func=parser_div,
         )
         columns.append(common)
         return columns
 
     preferred = description.ColDesc(
         num=2,
-        raw_name=("Дивиденд на одну привилегированную акцию",),
+        raw_name=("Дивиденд на одну",),
         name=ticker,
-        parser_func=cell_parser.div_ru,
+        parser_func=parser_div,
     )
     columns.append(preferred)
     return columns
@@ -60,5 +78,8 @@ class CloseGateway(gateways.DivGateway):
         except description.ParserError:
             return None
 
-        df[col.CURRENCY] = col.RUR
+        raw_data = df[ticker]
+        df[col.CURRENCY] = raw_data.str.slice(-3)
+        df[ticker] = raw_data.str.slice(stop=-3).astype(float)
+
         return df

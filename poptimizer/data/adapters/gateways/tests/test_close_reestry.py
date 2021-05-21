@@ -6,13 +6,26 @@ from poptimizer.data.adapters.gateways import close_reestry
 from poptimizer.data.adapters.html import description, parser
 from poptimizer.shared import col
 
+PARSER_CASE = (
+    ("1,04 USD", "1.04USD"),
+    ("12,29 руб.", "12.29RUR"),
+    ("11 612,20 руб.", "11612.20RUR"),
+)
+
+
+@pytest.mark.parametrize("raw, output", PARSER_CASE)
+def test_parser_div(raw, output):
+    """Проверка работы парсера для разных валют и длинных чисел."""
+    assert close_reestry.parser_div(input) == output
+
+
 DF = pd.DataFrame(
-    [[4.0], [1.0], [2.0]],
+    [["4.0USD"], ["1.0RUR"], ["2.0RUR"]],
     index=["2020-01-20", "2014-11-25", "2014-11-25"],
     columns=["TATNP"],
 )
 DF_REZ = pd.DataFrame(
-    [[4.0, col.RUR], [1.0, col.RUR], [2.0, col.RUR]],
+    [[4.0, col.USD], [1.0, col.RUR], [2.0, col.RUR]],
     index=["2020-01-20", "2014-11-25", "2014-11-25"],
     columns=["TATNP", col.CURRENCY],
 )
