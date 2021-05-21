@@ -16,7 +16,7 @@ PARSER_CASE = (
 @pytest.mark.parametrize("raw, output", PARSER_CASE)
 def test_parser_div(raw, output):
     """Проверка работы парсера для разных валют и длинных чисел."""
-    assert close_reestry.parser_div(input) == output
+    assert close_reestry.parser_div(raw) == output
 
 
 DF = pd.DataFrame(
