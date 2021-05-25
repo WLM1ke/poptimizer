@@ -1,16 +1,15 @@
-"""Интерфейс для записи и получения данных из  Mongo DB."""
-import pickle
-from typing import Any
+"""Интерфейс для записи и получения данных из Mongo DB."""
+import pickle  # noqa: S403
+from typing import Any, Final
 
 import pymongo
-from pymongo import MongoClient
-from pymongo.collection import Collection
-from pymongo.database import Database
 
 # Старые настройки по MongoDB
-MONGO_CLIENT = pymongo.MongoClient("localhost", 27017, tz_aware=False)
-DB = "data"
-MISC = "misc"
+_MONGO_URI: Final = "mongodb://localhost:27017"
+MONGO_CLIENT: Final = pymongo.MongoClient(_MONGO_URI, tz_aware=False)
+DB: Final = "data"
+MISC: Final = "misc"
+_ID: Final = "_id"
 
 # Ключ для сохранения данных в формате pickle
 PICKLE = "pickle"
@@ -30,43 +29,32 @@ class MongoDB:
         self,
         collection: str = MISC,
         db: str = DB,
-        client: MongoClient = MONGO_CLIENT,
+        client: pymongo.MongoClient = MONGO_CLIENT,
     ):
+        """Сохраняется коллекция MongoDB для хранения данных."""
         self._collection = client[db][collection]
 
-    def __getitem__(self, item: str):
-        doc = self._collection.find_one({"_id": item})
+    def __getitem__(self, key: str):
+        """Получить значение по заданному ключу."""
+        doc = self._collection.find_one({"_id": key}, projection={"_id": False})
         if doc is None:
             return doc
-        del doc["_id"]
-        if PICKLE in doc:
-            doc = pickle.loads(doc[PICKLE])
+        if (pickled_data := doc.get(PICKLE)) is not None:
+            doc = pickle.loads(pickled_data)  # noqa: S301
         return doc
 
-    def __setitem__(self, key: str, value: Any):
+    def __setitem__(self, key: str, value: Any):  # noqa: WPS110
+        """Сохраняет значение по ключу."""
         try:
-            self._collection.replace_one({"_id": key}, value, upsert=True)
+            self._collection.replace_one({_ID: key}, value, upsert=True)
         except TypeError:
-            value = {PICKLE: pickle.dumps(value)}
-            self._collection.replace_one({"_id": key}, value, upsert=True)
+            value = {PICKLE: pickle.dumps(value)}  # noqa: WPS110
+            self._collection.replace_one({_ID: key}, value, upsert=True)
 
-    def __delitem__(self, key: str):
-        self._collection.delete_one({"_id": key})
+    def __delitem__(self, key: str):  # noqa: WPS603
+        """Удаляет значение по ключу в коллекции."""
+        self._collection.delete_one({_ID: key})
 
     def __len__(self) -> int:
+        """Количество документов в хранилище."""
         return self._collection.count_documents({})
-
-    @property
-    def client(self) -> MongoClient:
-        """Клиент MongoDB."""
-        return self._collection.database.client
-
-    @property
-    def db(self) -> Database:
-        """База данных."""
-        return self._collection.database
-
-    @property
-    def collection(self) -> Collection:
-        """Коллекция для хранения данных."""
-        return self._collection
