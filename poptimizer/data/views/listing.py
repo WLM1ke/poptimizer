@@ -6,12 +6,12 @@ import pandas as pd
 from poptimizer.data import ports
 from poptimizer.data.app import bootstrap, viewers
 from poptimizer.data.domain import events
-from poptimizer.shared import app, col
+from poptimizer.shared import col
 
 
 def last_history_date(
     viewer: viewers.Viewer = bootstrap.VIEWER,
-    bus: app.EventBus = bootstrap.BUS,
+    bus: bootstrap.TableBus = bootstrap.BUS,
 ) -> pd.Timestamp:
     """Последняя доступная дата исторических котировок."""
     event = events.DateCheckRequired()

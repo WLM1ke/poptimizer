@@ -26,7 +26,7 @@ def is_common(ticker: str) -> bool:
     raise ParserError(f"Некорректный тикер {ticker}")
 
 
-ParserFunc = Callable[[str], Union[None, float, datetime]]
+ParserFunc = Callable[[str], Union[None, float, datetime, str]]
 
 
 class ColDesc(NamedTuple):
