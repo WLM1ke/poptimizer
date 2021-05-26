@@ -11,8 +11,8 @@ from poptimizer.shared import adapters, col
 # Параметры парсинга
 URL_START = "https://finrange.com/company/"
 URL_END = "/dividends"
-TABLE_XPATH = "//*[@id='filter-3']/div[2]/div[2]/div/table"
-TABLE_NUM = 2
+TABLE_XPATH = "//*[@id='app']/div[1]/section/div/div[3]/div[3]/div[2]/div[2]/div/table"
+TABLE_NUM = 1
 
 
 def _prepare_url(ticker: str) -> str:
@@ -36,13 +36,13 @@ async def _get_page_html(url: str, browser: chromium.Browser = chromium.BROWSER)
 def _get_col_desc(ticker: str) -> parser.Descriptions:
     """Формирует список с описанием нужных столбцов."""
     date_col = description.ColDesc(
-        num=1,
+        num=2,
         raw_name=("Дата закрытия реестра акционеров",),
         name=col.DATE,
         parser_func=cell_parser.date_ru,
     )
     div_col = description.ColDesc(
-        num=3,
+        num=4,
         raw_name=("Дивиденд на акцию",),
         name=ticker,
         parser_func=cast(parser.ParseFuncType, cell_parser.div_with_cur),
@@ -51,7 +51,7 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
 
 
 class FinRangeGateway(gateways.DivGateway):
-    """Обновление данных с https://finrange.com/.."""
+    """Обновление данных с https://finrange.com/."""
 
     _logger = adapters.AsyncLogger()
 
