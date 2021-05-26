@@ -17,6 +17,7 @@ from poptimizer.data.adapters.gateways import (  # noqa: WPS235
     moex_status,
     nasdaq,
     smart_lab,
+    street_insider,
 )
 from poptimizer.data.domain import events
 from poptimizer.data.domain.tables import base
@@ -124,6 +125,7 @@ class DivExt(base.AbstractTable[events.UpdateDivCommand]):
         GateWayDesc("InvestMint", col.ORDINARY, invest_mint.InvestMintGateway()),
         GateWayDesc("InvestMint", col.PREFERRED, invest_mint.InvestMintGateway()),
         GateWayDesc("InvestMint", col.FOREIGN, invest_mint.InvestMintGateway()),
+        GateWayDesc("StreetInsider", col.FOREIGN, street_insider.StreetInsider()),
     )
 
     def _update_cond(self, event: events.UpdateDivCommand) -> bool:
