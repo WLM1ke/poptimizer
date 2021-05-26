@@ -7,7 +7,7 @@ from poptimizer.shared import col
 
 DIV_PATTERN: Final = r".*\d"
 DIV_PATTERN_US: Final = r"\$(.*\d)"
-DIV_PATTERN_WITH_CUR = r".*\d\s{1,2}[$₽]"
+DIV_PATTERN_WITH_CUR = r".*\d\s{0,2}[$₽]"
 DATE_PATTERN: Final = r"\d{1,2}\.\d{2}\.\d{4}"
 DATE_PATTERN_US: Final = r"\d{1,2}\/\d{1,2}\/\d{4}"
 
