@@ -61,8 +61,8 @@ END_CHANNELS = GeneParams(
 )
 MIXTURE_SIZE = GeneParams(
     name="mixture_size",
-    default_range=(1.1, 1.9),
-    lower_bound=1.0,
+    default_range=(2.1, 2.9),
+    lower_bound=2.0,
     upper_bound=None,
     path=(MODEL_KEY, "mixture_size"),
     phenotype_function=int,
