@@ -21,12 +21,20 @@ def test_parser_div(raw, output):
 
 DF = pd.DataFrame(
     [["4.0USD"], ["1.0RUR"], ["2.0RUR"]],
-    index=["2020-01-20", "2014-11-25", "2014-11-25"],
+    index=["2020-01-20", "2014-11-23", "2014-11-25"],
     columns=["TATNP"],
 )
 DF_REZ = pd.DataFrame(
-    [[4.0, col.USD], [1.0, col.RUR], [2.0, col.RUR]],
-    index=["2020-01-20", "2014-11-25", "2014-11-25"],
+    [
+        [1.0, col.RUR],
+        [2.0, col.RUR],
+        [4.0, col.USD],
+    ],
+    index=[
+        "2014-11-23",
+        "2014-11-25",
+        "2020-01-20",
+    ],
     columns=["TATNP", col.CURRENCY],
 )
 

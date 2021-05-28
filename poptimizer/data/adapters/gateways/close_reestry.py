@@ -35,7 +35,7 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
     """Формирует список с описанием необходимых столбцов."""
     date = description.ColDesc(
         num=0,
-        raw_name=("Год за который производится выплата",),
+        raw_name=("Период выплаты",),
         name=col.DATE,
         parser_func=cell_parser.date_ru,
     )
@@ -81,5 +81,6 @@ class CloseGateway(gateways.DivGateway):
         raw_data = df[ticker]
         df[col.CURRENCY] = raw_data.str.slice(-3)
         df[ticker] = raw_data.str.slice(stop=-3).astype(float)
+        df = df.dropna()
 
-        return df
+        return df.sort_index()
