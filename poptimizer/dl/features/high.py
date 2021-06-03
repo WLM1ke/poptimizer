@@ -1,4 +1,5 @@
 """Динамика максимальной цены."""
+import pandas as pd
 import torch
 
 from poptimizer.config import DEVICE
@@ -17,19 +18,19 @@ class High(Feature):
 
     def __init__(self, ticker: str, params: DataParams):
         super().__init__(ticker, params)
-        p_open = quotes.prices(params.tickers, params.end, col.HIGH)[ticker]
+        p_high = quotes.prices(params.tickers, params.end, col.HIGH)[ticker]
         price = params.price(ticker)
-        p_open = p_open.reindex(
+        p_high = p_high.reindex(
             price.index,
             method="ffill",
             axis=0,
         )
-        self.high = torch.tensor(p_open.values, dtype=torch.float, device=DEVICE)
+        self.high = torch.tensor(p_high.values, dtype=torch.float, device=DEVICE)
         self.price = torch.tensor(params.price(ticker).values, dtype=torch.float, device=DEVICE)
         self.history_days = params.history_days
 
     def __getitem__(self, item: int) -> torch.Tensor:
-        return self.high[item: item + self.history_days] / self.price[item] - 1
+        return self.high[item : item + self.history_days] / self.price[item] - 1
 
     @property
     def type_and_size(self) -> tuple[FeatureType, int]:
