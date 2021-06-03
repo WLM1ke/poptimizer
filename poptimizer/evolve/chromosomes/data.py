@@ -121,6 +121,14 @@ OPEN_ON = GeneParams(
     path=("data", "features", "Open", "on"),
     phenotype_function=lambda x: x > 0,
 )
+HIGH_ON = GeneParams(
+    name="high_on",
+    default_range=(-1.0, 0.0),
+    lower_bound=None,
+    upper_bound=None,
+    path=("data", "features", "High", "on"),
+    phenotype_function=lambda x: x > 0,
+)
 
 
 class Data(Chromosome):
@@ -142,4 +150,5 @@ class Data(Chromosome):
         TICKER_TYPE_ON,
         USD_ON,
         OPEN_ON,
+        HIGH_ON,
     )

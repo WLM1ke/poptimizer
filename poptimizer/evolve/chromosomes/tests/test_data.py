@@ -3,7 +3,7 @@ from poptimizer.evolve.chromosomes import chromosome, data
 
 def test_init_no_data():
     chromo = data.Data({})
-    assert len(chromo.data) == 15
+    assert len(chromo.data) == 16
     assert 128.1 < chromo.data["batch_size"] < 128.9
     assert 50.1 < chromo.data["history_days"] < 50.9
     assert 0.0 < chromo.data["ticker_on"] < 1.0
@@ -23,7 +23,7 @@ def test_init_no_data():
 
 def test_init_some_data():
     chromo = data.Data(dict(history_days=40))
-    assert len(chromo.data) == 15
+    assert len(chromo.data) == 16
     assert 128.1 < chromo.data["batch_size"] < 128.9
     assert chromo.data["history_days"] == 40
     assert 0.0 < chromo.data["ticker_on"] < 1.0
@@ -57,7 +57,7 @@ def test_init_all_data():
             ticker_type_on=5,
         )
     )
-    assert len(chromo.data) == 15
+    assert len(chromo.data) == 16
     assert chromo.data["batch_size"] == 10
     assert chromo.data["history_days"] == 40
     assert chromo.data["ticker_on"] == -1
@@ -107,6 +107,7 @@ def test_setup_phenotype():
                 TickerType=dict(on=False),
                 USD=dict(on=False),
                 Open=dict(on=False),
+                High=dict(on=False),
             ),
         ),
     )
