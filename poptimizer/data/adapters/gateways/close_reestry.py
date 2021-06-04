@@ -35,7 +35,7 @@ def _get_col_desc(ticker: str) -> parser.Descriptions:
     """Формирует список с описанием необходимых столбцов."""
     date = description.ColDesc(
         num=0,
-        raw_name=("Период выплаты",),
+        raw_name=("выплат",),
         name=col.DATE,
         parser_func=cell_parser.date_ru,
     )
