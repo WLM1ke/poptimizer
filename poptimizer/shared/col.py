@@ -13,6 +13,8 @@ LOT_SIZE: Final = "LOT_SIZE"
 TURNOVER: Final = "TURNOVER"
 CURRENCY: Final = "CURRENCY"
 
+RF: Final = "RF"
+
 OPEN: Final = "OPEN"
 CLOSE: Final = "CLOSE"
 HIGH: Final = "HIGH"
