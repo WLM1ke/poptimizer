@@ -116,6 +116,7 @@ positions:
   PLZL: 0
   PMSBP: 0
   POGR: 0
+  POLY: 0
   QCOM-RM: 0
   RASP: 0
   RBCM: 0
@@ -138,6 +139,7 @@ positions:
   SMLT: 0
   SNGS: 0
   SNGSP: 0
+  SBUX-RM: 0
   SVAV: 0
   T-RM: 0
   TATN: 0
