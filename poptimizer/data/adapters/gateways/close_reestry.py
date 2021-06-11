@@ -12,7 +12,7 @@ from poptimizer.shared import adapters, col
 URL: Final = "https://закрытияреестров.рф/"
 BASE_TICKER_LENGTH: Final = 4
 TABLE_INDEX: Final = 0
-DIV_PATTERN: Final = r"(.*\d)\s(\w{3})"
+DIV_PATTERN: Final = r"(.*\d)\s(руб|USD|\$)"
 
 
 def parser_div(div: str) -> Optional[str]:
@@ -22,6 +22,8 @@ def parser_div(div: str) -> Optional[str]:
         if re_div.group(2) == "руб":
             currency = col.RUR
         elif re_div.group(2) == "USD":
+            currency = col.USD
+        elif re_div.group(2) == "$":
             currency = col.USD
         else:
             return None
