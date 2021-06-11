@@ -1,4 +1,4 @@
-"""Информация о актуальности данных по дивидендам."""
+"""Информация об актуальности данных по дивидендам."""
 import math
 from datetime import datetime
 from typing import Callable, Final
@@ -13,7 +13,7 @@ from poptimizer.data.views.crop import div
 # Точность сравнения дивидендов
 from poptimizer.shared import col
 
-RET_TOL: Final = 1e-3
+RET_TOL: Final = 2e-3
 
 DivSource = Callable[[str], pd.DataFrame]
 
