@@ -15,11 +15,11 @@ from poptimizer.dl import data_loader, models
 from poptimizer.dl.features import data_params
 from poptimizer.dl.forecast import Forecast
 
-# Ограничение на максимальное снижение правдоподобия во время обучения для его прервывния
+# Ограничение на максимальное снижение правдоподобия во время обучения для его прерывания
 LLH_DRAW_DOWN = 1
 
 # Максимальный размер документа в MongoDB
-MAX_SIZE = 2_000_000
+MAX_SIZE = 2 * (2 ** 10) ** 2
 
 
 class ModelError(POptimizerError):
@@ -54,12 +54,12 @@ class DegeneratedModelError(ModelError):
 def log_normal_llh_mix(
     model: nn.Module,
     batch: dict[str, torch.Tensor],
-) -> tuple[torch.Tensor, int, torch.Tensor]:
-    """Minus Normal Log Likelihood and batch size."""
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Minus Normal Log Likelihood and forecast means."""
     dist = model.dist(batch)
     llh = dist.log_prob(batch["Label"] + torch.tensor(1.0))
 
-    return -llh.sum(), llh.shape[0], llh
+    return -llh.sum(), dist.mean - torch.tensor(1.0)
 
 
 class Model:
@@ -148,7 +148,8 @@ class Model:
 
         llh_sum = 0
         weight_sum = 0
-        llh_all = []
+        all_means = []
+        all_labels = []
 
         print(f"Тестовых дней: {days}")
         print(f"Тестовых примеров: {len(loader.dataset)}")
@@ -156,17 +157,31 @@ class Model:
             model.eval()
             bars = tqdm.tqdm(loader, file=sys.stdout, desc="~~> Test")
             for batch in bars:
-                loss, weight, llh = loss_fn(model, batch)
+                loss, mean = loss_fn(model, batch)
                 llh_sum -= loss.item()
-                weight_sum += weight
-                llh_all.append(llh)
+                weight_sum += mean.shape[0]
+                all_means.append(mean)
+                all_labels.append(batch["Label"])
 
                 bars.set_postfix_str(f"{llh_sum / weight_sum:.5f}")
 
-        llh_all = torch.cat(llh_all)
-        print(f"STD: {llh_all.std(unbiased=True).item() / len(llh_all) ** 0.5:.4f}")
+        all_means = torch.cat(all_means).numpy().flatten()
+        all_labels = torch.cat(all_labels).numpy().flatten()
 
-        return llh_sum / weight_sum
+        forecast_sorted_labels = pd.DataFrame(all_labels, index=all_means).sort_index()
+        forecast_sorted_labels = (
+            forecast_sorted_labels * YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS
+        )
+
+        n_half = len(forecast_sorted_labels) // 2
+
+        best = forecast_sorted_labels.iloc[-n_half:].values.mean()
+        worst = forecast_sorted_labels.iloc[:n_half].values.mean()
+
+        print(f"Best  half - {best:.4f}")
+        print(f"Worst half - {worst:.4f}")
+
+        return float(best - worst)
 
     def _load_trained_model(
         self,
@@ -244,13 +259,13 @@ class Model:
         for batch in bars:
             optimizer.zero_grad()
 
-            loss, weight, _ = loss_fn(model, batch)
+            loss, means = loss_fn(model, batch)
 
             llh_sum += -loss.item() - llh_deque[0]
             llh_deque.append(-loss.item())
 
-            weight_sum += weight - weight_deque[0]
-            weight_deque.append(weight)
+            weight_sum += means.shape[0] - weight_deque[0]
+            weight_deque.append(means.shape[0])
 
             loss.backward()
             optimizer.step()
