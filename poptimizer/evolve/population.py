@@ -91,20 +91,25 @@ class Organism:
     def find_weaker(self) -> "Organism":
         """Находит организм с наименьшим llh.
 
-        В оборе участвуют только организмы с таким же набором тикеров и датой обновления. Может найти
-        самого себя.
+        Ищет самых медленных среди более старых и более слабых.
+        Если более старых и слабых нет, то ищет более слабых.
+        Может найти самого себя.
+
+        Таким образом, пока не пройден один цикл размножения с новыми данными эволюционный процесс
+        старается истреблять медленные организмы. Если за грубо сутки удается перетренировать все
+        организмы, то можно искать самые хорошие, не обращая внимание на скорость.
         """
         doc = self._doc
         collection = store.get_collection()
 
-        filter_ = {"timer": {"$gte": doc.timer}}
+        filter_ = {"llh": {"$lt": doc.llh}, "date": {"$lt": doc.date}, "timer": {"$gt": doc.timer}}
         id_dict = collection.find_one(
             filter=filter_,
             projection=["_id"],
-            sort=[("llh", pymongo.ASCENDING)],
+            sort=[("timer", pymongo.DESCENDING)],
         )
-        org = Organism(**id_dict)
-        if self.id != org.id:
+        if id_dict is not None:
+            org = Organism(**id_dict)
             return org
 
         filter_ = {}
@@ -225,7 +230,7 @@ def _print_llh_stats() -> None:
         quantiles = tuple(quantiles)
     else:
         quantiles = ["-" for _ in range(3)]
-    print(f"LLH - ({', '.join(tuple(quantiles))})")
+    print(f"Excess return - ({', '.join(tuple(quantiles))})")
 
 
 def _print_wins_stats() -> None:

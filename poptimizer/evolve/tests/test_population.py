@@ -201,5 +201,5 @@ def test_print_stat(capsys):
     population.print_stat()
     captured = capsys.readouterr()
 
-    assert "LLH" in captured.out
+    assert "Excess return" in captured.out
     assert "Максимум побед" in captured.out
