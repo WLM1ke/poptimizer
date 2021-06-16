@@ -29,7 +29,6 @@ def usd(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.Series:
     return df.loc[bootstrap.START_DATE :, col.CLOSE]  # type: ignore
 
 
-@functools.lru_cache(maxsize=1)
 def quotes(
     tickers: tuple[str, ...],
     viewer: viewers.Viewer = bootstrap.VIEWER,
