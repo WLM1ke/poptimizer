@@ -8,6 +8,7 @@ from typing import Optional
 import pandas as pd
 import torch
 import tqdm
+from scipy import stats
 from torch import nn, optim
 
 from poptimizer.config import DEVICE, YEAR_IN_TRADING_DAYS, POptimizerError
@@ -168,20 +169,21 @@ class Model:
         all_means = torch.cat(all_means).numpy().flatten()
         all_labels = torch.cat(all_labels).numpy().flatten()
 
-        forecast_sorted_labels = pd.DataFrame(all_labels, index=all_means).sort_index()
-        forecast_sorted_labels = (
-            forecast_sorted_labels * YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS
-        )
+        sorted_labels = pd.DataFrame(all_labels, index=all_means).sort_index(ascending=False)
+        sorted_labels = sorted_labels * YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS
 
-        n_half = len(forecast_sorted_labels) // 2
+        tau, p_value = stats.kendalltau(all_means, all_labels)
+        print(f"AUC = {(tau + 1) / 2:.2%}, p = {p_value:.2%}")
 
-        best = forecast_sorted_labels.iloc[-n_half:].values.mean()
-        worst = forecast_sorted_labels.iloc[:n_half].values.mean()
+        n_half = len(sorted_labels) // 2
 
-        print(f"Best  half - {best:.4f}")
-        print(f"Worst half - {worst:.4f}")
+        best = sorted_labels.iloc[:n_half].values.mean()
+        all_shares = sorted_labels.values.mean()
 
-        return float(best - worst)
+        print(f"Best - {best:.4f}")
+        print(f"All  - {all_shares:.4f}")
+
+        return float(best - all_shares)
 
     def _load_trained_model(
         self,
