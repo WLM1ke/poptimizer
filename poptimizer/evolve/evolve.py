@@ -107,10 +107,10 @@ def _eval_and_print(
     нормально, то оценку качества.
     """
     print(f"Побед — {organism.wins}")
-    print(organism)
     try:
+        print(organism)
         fitness = organism.evaluate_fitness(tickers, end)
-    except ModelError as error:
+    except (ModelError, AttributeError) as error:
         organism.die()
         print(f"Удаляю - {error.__class__.__name__}\n")
         return None
