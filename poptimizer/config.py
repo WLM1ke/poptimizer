@@ -37,4 +37,4 @@ MAX_TRADE = 1 / 110
 MAX_POPULATION = 60
 
 # Длинна прогноза в торговых днях
-FORECAST_DAYS = 31
+FORECAST_DAYS = 32
