@@ -115,7 +115,7 @@ def _eval_and_print(
         print(f"Удаляю - {error.__class__.__name__}\n")
         return None
 
-    print(f"Excess return: {fitness:.4f}")
+    print(f"Sharpe: {fitness:.4f}")
     print(f"Timer: {organism.timer / 10 ** 9:.0f}\n")
     return fitness
 
@@ -125,6 +125,6 @@ def _kill_weakest(organism: population.Organism) -> None:
     print("Наиболее слабый — удаляю:")
     print(f"Побед - {weakest.wins}")
     print(weakest)
-    print(f"Excess return: {weakest.llh:.4f}")
+    print(f"Sharpe: {weakest.llh:.4f}")
     print(f"Timer: {weakest.timer / 10 ** 9:.0f}\n")
     weakest.die()
