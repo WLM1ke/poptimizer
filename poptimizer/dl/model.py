@@ -173,20 +173,9 @@ class Model:
         all_means = torch.cat(all_means).numpy().flatten()
         all_vars = torch.cat(all_vars).numpy().flatten()
         all_labels = torch.cat(all_labels).numpy().flatten()
+        _opt_weights(all_means, all_vars, all_labels)
 
-        sorted_labels = pd.DataFrame(all_labels, index=all_means).sort_index(ascending=False)
-        sorted_labels = sorted_labels * YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS
-
-        n_half = len(sorted_labels) // 2
-
-        best = sorted_labels.iloc[:n_half].values.mean()
-        all_shares = sorted_labels.values.mean()
-
-        print(f"Best - {best:.4f}")
-        print(f"All  - {all_shares:.4f}")
-        print(f"Delta  - {best - all_shares:.4f}")
-
-        return float(_opt_weights(all_means, all_vars, all_labels))
+        return llh_sum / weight_sum
 
     def _load_trained_model(
         self,
@@ -327,21 +316,6 @@ class Model:
         )
 
 
-def m(x, w):
-    """Weighted Mean"""
-    return np.sum(x * w) / np.sum(w)
-
-
-def cov(x, y, w):
-    """Weighted Covariance"""
-    return np.sum(w * (x - m(x, w)) * (y - m(y, w))) / np.sum(w)
-
-
-def corr(x, y, w):
-    """Weighted Correlation"""
-    return cov(x, y, w) / np.sqrt(cov(x, x, w) * cov(y, y, w))
-
-
 def opt_weight(mean: np.array, var: np.array):
     precision = linalg.inv(np.diag(var))
     weighted_mean = precision @ mean.reshape(-1, 1)
@@ -354,4 +328,4 @@ def _opt_weights(mean: np.array, var: np.array, labels: np.array) -> None:
     n = len(mean)
     rez = stats.ttest_1samp(opt_weight(mean, var) * labels, 0, alternative="greater")
     print(rez)
-    return rez[0] / n ** 0.5  # * (YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS) ** 0.5
+    print(rez[0] / n ** 0.5 * (YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS) ** 0.5)
