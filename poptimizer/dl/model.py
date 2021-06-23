@@ -328,4 +328,5 @@ def _opt_weights(mean: np.array, var: np.array, labels: np.array) -> None:
     n = len(mean)
     rez = stats.ttest_1samp(opt_weight(mean, var) * labels, 0, alternative="greater")
     print(rez)
-    print(rez[0] / n ** 0.5 * (YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS) ** 0.5)
+    sharpe = rez[0] / n ** 0.5 * (YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS) ** 0.5
+    print(f"Sharpe - {sharpe:.2f}")
