@@ -6,6 +6,7 @@ from poptimizer.dl.features.dividends import Dividends
 from poptimizer.dl.features.feature import FeatureType
 from poptimizer.dl.features.imoex import IMOEX
 from poptimizer.dl.features.label import Label
+from poptimizer.dl.features.low import Low
 from poptimizer.dl.features.mcftrr import MCFTRR
 from poptimizer.dl.features.open import Open
 from poptimizer.dl.features.prices import Prices

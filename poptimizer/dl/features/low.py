@@ -1,4 +1,4 @@
-"""Динамика максимальной цены."""
+"""Динамика минимальной цены."""
 import torch
 
 from poptimizer.config import DEVICE
@@ -8,28 +8,28 @@ from poptimizer.dl.features.feature import Feature, FeatureType
 from poptimizer.shared import col
 
 
-class High(Feature):
-    """Динамика максимальной цены, нормированная на начальную цену закрытия.
+class Low(Feature):
+    """Динамика минимальной цены, нормированная на начальную цену закрытия.
 
-    Максимальная цена содержит дополнительную информацию о динамике стоимости актива и его внутридневной
+    Минимальная цена содержит дополнительную информацию о динамике стоимости актива и его внутридневной
     волатильности.
     """
 
     def __init__(self, ticker: str, params: DataParams):
         super().__init__(ticker, params)
-        p_high = quotes.prices(params.tickers, params.end, col.HIGH)[ticker]
+        p_low = quotes.prices(params.tickers, params.end, col.LOW)[ticker]
         price = params.price(ticker)
-        p_high = p_high.reindex(
+        p_low = p_low.reindex(
             price.index,
             method="ffill",
             axis=0,
         )
-        self.high = torch.tensor(p_high.values, dtype=torch.float, device=DEVICE)
+        self.low = torch.tensor(p_low.values, dtype=torch.float, device=DEVICE)
         self.price = torch.tensor(params.price(ticker).values, dtype=torch.float, device=DEVICE)
         self.history_days = params.history_days
 
     def __getitem__(self, item: int) -> torch.Tensor:
-        return self.high[item : item + self.history_days] / self.price[item] - 1
+        return self.low[item : item + self.history_days] / self.price[item] - 1
 
     @property
     def type_and_size(self) -> tuple[FeatureType, int]:
