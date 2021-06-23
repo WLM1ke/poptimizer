@@ -230,7 +230,7 @@ def _print_llh_stats() -> None:
         quantiles = tuple(quantiles)
     else:
         quantiles = ["-" for _ in range(3)]
-    print(f"Excess return - ({', '.join(tuple(quantiles))})")
+    print(f"LLH - ({', '.join(tuple(quantiles))})")
 
 
 def _print_wins_stats() -> None:
