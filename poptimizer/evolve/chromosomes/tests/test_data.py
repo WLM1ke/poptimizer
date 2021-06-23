@@ -108,6 +108,7 @@ def test_setup_phenotype():
                 USD=dict(on=False),
                 Open=dict(on=False),
                 High=dict(on=False),
+                Low=dict(on=False),
             ),
         ),
     )
