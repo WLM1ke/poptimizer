@@ -130,7 +130,7 @@ HIGH_ON = GeneParams(
     phenotype_function=lambda x: x > 0,
 )
 LOW_ON = GeneParams(
-    name="high_on",
+    name="low_on",
     default_range=(-1.0, 0.0),
     lower_bound=None,
     upper_bound=None,
