@@ -61,7 +61,7 @@ async def test_trading_day_ended(mocker):
     mocker.patch.object(
         handlers,
         "_load_by_id_and_handle_event",
-        side_effect=[["a"], ["b", "c"], ["usd"]],
+        side_effect=[["a"], ["rf"], ["b", "c"], ["usd"]],
     )
 
     assert await dispatcher.handle_event(event, fake_repo) == [
@@ -69,6 +69,7 @@ async def test_trading_day_ended(mocker):
         events.IndexCalculated("IMOEX", event.date),
         events.IndexCalculated("RVI", event.date),
         "a",
+        "rf",
         "b",
         "c",
         "usd",
