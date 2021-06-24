@@ -1,12 +1,16 @@
 """Метрики для одного прогноза и набора прогнозов."""
 import functools
+from typing import Final
 
 import numpy as np
 import pandas as pd
 
 from poptimizer import evolve
+from poptimizer.data.views import indexes
 from poptimizer.dl import Forecast
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO, Portfolio
+
+_P_VALUE: Final = 0.05
 
 
 class MetricsSingle:
@@ -24,6 +28,7 @@ class MetricsSingle:
         """
         self._portfolio = portfolio
         self._forecast = forecast
+        self._rf = indexes.rf(portfolio.date)
 
     def __str__(self) -> str:
         """Текстовое представление метрик портфеля."""
@@ -46,6 +51,11 @@ class MetricsSingle:
     def shrinkage(self) -> float:
         """Среднее сжатие корреляционной матрицы."""
         return self._forecast.shrinkage
+
+    @functools.cached_property
+    def rf(self) -> float:
+        """Безрисковая ставка."""
+        return self._rf
 
     @functools.cached_property
     def mean(self) -> pd.Series:
@@ -92,7 +102,8 @@ class MetricsSingle:
     @functools.cached_property
     def sharpe(self) -> pd.Series:
         """Отношение доходности и риска портфеля."""
-        sharpe = (self.mean + self.mean[PORTFOLIO] * (1 - self.beta)) / self.std[PORTFOLIO]
+        rf = self._rf
+        sharpe = ((self.mean - rf) - (self.mean[PORTFOLIO] - rf) * (self.beta - 1)) / self.std[PORTFOLIO]
         sharpe.name = "SHARPE"
 
         return sharpe
@@ -108,9 +119,10 @@ class MetricsSingle:
         При правильной реализации взвешенный по долям отдельных позиций градиент равен градиенту по
         портфелю в целом и равен 0.
 
-        В общем случае градиент равен (m - b * mp) / sp, где:
+        В общем случае градиент равен (m -(rf + b * (mp - rf))) / sp, где:
 
         - m и mp - доходность актива и портфеля, соответственно,
+        - rf - безрисковая ставка,
         - sp - СКО портфеля,
         - b - бета актива.
 
@@ -123,7 +135,8 @@ class MetricsSingle:
         В данной реализации используется только числитель градиента.
         """
         mean = self.mean
-        gradient = mean - mean[PORTFOLIO] * self.beta
+        rf = self._rf
+        gradient = mean - (rf + (mean[PORTFOLIO] - rf) * self.beta)
         gradient.name = "GRAD"
 
         return gradient
@@ -259,21 +272,21 @@ class MetricsResample:
         Бумага с минимальным градиентом выбирается среди имеющих не нулевой вес.
         Бумага с максимальным градиентом выбирается с учетом фактора оборота.
         """
-        min_grad_ticker = self.shape.iloc[:-2][self._portfolio.weight.iloc[:-2] > 0].idxmin()
+        return_ = pd.concat([metric.mean for metric in self._metrics], axis=1)
+        return_ = return_.loc[PORTFOLIO].quantile(_P_VALUE)
 
-        factor = self._portfolio.turnover_factor > 0
-        max_grad_ticker = (self.shape * factor).iloc[:-2].idxmax()
+        risk = pd.concat([metric.std for metric in self._metrics], axis=1)
+        risk = risk.loc[PORTFOLIO].quantile(1 - _P_VALUE)
 
         sharpe = pd.concat([metric.sharpe for metric in self._metrics], axis=1)
-        sharpe = sharpe.loc[PORTFOLIO].quantile(0.05)
+        sharpe = sharpe.loc[PORTFOLIO].quantile(_P_VALUE)
 
         strings = [
             "",
-            "Экстремальные Шарп",
-            f"{min_grad_ticker}: {self.shape[min_grad_ticker]: .4f}",
-            f"{max_grad_ticker}: {self.shape[max_grad_ticker]: .4f}",
-            "",
-            f"Консервативный Шарп портфеля: {sharpe: .4f}",
+            f"Безрисковая ставка:        {self._metrics[0].rf: .4f}",
+            f"Консервативный доходность: {return_: .4f}",
+            f"Консервативный риск:       {risk: .4f}",
+            f"Консервативный Шарп:       {sharpe: .4f}",
         ]
 
         return "\n".join(strings)
