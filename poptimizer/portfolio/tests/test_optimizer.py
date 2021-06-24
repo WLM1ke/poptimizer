@@ -7,16 +7,21 @@ from poptimizer.portfolio import Portfolio, optimizer, portfolio
 
 class FakeMetricsResample:
     def __init__(self, _=None):
-        self.count = 20
+        self.count = 30
 
     @property
     def all_gradients(self):
         grad = dict(CHEP=0.015, KZOS=0.20, MTSS=0.01, RTKMP=0.03, TRCN=0.04, CASH=-0.05, PORTFOLIO=0.0)
-        return pd.DataFrame([grad] * 20).T
+        return pd.DataFrame([grad] * 30).T
 
     @property
     def beta(self):
         beta = dict(CHEP=0.1, KZOS=0.5, MTSS=1.0, RTKMP=1.5, TRCN=2.0, CASH=0, PORTFOLIO=1.0)
+        return pd.Series(beta)
+
+    @property
+    def mean(self):
+        beta = dict(CHEP=0.11, KZOS=0.15, MTSS=0.2, RTKMP=0.5, TRCN=0.3, CASH=0, PORTFOLIO=1.0)
         return pd.Series(beta)
 
 
@@ -36,21 +41,21 @@ def make_opt():
 
 
 def test_trials(opt):
-    assert opt.trials == 4 + 4 + 4 + 5
+    assert opt.trials == 8
 
 
 def test_best_combination(opt, monkeypatch):
-    monkeypatch.setattr(optimizer, "COSTS", 0)
+    monkeypatch.setattr(optimizer.config, "COSTS", 0)
     monkeypatch.setattr(portfolio, "MAX_HISTORY", 100)
     monkeypatch.setattr(portfolio, "ADD_DAYS", 100)
-    df = opt.best_combination
+    df = opt.best_combination()
 
     assert isinstance(df, pd.DataFrame)
-    assert df.shape == (2, 6)
+    assert df.shape == (3, 6)
     assert list(df.columns) == [
         "SELL",
         "BUY",
-        "RISK_CON",
+        "SML_DIFF",
         "R_DIFF",
         "TURNOVER",
         "P_VALUE",

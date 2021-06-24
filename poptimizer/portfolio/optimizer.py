@@ -51,7 +51,7 @@ class Optimizer:
         """Количество тестов на значимость."""
         return sum(1 for _ in self._acceptable_trades())
 
-    def best_combination(self) -> tuple[pd.DataFrame, int]:
+    def best_combination(self) -> pd.DataFrame:
         """Лучшие комбинации для торговли.
 
         Для каждого актива, который можно продать со значимым улучшением выбирается актив с
@@ -79,6 +79,9 @@ class Optimizer:
         turnover = self.portfolio.turnover_factor
 
         for sell, buy in itertools.product(positions, positions):
+            if sell == buy:
+                continue
+
             if weight[sell] == 0:
                 continue
 
