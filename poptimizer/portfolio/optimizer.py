@@ -1,28 +1,19 @@
 """Оптимизатор портфеля."""
+import functools
 import itertools
-import math
-from typing import Tuple
 
 import pandas as pd
 from scipy import stats
 
 from poptimizer import config
-from poptimizer.config import MAX_TRADE
-from poptimizer.dl.features.data_params import FORECAST_DAYS
 from poptimizer.portfolio import metrics
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO, Portfolio
-
-# Значимость отклонения градиента от нуля
-P_VALUE = 0.05
-
-# Издержки в годовом выражении для двух операций
-COSTS = (config.YEAR_IN_TRADING_DAYS * 2 / FORECAST_DAYS) * (0.025 / 100)
 
 
 class Optimizer:
     """Предлагает сделки для улучшения метрики портфеля."""
 
-    def __init__(self, portfolio: Portfolio, p_value: float = P_VALUE):
+    def __init__(self, portfolio: Portfolio, p_value: float = config.P_VALUE):
         """Учитывается градиент, его ошибку и ликвидность бумаг.
 
         :param portfolio:
@@ -35,20 +26,13 @@ class Optimizer:
         self._metrics = metrics.MetricsResample(portfolio)
 
     def __str__(self) -> str:
+        df = self.best_combination()
         blocks = [
             "\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ",
-            self._p_value_block(),
-            f"{self.best_combination}",
-        ]
-        return "\n\n".join(blocks)
-
-    def _p_value_block(self) -> str:
-        """Информация значимости при множественном тестировании гипотез."""
-        blocks = [
-            "Оценка значимости:",
-            f"forecasts = {self.n_forecasts}",
-            f"p-value = {self.p_value:.2%}",
+            f"forecasts = {self.metrics.count}",
+            f"p-value = {self._p_value:.2%}",
             f"trials = {self.trials}",
+            f"\n{df}",
         ]
         return "\n".join(blocks)
 
@@ -62,92 +46,78 @@ class Optimizer:
         """Метрики портфеля."""
         return self._metrics
 
-    @property
-    def p_value(self) -> float:
-        """Уровень значимости отклонения градиента от нуля."""
-        return self._p_value
-
-    @property
-    def n_forecasts(self) -> int:
-        """Количество прогнозов."""
-        return self.metrics.count
-
-    @property
+    @functools.cached_property
     def trials(self) -> int:
-        """Количество тестов на значимость.
+        """Количество тестов на значимость."""
+        return sum(1 for _ in self._acceptable_trades())
 
-        Продать можно позиции с не нулевым весом.
-
-        Можно уйти в кэш или купить любую позицию, кроме продаваемой и с нулевым фактором объема.
-        Для позиции с нулевым фактором объема - уйти в кеш или купить любую позицию кроме себя.
-        """
-        positions_to_sell = (self.portfolio.shares[:-2] > 0).sum()
-        positions = len(self.portfolio.shares) - 2
-        return positions_to_sell * positions - positions_to_sell + 1
-
-    @property
-    def best_combination(self):
+    def best_combination(self) -> tuple[pd.DataFrame, int]:
         """Лучшие комбинации для торговли.
 
         Для каждого актива, который можно продать со значимым улучшением выбирается актив с
         максимальной вероятностью улучшения.
         """
-        rez = self._wilcoxon_tests()
-
         rez = pd.DataFrame(
-            list(rez),
+            list(self._wilcoxon_tests()),
             columns=[
                 "SELL",
                 "BUY",
-                "RISK_CON",
+                "SML_DIFF",
                 "R_DIFF",
                 "TURNOVER",
                 "P_VALUE",
             ],
         )
-        rez = rez.sort_values(["R_DIFF"], ascending=[False])
-        rez = rez.drop_duplicates("SELL")
+        rez = rez.sort_values(["SML_DIFF"], ascending=[False])
         rez.index = pd.RangeIndex(start=1, stop=len(rez) + 1)
 
         return rez
 
-    def _wilcoxon_tests(self) -> Tuple[str, str, float, float]:
-        """Осуществляет тестирование всех допустимых пар активов с помощью теста Вилкоксона.
-
-        Возвращает все значимо улучшающие варианты сделок в формате:
-
-        - Продаваемый тикер
-        - Покупаемый тикер
-        - Медиана разницы в градиенте
-        - Значимость скорректированная на общее количество тестов и оборачиваемость покупаемого тикера.
-        """
-        positions_to_sell = self.portfolio.index[:-2][self.portfolio.shares[:-2] > 0]
-        positions_with_cash = self.portfolio.index[:-1]
-        all_gradients = self.metrics.all_gradients
-        betas = self.metrics.beta
-        trials = self.trials
-        turnover_all = self.portfolio.turnover_factor
+    def _acceptable_trades(self) -> tuple[str, str, float]:
+        positions = self.portfolio.index[:-2]
         weight = self.portfolio.weight
-        for sell, buy in itertools.product(positions_to_sell, positions_with_cash):
+        turnover = self.portfolio.turnover_factor
 
-            if sell == buy or turnover_all[buy] == 0:
+        for sell, buy in itertools.product(positions, positions):
+            if weight[sell] == 0:
                 continue
 
-            factor = turnover_all[buy] - (weight[sell] + weight[CASH])
+            factor = turnover[buy] - (weight[sell] + weight[CASH])
             if factor < 0:
                 continue
 
-            diff = all_gradients.loc[buy] - all_gradients.loc[sell] - COSTS
+            yield sell, buy, factor
+
+    def _wilcoxon_tests(self) -> tuple[str, str, float, float, float, float]:
+        """Осуществляет тестирование всех допустимых пар активов с помощью теста Вилкоксона."""
+        all_gradients = self.metrics.all_gradients
+        means = self.metrics.mean
+
+        for sell, buy, factor in self._acceptable_trades():
+            mean = means[buy] - means[sell] - config.COSTS
+            if _bad_mean(mean, means[PORTFOLIO]):
+                continue
+
+            diff = all_gradients.loc[buy] - all_gradients.loc[sell] - config.COSTS
             _, alfa = stats.wilcoxon(diff, alternative="greater", correction=True)
+            alfa *= self.trials
 
-            alfa *= trials
-
-            if alfa < P_VALUE:
+            if alfa < self._p_value:
                 yield [
                     sell,
                     buy,
-                    betas[buy] * weight[buy] - betas[sell] * weight[sell],
                     diff.median(),
+                    mean,
                     factor,
                     alfa,
                 ]
+
+
+def _bad_mean(mean: float, port_mean: float) -> bool:
+    if config.MIN_RETURN is None:
+        return False
+
+    if port_mean > config.MIN_RETURN:
+        return False
+
+    return mean < 0
