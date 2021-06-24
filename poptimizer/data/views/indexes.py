@@ -1,7 +1,17 @@
 """Индексы потребительских цен и MOEX."""
 import pandas as pd
 
+from poptimizer.data import ports
+from poptimizer.data.app import bootstrap, viewers
 from poptimizer.data.views.crop import not_div
+from poptimizer.shared import col
+
+
+def rf(date: pd.Timestamp, viewer: viewers.Viewer = bootstrap.VIEWER) -> float:
+    """Безрисковая ставка."""
+    df = viewer.get_df(ports.RF, ports.RF)
+    df = df.loc[:date, col.RF]
+    return df.iloc[-1]
 
 
 def cpi(date: pd.Timestamp) -> pd.Series:

@@ -6,6 +6,19 @@ from poptimizer.data.app import bootstrap
 from poptimizer.data.views import indexes
 from poptimizer.shared import col
 
+RF_CASES = (
+    ("2021-05-25", 0.04899),
+    ("2021-06-01", 0.05103),
+    ("2021-06-24", 0.05173),
+)
+
+
+@pytest.mark.parametrize("date, rf", RF_CASES)
+def test_rf(date, rf):
+    """Тестирование безрисковой ставки."""
+    assert indexes.rf(pd.Timestamp(date)) == pytest.approx(rf)
+
+
 CPI_CASES = (
     ("2020-09-30", 0.9993),
     ("2018-11-30", 1.005),
