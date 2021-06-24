@@ -173,7 +173,7 @@ class Model:
         all_means = torch.cat(all_means).numpy().flatten()
         all_vars = torch.cat(all_vars).numpy().flatten()
         all_labels = torch.cat(all_labels).numpy().flatten()
-        _opt_weights(all_means, all_vars, all_labels)
+        _opt_port(all_means, all_vars, all_labels)
 
         return llh_sum / weight_sum
 
@@ -316,7 +316,7 @@ class Model:
         )
 
 
-def opt_weight(mean: np.array, var: np.array):
+def _opt_weight(mean: np.array, var: np.array):
     precision = linalg.inv(np.diag(var))
     weighted_mean = precision @ mean.reshape(-1, 1)
     lambda_ = weighted_mean.sum() / precision.sum()
@@ -324,9 +324,14 @@ def opt_weight(mean: np.array, var: np.array):
     return optimal_weights.ravel()
 
 
-def _opt_weights(mean: np.array, var: np.array, labels: np.array) -> None:
-    n = len(mean)
-    rez = stats.ttest_1samp(opt_weight(mean, var) * labels, 0, alternative="greater")
+def _opt_port(mean: np.array, var: np.array, labels: np.array) -> None:
+    weight = _opt_weight(mean, var)
+
+    rez = stats.ttest_1samp(weight * labels, 0, alternative="greater")
     print(rez)
-    sharpe = rez[0] / n ** 0.5 * (YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS) ** 0.5
-    print(f"Sharpe - {sharpe:.2f}")
+
+    n = len(mean)
+    ir = rez[0] / n ** 0.5 * (YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS) ** 0.5
+    ic = np.corrcoef(weight, labels)[0, 1]
+    br = (ir / ic) ** 2
+    print(f"IR = IC * sqrt(BR) = {ic:.2f} * sqrt({br:.2f}) = {ir:.2f}")
