@@ -26,7 +26,7 @@ class RF(base.AbstractTable[events.TradingDayEnded]):
 
         next_update = df.index[-1] + pd.DateOffset(days=10)
 
-        return cast(bool, next_update < event.date)
+        return cast(bool, next_update <= event.date)
 
     async def _prepare_df(self, event: events.TradingDayEnded) -> pd.DataFrame:
         """Загружает новый DataFrame."""
