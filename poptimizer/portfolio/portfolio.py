@@ -203,14 +203,19 @@ class Portfolio:
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]
 
         index = last_turnover.index.difference(self.index)
+
         last_turnover = last_turnover.reindex(index)
-        last_turnover = last_turnover.sort_values(ascending=False).astype("int")
+        last_turnover = last_turnover.astype("int")
 
         returns_new = self.norm_ret(tuple(index))
         returns_old = self.norm_ret(tuple(self.index[:-2]))
-        corr_max = (returns_new.T @ returns_old / MAX_HISTORY).max(axis=1).sort_values()
+        corr_max = (returns_new.T @ returns_old / MAX_HISTORY).max(axis=1)
 
-        print(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{last_turnover}\n{corr_max}")
+        rez = pd.concat([corr_max, last_turnover], axis=1)
+        rez.columns = ["Correlation", "Turnover"]
+        rez = rez.sort_values("Correlation")
+
+        print(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{rez}")
 
     def norm_ret(self, tickers):
         div, p1 = poptimizer.data.views.quotes.div_and_prices(tickers, self.date)
