@@ -33,15 +33,15 @@ def test_llh_from_trained_and_reloaded_model(org):
     net = model.Model(tuple(org._doc.tickers), org._doc.date, phenotype, None)
     assert bytes(net) == bytes()
 
-    llh = net.llh
+    llh = net.quality_metrics
     pickled_model = bytes(net)
 
     net = model.Model(tuple(org._doc.tickers), org._doc.date, phenotype, pickled_model)
-    assert llh == net.llh
+    assert llh == net.quality_metrics
     assert bytes(net) == pickled_model
 
     # Из кеша
-    assert llh == net.llh
+    assert llh == net.quality_metrics
     assert llh == net._eval_llh()
 
 
