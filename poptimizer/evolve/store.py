@@ -1,6 +1,6 @@
 """Доступ к данным для эволюции."""
 import math
-from typing import Any, Optional, Type
+from typing import Any, Final, Optional
 
 import bson
 from pymongo.collection import Collection
@@ -13,7 +13,7 @@ from poptimizer.store.database import DB, MONGO_CLIENT
 _COLLECTION = MONGO_CLIENT[DB]["models"]
 
 # Название столбца с индексом
-ID = "_id"
+ID: Final = "_id"
 
 
 def get_collection() -> Collection:
@@ -24,28 +24,31 @@ def get_collection() -> Collection:
 class BaseField:
     """Базовый дескриптор поля.
 
-    Информация об изменениях значения поля сохраняется в вспомогательную переменную для последующих
-    инкрементальных апдейтов.
+    Информация об изменениях значения поля сохраняется во вспомогательную переменную для последующих
+    инкрементальных обновлений.
     """
 
     def __init__(self, *, index: bool = False):
+        """Для индексируемых полей сохраняет специальное значение названия поля."""
         self._name = index and ID
 
-    def __set_name__(self, owner: Type, name: str):
+    def __set_name__(self, owner: type, name: str):
+        """Использует специальное имя для индексируемых полей."""
         self._name = self._name or name
 
-    def __set__(self, instance: Any, value: Any):
+    def __set__(self, instance: Any, value: Any):  # noqa: WPS110
         """Сохраняет измененные значение во вспомогательный словарь."""
-        data_dict = vars(instance)
+        data_dict = vars(instance)  # noqa: WPS421
         key = self._name
 
         update = data_dict["_update"]
         update[key] = value
         data_dict[key] = value
 
-    def __get__(self, instance: Any, owner: Type) -> Any:
+    def __get__(self, instance: Any, owner: type) -> Any:
+        """Получает значение атрибута дескриптера."""
+        data_dict = vars(instance)  # noqa: WPS421
         try:
-            data_dict = vars(instance)
             return data_dict[self._name]
         except KeyError as error:
             raise AttributeError(f"'{owner.__name__}' object has no attribute {error}")
@@ -55,23 +58,23 @@ class DefaultField(BaseField):
     """Дескриптор поля со значением по умолчанию."""
 
     def __init__(self, default: Optional[Any] = None):
+        """Сохраняет значение поля по умолчанию."""
         super().__init__()
         self._default = default
 
-    def __get__(self, instance: Any, owner: Type) -> Any:
-        data_dict = vars(instance)
+    def __get__(self, instance: Any, owner: type) -> Any:
+        """При отсутствии значения возвращает значение по умолчанию."""
+        data_dict = vars(instance)  # noqa: WPS421
         return data_dict.get(self._name, self._default)
 
 
 class GenotypeField(BaseField):
-    """Дескриптор для генотипа.
+    """Дескриптор для генотипа."""
 
-    При необходимости присваиваемое значение преобразуется к типу генотип.
-    """
-
-    def __set__(self, instance: Any, value: Any):
+    def __set__(self, instance: Any, value: Any):  # noqa: WPS110
+        """При необходимости присваиваемое значение преобразуется к типу генотип."""
         if not isinstance(value, Genotype):
-            value = Genotype(value)
+            value = Genotype(value)  # noqa: WPS110
         super().__set__(instance, value)
 
 
@@ -88,12 +91,29 @@ class Doc:
         id_: Optional[bson.ObjectId] = None,
         genotype: Optional[Genotype] = None,
     ):
+        """Создает словарь для хранения изменений. Загружает данные по id или создает id."""
         self._update = {}
         if id_ is None:
-            self.id = bson.ObjectId()
-            self.genotype = genotype
+            self.id = bson.ObjectId()  # noqa: WPS601
+            self.genotype = genotype  # noqa: WPS601
         else:
             self._load(id_)
+
+    def save(self) -> None:
+        """Сохраняет измененные значения в MongoDB."""
+        collection = get_collection()
+        update = self._update
+        collection.update_one(
+            filter={ID: self.id},
+            update={"$set": self._update},
+            upsert=True,
+        )
+        update.clear()
+
+    def delete(self) -> None:
+        """Удаляет документ из базы."""
+        collection = get_collection()
+        collection.delete_one({ID: self.id})
 
     def _load(self, id_: bson.ObjectId) -> None:
         collection = get_collection()
@@ -102,28 +122,17 @@ class Doc:
         if doc is None:
             raise IdError(id_)
 
-        for key, value in doc.items():
+        for key, value in doc.items():  # noqa: WPS110
             setattr(self, key, value)
 
         self._update.clear()
-
-    def save(self) -> None:
-        """Сохраняет измененные значения в MongoDB."""
-        collection = get_collection()
-        update = self._update
-        collection.update_one(filter={ID: self.id}, update={"$set": self._update}, upsert=True)
-        update.clear()
-
-    def delete(self) -> None:
-        """Удаляет документ из базы."""
-        collection = get_collection()
-        collection.delete_one({ID: self.id})
 
     id = BaseField(index=True)
     genotype = GenotypeField()
     wins = DefaultField(0)
     model = DefaultField()
     llh = DefaultField(-math.inf)
+    ir = DefaultField(-math.inf)
     date = DefaultField()
     timer = DefaultField(0)
     tickers = DefaultField()
