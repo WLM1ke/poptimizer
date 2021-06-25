@@ -93,6 +93,18 @@ TEST_ROWS = (
         datetime(2019, 6, 20),
         None,
     ),
+    (
+        """<div class="dividends-table__row _item">
+        <div class="dividends-table__cell _title">Транснефть ап 2018</div>
+        <div class="dividends-table__cell _last-day">17.07.2019</div>
+        <div class="dividends-table__cell _close-date">20.06.2019</div>
+        <div class="dividends-table__cell _value"></div>
+        <div class="dividends-table__cell _price">165200</div>
+        <div class="dividends-table__cell _profit">6,48%</div>
+        </div>""",
+        datetime(2019, 6, 20),
+        None,
+    ),
 )
 
 

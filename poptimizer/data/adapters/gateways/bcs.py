@@ -42,6 +42,8 @@ def _parse_div(row: bs4.BeautifulSoup) -> Optional[float]:
     """Парсит дивиденды из строки таблицы."""
     soup = row.find(DIV_TAG, {CLASS_TAG: DIV_TAG_RE})
     div_string = soup.string
+    if div_string is None:
+        return None
     div_string = div_string.replace(",", ".")
     div_string = div_string.replace(" ", "")
     try:
