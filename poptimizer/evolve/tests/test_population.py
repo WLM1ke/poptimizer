@@ -28,9 +28,9 @@ class FakeModel:
         pass
 
     @property
-    def llh(self):
+    def quality_metrics(self):
         self.__class__.COUNTER += 1
-        return 5
+        return 5, 7
 
     def __bytes__(self):
         return bytes(6)
@@ -67,6 +67,7 @@ def test_reload_organism(organism):
     population.Organism(_id=organism.id)
 
     assert organism._doc.llh == 5
+    assert organism._doc.ir == 7
     assert organism._doc.date == pd.Timestamp("2020-04-12")
     assert organism._doc.tickers == ["GAZP", "AKRN"]
     assert organism._doc.model == bytes(6)
@@ -96,7 +97,7 @@ def test_evaluate_new_timestamp(organism):
 @pytest.fixture()
 def make_weak_organism():
     weak = population.Organism()
-    weak._doc.llh = -100
+    weak._doc.quality_metrics = -100
     weak._doc.timer = 100
     weak._doc.date = pd.Timestamp("2020-04-13")
     weak._doc.tickers = ("GAZP", "LKOH")
@@ -201,5 +202,5 @@ def test_print_stat(capsys):
     population.print_stat()
     captured = capsys.readouterr()
 
-    assert "Excess return" in captured.out
+    assert "LLH" in captured.out
     assert "Максимум побед" in captured.out

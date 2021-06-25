@@ -62,6 +62,11 @@ class Organism:
         """LLH OOS."""
         return self._doc.llh
 
+    @property
+    def ir(self) -> float:
+        """Information ratio."""
+        return self._doc.ir
+
     def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp) -> float:
         """Вычисляет качество организма.
 
@@ -75,10 +80,11 @@ class Organism:
 
         timer = time.monotonic_ns()
         model = Model(tuple(tickers), end, self.genotype.get_phenotype())
-        llh = model.llh
+        llh, ir = model.quality_metrics
         timer = time.monotonic_ns() - timer
 
         doc.llh = llh
+        doc.ir = ir
         doc.model = bytes(model)
         doc.date = end
         doc.tickers = tickers
