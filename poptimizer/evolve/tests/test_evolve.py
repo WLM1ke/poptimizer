@@ -52,8 +52,10 @@ def test_kill_weakest(mocker):
     """Находится и убивается слабый."""
     org = mocker.Mock()
     weaker = org.find_weaker.return_value
-    weaker.llh = 2.11
+    weaker.quality_metrics = 2.11
     weaker.timer = 3
+    weaker.ir = 4.0
+    weaker.llh = 6.0
 
     evolve._kill_weakest(org)
 
