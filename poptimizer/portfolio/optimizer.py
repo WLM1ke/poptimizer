@@ -32,6 +32,8 @@ class Optimizer:
             f"forecasts = {self.metrics.count}",
             f"p-value = {self._p_value:.2%}",
             f"trials = {self.trials}",
+            f"match = {len(df)}",
+            f"for sale = {len(df['SELL'].unique())}",
             f"\n{df}",
         ]
         return "\n".join(blocks)
