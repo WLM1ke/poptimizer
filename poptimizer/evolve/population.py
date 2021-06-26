@@ -95,36 +95,32 @@ class Organism:
         return llh
 
     def find_weaker(self) -> "Organism":
-        """Находит организм с наименьшим llh.
+        """Находит организм с меньшим равным llh и выбирает один из них по дополнительным признакам.
 
-        Ищет самых медленных среди более старых и более слабых.
-        Если более старых и слабых нет, то ищет более слабых.
-        Может найти самого себя.
+        Если есть организмы, которые не тренировались на актуальных данных, то выбирается самый
+        медленный организм (среди организмов с меньшим llh). В ином случае, выбирается организм с
+        минимальным ir (среди организмов с меньшим llh).
 
-        Таким образом, пока не пройден один цикл размножения с новыми данными эволюционный процесс
-        старается истреблять медленные организмы. Если за грубо сутки удается перетренировать все
-        организмы, то можно искать самые хорошие, не обращая внимание на скорость.
+        Так как на первом этапе отбирается организм с меньшим или равным llh, то потенциально на втором
+        этапе может быть выбран он сам.
         """
         doc = self._doc
         collection = store.get_collection()
 
-        filter_ = {"llh": {"$lt": doc.llh}, "date": {"$lt": doc.date}, "timer": {"$gt": doc.timer}}
-        id_dict = collection.find_one(
-            filter=filter_,
-            projection=["_id"],
-            sort=[("timer", pymongo.DESCENDING)],
+        org_dict = collection.find(
+            filter={"llh": {"$lte": doc.llh}},
+            projection=["_id", "date", "timer", "ir"],
         )
-        if id_dict is not None:
-            org = Organism(**id_dict)
-            return org
 
-        filter_ = {}
-        id_dict = collection.find_one(
-            filter=filter_,
-            projection=["_id"],
-            sort=[("llh", pymongo.ASCENDING)],
+        organisms = pd.DataFrame.from_records(
+            list(org_dict),
+            index="_id",
         )
-        return Organism(**id_dict)
+
+        if (organisms["date"].values < doc.date).sum() > 0:
+            return Organism(_id=organisms["timer"].idxmax())
+
+        return Organism(_id=organisms["ir"].idxmin())
 
     def die(self) -> None:
         """Организм удаляется из популяции."""
