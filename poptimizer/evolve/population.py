@@ -106,18 +106,19 @@ class Organism:
         doc = self._doc
         collection = store.get_collection()
 
-        org_dict = collection.find(
+        organisms = collection.find(
             filter={"llh": {"$lt": doc.llh}},
             projection=["_id", "date", "timer", "ir"],
         )
 
-        organisms = pd.DataFrame.from_records(
-            list(org_dict),
-            index="_id",
-        )
-
+        organisms = list(organisms)
         if not len(organisms):
             return self
+
+        organisms = pd.DataFrame.from_records(
+            organisms,
+            index="_id",
+        )
 
         if (organisms["date"].values < doc.date).sum() > 0:
             return Organism(_id=organisms["timer"].idxmax())
