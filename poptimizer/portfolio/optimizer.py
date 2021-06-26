@@ -63,6 +63,7 @@ class Optimizer:
                 "SELL",
                 "BUY",
                 "SML_DIFF",
+                "B_DIFF",
                 "R_DIFF",
                 "TURNOVER",
                 "P_VALUE",
@@ -95,6 +96,7 @@ class Optimizer:
         """Осуществляет тестирование всех допустимых пар активов с помощью теста Вилкоксона."""
         all_gradients = self.metrics.all_gradients
         means = self.metrics.mean
+        betas = self.metrics.beta
 
         for sell, buy, factor in self._acceptable_trades():
             mean = means[buy] - means[sell] - config.COSTS
@@ -110,6 +112,7 @@ class Optimizer:
                     sell,
                     buy,
                     diff.median(),
+                    betas[sell] - betas[buy],
                     mean,
                     factor,
                     alfa,
