@@ -95,20 +95,19 @@ class Organism:
         return llh
 
     def find_weaker(self) -> "Organism":
-        """Находит организм с меньшим равным llh и выбирает один из них по дополнительным признакам.
+        """Находит организм с меньшим llh и выбирает один из них по дополнительным признакам.
+
+        Если меньших нет, то возвращает себя.
 
         Если есть организмы, которые не тренировались на актуальных данных, то выбирается самый
         медленный организм (среди организмов с меньшим llh). В ином случае, выбирается организм с
         минимальным ir (среди организмов с меньшим llh).
-
-        Так как на первом этапе отбирается организм с меньшим или равным llh, то потенциально на втором
-        этапе может быть выбран он сам.
         """
         doc = self._doc
         collection = store.get_collection()
 
         org_dict = collection.find(
-            filter={"llh": {"$lte": doc.llh}},
+            filter={"llh": {"$lt": doc.llh}},
             projection=["_id", "date", "timer", "ir"],
         )
 
@@ -116,6 +115,9 @@ class Organism:
             list(org_dict),
             index="_id",
         )
+
+        if not len(organisms):
+            return self
 
         if (organisms["date"].values < doc.date).sum() > 0:
             return Organism(_id=organisms["timer"].idxmax())
