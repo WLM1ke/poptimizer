@@ -195,7 +195,7 @@ def get_parent() -> Organism:
         projection=["_id"],
         sort=[
             ("date", pymongo.ASCENDING),
-            ("llh", pymongo.DESCENDING),
+            ("ir", pymongo.DESCENDING),
         ],
     )
     return Organism(**organism)
