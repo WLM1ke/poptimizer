@@ -54,9 +54,9 @@ def test_evaluate_fitness(organism):
 
     fitness = organism.evaluate_fitness(("GAZP", "AKRN"), pd.Timestamp("2020-04-12"))
 
-    assert fitness == 5
+    assert fitness == [5]
     assert FakeModel.COUNTER == 1
-    assert organism.wins == 1
+    assert organism.scores == 1
     assert organism._doc.date == pd.Timestamp("2020-04-12")
     assert organism._doc.tickers == ["GAZP", "AKRN"]
     assert organism._doc.model == bytes(6)
@@ -66,31 +66,31 @@ def test_evaluate_fitness(organism):
 def test_reload_organism(organism):
     population.Organism(_id=organism.id)
 
-    assert organism._doc.llh == 5
+    assert organism._doc.llh == [5]
     assert organism._doc.ir == 7
     assert organism._doc.date == pd.Timestamp("2020-04-12")
     assert organism._doc.tickers == ["GAZP", "AKRN"]
     assert organism._doc.model == bytes(6)
     assert organism._doc.timer > 0
-    assert organism.wins == 1
+    assert organism.scores == 1
 
 
 @pytest.mark.usefixtures("fake_model")
 def test_evaluate_new_tickers(organism):
     fitness = organism.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-12"))
 
-    assert fitness == 5
+    assert fitness == [5, 5]
     assert FakeModel.COUNTER == 2
-    assert organism.wins == 2
+    assert organism.scores == 2
 
 
 @pytest.mark.usefixtures("fake_model")
 def test_evaluate_new_timestamp(organism):
     fitness = organism.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-13"))
 
-    assert fitness == 5
+    assert fitness == [5, 5, 5]
     assert FakeModel.COUNTER == 3
-    assert organism.wins == 3
+    assert organism.scores == 3
 
 
 # noinspection PyProtectedMember
@@ -105,14 +105,6 @@ def make_weak_organism():
     yield weak
 
     weak.die()
-
-
-def test_find_weaker(organism):
-    found = organism.find_weaker()
-
-    assert isinstance(found, population.Organism)
-    assert found._doc.llh <= organism._doc.llh
-    assert found._doc.timer >= organism._doc.timer
 
 
 def test_die(organism):
@@ -203,4 +195,4 @@ def test_print_stat(capsys):
     captured = capsys.readouterr()
 
     assert "LLH" in captured.out
-    assert "Максимум побед" in captured.out
+    assert "Максимум оценок" in captured.out

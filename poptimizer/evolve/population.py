@@ -32,10 +32,25 @@ class Organism:
     ) -> None:
         """Загружает организм из базы данных."""
         self._doc = store.Doc(id_=_id, genotype=genotype)
+        # TODO: временно — убрать после преобразования всех значений
+        if isinstance(self._doc.llh, float):
+            self._doc.llh = [self._doc.llh]
 
     def __str__(self) -> str:
         """Текстовое представление генотипа организма."""
-        return str(self._doc.genotype)
+        llh_block = -np.inf
+        if self.scores > 0:
+            llh_all = [f"{llh:.4f}" for llh in self.llh]
+            llh_block = f"{np.array(self.llh).mean():0.4f}: {', '.join(llh_all)}"
+
+        blocks = [
+            f"Оценок — {self.scores}",
+            f"LLH — {llh_block}",
+            f"IR — {self.ir:0.4f}",
+            str(self._doc.genotype),
+        ]
+
+        return "\n".join(blocks)
 
     @property
     def id(self) -> bson.ObjectId:
@@ -53,13 +68,13 @@ class Organism:
         return self._doc.timer
 
     @property
-    def wins(self) -> int:
-        """Количество побед."""
-        return self._doc.wins
+    def scores(self) -> int:
+        """Количество оценок LLH."""
+        return len(self.llh)
 
     @property
-    def llh(self) -> float:
-        """LLH OOS."""
+    def llh(self) -> list[float]:
+        """List of LLH OOS."""
         return self._doc.llh
 
     @property
@@ -67,63 +82,38 @@ class Organism:
         """Information ratio."""
         return self._doc.ir
 
-    def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp) -> float:
+    def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp) -> list[float]:
         """Вычисляет качество организма.
 
-        Если осуществлялась оценка для указанных тикеров и даты - используется сохраненное значение. Если
-        существует натренированная модель для указанных тикеров - осуществляется оценка без тренировки.
-        В ином случае тренируется и оценивается с нуля.
+        В первый вызов для нового дня используется метрика существующей натренированной модели.
+        При последующих вызовах в течение дня происходит обучение с нуля.
         """
         tickers = list(tickers)
         doc = self._doc
-        doc.wins += 1
+
+        pickled_model = None
+        if doc.date is not None and doc.date < end and tickers == doc.tickers:
+            pickled_model = doc.model
 
         timer = time.monotonic_ns()
-        model = Model(tuple(tickers), end, self.genotype.get_phenotype())
+        model = Model(tuple(tickers), end, self.genotype.get_phenotype(), pickled_model)
         llh, ir = model.quality_metrics
-        timer = time.monotonic_ns() - timer
 
-        doc.llh = llh
+        if pickled_model is None:
+            doc.timer = time.monotonic_ns() - timer
+
+        doc.llh = [llh] + doc.llh
+        doc.wins = len(doc.llh)
         doc.ir = ir
+
         doc.model = bytes(model)
+
         doc.date = end
         doc.tickers = tickers
 
-        doc.timer = timer
-
         doc.save()
-        return llh
 
-    def find_weaker(self) -> "Organism":
-        """Находит организм с меньшим llh и выбирает один из них по дополнительным признакам.
-
-        Если меньших нет, то возвращает себя.
-
-        Если есть организмы, которые не тренировались на актуальных данных, то выбирается самый
-        медленный организм (среди организмов с меньшим llh). В ином случае, выбирается организм с
-        минимальным ir (среди организмов с меньшим llh).
-        """
-        doc = self._doc
-        collection = store.get_collection()
-
-        organisms = collection.find(
-            filter={"llh": {"$lt": doc.llh}},
-            projection=["_id", "date", "timer", "ir"],
-        )
-
-        organisms = list(organisms)
-        if not len(organisms):
-            return self
-
-        organisms = pd.DataFrame.from_records(
-            organisms,
-            index="_id",
-        )
-
-        if (organisms["date"].values < doc.date).sum() > 0:
-            return Organism(_id=organisms["timer"].idxmax())
-
-        return Organism(_id=organisms["ir"].idxmin())
+        return self.llh
 
     def die(self) -> None:
         """Организм удаляется из популяции."""
@@ -188,7 +178,7 @@ def get_random_organism() -> Organism:
 
 
 def get_parent() -> Organism:
-    """Получить лучший из популяции."""
+    """Родитель — лучший по IR среде давно не обучавшихся."""
     collection = store.get_collection()
     organism = collection.find_one(
         filter={},
@@ -198,6 +188,21 @@ def get_parent() -> Organism:
             ("ir", pymongo.DESCENDING),
         ],
     )
+
+    return Organism(**organism)
+
+
+def get_prey() -> Organism:
+    """Жертва — самый слабый по IR."""
+    collection = store.get_collection()
+    organism = collection.find_one(
+        filter={},
+        projection=["_id"],
+        sort=[
+            ("ir", pymongo.ASCENDING),
+        ],
+    )
+
     return Organism(**organism)
 
 
@@ -229,14 +234,14 @@ def _print_key_stats(key: str) -> None:
     db_find = collection.find
     cursor = db_find(filter={key: {"$exists": True}}, projection=[key])
     keys = map(lambda doc: doc[key], cursor)
-    keys = tuple(keys)
+    keys = tuple(key if isinstance(key, float) else np.array(key).mean() for key in keys)
     if keys:
-        quantiles = np.quantile(tuple(keys), [0, 0.5, 1.0])
+        quantiles = np.quantile(keys, [0, 0.5, 1.0])
         quantiles = map(lambda quantile: f"{quantile:.4f}", quantiles)
         quantiles = tuple(quantiles)
     else:
         quantiles = ["-" for _ in range(3)]
-    print(f"{key.upper()} - ({', '.join(tuple(quantiles))})")
+    print(f"{key.upper()} - ({', '.join(tuple(quantiles))})")  # noqa: WPS421
 
 
 def _print_wins_stats() -> None:
@@ -254,4 +259,4 @@ def _print_wins_stats() -> None:
     if wins:
         max_wins, *_ = wins
         max_wins = max_wins["wins"]
-    print(f"Максимум побед - {max_wins}")
+    print(f"Максимум оценок - {max_wins}")  # noqa: WPS421
