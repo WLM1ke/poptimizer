@@ -287,6 +287,7 @@ class MetricsResample:
             f"Консервативная доходность: {return_: .4f}",
             f"Консервативный риск:       {risk: .4f}",
             f"Консервативный Шарп:       {sharpe: .4f}",
+            f"Бумага с минимальным СКО:   {self.std.iloc[:-2].idxmin()}",
         ]
 
         return "\n".join(strings)
