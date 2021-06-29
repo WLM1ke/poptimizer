@@ -1,6 +1,6 @@
 """Доступ к данным для эволюции."""
 import math
-from typing import Any, Final, Optional
+from typing import Any, Callable, Final, Optional
 
 import bson
 from pymongo.collection import Collection
@@ -68,6 +68,20 @@ class DefaultField(BaseField):
         return data_dict.get(self._name, self._default)
 
 
+class FactoryField(BaseField):
+    """Дескриптор поля со значением по умолчанию на основе функции-фабрики."""
+
+    def __init__(self, factory: Callable[[], Any]) -> None:
+        """Сохраняет значение фабрики для поля."""
+        super().__init__()
+        self._factory = factory
+
+    def __get__(self, instance: Any, owner: type) -> Any:
+        """При отсутствии значения возвращает результат вызова фабрики."""
+        data_dict = vars(instance)  # noqa: WPS421
+        return data_dict.get(self._name, self._factory())
+
+
 class GenotypeField(BaseField):
     """Дескриптор для генотипа."""
 
@@ -131,7 +145,7 @@ class Doc:
     genotype = GenotypeField()
     wins = DefaultField(0)
     model = DefaultField()
-    llh = DefaultField(-math.inf)
+    llh = FactoryField(list)
     ir = DefaultField(-math.inf)
     date = DefaultField()
     timer = DefaultField(0)

@@ -135,7 +135,7 @@ class TestDoc:
         assert doc.wins == 0
         assert doc.model is None
 
-        assert doc.llh == -math.inf
+        assert doc.llh == []
         assert doc.ir == -math.inf
 
         assert doc.date is None
@@ -163,7 +163,7 @@ class TestDoc:
         assert doc.wins == 0
         assert doc.model is None
 
-        assert doc.llh == -math.inf
+        assert doc.llh == []
 
         assert doc.date is None
         assert doc.timer == 0
