@@ -1,15 +1,14 @@
 """Эволюция параметров модели."""
-from typing import Optional
+import numpy as np
+from scipy import stats
 
-import pandas as pd
-
-from poptimizer.config import MAX_POPULATION
+from poptimizer import config
 from poptimizer.data.views import listing
 from poptimizer.dl import ModelError
 from poptimizer.evolve import population
 from poptimizer.portfolio.portfolio import load_from_yaml
 
-# Понижение масштаба разницы между родителями
+# Понижение масштаба разницы между родителями после возникновения ошибки
 SCALE_DOWN = 0.9
 
 
@@ -21,24 +20,26 @@ class Evolution:
     очередной этап с новыми данными.
 
     Шаг состоит из:
-    - перетренировки одной из существующих моделей для исключения возможности случайной удачно
-    тренировки, так как в первую очередь интересует получение параметров обеспечивающий стабильность
-    хороших результатов
-    - создания потом на основе этой модели
-    - уничтожения самого плохого организма в популяции
+    - проверки наличия свободного места в популяции — создается и оценивается ребенок
+    - проверка возможности достоверно оценить преимущество родителя над жертвой — жертва уничтожается
+    или родитель или жертва направляются на дополнительную оценку
+
+    Шаг прерывается после первой оценки организма.
 
     Организмы могут погибнуть вне очереди, если во время его оценки произошло ошибка (взрыв
-    градиентов, невалидные параметры и т.д.).
+    градиентов, отрицательный IR, невалидные параметры и т.д.).
 
-    Уничтожение может быть пропущено, если размер популяции меньше установленной величины.
-
-    Процесс выбора организма для перетренировки, размножения и уничтожения регулируется функциями
+    Процесс выбора организма родителя, жертвы, размножения и уничтожения регулируется функциями
     модуля популяции.
     """
 
-    def __init__(self, max_population: int = MAX_POPULATION):
+    def __init__(self, max_population: int = config.MAX_POPULATION):
         """Сохраняет предельный размер популяции."""
         self._max_population = max_population
+        self._end = listing.last_history_date()
+        port = load_from_yaml(self._end)
+        self._tickers = tuple(port.index[:-2])
+        self._scale = 1.0
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -47,84 +48,117 @@ class Evolution:
         """
         self._setup()
 
-        end = listing.last_history_date()
-        port = load_from_yaml(end)
-        tickers = tuple(port.index[:-2])
-        scale = 1.0
         step = 0
+        while True:  # noqa: WPS457
 
-        while True:
-
-            if (new_end := listing.last_history_date()) != end:
-                end = new_end
-                scale = 1.0
+            if (new_end := listing.last_history_date()) != self._end:
+                self._end = new_end
+                self._scale = 1.0
                 step = 0
 
             step += 1
-            print(f"***{end.date()}: Шаг эволюции — {step}***")
+            date = self._end.date()
+            print(f"***{date}: Шаг эволюции — {step}***")  # noqa: WPS421
             population.print_stat()
-            print(f"Фактор - {scale:.2%}\n")
+            print(f"Фактор - {self._scale:.2%}\n")  # noqa: WPS421
 
             parent = population.get_parent()
-            print("Переоцениваю родителя:")
-            if _eval_and_print(parent, tickers, end) is None:
-                scale *= SCALE_DOWN
+            if self._child_produced(parent):
                 continue
 
-            child = parent.make_child(scale)
-            print("Потомок:")
-            if _eval_and_print(child, tickers, end) is None:
-                scale *= SCALE_DOWN
+            prey = population.get_prey()
+            if self._prey_killed(parent, prey):
                 continue
 
-            if population.count() > self._max_population:
-                _kill_weakest(child)
+            if prey.scores < parent.scores:
+                self._eval_organism("Добыча", prey)
+                continue
+
+            self._eval_organism("Родитель", parent)
 
     def _setup(self) -> None:
-        """Создает популяцию из организмов по умолчанию.
-
-        Если организмов меньше 2 - минимальное количество для осуществления эволюции.
-        """
+        """Создает популяцию из организмов по умолчанию, если организмов меньше 4."""
         count = population.count()
-        print(f"Имеется {count} организмов из {self._max_population}")
-        print()
+        print(f"Имеется {count} организмов из {self._max_population}")  # noqa: WPS421
+        print()  # noqa: WPS421
 
-        if count < 2:
-            for n_org in range(1, self._max_population - count + 1):
-                print(f"Создаю базовые генотипы — {n_org}/{self._max_population - count}")
+        if count < 4:
+            n_to_create = self._max_population - count
+            for n_org in range(1, n_to_create + 1):
+                print(  # noqa: WPS421
+                    f"Создаю базовые генотипы — {n_org}/{n_to_create}",
+                )
                 organism = population.create_new_organism()
-                print(organism, end="\n\n")
+                print(organism, end="\n\n")  # noqa: WPS421
 
+    def _child_produced(self, parent: population.Organism) -> bool:
+        """Создает потомка, если есть свободное место в популяции."""
+        if population.count() >= self._max_population:
+            return False
 
-def _eval_and_print(
-    organism: population.Organism,
-    tickers: tuple[str, ...],
-    end: pd.Timestamp,
-) -> Optional[float]:
-    """Оценивает организм, распечатывает метрики.
+        print("Родитель:")  # noqa: WPS421
+        print(parent)  # noqa: WPS421
+        print()  # noqa: WPS421
 
-    Обрабатывает ошибки оценки и возвращает None и убивает организм в случае их наличия, а если все
-    нормально, то оценку качества.
-    """
-    print(f"Побед — {organism.wins}")
-    try:
-        print(organism)
-        fitness = organism.evaluate_fitness(tickers, end)
-    except (ModelError, AttributeError) as error:
-        organism.die()
-        print(f"Удаляю - {error.__class__.__name__}\n")
-        return None
+        child = parent.make_child(self._scale)
+        self._eval_organism("Потомок", child)
 
-    print(f"Timer: {organism.timer / 10 ** 9:.0f}\n")
-    return fitness
+        return True
 
+    def _eval_organism(self, name: str, organism: population.Organism) -> None:
+        print(f"{name} - обучается:")  # noqa: WPS421
+        print(organism)  # noqa: WPS421
+        print()  # noqa: WPS421
 
-def _kill_weakest(organism: population.Organism) -> None:
-    weakest = organism.find_weaker()
-    print("Наиболее слабый — удаляю:")
-    print(f"Побед - {weakest.wins}")
-    print(weakest)
-    print(f"IR:    {weakest.ir:.4f}")
-    print(f"LLH:   {weakest.llh:.4f}")
-    print(f"Timer: {weakest.timer / 10 ** 9:.0f}\n")
-    weakest.die()
+        try:
+            organism.evaluate_fitness(self._tickers, self._end)
+        except (ModelError, AttributeError) as error:
+            organism.die()
+            error = error.__class__.__name__
+            print(f"Удаляю - {error}\n")  # noqa: WPS421
+
+            self._scale *= SCALE_DOWN
+            return
+
+        if not (organism.ir > 0):  # noqa: WPS508 - защита от NaN
+            organism.die()
+            print(f"Удаляю - IR = {organism.ir:0.4f}\n")  # noqa: WPS421
+
+            self._scale *= SCALE_DOWN
+            return
+
+        print(f"Timer: {organism.timer:.0f}\n")  # noqa: WPS421
+
+    def _prey_killed(self, hunter: population.Organism, prey: population.Organism) -> bool:
+        print("Родитель:")  # noqa: WPS421
+        print(hunter)  # noqa: WPS421
+        print()  # noqa: WPS421
+
+        print("Добыча:")  # noqa: WPS421
+        print(prey)  # noqa: WPS421
+        print()  # noqa: WPS421
+
+        if hunter.scores < 2 or prey.scores < 2:
+            print("Недостаточно оценок...")  # noqa: WPS421
+            print()  # noqa: WPS421
+
+            return False
+
+        print("Родитель нападает на добычу:")  # noqa: WPS421
+        _, p_value = stats.ttest_ind(
+            hunter.llh,
+            prey.llh,
+            permutations=np.inf,
+            alternative="greater",
+        )
+        if p_value < config.P_VALUE:
+            print(f"Добыча уничтожена - p_value={p_value:.2%}")  # noqa: WPS421
+            print()  # noqa: WPS421
+            prey.die()
+
+            return True
+
+        print(f"Добыча выжила - p_value={p_value:.2%}")  # noqa: WPS421
+        print()  # noqa: WPS421
+
+        return False

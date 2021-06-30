@@ -48,7 +48,7 @@ class Organism:
 
             llh_block = f"{llh:0.4f}: {llh_all}"
 
-        seconds = self.timer // 10 ** 9
+        seconds = self.timer
 
         blocks = [
             f"Оценок — {self.scores}",
@@ -73,7 +73,7 @@ class Organism:
     @property
     def timer(self) -> float:
         """Генотип организма."""
-        return self._doc.timer
+        return self._doc.timer // 10 ** 9
 
     @property
     def scores(self) -> int:
