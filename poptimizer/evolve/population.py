@@ -1,4 +1,5 @@
 """Класс организма и операции с популяцией организмов."""
+import contextlib
 import time
 from typing import Iterable, Optional
 
@@ -7,13 +8,13 @@ import numpy as np
 import pandas as pd
 import pymongo
 
-from poptimizer.config import POptimizerError
+from poptimizer import config
 from poptimizer.dl import Forecast, Model
 from poptimizer.evolve import store
 from poptimizer.evolve.genotype import Genotype
 
 
-class ForecastError(POptimizerError):
+class ForecastError(config.POptimizerError):
     """Отсутствующий прогноз."""
 
 
@@ -41,12 +42,19 @@ class Organism:
         llh_block = -np.inf
         if self.scores > 0:
             llh_all = [f"{llh:.4f}" for llh in self.llh]
-            llh_block = f"{np.array(self.llh).mean():0.4f}: {', '.join(llh_all)}"
+            llh_all = ", ".join(llh_all)
+
+            llh = np.array(self.llh).mean()
+
+            llh_block = f"{llh:0.4f}: {llh_all}"
+
+        seconds = self.timer // 10 ** 9
 
         blocks = [
             f"Оценок — {self.scores}",
             f"LLH — {llh_block}",
             f"IR — {self.ir:0.4f}",
+            f"Timer — {seconds}",
             str(self._doc.genotype),
         ]
 
@@ -178,32 +186,43 @@ def get_random_organism() -> Organism:
 
 
 def get_parent() -> Organism:
-    """Родитель — лучший по IR среде давно не обучавшихся."""
-    collection = store.get_collection()
-    organism = collection.find_one(
-        filter={},
-        projection=["_id"],
-        sort=[
-            ("date", pymongo.ASCENDING),
-            ("ir", pymongo.DESCENDING),
-        ],
-    )
+    """Родитель отбирается по трем критериям среди давно не оценивавшихся.
 
-    return Organism(**organism)
+    - Должен входить в лучшую половину по LLH
+    - Внутри этой половины входить в лучшую половину по IR
+    - Иметь максимальную скорость тренировки среди оставшихся
+    """
+    n_llh = (config.MAX_POPULATION + 1) // 2
+    n_irr = (n_llh + 1) // 2
+
+    collection = store.get_collection()
+    pipeline = [
+        {"$project": {"date": True, "llh": {"$avg": "$llh"}, "ir": True, "timer": True}},
+        {"$sort": {"date": pymongo.ASCENDING, "llh": pymongo.DESCENDING}},
+        {"$limit": n_llh},
+        {"$sort": {"date": pymongo.ASCENDING, "ir": pymongo.DESCENDING}},
+        {"$limit": n_irr},
+        {"$sort": {"date": pymongo.ASCENDING, "timer": pymongo.ASCENDING}},
+        {"$limit": 1},
+        {"$project": {"_id": True}},
+    ]
+    doc = next(collection.aggregate(pipeline))
+
+    return Organism(**doc)
 
 
 def get_prey() -> Organism:
-    """Жертва — самый слабый по IR."""
+    """Жертва — самый слабый по LLH среди давно не оценивавшихся."""
     collection = store.get_collection()
-    organism = collection.find_one(
-        filter={},
-        projection=["_id"],
-        sort=[
-            ("ir", pymongo.ASCENDING),
-        ],
-    )
+    pipeline = [
+        {"$project": {"date": True, "llh": {"$avg": "$llh"}}},
+        {"$sort": {"date": pymongo.ASCENDING, "llh": pymongo.ASCENDING}},
+        {"$limit": 1},
+        {"$project": {"_id": True}},
+    ]
+    doc = next(collection.aggregate(pipeline))
 
-    return Organism(**organism)
+    return Organism(**doc)
 
 
 def get_all_organisms() -> Iterable[Organism]:
@@ -215,10 +234,8 @@ def get_all_organisms() -> Iterable[Organism]:
         sort=[("date", pymongo.ASCENDING), ("llh", pymongo.DESCENDING)],
     )
     for id_dict in id_dicts:
-        try:
+        with contextlib.suppress(store.IdError):
             yield Organism(**id_dict)
-        except store.IdError:
-            pass
 
 
 def print_stat() -> None:
@@ -233,15 +250,24 @@ def _print_key_stats(key: str) -> None:
     collection = store.get_collection()
     db_find = collection.find
     cursor = db_find(filter={key: {"$exists": True}}, projection=[key])
+
     keys = map(lambda doc: doc[key], cursor)
-    keys = tuple(key if isinstance(key, float) else np.array(key).mean() for key in keys)
+    keys = map(
+        lambda amount: amount if isinstance(amount, float) else np.array(amount).mean(),
+        keys,
+    )
+    keys = tuple(keys)
+
     if keys:
         quantiles = np.quantile(keys, [0, 0.5, 1.0])
         quantiles = map(lambda quantile: f"{quantile:.4f}", quantiles)
         quantiles = tuple(quantiles)
     else:
         quantiles = ["-" for _ in range(3)]
-    print(f"{key.upper()} - ({', '.join(tuple(quantiles))})")  # noqa: WPS421
+
+    quantiles = ", ".join(tuple(quantiles))
+
+    print(f"{key.upper()} - ({quantiles})")  # noqa: WPS421
 
 
 def _print_wins_stats() -> None:
@@ -259,4 +285,5 @@ def _print_wins_stats() -> None:
     if wins:
         max_wins, *_ = wins
         max_wins = max_wins["wins"]
+
     print(f"Максимум оценок - {max_wins}")  # noqa: WPS421
