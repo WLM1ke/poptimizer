@@ -51,7 +51,6 @@ class Organism:
         seconds = self.timer
 
         blocks = [
-            f"Оценок — {self.scores}",
             f"LLH — {llh_block}",
             f"IR — {self.ir:0.4f}",
             f"Timer — {seconds}",
