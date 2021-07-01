@@ -9,7 +9,7 @@ from poptimizer.evolve import population
 from poptimizer.portfolio.portfolio import load_from_yaml
 
 # Понижение масштаба разницы между родителями после возникновения ошибки
-SCALE_DOWN = 0.9
+SCALE_DOWN = 0.91
 
 
 class Evolution:
