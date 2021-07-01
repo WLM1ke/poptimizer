@@ -5,7 +5,7 @@ MODEL_KEY = "model"
 
 START_BN = GeneParams(
     name="start_bn",
-    default_range=(0, 1),
+    default_range=(-1, 1),
     lower_bound=None,
     upper_bound=None,
     path=(MODEL_KEY, "start_bn"),
@@ -13,7 +13,7 @@ START_BN = GeneParams(
 )
 KERNELS = GeneParams(
     name="kernels",
-    default_range=(2.1, 2.9),
+    default_range=(2, 8),
     lower_bound=1.0,
     upper_bound=None,
     path=(MODEL_KEY, "kernels"),
@@ -21,7 +21,7 @@ KERNELS = GeneParams(
 )
 SUB_BLOCKS = GeneParams(
     name="sub_blocks",
-    default_range=(1.1, 1.2),
+    default_range=(1, 4),
     lower_bound=1.0,
     upper_bound=None,
     path=(MODEL_KEY, "sub_blocks"),
@@ -29,7 +29,7 @@ SUB_BLOCKS = GeneParams(
 )
 GATE_CHANNELS = GeneParams(
     name="gate_channels",
-    default_range=(4.1, 4.9),
+    default_range=(4, 8),
     lower_bound=1.0,
     upper_bound=None,
     path=(MODEL_KEY, "gate_channels"),
@@ -37,7 +37,7 @@ GATE_CHANNELS = GeneParams(
 )
 RESIDUAL_CHANNELS = GeneParams(
     name="residual_channels",
-    default_range=(4.1, 4.9),
+    default_range=(4, 8),
     lower_bound=1.0,
     upper_bound=None,
     path=(MODEL_KEY, "residual_channels"),
@@ -45,7 +45,7 @@ RESIDUAL_CHANNELS = GeneParams(
 )
 SKIP_CHANNELS = GeneParams(
     name="skip_channels",
-    default_range=(4.1, 4.9),
+    default_range=(4, 8),
     lower_bound=1.0,
     upper_bound=None,
     path=(MODEL_KEY, "skip_channels"),
@@ -53,7 +53,7 @@ SKIP_CHANNELS = GeneParams(
 )
 END_CHANNELS = GeneParams(
     name="end_channels",
-    default_range=(4.1, 4.9),
+    default_range=(4, 8),
     lower_bound=1.0,
     upper_bound=None,
     path=(MODEL_KEY, "end_channels"),
@@ -61,7 +61,7 @@ END_CHANNELS = GeneParams(
 )
 MIXTURE_SIZE = GeneParams(
     name="mixture_size",
-    default_range=(2.1, 2.9),
+    default_range=(2, 4),
     lower_bound=2.0,
     upper_bound=None,
     path=(MODEL_KEY, "mixture_size"),
