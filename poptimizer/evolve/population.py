@@ -35,7 +35,7 @@ class Organism:
         self._doc = store.Doc(id_=_id, genotype=genotype)
         # TODO: временно — убрать после преобразования всех значений
         if isinstance(self._doc.llh, float):
-            self._doc.llh = [self._doc.llh]
+            self._doc.llh = [self._doc.llh + np.log(config.FORECAST_DAYS) / 2]
 
     def __str__(self) -> str:
         """Текстовое представление генотипа организма."""
@@ -189,19 +189,23 @@ def get_parent() -> Organism:
 
     - Должен входить в лучшую половину по LLH
     - Внутри этой половины входить в лучшую половину по IR
-    - Иметь максимальную скорость тренировки среди оставшихся
+    - Внутри этой половины входить в лучшую половину по скорости
+    - Иметь максимальное число оценок
     """
     n_llh = (config.MAX_POPULATION + 1) // 2
     n_irr = (n_llh + 1) // 2
+    n_timer = (n_irr + 1) // 2
 
     collection = store.get_collection()
     pipeline = [
-        {"$project": {"date": True, "llh": {"$avg": "$llh"}, "ir": True, "timer": True}},
+        {"$project": {"date": True, "llh": {"$avg": "$llh"}, "ir": True, "timer": True, "wins": True}},
         {"$sort": {"date": pymongo.ASCENDING, "llh": pymongo.DESCENDING}},
         {"$limit": n_llh},
         {"$sort": {"date": pymongo.ASCENDING, "ir": pymongo.DESCENDING}},
         {"$limit": n_irr},
         {"$sort": {"date": pymongo.ASCENDING, "timer": pymongo.ASCENDING}},
+        {"$limit": n_timer},
+        {"$sort": {"date": pymongo.ASCENDING, "wins": pymongo.DESCENDING}},
         {"$limit": 1},
         {"$project": {"_id": True}},
     ]
