@@ -3,7 +3,7 @@ from poptimizer.evolve.chromosomes.chromosome import Chromosome, GeneParams
 
 BATCH_SIZE = GeneParams(
     name="batch_size",
-    default_range=(128.1, 128.9),
+    default_range=(128, 128 * 4),
     lower_bound=1.0,
     upper_bound=None,
     path=("data", "batch_size"),
@@ -11,7 +11,7 @@ BATCH_SIZE = GeneParams(
 )
 HISTORY_DAYS = GeneParams(
     name="history_days",
-    default_range=(50.1, 50.9),
+    default_range=(37, 37 * 2),
     lower_bound=37,
     upper_bound=None,
     path=("data", "history_days"),
@@ -19,7 +19,7 @@ HISTORY_DAYS = GeneParams(
 )
 TICKER_ON = GeneParams(
     name="ticker_on",
-    default_range=(0.0, 1.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "Ticker", "on"),
@@ -27,7 +27,7 @@ TICKER_ON = GeneParams(
 )
 DAY_OF_YEAR_ON = GeneParams(
     name="day_of_year_on",
-    default_range=(0.0, 1.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "DayOfYear", "on"),
@@ -35,7 +35,7 @@ DAY_OF_YEAR_ON = GeneParams(
 )
 DAY_OF_PERIOD_ON = GeneParams(
     name="day_of_period_on",
-    default_range=(-1.0, 0.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "DayOfPeriod", "on"),
@@ -43,7 +43,7 @@ DAY_OF_PERIOD_ON = GeneParams(
 )
 PRICES_ON = GeneParams(
     name="prices_on",
-    default_range=(0.0, 1.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "Prices", "on"),
@@ -51,7 +51,7 @@ PRICES_ON = GeneParams(
 )
 DIVIDENDS_ON = GeneParams(
     name="dividends_on",
-    default_range=(0.0, 1.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "Dividends", "on"),
@@ -59,7 +59,7 @@ DIVIDENDS_ON = GeneParams(
 )
 TURNOVER_ON = GeneParams(
     name="turnover_on",
-    default_range=(0.0, 1.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "Turnover", "on"),
@@ -67,7 +67,7 @@ TURNOVER_ON = GeneParams(
 )
 AVERAGE_TURNOVER_ON = GeneParams(
     name="average_turnover_on",
-    default_range=(0.0, 1.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "AverageTurnover", "on"),
@@ -75,7 +75,7 @@ AVERAGE_TURNOVER_ON = GeneParams(
 )
 RVI_ON = GeneParams(
     name="rvi_on",
-    default_range=(-1.0, 0.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "RVI", "on"),
@@ -83,7 +83,7 @@ RVI_ON = GeneParams(
 )
 MCFTRR_ON = GeneParams(
     name="mcftrr_on",
-    default_range=(-1.0, 0.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "MCFTRR", "on"),
@@ -91,7 +91,7 @@ MCFTRR_ON = GeneParams(
 )
 IMOEX_ON = GeneParams(
     name="imoex_on",
-    default_range=(-1.0, 0.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "IMOEX", "on"),
@@ -99,7 +99,7 @@ IMOEX_ON = GeneParams(
 )
 TICKER_TYPE_ON = GeneParams(
     name="ticker_type_on",
-    default_range=(-1.0, 0.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "TickerType", "on"),
@@ -107,7 +107,7 @@ TICKER_TYPE_ON = GeneParams(
 )
 USD_ON = GeneParams(
     name="usd_on",
-    default_range=(-1.0, 0.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "USD", "on"),
@@ -115,7 +115,7 @@ USD_ON = GeneParams(
 )
 OPEN_ON = GeneParams(
     name="open_on",
-    default_range=(-1.0, 0.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "Open", "on"),
@@ -123,7 +123,7 @@ OPEN_ON = GeneParams(
 )
 HIGH_ON = GeneParams(
     name="high_on",
-    default_range=(-1.0, 0.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "High", "on"),
@@ -131,7 +131,7 @@ HIGH_ON = GeneParams(
 )
 LOW_ON = GeneParams(
     name="low_on",
-    default_range=(-1.0, 0.0),
+    default_range=(-1.0, 1.0),
     lower_bound=None,
     upper_bound=None,
     path=("data", "features", "Low", "on"),
