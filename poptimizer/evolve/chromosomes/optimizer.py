@@ -11,7 +11,7 @@ BETA2 = chromosome.GeneParams(
 )
 EPS = chromosome.GeneParams(
     name="eps",
-    default_range=(0.999e-8, 1.001e-8),
+    default_range=(1.0e-9, 1.0e-7),
     lower_bound=0.0,
     upper_bound=None,
     path=("optimizer", "eps"),
@@ -19,7 +19,7 @@ EPS = chromosome.GeneParams(
 )
 WEIGHT_DECAY = chromosome.GeneParams(
     name="weight_decay",
-    default_range=(0.999e-2, 1.01e-2),
+    default_range=(1.0e-3, 1.0e-1),
     lower_bound=0.0,
     upper_bound=None,
     path=("optimizer", "weight_decay"),

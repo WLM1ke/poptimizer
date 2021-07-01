@@ -5,8 +5,8 @@ def test_init_no_data():
     chromo = optimizer.Optimizer({})
     assert len(chromo.data) == 3
     assert 0.99899 < chromo.data["betas"] < 0.99901
-    assert 0.999e-8 < chromo.data["eps"] < 1.001e-8
-    assert 0.999e-2 < chromo.data["weight_decay"] < 1.01e-2
+    assert 1.0e-9 < chromo.data["eps"] < 1.0e-7
+    assert 1.0e-3 < chromo.data["weight_decay"] < 1.0e-1
 
 
 def test_setup_phenotype():
