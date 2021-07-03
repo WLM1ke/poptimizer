@@ -1,4 +1,6 @@
 """Тесты для эволюционного процесса."""
+import pytest
+
 from poptimizer.dl import ModelError
 from poptimizer.evolve import evolve
 
@@ -30,34 +32,42 @@ def test_setup_not_needed(mocker):
 
 
 def test_eval_and_print(mocker):
-    """Возвращает фитнес организма."""
+    """Вызывает оценку и не меняет шкалу разброса."""
     org = mocker.Mock()
     org.evaluate_fitness.return_value = 4
+    org.ir = 3
     org.timer = 6
 
-    assert evolve._eval_and_print(org, "aaa", "bbb") == 4
+    evolution = evolve.Evolution()
+    evolution._eval_organism("name", org)
 
-    org.evaluate_fitness.assert_called_once_with("aaa", "bbb")
+    assert evolution._scale == pytest.approx(1)
+
+    org.evaluate_fitness.assert_called_once()
 
 
 def test_eval_and_print_err(mocker):
-    """Возвращает None при ошибке во время оценки организма."""
+    """При ошибке меняет шкалу разброса."""
     org = mocker.Mock(side_effect=ModelError)
     org.evaluate_fitness.side_effect = ModelError
 
-    assert evolve._eval_and_print(org, "aaa", "bbb") is None
+    evolution = evolve.Evolution()
+    evolution._eval_organism("name", org)
+
+    assert evolution._scale == pytest.approx(evolve.SCALE_DOWN)
+
+    org.evaluate_fitness.assert_called_once()
 
 
-def test_kill_weakest(mocker):
-    """Находится и убивается слабый."""
+def test_eval_and_print_low_ir(mocker):
+    """При отрицательном IR меняет шкалу разброса."""
     org = mocker.Mock()
-    weaker = org.find_weaker.return_value
-    weaker.quality_metrics = 2.11
-    weaker.timer = 3
-    weaker.ir = 4.0
-    weaker.llh = 6.0
+    org.evaluate_fitness.return_value = 4
+    org.ir = -3
 
-    evolve._kill_weakest(org)
+    evolution = evolve.Evolution()
+    evolution._eval_organism("name", org)
 
-    org.find_weaker.assert_called_once_with()
-    weaker.die.assert_called_once_with()
+    assert evolution._scale == pytest.approx(evolve.SCALE_DOWN)
+
+    org.evaluate_fitness.assert_called_once()
