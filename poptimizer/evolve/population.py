@@ -189,23 +189,26 @@ def get_parent() -> Organism:
 
     - Должен входить в лучшую половину по LLH
     - Внутри этой половины входить в лучшую половину по IR
-    - Внутри этой половины входить в лучшую половину по скорости
-    - Иметь максимальное число оценок
+    - Было затрачено минимальное время на обучение
     """
     n_llh = (config.MAX_POPULATION + 1) // 2
     n_irr = (n_llh + 1) // 2
-    n_timer = (n_irr + 1) // 2
 
     collection = store.get_collection()
     pipeline = [
-        {"$project": {"date": True, "llh": {"$avg": "$llh"}, "ir": True, "timer": True, "wins": True}},
+        {
+            "$project": {
+                "date": True,
+                "llh": {"$avg": "$llh"},
+                "ir": True,
+                "total": {"$multiply": ["$timer", "$wins"]},
+            },
+        },
         {"$sort": {"date": pymongo.ASCENDING, "llh": pymongo.DESCENDING}},
         {"$limit": n_llh},
         {"$sort": {"date": pymongo.ASCENDING, "ir": pymongo.DESCENDING}},
         {"$limit": n_irr},
-        {"$sort": {"date": pymongo.ASCENDING, "timer": pymongo.ASCENDING}},
-        {"$limit": n_timer},
-        {"$sort": {"date": pymongo.ASCENDING, "wins": pymongo.DESCENDING}},
+        {"$sort": {"date": pymongo.ASCENDING, "total": pymongo.ASCENDING}},
         {"$limit": 1},
         {"$project": {"_id": True}},
     ]

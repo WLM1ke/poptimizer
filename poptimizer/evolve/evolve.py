@@ -70,7 +70,7 @@ class Evolution:
             if self._prey_killed(parent, prey):
                 continue
 
-            if prey.scores < parent.scores:
+            if prey.scores * prey.timer < parent.scores * parent.timer:
                 self._eval_organism("Добыча", prey)
                 continue
 
