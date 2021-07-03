@@ -67,6 +67,7 @@ positions:
   KLSB: 0
   KMAZ: 0
   KRKNP: 0
+  KRSB: 0
   KZOS: 0
   LIFE: 0
   LKOH: 0
@@ -148,6 +149,7 @@ positions:
   T-RM: 0
   TATN: 0
   TATNP: 0
+  TCSG: 0
   TGKA: 0
   TGKB: 0
   TGKBP: 0
@@ -167,7 +169,6 @@ positions:
   V-RM: 0
   VSMO: 0
   VTBB: 0
-  VTBM: 0
   VTBR: 0
   VTRS-RM: 0
   WMT-RM: 0
