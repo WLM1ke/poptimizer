@@ -171,9 +171,9 @@ class Model:
 
                 bars.set_postfix_str(f"{llh_sum / weight_sum + llh_adj:.5f}")
 
-        all_means = torch.cat(all_means).numpy().flatten()
-        all_vars = torch.cat(all_vars).numpy().flatten()
-        all_labels = torch.cat(all_labels).numpy().flatten()
+        all_means = torch.cat(all_means).cpu().numpy().flatten()
+        all_vars = torch.cat(all_vars).cpu().numpy().flatten()
+        all_labels = torch.cat(all_labels).cpu().numpy().flatten()
         llh = llh_sum / weight_sum + llh_adj
         ir = _opt_port(all_means, all_vars, all_labels)
         print(f"LLH:   {llh:.4f}")
