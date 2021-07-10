@@ -37,7 +37,7 @@ MAX_TRADE = 1 / 170
 MAX_POPULATION = 60
 
 # Длинна прогноза в торговых днях
-FORECAST_DAYS = 33
+FORECAST_DAYS = 34
 
 # Требуемая доходность, если None не используется
 MIN_RETURN = None
