@@ -185,15 +185,7 @@ def get_random_organism() -> Organism:
 
 
 def get_parent() -> Organism:
-    """Родитель отбирается по трем критериям среди давно не оценивавшихся.
-
-    - Должен входить в лучшую половину по LLH
-    - Внутри этой половины входить в лучшую половину по IR
-    - Было затрачено минимальное время на обучение
-    """
-    n_llh = (config.MAX_POPULATION + 1) // 2
-    n_irr = (n_llh + 1) // 2
-
+    """Родитель отбирается по максимуму llh среди давно не тренировавшихся."""
     collection = store.get_collection()
     pipeline = [
         {
@@ -205,10 +197,6 @@ def get_parent() -> Organism:
             },
         },
         {"$sort": {"date": pymongo.ASCENDING, "llh": pymongo.DESCENDING}},
-        {"$limit": n_llh},
-        {"$sort": {"date": pymongo.ASCENDING, "ir": pymongo.DESCENDING}},
-        {"$limit": n_irr},
-        {"$sort": {"date": pymongo.ASCENDING, "total": pymongo.ASCENDING}},
         {"$limit": 1},
         {"$project": {"_id": True}},
     ]

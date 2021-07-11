@@ -70,10 +70,6 @@ class Evolution:
             if self._prey_killed(parent, prey):
                 continue
 
-            if prey.scores * prey.timer < parent.scores * parent.timer:
-                self._eval_organism("Добыча", prey)
-                continue
-
             self._eval_organism("Родитель", parent)
 
     def _setup(self) -> None:
@@ -138,19 +134,22 @@ class Evolution:
         print(prey)  # noqa: WPS421
         print()  # noqa: WPS421
 
-        if hunter.scores < 2 or prey.scores < 2:
+        if hunter.scores < 2:
             print("Недостаточно оценок...")  # noqa: WPS421
             print()  # noqa: WPS421
 
             return False
 
         print("Родитель нападает на добычу:")  # noqa: WPS421
-        _, p_value = stats.ttest_ind(
-            hunter.llh,
-            prey.llh,
-            permutations=np.inf,
-            alternative="greater",
-        )
+        if prey.scores == 1:
+            p_value = stats.percentileofscore(hunter.llh, prey.llh[0]) / 100
+        else:
+            _, p_value = stats.ttest_ind(
+                hunter.llh,
+                prey.llh,
+                permutations=np.inf,
+                alternative="greater",
+            )
         if p_value < config.P_VALUE:
             print(f"Добыча уничтожена - p_value={p_value:.2%}")  # noqa: WPS421
             print()  # noqa: WPS421
