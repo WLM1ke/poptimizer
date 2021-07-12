@@ -40,7 +40,6 @@ class Evolution:
         port = load_from_yaml(self._end)
         self._tickers = tuple(port.index[:-2])
         self._scale = 1.0
-        self._comp = 0
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -55,7 +54,6 @@ class Evolution:
             if (new_end := listing.last_history_date()) != self._end:
                 self._end = new_end
                 self._scale = 1.0
-                self._comp = 0
                 step = 0
 
             step += 1
@@ -142,8 +140,6 @@ class Evolution:
 
             return False
 
-        self._comp += 1
-
         print("Родитель нападает на добычу:")  # noqa: WPS421
         if prey.scores == 1:
             _, p_value = stats.ttest_1samp(
@@ -158,16 +154,18 @@ class Evolution:
                 permutations=np.inf,
                 alternative="greater",
             )
-        if p_value * self._comp < config.P_VALUE:
+        if p_value * (hunter.scores - 1) < config.P_VALUE:
             print(
-                f"Добыча уничтожена - p_value={p_value:.2%} < {config.P_VALUE / self._comp:.2%}"
+                f"Добыча уничтожена - p_value={p_value:.2%} < {config.P_VALUE / (hunter.scores - 1):.2%}"
             )  # noqa: WPS421
             print()  # noqa: WPS421
             prey.die()
 
             return True
 
-        print(f"Добыча выжила - p_value={p_value:.2%} > {config.P_VALUE / self._comp:.2%}")  # noqa:
+        print(
+            f"Добыча выжила - p_value={p_value:.2%} > {config.P_VALUE / (hunter.scores - 1):.2%}"
+        )  # noqa:
         # WPS421
         print()  # noqa: WPS421
 
