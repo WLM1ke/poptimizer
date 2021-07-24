@@ -34,7 +34,7 @@ YEAR_IN_TRADING_DAYS = 12 * 21
 MAX_POPULATION = 60
 
 # Длинна прогноза в торговых днях
-FORECAST_DAYS = 34
+FORECAST_DAYS = 35
 
 # Требуемая доходность, если None не используется
 MIN_RETURN = None
