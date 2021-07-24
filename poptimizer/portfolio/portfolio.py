@@ -9,7 +9,7 @@ import yaml
 
 import poptimizer.data.views.quotes
 from poptimizer import config
-from poptimizer.config import MAX_TRADE, POptimizerError
+from poptimizer.config import POptimizerError
 from poptimizer.data.views import listing
 from poptimizer.dl.features import data_params
 from poptimizer.store import database
@@ -25,8 +25,8 @@ try:
     MAX_HISTORY = int(MAX_HISTORY["genotype"]["Data"]["history_days"])
     ADD_DAYS = (MAX_HISTORY + data_params.FORECAST_DAYS * 2) * 2
 except TypeError:
-    MAX_HISTORY = int(1 / config.MAX_TRADE)
-    ADD_DAYS = int(1 / config.MAX_TRADE)
+    MAX_HISTORY = config.YEAR_IN_TRADING_DAYS
+    ADD_DAYS = config.YEAR_IN_TRADING_DAYS
 
 
 class Portfolio:
@@ -199,7 +199,7 @@ class Portfolio:
         """Претенденты для добавления."""
         all_tickers = listing.securities()
         last_turnover = self._median_turnover(tuple(all_tickers), ADD_DAYS)
-        minimal_turnover = self.value[PORTFOLIO] * MAX_TRADE
+        minimal_turnover = self.value[PORTFOLIO] / (len(self.index) - 2)
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]
 
         index = last_turnover.index.difference(self.index)
