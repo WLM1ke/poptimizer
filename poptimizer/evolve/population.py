@@ -185,18 +185,19 @@ def get_random_organism() -> Organism:
 
 
 def get_parent() -> Organism:
-    """Родитель отбирается по максимуму llh среди давно не тренировавшихся."""
+    """Родитель отбирается по максимуму последнего llh среди давно не тренировавшихся."""
     collection = store.get_collection()
     pipeline = [
         {
             "$project": {
                 "date": True,
                 "llh": {"$avg": "$llh"},
+                "llh_last": {"$arrayElemAt": ["$llh", 0]},
                 "ir": True,
                 "total": {"$multiply": ["$timer", "$wins"]},
             },
         },
-        {"$sort": {"date": pymongo.ASCENDING, "llh": pymongo.DESCENDING}},
+        {"$sort": {"date": pymongo.ASCENDING, "llh_last": pymongo.DESCENDING}},
         {"$limit": 1},
         {"$project": {"_id": True}},
     ]
