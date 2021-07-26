@@ -33,9 +33,6 @@ class Organism:
     ) -> None:
         """Загружает организм из базы данных."""
         self._doc = store.Doc(id_=_id, genotype=genotype)
-        # TODO: временно — убрать после преобразования всех значений
-        if isinstance(self._doc.llh, float):
-            self._doc.llh = [self._doc.llh + np.log(config.FORECAST_DAYS) / 2]
 
     def __str__(self) -> str:
         """Текстовое представление генотипа организма."""
