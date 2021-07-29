@@ -1,13 +1,10 @@
 """Оптимизатор портфеля."""
-import functools
-import itertools
-
 import pandas as pd
 from scipy import stats
 
 from poptimizer import config
 from poptimizer.portfolio import metrics
-from poptimizer.portfolio.portfolio import CASH, PORTFOLIO, Portfolio
+from poptimizer.portfolio.portfolio import CASH, Portfolio
 
 
 class Optimizer:
@@ -26,14 +23,13 @@ class Optimizer:
         self._metrics = metrics.MetricsResample(portfolio)
 
     def __str__(self) -> str:
-        df = self.best_combination()
+        """Информация о позициях, градиенты которых значимо отличны от 0."""
+        df = self._for_trade()
+        forecasts = self.metrics.count
         blocks = [
             "\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ",
-            f"forecasts = {self.metrics.count}",
+            f"\nforecasts = {forecasts}",
             f"p-value = {self._p_value:.2%}",
-            f"trials = {self.trials}",
-            f"match = {len(df)}",
-            f"for sale = {len(df['SELL'].unique())}",
             f"\n{df}",
         ]
         return "\n".join(blocks)
@@ -48,84 +44,36 @@ class Optimizer:
         """Метрики портфеля."""
         return self._metrics
 
-    @functools.cached_property
-    def trials(self) -> int:
-        """Количество тестов на значимость."""
-        return sum(1 for _ in self._acceptable_trades())
+    def _for_trade(self) -> pd.DataFrame:
+        """Осуществляет расчет доверительного интервала для среднего."""
+        p_value = self._p_value / (len(self._portfolio.index) - 2)
 
-    def best_combination(self) -> pd.DataFrame:
-        """Лучшие комбинации для торговли.
-
-        Для каждого актива, который можно продать со значимым улучшением выбирается актив с
-        максимальной вероятностью улучшения.
-        """
-        rez = pd.DataFrame(
-            list(self._wilcoxon_tests()),
-            columns=[
-                "SELL",
-                "BUY",
-                "SML_DIFF",
-                "B_DIFF",
-                "R_DIFF",
-                "TURNOVER",
-                "P_VALUE",
-            ],
+        conf_int = self.metrics.all_gradients.iloc[:-2]
+        conf_int = conf_int.apply(
+            lambda grad: _grad_conf_int(grad, p_value),
+            axis=1,
+            result_type="expand",
         )
-        rez = rez.sort_values(["SML_DIFF"], ascending=[False])
-        rez.index = pd.RangeIndex(start=1, stop=len(rez) + 1)
+        conf_int.columns = ["LOWER", "UPPER"]
 
-        return rez
+        portfolio = self._portfolio
 
-    def _acceptable_trades(self) -> tuple[str, str, float]:
-        positions = self.portfolio.index[:-2]
-        weight = self.portfolio.weight
-        turnover = self.portfolio.turnover_factor
+        for_sale = conf_int["UPPER"] < -config.COSTS
+        for_sale = for_sale & (portfolio.shares.iloc[:-2] > 0)  # noqa: WPS465
+        for_sale = conf_int[for_sale]
 
-        for sell, buy in itertools.product(positions, positions):
-            if sell == buy:
-                continue
+        good_purchase = portfolio.turnover_factor.iloc[:-2] > portfolio.weight[CASH]
+        good_purchase = good_purchase & (conf_int["LOWER"] > config.COSTS)  # noqa: WPS465
+        good_purchase = conf_int[good_purchase]
 
-            if weight[sell] == 0:
-                continue
-
-            factor = turnover[buy] - (weight[sell] + weight[CASH])
-            if factor < 0:
-                continue
-
-            yield sell, buy, factor
-
-    def _wilcoxon_tests(self) -> tuple[str, str, float, float, float, float]:
-        """Осуществляет тестирование всех допустимых пар активов с помощью теста Вилкоксона."""
-        all_gradients = self.metrics.all_gradients
-        means = self.metrics.mean
-        betas = self.metrics.beta
-
-        for sell, buy, factor in self._acceptable_trades():
-            mean = means[buy] - means[sell] - config.COSTS
-            if _bad_mean(mean, means[PORTFOLIO]):
-                continue
-
-            diff = all_gradients.loc[buy] - all_gradients.loc[sell] - config.COSTS
-            _, alfa = stats.wilcoxon(diff, alternative="greater", correction=True)
-            alfa *= self.trials
-
-            if alfa < self._p_value:
-                yield [
-                    sell,
-                    buy,
-                    diff.median(),
-                    betas[sell] - betas[buy],
-                    mean,
-                    factor,
-                    alfa,
-                ]
+        return pd.concat(
+            [
+                good_purchase.sort_values("LOWER", ascending=False),
+                for_sale.sort_values("UPPER", ascending=False),
+            ],
+            axis=0,
+        )
 
 
-def _bad_mean(mean: float, port_mean: float) -> bool:
-    if config.MIN_RETURN is None:
-        return False
-
-    if port_mean > config.MIN_RETURN:
-        return False
-
-    return mean < 0
+def _grad_conf_int(forecasts, p_value) -> tuple[float, float]:
+    return stats.bayes_mvs(forecasts, (1 - p_value))[0][1]

@@ -40,32 +40,20 @@ def make_opt():
     optimizer.metrics.MetricsResample = saved_metrics
 
 
-def test_trials(opt):
-    assert opt.trials == 8
-
-
-def test_best_combination(opt, monkeypatch):
-    monkeypatch.setattr(optimizer.config, "COSTS", 0)
+def test_for_trade(opt, monkeypatch):
+    monkeypatch.setattr(optimizer.config, "COSTS", 0.001)
     monkeypatch.setattr(portfolio, "MAX_HISTORY", 100)
     monkeypatch.setattr(portfolio, "ADD_DAYS", 100)
-    df = opt.best_combination()
+    df = opt._for_trade()
+    print(df)
 
     assert isinstance(df, pd.DataFrame)
-    assert df.shape == (3, 6)
-    assert list(df.columns) == [
-        "SELL",
-        "BUY",
-        "SML_DIFF",
-        "R_DIFF",
-        "TURNOVER",
-        "P_VALUE",
-    ]
+    assert df.shape == (4, 2)
+    assert list(df.columns) == ["LOWER", "UPPER"]
 
-    assert df.loc[1, "SELL"] == "MTSS"
-    assert df.loc[1, "BUY"] == "KZOS"
-
-    assert df.loc[2, "SELL"] == "TRCN"
-    assert df.loc[2, "BUY"] == "KZOS"
+    assert df.loc["KZOS", "LOWER"] == pytest.approx(0.200)
+    assert df.index[1] == "RTKMP"
+    assert df.loc["MTSS", "UPPER"] == pytest.approx(0.010)
 
 
 def test_str(opt):
