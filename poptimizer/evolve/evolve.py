@@ -1,5 +1,4 @@
 """Эволюция параметров модели."""
-import numpy as np
 from scipy import stats
 
 from poptimizer import config
@@ -70,7 +69,11 @@ class Evolution:
             if self._prey_killed(parent, prey):
                 continue
 
-            self._eval_organism("Родитель", parent)
+            if (parent.scores == 1) or (prey.scores + parent.scores) % 2:
+                self._eval_organism("Родитель", parent)
+                continue
+
+            self._eval_organism("Добыча", prey)
 
     def _setup(self) -> None:
         """Создает популяцию из организмов по умолчанию, если организмов меньше 4."""
@@ -116,13 +119,6 @@ class Evolution:
             self._scale *= SCALE_DOWN
             return
 
-        if not (organism.ir > 0):  # noqa: WPS508 - защита от NaN
-            organism.die()
-            print(f"Удаляю - IR = {organism.ir:0.4f}\n")  # noqa: WPS421
-
-            self._scale *= SCALE_DOWN
-            return
-
         print(f"Timer: {organism.timer:.0f}\n")  # noqa: WPS421
 
     def _prey_killed(self, hunter: population.Organism, prey: population.Organism) -> bool:
@@ -151,22 +147,17 @@ class Evolution:
             _, p_value = stats.ttest_ind(
                 hunter.llh,
                 prey.llh,
-                permutations=np.inf,
+                permutations=10 ** 6,
                 alternative="greater",
             )
-        if p_value * (hunter.scores - 1) < config.P_VALUE:
-            print(
-                f"Добыча уничтожена - p_value={p_value:.2%} < {config.P_VALUE / (hunter.scores - 1):.2%}"
-            )  # noqa: WPS421
+        if p_value <= config.P_VALUE:
+            print(f"Добыча уничтожена - p_value={p_value:.2%} <= {config.P_VALUE:.2%}")  # noqa: WPS421
             print()  # noqa: WPS421
             prey.die()
 
             return True
 
-        print(
-            f"Добыча выжила - p_value={p_value:.2%} > {config.P_VALUE / (hunter.scores - 1):.2%}"
-        )  # noqa:
-        # WPS421
+        print(f"Добыча выжила - p_value={p_value:.2%} > {config.P_VALUE:.2%}")  # noqa: WPS421
         print()  # noqa: WPS421
 
         return False

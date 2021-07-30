@@ -57,17 +57,3 @@ def test_eval_and_print_err(mocker):
     assert evolution._scale == pytest.approx(evolve.SCALE_DOWN)
 
     org.evaluate_fitness.assert_called_once()
-
-
-def test_eval_and_print_low_ir(mocker):
-    """При отрицательном IR меняет шкалу разброса."""
-    org = mocker.Mock()
-    org.evaluate_fitness.return_value = 4
-    org.ir = -3
-
-    evolution = evolve.Evolution()
-    evolution._eval_organism("name", org)
-
-    assert evolution._scale == pytest.approx(evolve.SCALE_DOWN)
-
-    org.evaluate_fitness.assert_called_once()
