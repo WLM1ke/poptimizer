@@ -182,7 +182,7 @@ def get_random_organism() -> Organism:
 
 
 def get_parent() -> Organism:
-    """Родитель отбирается по максимуму последнего llh среди давно не тренировавшихся."""
+    """Родитель отбирается по максимуму IR среди давно не тренировавшихся."""
     collection = store.get_collection()
     pipeline = [
         {
@@ -194,7 +194,7 @@ def get_parent() -> Organism:
                 "total": {"$multiply": ["$timer", "$wins"]},
             },
         },
-        {"$sort": {"date": pymongo.ASCENDING, "llh_last": pymongo.DESCENDING}},
+        {"$sort": {"date": pymongo.ASCENDING, "ir": pymongo.DESCENDING}},
         {"$limit": 1},
         {"$project": {"_id": True}},
     ]
@@ -204,11 +204,11 @@ def get_parent() -> Organism:
 
 
 def get_prey() -> Organism:
-    """Жертва — самый слабый по LLH среди давно не оценивавшихся."""
+    """Жертва — самый слабый по IR среди давно не оценивавшихся."""
     collection = store.get_collection()
     pipeline = [
-        {"$project": {"date": True, "llh": {"$avg": "$llh"}}},
-        {"$sort": {"date": pymongo.ASCENDING, "llh": pymongo.ASCENDING}},
+        {"$project": {"date": True, "ir": True}},
+        {"$sort": {"date": pymongo.ASCENDING, "ir": pymongo.ASCENDING}},
         {"$limit": 1},
         {"$project": {"_id": True}},
     ]
