@@ -27,7 +27,6 @@ positions:
   BRZL: 0
   BSPB: 0
   CBOM: 0
-  CHEP: 0
   CHMF: 0
   CNTL: 0
   CNTLP: 0
@@ -103,6 +102,7 @@ positions:
   MTSS: 0
   MU-RM: 0
   MVID: 0
+  NEE-RM: 0
   NEM-RM: 0
   NFAZ: 0
   NFLX-RM: 0
@@ -124,6 +124,7 @@ positions:
   POGR: 0
   POLY: 0
   QCOM-RM: 0
+  QIWI: 0
   RASP: 0
   RBCM: 0
   RGSS: 0
@@ -159,6 +160,7 @@ positions:
   TGKBP: 0
   TGKD: 0
   TGKN: 0
+  TORSP: 0
   TRMK: 0
   TRNFP: 0
   TSLA-RM: 0
