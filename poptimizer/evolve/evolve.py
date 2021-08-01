@@ -1,4 +1,5 @@
 """Эволюция параметров модели."""
+import numpy as np
 from scipy import stats
 
 from poptimizer import config
@@ -8,7 +9,9 @@ from poptimizer.evolve import population
 from poptimizer.portfolio.portfolio import load_from_yaml
 
 # Понижение масштаба разницы между родителями после возникновения ошибки
-SCALE_DOWN = 0.95
+SCALE_DOWN = 0.9
+# Целевая вероятность удачного перехода
+ACCEPTANCE = 0.23
 
 
 class Evolution:
@@ -38,7 +41,7 @@ class Evolution:
         self._end = listing.last_history_date()
         port = load_from_yaml(self._end)
         self._tickers = tuple(port.index[:-2])
-        self._scale = 1.0
+        self._scale = 0
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -52,14 +55,13 @@ class Evolution:
 
             if (new_end := listing.last_history_date()) != self._end:
                 self._end = new_end
-                self._scale = 1.0
                 step = 0
 
             step += 1
             date = self._end.date()
             print(f"***{date}: Шаг эволюции — {step}***")  # noqa: WPS421
             population.print_stat()
-            print(f"Фактор - {self._scale:.2%}\n")  # noqa: WPS421
+            print(f"Фактор - {SCALE_DOWN ** self._scale:.2%}\n")  # noqa: WPS421
 
             parent = population.get_parent()
             if self._child_produced(parent):
@@ -99,8 +101,21 @@ class Evolution:
         print(parent)  # noqa: WPS421
         print()  # noqa: WPS421
 
-        child = parent.make_child(self._scale)
+        child = parent.make_child(SCALE_DOWN ** self._scale)
         self._eval_organism("Потомок", child)
+
+        if not child.llh:
+            self._scale += ACCEPTANCE
+
+            return True
+
+        llh_delta = child.llh[0] - parent.llh[0]
+        if np.log(np.random.uniform()) > llh_delta:
+            self._scale += ACCEPTANCE
+
+            return True
+
+        self._scale -= 1 - ACCEPTANCE
 
         return True
 
@@ -116,7 +131,6 @@ class Evolution:
             error = error.__class__.__name__
             print(f"Удаляю - {error}\n")  # noqa: WPS421
 
-            self._scale *= SCALE_DOWN
             return
 
         print(f"Timer: {organism.timer:.0f}\n")  # noqa: WPS421
