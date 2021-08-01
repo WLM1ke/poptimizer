@@ -71,7 +71,7 @@ class Evolution:
             if self._prey_killed(parent, prey):
                 continue
 
-            if (parent.scores == 1) or (prey.scores + parent.scores) % 2:
+            if (prey.scores + parent.scores + 1) % 2:
                 self._eval_organism("Родитель", parent)
                 continue
 
@@ -144,7 +144,7 @@ class Evolution:
         print(prey)  # noqa: WPS421
         print()  # noqa: WPS421
 
-        if hunter.scores < 2:
+        if hunter.scores < 2 and prey.scores < 2:
             print("Недостаточно оценок...")  # noqa: WPS421
             print()  # noqa: WPS421
 
@@ -156,6 +156,12 @@ class Evolution:
                 hunter.llh,
                 prey.llh[0],
                 alternative="greater",
+            )
+        elif hunter.scores == 1:
+            _, p_value = stats.ttest_1samp(
+                prey.llh,
+                hunter.llh[0],
+                alternative="less",
             )
         else:
             _, p_value = stats.ttest_ind(
