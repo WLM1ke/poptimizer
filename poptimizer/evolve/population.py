@@ -194,7 +194,7 @@ def get_parent() -> Organism:
                 "total": {"$multiply": ["$timer", "$wins"]},
             },
         },
-        {"$sort": {"date": pymongo.ASCENDING, "ir": pymongo.DESCENDING}},
+        {"$sort": {"date": pymongo.ASCENDING, "llh_last": pymongo.DESCENDING}},
         {"$limit": 1},
         {"$project": {"_id": True}},
     ]

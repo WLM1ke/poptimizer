@@ -109,7 +109,7 @@ class Evolution:
 
             return True
 
-        llh_delta = child.llh[0] - parent.llh[0]
+        llh_delta = (child.llh[0] - parent.llh[0]) * len(self._tickers)
         if np.log(np.random.uniform()) > llh_delta:
             self._scale += ACCEPTANCE
 
