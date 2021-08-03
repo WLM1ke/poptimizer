@@ -248,6 +248,10 @@ def _print_key_stats(key: str) -> None:
         lambda amount: amount if isinstance(amount, float) else np.array(amount).mean(),
         keys,
     )
+    keys = filter(
+        lambda amount: not np.isnan(amount),
+        keys,
+    )
     keys = tuple(keys)
 
     if keys:
