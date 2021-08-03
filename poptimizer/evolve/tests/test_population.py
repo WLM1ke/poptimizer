@@ -184,9 +184,9 @@ def test_get_all_and_random_organisms():
 
     assert len(list(organisms)) == 4
 
-    ids = [organism.id for organism in organisms]
+    ids = [organism.id for organism in organisms[1:]]
 
-    org = population.get_random_organism()
+    org = population.get_random_organism(organisms[0])
     assert org.id in ids
 
 
