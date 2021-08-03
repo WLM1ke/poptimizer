@@ -36,9 +36,7 @@ def test_portfolio(monkeypatch, port):
         port.weight,
         [0.257_950_085_844_95, 0.050_708_129_601_95, 0.691_071_449_329_312, 0.000_270_335_223_788, 1],
     )
-    assert np.allclose(
-        port.turnover_factor, [7060.72825562, 7055.49808259, 7060.72825562, 0.000000, 5.23017303]
-    )
+    assert np.allclose(port.turnover_factor, [7055.498083, 0.000000, 5.230173, 7060.728256, 7060.728256])
 
 
 def test_portfolio_wrong_value():
@@ -60,7 +58,6 @@ def fake_securities_with_reg_number():
 
 
 def test_portfolio_add_tickers(monkeypatch, port, capsys):
-    monkeypatch.setattr(portfolio, "MAX_TRADE", 7)
     monkeypatch.setattr(portfolio.listing, "securities", fake_securities_with_reg_number)
     port.add_tickers()
     captured = capsys.readouterr()
@@ -81,3 +78,11 @@ def test_load_from_yaml(monkeypatch):
     assert port.shares["GMKN"] == 5
     assert port.shares["VSMO"] == 4
     assert port.shares["CASH"] == 300
+
+
+def test_load_tickers(monkeypatch):
+    monkeypatch.setattr(portfolio.config, "PORT_PATH", Path(__file__).parent)
+    tickers = portfolio.load_tickers()
+
+    assert isinstance(tickers, tuple)
+    assert tickers == ("AKRN", "GMKN", "VSMO")
