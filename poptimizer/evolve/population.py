@@ -125,8 +125,9 @@ class Organism:
 
     def make_child(self, scale: float) -> "Organism":
         """Создает новый организм с помощью дифференциальной мутации."""
-        parent, *_ = [organism.genotype for organism in _sample_organism(1)]
-        child_genotype = self.genotype.make_child(parent, scale)
+        parent = get_random_organism(self)
+        child_genotype = self.genotype.make_child(parent.genotype, scale)
+
         return Organism(genotype=child_genotype)
 
     def forecast(self, tickers: tuple[str, ...], end: pd.Timestamp) -> Forecast:
@@ -175,46 +176,11 @@ def create_new_organism() -> Organism:
     return org
 
 
-def get_random_organism() -> Organism:
-    """Получить случайный организм из популяции."""
-    organism, *_ = tuple(_sample_organism(1))
-    return organism
-
-
-def get_parent() -> Organism:
-    """Родитель отбирается по максимуму IR среди давно не тренировавшихся."""
-    collection = store.get_collection()
-    pipeline = [
-        {
-            "$project": {
-                "date": True,
-                "llh": {"$avg": "$llh"},
-                "llh_last": {"$arrayElemAt": ["$llh", 0]},
-                "ir": True,
-                "total": {"$multiply": ["$timer", "$wins"]},
-            },
-        },
-        {"$sort": {"date": pymongo.ASCENDING, "llh_last": pymongo.DESCENDING}},
-        {"$limit": 1},
-        {"$project": {"_id": True}},
-    ]
-    doc = next(collection.aggregate(pipeline))
-
-    return Organism(**doc)
-
-
-def get_prey() -> Organism:
-    """Жертва — самый слабый по IR среди давно не оценивавшихся."""
-    collection = store.get_collection()
-    pipeline = [
-        {"$project": {"date": True, "ir": True}},
-        {"$sort": {"date": pymongo.ASCENDING, "ir": pymongo.ASCENDING}},
-        {"$limit": 1},
-        {"$project": {"_id": True}},
-    ]
-    doc = next(collection.aggregate(pipeline))
-
-    return Organism(**doc)
+def get_random_organism(org: Organism) -> Organism:
+    """Получить случайный организм из популяции не совпадающий с данным."""
+    while org_rnd := next(_sample_organism(1)):
+        if org.id != org_rnd.id:
+            return org_rnd
 
 
 def get_all_organisms() -> Iterable[Organism]:
