@@ -7,13 +7,12 @@ import numpy as np
 import pandas as pd
 import yaml
 
-import poptimizer.data.views.quotes
 from poptimizer import config
-from poptimizer.config import POptimizerError
-from poptimizer.data.views import listing
+from poptimizer.data.views import listing, quotes
 from poptimizer.dl.features import data_params
 from poptimizer.store import database
 
+VALUE_REL_TOL = 2.0e-4
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
 MAX_HISTORY = database.MONGO_CLIENT["data"]["models"].find_one(
@@ -23,10 +22,10 @@ MAX_HISTORY = database.MONGO_CLIENT["data"]["models"].find_one(
 )
 try:
     MAX_HISTORY = int(MAX_HISTORY["genotype"]["Data"]["history_days"])
-    ADD_DAYS = (MAX_HISTORY + data_params.FORECAST_DAYS * 2) * 2
 except TypeError:
-    MAX_HISTORY = config.YEAR_IN_TRADING_DAYS
-    ADD_DAYS = config.YEAR_IN_TRADING_DAYS
+    raise config.POptimizerError("Отсуствуют генотипы моделей - запусти эволюцию")
+
+ADD_DAYS = (MAX_HISTORY + data_params.FORECAST_DAYS * 2) * 2
 
 
 class Portfolio:
@@ -41,7 +40,7 @@ class Portfolio:
         date: Union[str, pd.Timestamp],
         cash: int,
         positions: Dict[str, int],
-        value: Optional[float] = None,
+        value: Optional[float] = None,  # noqa: WPS110
     ):
         """При создании может быть осуществлена проверка совпадения расчетной стоимости и введенной.
 
@@ -53,16 +52,20 @@ class Portfolio:
             Словарь с тикерами и количеством акций.
         :param value:
             Стоимость портфеля на отчетную дату.
+        :raises POptimizerError:
+            Не совпадает в пределах точности расчетная и введенная стоимости портфеля.
         """
         self._date = pd.Timestamp(date)
         self._shares = pd.Series(positions).sort_index()
         self._shares[CASH] = cash
         self._shares[PORTFOLIO] = 1
         self._shares.name = "SHARES"
-        if value is not None and not np.isclose(self.value[PORTFOLIO], value, rtol=2.0e-4):
-            raise POptimizerError(
-                f"Введенная стоимость портфеля {value} " f"не равна расчетной {self.value[PORTFOLIO]}"
-            )
+        if value is not None:
+            if not np.isclose(self.value[PORTFOLIO], value, rtol=VALUE_REL_TOL):
+                calc_value = self.value[PORTFOLIO]
+                raise config.POptimizerError(
+                    f"Введенная стоимость портфеля {value} не равна расчетной {calc_value}",
+                )
 
     def __str__(self) -> str:
         blocks = [
@@ -71,6 +74,7 @@ class Portfolio:
             f"{self._main_info_df()}",
             self._least_liquid_pos(),
         ]
+
         return "\n\n".join(blocks)
 
     def _main_info_df(self) -> pd.DataFrame:
@@ -83,6 +87,7 @@ class Portfolio:
             self.weight,
             self.turnover_factor,
         ]
+
         return pd.concat(columns, axis="columns")
 
     def _positions_stats(self) -> str:
@@ -95,11 +100,13 @@ class Portfolio:
         if (sum_w := self.weight.iloc[:-2].sum()) != 0:
             weights = weights / sum_w
             blocks.append(f"Эффективных позиций - {int(1 / (weights ** 2).sum())}")
+
         return "\n".join(blocks)
 
     def _least_liquid_pos(self) -> str:
         """Наименее ликвидная позиция по соотношению размера и дневного оборота."""
         result = self.value / self._median_turnover(tuple(self.index[:-2]), MAX_HISTORY)
+
         return f"НАИМЕНЕЕ ЛИКВИДНАЯ ПОЗИЦИЯ:\n{result.idxmax()} - {result.max():.0%}"
 
     @property
@@ -128,6 +135,7 @@ class Portfolio:
         lot_size = listing.lot_size(tuple(self.index[:-2]))
         lot_size = lot_size.reindex(self.index, fill_value=1)
         lot_size.name = "LOT_SIZE"
+
         return lot_size
 
     @property
@@ -138,6 +146,7 @@ class Portfolio:
         """
         lots = self.shares / self.lot_size
         lots.name = "LOTS"
+
         return lots
 
     @property
@@ -147,14 +156,17 @@ class Portfolio:
 
         CASH - 1 и PORTFOLIO - расчетная стоимость.
         """
-        price = poptimizer.data.views.quotes.prices(tuple(self.index[:-2]), self.date)
+        price = quotes.prices(tuple(self.index[:-2]), self.date)
         try:
             price = price.loc[self.date]
         except KeyError:
-            raise POptimizerError(f"Для даты {self._date.date()} отсутствуют исторические котировки")
+            raise config.POptimizerError(
+                f"Для даты {self._date.date()} отсутствуют исторические " f"котировки"
+            )
         price[CASH] = 1
         price[PORTFOLIO] = (self.shares[:-1] * price).sum(axis=0)
         price.name = "PRICE"
+
         return price
 
     @property
@@ -162,6 +174,7 @@ class Portfolio:
         """Стоимость позиций."""
         value = self.price * self.shares
         value.name = "VALUE"
+
         return value
 
     @property
@@ -173,6 +186,7 @@ class Portfolio:
         value = self.value
         weight = value / value[PORTFOLIO]
         weight.name = "WEIGHT"
+
         return weight
 
     @property
@@ -191,9 +205,10 @@ class Portfolio:
 
     def _median_turnover(self, tickers, days) -> pd.Series:
         """Медианный оборот за несколько последних дней."""
-        last_turnover = poptimizer.data.views.quotes.turnovers(tickers, self.date)
+        last_turnover = quotes.turnovers(tickers, self.date)
         last_turnover = last_turnover.iloc[-days:]
         last_turnover = last_turnover.median(axis=0)
+
         return last_turnover
 
     def add_tickers(self) -> NoReturn:
@@ -208,37 +223,39 @@ class Portfolio:
         last_turnover = last_turnover.reindex(index)
         last_turnover = last_turnover.astype("int")
 
-        returns_new = self.norm_ret(tuple(index))
-        returns_old = self.norm_ret(tuple(self.index[:-2]))
+        returns_new = self._norm_ret(tuple(index))
+        returns_old = self._norm_ret(tuple(self.index[:-2]))
         corr_max = (returns_new.T @ returns_old / MAX_HISTORY).max(axis=1)
 
         rez = pd.concat([corr_max, last_turnover], axis=1)
         rez.columns = ["Correlation", "Turnover"]
         rez = rez.sort_values("Correlation")
 
-        print(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{rez}")
+        print(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{rez}")  # noqa: WPS421
 
-    def norm_ret(self, tickers):
-        div, p1 = poptimizer.data.views.quotes.div_and_prices(tickers, self.date)
+    def _norm_ret(self, tickers):
+        div, p1 = quotes.div_and_prices(tickers, self.date)
         p0 = p1.shift(1)
         returns_new = (p1 + div) / p0
         returns_new = returns_new.iloc[-MAX_HISTORY:]
-        returns_new = (returns_new - returns_new.mean(axis=0)) / returns_new.std(axis=0, ddof=0)
-        return returns_new
+        returns_new = returns_new - returns_new.mean(axis=0)
+
+        return returns_new / returns_new.std(axis=0, ddof=0)
 
 
 def load_from_yaml(date: Union[str, pd.Timestamp]) -> Portfolio:
     """Загружает информацию о портфеле из yaml-файлов."""
-    positions = collections.Counter()
     kwargs = collections.Counter()
+    positions = collections.Counter()
     for path in config.PORT_PATH.glob("*.yaml"):
-        with path.open() as file:
-            doc = yaml.safe_load(file)
-            pos = doc.pop("positions")
+        with path.open() as port:
+            port = yaml.safe_load(port)
+            pos = port.pop("positions")
             positions.update(pos)
-            kwargs.update(doc)
+            kwargs.update(port)
     kwargs["positions"] = positions
     kwargs["date"] = date
+
     return Portfolio(**kwargs)
 
 
