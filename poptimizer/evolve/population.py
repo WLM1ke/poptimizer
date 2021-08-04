@@ -187,7 +187,7 @@ def get_next(org: Optional[Organism] = None) -> Organism:
                 "total": {"$multiply": ["$timer", "$wins"]},
             },
         },
-        {"$sort": {"date": pymongo.ASCENDING, "total": pymongo.DESCENDING}},
+        {"$sort": {"date": pymongo.ASCENDING, "total": pymongo.ASCENDING}},
         {"$limit": 1},
         {"$project": {"_id": True}},
     ]
