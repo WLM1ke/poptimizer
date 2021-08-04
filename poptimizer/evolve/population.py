@@ -67,6 +67,11 @@ class Organism:
         return self._doc.genotype
 
     @property
+    def date(self) -> pd.Timestamp:
+        """Дата последнего расчета."""
+        return self._doc.date
+
+    @property
     def timer(self) -> float:
         """Генотип организма."""
         return self._doc.timer // 10 ** 9
@@ -152,17 +157,6 @@ class Organism:
         self._doc.save()
 
 
-def _sample_organism(num: int) -> Iterable[Organism]:
-    """Выбирает несколько случайных организмов.
-
-    Необходимо для реализации размножения и отбора.
-    """
-    collection = store.get_collection()
-    pipeline = [{"$sample": {"size": num}}, {"$project": {"_id": True}}]
-    organisms = collection.aggregate(pipeline)
-    yield from (Organism(**organism) for organism in organisms)
-
-
 def count() -> int:
     """Количество организмов в популяции."""
     collection = store.get_collection()
@@ -176,11 +170,45 @@ def create_new_organism() -> Organism:
     return org
 
 
-def get_random_organism(org: Organism) -> Organism:
+def get_next(org: Optional[Organism] = None) -> Organism:
+    """Получить следующий из популяции, отличающийся от данного.
+
+    Предпочтение отдается давно не переоценивавшимя, а если все переоценивались, то тому на который
+    было потрачено минимальное время на переоценку.
+    """
+    id_ = org and org.llh
+
+    collection = store.get_collection()
+    pipeline = [
+        {"$match": {"_id": {"$ne": id_}}},
+        {
+            "$project": {
+                "date": True,
+                "total": {"$multiply": ["$timer", "$wins"]},
+            },
+        },
+        {"$sort": {"date": pymongo.ASCENDING, "total": pymongo.DESCENDING}},
+        {"$limit": 1},
+        {"$project": {"_id": True}},
+    ]
+    doc = next(collection.aggregate(pipeline))
+
+    return Organism(**doc)
+
+
+def get_random_organism(org: Optional[Organism] = None) -> Organism:
     """Получить случайный организм из популяции не совпадающий с данным."""
-    while org_rnd := next(_sample_organism(1)):
-        if org.id != org_rnd.id:
-            return org_rnd
+    id_ = org and org.llh
+
+    collection = store.get_collection()
+    pipeline = [
+        {"$match": {"_id": {"$ne": id_}}},
+        {"$project": {"_id": True}},
+        {"$sample": {"size": 1}},
+    ]
+    doc = next(collection.aggregate(pipeline))
+
+    return Organism(**doc)
 
 
 def get_all_organisms() -> Iterable[Organism]:
