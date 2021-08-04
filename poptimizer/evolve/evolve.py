@@ -1,4 +1,6 @@
 """Эволюция параметров модели."""
+from typing import Optional
+
 import numpy as np
 from scipy import stats
 
@@ -6,123 +8,143 @@ from poptimizer import config
 from poptimizer.data.views import listing
 from poptimizer.dl import ModelError
 from poptimizer.evolve import population
-from poptimizer.portfolio.portfolio import load_from_yaml
+from poptimizer.portfolio.portfolio import load_tickers
 
-# Понижение масштаба разницы между родителями после возникновения ошибки
-SCALE_DOWN = 0.9
 # Целевая вероятность удачного перехода
-ACCEPTANCE = 0.23
+# За основу выбора следующего организма взят алгоритм Метрополиса — Гастингса
+# Оптимальной для многомерного случая вероятностью перехода является 0.234
+ACCEPTANCE = 0.234
+# Понижение масштаба дисперсии, если дисбаланс итераций удачного перехода достиг 1
+SCALE_DOWN = 0.9
 
 
 class Evolution:
     """Эволюция параметров модели.
 
-    Эволюция бесконечный процесс обновления параметров модели. В начале каждого шага осуществляется
-    проверка наличия новых данных. В случае их появления счетчик шага сбрасывается и начинается
-    очередной этап с новыми данными.
+    Эволюция состоит из бесконечного сравнения пар организмов и выбора лучшего, и порождения новых
+    претендентов для анализа. Популяция организмов поодерживается на заданном уровне. За основу выбора
+    следующего организма взяты подходы из алгоритма Метрополиса — Гастингса:
 
-    Шаг состоит из:
-    - проверки наличия свободного места в популяции — создается и оценивается ребенок
-    - проверка возможности достоверно оценить преимущество родителя над жертвой — жертва уничтожается
-    или родитель или жертва направляются на дополнительную оценку
+    - Порождается случайная популяция, из которой выберается первый организм
+    - Выбирается претендент - при отсутсвии свободных мест в популяции из популяции, а при наличии - в
+    случайной окрестности текущего
+    - Производится сравнение - если новый лучше, то он становится текущим, если новый хуже,
+    то он становится текущим случайным образом с вероятностью убыващей пропорционально его качеству
+    - Новый не принятый организм не включается в популяцию, а существующий не принятый может быть
+    исключен из популяции, если он значимо хуже
 
-    Шаг прерывается после первой оценки организма.
-
-    Организмы могут погибнуть вне очереди, если во время его оценки произошло ошибка (взрыв
-    градиентов, отрицательный IR, невалидные параметры и т.д.).
-
-    Процесс выбора организма родителя, жертвы, размножения и уничтожения регулируется функциями
-    модуля популяции.
+    При создании нового оргнизма, окресность около текущего выбирается пропорционально расстоянию до
+    случайного организма в популяции, а коэффициент пропорциональности динамически корректируется для
+    достижения целевого уровня принятия нового организма 0.234
     """
 
     def __init__(self, max_population: int = config.MAX_POPULATION):
         """Сохраняет предельный размер популяции."""
         self._max_population = max_population
-        self._end = listing.last_history_date()
-        port = load_from_yaml(self._end)
-        self._tickers = tuple(port.index[:-2])
+        self._tickers = load_tickers()
+        self._end = None
         self._scale = 0
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
 
-        При необходимости создается начальная популяция из организмов по умолчанию.
+        При необходимости создается начальная популяция из случайных организмов по умолчанию.
         """
-        self._setup()
-
+        current = None
         step = 0
+
         while True:  # noqa: WPS457
 
             if (new_end := listing.last_history_date()) != self._end:
-                self._end = new_end
                 step = 0
+                self._end = new_end
 
             step += 1
             date = self._end.date()
             print(f"***{date}: Шаг эволюции — {step}***")  # noqa: WPS421
             population.print_stat()
-            print(f"Фактор - {SCALE_DOWN ** self._scale:.2%}\n")  # noqa: WPS421
+            print(f"Фактор - {self.scale():.2%}\n")  # noqa: WPS421
 
-            parent = population.get_parent()
-            if self._child_produced(parent):
-                continue
+            if current is None:
+                current = self._setup()
 
-            prey = population.get_prey()
-            if self._prey_killed(parent, prey):
-                continue
+            current = self._step(current)
 
-            if (prey.scores + parent.scores + 1) % 2:
-                self._eval_organism("Родитель", parent)
-                continue
+    def scale(self) -> float:
+        """Расчет фактора масштаба при порождении нового организма."""
+        return SCALE_DOWN ** self._scale
 
-            self._eval_organism("Добыча", prey)
+    def _setup(self) -> population.Organism:
+        """При необходимости создает популяцию из организмов по умолчанию и возвращает стартовый."""
+        if population.count() == 0:
+            for n_org in range(1, self._max_population + 1):
+                print(f"Создаются базовые организмы — {n_org}")  # noqa: WPS421
+                org = population.create_new_organism()
+                print(org, "\n")  # noqa: WPS421
 
-    def _setup(self) -> None:
-        """Создает популяцию из организмов по умолчанию, если организмов меньше 4."""
-        count = population.count()
-        print(f"Имеется {count} организмов из {self._max_population}")  # noqa: WPS421
-        print()  # noqa: WPS421
+        return population.get_next()
 
-        if count < 4:
-            n_to_create = self._max_population - count
-            for n_org in range(1, n_to_create + 1):
-                print(  # noqa: WPS421
-                    f"Создаю базовые генотипы — {n_org}/{n_to_create}",
-                )
-                organism = population.create_new_organism()
-                print(organism, end="\n\n")  # noqa: WPS421
+    def _step(self, hunter: population.Organism) -> Optional[population.Organism]:
 
-    def _child_produced(self, parent: population.Organism) -> bool:
-        """Создает потомка, если есть свободное место в популяции."""
-        if population.count() >= self._max_population:
-            return False
+        print("Охотник:")  # noqa: WPS421
+        if self._eval_organism(hunter) is None:
+            return None
 
-        print("Родитель:")  # noqa: WPS421
-        print(parent)  # noqa: WPS421
-        print()  # noqa: WPS421
+        prey, new = self._next_org(hunter)
+        label = ""
+        if new:
+            self._scale -= 1 - ACCEPTANCE
+            label = " - новый организм"
+        print("Добыча", label, ":", sep="")  # noqa: WPS421
+        if self._eval_organism(prey) is None:
+            self._scale += 1
 
-        child = parent.make_child(SCALE_DOWN ** self._scale)
-        self._eval_organism("Потомок", child)
+            return hunter
 
-        if not child.llh:
-            self._scale += ACCEPTANCE
+        p_value = _eval_p_value(hunter, prey)
+        llh_ratio = np.inf
+        if (1 - p_value) != 0:
+            llh_ratio = p_value / (1 - p_value)
 
-            return True
+        accepted = False
+        label = "Старый"
+        sign = "<"
+        if (rnd := np.random.uniform()) < llh_ratio:
+            accepted = True
+            hunter = prey
+            label = "Новый"
+            sign = ">"
 
-        llh_delta = (child.llh[0] - parent.llh[0]) * len(self._tickers)
-        if np.log(np.random.uniform()) > llh_delta:
-            self._scale += ACCEPTANCE
+        print(  # noqa: WPS421
+            label,
+            f"охотник - llh ratio={llh_ratio:.2%}",
+            sign,
+            f"rnd={rnd:.2%}\n",
+        )
 
-            return True
+        if new and not accepted:
+            self._scale += 1
+            prey.die()
+            print("Добыча не принята в популяцию...\n")  # noqa: WPS421
 
-        self._scale -= 1 - ACCEPTANCE
+        if not new and not accepted and p_value < config.P_VALUE:
+            prey.die()
+            print(  # noqa: WPS421
+                f"Добыча уничтожена - p_value={p_value:.2%}",
+                "<=",
+                f"{config.P_VALUE:.2%}\n",
+            )
 
-        return True
+        return hunter
 
-    def _eval_organism(self, name: str, organism: population.Organism) -> None:
-        print(f"{name} - обучается:")  # noqa: WPS421
-        print(organism)  # noqa: WPS421
-        print()  # noqa: WPS421
+    def _next_org(self, parent: population.Organism) -> tuple[population.Organism, bool]:
+        if population.count() < self._max_population:
+            return parent.make_child(self.scale()), True
+
+        return population.get_next(parent), False
+
+    def _eval_organism(self, organism: population.Organism) -> Optional[population.Organism]:
+        print(organism, "\n")  # noqa: WPS421
 
         try:
             organism.evaluate_fitness(self._tickers, self._end)
@@ -131,53 +153,25 @@ class Evolution:
             error = error.__class__.__name__
             print(f"Удаляю - {error}\n")  # noqa: WPS421
 
-            return
+            return None
 
         print(f"Timer: {organism.timer:.0f}\n")  # noqa: WPS421
 
-    def _prey_killed(self, hunter: population.Organism, prey: population.Organism) -> bool:
-        print("Родитель:")  # noqa: WPS421
-        print(hunter)  # noqa: WPS421
-        print()  # noqa: WPS421
+        return organism
 
-        print("Добыча:")  # noqa: WPS421
-        print(prey)  # noqa: WPS421
-        print()  # noqa: WPS421
 
-        if hunter.scores < 2 and prey.scores < 2:
-            print("Недостаточно оценок...")  # noqa: WPS421
-            print()  # noqa: WPS421
+def _eval_p_value(hunter: population.Organism, prey: population.Organism) -> float:
 
-            return False
+    if hunter.scores < 2:
+        p_value = 0.5
+    elif prey.scores == 1:
+        p_value = stats.percentileofscore(hunter.llh, prey.llh[0]) / 100
+    else:
+        _, p_value = stats.ttest_ind(
+            hunter.llh,
+            prey.llh,
+            permutations=10 ** 6,
+            alternative="greater",
+        )
 
-        print("Родитель нападает на добычу:")  # noqa: WPS421
-        if prey.scores == 1:
-            _, p_value = stats.ttest_1samp(
-                hunter.llh,
-                prey.llh[0],
-                alternative="greater",
-            )
-        elif hunter.scores == 1:
-            _, p_value = stats.ttest_1samp(
-                prey.llh,
-                hunter.llh[0],
-                alternative="less",
-            )
-        else:
-            _, p_value = stats.ttest_ind(
-                hunter.llh,
-                prey.llh,
-                permutations=10 ** 6,
-                alternative="greater",
-            )
-        if p_value <= config.P_VALUE:
-            print(f"Добыча уничтожена - p_value={p_value:.2%} <= {config.P_VALUE:.2%}")  # noqa: WPS421
-            print()  # noqa: WPS421
-            prey.die()
-
-            return True
-
-        print(f"Добыча выжила - p_value={p_value:.2%} > {config.P_VALUE:.2%}")  # noqa: WPS421
-        print()  # noqa: WPS421
-
-        return False
+    return p_value
