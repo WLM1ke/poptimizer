@@ -161,12 +161,13 @@ class Evolution:
 
 
 def _eval_p_value(hunter: population.Organism, prey: population.Organism) -> float:
+    p_value = 0.5
 
-    if hunter.scores < 2:
-        p_value = 0.5
+    if hunter.scores == 1 and prey.scores == 1:
+        p_value = hunter.llh[0] < prey.llh[0]
     elif prey.scores == 1:
         p_value = stats.percentileofscore(hunter.llh, prey.llh[0]) / 100
-    else:
+    elif hunter.scores > 1 and prey.scores > 1:
         _, p_value = stats.ttest_ind(
             hunter.llh,
             prey.llh,
