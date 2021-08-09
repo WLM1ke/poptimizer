@@ -137,7 +137,7 @@ async def test_bcs(mocker):
         index=index,
     )
 
-    pd.testing.assert_frame_equal(df, df_rez)
+    pd.testing.assert_frame_equal(df, df_rez, check_names=False)
 
 
 @pytest.mark.asyncio
