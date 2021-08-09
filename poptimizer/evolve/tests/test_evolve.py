@@ -8,14 +8,14 @@ from poptimizer.evolve import evolve
 def test_setup_needed(mocker):
     """Создается необходимое количество организмов."""
     fake_population = mocker.patch.object(evolve, "population")
-    fake_population.count.return_value = 1
+    fake_population.count.return_value = 0
 
     ev = evolve.Evolution(max_population=4)
 
     ev._setup()
 
     fake_population.count.assert_called_once_with()
-    assert fake_population.create_new_organism.call_count == 3
+    assert fake_population.create_new_organism.call_count == 4
 
 
 def test_setup_not_needed(mocker):
@@ -39,21 +39,20 @@ def test_eval_and_print(mocker):
     org.timer = 6
 
     evolution = evolve.Evolution()
-    evolution._eval_organism("name", org)
+    evolution._eval_organism(org)
 
-    assert evolution._scale == pytest.approx(1)
+    assert evolution.scale() == pytest.approx(1)
 
     org.evaluate_fitness.assert_called_once()
 
 
 def test_eval_and_print_err(mocker):
     """При ошибке меняет шкалу разброса."""
-    org = mocker.Mock(side_effect=ModelError)
+    org = mocker.Mock()
     org.evaluate_fitness.side_effect = ModelError
 
     evolution = evolve.Evolution()
-    evolution._eval_organism("name", org)
 
-    assert evolution._scale == pytest.approx(evolve.SCALE_DOWN)
+    assert evolution._eval_organism(org) is None
 
     org.evaluate_fitness.assert_called_once()
