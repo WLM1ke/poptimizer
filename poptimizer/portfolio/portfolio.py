@@ -20,10 +20,11 @@ MAX_HISTORY = database.MONGO_CLIENT["data"]["models"].find_one(
     projection={"_id": False, "genotype.Data.history_days": True},
     sort=[("genotype.Data.history_days", -1)],
 )
+# Нужно для тестирования на пустой базе
 try:
     MAX_HISTORY = int(MAX_HISTORY["genotype"]["Data"]["history_days"])
 except TypeError:
-    raise config.POptimizerError("Отсуствуют генотипы моделей - запусти эволюцию")
+    MAX_HISTORY = config.HISTORY_DAYS_MIN
 
 ADD_DAYS = (MAX_HISTORY + data_params.FORECAST_DAYS * 2) * 2
 
