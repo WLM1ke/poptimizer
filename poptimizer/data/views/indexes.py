@@ -1,4 +1,6 @@
 """Индексы потребительских цен и MOEX."""
+from typing import cast
+
 import pandas as pd
 
 from poptimizer.data import ports
@@ -11,7 +13,8 @@ def rf(date: pd.Timestamp, viewer: viewers.Viewer = bootstrap.VIEWER) -> float:
     """Безрисковая ставка."""
     df = viewer.get_df(ports.RF, ports.RF)
     df = df.loc[:date, col.RF]
-    return df.iloc[-1]
+
+    return cast(float, df.iloc[-1])
 
 
 def cpi(date: pd.Timestamp) -> pd.Series:

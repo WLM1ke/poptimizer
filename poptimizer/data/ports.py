@@ -18,6 +18,7 @@ GroupName = Literal[
     "dividends",
     "div_ext",
     "CPI",
+    "risk_free",
     "securities",
     "indexes",
     "quotes",
