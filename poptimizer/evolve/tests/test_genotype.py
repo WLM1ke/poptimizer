@@ -26,23 +26,14 @@ def test_get_phenotype():
     """Проверка формирования фенотипа."""
     genotype_data = {"Data": {"batch_size": 3, "history_days": 4}}
     chromosomes_types = [data.Data]
-    base_phenotype = {"type": "TestNet", "data": {"features": {"Prices": {}}}}
+    base_phenotype = {"type": "TestNet", "data": {"features": {"Prices": {"on": False}}}}
     gen = genotype.Genotype(genotype_data, base_phenotype, chromosomes_types)
-    assert gen.get_phenotype() == {
-        "type": "TestNet",
-        "data": {
-            "batch_size": 3,
-            "history_days": 4,
-            "features": {
-                "Prices": {"on": True},
-                "Dividends": {"on": True},
-                "Turnover": {"on": True},
-                "AverageTurnover": {"on": True},
-                "Ticker": {"on": True},
-                "DayOfYear": {"on": True},
-            },
-        },
-    }
+    phenotype = gen.get_phenotype()
+    assert phenotype["type"] == "TestNet"
+    assert phenotype["data"]["batch_size"] == 3
+    assert phenotype["data"]["history_days"] == 4
+    assert phenotype["data"]["features"]["Prices"] == {"on": False}
+    assert len(phenotype["data"]["features"]) == 6
 
 
 def test_make_child_zero_scale():
