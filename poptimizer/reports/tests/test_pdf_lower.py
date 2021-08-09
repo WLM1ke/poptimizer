@@ -12,7 +12,6 @@ POSITIONS = dict(
     ENRU=467_000,
     GAZP=0,
     GMKN=194,
-    KBTK=90,
     LKOH=123,
     LSNGP=8100,
     LSRG=641,
@@ -46,9 +45,9 @@ def test_drop_small_positions():
     index = df.index
     assert len(df) == pdf_lower.MAX_TABLE_ROWS + 2
     assert index[-1] == PORTFOLIO
-    assert df[PORTFOLIO] == pytest.approx(38525478)
+    assert df[PORTFOLIO] == pytest.approx(38511528)
     assert index[-2] == OTHER
-    assert df[OTHER] == pytest.approx(5822654)
+    assert df[OTHER] == pytest.approx(5808704)
     assert index[0] == "RTKMP"
     assert df.iloc[0] == pytest.approx(11_167_816)
     assert index[-3] == "MVID"
@@ -59,6 +58,6 @@ def test_make_list_of_lists_table():
     list_of_lists = pdf_lower.make_list_of_lists_table(TEST_PORTFOLIO)
     assert len(list_of_lists) == pdf_lower.MAX_TABLE_ROWS + 3
     assert list_of_lists[0] == ["Name", "Value", "Share"]
-    assert list_of_lists[-1] == ["PORTFOLIO", "38 525 478", "100.0%"]
+    assert list_of_lists[-1] == ["PORTFOLIO", "38 511 528", "100.0%"]
     assert list_of_lists[7] == ["CASH", "1 548 264", "4.0%"]
     assert list_of_lists[5] == ["MTSS", "2 168 355", "5.6%"]
