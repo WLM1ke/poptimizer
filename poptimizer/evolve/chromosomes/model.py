@@ -21,7 +21,7 @@ KERNELS = GeneParams(
 )
 SUB_BLOCKS = GeneParams(
     name="sub_blocks",
-    default_range=(1, 4),
+    default_range=(1, 2),
     lower_bound=1.0,
     upper_bound=None,
     path=(MODEL_KEY, "sub_blocks"),
