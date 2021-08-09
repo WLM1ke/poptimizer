@@ -173,7 +173,7 @@ def create_new_organism() -> Organism:
 def get_next(org: Optional[Organism] = None) -> Organism:
     """Получить следующий из популяции, отличающийся от данного.
 
-    Предпочтение отдается давно не переоценивавшимя, а если все переоценивались, то тому на который
+    Предпочтение отдается давно не переоценивавшемся, а если все переоценивались, то тому на который
     было потрачено минимальное время на переоценку.
     """
     id_ = org and org.llh
@@ -198,7 +198,7 @@ def get_next(org: Optional[Organism] = None) -> Organism:
 
 def get_random_organism(org: Optional[Organism] = None) -> Organism:
     """Получить случайный организм из популяции не совпадающий с данным."""
-    id_ = org and org.llh
+    id_ = org and org.id
 
     collection = store.get_collection()
     pipeline = [
