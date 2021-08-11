@@ -106,6 +106,9 @@ class Evolution:
         if (1 - p_value) != 0:
             llh_ratio = p_value / (1 - p_value)
 
+        if (llh_ratio < 1) and (prey.timer > hunter.timer):
+            llh_ratio = 0
+
         accepted = False
         label = "Старый"
         sign = "<"
