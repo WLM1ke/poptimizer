@@ -130,8 +130,9 @@ class Organism:
 
     def make_child(self, scale: float) -> "Organism":
         """Создает новый организм с помощью дифференциальной мутации."""
-        parent = get_random_organism(self)
-        child_genotype = self.genotype.make_child(parent.genotype, scale)
+        parent1 = get_random_organism(None)
+        parent2 = get_random_organism(parent1)
+        child_genotype = self.genotype.make_child(parent1.genotype, parent2.genotype, scale)
 
         return Organism(genotype=child_genotype)
 
