@@ -9,7 +9,6 @@ FAKE_GENES = (
     data.HISTORY_DAYS,
     data.TICKER_ON,
     data.DAY_OF_YEAR_ON,
-    data.PRICES_ON,
     data.DIVIDENDS_ON,
     data.TURNOVER_ON,
     data.AVERAGE_TURNOVER_ON,
@@ -68,7 +67,7 @@ def test_make_child_zero_scale():
     parent = genotype.Genotype(parent, all_chromosome_types=chromosomes_types)
     base = genotype.Genotype(base, all_chromosome_types=chromosomes_types)
 
-    child = parent.make_child(base, 0)
+    child = parent.make_child(base, base, 1)
 
     assert isinstance(child, genotype.Genotype)
     assert child.data == parent.data

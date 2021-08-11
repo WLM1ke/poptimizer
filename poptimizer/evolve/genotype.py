@@ -68,11 +68,12 @@ class Genotype(UserDict):
 
     def make_child(
         self,
-        parent: "Genotype",
+        parent1: "Genotype",
+        parent2: "Genotype",
         scale: float,
     ) -> "Genotype":
         """Реализует мутацию в рамках дифференциальной эволюции отдельных хромосом."""
         child = copy.deepcopy(self)
         for key in child:
-            child[key] = self[key].make_child(parent[key], scale)
+            child[key] = self[key].make_child(parent1[key], parent2[key], scale)
         return child
