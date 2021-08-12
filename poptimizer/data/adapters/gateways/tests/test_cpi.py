@@ -7,61 +7,8 @@ from poptimizer.shared import col
 
 
 @pytest.mark.asyncio
-async def test_get_cpi_url(mocker):
-    """Поиск url страницы с CPI."""
-    fake_session = mocker.MagicMock()
-    fake_re = mocker.patch.object(cpi.re, "search")
-
-    await cpi._get_cpi_url(fake_session)
-
-    fake_session.get.assert_called_once_with(cpi.START_URL)
-    fake_re.assert_called_once()
-    fake_re.return_value.group.assert_called_once_with(0)
-
-
-@pytest.mark.asyncio
-async def test_get_cpi_url_raises(mocker):
-    """Обработка отсутствия ссылки на страницу с CPI."""
-    fake_session = mocker.MagicMock()
-    mocker.patch.object(cpi.re, "search", return_value=None)
-
-    with pytest.raises(cpi.CPIGatewayError):
-        await cpi._get_cpi_url(fake_session)
-
-
-@pytest.mark.asyncio
-async def test_get_xlsx_url(mocker):
-    """Поиск url с Excel-файлом на странице."""
-    fake_session = mocker.MagicMock()
-    fake_get_cpi_url = mocker.patch.object(cpi, "_get_cpi_url")
-    fake_re = mocker.patch.object(cpi.re, "search")
-
-    url = await cpi._get_xlsx_url(fake_session)
-
-    fake_get_cpi_url.assert_called_once_with(fake_session)
-    fake_session.get.assert_called_once_with(fake_get_cpi_url.return_value)
-
-    fake_re.assert_called_once()
-    assert fake_re.call_args[0][0] is cpi.FILE_PATTERN
-
-    assert url is fake_re.return_value.group.return_value
-
-
-@pytest.mark.asyncio
-async def test_get_xlsx_url_raises(mocker):
-    """Обработка отсутствия url с Excel-файлом на странице."""
-    fake_session = mocker.MagicMock()
-    mocker.patch.object(cpi, "_get_cpi_url")
-    mocker.patch.object(cpi.re, "search", return_value=None)
-
-    with pytest.raises(cpi.CPIGatewayError):
-        await cpi._get_xlsx_url(fake_session)
-
-
-@pytest.mark.asyncio
 async def test_load_xlsx(mocker):
     """Парсинг Excel с необходимыми параметрами."""
-    mocker.patch.object(cpi, "_get_xlsx_url")
     fake_read_excel = mocker.patch.object(cpi.pd, "read_excel")
 
     await cpi._load_xlsx(mocker.MagicMock())
