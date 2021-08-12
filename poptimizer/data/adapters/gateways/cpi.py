@@ -1,5 +1,4 @@
 """Загрузка данных по потребительской инфляции."""
-import re
 import types
 
 import aiohttp
@@ -10,10 +9,7 @@ from poptimizer.data.adapters.gateways import gateways
 from poptimizer.shared import adapters, col
 
 # Параметры загрузки валидации данных
-START_URL = "https://rosstat.gov.ru/price"
-URL_CORE = "https://rosstat.gov.ru/"
-CPI_PATTERN = re.compile("storage/mediabank/[a-zA-Z0-9]+/Индексы потребительских цен.*html?")
-FILE_PATTERN = re.compile("https://rosstat.gov.ru/storage/mediabank/[a-zA-Z0-9]+/i_ipc.*xlsx")
+URL = "https://rosstat.gov.ru/storage/mediabank/i_ipc_1991-2021.xlsx"
 END_OF_JAN = 31
 PARSING_PARAMETERS = types.MappingProxyType(
     {
@@ -34,30 +30,9 @@ class CPIGatewayError(config.POptimizerError):
     """Ошибки, связанные с загрузкой данных по инфляции."""
 
 
-async def _get_cpi_url(session: aiohttp.ClientSession) -> str:
-    """Получить url на страницу с потребительской инфляцией."""
-    async with session.get(START_URL) as resp:
-        html = await resp.text()
-    if match := re.search(CPI_PATTERN, html):
-        url_code = match.group(0)
-        return f"{URL_CORE}{url_code}"
-    raise CPIGatewayError("На странице отсутствует ссылка на страницу с потребительской инфляцией")
-
-
-async def _get_xlsx_url(session: aiohttp.ClientSession) -> str:
-    """Получить url для файла с инфляцией."""
-    cpi_url = await _get_cpi_url(session)
-    async with session.get(cpi_url) as resp:
-        html = await resp.text()
-    if match := re.search(FILE_PATTERN, html):
-        return match.group(0)
-    raise CPIGatewayError("На странице отсутствует URL файла с инфляцией")
-
-
 async def _load_xlsx(session: aiohttp.ClientSession) -> pd.DataFrame:
     """Загрузка Excel-файла с данными по инфляции."""
-    file_url = await _get_xlsx_url(session)
-    async with session.get(file_url) as resp:
+    async with session.get(URL) as resp:
         xls_file = await resp.read()
     return pd.read_excel(
         xls_file,
