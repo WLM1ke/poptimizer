@@ -23,6 +23,7 @@ positions:
   BELU: 0
   BIDU-RM: 0
   BIIB-RM: 0
+  BISVP: 0
   BMY-RM: 0
   BRZL: 0
   BSPB: 0
@@ -33,6 +34,7 @@ positions:
   DIOD: 0
   DIS-RM: 0
   DSKY: 0
+  EA-RM: 0
   EELT: 0
   ENPG: 0
   ENRU: 0
@@ -46,7 +48,6 @@ positions:
   FLOT: 0
   FXDE: 0
   FXKZ: 0
-  FXMM: 0
   FXRU: 0
   GAZP: 0
   GCHE: 0
