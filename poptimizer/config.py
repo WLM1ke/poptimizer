@@ -44,3 +44,6 @@ P_VALUE = 0.05
 
 # Транзакционные издержки на одну сделку
 COSTS = (YEAR_IN_TRADING_DAYS / FORECAST_DAYS) * (0.025 / 100)
+
+# Market impact в дневном СКО при операциях на уровне дневного объема
+MARKET_IMPACT_FACTOR = 1

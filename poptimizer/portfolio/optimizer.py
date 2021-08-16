@@ -55,23 +55,65 @@ class Optimizer:
             result_type="expand",
         )
         conf_int.columns = ["LOWER", "UPPER"]
+        conf_int["COSTS"] = self._costs()
+        conf_int["PRIORITY"] = conf_int["LOWER"] - conf_int["COSTS"]
 
-        portfolio = self._portfolio
-
-        for_sale = conf_int["UPPER"] < -config.COSTS
-        for_sale = for_sale & (portfolio.shares.iloc[:-2] > 0)  # noqa: WPS465
+        for_sale = conf_int["UPPER"] < 0
+        for_sale = for_sale & (self._portfolio.shares.iloc[:-2] > 0)  # noqa: WPS465
         for_sale = conf_int[for_sale]
+        for_sale = for_sale.assign(PRIORITY=lambda df: df["UPPER"])
 
-        good_purchase = portfolio.turnover_factor.iloc[:-2] > portfolio.weight[CASH]
-        good_purchase = good_purchase & (conf_int["LOWER"] > config.COSTS)  # noqa: WPS465
+        good_purchase = conf_int["PRIORITY"] > 0  # noqa: WPS465
         good_purchase = conf_int[good_purchase]
 
         return pd.concat(
             [
-                good_purchase.sort_values("LOWER", ascending=False),
-                for_sale.sort_values("UPPER", ascending=False),
+                good_purchase,
+                for_sale,
             ],
             axis=0,
+        ).sort_values("PRIORITY", ascending=False)
+
+    def _costs(self) -> pd.DataFrame:
+        """Удельные торговые издержки.
+
+        Полностью распределяются на покупаемую позицию с учетом ее последующего закрытия. Состоят из
+        двух составляющих - комиссии и воздействия на рынок. Для учета воздействия на рынок
+        используется Rule of thumb, trading one day’s volume moves the price by about one day’s
+        volatility
+
+        https://arxiv.org/pdf/1705.00109.pdf
+
+        Размер операций на покупку условно выбран равным текущему кэшу, а на последующую продажу
+        текущая позиция плюс кэш за вычетом уже учтенных издержек на продажу текущей позиции.
+
+        Было решено отказаться от расчета производной так как для нулевых позиций издержки воздействия
+        небольшие, но быстро нарастают с объемом. Расчет для условной сделки в размере кэша сразу
+        отсекает совсем неликвидных кандидатов на покупку.
+        """
+        port = self._portfolio
+
+        cash = port.weight[CASH] / port.turnover_factor
+        weight = port.weight / port.turnover_factor
+        weight_cash = weight + cash
+
+        impact_scale = 1.5
+
+        return (
+            # Размер рыночного воздействие в дневном СКО для дневного оборот
+            config.MARKET_IMPACT_FACTOR
+            # Дневное СКО
+            * (self.metrics.std / config.YEAR_IN_TRADING_DAYS ** 0.5)
+            # Зависимость общих издержек от воздействия пропорционален степени 1.5 от нормированного на
+            # дневной оборот объема. Совершается покупка на кэш сейчас и увеличиваются издержки на
+            # ликвидацию позиции
+            * (cash ** impact_scale + (weight_cash ** impact_scale - weight ** impact_scale))
+            # Делим на объем операции для получения удельных издержек
+            / cash
+            # Умножаем на коэффициент пересчета в годовые значения
+            * (config.YEAR_IN_TRADING_DAYS / config.FORECAST_DAYS)
+            # Обычные издержки в две стороны
+            + config.COSTS * 2
         )
 
 

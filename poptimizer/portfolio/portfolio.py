@@ -1,7 +1,7 @@
 """Реализация класса портфеля."""
 import collections
 import functools
-from typing import Dict, NoReturn, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -40,7 +40,7 @@ class Portfolio:
         self,
         date: Union[str, pd.Timestamp],
         cash: int,
-        positions: Dict[str, int],
+        positions: dict[str, int],
         value: Optional[float] = None,  # noqa: WPS110
     ):
         """При создании может быть осуществлена проверка совпадения расчетной стоимости и введенной.
@@ -73,7 +73,6 @@ class Portfolio:
             f"ПОРТФЕЛЬ - {self._date.date()}",
             self._positions_stats(),
             f"{self._main_info_df()}",
-            self._least_liquid_pos(),
         ]
 
         return "\n\n".join(blocks)
@@ -103,12 +102,6 @@ class Portfolio:
             blocks.append(f"Эффективных позиций - {int(1 / (weights ** 2).sum())}")
 
         return "\n".join(blocks)
-
-    def _least_liquid_pos(self) -> str:
-        """Наименее ликвидная позиция по соотношению размера и дневного оборота."""
-        result = self.value / self._median_turnover(tuple(self.index[:-2]), MAX_HISTORY)
-
-        return f"НАИМЕНЕЕ ЛИКВИДНАЯ ПОЗИЦИЯ:\n{result.idxmax()} - {result.max():.0%}"
 
     @property
     def date(self) -> pd.Timestamp:
@@ -192,17 +185,14 @@ class Portfolio:
 
     @property
     def turnover_factor(self) -> pd.Series:
-        """Понижающий коэффициент для акций с малым объемом оборотов относительно открытой позиции."""
+        """Медианный дневной оборот, как доля от портфеля."""
         last_turnover = self._median_turnover(tuple(self.index[:-2]), MAX_HISTORY)
-        result = self.value / last_turnover
-        last_turnover = last_turnover * result.max() - self.value
-        result = last_turnover / self.value[PORTFOLIO]
-        max_factor = result.sum()
-        result[CASH] = max_factor
-        result[PORTFOLIO] = max_factor
-        result.name = "TURNOVER"
+        last_turnover = last_turnover / self.value[PORTFOLIO]
+        last_turnover[CASH] = last_turnover.sum()
+        last_turnover[PORTFOLIO] = last_turnover[CASH]
+        last_turnover.name = "TURNOVER"
 
-        return result.reindex(self.index)
+        return last_turnover.reindex(self.index)
 
     def _median_turnover(self, tickers, days) -> pd.Series:
         """Медианный оборот за несколько последних дней."""
@@ -212,7 +202,7 @@ class Portfolio:
 
         return last_turnover
 
-    def add_tickers(self) -> NoReturn:
+    def add_tickers(self) -> None:
         """Претенденты для добавления."""
         all_tickers = listing.securities()
         last_turnover = self._median_turnover(tuple(all_tickers), ADD_DAYS)

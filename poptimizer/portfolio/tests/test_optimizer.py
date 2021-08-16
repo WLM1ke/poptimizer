@@ -24,6 +24,11 @@ class FakeMetricsResample:
         beta = dict(CHEP=0.11, KZOS=0.15, MTSS=0.2, RTKMP=0.5, TRCN=0.3, CASH=0, PORTFOLIO=1.0)
         return pd.Series(beta)
 
+    @property
+    def std(self):
+        beta = dict(CHEP=0.31, KZOS=0.35, MTSS=0.32, RTKMP=0.35, TRCN=0.33, CASH=0, PORTFOLIO=1.0)
+        return pd.Series(beta)
+
 
 @pytest.fixture(scope="module", name="opt")
 def make_opt():
@@ -45,15 +50,13 @@ def test_for_trade(opt, monkeypatch):
     monkeypatch.setattr(portfolio, "MAX_HISTORY", 100)
     monkeypatch.setattr(portfolio, "ADD_DAYS", 100)
     df = opt._for_trade()
-    print(df)
 
     assert isinstance(df, pd.DataFrame)
-    assert df.shape == (4, 2)
-    assert list(df.columns) == ["LOWER", "UPPER"]
+    assert df.shape == (2, 4)
+    assert list(df.columns) == ["LOWER", "UPPER", "COSTS", "PRIORITY"]
 
     assert df.loc["KZOS", "LOWER"] == pytest.approx(0.200)
-    assert df.index[1] == "RTKMP"
-    assert df.loc["MTSS", "UPPER"] == pytest.approx(0.010)
+    assert df.index[1] == "CHEP"
 
 
 def test_str(opt):
