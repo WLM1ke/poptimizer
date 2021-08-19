@@ -76,8 +76,8 @@ def test_reload_organism(organism):
 
 
 @pytest.mark.usefixtures("fake_model")
-def test_evaluate_new_tickers(organism):
-    fitness = organism.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-12"))
+def test_evaluate_new_timestamp(organism):
+    fitness = organism.evaluate_fitness(("GAZP", "AKRN"), pd.Timestamp("2020-04-13"))
 
     assert fitness == [5, 5]
     assert FakeModel.COUNTER == 2
@@ -85,8 +85,14 @@ def test_evaluate_new_tickers(organism):
 
 
 @pytest.mark.usefixtures("fake_model")
-def test_evaluate_new_timestamp(organism):
-    fitness = organism.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-13"))
+def test_raise_evaluate_same_timestamp(organism):
+    with pytest.raises(population.ReevaluationError):
+        organism.evaluate_fitness(("GAZP", "AKRN"), pd.Timestamp("2020-04-13"))
+
+
+@pytest.mark.usefixtures("fake_model")
+def test_evaluate_new_tickers(organism):
+    fitness = organism.evaluate_fitness(("GAZP", "LKOH"), pd.Timestamp("2020-04-14"))
 
     assert fitness == [5, 5, 5]
     assert FakeModel.COUNTER == 3
@@ -173,8 +179,16 @@ def test_create_new_organism():
     org.die()
 
 
-def test_get_all_and_random_organisms():
-    organisms = population.get_all_organisms()
+def test_get_oldest():
+    org = population.create_new_organism()
+    org._doc.wins = 1
+    org.save()
+
+    org = population.create_new_organism()
+    org._doc.wins = 2
+    org.save()
+
+    organisms = population.get_oldest()
     assert isinstance(organisms, Iterable)
 
     organisms = list(organisms)
@@ -182,12 +196,7 @@ def test_get_all_and_random_organisms():
     for organism in organisms:
         assert isinstance(organism, population.Organism)
 
-    assert len(list(organisms)) == 4
-
-    ids = [organism.id for organism in organisms[1:]]
-
-    org = population.get_random_organism(organisms[0])
-    assert org.id in ids
+    assert len(list(organisms)) == 1
 
 
 def test_print_stat(capsys):

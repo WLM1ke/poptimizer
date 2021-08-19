@@ -27,7 +27,7 @@ class Forecasts(Iterable):
         self._date = date
 
         self._forecasts = []
-        for organism in tqdm.tqdm(population.get_all_organisms(), desc="Forecasts"):
+        for organism in tqdm.tqdm(population.get_oldest(), desc="Forecasts"):
             try:
                 forecast = organism.forecast(tickers, date)
             except ForecastError:

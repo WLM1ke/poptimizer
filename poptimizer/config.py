@@ -30,8 +30,8 @@ PORT_PATH = pathlib.Path(__file__).parents[1] / "portfolio"
 # Количество торговых дней в году
 YEAR_IN_TRADING_DAYS = 12 * 21
 
-# Максимальная популяция
-MAX_POPULATION = 60
+# Минимальное количество моделей в ансамбле
+MIN_POPULATION = 60
 
 # Длинна прогноза в торговых днях
 FORECAST_DAYS = 37

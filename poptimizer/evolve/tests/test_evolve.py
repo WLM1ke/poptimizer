@@ -10,7 +10,7 @@ def test_setup_needed(mocker):
     fake_population = mocker.patch.object(evolve, "population")
     fake_population.count.return_value = 0
 
-    ev = evolve.Evolution(max_population=4)
+    ev = evolve.Evolution(min_population=4)
 
     ev._setup()
 
@@ -23,7 +23,7 @@ def test_setup_not_needed(mocker):
     fake_population = mocker.patch.object(evolve, "population")
     fake_population.count.return_value = 4
 
-    ev = evolve.Evolution(max_population=4)
+    ev = evolve.Evolution(min_population=4)
 
     ev._setup()
 
@@ -40,8 +40,6 @@ def test_eval_and_print(mocker):
 
     evolution = evolve.Evolution()
     evolution._eval_organism(org)
-
-    assert evolution.scale() == pytest.approx(1)
 
     org.evaluate_fitness.assert_called_once()
 

@@ -1,5 +1,6 @@
 """Класс организма и операции с популяцией организмов."""
 import contextlib
+import datetime
 import time
 from typing import Iterable, Optional
 
@@ -13,6 +14,13 @@ from poptimizer.dl import Forecast, Model
 from poptimizer.evolve import store
 from poptimizer.evolve.genotype import Genotype
 
+# Преобразование времени в секунды
+TIME_TO_SEC = 10 ** 9
+
+
+class ReevaluationError(config.POptimizerError):
+    """Попытка сделать вторую оценку для заданной даты."""
+
 
 class ForecastError(config.POptimizerError):
     """Отсутствующий прогноз."""
@@ -21,8 +29,7 @@ class ForecastError(config.POptimizerError):
 class Organism:
     """Организм и основные операции с ним.
 
-    Умеет рассчитывать качество организма для проведения естественного отбора, умирать, размножаться и
-    отображать количество пройденных оценок качества.
+    Умеет рассчитывать качество организма для проведения естественного отбора, умирать, размножаться.
     """
 
     def __init__(
@@ -45,12 +52,12 @@ class Organism:
 
             llh_block = f"{llh:0.4f}: {llh_all}"
 
-        seconds = self.timer
+        timer = datetime.timedelta(seconds=self.timer // TIME_TO_SEC)
 
         blocks = [
             f"LLH — {llh_block}",
             f"IR — {self.ir:0.4f}",
-            f"Timer — {seconds}",
+            f"Timer — {timer}",
             str(self._doc.genotype),
         ]
 
@@ -74,7 +81,7 @@ class Organism:
     @property
     def timer(self) -> float:
         """Генотип организма."""
-        return self._doc.timer // 10 ** 9
+        return self._doc.timer
 
     @property
     def scores(self) -> int:
@@ -95,8 +102,11 @@ class Organism:
         """Вычисляет качество организма.
 
         В первый вызов для нового дня используется метрика существующей натренированной модели.
-        При последующих вызовах в течение дня происходит обучение с нуля.
+        При последующих вызовах в течение дня выбрасывается ошибка.
         """
+        if end == self.date:
+            raise ReevaluationError
+
         tickers = list(tickers)
         doc = self._doc
 
@@ -130,8 +140,7 @@ class Organism:
 
     def make_child(self, scale: float) -> "Organism":
         """Создает новый организм с помощью дифференциальной мутации."""
-        parent1 = get_random_organism(None)
-        parent2 = get_random_organism(parent1)
+        parent1, parent2 = _get_parents()
         child_genotype = self.genotype.make_child(parent1.genotype, parent2.genotype, scale)
 
         return Organism(genotype=child_genotype)
@@ -161,6 +170,7 @@ class Organism:
 def count() -> int:
     """Количество организмов в популяции."""
     collection = store.get_collection()
+
     return collection.count_documents({})
 
 
@@ -168,65 +178,95 @@ def create_new_organism() -> Organism:
     """Создает новый организм с пустым генотипом и сохраняет его в базе данных."""
     org = Organism()
     org.save()
+
     return org
 
 
-def get_next(org: Optional[Organism] = None) -> Organism:
-    """Получить следующий из популяции, отличающийся от данного.
+def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
+    """Последовательно выдает организмы с датой не равной данной и None при отсутствии.
 
-    Предпочтение отдается давно не переоценивавшемся, а если все переоценивались, то тому на который
-    было потрачено минимальное время на переоценку.
+    В первую очередь выдаются организмы с минимальным количеством оценок.
     """
-    id_ = org and org.llh
-
     collection = store.get_collection()
-    pipeline = [
-        {"$match": {"_id": {"$ne": id_}}},
-        {
-            "$project": {
-                "date": True,
-                "total": {"$multiply": ["$timer", "$wins"]},
-            },
-        },
-        {"$sort": {"date": pymongo.ASCENDING, "total": pymongo.ASCENDING}},
-        {"$limit": 1},
-        {"$project": {"_id": True}},
-    ]
-    doc = next(collection.aggregate(pipeline))
-
-    return Organism(**doc)
-
-
-def get_random_organism(org: Optional[Organism] = None) -> Organism:
-    """Получить случайный организм из популяции не совпадающий с данным."""
-    id_ = org and org.id
-
-    collection = store.get_collection()
-    pipeline = [
-        {"$match": {"_id": {"$ne": id_}}},
-        {"$project": {"_id": True}},
-        {"$sample": {"size": 1}},
-    ]
-    doc = next(collection.aggregate(pipeline))
-
-    return Organism(**doc)
-
-
-def get_all_organisms() -> Iterable[Organism]:
-    """Получить все имеющиеся организмы."""
-    collection = store.get_collection()
-    id_dicts = collection.find(
-        filter={},
-        projection=["_id"],
-        sort=[("date", pymongo.ASCENDING), ("llh", pymongo.DESCENDING)],
+    doc = collection.find_one(
+        filter={"date": {"$ne": date}},
+        sort=[("wins", pymongo.ASCENDING)],
+        projection={"_id": True},
+        limit=1,
     )
-    for id_dict in id_dicts:
+
+    return doc and Organism(**doc)
+
+
+def _get_parents() -> tuple[Organism, Organism]:
+    """Получить родителей с разным генотипом."""
+    collection = store.get_collection()
+
+    pipeline = [
+        {"$project": {"_id": True}},
+        {"$sample": {"size": 2}},
+    ]
+
+    parent1, parent2 = [Organism(**doc) for doc in collection.aggregate(pipeline)]
+
+    if parent1.genotype == parent2.genotype:
+        return Organism(), Organism()
+
+    return parent1, parent2
+
+
+def get_oldest(limit: int = config.MIN_POPULATION) -> Iterable[Organism]:
+    """Получить самые старые с количеством побед больше 1."""
+    collection = store.get_collection()
+
+    pipeline = [
+        {"$project": {"_id": True, "wins": True}},
+        {"$match": {"wins": {"$gt": 1}}},
+        {"$sort": {"wins": pymongo.DESCENDING}},
+        {"$limit": limit},
+        {"$project": {"_id": True}},
+    ]
+
+    for id_dict in collection.aggregate(pipeline):
         with contextlib.suppress(store.IdError):
             yield Organism(**id_dict)
 
 
+def min_max_date() -> tuple[pd.Timestamp, pd.Timestamp]:
+    """Минимальная и максимальная дата в популяции."""
+    collection = store.get_collection()
+
+    pipeline = [
+        {
+            "$group": {
+                "_id": {},
+                "min": {"$min": "$date"},
+                "max": {"$max": "$date"},
+            },
+        },
+    ]
+    doc = next(collection.aggregate(pipeline), {})
+
+    return (
+        pd.Timestamp(doc.get("min")),
+        pd.Timestamp(doc.get("max")),
+    )
+
+
+def get_llh(date: pd.Timestamp) -> list:
+    """Значения llh и timer для заданной даты отсортированные по убыванию llh."""
+    collection = store.get_collection()
+    pipeline = [
+        {"$match": {"date": {"$eq": date}}},
+        {"$project": {"llh": {"$first": "$llh"}, "timer": True}},
+        {"$sort": {"llh": pymongo.DESCENDING}},
+    ]
+
+    return list(collection.aggregate(pipeline))
+
+
 def print_stat() -> None:
-    """Статистика — минимальное и максимальное значение коэффициента Шарпа."""
+    """Распечатка сводных статистических данных по популяции."""
     _print_key_stats("llh")
     _print_key_stats("ir")
     _print_wins_stats()
@@ -277,4 +317,4 @@ def _print_wins_stats() -> None:
         max_wins, *_ = wins
         max_wins = max_wins["wins"]
 
-    print(f"Максимум оценок - {max_wins}")  # noqa: WPS421
+    print(f"Организмов - {count()} /", f"Максимум оценок - {max_wins}")  # noqa: WPS421

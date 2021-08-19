@@ -2,118 +2,161 @@
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 from scipy import stats
 
 from poptimizer import config
-from poptimizer.data.views import listing
+from poptimizer.data.views import indexes, listing
 from poptimizer.dl import ModelError
 from poptimizer.evolve import population
 from poptimizer.portfolio.portfolio import load_tickers
 
-# Целевая вероятность удачного перехода
-# За основу выбора следующего организма взят алгоритм Метрополиса — Гастингса
-# Оптимальной для многомерного случая вероятностью перехода является 0.234
-ACCEPTANCE = 0.234
-# Понижение масштаба дисперсии, если дисбаланс итераций удачного перехода достиг 1
-SCALE_DOWN = 0.9
+# За основу выбора следующего организма взят алгоритм Метрополиса — Гастингса. В рамках него
+# оптимальную долю принятых предложений рекомендуется брать от 0.234 для многомерного случая до 0.44 для
+# одномерного. В тоже время алгоритм сохраняет свою эффективность в диапазоне от 0.1 до 0.6
+# http://probability.ca/jeff/ftpdir/galinart.pdf
+#
+# Библиотеке PyMC3 ориентируются не на конкретное целевое значение, а на диапазон 0.2-0.5
+MIN_ACCEPTANCE = 0.234
+MAX_ACCEPTANCE = 0.44
+DELTA_SCALE = 1.1
 
 
 class Evolution:
     """Эволюция параметров модели.
 
     Эволюция состоит из бесконечного сравнения пар организмов и выбора лучшего, и порождения новых
-    претендентов для анализа. Популяция организмов поодерживается на заданном уровне. За основу выбора
-    следующего организма взяты подходы из алгоритма Метрополиса — Гастингса:
+    претендентов для анализа. Размер популяция поддерживается на уровне не меньше заданного.
 
-    - Порождается случайная популяция, из которой выберается первый организм
-    - Выбирается претендент - при отсутсвии свободных мест в популяции из популяции, а при наличии - в
-    случайной окрестности текущего
+    За основу
+    выбора следующего организма взяты подходы из алгоритма Метрополиса — Гастингса:
+
+    - Текущий организм порождает потомка в некой окрестности пространства генов
     - Производится сравнение - если новый лучше, то он становится текущим, если новый хуже,
-    то он становится текущим случайным образом с вероятностью убыващей пропорционально его качеству
-    - Новый не принятый организм не включается в популяцию, а существующий не принятый может быть
-    исключен из популяции, если он значимо хуже
+      то он становится текущим случайным образом с вероятностью убывающей пропорционально его качеству
 
-    При создании нового оргнизма, окресность около текущего выбирается пропорционально расстоянию до
-    случайного организма в популяции, а коэффициент пропорциональности динамически корректируется для
-    достижения целевого уровня принятия нового организма 0.234
+    Масштаб окрестности изменяется, если организмы принимаются слишком часто или редко.
+
+    При появлении новых данных происходит сравнение существующих организмов - статистически значимо
+    более плохие удаляются.
     """
 
-    def __init__(self, max_population: int = config.MAX_POPULATION):
+    def __init__(self, min_population: int = config.MIN_POPULATION):
         """Сохраняет предельный размер популяции."""
-        self._max_population = max_population
-        self._tickers = load_tickers()
+        self._min_population = min_population
+        self._tickers = None
         self._end = None
-        self._scale = 0
+        self._scale = 1
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
 
         При необходимости создается начальная популяция из случайных организмов по умолчанию.
         """
-        current = None
         step = 0
+        trial = 0
+        acceptance = 0
+        current = self._setup()
 
         while True:  # noqa: WPS457
+            d_min, d_max = population.min_max_date()
 
-            if (new_end := listing.last_history_date()) != self._end:
-                step = 0
-                self._end = new_end
+            if (population.count() >= self._min_population) and (d_min == d_max):
+                dates = indexes.mcftrr(listing.last_history_date()).loc[self._end :].index
+                if len(dates) > 1:
+                    step = 0
+                    self._tickers = load_tickers()
+                    self._end = dates[1]
 
             step += 1
             date = self._end.date()
             print(f"***{date}: Шаг эволюции — {step}***")  # noqa: WPS421
             population.print_stat()
-            print(f"Фактор - {self.scale():.2%}\n")  # noqa: WPS421
+            print(  # noqa: WPS421
+                f"Доля принятых - {acceptance:.2%}",
+                "/",
+                f"Фактор - {self._scale:.2%}\n",
+            )
 
-            if current is None:
-                current = self._setup()
+            next_, new = self._step(current)
 
-            current = self._step(current)
+            accepted = next_.id != current.id
 
-    def scale(self) -> float:
-        """Расчет фактора масштаба при порождении нового организма."""
-        return SCALE_DOWN ** self._scale
+            if new:
+                acceptance = (acceptance * trial + accepted) / (trial + 1)
+                trial += 1
+                self._scale = _tune_scale(self._scale, acceptance)
 
-    def _setup(self) -> population.Organism:
-        """При необходимости создает популяцию из организмов по умолчанию и возвращает стартовый."""
+            current = next_
+
+    def _setup(self) -> pd.Timestamp:
+        """При необходимости создает популяцию из организмов по умолчанию и устанавливает дату."""
+        self._tickers = load_tickers()
+        self._end = population.min_max_date()[1]
+
         if population.count() == 0:
-            for n_org in range(1, self._max_population + 1):
+            self._end = listing.last_history_date()
+            for n_org in range(1, self._min_population + 1):
                 print(f"Создаются базовые организмы — {n_org}")  # noqa: WPS421
                 org = population.create_new_organism()
                 print(org, "\n")  # noqa: WPS421
 
-        return population.get_next()
+        return self._next_org(None)[0]
 
-    def _step(self, hunter: population.Organism) -> Optional[population.Organism]:
+    def _next_org(
+        self,
+        current: Optional[population.Organism],
+    ) -> tuple[population.Organism, bool]:
+        """Возвращает следующий организм и информацию новый ли он.
 
+        В первую очередь берутся не переоцененные существующие организмы. При их отсутствии создается
+        потомок текущего в окрестности. При отсутствии текущего (обычно после возобновления прерванной
+        эволюции) создается потомок в окрестности существующего случайного организма.
+        """
+        if (org := population.get_next_one(self._end)) is not None:
+            return org, False
+
+        if current is not None:
+            return current.make_child(self._scale), True
+
+        return population.get_next_one(None).make_child(self._scale), True
+
+    def _step(self, hunter: population.Organism) -> tuple[population.Organism, bool]:
+        """Один шаг эволюции.
+
+        Создается и оценивается потомок. Если это существующий организм, то он может быть уничтожен,
+        если он значимо хуже текущего.
+
+        После этого любой потомок (старый или новый) принимается на основе алгоритма
+        Метрополиса — Гастингса.
+        """
         print("Охотник:")  # noqa: WPS421
         if self._eval_organism(hunter) is None:
-            return None
+            return self._next_org(None)
 
         prey, new = self._next_org(hunter)
         label = ""
         if new:
-            self._scale -= 1 - ACCEPTANCE
             label = " - новый организм"
         print("Добыча", label, ":", sep="")  # noqa: WPS421
         if self._eval_organism(prey) is None:
-            self._scale += 1
+            return hunter, new
 
-            return hunter
+        if not new:
+            if (p_value := _hunt(hunter, prey)) < config.P_VALUE:
+                prey.die()
+                print(  # noqa: WPS421
+                    f"Добыча уничтожена - p_value={p_value:.2%}",
+                    "<=",
+                    f"{config.P_VALUE:.2%}\n",
+                )
 
-        p_value = _eval_p_value(hunter, prey)
-        llh_ratio = np.inf
-        if (1 - p_value) != 0:
-            llh_ratio = p_value / (1 - p_value)
+                return hunter, new
 
-        if (llh_ratio < 1) and (prey.timer > hunter.timer):
-            llh_ratio = 0
-
-        accepted = False
+        llh_ratio = _llh_ratio(hunter, prey)
         label = "Старый"
         sign = "<"
         if (rnd := np.random.uniform()) < llh_ratio:
-            accepted = True
             hunter = prey
             label = "Новый"
             sign = ">"
@@ -125,29 +168,15 @@ class Evolution:
             f"rnd={rnd:.2%}\n",
         )
 
-        if new and not accepted:
-            self._scale += 1
-            prey.die()
-            print("Добыча не принята в популяцию...\n")  # noqa: WPS421
-
-        if not new and not accepted and p_value < config.P_VALUE:
-            prey.die()
-            print(  # noqa: WPS421
-                f"Добыча уничтожена - p_value={p_value:.2%}",
-                "<=",
-                f"{config.P_VALUE:.2%}\n",
-            )
-
-        return hunter
-
-    def _next_org(self, parent: population.Organism) -> tuple[population.Organism, bool]:
-        if population.count() < self._max_population:
-            return parent.make_child(self.scale()), True
-
-        return population.get_next(parent), False
+        return hunter, new
 
     def _eval_organism(self, organism: population.Organism) -> Optional[population.Organism]:
         print(organism, "\n")  # noqa: WPS421
+
+        if organism.date == self._end:
+            print("Уже оценен\n")  # noqa: WPS421
+
+            return organism
 
         try:
             organism.evaluate_fitness(self._tickers, self._end)
@@ -158,24 +187,47 @@ class Evolution:
 
             return None
 
-        print(f"Timer: {organism.timer:.0f}\n")  # noqa: WPS421
+        print()  # noqa: WPS421
 
         return organism
 
 
-def _eval_p_value(hunter: population.Organism, prey: population.Organism) -> float:
-    p_value = 0.5
+def _hunt(hunter: population.Organism, prey: population.Organism) -> float:
+    scores_delta = zip(hunter.llh, prey.llh)
+    scores_delta = [first - second for first, second in scores_delta]
 
-    if hunter.scores == 1 and prey.scores == 1:
-        p_value = hunter.llh[0] < prey.llh[0]
-    elif prey.scores == 1:
-        p_value = stats.percentileofscore(hunter.llh, prey.llh[0]) / 100
-    elif hunter.scores > 1 and prey.scores > 1:
-        _, p_value = stats.ttest_ind(
-            hunter.llh,
-            prey.llh,
-            permutations=10 ** 6,
-            alternative="greater",
-        )
+    if len(scores_delta) < 2:
+        return 0.5
+
+    _, p_value = stats.ttest_1samp(
+        scores_delta,
+        0,
+        alternative="greater",
+    )
 
     return p_value
+
+
+def _llh_ratio(hunter: population.Organism, prey: population.Organism) -> float:
+    sample = population.get_llh(hunter.date)
+    max_timer = max(sample[0]["timer"], hunter.timer)
+    sample = np.array([doc["llh"] for doc in sample])
+
+    llh_prey = (prey.llh[0] >= sample).sum()
+    llh_hunter = (hunter.llh[0] >= sample).sum()
+    llh = llh_prey / llh_hunter
+
+    if (llh < 1) and (prey.timer > max_timer):
+        llh = 0
+
+    return llh
+
+
+def _tune_scale(scale: float, acc_rate: float) -> float:
+    """Корректировка размера шага."""
+    if acc_rate < MIN_ACCEPTANCE:
+        return scale / DELTA_SCALE
+    elif acc_rate > MAX_ACCEPTANCE:
+        return scale * DELTA_SCALE
+
+    return scale

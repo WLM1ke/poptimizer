@@ -79,6 +79,7 @@ class Chromosome(UserDict):
         parent1: "Chromosome",
         parent2: "Chromosome",
         scale: float,
+        epsilon: float = 0.01,
     ) -> "Chromosome":
         """Мутация на основе алгоритма дифференциальной эволюции.
 
@@ -95,6 +96,8 @@ class Chromosome(UserDict):
             Хромосома второго родителя, которая используется для расчета разницы значений признаков.
         :param scale:
             Фактор масштабирования разницы между родителями.
+        :param epsilon:
+            Доля случайной компоненты.
         :return:
             Представление хромосомы потомка в виде словаря.
         """
@@ -102,7 +105,7 @@ class Chromosome(UserDict):
 
         for gene in self._genes:
             key = gene.name
-            diff = (parent1[key] - parent2[key]) * scale
+            diff = (parent1[key] - parent2[key]) * scale * (1 + random.normal(0, epsilon))
             raw_value = child[key] + diff * random.normal()
             child[key] = _to_bounds(raw_value, gene.lower_bound, gene.upper_bound)
         return child

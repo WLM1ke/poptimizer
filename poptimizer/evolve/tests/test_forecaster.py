@@ -16,14 +16,13 @@ def set_test_collection():
 
     org = population.create_new_organism()
     org.evaluate_fitness(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23"))
+    org.evaluate_fitness(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-24"))
     org = population.create_new_organism()
     org.evaluate_fitness(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23"))
+    org.evaluate_fitness(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-24"))
 
     org = population.create_new_organism()
     org.evaluate_fitness(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-22"))
-
-    org = population.create_new_organism()
-    org.evaluate_fitness(("AKRN", "TRNFP"), pd.Timestamp("2020-05-23"))
 
     yield
 
@@ -36,7 +35,7 @@ def forecasts_checkup(forecasts: forecaster.Forecasts):
     assert forecasts.tickers == ("TGKBP", "TRNFP")
     assert forecasts.date == pd.Timestamp("2020-05-23")
     forecasts = list(forecasts)
-    assert len(forecasts) == 3
+    assert len(forecasts) == 2
     forecast = forecasts[0]
     assert isinstance(forecast, Forecast)
     assert forecast.tickers == ("TGKBP", "TRNFP")
@@ -44,16 +43,12 @@ def forecasts_checkup(forecasts: forecaster.Forecasts):
 
 
 def test_get_forecasts():
-    forecasts = forecaster.get_forecasts(
-        ("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23")
-    )
+    forecasts = forecaster.get_forecasts(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23"))
 
     forecasts_checkup(forecasts)
 
 
 def test_get_forecasts_from_cache():
-    forecasts = forecaster.get_forecasts(
-        ("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23")
-    )
+    forecasts = forecaster.get_forecasts(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23"))
 
     forecasts_checkup(forecasts)
