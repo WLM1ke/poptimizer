@@ -1,6 +1,7 @@
 cash: 0
 positions:
   AAL-RM: 0
+  AAPL-RM: 0
   ABBV-RM: 0
   ABRD: 0
   ABT-RM: 0
@@ -48,7 +49,6 @@ positions:
   FLOT: 0
   FXDE: 0
   FXKZ: 0
-  FXRU: 0
   GAZP: 0
   GCHE: 0
   GEMA: 0
@@ -67,6 +67,7 @@ positions:
   ISKJ: 0
   JNJ-RM: 0
   KAZT: 0
+  KBSB: 0
   KLSB: 0
   KMAZ: 0
   KRKNP: 0
@@ -114,6 +115,7 @@ positions:
   NLMK: 0
   NMTP: 0
   NSVZ: 0
+  NVDA-RM: 0
   NVTK: 0
   OGKB: 0
   ORUP: 0
@@ -137,6 +139,7 @@ positions:
   RSTIP: 0
   RTKM: 0
   RTKMP: 0
+  RUAL: 0
   RUGR: 0
   RZSB: 0
   SBER: 0
