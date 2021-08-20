@@ -43,7 +43,7 @@ TEST_ROWS = (
         <div class="dividends-table__cell _profit">6,48%</div>
         </div>""",
         datetime(2019, 7, 20),
-        10705.95,
+        (10705.95, "RUR"),
     ),
     (
         """<div class="dividends-table__row _item">
@@ -55,7 +55,7 @@ TEST_ROWS = (
         <div class="dividends-table__cell _profit">6,48%</div>
         </div>""",
         datetime(2019, 7, 20),
-        100.0,
+        (100.0, "RUR"),
     ),
     (
         """<div class="dividends-table__row _item">
@@ -67,7 +67,7 @@ TEST_ROWS = (
         <div class="dividends-table__cell _profit">6,48%</div>
         </div>""",
         datetime(2019, 6, 20),
-        200.0,
+        (200.0, "RUR"),
     ),
     (
         """<div class="dividends-table__row _item">
@@ -79,7 +79,7 @@ TEST_ROWS = (
         <div class="dividends-table__cell _profit">—</div>
         </div>""",
         None,
-        0,
+        (0, "RUR"),
     ),
     (
         """<div class="dividends-table__row _item">
@@ -91,7 +91,7 @@ TEST_ROWS = (
         <div class="dividends-table__cell _profit">6,48%</div>
         </div>""",
         datetime(2019, 6, 20),
-        None,
+        (0.09, "USD"),
     ),
     (
         """<div class="dividends-table__row _item">
@@ -103,7 +103,7 @@ TEST_ROWS = (
         <div class="dividends-table__cell _profit">6,48%</div>
         </div>""",
         datetime(2019, 6, 20),
-        None,
+        (None, None),
     ),
 )
 
@@ -120,24 +120,6 @@ def test_parse_div(row, _, div):
     """Парсинг, больших чисел, пропусков и чисел с запятой."""
     soup = bs4.BeautifulSoup(row)
     assert bcs._parse_div(soup) == div
-
-
-@pytest.mark.asyncio
-async def test_bcs(mocker):
-    """Проверка, что данные группируются и сортируются в нужном порядке."""
-    rows = [bs4.BeautifulSoup(row_data[0]) for row_data in TEST_ROWS]
-    mocker.patch.object(bcs, "_get_rows", return_value=rows)
-
-    df = await bcs.BCSGateway().__call__("TEST")
-
-    index = pd.DatetimeIndex(["2019-06-20", "2019-07-20"])
-    df_rez = pd.DataFrame(
-        [[200.0, col.RUR], [10805.95, col.RUR]],
-        columns=["TEST", col.CURRENCY],
-        index=index,
-    )
-
-    pd.testing.assert_frame_equal(df, df_rez, check_names=False)
 
 
 @pytest.mark.asyncio

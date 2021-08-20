@@ -38,18 +38,22 @@ def _parse_date(row: bs4.BeautifulSoup) -> Optional[datetime]:
     return None
 
 
-def _parse_div(row: bs4.BeautifulSoup) -> Optional[float]:
+def _parse_div(row: bs4.BeautifulSoup) -> tuple[Optional[float], Optional[str]]:
     """Парсит дивиденды из строки таблицы."""
     soup = row.find(DIV_TAG, {CLASS_TAG: DIV_TAG_RE})
     div_string = soup.string
     if div_string is None:
-        return None
+        return None, None
     div_string = div_string.replace(",", ".")
     div_string = div_string.replace(" ", "")
+
+    if div_string[0] == "$":
+        return float(div_string[1:]), col.USD
+
     try:
-        return float(div_string)
+        return float(div_string), col.RUR
     except ValueError:
-        return None
+        return None, None
 
 
 class BCSGateway(gateways.DivGateway):
@@ -66,11 +70,9 @@ class BCSGateway(gateways.DivGateway):
         except description.ParserError:
             return None
 
-        div_data = [(_parse_date(row), _parse_div(row)) for row in rows]
-
-        df = pd.DataFrame(data=div_data, columns=[col.DATE, ticker])
+        div_data = [(_parse_date(row), *_parse_div(row)) for row in rows]
+        df = pd.DataFrame(data=div_data, columns=[col.DATE, ticker, col.CURRENCY])
         df = df.set_index(col.DATE)
+        df = df.groupby(lambda date: date).agg({ticker: "sum", col.CURRENCY: "last"})
 
-        df = self._sort_and_agg(df)
-        df[col.CURRENCY] = col.RUR
-        return df
+        return df.sort_index()
