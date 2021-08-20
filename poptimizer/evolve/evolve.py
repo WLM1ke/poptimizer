@@ -217,7 +217,7 @@ def _llh_ratio(hunter: population.Organism, prey: population.Organism) -> float:
     llh_hunter = (hunter.llh[0] >= sample).sum()
     llh = llh_prey / llh_hunter
 
-    if (llh < 1) and (prey.timer > max_timer):
+    if prey.timer > max_timer:
         llh = 0
 
     return llh
