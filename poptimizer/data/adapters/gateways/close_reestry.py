@@ -74,6 +74,9 @@ class CloseGateway(gateways.DivGateway):
 
         cols_desc = _get_col_desc(ticker)
         base_ticker = ticker[:BASE_TICKER_LENGTH]
+        if base_ticker == "RUAL":
+            base_ticker = "RUALR"
+
         url = f"{URL}{base_ticker}"
         try:
             df = await parser.get_df_from_url(url, TABLE_INDEX, cols_desc)
