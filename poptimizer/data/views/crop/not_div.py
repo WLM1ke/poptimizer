@@ -1,6 +1,4 @@
 """Обрезка данных для различных источников кроме дивидендов."""
-import functools
-
 import pandas as pd
 
 from poptimizer.data import ports

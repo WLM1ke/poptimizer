@@ -2,12 +2,10 @@
 from datetime import datetime
 
 import bs4
-import pandas as pd
 import pytest
 
 from poptimizer.data.adapters.gateways import bcs
 from poptimizer.data.adapters.html import description, parser
-from poptimizer.shared import col
 
 
 @pytest.mark.asyncio
@@ -43,7 +41,8 @@ TEST_ROWS = (
         <div class="dividends-table__cell _profit">6,48%</div>
         </div>""",
         datetime(2019, 7, 20),
-        (10705.95, "RUR"),
+        10705.95,
+        "RUR",
     ),
     (
         """<div class="dividends-table__row _item">
@@ -55,7 +54,8 @@ TEST_ROWS = (
         <div class="dividends-table__cell _profit">6,48%</div>
         </div>""",
         datetime(2019, 7, 20),
-        (100.0, "RUR"),
+        100.0,
+        "RUR",
     ),
     (
         """<div class="dividends-table__row _item">
@@ -67,7 +67,8 @@ TEST_ROWS = (
         <div class="dividends-table__cell _profit">6,48%</div>
         </div>""",
         datetime(2019, 6, 20),
-        (200.0, "RUR"),
+        200.0,
+        "RUR",
     ),
     (
         """<div class="dividends-table__row _item">
@@ -79,7 +80,8 @@ TEST_ROWS = (
         <div class="dividends-table__cell _profit">—</div>
         </div>""",
         None,
-        (0, "RUR"),
+        0,
+        "RUR",
     ),
     (
         """<div class="dividends-table__row _item">
@@ -91,7 +93,8 @@ TEST_ROWS = (
         <div class="dividends-table__cell _profit">6,48%</div>
         </div>""",
         datetime(2019, 6, 20),
-        (0.09, "USD"),
+        0.09,
+        "USD",
     ),
     (
         """<div class="dividends-table__row _item">
@@ -103,23 +106,24 @@ TEST_ROWS = (
         <div class="dividends-table__cell _profit">6,48%</div>
         </div>""",
         datetime(2019, 6, 20),
-        (None, None),
+        None,
+        None,
     ),
 )
 
 
-@pytest.mark.parametrize("row, date, _", TEST_ROWS)
-def test_parse_date(row, date, _):
+@pytest.mark.parametrize("row, date, div, cur", TEST_ROWS)
+def test_parse_date(row, date, div, cur):
     """Парсинг дат и пропусков."""
     soup = bs4.BeautifulSoup(row)
     assert bcs._parse_date(soup) == date
 
 
-@pytest.mark.parametrize("row, _, div", TEST_ROWS)
-def test_parse_div(row, _, div):
+@pytest.mark.parametrize("row, date, div, cur", TEST_ROWS)
+def test_parse_div(row, date, div, cur):
     """Парсинг, больших чисел, пропусков и чисел с запятой."""
     soup = bs4.BeautifulSoup(row)
-    assert bcs._parse_div(soup) == div
+    assert bcs._parse_div(soup) == (div, cur)
 
 
 @pytest.mark.asyncio

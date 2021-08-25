@@ -73,6 +73,11 @@ class BCSGateway(gateways.DivGateway):
         div_data = [(_parse_date(row), *_parse_div(row)) for row in rows]
         df = pd.DataFrame(data=div_data, columns=[col.DATE, ticker, col.CURRENCY])
         df = df.set_index(col.DATE)
-        df = df.groupby(lambda date: date).agg({ticker: "sum", col.CURRENCY: "last"})
+        df = df.groupby(lambda date: date).agg(
+            {
+                ticker: "sum",
+                col.CURRENCY: "last",
+            },
+        )
 
         return df.sort_index()
