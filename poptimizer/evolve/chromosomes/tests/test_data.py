@@ -1,3 +1,4 @@
+from poptimizer import config
 from poptimizer.evolve.chromosomes import chromosome, data
 
 
@@ -5,7 +6,7 @@ def test_init_no_data():
     chromo = data.Data({})
     assert len(chromo.data) == 17
     assert 128 < chromo.data["batch_size"] < 512
-    assert 37 < chromo.data["history_days"] < 74
+    assert config.HISTORY_DAYS_MIN < chromo.data["history_days"] < config.HISTORY_DAYS_MIN * 2
     assert -1.0 < chromo.data["ticker_on"] < 1.0
     assert -1.0 < chromo.data["day_of_year_on"] < 1.0
     assert -1.0 < chromo.data["day_of_period_on"] < 1.0
@@ -76,7 +77,7 @@ def test_make_child(monkeypatch):
     base = data.Data(
         dict(
             batch_size=40,
-            history_days=60,
+            history_days=config.HISTORY_DAYS_MIN,
             ticker_on=1,
             day_of_year_on=1,
             day_of_period_on=2,
@@ -90,7 +91,7 @@ def test_make_child(monkeypatch):
     parent = data.Data(
         dict(
             batch_size=30,
-            history_days=50,
+            history_days=config.HISTORY_DAYS_MIN * 2,
             ticker_on=2,
             day_of_year_on=6,
             day_of_period_on=7,
@@ -102,7 +103,7 @@ def test_make_child(monkeypatch):
         )
     )
 
-    child = base.make_child(parent, 0)
+    child = base.make_child(parent, parent, 1)
 
     assert isinstance(child, data.Data)
     assert base.data == child.data
