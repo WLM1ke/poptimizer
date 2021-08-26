@@ -256,11 +256,11 @@ def min_max_date() -> tuple[pd.Timestamp, pd.Timestamp]:
 
 
 def get_llh(date: pd.Timestamp) -> list:
-    """Значения llh и timer для заданной даты отсортированные по убыванию llh."""
+    """Значения llh, wins и timer для заданной даты отсортированные по убыванию llh."""
     collection = store.get_collection()
     pipeline = [
         {"$match": {"date": {"$eq": date}}},
-        {"$project": {"llh": {"$first": "$llh"}, "timer": True}},
+        {"$project": {"llh": {"$first": "$llh"}, "timer": True, "wins": True}},
         {"$sort": {"llh": pymongo.DESCENDING}},
     ]
 
