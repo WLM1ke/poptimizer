@@ -196,7 +196,7 @@ def test_get_oldest():
     for organism in organisms:
         assert isinstance(organism, population.Organism)
 
-    assert len(list(organisms)) == 1
+    assert len(list(organisms)) == 6
 
 
 def test_print_stat(capsys):

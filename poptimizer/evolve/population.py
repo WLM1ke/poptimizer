@@ -216,13 +216,15 @@ def _get_parents() -> tuple[Organism, Organism]:
 
 
 def get_oldest(limit: int = config.MIN_POPULATION) -> Iterable[Organism]:
-    """Получить самые старые с количеством побед больше 1."""
+    """Получить самые старые.
+
+    При одинаковом возрасте сортировать по среднему llh.
+    """
     collection = store.get_collection()
 
     pipeline = [
-        {"$project": {"_id": True, "wins": True}},
-        {"$match": {"wins": {"$gt": 1}}},
-        {"$sort": {"wins": pymongo.DESCENDING}},
+        {"$project": {"_id": True, "wins": True, "llh": {"$avg": "$llh"}}},
+        {"$sort": {"wins": pymongo.DESCENDING, "llh": pymongo.DESCENDING}},
         {"$limit": limit},
         {"$project": {"_id": True}},
     ]
