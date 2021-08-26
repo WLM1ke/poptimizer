@@ -111,7 +111,7 @@ class Evolution:
 
         В первую очередь берутся не переоцененные существующие организмы. При их отсутствии создается
         потомок текущего в окрестности. При отсутствии текущего (обычно после возобновления прерванной
-        эволюции) создается потомок в окрестности существующего случайного организма.
+        эволюции) берется самый старый организм.
         """
         if (org := population.get_next_one(self._end)) is not None:
             return org, False
@@ -119,7 +119,7 @@ class Evolution:
         if current is not None:
             return current.make_child(self._scale), True
 
-        return population.get_next_one(None).make_child(self._scale), True
+        return next(population.get_oldest()), False
 
     def _step(self, hunter: population.Organism) -> tuple[population.Organism, bool]:
         """Один шаг эволюции.
@@ -210,17 +210,31 @@ def _hunt(hunter: population.Organism, prey: population.Organism) -> float:
 
 def _llh_ratio(hunter: population.Organism, prey: population.Organism) -> float:
     sample = population.get_llh(hunter.date)
+
     max_timer = max(sample[0]["timer"], hunter.timer)
-    sample = np.array([doc["llh"] for doc in sample])
-
-    llh_prey = (prey.llh[0] >= sample).sum()
-    llh_hunter = (hunter.llh[0] >= sample).sum()
-    llh = llh_prey / llh_hunter
-
     if prey.timer > max_timer:
-        llh = 0
+        return 0
 
-    return llh
+    sample = _filter_sample(sample)
+
+    return _llh(prey, sample) / _llh(hunter, sample)
+
+
+def _filter_sample(sample: list[dict]) -> np.array:
+    max_wins = map(lambda doc: min(2, doc["wins"]), sample)
+    max_wins = max(max_wins)
+
+    min_llh = min(
+        sample,
+        key=lambda doc: doc["llh"] if doc["wins"] >= max_wins else np.inf,
+    )["llh"]
+    sample = list(filter(lambda doc: doc["llh"] >= min_llh, sample))
+
+    return np.array([doc["llh"] for doc in sample])
+
+
+def _llh(org: population.Organism, sample: np.array) -> float:
+    return (org.llh[0] >= sample).sum()
 
 
 def _tune_scale(scale: float, acc_rate: float) -> float:
