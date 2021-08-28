@@ -8,7 +8,7 @@ import pandas as pd
 from poptimizer.data import ports
 from poptimizer.data.app import bootstrap, viewers
 from poptimizer.data.domain import events
-from poptimizer.data.views.crop import div
+from poptimizer.data.views.crop import div, not_div
 
 # Точность сравнения дивидендов
 from poptimizer.shared import col
@@ -99,8 +99,7 @@ def dividends_validation(ticker: str) -> pd.DataFrame:
     Запускает принудительное обновление, сравнивает основные данные по дивидендам с альтернативными
     источниками и распечатывает результаты.
     """
-    command = events.UpdateDivCommand(ticker)
-    bootstrap.BUS.handle_event(command)
+    bootstrap.BUS.handle_event(events.UpdateDivCommand(ticker))
 
     df_local = div.dividends(ticker)
     df_local.columns = ["LOCAL"]
@@ -112,6 +111,9 @@ def dividends_validation(ticker: str) -> pd.DataFrame:
         [div_ex.iloc[:, :-1], df_comp],
         axis=1,
     )
+
+    first_quote = not_div.quotes((ticker,))[0].index[0]
+    df_comp = df_comp.loc[first_quote:]
 
     comp_str = f"\nСравнение интернет источников с локальными данными - {ticker}\n\n{df_comp}"
     print(comp_str)  # noqa: WPS421
