@@ -1,54 +1,47 @@
-from collections import Iterable
-
+"""Тесты для подготовки прогнозов."""
 import pandas as pd
-import pytest
 
-from poptimizer.dl import Forecast
-from poptimizer.evolve import forecaster, population, store
+from poptimizer.evolve import forecaster
 
 
-@pytest.fixture(scope="module", autouse=True)
-def set_test_collection():
-    # noinspection PyProtectedMember
-    saved_collection = store._COLLECTION
-    test_collection = saved_collection.database["test"]
-    store._COLLECTION = test_collection
+def test_forecasts_is_not_none():
+    """При наличии прогнозов в конструкторе не создаются новые."""
+    tickers = ("AKRN", "GAZP")
+    date = pd.Timestamp("2021-09-01")
 
-    org = population.create_new_organism()
-    org.evaluate_fitness(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23"))
-    org.evaluate_fitness(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-24"))
-    org = population.create_new_organism()
-    org.evaluate_fitness(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23"))
-    org.evaluate_fitness(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-24"))
+    forecasts = forecaster.Forecasts(tickers, date, [tickers, date])
 
-    org = population.create_new_organism()
-    org.evaluate_fitness(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-22"))
-
-    yield
-
-    store._COLLECTION = saved_collection
-    test_collection.drop()
-
-
-def forecasts_checkup(forecasts: forecaster.Forecasts):
-    assert isinstance(forecasts, Iterable)
-    assert forecasts.tickers == ("TGKBP", "TRNFP")
-    assert forecasts.date == pd.Timestamp("2020-05-23")
-    forecasts = list(forecasts)
+    assert list(forecasts) == [tickers, date]
     assert len(forecasts) == 2
-    forecast = forecasts[0]
-    assert isinstance(forecast, Forecast)
-    assert forecast.tickers == ("TGKBP", "TRNFP")
-    assert forecast.date == pd.Timestamp("2020-05-23")
+    assert forecasts.tickers == tickers
+    assert forecasts.date == date
 
 
-def test_get_forecasts():
-    forecasts = forecaster.get_forecasts(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23"))
+def test_forecasts_is_none(mocker):
+    """При отсутствии прогнозов создаются новые."""
+    fake_forecasts = list(range(11))
+    fake_prepare_forecasts = mocker.patch.object(
+        forecaster,
+        "_prepare_forecasts",
+        return_value=fake_forecasts,
+    )
 
-    forecasts_checkup(forecasts)
+    tickers = ("AKRN", "GAZP")
+    date = pd.Timestamp("2021-09-01")
+
+    forecasts = forecaster.Forecasts(tickers, date)
+
+    assert list(forecasts) == fake_forecasts
+    assert len(forecasts) == len(fake_forecasts)
+    assert forecasts.tickers == tickers
+    assert forecasts.date == date
+
+    fake_prepare_forecasts.assert_called_once_with(tickers, date)
 
 
-def test_get_forecasts_from_cache():
-    forecasts = forecaster.get_forecasts(("TGKBP", "TRNFP"), pd.Timestamp("2020-05-23"))
+def test_prepare_forecasts(mocker):
+    """Создается ограниченное число прогнозов."""
+    fake_organisms = [mocker.MagicMock() for _ in range(100)]
+    mocker.patch.object(forecaster.population, "get_oldest", return_value=fake_organisms)
 
-    forecasts_checkup(forecasts)
+    assert len(forecaster._prepare_forecasts("", "", 12)) == 12
