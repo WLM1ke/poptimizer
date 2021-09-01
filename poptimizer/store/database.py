@@ -58,3 +58,7 @@ class MongoDB:
     def __len__(self) -> int:
         """Количество документов в хранилище."""
         return self._collection.count_documents({})
+
+    def drop(self) -> None:
+        """Удалить коллекцию."""
+        self._collection.drop()
