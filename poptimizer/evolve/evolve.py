@@ -3,6 +3,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+from numpy import random
 from scipy import stats
 
 from poptimizer import config
@@ -19,7 +20,6 @@ from poptimizer.portfolio.portfolio import load_tickers
 # Библиотеке PyMC3 ориентируются не на конкретное целевое значение, а на диапазон 0.2-0.5
 MIN_ACCEPTANCE = 0.234
 MAX_ACCEPTANCE = 0.44
-DELTA_SCALE = 1.1
 
 
 class Evolution:
@@ -46,7 +46,7 @@ class Evolution:
         self._min_population = min_population
         self._tickers = None
         self._end = None
-        self._scale = 1
+        self._scale = random.uniform()
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -142,21 +142,22 @@ class Evolution:
         if self._eval_organism(prey) is None:
             return hunter, new
 
-        if not new:
-            if (p_value := _hunt(hunter, prey)) < config.P_VALUE:
-                prey.die()
-                print(  # noqa: WPS421
-                    f"Добыча уничтожена - p_value={p_value:.2%}",
-                    "<=",
-                    f"{config.P_VALUE:.2%}\n",
-                )
+        p_value = _hunt(hunter, prey)
+        print(f"p_value={p_value:.2%}")
 
-                return hunter, new
+        if p_value < config.P_VALUE:
+            prey.die()
+            print("Добыча уничтожена...\n")  # noqa: WPS421
 
-        llh_ratio = _llh_ratio(hunter, prey)
+            return hunter, new
+
+        llh_ratio = np.inf
+        if p_value != 1:
+            llh_ratio = p_value / (1 - p_value)
+
         label = "Старый"
         sign = "<"
-        if (rnd := np.random.uniform()) < llh_ratio:
+        if (rnd := random.uniform()) < llh_ratio:
             hunter = prey
             label = "Новый"
             sign = ">"
@@ -193,55 +194,38 @@ class Evolution:
 
 
 def _hunt(hunter: population.Organism, prey: population.Organism) -> float:
-    scores_delta = zip(hunter.llh, prey.llh)
-    scores_delta = [first - second for first, second in scores_delta]
+    if len(prey.llh) == 1:
+        return _p_value_new(hunter, prey)
 
-    if len(scores_delta) < 2:
-        return 0.5
+    test_func = stats.ttest_rel
+    if len(hunter.llh) != len(prey.llh):
+        test_func = stats.ttest_ind
 
-    _, p_value = stats.ttest_1samp(
-        scores_delta,
-        0,
+    _, p_value = test_func(
+        hunter.llh,
+        prey.llh,
         alternative="greater",
     )
 
     return p_value
 
 
-def _llh_ratio(hunter: population.Organism, prey: population.Organism) -> float:
+def _p_value_new(hunter: population.Organism, prey: population.Organism) -> float:
+    llh_delta = prey.llh[0] - hunter.llh[0]
+
     sample = population.get_llh(hunter.date)
+    sample = np.array(sample)
+    sample = sample.reshape(-1, 1) - sample.reshape(1, -1)
+    sample = sample.flatten()
 
-    max_timer = max(sample[0]["timer"], hunter.timer)
-    if prey.timer > max_timer:
-        return 0
-
-    sample = _filter_sample(sample)
-
-    return _llh(prey, sample) / _llh(hunter, sample)
-
-
-def _filter_sample(sample: list[dict]) -> np.array:
-    max_wins = map(lambda doc: min(2, doc["wins"]), sample)
-    max_wins = max(max_wins)
-
-    min_llh = min(
-        sample,
-        key=lambda doc: doc["llh"] if doc["wins"] >= max_wins else np.inf,
-    )["llh"]
-    sample = list(filter(lambda doc: doc["llh"] >= min_llh, sample))
-
-    return np.array([doc["llh"] for doc in sample])
-
-
-def _llh(org: population.Organism, sample: np.array) -> float:
-    return (org.llh[0] >= sample).sum()
+    return stats.percentileofscore(sample, llh_delta, "mean") / 100
 
 
 def _tune_scale(scale: float, acc_rate: float) -> float:
     """Корректировка размера шага."""
     if acc_rate < MIN_ACCEPTANCE:
-        return scale / DELTA_SCALE
+        return min(scale, random.uniform())
     elif acc_rate > MAX_ACCEPTANCE:
-        return scale * DELTA_SCALE
+        return max(scale, random.uniform())
 
     return scale
