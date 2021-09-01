@@ -185,15 +185,18 @@ def create_new_organism() -> Organism:
 def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
     """Последовательно выдает организмы с датой не равной данной и None при отсутствии.
 
-    В первую очередь выдаются организмы с минимальным количеством оценок.
+    В первую очередь выдаются организмы с минимальным количеством оценок и низким СКО llh.
     """
     collection = store.get_collection()
-    doc = collection.find_one(
-        filter={"date": {"$ne": date}},
-        sort=[("wins", pymongo.ASCENDING)],
-        projection={"_id": True},
-        limit=1,
-    )
+
+    pipeline = [
+        {"$match": {"date": {"$ne": date}}},
+        {"$project": {"_id": True, "wins": True, "std": {"$stdDevPop": "$llh"}}},
+        {"$sort": {"wins": pymongo.ASCENDING, "std": pymongo.ASCENDING}},
+        {"$limit": 1},
+        {"$project": {"_id": True}},
+    ]
+    doc = next(collection.aggregate(pipeline), None)
 
     return doc and Organism(**doc)
 
@@ -215,17 +218,16 @@ def _get_parents() -> tuple[Organism, Organism]:
     return parent1, parent2
 
 
-def get_oldest(limit: int = config.MIN_POPULATION) -> Iterable[Organism]:
+def get_oldest() -> Iterable[Organism]:
     """Получить самые старые.
 
-    При одинаковом возрасте сортировать по среднему llh.
+    При одинаковом возрасте сортировать по последнему llh.
     """
     collection = store.get_collection()
 
     pipeline = [
-        {"$project": {"_id": True, "wins": True, "llh": {"$avg": "$llh"}}},
+        {"$project": {"_id": True, "wins": True, "llh": {"$first": "$llh"}}},
         {"$sort": {"wins": pymongo.DESCENDING, "llh": pymongo.DESCENDING}},
-        {"$limit": limit},
         {"$project": {"_id": True}},
     ]
 
@@ -255,16 +257,15 @@ def min_max_date() -> tuple[pd.Timestamp, pd.Timestamp]:
     )
 
 
-def get_llh(date: pd.Timestamp) -> list:
-    """Значения llh, wins и timer для заданной даты отсортированные по убыванию llh."""
+def get_llh(date: pd.Timestamp) -> list[float]:
+    """Последние значения llh в популяции."""
     collection = store.get_collection()
     pipeline = [
         {"$match": {"date": {"$eq": date}}},
-        {"$project": {"llh": {"$first": "$llh"}, "timer": True, "wins": True}},
-        {"$sort": {"llh": pymongo.DESCENDING}},
+        {"$project": {"llh": {"$first": "$llh"}}},
     ]
 
-    return list(collection.aggregate(pipeline))
+    return [doc["llh"] for doc in collection.aggregate(pipeline)]
 
 
 def print_stat() -> None:
