@@ -13,10 +13,12 @@ from numpy import linalg
 from scipy import stats
 from torch import nn, optim
 
-from poptimizer.config import DEVICE, YEAR_IN_TRADING_DAYS, POptimizerError
+from poptimizer.config import DEVICE, YEAR_IN_TRADING_DAYS
 from poptimizer.dl import data_loader, models
 from poptimizer.dl.features import data_params
 from poptimizer.dl.forecast import Forecast
+from poptimizer.dl.models.wave_net import GradientsError, ModelError
+
 
 # Ограничение на максимальное снижение правдоподобия во время обучения для его прерывания
 LLH_DRAW_DOWN = 1
@@ -25,21 +27,10 @@ LLH_DRAW_DOWN = 1
 MAX_SIZE = 2 * (2 ** 10) ** 2
 
 
-class ModelError(POptimizerError):
-    """Базовая ошибка модели."""
-
-
 class TooLongHistoryError(ModelError):
     """Слишком длинная история признаков.
 
     Отсутствуют история для всех тикеров - нужно сократить историю.
-    """
-
-
-class GradientsError(ModelError):
-    """Слишком большие ошибки на обучении.
-
-    Вероятно произошел взрыв градиентов.
     """
 
 
@@ -332,12 +323,14 @@ def _opt_port(mean: np.array, var: np.array, labels: np.array) -> float:
     weight = _opt_weight(mean, var)
 
     rez = stats.ttest_1samp(weight * labels, 0, alternative="greater")
-    print(rez)
+    print(rez)  # noqa: WPS421
 
-    n = len(mean)
-    ir = rez[0] / n ** 0.5 * (YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS) ** 0.5
+    num = len(mean)
+    ir = rez[0] / num ** 0.5
+    ir *= (YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS) ** 0.5
+
     ic = np.corrcoef(weight, labels)[0, 1]
     br = (ir / ic) ** 2
-    print(f"IR = IC * sqrt(BR) = {ic:.2f} * sqrt({br:.2f}) = {ir:.2f}")
+    print(f"IR = IC * sqrt(BR) = {ic:.2f} * sqrt({br:.2f}) = {ir:.2f}")  # noqa: WPS421
 
     return ir

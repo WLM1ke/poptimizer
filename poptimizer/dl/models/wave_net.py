@@ -5,10 +5,21 @@ import numpy as np
 import torch
 from torch import distributions, nn
 
-from poptimizer.config import DEVICE
+from poptimizer.config import DEVICE, POptimizerError
 from poptimizer.dl.features import FeatureType
 
 EPS = torch.tensor(torch.finfo().eps)
+
+
+class ModelError(POptimizerError):
+    """Базовая ошибка модели."""
+
+
+class GradientsError(ModelError):
+    """Слишком большие ошибки на обучении.
+
+    Вероятно произошел взрыв градиентов.
+    """
 
 
 class SubBlock(nn.Module):
@@ -288,7 +299,7 @@ class WaveNet(nn.Module):
                 emb = emb.unsqueeze(2)
                 y = emb + y
 
-        skips = torch.tensor(0.0, dtype=torch.float)
+        skips = torch.tensor(0, dtype=torch.float)
 
         for block in self.blocks:
             y, skip = block(y)
@@ -303,19 +314,31 @@ class WaveNet(nn.Module):
 
         logits = self.output_conv_logits(y)
 
-        m = self.output_conv_m(y)
+        mean = self.output_conv_m(y)
 
-        s = self.output_conv_s(y)
-        s = self.output_softplus_s(s) + EPS
+        std = self.output_conv_s(y)
+        std = self.output_softplus_s(std) + EPS
 
-        return logits.permute((0, 2, 1)), m.permute((0, 2, 1)), s.permute((0, 2, 1))
+        return (
+            logits.permute((0, 2, 1)),
+            mean.permute((0, 2, 1)),
+            std.permute(
+                (0, 2, 1),
+            ),
+        )
 
     def dist(
-        self, batch: dict[str, Union[torch.Tensor, list[torch.Tensor]]]
+        self,
+        batch: dict[str, Union[torch.Tensor, list[torch.Tensor]]],
     ) -> distributions.Distribution:
+        """Возвращает распределение доходности."""
         logits, mean, std = self(batch)
 
-        weights_dist = distributions.Categorical(logits=logits)
+        try:
+            weights_dist = distributions.Categorical(logits=logits)
+        except ValueError as err:
+            raise GradientsError(err)
+
         comp_dist = distributions.LogNormal(mean, std)
 
         return distributions.MixtureSameFamily(weights_dist, comp_dist)
