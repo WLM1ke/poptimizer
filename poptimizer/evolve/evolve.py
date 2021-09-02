@@ -20,6 +20,8 @@ from poptimizer.portfolio.portfolio import load_tickers
 # Библиотеке PyMC3 ориентируются не на конкретное целевое значение, а на диапазон 0.2-0.5
 MIN_ACCEPTANCE = 0.234
 MAX_ACCEPTANCE = 0.44
+# Штраф за большое время тренировки
+TIME_TEMPERATURE = 0
 
 
 class Evolution:
@@ -143,7 +145,7 @@ class Evolution:
             return hunter, new
 
         p_value = _hunt(hunter, prey)
-        print(f"p_value={p_value:.2%}")
+        print(f"p_value={p_value:.2%}")  # noqa: WPS421
 
         if p_value < config.P_VALUE:
             prey.die()
@@ -153,7 +155,8 @@ class Evolution:
 
         llh_ratio = np.inf
         if p_value != 1:
-            llh_ratio = p_value / (1 - p_value)
+            temperature = (prey.timer / hunter.timer) ** TIME_TEMPERATURE
+            llh_ratio = (p_value / (1 - p_value)) ** temperature
 
         label = "Старый"
         sign = "<"
