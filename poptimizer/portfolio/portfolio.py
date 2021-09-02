@@ -5,6 +5,7 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
+import pymongo
 import yaml
 
 from poptimizer import config
@@ -15,14 +16,23 @@ from poptimizer.store import database
 VALUE_REL_TOL = 2.0e-4
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
-MAX_HISTORY = database.MONGO_CLIENT["data"]["models"].find_one(
-    {},
-    projection={"_id": False, "genotype.Data.history_days": True},
-    sort=[("genotype.Data.history_days", -1)],
-)
+pipeline = [
+    {
+        "$project": {
+            "history_days": "$genotype.Data.history_days",
+            "wins": True,
+            "llh": {"$first": "$llh"},
+        }
+    },
+    {"$sort": {"wins": pymongo.DESCENDING, "llh": pymongo.DESCENDING}},
+    {"$limit": config.MIN_POPULATION},
+    {"$sort": {"history_days": pymongo.DESCENDING}},
+    {"$limit": 1},
+]
+MAX_HISTORY = next(database.MONGO_CLIENT["data"]["models"].aggregate(pipeline))["history_days"]
 # Нужно для тестирования на пустой базе
 try:
-    MAX_HISTORY = int(MAX_HISTORY["genotype"]["Data"]["history_days"])
+    MAX_HISTORY = int(MAX_HISTORY)
 except TypeError:
     MAX_HISTORY = config.HISTORY_DAYS_MIN
 
