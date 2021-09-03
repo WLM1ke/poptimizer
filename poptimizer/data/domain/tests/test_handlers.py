@@ -66,6 +66,7 @@ async def test_trading_day_ended(mocker):
 
     assert await dispatcher.handle_event(event, fake_repo) == [
         events.IndexCalculated("MCFTRR", event.date),
+        events.IndexCalculated("MEOGTRR", event.date),
         events.IndexCalculated("IMOEX", event.date),
         events.IndexCalculated("RVI", event.date),
         "a",

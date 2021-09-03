@@ -63,6 +63,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         aws = [_load_by_id_and_handle_event(repo, id_, event) for id_ in table_ids]
         return [
             events.IndexCalculated("MCFTRR", event.date),
+            events.IndexCalculated("MEOGTRR", event.date),
             events.IndexCalculated("IMOEX", event.date),
             events.IndexCalculated("RVI", event.date),
             *itertools.chain.from_iterable(await asyncio.gather(*aws)),
