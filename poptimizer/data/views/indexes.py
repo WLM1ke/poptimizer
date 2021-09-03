@@ -53,6 +53,12 @@ def rvi(last_date: pd.Timestamp) -> pd.Series:
     return df.loc[:last_date]
 
 
+def index(ticker: str, last_date: pd.Timestamp) -> pd.Series:
+    """Поучение произвольного индекса из загружаемых."""
+    df = not_div.index(ticker)
+    return df.loc[:last_date]
+
+
 def usd(last_date: pd.Timestamp) -> pd.Series:
     """Курс доллара."""
     df = not_div.usd()

@@ -86,6 +86,14 @@ def test_rvi(date, index):
     assert df.loc[date] == pytest.approx(index)
 
 
+def test_index():
+    """Совпадение данных произвольного индекса и специальной функции."""
+    pd.testing.assert_series_equal(
+        indexes.index("RVI", pd.Timestamp("2021-09-02")),
+        indexes.rvi(pd.Timestamp("2021-09-02")),
+    )
+
+
 USD_CASES = (
     ("2021-01-12", 73.54),
     ("2021-02-12", 73.7175),
