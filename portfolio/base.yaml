@@ -30,6 +30,7 @@ positions:
   BSPB: 0
   CBOM: 0
   CHMF: 0
+  CHMK: 0
   CNTL: 0
   CNTLP: 0
   DIOD: 0
@@ -47,7 +48,6 @@ positions:
   FESH: 0
   FIVE: 0
   FLOT: 0
-  FXKZ: 0
   GAZP: 0
   GCHE: 0
   GEMA: 0
@@ -98,6 +98,7 @@ positions:
   MRKY: 0
   MRKZ: 0
   MRSB: 0
+  MSFT-RM: 0
   MSNG: 0
   MSRS: 0
   MSTT: 0
