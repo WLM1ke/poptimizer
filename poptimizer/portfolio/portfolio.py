@@ -16,7 +16,7 @@ from poptimizer.store import database
 VALUE_REL_TOL = 2.0e-4
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
-pipeline = [
+_PIPELINE = [
     {
         "$project": {
             "history_days": "$genotype.Data.history_days",
@@ -29,13 +29,13 @@ pipeline = [
     {"$sort": {"history_days": pymongo.DESCENDING}},
     {"$limit": 1},
 ]
-MAX_HISTORY = next(database.MONGO_CLIENT["data"]["models"].aggregate(pipeline))["history_days"]
 # Нужно для тестирования на пустой базе
 try:
-    MAX_HISTORY = int(MAX_HISTORY)
-except TypeError:
+    MAX_HISTORY = next(database.MONGO_CLIENT["data"]["models"].aggregate(_PIPELINE))["history_days"]
+except StopIteration:
     MAX_HISTORY = config.HISTORY_DAYS_MIN
 
+MAX_HISTORY = int(MAX_HISTORY)
 ADD_DAYS = (MAX_HISTORY + data_params.FORECAST_DAYS * 2) * 2
 
 
