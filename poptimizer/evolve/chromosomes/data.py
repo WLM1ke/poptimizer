@@ -138,6 +138,14 @@ LOW_ON = GeneParams(
     path=("data", "features", "Low", "on"),
     phenotype_function=lambda x: x > 0,
 )
+MEOGTRR_ON = GeneParams(
+    name="meogtrr_on",
+    default_range=(-1.0, 0.0),
+    lower_bound=None,
+    upper_bound=None,
+    path=("data", "features", "MEOGTRR", "on"),
+    phenotype_function=lambda x: x > 0,
+)
 
 
 class Data(Chromosome):
@@ -161,4 +169,5 @@ class Data(Chromosome):
         OPEN_ON,
         HIGH_ON,
         LOW_ON,
+        MEOGTRR_ON,
     )

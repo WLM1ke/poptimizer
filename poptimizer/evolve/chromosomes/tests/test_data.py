@@ -4,7 +4,7 @@ from poptimizer.evolve.chromosomes import chromosome, data
 
 def test_init_no_data():
     chromo = data.Data({})
-    assert len(chromo.data) == 17
+    assert len(chromo.data) == len(chromo._genes)
     assert 128 < chromo.data["batch_size"] < 512
     assert config.HISTORY_DAYS_MIN < chromo.data["history_days"] < config.HISTORY_DAYS_MIN * 2
     assert -1.0 < chromo.data["ticker_on"] < 1.0
@@ -24,7 +24,7 @@ def test_init_no_data():
 
 def test_init_some_data():
     chromo = data.Data(dict(history_days=40))
-    assert len(chromo.data) == 17
+    assert len(chromo.data) == len(chromo._genes)
     assert 128 < chromo.data["batch_size"] < 512
     assert chromo.data["history_days"] == 40
     assert -1.0 < chromo.data["ticker_on"] < 1.0
@@ -58,7 +58,7 @@ def test_init_all_data():
             ticker_type_on=5,
         )
     )
-    assert len(chromo.data) == 17
+    assert len(chromo.data) == len(chromo._genes)
     assert chromo.data["batch_size"] == 10
     assert chromo.data["history_days"] == 40
     assert chromo.data["ticker_on"] == -1
