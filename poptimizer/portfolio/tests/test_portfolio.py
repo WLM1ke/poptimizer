@@ -28,8 +28,8 @@ def test_portfolio(monkeypatch, port):
     assert port.date == pd.Timestamp("2018-03-19")
     assert port.index.tolist() == ["GAZP", "TTLK", "VSMO", CASH, PORTFOLIO]
     assert np.allclose(port.shares, [6820, 1_230_000, 145, 1000, 1])
-    assert np.allclose(port.lot_size, [10, 10000, 1, 1, 1])
-    assert np.allclose(port.lots, [682, 123, 145, 1000, 1])
+    assert np.allclose(port.lot_size, [10, 1000, 1, 1, 1])
+    assert np.allclose(port.lots, [682, 1230, 145, 1000, 1])
     assert np.allclose(port.price, [139.91, 0.1525, 17630, 1, 3_699_111])
     assert np.allclose(port.value, [954_186, 187_575, 2_556_350, 1000, 3_699_111])
     assert np.allclose(

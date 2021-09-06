@@ -44,7 +44,7 @@ def test_ticker_types(ticker, type_):
 LOT_CASES = (
     (("AKRN", "MOEX"), (1, 10)),
     (("MTSS", "MOEX", "MRSB"), (10, 10, 10000)),
-    (("SNGSP", "TTLK", "PMSBP", "RTKM", "SIBN"), (100, 10000, 10, 10, 10)),
+    (("SNGSP", "TTLK", "PMSBP", "RTKM", "SIBN"), (100, 1000, 10, 10, 10)),
 )
 
 
