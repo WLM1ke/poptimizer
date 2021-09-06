@@ -21,7 +21,7 @@ from poptimizer.portfolio.portfolio import load_tickers
 MIN_ACCEPTANCE = 0.234
 MAX_ACCEPTANCE = 0.44
 # Штраф за большое время тренировки
-TIME_TEMPERATURE = 0
+TIME_TEMPERATURE = 0.04
 
 
 class Evolution:
