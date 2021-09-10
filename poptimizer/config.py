@@ -37,7 +37,7 @@ MIN_POPULATION = 80
 FORECAST_DAYS = 37
 
 # Минимальная количество дней истории котировок для прогнозов
-HISTORY_DAYS_MIN = 70
+HISTORY_DAYS_MIN = 72
 
 # Значимость отклонения градиента от нуля
 P_VALUE = 0.05
