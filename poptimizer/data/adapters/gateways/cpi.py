@@ -9,7 +9,7 @@ from poptimizer.data.adapters.gateways import gateways
 from poptimizer.shared import adapters, col
 
 # Параметры загрузки валидации данных
-URL = "https://rosstat.gov.ru/storage/mediabank/i_ipc_1991-2021.xlsx"
+URL = "https://rosstat.gov.ru/storage/mediabank/i_ipc_1991-2021(1).xlsx"
 END_OF_JAN = 31
 PARSING_PARAMETERS = types.MappingProxyType(
     {
@@ -33,6 +33,7 @@ class CPIGatewayError(config.POptimizerError):
 async def _load_xlsx(session: aiohttp.ClientSession) -> pd.DataFrame:
     """Загрузка Excel-файла с данными по инфляции."""
     async with session.get(URL) as resp:
+        print(URL)
         xls_file = await resp.read()
     return pd.read_excel(
         xls_file,
