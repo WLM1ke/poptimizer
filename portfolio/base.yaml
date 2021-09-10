@@ -5,6 +5,7 @@ positions:
   ABBV-RM: 0
   ABRD: 0
   ABT-RM: 0
+  ADBE-RM: 0
   AFKS: 0
   AFLT: 0
   AGRO: 0
@@ -129,6 +130,7 @@ positions:
   PMSBP: 0
   POGR: 0
   POLY: 0
+  PYPL-RM: 0
   QCOM-RM: 0
   QIWI: 0
   RASP: 0
@@ -146,7 +148,6 @@ positions:
   RZSB: 0
   SBER: 0
   SBERP: 0
-  SBRB: 0
   SELG: 0
   SELGP: 0
   SFIN: 0
