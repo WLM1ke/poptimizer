@@ -55,22 +55,17 @@ class Evolution:
 
         При необходимости создается начальная популяция из случайных организмов по умолчанию.
         """
-        step = 0
+        self._setup()
+
         trial = 0
         acceptance = 0
-        current = self._setup()
+
+        step = 0
+        current = None
 
         while True:  # noqa: WPS457
-            d_min, d_max = population.min_max_date()
+            step, current = self._step_setup(step, current)
 
-            if (population.count() >= self._min_population) and (d_min == d_max):
-                dates = indexes.mcftrr(listing.last_history_date()).loc[self._end :].index
-                if len(dates) > 1:
-                    step = 0
-                    self._tickers = load_tickers()
-                    self._end = dates[1]
-
-            step += 1
             date = self._end.date()
             print(f"***{date}: Шаг эволюции — {step}***")  # noqa: WPS421
             population.print_stat()
@@ -91,23 +86,36 @@ class Evolution:
 
             current = next_
 
-    def _setup(self) -> pd.Timestamp:
-        """При необходимости создает популяцию из организмов по умолчанию и устанавливает дату."""
-        self._tickers = load_tickers()
-        self._end = population.min_max_date()[1]
-
+    def _setup(self) -> None:
         if population.count() == 0:
-            self._end = listing.last_history_date()
             for n_org in range(1, self._min_population + 1):
                 print(f"Создаются базовые организмы — {n_org}")  # noqa: WPS421
                 org = population.create_new_organism()
                 print(org, "\n")  # noqa: WPS421
 
-        return self._next_org(None)[0]
+    def _step_setup(
+        self,
+        step: int,
+        org: Optional[population.Organism],
+    ) -> tuple[int, population.Organism]:
+        d_min, d_max = population.min_max_date()
+        if org is None:
+            self._end = d_max or listing.last_history_date()
+            self._tickers = load_tickers()
+            org = self._next_org()
+
+        dates = indexes.mcftrr(listing.last_history_date()).loc[self._end :].index
+        if (d_min != d_max) or (population.count() < self._min_population) or (len(dates) == 1):
+            return step + 1, org
+
+        self._tickers = load_tickers()
+        self._end = dates[1]
+
+        return 1, self._next_org()
 
     def _next_org(
         self,
-        current: Optional[population.Organism],
+        current: Optional[population.Organism] = None,
     ) -> tuple[population.Organism, bool]:
         """Возвращает следующий организм и информацию новый ли он.
 
