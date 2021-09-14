@@ -89,8 +89,8 @@ def _median_conf_radius(
     return k1 * 0.5 * (l_t / t) ** 0.5
 
 
-def minimum_n(alfa: float) -> int:
-    """Подбор оптимально n для заданного уровня значимости.
+def minimum_bounding_n(alfa: float) -> int:
+    """Подбор минимального ограничивающего n для заданного уровня значимости.
 
     Параметр n в формуле доверительных интервалов при последовательном тестировании отвечает за момент
     начала тестов. Однако для малых n интервалы имеют ширину больше 0.5, то есть не накладывают
@@ -111,7 +111,7 @@ def median_conf_bound(sample: list[float], p_value: float) -> tuple[float, float
     интервалы с начала тестирования под заданное p_value.
     """
     t = len(sample)  # noqa: WPS111
-    n = minimum_n(p_value)  # noqa: WPS111
+    n = minimum_bounding_n(p_value)  # noqa: WPS111
     if t < n:
         raise SmallSampleError(t, n)
     radius = _median_conf_radius(t, p_value, n)
