@@ -1,4 +1,5 @@
 """Оптимизатор портфеля."""
+import numpy as np
 import pandas as pd
 from scipy import stats
 
@@ -118,4 +119,11 @@ class Optimizer:
 
 
 def _grad_conf_int(forecasts, p_value) -> tuple[float, float]:
-    return stats.bayes_mvs(forecasts, (1 - p_value))[0][1]
+    interval = stats.bootstrap(
+        (forecasts,),
+        np.mean,
+        confidence_level=(1 - p_value),
+        random_state=0,
+    ).confidence_interval
+
+    return interval.low, interval.high
