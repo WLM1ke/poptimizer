@@ -113,7 +113,8 @@ def median_conf_bound(sample: list[float], p_value: float) -> tuple[float, float
     t = len(sample)  # noqa: WPS111
     n = minimum_bounding_n(p_value)  # noqa: WPS111
     if t < n:
-        raise SmallSampleError(t, n)
+        # TODO: raise SmallSampleError(f"Размер выборки {t} - должен быть не меньше {n}")
+        return min(sample), max(sample)
     radius = _median_conf_radius(t, p_value, n)
 
     return tuple(
