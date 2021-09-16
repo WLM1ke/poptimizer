@@ -262,16 +262,6 @@ class MetricsResample:
         return f"\n{pd.concat(frames, axis=1)}"
 
     def _grad_summary(self) -> str:
-        """Информация о максимальном и минимальном градиенте.
-
-        Вспомогательная информация для осуществления операций, не связанных с оптимизацией:
-
-        - Выводом средств
-        - Покупкой бумаг на поступившие дивиденды.
-
-        Бумага с минимальным градиентом выбирается среди имеющих не нулевой вес.
-        Бумага с максимальным градиентом выбирается с учетом фактора оборота.
-        """
         return_ = pd.concat([metric.mean for metric in self._metrics], axis=1)
         return_ = return_.loc[PORTFOLIO].quantile(_P_VALUE)
 
@@ -287,7 +277,6 @@ class MetricsResample:
             f"Консервативная доходность: {return_: .4f}",
             f"Консервативный риск:       {risk: .4f}",
             f"Консервативный Шарп:       {sharpe: .4f}",
-            f"Бумага с минимальным СКО:   {self.std.iloc[:-2].idxmin()}",
         ]
 
         return "\n".join(strings)
