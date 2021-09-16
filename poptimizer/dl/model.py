@@ -105,14 +105,14 @@ class Model:
             self._llh = self._eval_llh()
         return self._llh
 
-    def prepare_model(self, loader: data_loader.DescribedDataLoader, verbose: bool = True) -> nn.Module:
+    def prepare_model(self, loader: data_loader.DescribedDataLoader) -> nn.Module:
         """Загрузка или обучение модели."""
         if self._model is not None:
             return self._model
 
         pickled_model = self._pickled_model
         if pickled_model:
-            self._model = self._load_trained_model(pickled_model, loader, verbose)
+            self._model = self._load_trained_model(pickled_model, loader)
         else:
             self._model = self._train_model()
 
@@ -146,8 +146,6 @@ class Model:
         all_vars = []
         all_labels = []
 
-        print(f"Тестовых дней: {days}")
-        print(f"Тестовых примеров: {len(loader.dataset)}")
         llh_adj = np.log(data_params.FORECAST_DAYS) / 2
         with torch.no_grad():
             model.eval()
@@ -167,7 +165,6 @@ class Model:
         all_labels = torch.cat(all_labels).cpu().numpy().flatten()
         llh = llh_sum / weight_sum + llh_adj
         ir = _opt_port(all_means, all_vars, all_labels)
-        print(f"LLH:   {llh:.4f}")
 
         return llh, ir
 
@@ -175,10 +172,9 @@ class Model:
         self,
         pickled_model: bytes,
         loader: data_loader.DescribedDataLoader,
-        verbose: bool = True,
     ) -> nn.Module:
         """Создание тренированной модели."""
-        model = self._make_untrained_model(loader, verbose)
+        model = self._make_untrained_model(loader)
         buffer = io.BytesIO(pickled_model)
         state_dict = torch.load(buffer)
         model.load_state_dict(state_dict)
@@ -187,19 +183,13 @@ class Model:
     def _make_untrained_model(
         self,
         loader: data_loader.DescribedDataLoader,
-        verbose: bool = True,
     ) -> nn.Module:
         """Создает модель с не обученными весами."""
         model_type = getattr(models, self._phenotype["type"])
         model = model_type(loader.history_days, loader.features_description, **self._phenotype["model"])
 
-        if verbose:
-            modules = sum(1 for _ in model.modules())
-            print(f"Количество слоев - {modules}")
-            model_params = sum(tensor.numel() for tensor in model.parameters())
-            print(f"Количество параметров - {model_params}")
-            if model_params > MAX_SIZE:
-                raise TooLargeModelError()
+        if sum(tensor.numel() for tensor in model.parameters()) > MAX_SIZE:
+            raise TooLargeModelError()
 
         return model
 
@@ -228,8 +218,10 @@ class Model:
         scheduler_params["total_steps"] = total_steps
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer, **scheduler_params)
 
-        print(f"Epochs - {epochs:.2f}")
-        print(f"Train size - {len(loader.dataset)}")
+        print(f"Epochs - {epochs:.2f} / Train size - {len(loader.dataset)}")
+        modules = sum(1 for _ in model.modules())
+        model_params = sum(tensor.numel() for tensor in model.parameters())
+        print(f"Количество слоев / параметров - {modules}/{model_params}")
 
         llh_sum = 0
         llh_deque = collections.deque([0], maxlen=steps_per_epoch)
@@ -280,7 +272,7 @@ class Model:
             data_params.ForecastParams,
         )
 
-        model = self.prepare_model(loader, verbose=False)
+        model = self.prepare_model(loader)
         model.to(DEVICE)
 
         means = []
@@ -323,7 +315,6 @@ def _opt_port(mean: np.array, var: np.array, labels: np.array) -> float:
     weight = _opt_weight(mean, var)
 
     rez = stats.ttest_1samp(weight * labels, 0, alternative="greater")
-    print(rez)  # noqa: WPS421
 
     num = len(mean)
     ir = rez[0] / num ** 0.5
