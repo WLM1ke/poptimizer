@@ -236,7 +236,7 @@ def get_oldest() -> Iterable[Organism]:
             yield Organism(**id_dict)
 
 
-def min_max_date() -> tuple[pd.Timestamp, pd.Timestamp]:
+def min_max_date() -> tuple[Optional[pd.Timestamp], Optional[pd.Timestamp]]:
     """Минимальная и максимальная дата в популяции."""
     collection = store.get_collection()
 
@@ -250,11 +250,10 @@ def min_max_date() -> tuple[pd.Timestamp, pd.Timestamp]:
         },
     ]
     doc = next(collection.aggregate(pipeline), {})
+    if doc.get("max") is None:
+        return None, None
 
-    return (
-        pd.Timestamp(doc.get("min")),
-        pd.Timestamp(doc.get("max")),
-    )
+    return pd.Timestamp(doc["min"]), pd.Timestamp(doc["max"])
 
 
 def get_llh(date: pd.Timestamp) -> list[float]:
