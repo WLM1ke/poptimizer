@@ -185,16 +185,16 @@ def create_new_organism() -> Organism:
 def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
     """Последовательно выдает организмы с датой не равной данной и None при отсутствии.
 
-    В первую очередь выдаются организмы с минимальным количеством оценок и низким СКО llh.
+    Организмы выдаются в порядке возрастания id, чтобы при последовательных сравнениях оценивались
+    одни и те же организмы пока один не уничтожит другой.
     """
     collection = store.get_collection()
 
     pipeline = [
         {"$match": {"date": {"$ne": date}}},
-        {"$project": {"_id": True, "wins": True, "std": {"$stdDevPop": "$llh"}}},
-        {"$sort": {"wins": pymongo.ASCENDING, "std": pymongo.ASCENDING}},
-        {"$limit": 1},
         {"$project": {"_id": True}},
+        {"$sort": {"_id": pymongo.ASCENDING}},
+        {"$limit": 1},
     ]
     doc = next(collection.aggregate(pipeline), None)
 
