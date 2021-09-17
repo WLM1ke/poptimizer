@@ -34,6 +34,8 @@ positions:
   CHMK: 0
   CNTL: 0
   CNTLP: 0
+  CRM-RM: 0
+  CSCO-RM: 0
   DIOD: 0
   DIS-RM: 0
   DSKY: 0
@@ -157,7 +159,6 @@ positions:
   SNGSP: 0
   SBUX-RM: 0
   STSBP: 0
-  SUGB: 0
   SVAV: 0
   T-RM: 0
   TATN: 0
