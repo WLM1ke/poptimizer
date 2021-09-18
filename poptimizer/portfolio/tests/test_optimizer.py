@@ -11,8 +11,9 @@ class FakeMetricsResample:
 
     @property
     def all_gradients(self):
-        grad = dict(CHEP=0.015, KZOS=0.20, MTSS=0.01, RTKMP=0.03, TRCN=0.04, CASH=-0.05, PORTFOLIO=0.0)
-        return pd.DataFrame([grad] * 30).T
+        grad1 = dict(CHEP=0.015, KZOS=0.20, MTSS=0.01, RTKMP=0.03, TRCN=0.04, CASH=-0.05, PORTFOLIO=0.0)
+        grad2 = dict(CHEP=0.016, KZOS=0.21, MTSS=0.02, RTKMP=0.04, TRCN=0.05, CASH=-0.06, PORTFOLIO=0.2)
+        return pd.DataFrame([grad1] * 30 + [grad2]).T
 
     @property
     def beta(self):
