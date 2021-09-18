@@ -33,7 +33,6 @@ class CPIGatewayError(config.POptimizerError):
 async def _load_xlsx(session: aiohttp.ClientSession) -> pd.DataFrame:
     """Загрузка Excel-файла с данными по инфляции."""
     async with session.get(URL) as resp:
-        print(URL)
         xls_file = await resp.read()
     return pd.read_excel(
         xls_file,
