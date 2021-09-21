@@ -1,13 +1,14 @@
 """Формирование блока pdf-файла с информацией о структуре портфеля."""
+import types
 from io import BytesIO
 
 import matplotlib.pyplot as plt
+import pandas as pd
 from reportlab import platypus
 from reportlab.lib.units import inch
 
-# Количество строк в таблице, которое влезает в блок и нормально выглядит на диаграмме
-import poptimizer.data.views.crop
-from poptimizer.portfolio import PORTFOLIO, Portfolio
+from poptimizer.data.views import listing
+from poptimizer.portfolio import CASH, PORTFOLIO, Portfolio
 from poptimizer.reports.pdf_style import (
     BLOCK_HEADER_STYLE,
     BOLD_FONT,
@@ -16,10 +17,18 @@ from poptimizer.reports.pdf_style import (
     BlockPosition,
 )
 
-MAX_TABLE_ROWS = 9
+# Количество строк в таблице, которое влезает в блок и нормально выглядит на диаграмме
+MAX_TABLE_ROWS = 10
 
-# Общее наименование мелких позиций в портфеле
-OTHER = "OTHER"
+# Наименование типов бумаг
+KINDS_MAPPING = types.MappingProxyType(
+    {
+        0: "Russian",
+        1: "Russian",
+        2: "Foreign",
+        3: "ETF",
+    }
+)
 
 # Доля левой части блока - используется для таблицы. В правой расположена диаграмма
 LEFT_PART_OF_BLOCK = 1 / 3
@@ -28,18 +37,33 @@ LEFT_PART_OF_BLOCK = 1 / 3
 def drop_small_positions(portfolio: Portfolio):
     """Отбрасывает нулевые позиции и при необходимости сокращает число строк до максимального.
 
-    Объединяет самые мелкие позиции в категорию OTHER и сортирует позиции по убыванию.
+    Объединяет самые мелкие позиции по типам бумаг.
     """
     value = portfolio.value
     portfolio_value = value[PORTFOLIO]
     value = value.iloc[:-1]
     value = value[value > 0]
-    sorted_value = value.sort_values(ascending=False)
-    max_rows = min(len(sorted_value), MAX_TABLE_ROWS)
-    sorted_value = sorted_value.iloc[:max_rows]
-    sorted_value[OTHER] = portfolio_value - sorted_value.sum()
-    sorted_value[PORTFOLIO] = portfolio_value
-    return sorted_value
+    value = value.sort_values(ascending=False)
+
+    kinds = listing.ticker_types().reindex(value.index)
+    kinds[CASH] = 0
+    kinds = kinds.replace(KINDS_MAPPING)
+
+    n_types = len(set(kinds))
+    max_rows = min(len(value), MAX_TABLE_ROWS - n_types)
+
+    rez = value.iloc[:max_rows]
+    other = pd.concat([value.iloc[max_rows:], kinds.iloc[max_rows:]], axis=1)
+    rez = pd.concat(
+        [
+            rez,
+            other.groupby("TICKER_TYPE").sum()["VALUE"].sort_values(),
+        ],
+        axis=0,
+    )
+    rez[PORTFOLIO] = portfolio_value
+
+    return rez
 
 
 def make_plot(portfolio: Portfolio, width: float, height: float):
