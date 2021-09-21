@@ -5,38 +5,16 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
-import pymongo
 import yaml
 
 from poptimizer import config
 from poptimizer.data.views import listing, quotes
 from poptimizer.dl.features import data_params
-from poptimizer.store import database
 
 VALUE_REL_TOL = 2.0e-4
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
-_PIPELINE = [
-    {
-        "$project": {
-            "history_days": "$genotype.Data.history_days",
-            "wins": True,
-            "llh": {"$first": "$llh"},
-        }
-    },
-    {"$sort": {"wins": pymongo.DESCENDING, "llh": pymongo.DESCENDING}},
-    {"$limit": config.MIN_POPULATION},
-    {"$sort": {"history_days": pymongo.DESCENDING}},
-    {"$limit": 1},
-]
-# Нужно для тестирования на пустой базе
-try:
-    MAX_HISTORY = next(database.MONGO_CLIENT["data"]["models"].aggregate(_PIPELINE))["history_days"]
-except StopIteration:
-    MAX_HISTORY = config.HISTORY_DAYS_MIN
-
-MAX_HISTORY = int(MAX_HISTORY)
-ADD_DAYS = (MAX_HISTORY + data_params.FORECAST_DAYS * 2) * 2
+LIQUIDITY_DAYS = int((config.HISTORY_DAYS_MIN + data_params.FORECAST_DAYS) * 1.8)
 
 
 class Portfolio:
@@ -196,7 +174,7 @@ class Portfolio:
     @property
     def turnover_factor(self) -> pd.Series:
         """Медианный дневной оборот, как доля от портфеля."""
-        last_turnover = self._median_turnover(tuple(self.index[:-2]), MAX_HISTORY)
+        last_turnover = self._median_turnover(tuple(self.index[:-2]), LIQUIDITY_DAYS)
         last_turnover = last_turnover / self.value[PORTFOLIO]
         last_turnover[CASH] = last_turnover.sum()
         last_turnover[PORTFOLIO] = last_turnover[CASH]
@@ -215,7 +193,7 @@ class Portfolio:
     def add_tickers(self) -> None:
         """Претенденты для добавления."""
         all_tickers = listing.securities()
-        last_turnover = self._median_turnover(tuple(all_tickers), ADD_DAYS)
+        last_turnover = self._median_turnover(tuple(all_tickers), LIQUIDITY_DAYS)
         minimal_turnover = self.value[PORTFOLIO] / (len(self.index) - 2)
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]
 
@@ -226,11 +204,11 @@ class Portfolio:
 
         returns_new = self._norm_ret(tuple(index))
         returns_old = self._norm_ret(tuple(self.index[:-2]))
-        corr_max = (returns_new.T @ returns_old / MAX_HISTORY).max(axis=1)
+        corr_max = (returns_new.T @ returns_old / LIQUIDITY_DAYS).max(axis=1)
 
         rez = pd.concat([corr_max, last_turnover], axis=1)
         rez.columns = ["Correlation", "Turnover"]
-        rez = rez.sort_values("Correlation")
+        rez = rez.sort_values("Correlation").dropna()
 
         print(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{rez}")  # noqa: WPS421
 
@@ -238,7 +216,7 @@ class Portfolio:
         div, p1 = quotes.div_and_prices(tickers, self.date)
         p0 = p1.shift(1)
         returns_new = (p1 + div) / p0
-        returns_new = returns_new.iloc[-MAX_HISTORY:]
+        returns_new = returns_new.iloc[-LIQUIDITY_DAYS:]
         returns_new = returns_new - returns_new.mean(axis=0)
 
         return returns_new / returns_new.std(axis=0, ddof=0)

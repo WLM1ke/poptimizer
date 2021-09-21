@@ -22,7 +22,7 @@ def make_portfolio():
 
 
 def test_portfolio(monkeypatch, port):
-    monkeypatch.setattr(portfolio, "MAX_HISTORY", 100)
+    monkeypatch.setattr(portfolio, "LIQUIDITY_DAYS", 100)
 
     assert "ПОРТФЕЛЬ - 2018-03-19" in str(port)
     assert port.date == pd.Timestamp("2018-03-19")
