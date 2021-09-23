@@ -9,14 +9,7 @@ from poptimizer.dl import ModelError
 from poptimizer.evolve import population, seq
 from poptimizer.portfolio.portfolio import load_tickers
 
-# За основу выбора следующего организма взят алгоритм Метрополиса — Гастингса. В рамках него
-# оптимальную долю принятых предложений рекомендуется брать от 0.234 для многомерного случая до 0.44 для
-# одномерного. В тоже время алгоритм сохраняет свою эффективность в диапазоне от 0.1 до 0.6
-# http://probability.ca/jeff/ftpdir/galinart.pdf
-#
-# Библиотеке PyMC3 ориентируются не на конкретное целевое значение, а на диапазон 0.2-0.5
-MIN_ACCEPTANCE = 0.234
-MAX_ACCEPTANCE = 0.44
+DECAY = 1 / config.MIN_POPULATION
 # Штраф за большое время тренировки
 TIME_TEMPERATURE = 1.4
 
@@ -44,7 +37,7 @@ class Evolution:
         self._min_population = min_population
         self._tickers = None
         self._end = None
-        self._scale = random.uniform()
+        self._scale = 1
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -52,9 +45,6 @@ class Evolution:
         При необходимости создается начальная популяция из случайных организмов по умолчанию.
         """
         self._setup()
-
-        trial = 0
-        acceptance = 0
 
         step = 0
         current = None
@@ -65,19 +55,13 @@ class Evolution:
             date = self._end.date()
             print(f"***{date}: Шаг эволюции — {step}***")  # noqa: WPS421
             population.print_stat()
-            print(  # noqa: WPS421
-                f"Доля принятых - {acceptance:.2%}",
-                "/",
-                f"Фактор - {self._scale:.2%}\n",
-            )
+            print(f"Доля принятых - {self._scale:.2%}")  # noqa: WPS421
 
             next_, new = self._step(current)
 
             if new:
                 accepted = next_.id != current.id
-                acceptance = (acceptance * trial + accepted) / (trial + 1)
-                trial += 1
-                self._scale = _tune_scale(self._scale, acceptance)
+                self._scale = self._scale * (1 - DECAY) + accepted * DECAY
 
             current = next_
 
@@ -169,7 +153,7 @@ class Evolution:
             return prey, new
 
         if not new:
-            print("Смена охотника...\n")
+            print("Смена охотника...\n")  # noqa: WPS421
 
             return prey, new
 
@@ -243,13 +227,3 @@ def _hunt(hunter: population.Organism, prey: population.Organism) -> float:
     )
 
     return max(min(-lower / (upper - lower), 1), 0)
-
-
-def _tune_scale(scale: float, acc_rate: float) -> float:
-    """Корректировка размера шага."""
-    if acc_rate < MIN_ACCEPTANCE:
-        return min(scale, random.uniform())
-    elif acc_rate > MAX_ACCEPTANCE:
-        return max(scale, random.uniform())
-
-    return scale
