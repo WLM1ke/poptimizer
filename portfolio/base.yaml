@@ -51,6 +51,7 @@ positions:
   FESH: 0
   FIVE: 0
   FLOT: 0
+  FXRB: 0
   GAZP: 0
   GCHE: 0
   GEMA: 0
@@ -65,7 +66,6 @@ positions:
   INGR: 0
   INTC-RM: 0
   IRAO: 0
-  IRGZ: 0
   IRKT: 0
   ISKJ: 0
   JNJ-RM: 0
@@ -183,6 +183,7 @@ positions:
   UWGN: 0
   V-RM: 0
   VSMO: 0
+  VTBM: 0
   VTBR: 0
   VTRS-RM: 0
   WMT-RM: 0
