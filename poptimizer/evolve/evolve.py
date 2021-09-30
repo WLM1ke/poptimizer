@@ -84,7 +84,7 @@ class Evolution:
             org, _ = self._next_org()
 
         dates = indexes.mcftrr(listing.last_history_date()).loc[self._end :].index
-        if (d_min != d_max) or (population.count() < self._min_population) or (len(dates) == 1):
+        if (d_min != d_max) or (len(dates) == 1):
             return step + 1, org
 
         self._tickers = load_tickers()
