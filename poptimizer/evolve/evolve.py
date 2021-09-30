@@ -210,14 +210,19 @@ class Evolution:
 
 
 def _hunt(hunter: population.Organism, prey: population.Organism) -> float:
-    llh_differance = zip(hunter.llh, prey.llh)
-    llh_differance = [llhs[0] - llhs[1] for llhs in llh_differance]
-    minimum = min(llh_differance)
-    maximum = max(llh_differance)
-    lower, upper = seq.median_conf_bound(llh_differance, config.P_VALUE / 2)
+    diffs = zip(hunter.llh, prey.llh)
+    type_ = "llh"
+    if len(prey.llh) == len(prey.ir):
+        diffs = zip(hunter.ir, prey.ir)
+        type_ = "ir"
+
+    diffs = [diff[0] - diff[1] for diff in diffs]
+    minimum = min(diffs)
+    maximum = max(diffs)
+    lower, upper = seq.median_conf_bound(diffs, config.P_VALUE / 2)
 
     print(  # noqa: WPS421
-        f"Median llh differance - [{minimum:0.4f},",
+        f"Median {type_} differance - [{minimum:0.4f},",
         f"{lower:0.4f},",
         f"{upper:0.4f},",
         f"{maximum:0.4f}]",
