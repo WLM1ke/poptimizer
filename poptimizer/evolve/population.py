@@ -41,22 +41,20 @@ class Organism:
         """Загружает организм из базы данных."""
         self._doc = store.Doc(id_=_id, genotype=genotype)
 
+        # TODO: Убрать после преобразования всех значений
+        if not isinstance(self._doc.ir, list):
+            self._doc.ir = [self._doc.ir]
+
     def __str__(self) -> str:
         """Текстовое представление генотипа организма."""
-        llh_block = -np.inf
-        if self.scores > 0:
-            llh_all = [f"{llh:.4f}" for llh in self.llh]
-            llh_all = ", ".join(llh_all)
-
-            llh = np.array(self.llh).mean()
-
-            llh_block = f"{llh:0.4f}: {llh_all}"
+        llh_block = _format_scores_list(self.llh)
+        ir_block = _format_scores_list(self.ir)
 
         timer = datetime.timedelta(seconds=self.timer // TIME_TO_SEC)
 
         blocks = [
             f"LLH — {llh_block}",
-            f"IR — {self.ir:0.4f}",
+            f"IR  — {ir_block}",
             f"Timer — {timer}",
             str(self._doc.genotype),
         ]
@@ -94,8 +92,8 @@ class Organism:
         return self._doc.llh
 
     @property
-    def ir(self) -> float:
-        """Information ratio."""
+    def ir(self) -> list[float]:
+        """List of information ratios."""
         return self._doc.ir
 
     def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp) -> list[float]:
@@ -123,7 +121,7 @@ class Organism:
 
         doc.llh = [llh] + doc.llh
         doc.wins = len(doc.llh)
-        doc.ir = ir
+        doc.ir = [ir] + doc.ir
 
         doc.model = bytes(model)
 
@@ -165,6 +163,19 @@ class Organism:
     def save(self) -> None:
         """Сохраняет все изменения в организме."""
         self._doc.save()
+
+
+def _format_scores_list(scores: list[float]) -> str:
+    block = "-"
+    if scores:
+        scores_all = [f"{score:.4f}" for score in scores]
+        scores_all = ", ".join(scores_all)
+
+        score = np.array(scores).mean()
+
+        block = f"{score:0.4f}: {scores_all}"
+
+    return block
 
 
 def count() -> int:
