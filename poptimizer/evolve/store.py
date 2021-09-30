@@ -1,5 +1,4 @@
 """Доступ к данным для эволюции."""
-import math
 from typing import Any, Callable, Final, Optional
 
 import bson
@@ -146,7 +145,7 @@ class Doc:
     wins = DefaultField(0)
     model = DefaultField()
     llh = FactoryField(list)
-    ir = DefaultField(-math.inf)
+    ir = FactoryField(list)
     date = DefaultField()
     timer = DefaultField(0)
     tickers = DefaultField()
