@@ -20,14 +20,14 @@ def get_col_desc() -> parser.Descriptions:
         parser_func=None,
     )
     date = description.ColDesc(
-        num=9,
-        raw_name=("дата отсечки",),
+        num=7,
+        raw_name=("ата закрытия реестра",),
         name=col.DATE,
         parser_func=cell_parser.date_ru,
     )
     div = description.ColDesc(
-        num=5,
-        raw_name=("дивиденд,руб",),
+        num=3,
+        raw_name=("ивиденд,руб",),
         name=col.DIVIDENDS,
         parser_func=cell_parser.div_ru,
     )
