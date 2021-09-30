@@ -10,8 +10,6 @@ from poptimizer.evolve import population, seq
 from poptimizer.portfolio.portfolio import load_tickers
 
 DECAY = 1 / config.MIN_POPULATION
-# Штраф за большое время тренировки
-TIME_TEMPERATURE = 1.4
 
 
 class Evolution:
@@ -157,8 +155,7 @@ class Evolution:
 
             return prey, new
 
-        temperature = (prey.timer / hunter.timer) ** TIME_TEMPERATURE
-        llh_ratio = (p_value / (1 - p_value)) ** temperature
+        llh_ratio = hunter.timer / prey.timer
 
         label = "Старый"
         sign = "<"
