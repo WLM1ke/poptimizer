@@ -63,6 +63,7 @@ positions:
   HIMCP: 0
   HPQ-RM: 0
   HYDR: 0
+  IBM-RM: 0
   INGR: 0
   INTC-RM: 0
   IRAO: 0
@@ -183,6 +184,7 @@ positions:
   UWGN: 0
   V-RM: 0
   VSMO: 0
+  VTBB: 0
   VTBM: 0
   VTBR: 0
   VTRS-RM: 0
