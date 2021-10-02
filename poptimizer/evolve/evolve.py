@@ -35,7 +35,7 @@ class Evolution:
         self._min_population = min_population
         self._tickers = None
         self._end = None
-        self._scale = 1
+        self._scale = DECAY
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
