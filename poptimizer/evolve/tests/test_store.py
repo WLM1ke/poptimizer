@@ -136,7 +136,7 @@ class TestDoc:
         assert doc.model is None
 
         assert doc.llh == []
-        assert doc.ir == -math.inf
+        assert doc.ir == []
 
         assert doc.date is None
         assert doc.timer == 0

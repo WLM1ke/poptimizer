@@ -67,7 +67,7 @@ def test_reload_organism(organism):
     population.Organism(_id=organism.id)
 
     assert organism._doc.llh == [5]
-    assert organism._doc.ir == 7
+    assert organism._doc.ir == [7]
     assert organism._doc.date == pd.Timestamp("2020-04-12")
     assert organism._doc.tickers == ["GAZP", "AKRN"]
     assert organism._doc.model == bytes(6)
