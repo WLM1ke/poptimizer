@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, ClassVar, Optional
 
 from numpy import random
+from scipy import stats
 
 from poptimizer.dl import PhenotypeData
 
@@ -79,16 +80,17 @@ class Chromosome(UserDict):
         parent1: "Chromosome",
         parent2: "Chromosome",
         scale: float,
-        epsilon: float = 0.01,
     ) -> "Chromosome":
         """Мутация на основе алгоритма дифференциальной эволюции.
 
-        Значение модифицируется на нормальный шум с СКО, равным разнице двумя другим родителем
-        помноженным на коэффициент. Если мутировавшее значение выходит за границы допустимых значений,
-        то значение отражается от границы.
+        Значения родителя модифицируется на величину пропорциональную равным разнице двумя другими
+        родителями, умноженную на заданный коэффициент и случайную величину из распределения Коши.
+        Использование этого распределения обеспечивает много мелких изменений и редкие, но потенциально
+        неограниченные большие изменения. Большие прыжки позволяют иногда прощупывать удаленные
+        области признакового пространство на наличие удачных генотипов.
 
-        Если мутировать на разницу между текущем и случайным, то ребенок начинает экспоненциально
-        убегать от популяции, что не очень хорошо.
+        Если мутировавшее значение выходит за границы допустимых значений,
+        то значение отражается от границы.
 
         :param parent1:
             Хромосома первого родителя, которая используется для расчета разницы значений признаков.
@@ -96,18 +98,16 @@ class Chromosome(UserDict):
             Хромосома второго родителя, которая используется для расчета разницы значений признаков.
         :param scale:
             Фактор масштабирования разницы между родителями.
-        :param epsilon:
-            Доля случайной компоненты.
         :return:
             Представление хромосомы потомка в виде словаря.
         """
         child = copy.deepcopy(self)
-
         for gene in self._genes:
             key = gene.name
-            diff = (parent1[key] - parent2[key]) * scale * (1 + random.normal(0, epsilon))
-            raw_value = child[key] + diff * random.normal()
+            diff = (parent1[key] - parent2[key]) * scale
+            raw_value = child[key] + diff * stats.cauchy.rvs()
             child[key] = _to_bounds(raw_value, gene.lower_bound, gene.upper_bound)
+
         return child
 
 
