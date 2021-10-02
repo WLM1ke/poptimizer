@@ -1,32 +1,17 @@
 """Представление прогноза."""
 import dataclasses
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
 
-import poptimizer.data.views.quotes
-from poptimizer.data.views import listing
-from poptimizer.dl import ledoit_wolf
-
-
-def ledoit_wolf_cor(
-    tickers: tuple, date: pd.Timestamp, history_days: int
-) -> Tuple[np.array, float, float]:
-    """Корреляционная матрица на основе Ledoit Wolf."""
-    div, p1 = poptimizer.data.views.quotes.div_and_prices(tickers, date)
-    p0 = p1.shift(1)
-    returns = (p1 + div) / p0
-    returns = returns.iloc[-history_days:]
-    returns = (returns - returns.mean()) / returns.std(ddof=0)
-    return ledoit_wolf.shrinkage(returns.values)
+from poptimizer.dl.ledoit_wolf import ledoit_wolf_cor
 
 
 @dataclasses.dataclass
 class Forecast:
     """Прогноз доходности и ковариации."""
 
-    tickers: Tuple[str, ...]
+    tickers: tuple[str, ...]
     date: pd.Timestamp
     history_days: int
     mean: pd.Series

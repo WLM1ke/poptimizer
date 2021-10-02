@@ -1,10 +1,11 @@
 """Ledoit & Wolf constant correlation unequal variance shrinkage estimator."""
-from typing import Tuple
-
 import numpy as np
+import pandas as pd
+
+from poptimizer.data.views import quotes
 
 
-def shrinkage(returns: np.array) -> Tuple[np.array, float, float]:
+def shrinkage(returns: np.array) -> tuple[np.array, float, float]:
     """Shrinks sample covariance matrix towards constant correlation unequal variance matrix.
 
     Ledoit & Wolf ("Honey, I shrunk the sample covariance matrix", Portfolio Management, 30(2004),
@@ -45,10 +46,7 @@ def shrinkage(returns: np.array) -> Tuple[np.array, float, float]:
     # rho-hat
     theta_mat = ((returns ** 3).transpose() @ returns) / t - var * sample_cov
     np.fill_diagonal(theta_mat, 0)
-    rho = (
-        np.diag(phi_mat).sum()
-        + average_cor * (1 / sqrt_var @ sqrt_var.transpose() * theta_mat).sum()
-    )
+    rho = np.diag(phi_mat).sum() + average_cor * (1 / sqrt_var @ sqrt_var.transpose() * theta_mat).sum()
 
     # gamma-hat
     gamma = np.linalg.norm(sample_cov - prior, "fro") ** 2
@@ -61,3 +59,20 @@ def shrinkage(returns: np.array) -> Tuple[np.array, float, float]:
     sigma = shrink * prior + (1 - shrink) * sample_cov
 
     return sigma, average_cor, shrink
+
+
+def ledoit_wolf_cor(
+    tickers: tuple,
+    date: pd.Timestamp,
+    history_days: int,
+    forecast_days: int = 0,
+) -> tuple[np.array, float, float]:
+    """Корреляционная матрица на основе Ledoit Wolf."""
+    div, p1 = quotes.div_and_prices(tickers, date)
+    p0 = p1.shift(1)
+    returns = (p1 + div) / p0
+    returns = returns.iloc[-history_days - forecast_days :]
+    returns = returns.iloc[:history_days]
+    returns = (returns - returns.mean()) / returns.std(ddof=0)
+
+    return shrinkage(returns.values)
