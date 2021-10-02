@@ -10,11 +10,11 @@ import pandas as pd
 import torch
 import tqdm
 from numpy import linalg
-from scipy import stats
 from torch import nn, optim
 
+from poptimizer import config
 from poptimizer.config import DEVICE, YEAR_IN_TRADING_DAYS
-from poptimizer.dl import data_loader, models
+from poptimizer.dl import data_loader, ledoit_wolf, models
 from poptimizer.dl.features import data_params
 from poptimizer.dl.forecast import Forecast
 from poptimizer.dl.models.wave_net import GradientsError, ModelError
@@ -164,7 +164,8 @@ class Model:
         all_vars = torch.cat(all_vars).cpu().numpy().flatten()
         all_labels = torch.cat(all_labels).cpu().numpy().flatten()
         llh = llh_sum / weight_sum + llh_adj
-        ir = _opt_port(all_means, all_vars, all_labels)
+
+        ir = _opt_port(all_means, all_vars, all_labels, self._tickers, self._end, loader.history_days)
 
         return llh, ir
 
@@ -303,25 +304,47 @@ class Model:
         )
 
 
-def _opt_weight(mean: np.array, var: np.array):
-    precision = linalg.inv(np.diag(var))
+def _opt_weight(
+    mean: np.array,
+    variance: np.array,
+    tickers: tuple[str],
+    end: pd.Timestamp,
+    history_days: int,
+) -> np.array:
+    """Рассчитывает веса бумаг в оптимальном арбитражном портфеле.
+
+    Арбитражный портфель имеет нулевую сумму весов (не требует финансирования) и максимальное отношение
+    доходности и ско. Фактически таких портфелей бесконечно много, но они имеют одинаковые веса с
+    точностью до умножения на константу.
+
+    Формула весов приведена в arbitrage.png
+    """
+    sigma, *_ = ledoit_wolf.ledoit_wolf_cor(tickers, end, history_days, config.FORECAST_DAYS)
+    std = variance ** 0.5
+    sigma = std.reshape(1, -1) * sigma * std.reshape(-1, 1)
+
+    precision = linalg.inv(sigma)
     weighted_mean = precision @ mean.reshape(-1, 1)
     lambda_ = weighted_mean.sum() / precision.sum()
     optimal_weights = precision @ (mean.reshape(-1, 1) - lambda_)
+
     return optimal_weights.ravel()
 
 
-def _opt_port(mean: np.array, var: np.array, labels: np.array) -> float:
-    weight = _opt_weight(mean, var)
+def _opt_port(
+    mean: np.array,
+    var: np.array,
+    labels: np.array,
+    tickers: tuple[str],
+    end: pd.Timestamp,
+    history_days: int,
+) -> float:
+    weight = _opt_weight(mean, var, tickers, end, history_days)
+    ir = (weight * labels).mean() / (weight * labels).std(ddof=1)
+    ir = ir * (YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS) ** 0.5
+    print(f"IR = {ir:.2f}")  # noqa: WPS421
 
-    rez = stats.ttest_1samp(weight * labels, 0, alternative="greater")
-
-    num = len(mean)
-    ir = rez[0] / num ** 0.5
-    ir *= (YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS) ** 0.5
-
-    ic = np.corrcoef(weight, labels)[0, 1]
-    br = (ir / ic) ** 2
-    print(f"IR = IC * sqrt(BR) = {ic:.2f} * sqrt({br:.2f}) = {ir:.2f}")  # noqa: WPS421
+    if np.isnan(ir):
+        raise DegeneratedModelError
 
     return ir
