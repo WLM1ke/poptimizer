@@ -10,7 +10,7 @@ def test_setup_needed(mocker):
     fake_population = mocker.patch.object(evolve, "population")
     fake_population.count.return_value = 0
 
-    ev = evolve.Evolution(min_population=4)
+    ev = evolve.Evolution(target_population=4)
 
     ev._setup()
 
@@ -23,7 +23,7 @@ def test_setup_not_needed(mocker):
     fake_population = mocker.patch.object(evolve, "population")
     fake_population.count.return_value = 4
 
-    ev = evolve.Evolution(min_population=4)
+    ev = evolve.Evolution(target_population=4)
 
     ev._setup()
 
@@ -35,7 +35,7 @@ def test_eval_and_print(mocker):
     """Вызывает оценку и не меняет шкалу разброса."""
     org = mocker.Mock()
     org.evaluate_fitness.return_value = 4
-    org.ir = 3
+    org.ir = [3]
     org.timer = 6
 
     evolution = evolve.Evolution()

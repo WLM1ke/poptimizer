@@ -54,7 +54,7 @@ class Forecasts(Iterable):
 def _prepare_forecasts(
     tickers: tuple[str, ...],
     date: pd.Timestamp,
-    max_count: int = config.MIN_POPULATION,
+    max_count: int = config.TARGET_POPULATION,
 ) -> list[Forecast]:
     forecasts = []
     for organism in tqdm.tqdm(population.get_oldest(), desc="Forecasts"):

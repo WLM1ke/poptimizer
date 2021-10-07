@@ -1,6 +1,7 @@
 """Эволюция параметров модели."""
 from typing import Optional
 
+import numpy as np
 from numpy import random
 
 from poptimizer import config
@@ -9,7 +10,7 @@ from poptimizer.dl import ModelError
 from poptimizer.evolve import population, seq
 from poptimizer.portfolio.portfolio import load_tickers
 
-DECAY = 1 / config.MIN_POPULATION
+DECAY = 1 / config.TARGET_POPULATION
 
 
 class Evolution:
@@ -21,18 +22,17 @@ class Evolution:
     За основу выбора следующего организма взяты подходы из алгоритма Метрополиса — Гастингса:
 
     - Текущий организм порождает потомка в некой окрестности пространства генов
-    - Производится сравнение - если новый лучше, то он становится текущим, если новый хуже,
-      то он становится текущим случайным образом с вероятностью убывающей пропорционально его качеству
+    - Производится сравнение - если новый быстрее и обладает минимально допустимым качеством,
+    то он становится текущим, если медленнее и обладает минимально допустимым качеством, то он становится
+    текущим случайным образом с вероятностью убывающей пропорционально его скорости
+    - Организмы, не обладающие минимально допустимым качеством, погибают сразу
 
     Масштаб окрестности изменяется, если организмы принимаются слишком часто или редко.
-
-    При появлении новых данных происходит сравнение существующих организмов - статистически значимо
-    более плохие удаляются.
     """
 
-    def __init__(self, min_population: int = config.MIN_POPULATION):
+    def __init__(self, target_population: int = config.TARGET_POPULATION):
         """Сохраняет предельный размер популяции."""
-        self._min_population = min_population
+        self._target_population = target_population
         self._tickers = None
         self._end = None
         self._scale = DECAY
@@ -53,7 +53,7 @@ class Evolution:
             date = self._end.date()
             print(f"***{date}: Шаг эволюции — {step}***")  # noqa: WPS421
             population.print_stat()
-            print(f"Доля принятых - {self._scale:.2%}")  # noqa: WPS421
+            print(f"Доля принятых - {self._scale:.2%}\n")  # noqa: WPS421
 
             next_, new = self._step(current)
 
@@ -65,7 +65,7 @@ class Evolution:
 
     def _setup(self) -> None:
         if population.count() == 0:
-            for n_org in range(1, self._min_population + 1):
+            for n_org in range(1, self._target_population + 1):
                 print(f"Создаются базовые организмы — {n_org}")  # noqa: WPS421
                 org = population.create_new_organism()
                 print(org, "\n")  # noqa: WPS421
@@ -87,7 +87,6 @@ class Evolution:
 
         self._tickers = load_tickers()
         self._end = dates[1]
-        org, _ = self._next_org()
 
         return 1, org
 
@@ -112,18 +111,14 @@ class Evolution:
     def _step(self, hunter: population.Organism) -> tuple[population.Organism, bool]:
         """Один шаг эволюции.
 
-        Создается и оценивается потомок. Сравнивается с текущим. Если один из организмов значимо хуже, то
-        он уничтожается. Сравнение происходит на половинной значимости, так как любой организ
-        сравнивается два раза - с предыдущим и со следующим.
+        Создается и оценивается потомок. Если он не обладает минимальным качеством, то погибает. Для
+        оценки качества используется тест на последовательное тестирование по IR. Минимальное IR равно 0
+        или больше, если популяция превышает установленный целевой уровень.
 
-        Если уничтожение не произошло, то для старых организмов обязательно происходит смена
-        охотника, чтобы сравнение двух организмов происходило все время с одним и тем жеб что требует
-        тест на последовательное тестирование.
-
-        Для новых организмов смена охотника происходит на основе алгоритма Метрополиса — Гастингса для
-        более широкого исследования пространства признаков.
+        Смена родителя происходит на основе алгоритма Метрополиса — Гастингса для более широкого
+        исследования пространства признаков.
         """
-        print("Охотник:")  # noqa: WPS421
+        print("Родитель:")  # noqa: WPS421
         if self._eval_organism(hunter) is None:
             return self._next_org(None)
 
@@ -131,29 +126,9 @@ class Evolution:
         label = ""
         if new:
             label = " - новый организм"
-        print("Добыча", label, ":", sep="")  # noqa: WPS421
+        print("Претендент", label, ":", sep="")  # noqa: WPS421
         if self._eval_organism(prey) is None:
             return hunter, new
-
-        p_value = _hunt(hunter, prey)
-        print(f"p_value={p_value:.2%}")  # noqa: WPS421
-
-        if p_value == 0:
-            prey.die()
-            print("Добыча уничтожена...\n")  # noqa: WPS421
-
-            return hunter, new
-
-        if p_value == 1:
-            hunter.die()
-            print("Охотник уничтожен...\n")  # noqa: WPS421
-
-            return prey, new
-
-        if not new:
-            print("Смена охотника...\n")  # noqa: WPS421
-
-            return prey, new
 
         llh_ratio = hunter.timer / prey.timer
 
@@ -166,7 +141,7 @@ class Evolution:
 
         print(  # noqa: WPS421
             label,
-            f"охотник - llh ratio={llh_ratio:.2%}",
+            f"родитель - timer ratio={llh_ratio:.2%}",
             sign,
             f"rnd={rnd:.2%}\n",
         )
@@ -184,13 +159,11 @@ class Evolution:
         print(organism, "\n")  # noqa: WPS421
 
         if organism.date == self._end:
-            print("Уже оценен\n")  # noqa: WPS421
-
             return organism
 
         dates = [self._end]
         if not organism.llh:
-            bounding_n = seq.minimum_bounding_n(config.P_VALUE / 2)
+            bounding_n = seq.minimum_bounding_n(config.P_VALUE * 2)
             dates = indexes.mcftrr(listing.last_history_date()).loc[: self._end]
             dates = dates.index[-bounding_n:].tolist()
 
@@ -204,28 +177,31 @@ class Evolution:
 
                 return None
 
-        print()  # noqa: WPS421
+        if self._is_dead(organism):
+            return None
 
         return organism
 
+    def _is_dead(self, org: population.Organism) -> bool:
+        min_ir = max(0, population.count() * DECAY - 1)
 
-def _hunt(hunter: population.Organism, prey: population.Organism) -> float:
-    diffs = zip(hunter.llh, prey.llh)
-    type_ = "llh"
-    if len(prey.llh) == len(prey.ir):
-        diffs = zip(hunter.ir, prey.ir)
-        type_ = "ir"
+        ir = org.ir
+        minimum = min(ir)
+        median = np.median(ir)
+        lower, _ = seq.median_conf_bound(ir, config.P_VALUE * 2)
 
-    diffs = [diff[0] - diff[1] for diff in diffs]
-    minimum = min(diffs)
-    maximum = max(diffs)
-    lower, upper = seq.median_conf_bound(diffs, config.P_VALUE / 2)
+        print(  # noqa: WPS421
+            f"IR required {min_ir:0.4f}:",
+            f"min - {minimum:0.4f},",
+            f"lower - {lower:0.4f},",
+            f"median - {median:0.4f}",
+        )
+        if lower < min_ir:
+            org.die()
+            print("Умер...\n")
 
-    print(  # noqa: WPS421
-        f"Median {type_} differance - [{minimum:0.4f},",
-        f"{lower:0.4f},",
-        f"{upper:0.4f},",
-        f"{maximum:0.4f}]",
-    )
+            return True
 
-    return max(min(-lower / (upper - lower), 1), 0)
+        print("Жив...\n")
+
+        return False
