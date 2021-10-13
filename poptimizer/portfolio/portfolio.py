@@ -8,7 +8,7 @@ import pandas as pd
 import yaml
 
 from poptimizer import config
-from poptimizer.data.views import listing, quotes
+from poptimizer.data.views import indexes, listing, quotes
 from poptimizer.dl.features import data_params
 
 VALUE_REL_TOL = 2.0e-4
@@ -57,6 +57,7 @@ class Portfolio:
                 )
 
     def __str__(self) -> str:
+        """Отображает сводную информацию о портфеле."""
         blocks = [
             f"ПОРТФЕЛЬ - {self._date.date()}",
             self._positions_stats(),
@@ -226,14 +227,19 @@ def load_from_yaml(date: Union[str, pd.Timestamp]) -> Portfolio:
     """Загружает информацию о портфеле из yaml-файлов."""
     kwargs = collections.Counter()
     positions = collections.Counter()
+
     for path in config.PORT_PATH.glob("*.yaml"):
         with path.open() as port:
             port = yaml.safe_load(port)
-            pos = port.pop("positions")
-            positions.update(pos)
+            positions.update(port.pop("positions"))
             kwargs.update(port)
     kwargs["positions"] = positions
     kwargs["date"] = date
+
+    usd = indexes.usd(pd.Timestamp(date))
+    usd = usd.iloc[-1]
+    kwargs["cash"] = kwargs.pop("USD") * usd
+    kwargs["cash"] += kwargs.pop("RUR")
 
     return Portfolio(**kwargs)
 

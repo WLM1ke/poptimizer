@@ -79,7 +79,7 @@ def test_load_from_yaml(monkeypatch):
     assert port.shares["AKRN"] == 1
     assert port.shares["GMKN"] == 5
     assert port.shares["VSMO"] == 4
-    assert port.shares["CASH"] == 300
+    assert port.shares["CASH"] == 369.02
 
 
 def test_load_tickers(monkeypatch):
