@@ -201,11 +201,15 @@ def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
     """
     collection = store.get_collection()
 
+    sort_dir = pymongo.DESCENDING
+    if date is None:
+        sort_dir = pymongo.ASCENDING
+
     pipeline = [
         {"$match": {"date": {"$ne": date}}},
-        {"$project": {"_id": True}},
-        {"$sort": {"_id": pymongo.ASCENDING}},
+        {"$sort": {"timer": sort_dir}},
         {"$limit": 1},
+        {"$project": {"_id": True}},
     ]
     doc = next(collection.aggregate(pipeline), None)
 
