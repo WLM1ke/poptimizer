@@ -52,6 +52,7 @@ positions:
   FESH: 0
   FIVE: 0
   FLOT: 0
+  FXMM: 0
   FXRB: 0
   FXRU: 0
   GAZP: 0
@@ -74,6 +75,7 @@ positions:
   JNJ-RM: 0
   KAZT: 0
   KBSB: 0
+  KHC-RM: 0
   KLSB: 0
   KMAZ: 0
   KRKNP: 0
@@ -155,7 +157,6 @@ positions:
   SBER: 0
   SBERP: 0
   SELG: 0
-  SELGP: 0
   SFIN: 0
   SIBN: 0
   SMLT: 0
