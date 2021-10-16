@@ -196,8 +196,9 @@ def create_new_organism() -> Organism:
 def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
     """Последовательно выдает организмы с датой не равной данной и None при отсутствии.
 
-    Организмы выдаются в порядке возрастания id, чтобы при последовательных сравнениях оценивались
-    одни и те же организмы пока один не уничтожит другой.
+    Организмы выдаются в порядке убывания id, чтобы создать дополнительное эволюционное давление на
+    новые модели. Если в качестве параметра передается None наоборот выдается самая старая модель,
+    чтобы эволюция после перезапуска программы начиналась с проверенных организмов.
     """
     collection = store.get_collection()
 
@@ -207,7 +208,7 @@ def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
 
     pipeline = [
         {"$match": {"date": {"$ne": date}}},
-        {"$sort": {"timer": sort_dir}},
+        {"$sort": {"_id": sort_dir}},
         {"$limit": 1},
         {"$project": {"_id": True}},
     ]
@@ -236,13 +237,13 @@ def _get_parents() -> tuple[Organism, Organism]:
 def get_oldest() -> Iterable[Organism]:
     """Получить самые старые.
 
-    При одинаковом возрасте сортировать по последнему llh.
+    При одинаковом возрасте сортировать по последнему ir.
     """
     collection = store.get_collection()
 
     pipeline = [
-        {"$project": {"_id": True, "wins": True, "llh": {"$first": "$llh"}}},
-        {"$sort": {"wins": pymongo.DESCENDING, "llh": pymongo.DESCENDING}},
+        {"$project": {"_id": True, "wins": True, "ir": {"$first": "$ir"}}},
+        {"$sort": {"wins": pymongo.DESCENDING, "ir": pymongo.DESCENDING}},
         {"$project": {"_id": True}},
     ]
 
