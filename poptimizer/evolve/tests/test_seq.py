@@ -27,7 +27,6 @@ def test_minimum_n(alfa):
     assert seq._median_conf_radius(n - 1, alfa, n - 1) > 0.5
 
 
-@pytest.mark.skip
 def test_median_conf_bound_small_sample():
     """Ошибка при короткой выборке."""
     with pytest.raises(seq.SmallSampleError):
