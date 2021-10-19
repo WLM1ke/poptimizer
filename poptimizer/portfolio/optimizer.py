@@ -121,7 +121,7 @@ class Optimizer:
 def _grad_conf_int(forecasts, p_value) -> tuple[float, float]:
     interval = stats.bootstrap(
         (forecasts,),
-        np.mean,
+        np.median,
         confidence_level=(1 - p_value),
         random_state=0,
     ).confidence_interval
