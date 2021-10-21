@@ -225,23 +225,33 @@ class Portfolio:
 
 def load_from_yaml(date: Union[str, pd.Timestamp]) -> Portfolio:
     """Загружает информацию о портфеле из yaml-файлов."""
-    kwargs = collections.Counter()
+    usd = indexes.usd(pd.Timestamp(date))
+    usd = usd.iloc[-1]
+    cash = 0
+    value = 0
+
     positions = collections.Counter()
 
-    for path in config.PORT_PATH.glob("*.yaml"):
+    for path in sorted(config.PORT_PATH.glob("*.yaml")):
         with path.open() as port:
             port = yaml.safe_load(port)
             positions.update(port.pop("positions"))
-            kwargs.update(port)
-    kwargs["positions"] = positions
-    kwargs["date"] = date
+            cash += port.get("USD", 0) * usd + port.get("RUR", 0)
+            value += port.get("value", 0)
 
-    usd = indexes.usd(pd.Timestamp(date))
-    usd = usd.iloc[-1]
-    kwargs["cash"] = kwargs.pop("USD") * usd
-    kwargs["cash"] += kwargs.pop("RUR")
+        if value:
+            print("Проверка стоимости:", path)
+            try:
+                Portfolio(date, cash, positions, value)
+            except config.POptimizerError as err:
+                print(err)
+                continue
+            print("OK")
 
-    return Portfolio(**kwargs)
+    if not value:
+        value = None
+
+    return Portfolio(date, cash, positions, value)
 
 
 def load_tickers() -> tuple[str]:
