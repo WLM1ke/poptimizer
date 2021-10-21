@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import torch
 import tqdm
-from numpy import linalg
+from scipy import optimize
 from torch import nn, optim
 
 from poptimizer import config
@@ -304,42 +304,6 @@ class Model:
         )
 
 
-def _opt_weight(
-    mean: np.array,
-    variance: np.array,
-    tickers: tuple[str],
-    end: pd.Timestamp,
-    history_days: int,
-) -> np.array:
-    """Рассчитывает веса бумаг в оптимальном арбитражном портфеле.
-
-    Формула весов приведена в arbitrage.png
-
-    Арбитражный портфель имеет нулевую сумму весов (не требует финансирования) и максимальное отношение
-    доходности и ско. Фактически таких портфелей бесконечно много, но они имеют одинаковые веса с
-    точностью до умножения на константу.
-
-    Существует альтернативная формулировка - максимизации активного риска за вычетом половины активного
-    риска умноженного на коэффициент нелюбви к риску. Используемая формула соответствует единичной
-    нелюбви к риску. При увеличении нелюбви к риску веса должны пропорционально снижаться.
-
-    Арбитражный портфель во многих случаях более показательный, чем полностью инвестированный
-    портфель. При увеличении доходностей на примерно одинаковую величину доходность полностью
-    инвестированного портфеля увеличивается на эту величину, а арбитражного не меняется - независимость
-    от состояния рынка.
-    """
-    sigma, *_ = ledoit_wolf.ledoit_wolf_cor(tickers, end, history_days, config.FORECAST_DAYS)
-    std = variance ** 0.5
-    sigma = std.reshape(1, -1) * sigma * std.reshape(-1, 1)
-
-    precision = linalg.inv(sigma)
-    weighted_mean = precision @ mean.reshape(-1, 1)
-    lambda_ = weighted_mean.sum() / precision.sum()
-    optimal_weights = precision @ (mean.reshape(-1, 1) - lambda_)
-
-    return optimal_weights.ravel()
-
-
 def _opt_port(
     mean: np.array,
     var: np.array,
@@ -348,12 +312,84 @@ def _opt_port(
     end: pd.Timestamp,
     history_days: int,
 ) -> float:
-    weight = _opt_weight(mean, var, tickers, end, history_days)
-    ir = (weight * labels).mean() / (weight * labels).std(ddof=1)
-    ir = ir * (YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS) ** 0.5
-    print(f"IR = {ir:.2f}")  # noqa: WPS421
+    """Доходность портфеля с максимальными ожидаемыми темпами роста.
 
-    if np.isnan(ir):
-        raise DegeneratedModelError
+    Рассчитывается доходность оптимального по темпам роста портфеля в годовом выражении (RET) и
+    выводится дополнительная статистика:
 
-    return ir
+    - MEAN - доходность равновзвешенного портфеля в качестве простого бенчмарка
+    - PLAN - ожидавшаяся доходность. Большие по модулю значения потенциально говорят о не адекватности
+    модели
+    - STD - ожидавшееся СКО. Большие по значения потенциально говорят о не адекватности модели
+    - T - нормированное отклонение факта от прогноза. Большинство прогнозов должно укладываться в
+    интервал (-3; 3)
+    - POS - количество не нулевых позиций. Малое количество говорит о слабой диверсификации портфеля
+    - MAX - максимальный вес актива. Большое значение говорит о слабой диверсификации портфеля
+    """
+    mean *= YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS
+    var *= YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS
+    labels *= YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS
+
+    w, sigma = _opt_weight(mean, var, tickers, end, history_days)
+    ret = (w * labels).sum()
+    ret_plan = (w * mean).sum()
+    std_plan = (w.reshape(1, -1) @ sigma @ w.reshape(-1, 1)).item() ** 0.5
+    t_stat = (ret - ret_plan) / std_plan
+
+    print(
+        f"RET = {ret:.2%}",
+        f"MEAN = {labels.mean():.2%}",
+        f"PLAN = {ret_plan:.2%}",
+        f"STD = {std_plan:.2%}",
+        f"T = {t_stat:.2f}",
+        f"POS = {(w > 0).sum()}",
+        f"MAX = {w.max():.2%}",
+        sep=" / ",
+    )
+
+    return ret
+
+
+def _opt_weight(
+    mean: np.array,
+    variance: np.array,
+    tickers: tuple[str],
+    end: pd.Timestamp,
+    history_days: int,
+) -> tuple[np.array, np.array]:
+    """Веса портфеля с максимальными темпами роста и использовавшаяся ковариационная матрица..
+
+    Задача максимизации темпов роста портфеля сводится к максимизации математического ожидания
+    логарифма доходности. Дополнительно накладывается ограничение на полною отсутствие кэша и
+    неотрицательные веса отдельных активов.
+    """
+    mean = mean.reshape(-1, 1)
+
+    sigma, *_ = ledoit_wolf.ledoit_wolf_cor(tickers, end, history_days, config.FORECAST_DAYS)
+    std = variance ** 0.5
+    sigma = std.reshape(1, -1) * sigma * std.reshape(-1, 1)
+
+    w = np.ones_like(mean).flatten()
+
+    rez = optimize.minimize(
+        _expected_ln_return,
+        w,
+        (mean, sigma),
+        bounds=[(0, None) for _ in w],
+    )
+
+    return rez.x / rez.x.sum(), sigma
+
+
+def _expected_ln_return(w: np.array, mean: np.array, sigma: np.array) -> np.array:
+    """Приблизительное значение минус логарифма доходности.
+
+    Математическое ожидание логарифма доходности можно приблизить с помощью разложения Тейлора,
+    как математическое ожидание доходности минус половина дисперсии. Входящие веса нормируются на
+    сумму, чтобы гарантировать отсутствие кэша в портфеле.
+
+    Для целей дальнейшего использование возвращается мис указанная величина.
+    """
+    w = w.reshape(-1, 1) / w.sum()
+
+    return ((w.T @ sigma @ w) / 2 - w.T @ mean).item()

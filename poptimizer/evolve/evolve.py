@@ -191,7 +191,7 @@ class Evolution:
         lower, _ = seq.median_conf_bound(ir, config.P_VALUE * 2)
 
         print(  # noqa: WPS421
-            f"IR required {min_ir:0.4f}:",
+            f"RET required {min_ir:0.4f}:",
             f"min - {minimum:0.4f},",
             f"lower - {lower:0.4f},",
             f"median - {median:0.4f}",

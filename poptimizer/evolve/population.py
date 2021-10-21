@@ -54,7 +54,7 @@ class Organism:
 
         blocks = [
             f"LLH — {llh_block}",
-            f"IR  — {ir_block}",
+            f"RET — {ir_block}",
             f"Timer — {timer}",
             str(self._doc.genotype),
         ]
@@ -286,11 +286,11 @@ def get_llh(date: pd.Timestamp) -> list[float]:
 def print_stat() -> None:
     """Распечатка сводных статистических данных по популяции."""
     _print_key_stats("llh")
-    _print_key_stats("ir")
+    _print_key_stats("ir", "RET")
     _print_wins_stats()
 
 
-def _print_key_stats(key: str) -> None:
+def _print_key_stats(key: str, view: str = None) -> None:
     """Статистика по минимуму, медиане и максимуму llh."""
     collection = store.get_collection()
     db_find = collection.find
@@ -315,8 +315,9 @@ def _print_key_stats(key: str) -> None:
         quantiles = ["-" for _ in range(3)]
 
     quantiles = ", ".join(tuple(quantiles))
+    view = view or key.upper()
 
-    print(f"{key.upper()} - ({quantiles})")  # noqa: WPS421
+    print(f"{view} - ({quantiles})")  # noqa: WPS421
 
 
 def _print_wins_stats() -> None:
