@@ -34,10 +34,10 @@ YEAR_IN_TRADING_DAYS = 12 * 21
 TARGET_POPULATION = 160
 
 # Длинна прогноза в торговых днях
-FORECAST_DAYS = 36
+FORECAST_DAYS = 35
 
 # Минимальная количество дней истории котировок для прогнозов
-HISTORY_DAYS_MIN = 84
+HISTORY_DAYS_MIN = 86
 
 # Значимость отклонения градиента от нуля
 P_VALUE = 0.05
