@@ -74,7 +74,6 @@ positions:
   ISKJ: 0
   JNJ-RM: 0
   KAZT: 0
-  KBSB: 0
   KHC-RM: 0
   KLSB: 0
   KMAZ: 0
@@ -156,6 +155,7 @@ positions:
   RZSB: 0
   SBER: 0
   SBERP: 0
+  SBRB: 0
   SELG: 0
   SFIN: 0
   SIBN: 0
@@ -174,6 +174,7 @@ positions:
   TGKBP: 0
   TGKD: 0
   TGKN: 0
+  TGT-RM: 0
   TORSP: 0
   TRMK: 0
   TRNFP: 0
