@@ -1,15 +1,19 @@
 """Unit of Work and EventBus."""
 import asyncio
-from contextlib import AbstractAsyncContextManager
+import contextlib
 from types import TracebackType
 from typing import Callable, Generic, Optional, TypeVar
 
+from poptimizer import config
 from poptimizer.shared import adapters, domain
 
 EntityType = TypeVar("EntityType", bound=domain.BaseEntity)
 
 
-class UoW(AbstractAsyncContextManager[domain.AbstractRepo[EntityType]], domain.AbstractRepo[EntityType]):
+class UoW(
+    contextlib.AbstractAsyncContextManager[domain.AbstractRepo[EntityType]],
+    domain.AbstractRepo[EntityType],
+):
     """Контекстный менеджер транзакции.
 
     Предоставляет интерфейс репо, хранит загруженные доменные объекты и сохраняет их при выходе из
@@ -66,7 +70,11 @@ class EventBus(Generic[EntityType]):
     ) -> None:
         """Обработка события."""
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(self._handle_event(event))
+        try:
+            loop.run_until_complete(self._handle_event(event))
+        except config.POptimizerError:
+            _shutdown_tasks(loop)
+            raise
 
     async def _handle_event(
         self,
@@ -90,3 +98,36 @@ class EventBus(Generic[EntityType]):
 
         async with self._uow_factory() as repo:
             return await self._event_handler.handle_event(event, repo)
+
+
+def _shutdown_tasks(loop: asyncio.AbstractEventLoop) -> None:
+    """Завершение в случае ошибки.
+
+    После ошибки происходит отмена всех заданий, чтобы не захламлять сообщение об ошибке множеством
+    сообщений, о том, что результат выполнения задания не был awaited.
+
+    Идея кода позаимствована из реализации asyncio.run.
+    """
+    to_cancel = asyncio.all_tasks(loop)
+    if not to_cancel:
+        return
+
+    for task in to_cancel:
+        task.cancel()
+
+    loop.run_until_complete(asyncio.gather(*to_cancel, loop=loop, return_exceptions=True))
+
+    for canceled_task in to_cancel:
+        if canceled_task.cancelled():
+            continue
+        if canceled_task.exception() is not None:
+            loop.call_exception_handler(
+                {
+                    "message": "unhandled EventBus exception",
+                    "exception": canceled_task.exception(),
+                    "task": canceled_task,
+                },
+            )
+
+    loop.run_until_complete(loop.shutdown_asyncgens())
+    loop.run_until_complete(loop.shutdown_default_executor())
