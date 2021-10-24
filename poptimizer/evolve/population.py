@@ -196,19 +196,14 @@ def create_new_organism() -> Organism:
 def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
     """Последовательно выдает организмы с датой не равной данной и None при отсутствии.
 
-    Организмы выдаются в порядке убывания id, чтобы создать дополнительное эволюционное давление на
-    новые модели. Если в качестве параметра передается None наоборот выдается самая старая модель,
-    чтобы эволюция после перезапуска программы начиналась с проверенных организмов.
+    Организмы выдаются в порядке убывания возраста. Если в качестве параметра передается None выдается
+    самая старая модель, чтобы эволюция после перезапуска программы начиналась с проверенных организмов.
     """
     collection = store.get_collection()
 
-    sort_dir = pymongo.DESCENDING
-    if date is None:
-        sort_dir = pymongo.ASCENDING
-
     pipeline = [
         {"$match": {"date": {"$ne": date}}},
-        {"$sort": {"_id": sort_dir}},
+        {"$sort": {"wins": pymongo.DESCENDING}},
         {"$limit": 1},
         {"$project": {"_id": True}},
     ]
