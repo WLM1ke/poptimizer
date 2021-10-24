@@ -35,7 +35,7 @@ def test_eval_and_print(mocker):
     """Вызывает оценку и не меняет шкалу разброса."""
     org = mocker.Mock()
     org.evaluate_fitness.return_value = 4
-    org.ir = [3]
+    org.ir = [i for i in range(9)]
     org.timer = 6
 
     evolution = evolve.Evolution()
