@@ -60,7 +60,7 @@ def _prepare_forecasts(
     for organism in tqdm.tqdm(population.get_oldest(), desc="Forecasts"):
         try:
             forecast = organism.forecast(tickers, date)
-        except population.ForecastError:
+        except (population.ForecastError, AttributeError):
             continue
 
         forecasts.append(forecast)
