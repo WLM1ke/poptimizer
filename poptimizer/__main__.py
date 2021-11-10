@@ -17,9 +17,9 @@ def dividends(ticker: str) -> None:
     div_status.dividends_validation(ticker)
 
 
-def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD")) -> None:
+def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD"), ports: set = None) -> None:
     """Optimize portfolio."""
-    port = load_from_yaml(date)
+    port = load_from_yaml(date, ports)
     opt = Optimizer(port)
     print(opt.portfolio)
     print(opt.metrics)
