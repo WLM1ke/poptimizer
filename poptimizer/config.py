@@ -1,6 +1,7 @@
 """Основные настраиваемые параметры."""
 import logging
 import pathlib
+import sys
 
 import pandas as pd
 import torch
@@ -11,10 +12,11 @@ class POptimizerError(Exception):
 
 
 # Конфигурация логгера
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO,
+                    handlers=[logging.FileHandler("debug.log"), logging.StreamHandler(sys.stdout)])
 
 # Устройство на котором будет производиться обучение
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu") #
 
 # Количество колонок в распечатках без переноса на несколько страниц
 pd.set_option("display.max_columns", 20)
