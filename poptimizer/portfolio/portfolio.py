@@ -50,6 +50,7 @@ class Portfolio:
         self._shares = pd.Series(positions).sort_index()
         self._shares[CASH] = cash
         self._shares[PORTFOLIO] = 1
+        self.summary = None
         self._shares.name = "SHARES"
         if value is not None:
             if not np.isclose(self.value[PORTFOLIO], value, rtol=VALUE_REL_TOL):
@@ -70,16 +71,20 @@ class Portfolio:
 
     def _main_info_df(self) -> pd.DataFrame:
         """Сводная информация по портфелю."""
-        columns = [
-            self.lot_size,
-            self.shares,
-            self.price,
-            self.value,
-            self.weight,
-            self.turnover_factor,
-        ]
-
-        return pd.concat(columns, axis="columns")
+        if self.summary is None:
+            columns = [
+                self.lot_size,
+                self.shares,
+                self.price,
+                self.value,
+                self.weight,
+                self.turnover_factor,
+            ]
+            df = pd.concat(columns, axis="columns")
+            df = df.loc[df['VALUE'] > 0]
+            df.sort_values('VALUE', inplace=True, ascending=False)
+            self.summary = df
+        return self.summary
 
     def _positions_stats(self) -> str:
         """Информация о количестве позиций"""
