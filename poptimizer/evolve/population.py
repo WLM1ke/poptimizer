@@ -168,7 +168,7 @@ class Organism:
 def _format_scores_list(scores: list[float]) -> str:
     block = "-"
     if scores:
-        scores_all = [f"{score:.4f}" for score in scores]
+        scores_all = [f"{score: .4f}" for score in scores]
         scores_all = ", ".join(scores_all)
 
         score = np.array(scores).mean()
