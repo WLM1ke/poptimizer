@@ -1,4 +1,5 @@
 """Тесты на формулы доверительных интервалов для последовательного тестирования медианы."""
+import numpy as np
 import pytest
 
 from poptimizer.evolve import seq
@@ -29,8 +30,7 @@ def test_minimum_n(alfa):
 
 def test_median_conf_bound_small_sample():
     """Ошибка при короткой выборке."""
-    with pytest.raises(seq.SmallSampleError):
-        seq.median_conf_bound(list(range(11)), 0.025)
+    assert (-np.inf, np.inf) == seq.median_conf_bound(list(range(11)), 0.025)
 
 
 def test_median_conf_bound():

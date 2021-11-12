@@ -12,16 +12,6 @@ import itertools
 import numpy as np
 from scipy import special, stats
 
-from poptimizer import config
-
-
-class SmallSampleError(config.POptimizerError):
-    """Слишком маленькая выборка.
-
-    Доверительные интервалы предполагают, что тестирование началось с некого минимального размера
-    выборки.
-    """
-
 
 def _median_conf_radius(
     t: int,  # noqa: WPS111
@@ -113,7 +103,7 @@ def median_conf_bound(sample: list[float], p_value: float) -> tuple[float, float
     t = len(sample)  # noqa: WPS111
     n = minimum_bounding_n(p_value)  # noqa: WPS111
     if t < n:
-        raise SmallSampleError(f"Размер выборки {t} - должен быть не меньше {n}")
+        return -np.inf, np.inf
     radius = _median_conf_radius(t, p_value, n)
 
     return tuple(
