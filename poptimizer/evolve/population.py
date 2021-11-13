@@ -242,7 +242,8 @@ def get_oldest() -> Iterable[Organism]:
         {"$project": {"_id": True}},
     ]
 
-    for id_dict in collection.aggregate(pipeline):
+    for id_dict in list(collection.aggregate(pipeline)):
+        print(id_dict)
         with contextlib.suppress(store.IdError):
             yield Organism(**id_dict)
 
