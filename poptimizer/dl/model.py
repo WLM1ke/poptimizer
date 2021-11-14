@@ -199,12 +199,15 @@ class Model:
         """Тренировка модели."""
         phenotype = self._phenotype
 
-        loader = data_loader.DescribedDataLoader(
-            self._tickers,
-            self._end,
-            phenotype["data"],
-            data_params.TrainParams,
-        )
+        try:
+            loader = data_loader.DescribedDataLoader(
+                self._tickers,
+                self._end,
+                phenotype["data"],
+                data_params.TrainParams,
+            )
+        except ValueError:
+            raise TooLongHistoryError
 
         if len(loader.features_description) == 1:
             raise DegeneratedModelError()

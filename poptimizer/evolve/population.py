@@ -243,7 +243,6 @@ def get_oldest() -> Iterable[Organism]:
     ]
 
     for id_dict in list(collection.aggregate(pipeline)):
-        print(id_dict)
         with contextlib.suppress(store.IdError):
             yield Organism(**id_dict)
 
