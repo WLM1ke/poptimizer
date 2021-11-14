@@ -58,7 +58,6 @@ class Optimizer:
                              date=self.portfolio.date,
                              cash=cash,
                              positions=rec['SHARES'].to_dict())
-        str(cur_prot.shares.to_dict())
         # Корректируем кэш (на всякий случай) чтобы оценка портфеля осталась той же
         cur_prot._shares[CASH] = self.portfolio.value['PORTFOLIO'] - cur_prot.value['PORTFOLIO']
         return cur_prot
@@ -72,19 +71,10 @@ class Optimizer:
         while True:
             cur_metrics = metrics.MetricsResample(cur_prot)
             grads = cur_metrics.all_gradients.iloc[:-2]
-            p_value = self._p_value / (len(cur_prot.index) - 2)
-            conf_int = grads
-            # Воообще, этот блок не используется, можно убрать, но пусть пока будет >>>
-            conf_int = conf_int.apply(
-                lambda grad: _grad_conf_int(grad, p_value),
-                axis=1,
-                result_type="expand",
-            )
-            conf_int.columns = ["LOWER", "UPPER"]
-            # <<<
-            rec = conf_int.copy()
             # гармоническое среднее квантилей градиентов вместо PRIORITY
-            rec['PRIORITY'] = stats.hmean(quantile_transform(grads, n_quantiles=grads.shape[0]), axis=1)
+
+            rec = pd.Series(data=stats.hmean(quantile_transform(grads, n_quantiles=grads.shape[0]), axis=1),
+                            index=grads.index).to_frame(name='PRIORITY')
             rec.sort_values(["PRIORITY"], ascending=[False], inplace=True)
             rec['lot_size'] = cur_prot.lot_size.loc[rec.index]
             rec['lots'] = (cur_prot.shares.loc[rec.index] / rec['lot_size']).fillna(0).astype(int)
