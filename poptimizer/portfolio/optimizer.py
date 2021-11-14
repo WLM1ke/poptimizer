@@ -58,6 +58,7 @@ class Optimizer:
                              date=self.portfolio.date,
                              cash=cash,
                              positions=rec['SHARES'].to_dict())
+        str(cur_prot.shares.to_dict())
         # Корректируем кэш (на всякий случай) чтобы оценка портфеля осталась той же
         cur_prot._shares[CASH] = self.portfolio.value['PORTFOLIO'] - cur_prot.value['PORTFOLIO']
         return cur_prot
@@ -65,13 +66,10 @@ class Optimizer:
     def _for_trade(self, serialize=True) -> pd.DataFrame:
         """Осуществляет расчет рекомендуемых операций."""
         cur_prot = self.portfolio
-
         rec = None
-        iteration = 0
-        prev_op = None
-
+        op = None
+        ports_set = set()
         while True:
-            iteration += 1
             cur_metrics = metrics.MetricsResample(cur_prot)
             grads = cur_metrics.all_gradients.iloc[:-2]
             p_value = self._p_value / (len(cur_prot.index) - 2)
@@ -98,21 +96,20 @@ class Optimizer:
             if cash > rec.loc[top_share, 'lot_price']:
                 rec.loc[top_share, 'lots'] += 1
                 cash -= rec.loc[top_share, 'lot_price']
-                cur_prot = self._update_portfolio(rec, cash)
-                if prev_op == ('SELL', top_share):
-                    # цикл (сначала продали лот, а потом купили обратно) -> выходим
-                    break
-                prev_op = ('BUY', top_share)
-                print(prev_op)
+                op = ('BUY', top_share)
             else:
                 rec.loc[bot_share, 'lots'] -= 1
                 cash += rec.loc[bot_share, 'lot_price']
-                cur_prot = self._update_portfolio(rec, cash)
-                prev_op = ('SELL', bot_share)
-                print(prev_op)
-
-            if iteration % 1000 == 0:
-                print('ITERATION', iteration, self.portfolio.name)
+                op = ('SELL', bot_share)
+            cur_prot = self._update_portfolio(rec, cash)
+            print(op)
+            port_tuple = tuple(cur_prot.shares.iloc[:-2].tolist())
+            # проверка цикла
+            if port_tuple in ports_set:
+                break
+            ports_set.add(port_tuple)
+            if len(ports_set) % 1000 == 0:
+                print('ITERATION', len(ports_set), self.portfolio.name)
 
         rec['SUM'] = (rec['lots'] * rec['lot_price']).round(2)
         rec.sort_values('SUM', ascending=False, inplace=True)
