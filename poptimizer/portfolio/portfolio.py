@@ -62,7 +62,7 @@ class Portfolio:
     def __str__(self) -> str:
         """Отображает сводную информацию о портфеле."""
         blocks = [
-            f"ПОРТФЕЛЬ - {self._date.date()}",
+            f"ПОРТФЕЛЬ {self.name} - {self._date.date()}",
             self._positions_stats(),
             f"{self._main_info_df()}",
         ]
