@@ -168,7 +168,7 @@ class Organism:
 def _format_scores_list(scores: list[float]) -> str:
     block = "-"
     if scores:
-        scores_all = [f"{score:.4f}" for score in scores]
+        scores_all = [f"{score: .4f}" for score in scores]
         scores_all = ", ".join(scores_all)
 
         score = np.array(scores).mean()
@@ -242,7 +242,7 @@ def get_oldest() -> Iterable[Organism]:
         {"$project": {"_id": True}},
     ]
 
-    for id_dict in collection.aggregate(pipeline):
+    for id_dict in list(collection.aggregate(pipeline)):
         with contextlib.suppress(store.IdError):
             yield Organism(**id_dict)
 

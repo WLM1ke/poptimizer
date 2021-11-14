@@ -10,7 +10,8 @@ from poptimizer.shared import adapters, col
 
 # Параметры загрузки валидации данных
 # Был адрес URL = "https://rosstat.gov.ru/storage/mediabank/i_ipc_1991-2021(1).xlsx"
-URL = "https://rosstat.gov.ru/storage/mediabank/i_ipc-1991-2021.xlsx"
+# Был адрес URL = "https://rosstat.gov.ru/storage/mediabank/i_ipc-1991-2021.xlsx"
+URL = "https://rosstat.gov.ru/storage/mediabank/i_ipc_1991-2021.xlsx"
 END_OF_JAN = 31
 PARSING_PARAMETERS = types.MappingProxyType(
     {
