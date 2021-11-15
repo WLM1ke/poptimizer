@@ -28,7 +28,7 @@ if __name__ == '__main__':
         del exc_info
         print(e)
 
-    ports = set(path.name for path in config.PORT_PATH.glob("*.yaml")) - config.NOT_USED_PORTS
+    ports = set(path.name for path in config.PORT_PATH.glob("*.yaml")) - config.NOT_USED_PORTS - config.BASE_PORTS
     for p in ports:
-        opt(config.BASE_PORTS.union({'p'}))
-    opt(ports)
+        opt(config.BASE_PORTS.union({p}))
+    opt(config.BASE_PORTS.union(ports))
