@@ -90,8 +90,8 @@ class Optimizer:
                 cash += rec.loc[bot_share, 'lot_price']
                 op = ('SELL', bot_share)
             cur_prot = self._update_portfolio(rec, cash)
-            print(op)
-            port_tuple = tuple(cur_prot.shares.iloc[:-2].tolist())
+            print(op, cash)
+            port_tuple = tuple(cur_prot.shares.drop(CASH).tolist())
             # проверка цикла
             if port_tuple in ports_set:
                 break

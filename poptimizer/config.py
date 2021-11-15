@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO,
                     handlers=[logging.FileHandler("debug.log"), logging.StreamHandler(sys.stdout)])
 
 # Устройство на котором будет производиться обучение
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu") #
+DEVICE = torch.device("cpu") #"cuda" if torch.cuda.is_available() else
 
 # Количество колонок в распечатках без переноса на несколько страниц
 pd.set_option("display.max_columns", 20)
