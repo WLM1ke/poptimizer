@@ -1,4 +1,5 @@
 """Эволюция параметров модели."""
+import datetime
 from typing import Optional
 
 import numpy as np
@@ -62,6 +63,10 @@ class Evolution:
                 self._scale = self._scale * (1 - DECAY) + accepted * DECAY
 
             current = next_
+            if config.START_EVOLVE_HOUR <= datetime.datetime.today().hour <= config.STOP_EVOLVE_HOUR:
+                continue
+            else:
+                break
 
     def _setup(self) -> None:
         if population.count() == 0:
