@@ -52,3 +52,6 @@ MARKET_IMPACT_FACTOR = 1
 
 START_EVOLVE_HOUR = 1
 STOP_EVOLVE_HOUR = 7
+
+BASE_PORTS = {'dividend_port.yaml'}
+NOT_USED_PORTS = {'base.yaml'}
