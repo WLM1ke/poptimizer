@@ -58,8 +58,6 @@ class Optimizer:
                              date=self.portfolio.date,
                              cash=cash,
                              positions=rec['SHARES'].to_dict())
-        # Корректируем кэш (на всякий случай) чтобы оценка портфеля осталась той же
-        cur_prot._shares[CASH] = self.portfolio.value['PORTFOLIO'] - cur_prot.value['PORTFOLIO']
         return cur_prot
 
     def _for_trade(self, serialize=True) -> pd.DataFrame:
@@ -82,7 +80,7 @@ class Optimizer:
 
             top_share = rec.index[0]
             bot_share = rec.loc[rec['lots'] > 0].index[-1]
-            cash = cur_prot.value[CASH]
+            cash = cur_prot.value[CASH] + self.portfolio.value['PORTFOLIO'] - cur_prot.value['PORTFOLIO']
             if cash > rec.loc[top_share, 'lot_price']:
                 rec.loc[top_share, 'lots'] += 1
                 cash -= rec.loc[top_share, 'lot_price']
