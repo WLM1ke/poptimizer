@@ -52,7 +52,7 @@ class Optimizer:
         return self._metrics
 
     def _update_portfolio(self, rec, cash):
-        # создаём новый портфель с учётом этой транзакции
+        # создаём новый портфель с учётом новой транзакции
         rec['SHARES'] = rec['lots'] * rec['lot_size']
         cur_prot = Portfolio(name=self.portfolio.name,
                              date=self.portfolio.date,
@@ -60,11 +60,11 @@ class Optimizer:
                              positions=rec['SHARES'].to_dict())
         return cur_prot
 
-    def _for_trade(self, serialize=True) -> pd.DataFrame:
+    def _for_trade(self, serialize=True) -> dict[str, pd.DataFrame]:
         """Осуществляет расчет рекомендуемых операций."""
         cur_prot = self.portfolio
-        rec = None
-        op = None
+        rec, op = None, None
+        # используется для определения цикла в операциях (получение портфеля который был ранее)
         ports_set = set()
         while True:
             cur_metrics = metrics.MetricsResample(cur_prot)
@@ -77,12 +77,13 @@ class Optimizer:
             rec['lots'] = (cur_prot.shares.loc[rec.index] / rec['lot_size']).fillna(0).astype(int)
             rec['lot_price'] = (cur_prot.lot_size.loc[rec.index] * cur_prot.price.loc[rec.index]).round(2)
 
+            # определяем операцию:
+            # покупка, если на покупку лучшего тикера хватает CASH
+            # иначе - продажа худшго тикера из тех, что в наличии
+
             top_share = rec.index[0]
             bot_share = rec.loc[rec['lots'] > 0].index[-1]
             cash = cur_prot.value[CASH] + self.portfolio.value['PORTFOLIO'] - cur_prot.value['PORTFOLIO']
-            # определяем операцию:
-            # покупка, если на покупку лучшего тикер хватает CASH
-            # иначе - продажа худшго тикера из тех, что в наличии
             if cash > rec.loc[top_share, 'lot_price']:
                 rec.loc[top_share, 'lots'] += 1
                 cash -= rec.loc[top_share, 'lot_price']
@@ -92,15 +93,12 @@ class Optimizer:
                 cash += rec.loc[bot_share, 'lot_price']
                 op = ('SELL', bot_share)
             cur_prot = self._update_portfolio(rec, cash)
-
-            print(op, cash)
-            port_tuple = tuple(cur_prot.shares.drop(CASH).tolist())
+            print(len(ports_set), op, cash)
             # проверка цикла
+            port_tuple = tuple(cur_prot.shares.drop(CASH).tolist())
             if port_tuple in ports_set:
                 break
             ports_set.add(port_tuple)
-            if len(ports_set) % 1000 == 0:
-                print('ITERATION', len(ports_set), self.portfolio.name)
 
         rec['SUM'] = (rec['lots'] * rec['lot_price']).round(2)
         rec.sort_values('SUM', ascending=False, inplace=True)
@@ -120,12 +118,13 @@ class Optimizer:
             recommendations[op]['SHARES_exists'] = recommendations[op]['lots_exists'] * recommendations[op]['lot_size']
             # корректируем сумму учитывая целое количество лотов
             recommendations[op]['SUM'] = (recommendations[op]['lots'] * recommendations[op]['lot_price']).round(2)
-
+            # изменение порядка столбцов
             recommendations[op] = recommendations[op][['lot_size', 'lot_price', 'SHARES_exists', 'lots_exists',
                                                        'lots', 'SHARES', 'SUM', 'SHARES_AFTER']]
-            recommendations[op].rename({'lots': f'lots_to_{op}'}, inplace=True, axis='columns')
-            recommendations[op].rename({'SHARES': f'SHARES_to_{op}'}, inplace=True, axis='columns')
-            recommendations[op].rename({'SUM': f'SUM_to_{op}'}, inplace=True, axis='columns')
+            recommendations[op].rename({'lots': f'lots_to_{op}',
+                                        'SHARES': f'SHARES_to_{op}',
+                                        'SUM': f'SUM_to_{op}'},
+                                       inplace=True, axis='columns')
 
         if serialize:
             path = f"{config.REPORTS_PATH}/{'/'.join(self.portfolio.name)}"
