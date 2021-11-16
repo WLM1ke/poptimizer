@@ -70,7 +70,6 @@ class Optimizer:
             cur_metrics = metrics.MetricsResample(cur_prot)
             grads = cur_metrics.all_gradients.iloc[:-2]
             # гармоническое среднее квантилей градиентов вместо PRIORITY
-
             rec = pd.Series(data=stats.hmean(quantile_transform(grads, n_quantiles=grads.shape[0]), axis=1),
                             index=grads.index).to_frame(name='PRIORITY')
             rec.sort_values(["PRIORITY"], ascending=[False], inplace=True)
@@ -81,6 +80,9 @@ class Optimizer:
             top_share = rec.index[0]
             bot_share = rec.loc[rec['lots'] > 0].index[-1]
             cash = cur_prot.value[CASH] + self.portfolio.value['PORTFOLIO'] - cur_prot.value['PORTFOLIO']
+            # определяем операцию:
+            # покупка, если на покупку лучшего тикер хватает CASH
+            # иначе - продажа худшго тикера из тех, что в наличии
             if cash > rec.loc[top_share, 'lot_price']:
                 rec.loc[top_share, 'lots'] += 1
                 cash -= rec.loc[top_share, 'lot_price']
@@ -90,6 +92,7 @@ class Optimizer:
                 cash += rec.loc[bot_share, 'lot_price']
                 op = ('SELL', bot_share)
             cur_prot = self._update_portfolio(rec, cash)
+
             print(op, cash)
             port_tuple = tuple(cur_prot.shares.drop(CASH).tolist())
             # проверка цикла
@@ -110,6 +113,8 @@ class Optimizer:
         recommendations['BUY'] = rec.loc[rec['lots'] > rec['lots_exists']].copy()
         recommendations['BUY']['lots'] = recommendations['BUY']['lots'] - recommendations['BUY']['lots_exists']
 
+        recommendations['new_port_summary'] = cur_prot._main_info_df()
+
         for op in ['SELL', 'BUY']:
             recommendations[op]['SHARES'] = recommendations[op]['lots'] * recommendations[op]['lot_size']
             recommendations[op]['SHARES_exists'] = recommendations[op]['lots_exists'] * recommendations[op]['lot_size']
@@ -122,7 +127,6 @@ class Optimizer:
             recommendations[op].rename({'SHARES': f'SHARES_to_{op}'}, inplace=True, axis='columns')
             recommendations[op].rename({'SUM': f'SUM_to_{op}'}, inplace=True, axis='columns')
 
-        recommendations['new_port_summary'] = cur_prot._main_info_df()
         if serialize:
             path = f"{config.REPORTS_PATH}/{'/'.join(self.portfolio.name)}"
             print(path)

@@ -48,7 +48,7 @@ class Evolution:
         step = 0
         current = None
 
-        while True:  # noqa: WPS457
+        while config.START_EVOLVE_HOUR <= datetime.datetime.today().hour <= config.STOP_EVOLVE_HOUR:  # noqa: WPS457
             step, current = self._step_setup(step, current)
 
             date = self._end.date()
@@ -63,10 +63,6 @@ class Evolution:
                 self._scale = self._scale * (1 - DECAY) + accepted * DECAY
 
             current = next_
-            if config.START_EVOLVE_HOUR <= datetime.datetime.today().hour <= config.STOP_EVOLVE_HOUR:
-                continue
-            else:
-                break
 
     def _setup(self) -> None:
         if population.count() == 0:

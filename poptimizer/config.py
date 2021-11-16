@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO,
                     handlers=[logging.FileHandler("debug.log"), logging.StreamHandler(sys.stdout)])
 
 # Устройство на котором будет производиться обучение
-DEVICE = torch.device("cpu") #"cuda" if torch.cuda.is_available() else
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu") #
 
 # Количество колонок в распечатках без переноса на несколько страниц
 pd.set_option("display.max_columns", 20)
@@ -50,8 +50,13 @@ COSTS = (YEAR_IN_TRADING_DAYS / FORECAST_DAYS) * (0.025 / 100)
 # Market impact в дневном СКО при операциях на уровне дневного объема
 MARKET_IMPACT_FACTOR = 1
 
+# Временной диапазон, когда эволюция будет работать
 START_EVOLVE_HOUR = 1
 STOP_EVOLVE_HOUR = 7
 
+# Имена файлов пртфелей, используемых для обучения модлей
 BASE_PORTS = {'dividend_port.yaml'}
+# Имена файлов пртфелей, неиспользуемых для обучения модлей
 NOT_USED_PORTS = {'base.yaml'}
+
+
