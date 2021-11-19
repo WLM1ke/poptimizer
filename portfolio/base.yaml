@@ -57,6 +57,7 @@ positions:
   FXRU: 0
   GAZP: 0
   GCHE: 0
+  GE-RM: 0
   GEMA: 0
   GLTR: 0
   GMKN: 0
@@ -131,6 +132,7 @@ positions:
   ORUP: 0
   OZON: 0
   PFE-RM: 0
+  PG-RM: 0
   PHOR: 0
   PIKK: 0
   PLZL: 0
@@ -175,7 +177,6 @@ positions:
   TGKD: 0
   TGKN: 0
   TGT-RM: 0
-  TORSP: 0
   TRMK: 0
   TRNFP: 0
   TSLA-RM: 0
