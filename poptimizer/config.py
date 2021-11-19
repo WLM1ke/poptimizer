@@ -37,7 +37,7 @@ TARGET_POPULATION = 200
 FORECAST_DAYS = 35
 
 # Минимальная количество дней истории котировок для прогнозов
-HISTORY_DAYS_MIN = 86
+HISTORY_DAYS_MIN = 88
 
 # Значимость отклонения градиента от нуля
 P_VALUE = 0.05
