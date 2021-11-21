@@ -57,8 +57,6 @@ START_EVOLVE_HOUR = 1
 STOP_EVOLVE_HOUR = 7
 
 # Имена файлов пртфелей, используемых для обучения модлей
-BASE_PORTS = {'dividend_port.yaml'}
+WHITE_LIST_PORTS = {'dividend_port.yaml'}
 # Имена файлов пртфелей, неиспользуемых для обучения модлей
 NOT_USED_PORTS = {'base.yaml'}
-
-

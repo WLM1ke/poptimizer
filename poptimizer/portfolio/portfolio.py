@@ -267,10 +267,9 @@ def load_tickers() -> tuple[str]:
     """Отсортированный перечень используемых тикеров."""
     all_pos = set()
     for path in config.PORT_PATH.glob("*.yaml"):
-        if path.name in config.BASE_PORTS:
-            with path.open() as port:
-                port = yaml.safe_load(port)
-                pos = port.pop("positions")
-                all_pos.update(pos)
+        with path.open() as port:
+            port = yaml.safe_load(port)
+            pos = port.pop("positions")
+            all_pos.update(pos)
 
     return tuple(sorted(all_pos))

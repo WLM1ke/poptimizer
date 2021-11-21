@@ -2,6 +2,7 @@
 import typer
 
 from poptimizer.data.views import div_status
+from poptimizer.data.views.listing import last_history_date
 from poptimizer.evolve import Evolution
 from poptimizer.portfolio import Optimizer, load_from_yaml
 
@@ -17,10 +18,14 @@ def dividends(ticker: str) -> None:
     div_status.dividends_validation(ticker)
 
 
-def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD"), ports: set = None) -> None:
+def optimize(ports_to_optimize: set = None,
+             ports_wht_lst: set = None,
+             ) -> None:
     """Optimize portfolio."""
-    port = load_from_yaml(date, ports)
-    opt = Optimizer(port)
+    date = last_history_date()
+    port = load_from_yaml(date, ports_to_optimize)
+    white_list_portfolio = load_from_yaml(date, ports_wht_lst)
+    opt = Optimizer(port, white_list_portfolio=white_list_portfolio)
     print(opt.portfolio)
     print(opt.metrics)
     print(opt)

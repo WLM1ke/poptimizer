@@ -15,15 +15,18 @@ from poptimizer.portfolio.portfolio import CASH, Portfolio
 class Optimizer:
     """Предлагает сделки для улучшения метрики портфеля."""
 
-    def __init__(self, portfolio: Portfolio, p_value: float = config.P_VALUE):
+    def __init__(self, portfolio: Portfolio, white_list_portfolio: Portfolio = None, p_value: float = config.P_VALUE):
         """Учитывается градиент, его ошибку и ликвидность бумаг.
 
         :param portfolio:
             Оптимизируемый портфель.
+        :param white_list_portfolio:
+            Портфель, содержащий допустимые тикеры, используется для фильтрации рекомендаций.
         :param p_value:
             Требуемая значимость отклонения градиента от нуля.
         """
         self._portfolio = portfolio
+        self._white_list_portfolio = white_list_portfolio
         self._p_value = p_value
         self._metrics = metrics.MetricsResample(portfolio)
 
@@ -77,13 +80,21 @@ class Optimizer:
             rec['lots'] = (cur_prot.shares.loc[rec.index] / rec['lot_size']).fillna(0).astype(int)
             rec['lot_price'] = (cur_prot.lot_size.loc[rec.index] * cur_prot.price.loc[rec.index]).round(2)
 
+            rec['is_acceptable'] = True
+            if self._white_list_portfolio is not None:
+                # продаём все позиции для тикеров, которых нет в white_list_portfolio
+                banned_tickers = rec.index.difference(self._white_list_portfolio.index)
+                rec.loc[banned_tickers, 'is_acceptable'] = False
+                rec.loc[banned_tickers, 'lots'] = 0
+
+            cash = cur_prot.value[CASH] + self.portfolio.value['PORTFOLIO'] - cur_prot.value['PORTFOLIO']
+
             # определяем операцию:
             # покупка, если на покупку лучшего тикера хватает CASH
             # иначе - продажа худшго тикера из тех, что в наличии
 
-            top_share = rec.index[0]
+            top_share = rec.loc[rec['is_acceptable']].index[0]
             bot_share = rec.loc[rec['lots'] > 0].index[-1]
-            cash = cur_prot.value[CASH] + self.portfolio.value['PORTFOLIO'] - cur_prot.value['PORTFOLIO']
             if cash > rec.loc[top_share, 'lot_price']:
                 rec.loc[top_share, 'lots'] += 1
                 cash -= rec.loc[top_share, 'lot_price']

@@ -60,7 +60,7 @@ class Evolution:
         step = 0
         current = None
 
-        while self._check_time_range():  # noqa: WPS457
+        while self._check_time_range():
             step, current = self._step_setup(step, current)
 
             date = self._end.date()

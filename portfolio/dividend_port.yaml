@@ -25,7 +25,7 @@ positions:
   ALRS: 0
   PHOR: 0
   MAGN: 0
-  TORSP: 0
+#  TORSP: 0
   RSTIP: 0
   MOEX: 0
   MSNG: 0
