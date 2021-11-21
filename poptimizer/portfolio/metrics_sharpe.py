@@ -1,16 +1,19 @@
 """Метрики для одного прогноза и набора прогнозов."""
 import functools
+from typing import Final
 
 import numpy as np
 import pandas as pd
 
-from poptimizer import config, evolve
+from poptimizer import evolve
 from poptimizer.data.views import indexes
 from poptimizer.dl import Forecast
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO, Portfolio
 
+_P_VALUE: Final = 0.05
 
-class MetricsSingle:  # noqa: WPS214
+
+class MetricsSingle:
     """Реализует основные метрики портфеля для одного прогноза."""
 
     def __init__(self, portfolio: Portfolio, forecast: Forecast) -> None:
@@ -29,7 +32,7 @@ class MetricsSingle:  # noqa: WPS214
 
     def __str__(self) -> str:
         """Текстовое представление метрик портфеля."""
-        frames = [self.mean, self.std, self.beta, self.r_geom, self.gradient]
+        frames = [self.mean, self.std, self.beta, self.sharpe, self.gradient]
         df = pd.concat(frames, axis=1)
 
         return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n\n{df}"
@@ -75,7 +78,7 @@ class MetricsSingle:  # noqa: WPS214
         std = pd.Series(std, index=portfolio.index[:-2])
         std[CASH] = 0
         weight = portfolio.weight[:-2].values
-        portfolio_var = weight.reshape(1, -1) @ cov @ weight.reshape(-1, 1)  # noqa: WPS221
+        portfolio_var = weight.reshape(1, -1) @ cov @ weight.reshape(-1, 1)
         std[PORTFOLIO] = portfolio_var.squeeze() ** 0.5
         std.name = "STD"
 
@@ -89,10 +92,7 @@ class MetricsSingle:  # noqa: WPS214
         weight = portfolio.weight[:-2].values
         beta = cov @ weight.reshape(-1, 1)
         beta = beta / (weight.reshape(1, -1) @ beta)
-        beta = pd.Series(
-            beta.ravel(),
-            index=portfolio.index[:-2],
-        )
+        beta = pd.Series(beta.ravel(), index=portfolio.index[:-2])
         beta[CASH] = 0
         beta[PORTFOLIO] = 1
         beta.name = "BETA"
@@ -100,27 +100,17 @@ class MetricsSingle:  # noqa: WPS214
         return beta
 
     @functools.cached_property
-    def r_geom(self) -> pd.Series:
-        """Приближенная оценка геометрической доходности.
+    def sharpe(self) -> pd.Series:
+        """Отношение доходности и риска портфеля."""
+        rf = self._rf
+        sharpe = ((self.mean - rf) - (self.mean[PORTFOLIO] - rf) * (self.beta - 1)) / self.std[PORTFOLIO]
+        sharpe.name = "SHARPE"
 
-        Для портфеля равна арифметической доходности минус половина квадрата СКО. Для остальных
-        активов рассчитывается как сумма градиента и показателя для портфеля.
-
-        При правильной реализации взвешенная по долям отдельных позиций геометрическая доходность
-        равна значению по портфелю в целом.
-        """
-        jensen_correction = self.std[PORTFOLIO] ** 2 * (self.beta - 0.5)
-        r_geom = self.mean.sub(jensen_correction)
-        r_geom.name = "R_GEOM"
-
-        return r_geom
+        return sharpe
 
     @functools.cached_property
     def gradient(self) -> pd.Series:
-        """Рассчитывает производную приближенного значения геометрической доходности по долям акций.
-
-        В общем случае равна (m - mp) - (b - 1) * sp ** 2, m и mp - доходность актива и портфеля,
-        соответственно, sp - СКО портфеля, b - бета актива.
+        """Производная отношения доходности и риска портфеля по долям позиций.
 
         Долю актива с максимальным градиентом необходимо наращивать, а с минимальным сокращать. Так как
         важную роль в градиенте играет бета, то во многих случаях выгодно наращивать долю той бумаги,
@@ -128,17 +118,31 @@ class MetricsSingle:  # noqa: WPS214
 
         При правильной реализации взвешенный по долям отдельных позиций градиент равен градиенту по
         портфелю в целом и равен 0.
+
+        В общем случае градиент равен (m -(rf + b * (mp - rf))) / sp, где:
+
+        - m и mp - доходность актива и портфеля, соответственно,
+        - rf - безрисковая ставка,
+        - sp - СКО портфеля,
+        - b - бета актива.
+
+        Знаменатель не влияет на знак — направление изменения доли актива для увеличения отношения
+        доходность/риск. Числитель формулы имеет размерность доходности и может быть интерпретирован,
+        как превышение доходности актива над SML. Таким образом, использование только числителя
+        позволяет легче учесть издержки для множества прогнозов и не влияет на корректность выводов о
+        требуемом направлении изменения доли актива в портфеле.
+
+        В данной реализации используется только числитель градиента.
         """
         mean = self.mean
-        mean_gradient = mean - mean[PORTFOLIO]
-        risk_gradient = self.beta.sub(1) * self.std[PORTFOLIO] ** 2
-        gradient = mean_gradient - risk_gradient
+        rf = self._rf
+        gradient = mean - (rf + (mean[PORTFOLIO] - rf) * self.beta)
         gradient.name = "GRAD"
 
         return gradient
 
 
-class MetricsResample:  # noqa: WPS214
+class MetricsResample:
     """Реализует усредненные метрики портфеля для набора прогнозов."""
 
     def __init__(self, portfolio: Portfolio) -> None:
@@ -200,13 +204,13 @@ class MetricsResample:  # noqa: WPS214
         return beta
 
     @functools.cached_property
-    def r_geom(self) -> pd.Series:
-        """Медиана для всех прогнозов приближенные оценки геометрической доходности."""
-        all_r_geom = [metric.r_geom for metric in self._metrics]
-        r_geom = pd.concat(all_r_geom, axis=1).median(axis=1)
-        r_geom.name = "R_GEOM"
+    def shape(self) -> pd.Series:
+        """Медиана для всех прогнозов отношения доходности и риска."""
+        sharpe = pd.concat([metric.sharpe for metric in self._metrics], axis=1)
+        sharpe = sharpe.median(axis=1)
+        sharpe.name = "SHARPE"
 
-        return r_geom
+        return sharpe
 
     @functools.cached_property
     def all_gradients(self) -> pd.DataFrame:
@@ -226,27 +230,24 @@ class MetricsResample:  # noqa: WPS214
         quantile = [0, 0.5, 1]
         quantile = np.quantile([met.history_days for met in self._metrics], quantile)
         quantile = list(map(lambda num: f"{num:.0f}", quantile))
-        quantile = " <-> ".join(quantile)
 
-        return f"Дней в истории - ({quantile})"
+        return f"Дней в истории - ({' <-> '.join(quantile)})"
 
     def _cor_block(self) -> str:
         """Разброс средней корреляции."""
         quantile = [0, 0.5, 1]
         quantile = np.quantile([met.cor for met in self._metrics], quantile)
         quantile = list(map(lambda num: f"{num:.2%}", quantile))
-        quantile = " <-> ".join(quantile)
 
-        return f"Корреляция - ({quantile})"
+        return f"Корреляция - ({' <-> '.join(quantile)})"
 
     def _shrinkage_block(self) -> str:
         """Разброс среднего сжатия."""
         quantile = [0, 0.5, 1]
         quantile = np.quantile([met.shrinkage for met in self._metrics], quantile)
         quantile = list(map(lambda num: f"{num:.2%}", quantile))
-        quantile = " <-> ".join(quantile)
 
-        return f"Сжатие - ({quantile})"
+        return f"Сжатие - ({' <-> '.join(quantile)})"
 
     def _main_block(self) -> str:
         """Основная информация о метриках."""
@@ -254,35 +255,28 @@ class MetricsResample:  # noqa: WPS214
             self.mean,
             self.std,
             self.beta,
-            self.r_geom,
+            self.shape,
             self.gradient,
         ]
-        df = pd.concat(frames, axis=1)
 
-        return f"\n{df}"
+        return f"\n{pd.concat(frames, axis=1)}"
 
     def _grad_summary(self) -> str:
         return_ = pd.concat([metric.mean for metric in self._metrics], axis=1)
-        return_ = return_.loc[PORTFOLIO].quantile(config.P_VALUE)
+        return_ = return_.loc[PORTFOLIO].quantile(_P_VALUE)
 
         risk = pd.concat([metric.std for metric in self._metrics], axis=1)
-        risk = risk.loc[PORTFOLIO].quantile(1 - config.P_VALUE)
+        risk = risk.loc[PORTFOLIO].quantile(1 - _P_VALUE)
 
-        r_geom = pd.concat([metric.r_geom for metric in self._metrics], axis=1)
-        r_geom = r_geom.loc[PORTFOLIO].quantile(config.P_VALUE)
-
-        dd = self.std[PORTFOLIO] ** 2 / self.mean[PORTFOLIO]
+        sharpe = pd.concat([metric.sharpe for metric in self._metrics], axis=1)
+        sharpe = sharpe.loc[PORTFOLIO].quantile(_P_VALUE)
 
         strings = [
             "",
-            _text_with_data("Консервативная доходность: ", return_),
-            _text_with_data("Консервативный риск:       ", risk),
-            _text_with_data("Консервативная метрика:    ", r_geom),
-            _text_with_data("Оценка просадки:           ", dd),
+            f"Безрисковая ставка:        {self._metrics[0].rf: .4f}",
+            f"Консервативная доходность: {return_: .4f}",
+            f"Консервативный риск:       {risk: .4f}",
+            f"Консервативный Шарп:       {sharpe: .4f}",
         ]
 
         return "\n".join(strings)
-
-
-def _text_with_data(text: str, num: float) -> str:
-    return f"{text}{num: .2%}"
