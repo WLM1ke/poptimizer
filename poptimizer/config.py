@@ -47,3 +47,9 @@ COSTS = (YEAR_IN_TRADING_DAYS / FORECAST_DAYS) * (0.025 / 100)
 
 # Market impact в дневном СКО при операциях на уровне дневного объема
 MARKET_IMPACT_FACTOR = 1
+
+# Временной диапазон, когда эволюция будет работать, если равны - будет работать бесконечно
+# включительно
+START_EVOLVE_HOUR = 1
+# не включительно
+STOP_EVOLVE_HOUR = 1
