@@ -26,7 +26,7 @@ class ForecastError(config.POptimizerError):
     """Отсутствующий прогноз."""
 
 
-class Organism:
+class Organism:  # noqa: WPS214
     """Организм и основные операции с ним.
 
     Умеет рассчитывать качество организма для проведения естественного отбора, умирать, размножаться.
@@ -40,10 +40,6 @@ class Organism:
     ) -> None:
         """Загружает организм из базы данных."""
         self._doc = store.Doc(id_=_id, genotype=genotype)
-
-        # TODO: Убрать после преобразования всех значений
-        if not isinstance(self._doc.ir, list):
-            self._doc.ir = [self._doc.ir]
 
     def __str__(self) -> str:
         """Текстовое представление генотипа организма."""
@@ -193,25 +189,6 @@ def create_new_organism() -> Organism:
     return org
 
 
-def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
-    """Последовательно выдает организмы с датой не равной данной и None при отсутствии.
-
-    Организмы выдаются в порядке убывания возраста. Если в качестве параметра передается None выдается
-    самая старая модель, чтобы эволюция после перезапуска программы начиналась с проверенных организмов.
-    """
-    collection = store.get_collection()
-
-    pipeline = [
-        {"$match": {"date": {"$ne": date}}},
-        {"$sort": {"wins": pymongo.DESCENDING}},
-        {"$limit": 1},
-        {"$project": {"_id": True}},
-    ]
-    doc = next(collection.aggregate(pipeline), None)
-
-    return doc and Organism(**doc)
-
-
 def _get_parents() -> tuple[Organism, Organism]:
     """Получить родителей с разным генотипом."""
     collection = store.get_collection()
@@ -229,22 +206,46 @@ def _get_parents() -> tuple[Organism, Organism]:
     return parent1, parent2
 
 
-def get_oldest() -> Iterable[Organism]:
-    """Получить самые старые.
+def _aggregate_oldest(limit: int, first_step: Optional[dict] = None):
+    """Берет первые документы по возрастанию id.
 
-    При одинаковом возрасте сортировать по последнему ir.
+    При наличие добавляет первый шаг агрегации.
     """
-    collection = store.get_collection()
-
     pipeline = [
-        {"$project": {"_id": True, "wins": True, "ir": {"$first": "$ir"}}},
-        {"$sort": {"wins": pymongo.DESCENDING, "ir": pymongo.DESCENDING}},
-        {"$project": {"_id": True}},
+        {"$project": {"ir": True, "llh": True}},
+        {"$sort": {"id": pymongo.ASCENDING}},
+        {"$limit": limit},
     ]
+    if first_step:
+        pipeline = [first_step] + pipeline
 
-    for id_dict in list(collection.aggregate(pipeline)):
+    return store.get_collection().aggregate(pipeline)
+
+
+def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
+    """Последовательно выдает организмы с датой не равной данной и None при отсутствии.
+
+    Организмы выдаются в порядке убывания возраста. Если в качестве параметра передается None выдается
+    самая старая модель, чтобы эволюция после перезапуска программы начиналась с проверенных организмов.
+    """
+    doc = next(
+        _aggregate_oldest(1, {"$match": {"date": {"$ne": date}}}),
+        None,
+    )
+
+    return doc and Organism(_id=doc["_id"])
+
+
+def base_pop_ret() -> Iterable[list[float]]:
+    """Данные по доходности базовой популяции."""
+    yield from (doc.get("ir", []) for doc in _aggregate_oldest(config.TARGET_POPULATION))
+
+
+def get_oldest() -> Iterable[Organism]:
+    """Получить самые старые."""
+    for doc in list(_aggregate_oldest(config.TARGET_POPULATION ** 2)):
         with contextlib.suppress(store.IdError):
-            yield Organism(**id_dict)
+            yield Organism(_id=doc["_id"])
 
 
 def min_max_date() -> tuple[Optional[pd.Timestamp], Optional[pd.Timestamp]]:
@@ -265,17 +266,6 @@ def min_max_date() -> tuple[Optional[pd.Timestamp], Optional[pd.Timestamp]]:
         return None, None
 
     return pd.Timestamp(doc["min"]), pd.Timestamp(doc["max"])
-
-
-def get_llh(date: pd.Timestamp) -> list[float]:
-    """Последние значения llh в популяции."""
-    collection = store.get_collection()
-    pipeline = [
-        {"$match": {"date": {"$eq": date}}},
-        {"$project": {"llh": {"$first": "$llh"}}},
-    ]
-
-    return [doc["llh"] for doc in collection.aggregate(pipeline)]
 
 
 def print_stat() -> None:
