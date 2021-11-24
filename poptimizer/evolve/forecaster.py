@@ -30,7 +30,8 @@ class Forecasts(Iterable):
 
         self._forecasts = forecasts or _prepare_forecasts(tickers, date)
         if not self._forecasts:
-            raise population.ForecastError("Отсутствуют прогнозы - необходимо обучить модели")
+            diff = set(next(population.get_oldest())._doc.tickers).symmetric_difference(set(tickers))
+            raise population.ForecastError(f"Отсутствуют прогнозы - необходимо обучить модели. SymDiff: {diff}")
 
     def __iter__(self) -> Iterator[Forecast]:
         """Возвращает отдельные прогнозы."""
