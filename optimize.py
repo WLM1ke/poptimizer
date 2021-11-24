@@ -27,7 +27,7 @@ if __name__ == '__main__':
         print(e)
 
     ports = set(path.name for path in config.PORT_PATH.glob("*.yaml")) - config.NOT_USED_PORTS - config.WHITE_LIST_PORTS
+    all_ports = config.WHITE_LIST_PORTS.union(config.NOT_USED_PORTS)
     for p in ports:
-        opt({p}, config.WHITE_LIST_PORTS)
-    all_ports = config.WHITE_LIST_PORTS.union(ports).union(config.NOT_USED_PORTS)
-    opt(all_ports, all_ports)
+        opt({p}.union(all_ports), config.WHITE_LIST_PORTS)
+    opt(ports.union(all_ports), all_ports)
