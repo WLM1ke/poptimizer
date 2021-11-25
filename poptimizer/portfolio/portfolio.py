@@ -78,8 +78,10 @@ class Portfolio:
             self.weight,
             self.turnover_factor,
         ]
-
-        return pd.concat(columns, axis="columns")
+        df = pd.concat(columns, axis="columns")
+        df = df.loc[df['VALUE'] > 0]
+        df.sort_values('VALUE', inplace=True, ascending=False)
+        return df
 
     def _positions_stats(self) -> str:
         """Информация о количестве позиций"""
