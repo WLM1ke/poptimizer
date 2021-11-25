@@ -169,8 +169,14 @@ class Evolution:
         Если организм новый, то он оценивается для минимального количества дат из истории, необходимых
         для последовательного тестирования.
         """
-        print(organism, "\n")  # noqa: WPS421
-
+        try:
+            print(organism, "\n")  # noqa: WPS421
+            if organism.llh and (np.array(organism.llh) < 0).any():
+                organism.die()
+                return None
+        except AttributeError as e:
+            organism.die()
+            return None
         if organism.date == self._end:
             return organism
 
