@@ -79,9 +79,9 @@ class Portfolio:
             self.turnover_factor,
         ]
         df = pd.concat(columns, axis="columns")
-        df = df.loc[df['VALUE'] > 0]
-        df.sort_values('VALUE', inplace=True, ascending=False)
-        return df
+        df = df.loc[df["VALUE"] > 0]
+        
+        return df.sort_values("VALUE", ascending=False)
 
     def _positions_stats(self) -> str:
         """Информация о количестве позиций"""
