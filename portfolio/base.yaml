@@ -26,10 +26,10 @@ positions:
   BELU: 0
   BIDU-RM: 0
   BIIB-RM: 0
-  BISVP: 0
   BMY-RM: 0
   BRZL: 0
   BSPB: 0
+  CAT-RM: 0
   CBOM: 0
   CHMF: 0
   CHMK: 0
@@ -179,6 +179,7 @@ positions:
   TGT-RM: 0
   TRMK: 0
   TRNFP: 0
+  TRUR: 0
   TSLA-RM: 0
   TTLK: 0
   TWTR-RM: 0
