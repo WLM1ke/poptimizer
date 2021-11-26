@@ -80,8 +80,8 @@ class Portfolio:
         ]
         df = pd.concat(columns, axis="columns")
         df = df.loc[df["VALUE"] > 0]
-        
-        return df.sort_values("VALUE", ascending=False)
+
+        return pd.concat([df.iloc[:-2].sort_values("VALUE", ascending=False), df.iloc[-2:]], axis=0)
 
     def _positions_stats(self) -> str:
         """Информация о количестве позиций"""
