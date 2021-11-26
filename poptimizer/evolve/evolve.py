@@ -1,4 +1,5 @@
 """Эволюция параметров модели."""
+import datetime
 from typing import Optional
 
 import numpy as np
@@ -37,6 +38,18 @@ class Evolution:
         self._end = None
         self._scale = DECAY
 
+    @staticmethod
+    def _check_time_range():
+        hour = datetime.datetime.today().hour
+        if config.START_EVOLVE_HOUR == config.STOP_EVOLVE_HOUR:
+            return True
+        elif config.START_EVOLVE_HOUR < config.STOP_EVOLVE_HOUR:
+            return config.START_EVOLVE_HOUR <= hour < config.STOP_EVOLVE_HOUR
+        else:
+            before_midnight = config.START_EVOLVE_HOUR <= hour
+            after_midnight = hour < config.STOP_EVOLVE_HOUR
+            return before_midnight or after_midnight
+
     def evolve(self) -> None:
         """Осуществляет эволюции.
 
@@ -47,7 +60,7 @@ class Evolution:
         step = 0
         current = None
 
-        while True:  # noqa: WPS457
+        while self._check_time_range():
             step, current = self._step_setup(step, current)
 
             date = self._end.date()
@@ -156,8 +169,14 @@ class Evolution:
         Если организм новый, то он оценивается для минимального количества дат из истории, необходимых
         для последовательного тестирования.
         """
-        print(organism, "\n")  # noqa: WPS421
-
+        try:
+            print(organism, "\n")  # noqa: WPS421
+            if organism.llh and (np.array(organism.llh) < 0).any():
+                organism.die()
+                return None
+        except AttributeError as e:
+            organism.die()
+            return None
         if organism.date == self._end:
             return organism
 

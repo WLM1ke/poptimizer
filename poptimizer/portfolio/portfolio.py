@@ -26,6 +26,7 @@ class Portfolio:
 
     def __init__(
         self,
+        name: list[str],
         date: Union[str, pd.Timestamp],
         cash: int,
         positions: dict[str, int],
@@ -44,6 +45,7 @@ class Portfolio:
         :raises POptimizerError:
             Не совпадает в пределах точности расчетная и введенная стоимости портфеля.
         """
+        self.name = name
         self._date = pd.Timestamp(date)
         self._shares = pd.Series(positions).sort_index()
         self._shares[CASH] = cash
@@ -59,7 +61,7 @@ class Portfolio:
     def __str__(self) -> str:
         """Отображает сводную информацию о портфеле."""
         blocks = [
-            f"ПОРТФЕЛЬ - {self._date.date()}",
+            f"ПОРТФЕЛЬ {self.name} - {self._date.date()}",
             self._positions_stats(),
             f"{self._main_info_df()}",
         ]
@@ -76,8 +78,10 @@ class Portfolio:
             self.weight,
             self.turnover_factor,
         ]
-
-        return pd.concat(columns, axis="columns")
+        df = pd.concat(columns, axis="columns")
+        df = df.loc[df["VALUE"] > 0]
+        
+        return df.sort_values("VALUE", ascending=False)
 
     def _positions_stats(self) -> str:
         """Информация о количестве позиций"""
@@ -223,7 +227,7 @@ class Portfolio:
         return returns_new / returns_new.std(axis=0, ddof=0)
 
 
-def load_from_yaml(date: Union[str, pd.Timestamp]) -> Portfolio:
+def load_from_yaml(date: Union[str, pd.Timestamp], ports: set = None) -> Portfolio:
     """Загружает информацию о портфеле из yaml-файлов."""
     usd = indexes.usd(pd.Timestamp(date))
     usd = usd.iloc[-1]
@@ -231,27 +235,29 @@ def load_from_yaml(date: Union[str, pd.Timestamp]) -> Portfolio:
     value = 0
 
     positions = collections.Counter()
-
+    name = list()
     for path in sorted(config.PORT_PATH.glob("*.yaml")):
-        with path.open() as port:
-            port = yaml.safe_load(port)
-            positions.update(port.pop("positions"))
-            cash += port.get("USD", 0) * usd + port.get("RUR", 0)
-            value += port.get("value", 0)
+        if ports is None or path.name in ports:
+            name.append(path.stem)
+            with path.open() as port:
+                port = yaml.safe_load(port)
+                positions.update(port.pop("positions"))
+                cash += port.get("USD", 0) * usd + port.get("RUR", 0)
+                value += port.get("value", 0)
 
-        if value:
-            print("Проверка стоимости:", path)
-            try:
-                Portfolio(date, cash, positions, value)
-            except config.POptimizerError as err:
-                print(err)
-                continue
-            print("OK")
+            if value:
+                print("Проверка стоимости:", path)
+                try:
+                    Portfolio([path.stem], date, cash, positions, value)
+                except config.POptimizerError as err:
+                    print(err)
+                    continue
+                print("OK")
 
     if not value:
         value = None
 
-    return Portfolio(date, cash, positions, value)
+    return Portfolio(name, date, cash, positions, value)
 
 
 def load_tickers() -> tuple[str]:
