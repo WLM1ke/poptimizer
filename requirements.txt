@@ -7,7 +7,6 @@ pytest-asyncio
 # Математические операции и нейронные сети
 pandas
 numpy
-scikit-learn
 scipy
 torch
 tqdm
