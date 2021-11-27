@@ -61,7 +61,12 @@ class SecuritiesGateway(gateways.BaseGateway):
         """Получение списка торгуемых акций с ISIN и размером лота."""
         self._logger("Загрузка данных по торгуемым бумагам")
 
-        columns = ("SECID", "ISIN", "LOTSIZE")
+        columns = (
+            "SECID",
+            "ISIN",
+            "LOTSIZE",
+            "SECTYPE",
+        )
         json = await aiomoex.get_board_securities(
             self._session,
             market=market,
@@ -69,7 +74,8 @@ class SecuritiesGateway(gateways.BaseGateway):
             columns=columns,
         )
         df = pd.DataFrame(json)
-        df.columns = [col.TICKER, col.ISIN, col.LOT_SIZE]
+        df.columns = [col.TICKER, col.ISIN, col.LOT_SIZE, col.TICKER_TYPE]
+
         return df.set_index(col.TICKER)
 
 

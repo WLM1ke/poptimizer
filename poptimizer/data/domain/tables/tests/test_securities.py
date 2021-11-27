@@ -10,10 +10,10 @@ from poptimizer.data.domain.tables import base, securities
 from poptimizer.shared import col
 
 TICKER_CASES = (
-    ("GAZP", 0),
-    ("SNGSP", 1),
-    ("WRONG", None),
-    ("AAPL-RM", None),
+    ("1", 0),
+    ("2", 1),
+    ("D", 0),
+    ("a", None),
 )
 
 
@@ -21,7 +21,7 @@ TICKER_CASES = (
 def test_ticker_type(ticker, answer):
     """Проверка, что тикер соответствует обыкновенной акции."""
     if answer is None:
-        with pytest.raises(securities.WrongTickerTypeError, match=ticker):
+        with pytest.raises(securities.WrongTickerTypeError):
             securities._ticker_type(ticker)
     else:
         assert securities._ticker_type(ticker) is answer
@@ -43,20 +43,20 @@ def test_update_cond(table):
 async def test_load_and_format_df(table, mocker):
     """Данные загружаются и добавляется колонка с названием рынка."""
     fake_gateway = mocker.AsyncMock()
-    fake_gateway.return_value = pd.DataFrame([1, 2])
+    fake_gateway.return_value = pd.DataFrame([[10]], columns=[col.TICKER_TYPE])
     table._gateway = fake_gateway
 
     df = await table._load_and_format_df(
         "m1",
         "b1",
-        lambda index: 1 + index * 2,
+        lambda index: index ** 2,
     )
 
     pd.testing.assert_frame_equal(
         df,
         pd.DataFrame(
-            [[1, "m1", 1], [2, "m1", 3]],
-            columns=[0, col.MARKET, col.TICKER_TYPE],
+            [[100, "m1"]],
+            columns=[col.TICKER_TYPE, col.MARKET],
         ),
     )
     fake_gateway.assert_called_once_with(market="m1", board="b1")
@@ -66,9 +66,13 @@ async def test_load_and_format_df(table, mocker):
 async def test_prepare_df(table, mocker):
     """Данные загружаются объединяются и сортируются."""
     dfs = [
-        pd.DataFrame([1, 4], index=["AKRN", "RTKMP"]),
-        pd.DataFrame([2], index=["FXCN"]),
-        pd.DataFrame([3], index=["AAPL-RM"]),
+        pd.DataFrame(
+            ["1", "2", "D"],
+            index=["AKRN", "RTKMP", "FIVE"],
+            columns=[col.TICKER_TYPE],
+        ),
+        pd.DataFrame([2], index=["FXCN"], columns=[col.TICKER_TYPE]),
+        pd.DataFrame([3], index=["AAPL-RM"], columns=[col.TICKER_TYPE]),
     ]
     fake_gateway = mocker.AsyncMock()
     fake_gateway.side_effect = dfs
@@ -80,13 +84,14 @@ async def test_prepare_df(table, mocker):
         df,
         pd.DataFrame(
             [
-                [3, "foreignshares", col.FOREIGN],
-                [1, "shares", col.ORDINARY],
-                [2, "shares", col.ETF],
-                [4, "shares", col.PREFERRED],
+                [col.FOREIGN, "foreignshares"],
+                [col.ORDINARY, "shares"],
+                [col.ORDINARY, "shares"],
+                [col.ETF, "shares"],
+                [col.PREFERRED, "shares"],
             ],
-            index=["AAPL-RM", "AKRN", "FXCN", "RTKMP"],
-            columns=[0, col.MARKET, col.TICKER_TYPE],
+            index=["AAPL-RM", "AKRN", "FIVE", "FXCN", "RTKMP"],
+            columns=[col.TICKER_TYPE, col.MARKET],
         ),
     )
 

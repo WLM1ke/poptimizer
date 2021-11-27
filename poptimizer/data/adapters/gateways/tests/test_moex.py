@@ -53,7 +53,16 @@ async def test_index_gateway(mocker):
 @pytest.mark.asyncio
 async def test_securities_gateway(mocker):
     """Форматирование загруженных данных по торгуемым акциям."""
-    df_rez = pd.DataFrame([{"ticker": "GAZP", "rn": "abc", "lot": 12}])
+    df_rez = pd.DataFrame(
+        [
+            {
+                "ticker": "GAZP",
+                "rn": "abc",
+                "lot": 12,
+                "SECTYPE": "1",
+            },
+        ],
+    )
     outer_call = mocker.patch.object(moex.aiomoex, "get_board_securities", return_value=df_rez)
     fake_session = mocker.Mock()
 
@@ -61,15 +70,15 @@ async def test_securities_gateway(mocker):
 
     df_rez = await loader.__call__("m1", "b1")
 
-    assert df_rez.columns.tolist() == [col.ISIN, col.LOT_SIZE]
+    assert df_rez.columns.tolist() == [col.ISIN, col.LOT_SIZE, col.TICKER_TYPE]
     assert df_rez.index.tolist() == ["GAZP"]
-    assert df_rez.values.tolist() == [["abc", 12]]
+    assert df_rez.values.tolist() == [["abc", 12, "1"]]
 
     outer_call.assert_called_once_with(
         fake_session,
         market="m1",
         board="b1",
-        columns=("SECID", "ISIN", "LOTSIZE"),
+        columns=("SECID", "ISIN", "LOTSIZE", "SECTYPE"),
     )
 
 

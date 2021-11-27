@@ -20,14 +20,16 @@ class WrongTickerTypeError(config.POptimizerError):
     """Некорректный тикер."""
 
 
-def _ticker_type(ticker: str) -> int:
+def _ticker_type(sec_type: str) -> int:
     """Является ли акция обыкновенной."""
-    if len(ticker) == COMMON_TICKER_LENGTH:
-        return col.ORDINARY
-    elif len(ticker) == COMMON_TICKER_LENGTH + 1:
-        if ticker[COMMON_TICKER_LENGTH] == PREFERRED_TICKER_ENDING:
-            return col.PREFERRED
-    raise WrongTickerTypeError(ticker)
+    try:
+        return {
+            "1": col.ORDINARY,
+            "2": col.PREFERRED,
+            "D": col.ORDINARY,
+        }[sec_type]
+    except KeyError as err:
+        raise WrongTickerTypeError from err
 
 
 # Перечень рынков и режимов торгов, для которых загружаются списки доступных бумаг
@@ -68,7 +70,8 @@ class Securities(base.AbstractTable[events.USDUpdated]):
         """Загружает данные о торгуемых бумагах и добавляет информацию о рынке."""
         df = await self._gateway(market=market, board=board)
         df[col.MARKET] = market
-        df[col.TICKER_TYPE] = df.index.map(type_func)
+        df[col.TICKER_TYPE] = df[col.TICKER_TYPE].apply(type_func)
+
         return df
 
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:

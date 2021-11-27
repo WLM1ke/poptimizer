@@ -25,6 +25,8 @@ def test_securities_with_reg_number():
 
 TYPE_CASES = (
     ("AKRN", 0),
+    ("FIVE", 0),
+    ("VEON-RX", 0),
     ("RTKMP", 1),
     ("AMD-RM", 2),
     ("FXDE", 3),
