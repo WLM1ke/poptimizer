@@ -1,9 +1,11 @@
 """Основные настраиваемые параметры."""
 import logging
 import pathlib
+from typing import Union
 
 import pandas as pd
 import torch
+import yaml
 
 
 class POptimizerError(Exception):
@@ -21,35 +23,39 @@ pd.set_option("display.max_columns", 20)
 pd.set_option("display.max_rows", None)
 pd.set_option("display.width", None)
 
+_root = pathlib.Path(__file__).parents[1]
+
 # Путь к директории с отчетами
-REPORTS_PATH = pathlib.Path(__file__).parents[1] / "reports"
+REPORTS_PATH = _root / "reports"
 
 # Путь к директории с портфелями
-PORT_PATH = pathlib.Path(__file__).parents[1] / "portfolio"
+PORT_PATH = _root / "portfolio"
 
-# Количество торговых дней в году
-YEAR_IN_TRADING_DAYS = 12 * 21
 
-# Минимальное количество моделей в ансамбле
-TARGET_POPULATION = 200
+def _load_config() -> dict[str, Union[int, float]]:
+    cfg = {}
+    path = _root / "config" / "config.yaml"
+    if path.exists():
+        with path.open() as path:
+            cfg = yaml.safe_load(path)
 
-# Длинна прогноза в торговых днях
-FORECAST_DAYS = 33
+    logging.getLogger("Config").info(f"{cfg}")
 
-# Минимальная количество дней истории котировок для прогнозов
-HISTORY_DAYS_MIN = 90
+    return cfg
 
-# Значимость отклонения градиента от нуля
-P_VALUE = 0.05
 
-# Транзакционные издержки на одну сделку
-COSTS = (YEAR_IN_TRADING_DAYS / FORECAST_DAYS) * (0.025 / 100)
+_cfg = _load_config()
 
-# Market impact в дневном СКО при операциях на уровне дневного объема
-MARKET_IMPACT_FACTOR = 1
+# Количество торговых дней в месяце и в году
+MONTH_IN_TRADING_DAYS = 21
+YEAR_IN_TRADING_DAYS = 12 * MONTH_IN_TRADING_DAYS
 
-# Временной диапазон, когда эволюция будет работать, если равны - будет работать бесконечно
-# включительно
-START_EVOLVE_HOUR = 1
-# не включительно
-STOP_EVOLVE_HOUR = 1
+# Загрузка конфигурации
+TARGET_POPULATION = _cfg.get("TARGET_POPULATION", 100)
+FORECAST_DAYS = _cfg.get("FORECAST_DAYS", 21)
+HISTORY_DAYS_MIN = _cfg.get("HISTORY_DAYS_MIN", 63)
+P_VALUE = _cfg.get("P_VALUE", 0.05)
+COSTS = _cfg.get("COSTS", 0.025) / 100 * (YEAR_IN_TRADING_DAYS / FORECAST_DAYS)
+MARKET_IMPACT_FACTOR = _cfg.get("MARKET_IMPACT_FACTOR", 1)
+START_EVOLVE_HOUR = _cfg.get("START_EVOLVE_HOUR", 1)
+STOP_EVOLVE_HOUR = _cfg.get("STOP_EVOLVE_HOUR", 1)
