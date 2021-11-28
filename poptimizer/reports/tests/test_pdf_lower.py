@@ -36,7 +36,7 @@ POSITIONS = {
 }
 CASH = 1_548_264
 DATE = "2021-04-19"
-TEST_PORTFOLIO = portfolio.Portfolio(date=DATE, cash=CASH, positions=POSITIONS)
+TEST_PORTFOLIO = portfolio.Portfolio(name=["test"], date=DATE, cash=CASH, positions=POSITIONS)
 
 
 def test_drop_small_positions():
