@@ -23,18 +23,20 @@ class Optimizer:
         self._portfolio = portfolio
         self._p_value = p_value
         self._metrics = metrics.MetricsResample(portfolio)
+        self.rec = None
 
     def __str__(self) -> str:
         """Информация о позициях, градиенты которых значимо отличны от 0."""
-        rec = self._for_trade()
+        if self.rec is None:
+            self.rec = self._for_trade()
         forecasts = self.metrics.count
         blocks = [
             "\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ",
             f"\nforecasts = {forecasts}",
             f"p-value = {self._p_value:.2%}",
-            f"\n{rec['SELL']}",
-            f"\n{rec['BUY']}",
-            f"\n{rec['new_port_summary']}",
+            f"\n{self.rec['SELL']}",
+            f"\n{self.rec['BUY']}",
+            f"\n{self.rec['new_port_summary']}",
         ]
         return "\n".join(blocks)
 
