@@ -60,8 +60,9 @@ class Portfolio:
 
     def __str__(self) -> str:
         """Отображает сводную информацию о портфеле."""
+        name = ", ".join(self.name)
         blocks = [
-            f"ПОРТФЕЛЬ {self.name} - {self._date.date()}",
+            f"ПОРТФЕЛЬ [{name}] - {self._date.date()}",
             self._positions_stats(),
             f"{self._main_info_df()}",
         ]
