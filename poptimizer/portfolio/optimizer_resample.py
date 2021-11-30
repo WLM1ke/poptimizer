@@ -1,4 +1,4 @@
-"""Оптимизатор портфеля."""
+"""Оптимизатор портфеля на основе ресемплирования отдельных прогнозов."""
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -7,9 +7,25 @@ from poptimizer import config
 from poptimizer.portfolio import metrics
 from poptimizer.portfolio.portfolio import CASH, Portfolio
 
+# Наименование столбцов
+_PRIORITY = "PRIORITY"
+_LOWER = "LOWER"
+_UPPER = "UPPER"
+_COSTS = "COSTS"
+_SELL = "SELL"
+_BUY = "BUY"
+_SIGNAL = "SIGNAL"
+_WEIGHT = "WEIGHT"
+_RISK_CON = "RISK_CON"
 
-class Optimizer:
-    """Предлагает сделки для улучшения метрики портфеля."""
+
+class Optimizer:  # noqa: WPS214
+    """Предлагает сделки для улучшения метрики портфеля.
+
+    Использует множество предсказаний и статистические тесты для выявления только статистически значимых
+    улучшений портфеля, которые покрывают транзакционные издержки и импакт на рыночные котировки.
+    Рекомендации даются в сокращенном виде без конкретизации конкретных сделок.
+    """
 
     def __init__(self, portfolio: Portfolio, p_value: float = config.P_VALUE):
         """Учитывается градиент, его ошибку и ликвидность бумаг.
@@ -47,33 +63,67 @@ class Optimizer:
 
     def _for_trade(self) -> pd.DataFrame:
         """Осуществляет расчет доверительного интервала для среднего."""
-        p_value = self._p_value / (len(self._portfolio.index) - 2)
+        conf_int = self._prepare_bounds()
 
+        break_even = self._break_even(conf_int)
+
+        sell = self._select_sell(conf_int, break_even)
+
+        bye = self._select_buy(break_even, conf_int)
+
+        rez = pd.concat([bye, sell], axis=0)
+        rez = rez.sort_values(_PRIORITY, ascending=False)
+        rez[_PRIORITY] = rez[_PRIORITY] - break_even
+
+        return rez
+
+    def _break_even(self, conf_int):
+        non_zero_positions = self._portfolio.shares.iloc[:-2] > 0
+
+        return conf_int[_UPPER].loc[non_zero_positions].min()
+
+    def _select_buy(self, break_even, conf_int):
+        buy = conf_int[_PRIORITY] >= break_even  # noqa: WPS465
+        buy = conf_int[buy]
+        buy[_SIGNAL] = _BUY
+
+        return buy
+
+    def _select_sell(self, conf_int, break_even):
+        sell = conf_int[_UPPER] <= break_even
+        sell = sell & (self._portfolio.shares.iloc[:-2] > 0)  # noqa: WPS465
+        sell = conf_int[sell]
+        kwarg = {_PRIORITY: lambda df: df[_UPPER]}
+        sell = sell.assign(**kwarg)
+        sell[_SIGNAL] = _SELL
+
+        return sell
+
+    def _prepare_bounds(self):
+        p_value = self._p_value / (len(self._portfolio.index) - 2) * 2
         conf_int = self.metrics.all_gradients.iloc[:-2]
         conf_int = conf_int.apply(
             lambda grad: _grad_conf_int(grad, p_value),
             axis=1,
             result_type="expand",
         )
-        conf_int.columns = ["LOWER", "UPPER"]
-        conf_int["COSTS"] = self._costs()
-        conf_int["PRIORITY"] = conf_int["LOWER"] - conf_int["COSTS"]
 
-        for_sale = conf_int["UPPER"] < 0
-        for_sale = for_sale & (self._portfolio.shares.iloc[:-2] > 0)  # noqa: WPS465
-        for_sale = conf_int[for_sale]
-        for_sale = for_sale.assign(PRIORITY=lambda df: df["UPPER"])
+        risk_contribution = self._metrics.beta[:-2]
+        risk_contribution = risk_contribution * self._portfolio.weight.iloc[:-2]
 
-        good_purchase = conf_int["PRIORITY"] > 0  # noqa: WPS465
-        good_purchase = conf_int[good_purchase]
-
-        return pd.concat(
+        conf_int = pd.concat(
             [
-                good_purchase,
-                for_sale,
+                self._portfolio.weight.iloc[:-2],
+                risk_contribution,
+                conf_int,
             ],
-            axis=0,
-        ).sort_values("PRIORITY", ascending=False)
+            axis=1,
+        )
+        conf_int.columns = [_WEIGHT, _RISK_CON, _LOWER, _UPPER]
+        conf_int[_COSTS] = self._costs()
+        conf_int[_PRIORITY] = conf_int[_LOWER] - conf_int[_COSTS]
+
+        return conf_int
 
     def _costs(self) -> pd.DataFrame:
         """Удельные торговые издержки.
@@ -119,8 +169,9 @@ class Optimizer:
 
 
 def _grad_conf_int(forecasts, p_value) -> tuple[float, float]:
+    forecasts = (forecasts,)
     interval = stats.bootstrap(
-        (forecasts,),
+        forecasts,
         np.median,
         confidence_level=(1 - p_value),
         random_state=0,
