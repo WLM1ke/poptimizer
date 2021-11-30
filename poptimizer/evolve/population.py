@@ -167,7 +167,7 @@ def _format_scores_list(scores: list[float]) -> str:
         scores_all = [f"{score: .4f}" for score in scores]
         scores_all = ", ".join(scores_all)
 
-        score = np.array(scores).mean()
+        score = np.median(np.array(scores))
 
         block = f"{score:0.4f}: {scores_all}"
 
@@ -283,7 +283,7 @@ def _print_key_stats(key: str, view: str = None) -> None:
 
     keys = map(lambda doc: doc[key], cursor)
     keys = map(
-        lambda amount: amount if isinstance(amount, float) else np.array(amount).mean(),
+        lambda amount: amount if isinstance(amount, float) else np.median(np.array(amount)),
         keys,
     )
     keys = filter(
