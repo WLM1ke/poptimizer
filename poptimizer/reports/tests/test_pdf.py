@@ -36,7 +36,7 @@ def test_read_data():
 
 
 def test_update_data():
-    port = portfolio.Portfolio(date=DATE_NEW, cash=CASH, positions=POSITIONS)
+    port = portfolio.Portfolio(name=["test"], date=DATE_NEW, cash=CASH, positions=POSITIONS)
     pdf.update_data("test", port.date, port.value[PORTFOLIO], dict(WLMike=1000, Igor=-2000), 1234)
     df = pdf.read_data("test")
     assert df.shape == (241, 6)
@@ -50,7 +50,7 @@ def test_update_data():
 
 
 def test_update_data_bad_date():
-    port = portfolio.Portfolio(date=DATE_OLD, cash=CASH, positions=POSITIONS)
+    port = portfolio.Portfolio(name=["test"], date=DATE_OLD, cash=CASH, positions=POSITIONS)
     with pytest.raises(POptimizerError) as error:
         pdf.update_data(
             "test",
@@ -63,7 +63,7 @@ def test_update_data_bad_date():
 
 
 def test_update_data_bad_investor_name():
-    port = portfolio.Portfolio(date=DATE_NEW, cash=CASH, positions=POSITIONS)
+    port = portfolio.Portfolio(name=["test"], date=DATE_NEW, cash=CASH, positions=POSITIONS)
     with pytest.raises(POptimizerError) as error:
         pdf.update_data("test", port.date, port.value[PORTFOLIO], dict(WLMike1=1000), 1234)
     assert str(error.value) == "Неверное имя инвестора - WLMike1"
@@ -78,7 +78,7 @@ def test_report_files_path(report_path):
 
 
 def test_report_new_month():
-    port = portfolio.Portfolio(date=DATE_NEW, cash=CASH, positions=POSITIONS)
+    port = portfolio.Portfolio(name=["test"], date=DATE_NEW, cash=CASH, positions=POSITIONS)
     pdf.report("test", port, dict(WLMike=10000, Igor=-5000), 4321)
     df = pdf.read_data("test")
     date = port.date
@@ -92,7 +92,7 @@ def test_report_new_month():
 
 
 def test_report_no_dividends():
-    port = portfolio.Portfolio(date=DATE_NEW, cash=CASH, positions=POSITIONS)
+    port = portfolio.Portfolio(name=["test"], date=DATE_NEW, cash=CASH, positions=POSITIONS)
     pdf.report("test", port, dict(WLMike=10000, Igor=-5000), 0)
     df = pdf.read_data("test")
     date = port.date
