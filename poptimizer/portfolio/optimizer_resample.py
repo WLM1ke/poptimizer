@@ -85,19 +85,20 @@ class Optimizer:  # noqa: WPS214
     def _select_buy(self, break_even, conf_int):
         buy = conf_int[_PRIORITY] >= break_even  # noqa: WPS465
         buy = conf_int[buy]
-        buy[_SIGNAL] = _BUY
+        kwarg = {_SIGNAL: lambda df: _BUY}
 
-        return buy
+        return buy.assign(**kwarg)
 
     def _select_sell(self, conf_int, break_even):
         sell = conf_int[_UPPER] <= break_even
         sell = sell & (self._portfolio.shares.iloc[:-2] > 0)  # noqa: WPS465
         sell = conf_int[sell]
-        kwarg = {_PRIORITY: lambda df: df[_UPPER]}
-        sell = sell.assign(**kwarg)
-        sell[_SIGNAL] = _SELL
+        kwarg = {
+            _PRIORITY: lambda df: df[_UPPER],
+            _SIGNAL: lambda df: _SELL,
+        }
 
-        return sell
+        return sell.assign(**kwarg)
 
     def _prepare_bounds(self):
         p_value = self._p_value / (len(self._portfolio.index) - 2) * 2
