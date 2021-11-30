@@ -32,7 +32,7 @@ REPORTS_PATH = _root / "reports"
 PORT_PATH = _root / "portfolio"
 
 
-def _load_config() -> dict[str, Union[int, float]]:
+def _load_config() -> dict[str, Union[int, float, str]]:
     cfg = {}
     path = _root / "config" / "config.yaml"
     if path.exists():
@@ -59,3 +59,4 @@ COSTS = _cfg.get("COSTS", 0.025) / 100 * (YEAR_IN_TRADING_DAYS / FORECAST_DAYS)
 MARKET_IMPACT_FACTOR = _cfg.get("MARKET_IMPACT_FACTOR", 1)
 START_EVOLVE_HOUR = _cfg.get("START_EVOLVE_HOUR", 1)
 STOP_EVOLVE_HOUR = _cfg.get("STOP_EVOLVE_HOUR", 1)
+OPTIMIZER = _cfg.get("OPTIMIZER", "resample")

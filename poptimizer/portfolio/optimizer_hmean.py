@@ -1,4 +1,4 @@
-"""Оптимизатор портфеля."""
+"""Оптимизатор портфеля на основе рангов отдельных акций и гармонического среднего прогнозов."""
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -10,7 +10,13 @@ from poptimizer.portfolio.portfolio import CASH, Portfolio
 
 
 class Optimizer:
-    """Предлагает сделки для улучшения метрики портфеля."""
+    """Предлагает сделки для улучшения метрики портфеля.
+
+    Использует ранги преимуществ бумаг для сглаживания выбросов по отдельным бумагам и гармоническую
+    среднюю между различными прогнозами, при этом не учитываются транзакционные издержки и импакт на
+    рыночные котировки. В результате даются детальные рекомендации с конкретными сделками. Для большого
+    портфеля оптимизация может занять много времени.
+    """
 
     def __init__(self, portfolio: Portfolio, p_value: float = config.P_VALUE):
         """Учитывается градиент, его ошибку и ликвидность бумаг.
@@ -61,6 +67,8 @@ class Optimizer:
 
     def _for_trade(self, serialize=True) -> dict[str, pd.DataFrame]:
         """Осуществляет расчет рекомендуемых операций."""
+        print("\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ\n")
+
         cur_prot = self.portfolio
         rec, op = None, None
         # используется для определения цикла в операциях (получение портфеля который был ранее)
@@ -103,7 +111,7 @@ class Optimizer:
                 cash += rec.loc[bot_share, "lot_price"]
                 op = ("SELL", bot_share)
             cur_prot = self._update_portfolio(rec, cash)
-            print(len(ports_set), op, cash)
+            print(len(ports_set) + 1, *op, f"{cash:.0f}")
             # проверка цикла
             port_tuple = tuple(cur_prot.shares.drop(CASH).tolist())
             if port_tuple in ports_set:

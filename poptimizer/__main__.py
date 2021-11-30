@@ -1,9 +1,10 @@
 """Запуск основных операций с помощью CLI."""
 import typer
 
+from poptimizer import config
 from poptimizer.data.views import div_status
 from poptimizer.evolve import Evolution
-from poptimizer.portfolio import Optimizer, load_from_yaml
+from poptimizer.portfolio import load_from_yaml, optimizer_hmean, optimizer_resample
 
 
 def evolve() -> None:
@@ -20,7 +21,11 @@ def dividends(ticker: str) -> None:
 def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD")) -> None:
     """Optimize portfolio."""
     port = load_from_yaml(date)
-    opt = Optimizer(port)
+    opt_type = {
+        "resample": optimizer_resample.Optimizer,
+        "hmean": optimizer_hmean.Optimizer,
+    }[config.OPTIMIZER]
+    opt = opt_type(port)
     print(opt.portfolio)
     print(opt.metrics)
     print(opt)
