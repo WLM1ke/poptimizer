@@ -236,9 +236,9 @@ def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
     return doc and Organism(_id=doc["_id"])
 
 
-def base_pop_ret() -> Iterable[list[float]]:
+def base_pop_metrics() -> Iterable[dict[str, list[float]]]:
     """Данные по доходности базовой популяции."""
-    yield from (doc.get("ir", []) for doc in _aggregate_oldest(config.TARGET_POPULATION))
+    yield from _aggregate_oldest(config.TARGET_POPULATION, {"$match": {"date": {"$exists": True}}})
 
 
 def get_oldest() -> Iterable[Organism]:
