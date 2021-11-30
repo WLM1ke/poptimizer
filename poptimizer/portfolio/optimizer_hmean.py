@@ -29,18 +29,20 @@ class Optimizer:
         self._portfolio = portfolio
         self._p_value = p_value
         self._metrics = metrics.MetricsResample(portfolio)
+        self.rec = None
 
     def __str__(self) -> str:
         """Информация о позициях, градиенты которых значимо отличны от 0."""
-        rec = self._for_trade()
+        if self.rec is None:
+            self.rec = self._for_trade()
         forecasts = self.metrics.count
         blocks = [
             "\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ",
             f"\nforecasts = {forecasts}",
             f"p-value = {self._p_value:.2%}",
-            f"\n{rec['SELL']}",
-            f"\n{rec['BUY']}",
-            f"\n{rec['new_port_summary']}",
+            f"\n{self.rec['SELL']}",
+            f"\n{self.rec['BUY']}",
+            f"\n{self.rec['new_port_summary']}",
         ]
         return "\n".join(blocks)
 
@@ -56,7 +58,7 @@ class Optimizer:
 
     def _update_portfolio(self, rec, cash):
         """Создаёт новый портфель с учётом новой транзакции"""
-        rec["SHARES"] = rec["lots"] * rec["lot_size"]
+        rec["SHARES"] = rec["lots"] * rec["LOT_size"]
         cur_prot = Portfolio(
             name=self.portfolio.name,
             date=self.portfolio.date,
@@ -80,7 +82,7 @@ class Optimizer:
             # вычислительно существенно быстрее
             q_trans_grads = quantile_transform(grads, n_quantiles=grads.shape[0])
             # обработка (маскировка) возможных NA от плохих моделей
-            q_trans_grads = np.ma.array(q_trans_grads, mask=~(q_trans_grads > 0), fill_value=0)
+            q_trans_grads = np.ma.array(q_trans_grads, mask=~(q_trans_grads > 0))
             # гармоническое среднее сильнее штрафует за низкие значения (близкие к 0),
             # но его использование не принципиально - можно заменить на просто среднее или медиану
             hmean_q_trans_grads = stats.hmean(q_trans_grads, axis=1)
@@ -88,9 +90,9 @@ class Optimizer:
             rec.sort_values(["PRIORITY"], ascending=[False], inplace=True)
 
             # так как все операции производятся в лотах, нужно знать стоимость лота и текущее количество лотов
-            rec["lot_size"] = cur_prot.lot_size.loc[rec.index]
-            rec["lots"] = (cur_prot.shares.loc[rec.index] / rec["lot_size"]).fillna(0).astype(int)
-            rec["lot_price"] = (cur_prot.lot_size.loc[rec.index] * cur_prot.price.loc[rec.index]).round(
+            rec["LOT_size"] = cur_prot.lot_size.loc[rec.index]
+            rec["lots"] = (cur_prot.shares.loc[rec.index] / rec["LOT_size"]).fillna(0).astype(int)
+            rec["LOT_price"] = (cur_prot.lot_size.loc[rec.index] * cur_prot.price.loc[rec.index]).round(
                 2
             )
 
@@ -102,13 +104,13 @@ class Optimizer:
 
             top_share = rec.index[0]
             bot_share = rec.loc[rec["lots"] > 0].index[-1]
-            if cash > rec.loc[top_share, "lot_price"]:
+            if cash > rec.loc[top_share, "LOT_price"]:
                 rec.loc[top_share, "lots"] += 1
-                cash -= rec.loc[top_share, "lot_price"]
+                cash -= rec.loc[top_share, "LOT_price"]
                 op = ("BUY", top_share)
             else:
                 rec.loc[bot_share, "lots"] -= 1
-                cash += rec.loc[bot_share, "lot_price"]
+                cash += rec.loc[bot_share, "LOT_price"]
                 op = ("SELL", bot_share)
             cur_prot = self._update_portfolio(rec, cash)
             print(len(ports_set) + 1, *op, f"{cash:.0f}")
@@ -120,42 +122,44 @@ class Optimizer:
 
         # оптимизированный портфель получен
         # сортируем по новому весу от портфеля для наглядности и приоритезации сделок на покупку
-        rec["SUM"] = (rec["lots"] * rec["lot_price"]).round(2)
+        rec["SUM"] = (rec["lots"] * rec["LOT_price"]).round(2)
         rec.sort_values("SUM", ascending=False, inplace=True)
         # найдем разницу с текущим портфелем
-        rec["lots_exists"] = (
-            (self.portfolio.shares.loc[rec.index] / rec["lot_size"]).fillna(0).astype(int)
+        rec["LOTS_exists"] = (
+            (self.portfolio.shares.loc[rec.index] / rec["LOT_size"]).fillna(0).astype(int)
         )
-        rec["SHARES_AFTER"] = rec["lots"] * rec["lot_size"]
+        rec["SHARES_after"] = rec["lots"] * rec["LOT_size"]
         report = dict()
-        report["SELL"] = rec.loc[rec["lots"] < rec["lots_exists"]].copy()
-        report["SELL"]["lots"] = report["SELL"]["lots_exists"] - report["SELL"]["lots"]
+        report["current_port_summary"] = self.portfolio._main_info_df()
 
-        report["BUY"] = rec.loc[rec["lots"] > rec["lots_exists"]].copy()
-        report["BUY"]["lots"] = report["BUY"]["lots"] - report["BUY"]["lots_exists"]
+        report["SELL"] = rec.loc[rec["lots"] < rec["LOTS_exists"]].copy()
+        report["SELL"]["lots"] = report["SELL"]["LOTS_exists"] - report["SELL"]["lots"]
+
+        report["BUY"] = rec.loc[rec["lots"] > rec["LOTS_exists"]].copy()
+        report["BUY"]["lots"] = report["BUY"]["lots"] - report["BUY"]["LOTS_exists"]
 
         report["new_port_summary"] = cur_prot._main_info_df()
 
         for op in ["SELL", "BUY"]:
-            report[op]["SHARES"] = report[op]["lots"] * report[op]["lot_size"]
-            report[op]["SHARES_exists"] = report[op]["lots_exists"] * report[op]["lot_size"]
+            report[op]["SHARES"] = report[op]["lots"] * report[op]["LOT_size"]
+            report[op]["SHARES_exists"] = report[op]["LOTS_exists"] * report[op]["LOT_size"]
             # корректируем сумму учитывая целое количество лотов
-            report[op]["SUM"] = (report[op]["lots"] * report[op]["lot_price"]).round(2)
+            report[op]["SUM"] = (report[op]["lots"] * report[op]["LOT_price"]).round(2)
             # изменение порядка столбцов
             report[op] = report[op][
                 [
-                    "lot_size",
-                    "lot_price",
+                    "LOT_size",
+                    "LOT_price",
                     "SHARES_exists",
-                    "lots_exists",
+                    "LOTS_exists",
                     "lots",
                     "SHARES",
                     "SUM",
-                    "SHARES_AFTER",
+                    "SHARES_after",
                 ]
             ]
             report[op].rename(
-                {"lots": f"lots_to_{op}", "SHARES": f"SHARES_to_{op}", "SUM": f"SUM_to_{op}"},
+                {"lots": f"LOTS_to_{op}", "SHARES": f"SHARES_to_{op}", "SUM": f"SUM_to_{op}"},
                 inplace=True,
                 axis="columns",
             )
