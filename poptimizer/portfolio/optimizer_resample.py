@@ -47,6 +47,7 @@ class Optimizer:  # noqa: WPS214
             "\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ",
             f"\nforecasts = {forecasts}",
             f"p-value = {self._p_value:.2%}",
+            f"impact = {config.MARKET_IMPACT_FACTOR:.2f}",
             f"\n{df}",
         ]
         return "\n".join(blocks)
