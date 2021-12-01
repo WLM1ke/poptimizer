@@ -1,5 +1,7 @@
 """Эволюция параметров модели."""
 import datetime
+import functools
+import operator
 from typing import Optional
 
 import numpy as np
@@ -12,9 +14,11 @@ from poptimizer.evolve import population, seq
 from poptimizer.portfolio.portfolio import load_tickers
 
 DECAY = 1 / config.TARGET_POPULATION
+# Делается поправка на множественное тестирование для одностороннего теста для двух метрик
+ALFA = config.P_VALUE * 2 / (config.TARGET_POPULATION * 2)
 
 
-class Evolution:
+class Evolution:  # noqa: WPS214
     """Эволюция параметров модели.
 
     Эволюция состоит из бесконечного сравнения пар организмов и выбора лучшего, и порождения новых
@@ -23,9 +27,9 @@ class Evolution:
     За основу выбора следующего организма взяты подходы из алгоритма Метрополиса — Гастингса:
 
     - Текущий организм порождает потомка в некой окрестности пространства генов
-    - Производится сравнение - если новый быстрее и обладает минимально допустимым качеством,
-    то он становится текущим, если медленнее и обладает минимально допустимым качеством, то он становится
-    текущим случайным образом с вероятностью убывающей пропорционально его скорости
+    - Производится сравнение - если новый быстрее и обладает минимально допустимым качеством, то он
+      становится текущим, если медленнее и обладает минимально допустимым качеством, то он становится
+      текущим случайным образом с вероятностью убывающей пропорционально его скорости
     - Организмы, не обладающие минимально допустимым качеством, погибают сразу
 
     Масштаб окрестности изменяется, если организмы принимаются слишком часто или редко.
@@ -38,18 +42,6 @@ class Evolution:
         self._end = None
         self._scale = DECAY
 
-    @staticmethod
-    def _check_time_range():
-        hour = datetime.datetime.today().hour
-        if config.START_EVOLVE_HOUR == config.STOP_EVOLVE_HOUR:
-            return True
-        elif config.START_EVOLVE_HOUR < config.STOP_EVOLVE_HOUR:
-            return config.START_EVOLVE_HOUR <= hour < config.STOP_EVOLVE_HOUR
-        else:
-            before_midnight = config.START_EVOLVE_HOUR <= hour
-            after_midnight = hour < config.STOP_EVOLVE_HOUR
-            return before_midnight or after_midnight
-
     def evolve(self) -> None:
         """Осуществляет эволюции.
 
@@ -60,7 +52,7 @@ class Evolution:
         step = 0
         current = None
 
-        while self._check_time_range():
+        while _check_time_range():
             step, current = self._step_setup(step, current)
 
             date = self._end.date()
@@ -169,20 +161,14 @@ class Evolution:
         Если организм новый, то он оценивается для минимального количества дат из истории, необходимых
         для последовательного тестирования.
         """
-        try:
-            print(organism, "\n")  # noqa: WPS421
-            if organism.llh and (np.array(organism.llh) < 0).any():
-                organism.die()
-                return None
-        except AttributeError as e:
-            organism.die()
-            return None
+        print(organism, "\n")  # noqa: WPS421
+
         if organism.date == self._end:
             return organism
 
         dates = [self._end]
         if not organism.llh:
-            bounding_n = seq.minimum_bounding_n(config.P_VALUE * 2)
+            bounding_n = seq.minimum_bounding_n(ALFA)
             dates = indexes.mcftrr(listing.last_history_date()).loc[: self._end]
             dates = dates.index[-bounding_n:].tolist()
 
@@ -202,25 +188,90 @@ class Evolution:
         return organism
 
     def _is_dead(self, org: population.Organism) -> bool:
-        min_ir = max(0, population.count() * DECAY - 1)
+        """Используется тестирование разницы llh и ret против всех организмов базовой популяции.
 
-        ir = org.ir
-        minimum = min(ir)
-        median = np.median(ir)
-        lower, _ = seq.median_conf_bound(ir, config.P_VALUE * 2)
+        Используются тесты для связанных выборок, поэтому предварительно происходит выравнивание по
+        датам и отбрасывание значений не имеющих пары (возможно первое значение и хвост из старых
+        значений более старого организма).
+        """
+        for metric in ("LLH", "RET"):
+            maximum, median, upper = _select_worst_bound(
+                targets=list(population.base_pop_metrics()),
+                candidate={"date": org.date, "llh": org.llh, "ir": org.ir},
+                metric=metric,
+            )
 
-        print(  # noqa: WPS421
-            f"RET required {min_ir:0.4f}:",
-            f"min - {minimum:0.4f},",
-            f"lower - {lower:0.4f},",
-            f"median - {median:0.4f}",
-        )
-        if lower < min_ir:
-            org.die()
-            print("Умер...\n")
+            print(  # noqa: WPS421
+                f"{metric} worst difference:",
+                f"median - {median:0.4f},",
+                f"upper - {upper:0.4f},",
+                f"max - {maximum:0.4f}",
+            )
 
-            return True
+            if upper < 0:
+                org.die()
+                print("Умер...\n")  # noqa: WPS421
 
-        print("Жив...\n")
+                return True
+
+        print("Жив...\n")  # noqa: WPS421
 
         return False
+
+
+def _check_time_range() -> bool:
+    hour = datetime.datetime.today().hour
+
+    if config.START_EVOLVE_HOUR == config.STOP_EVOLVE_HOUR:
+        return True
+
+    if config.START_EVOLVE_HOUR < config.STOP_EVOLVE_HOUR:
+        return config.START_EVOLVE_HOUR <= hour < config.STOP_EVOLVE_HOUR
+
+    before_midnight = config.START_EVOLVE_HOUR <= hour
+    after_midnight = hour < config.STOP_EVOLVE_HOUR
+
+    return before_midnight or after_midnight
+
+
+def _select_worst_bound(targets: list[dict], candidate: dict, metric: str) -> tuple[float, float, float]:
+    """Выбирает минимальное значение верхней границы доверительного интервала.
+
+    Если данный организм не уступает какому либо организму, то верхняя граница будет положительной. В
+    то же время сравнение может идти против самого себя, в этом случае граница будет нулевой. Для
+    исключения этого случая нулевое значение подменяется на inf.
+    """
+    bounds = map(functools.partial(_aligned_tests, candidate=candidate, metric=metric), targets)
+
+    median, upper, maximum = min(
+        bounds,
+        key=lambda bound: bound[1] or np.inf,
+    )
+
+    return maximum, median, upper
+
+
+def _aligned_tests(target: dict, candidate: dict, metric: str) -> tuple[float, float, float]:
+    candidate_start = 0
+    target_start = 0
+
+    if candidate["date"] > target["date"]:
+        candidate_start = 1
+    if candidate["date"] < target["date"]:
+        target_start = 1
+
+    candidate = candidate["ir"][candidate_start:]
+    target = target["ir"][target_start:]
+
+    if metric == "LLH":
+        candidate = candidate["llh"][candidate_start:]
+        target = target["llh"][target_start:]
+
+    return _test_diff(target, candidate)
+
+
+def _test_diff(target: list[float], candidate: list[float]) -> tuple[float, float, float]:
+    diff = list(map(operator.sub, candidate, target))
+    _, upper = seq.median_conf_bound(diff, ALFA)
+
+    return np.median(diff), upper, np.max(diff)
