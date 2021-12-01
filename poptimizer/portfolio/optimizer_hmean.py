@@ -18,16 +18,16 @@ class Optimizer:
     портфеля оптимизация может занять много времени.
     """
 
-    def __init__(self, portfolio: Portfolio, p_value: float = config.P_VALUE):
+    def __init__(self, portfolio: Portfolio, wl_portfolio: Portfolio = None):
         """Учитывается градиент, его ошибку и ликвидность бумаг.
 
         :param portfolio:
             Оптимизируемый портфель.
-        :param p_value:
-            Требуемая значимость отклонения градиента от нуля.
+        :param wl_portfolio:
+            Портфель, содержащий список всех допустимых тикеров (white list), используется для фильтрации рекомендаций.
         """
         self._portfolio = portfolio
-        self._p_value = p_value
+        self._wl_portfolio = wl_portfolio
         self._metrics = metrics.MetricsResample(portfolio)
         self.rec = None
 
@@ -39,7 +39,6 @@ class Optimizer:
         blocks = [
             "\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ",
             f"\nforecasts = {forecasts}",
-            f"p-value = {self._p_value:.2%}",
             f"\n{self.rec['SELL']}",
             f"\n{self.rec['BUY']}",
             f"\n{self.rec['new_port_summary']}",
@@ -96,13 +95,21 @@ class Optimizer:
                 2
             )
 
+            rec['is_acceptable'] = True
+            if self._wl_portfolio is not None:
+                # поммечаем все такеры, которых нет в white list portfolio
+                # также продаём все недопустимые позиции
+                banned_tickers = rec.index.difference(self._wl_portfolio.index)
+                rec.loc[banned_tickers, 'is_acceptable'] = False
+                rec.loc[banned_tickers, 'lots'] = 0
+
             cash = cur_prot.value[CASH] + self.portfolio.value["PORTFOLIO"] - cur_prot.value["PORTFOLIO"]
 
             # определяем операцию:
             # покупка, если на покупку лучшего тикера хватает CASH
             # иначе - продажа худшго тикера из тех, что в наличии
 
-            top_share = rec.index[0]
+            top_share = rec.loc[rec['is_acceptable']].index[0]
             bot_share = rec.loc[rec["lots"] > 0].index[-1]
             if cash > rec.loc[top_share, "LOT_price"]:
                 rec.loc[top_share, "lots"] += 1
