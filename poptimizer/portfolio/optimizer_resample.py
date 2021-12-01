@@ -14,6 +14,7 @@ _UPPER = "UPPER"
 _COSTS = "COSTS"
 _SELL = "SELL"
 _BUY = "BUY"
+_PENDING = "PENDING"
 _SIGNAL = "SIGNAL"
 _WEIGHT = "WEIGHT"
 _RISK_CON = "RISK_CON"
@@ -75,6 +76,9 @@ class Optimizer:  # noqa: WPS214
         rez = pd.concat([bye, sell], axis=0)
         rez = rez.sort_values(_PRIORITY, ascending=False)
         rez[_PRIORITY] = rez[_PRIORITY] - break_even
+
+        if len(rez) == 1:
+            rez[_SIGNAL] = _PENDING
 
         return rez
 
