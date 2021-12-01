@@ -12,7 +12,7 @@ from poptimizer.portfolio import metrics, portfolio
 def make_metrics():
     """Подготовка тестовых данных."""
     positions = {"BSPB": 4890, "FESH": 1300, "KZOS": 5080}
-    port = portfolio.Portfolio("2020-05-14", 84449, positions)
+    port = portfolio.Portfolio(["test"], "2020-05-14", 84449, positions)
     mean = pd.Series([0.09, 0.06, 0.07], index=list(positions))
     cov = np.array(
         [
@@ -108,7 +108,7 @@ class TestMetricsSingle:
 def make_resample():
     """Данне для тестов."""
     positions = {"BSPB": 4890, "FESH": 1300}
-    port = portfolio.Portfolio("2020-05-14", 84449, positions)
+    port = portfolio.Portfolio("test", "2020-05-14", 84449, positions)
 
     mean1 = pd.Series([0.09, 0.06], index=list(positions))
     cov1 = np.array([[0.04, 0.005], [0.005, 0.0625]])
