@@ -42,7 +42,7 @@ def formatter():
 def get_handlers():
     logs_path = 'logs'
     os.makedirs(logs_path, exist_ok=True)
-    file_handler = RotatingFileHandler(filename='logs/log.log',
+    file_handler = RotatingFileHandler(filename=logs_path+'/log.log',
                                        encoding='utf-8',
                                        maxBytes=2 * 1024 ** 2,
                                        backupCount=1,
