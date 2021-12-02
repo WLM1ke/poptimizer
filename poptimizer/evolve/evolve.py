@@ -260,14 +260,14 @@ def _aligned_tests(target: dict, candidate: dict, metric: str) -> tuple[float, f
     if candidate["date"] < target["date"]:
         target_start = 1
 
-    candidate = candidate["ir"][candidate_start:]
-    target = target["ir"][target_start:]
+    candidate_data = candidate["ir"][candidate_start:]
+    target_data = target["ir"][target_start:]
 
     if metric == "LLH":
-        candidate = candidate["llh"][candidate_start:]
-        target = target["llh"][target_start:]
+        candidate_data = candidate["llh"][candidate_start:]
+        target_data = target["llh"][target_start:]
 
-    return _test_diff(target, candidate)
+    return _test_diff(target_data, candidate_data)
 
 
 def _test_diff(target: list[float], candidate: list[float]) -> tuple[float, float, float]:
