@@ -1,6 +1,7 @@
 """Класс организма и операции с популяцией организмов."""
 import contextlib
 import datetime
+import logging
 import time
 from typing import Iterable, Optional
 
@@ -17,6 +18,7 @@ from poptimizer.evolve.genotype import Genotype
 # Преобразование времени в секунды
 TIME_TO_SEC = 10 ** 9
 
+LOGGER = logging.getLogger()
 
 class ReevaluationError(config.POptimizerError):
     """Попытка сделать вторую оценку для заданной даты."""
@@ -302,7 +304,7 @@ def _print_key_stats(key: str, view: str = None) -> None:
     quantiles = ", ".join(tuple(quantiles))
     view = view or key.upper()
 
-    print(f"{view} - ({quantiles})")  # noqa: WPS421
+    LOGGER.info(f"{view} - ({quantiles})")  # noqa: WPS421
 
 
 def _print_wins_stats() -> None:
@@ -321,4 +323,4 @@ def _print_wins_stats() -> None:
         max_wins, *_ = wins
         max_wins = max_wins["wins"]
 
-    print(f"Организмов - {count()} /", f"Максимум оценок - {max_wins}")  # noqa: WPS421
+    LOGGER.info(f"Организмов - {count()} / Максимум оценок - {max_wins}")  # noqa: WPS421

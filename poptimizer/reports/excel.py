@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 
 
@@ -11,8 +13,9 @@ def dfs_dict_to_excel(filename: str, dfs: dict[str, pd.DataFrame]):
         dfs = {'gadgets': df_gadgets, 'widgets': df_widgets}
     """
     writer = pd.ExcelWriter(filename, engine='xlsxwriter')
+    logger = logging.getLogger()
     for sheetname, df in dfs.items():  # loop through `dict` of dataframes
-        print(sheetname)
+        logger.info(sheetname)
         df.to_excel(writer, sheet_name=sheetname)  # send df to writer
         worksheet = writer.sheets[sheetname]  # pull worksheet object
         for idx, col in enumerate(df.columns):  # loop through all columns

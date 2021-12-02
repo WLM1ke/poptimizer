@@ -1,6 +1,7 @@
 """Реализация класса портфеля."""
 import collections
 import functools
+import logging
 from typing import Optional, Union
 
 import numpy as np
@@ -16,6 +17,7 @@ CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
 LIQUIDITY_DAYS = int((config.HISTORY_DAYS_MIN + data_params.FORECAST_DAYS) * 1.8)
 
+LOGGER = logging.getLogger()
 
 class Portfolio:
     """Основные количественные и стоимостные характеристики портфеля.
@@ -216,7 +218,7 @@ class Portfolio:
         rez.columns = ["Correlation", "Turnover"]
         rez = rez.sort_values("Correlation").dropna()
 
-        print(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{rez}")  # noqa: WPS421
+        LOGGER.info(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{rez}")  # noqa: WPS421
 
     def _norm_ret(self, tickers):
         div, p1 = quotes.div_and_prices(tickers, self.date)
@@ -247,13 +249,13 @@ def load_from_yaml(date: Union[str, pd.Timestamp], ports: set = None) -> Portfol
                 value += port.get("value", 0)
 
             if value:
-                print("Проверка стоимости:", path)
+                LOGGER.info(f"Проверка стоимости: {path}")
                 try:
                     Portfolio([path.stem], date, cash, positions, value)
                 except config.POptimizerError as err:
-                    print(err)
+                    LOGGER.error(err)
                     continue
-                print("OK")
+                LOGGER.info("OK")
 
     if not value:
         value = None

@@ -1,6 +1,7 @@
 """Эволюция параметров модели."""
 import datetime
 import functools
+import logging
 import operator
 from typing import Optional
 
@@ -41,6 +42,7 @@ class Evolution:  # noqa: WPS214
         self._tickers = None
         self._end = None
         self._scale = DECAY
+        self._logger = logging.getLogger()
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -56,9 +58,9 @@ class Evolution:  # noqa: WPS214
             step, current = self._step_setup(step, current)
 
             date = self._end.date()
-            print(f"***{date}: Шаг эволюции — {step}***")  # noqa: WPS421
+            self._logger.info(f"***{date}: Шаг эволюции — {step}***")  # noqa: WPS421
             population.print_stat()
-            print(f"Доля принятых - {self._scale:.2%}\n")  # noqa: WPS421
+            self._logger.info(f"Доля принятых - {self._scale:.2%}\n")  # noqa: WPS421
 
             next_, new = self._step(current)
 
@@ -71,9 +73,9 @@ class Evolution:  # noqa: WPS214
     def _setup(self) -> None:
         if population.count() == 0:
             for n_org in range(1, self._target_population + 1):
-                print(f"Создаются базовые организмы — {n_org}")  # noqa: WPS421
+                self._logger.info(f"Создаются базовые организмы — {n_org}")  # noqa: WPS421
                 org = population.create_new_organism()
-                print(org, "\n")  # noqa: WPS421
+                self._logger.info(org, "\n")  # noqa: WPS421
 
     def _step_setup(
         self,
@@ -123,7 +125,7 @@ class Evolution:  # noqa: WPS214
         Смена родителя происходит на основе алгоритма Метрополиса — Гастингса для более широкого
         исследования пространства признаков.
         """
-        print("Родитель:")  # noqa: WPS421
+        self._logger.info("Родитель:")  # noqa: WPS421
         if self._eval_organism(hunter) is None:
             return self._next_org(None)
 
@@ -131,7 +133,7 @@ class Evolution:  # noqa: WPS214
         label = ""
         if new:
             label = " - новый организм"
-        print("Претендент", label, ":", sep="")  # noqa: WPS421
+        self._logger.info(f"Претендент{label}:")  # noqa: WPS421
         if self._eval_organism(prey) is None:
             return hunter, new
 
@@ -144,12 +146,7 @@ class Evolution:  # noqa: WPS214
             label = "Новый"
             sign = ">"
 
-        print(  # noqa: WPS421
-            label,
-            f"родитель - timer ratio={llh_ratio:.2%}",
-            sign,
-            f"rnd={rnd:.2%}\n",
-        )
+        self._logger.info(f"{label} родитель - timer ratio={llh_ratio:.2%} {sign} rnd={rnd:.2%}" + "\n")
 
         return hunter, new
 
@@ -161,7 +158,7 @@ class Evolution:  # noqa: WPS214
         Если организм новый, то он оценивается для минимального количества дат из истории, необходимых
         для последовательного тестирования.
         """
-        print(organism, "\n")  # noqa: WPS421
+        self._logger.info(str(organism) + "\n")  # noqa: WPS421
 
         if organism.date == self._end:
             return organism
@@ -178,7 +175,7 @@ class Evolution:  # noqa: WPS214
             except (ModelError, AttributeError) as error:
                 organism.die()
                 error = error.__class__.__name__
-                print(f"Удаляю - {error}\n")  # noqa: WPS421
+                self._logger.error(f"Удаляю - {error}\n")  # noqa: WPS421
 
                 return None
 
@@ -201,20 +198,17 @@ class Evolution:  # noqa: WPS214
                 metric=metric,
             )
 
-            print(  # noqa: WPS421
-                f"{metric} worst difference:",
-                f"median - {median:0.4f},",
-                f"upper - {upper:0.4f},",
-                f"max - {maximum:0.4f}",
+            self._logger.info(  # noqa: WPS421
+                f"{metric} worst difference: median - {median:0.4f}, upper - {upper:0.4f}, max - {maximum:0.4f}"
             )
 
             if upper < 0:
                 org.die()
-                print("Умер...\n")  # noqa: WPS421
+                self._logger.info("Умер...\n")  # noqa: WPS421
 
                 return True
 
-        print("Жив...\n")  # noqa: WPS421
+        self._logger.info("Жив...\n")  # noqa: WPS421
 
         return False
 

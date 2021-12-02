@@ -1,10 +1,14 @@
 """Запуск основных операций с помощью CLI."""
+import logging
+
 import typer
 
 from poptimizer import config
 from poptimizer.data.views import div_status
 from poptimizer.evolve import Evolution
 from poptimizer.portfolio import load_from_yaml, optimizer_hmean, optimizer_resample
+
+LOGGER = logging.getLogger()
 
 
 def evolve() -> None:
@@ -26,9 +30,9 @@ def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD")) -> None:
         "hmean": optimizer_hmean.Optimizer,
     }[config.OPTIMIZER]
     opt = opt_type(port)
-    print(opt.portfolio)
-    print(opt.metrics)
-    print(opt)
+    LOGGER.info(opt.portfolio)
+    LOGGER.info(opt.metrics)
+    LOGGER.info(opt)
     div_status.new_dividends(tuple(port.index[:-2]))
 
 
