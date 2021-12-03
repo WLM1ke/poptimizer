@@ -5,6 +5,7 @@ import shutil
 import sys
 from logging import Formatter, StreamHandler
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 
 class UtcMicrosecondsFormatter(Formatter):
@@ -21,36 +22,37 @@ class UtcMicrosecondsFormatter(Formatter):
 def rotator(source, dest):
     if os.path.exists(source):
         os.rename(source, dest)
-        with open(dest, 'rb') as f_in, gzip.open(dest + '.gz', 'wb') as f_out:
+        with open(dest, "rb") as f_in, gzip.open(dest + ".gz", "wb") as f_out:
             shutil.copyfileobj(f_in, f_out)
         os.remove(dest)
 
 
 def namer(default_name):
-    name = default_name.split('.')[0]
-    return name + '_' + datetime.datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S_%f') + '.log'
+    name = default_name.split(".")[0]
+    return name + "_" + datetime.datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S_%f") + ".log"
 
 
-def formatter():
-    formatter = UtcMicrosecondsFormatter(
-        '%(asctime)s | %(levelname)s | %(name)s | %(filename)s | line#%(lineno)d | pid#%(process)s | %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S.%f'
+def get_formatter():
+    return UtcMicrosecondsFormatter(
+        "%(asctime)s | %(levelname)s | %(name)s | %(filename)s | line#%(lineno)d | pid#%(process)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S.%f",
     )
-    return formatter
 
 
-def get_handlers(logs_path='logs', rotate_mega_bytes=2):
-    os.makedirs(logs_path, exist_ok=True)
-    file_handler = RotatingFileHandler(filename=logs_path+'/log.log',
-                                       encoding='utf-8',
-                                       maxBytes=rotate_mega_bytes * 1024 ** 2,
-                                       backupCount=1,
-                                       delay=False
-                                       )
+def get_handlers(logs_path: Path, rotate_mega_bytes: int = 2):
+    logs_path.mkdir(exist_ok=True)
+    file_handler = RotatingFileHandler(
+        filename=logs_path / "log.log",
+        encoding="utf-8",
+        maxBytes=rotate_mega_bytes * 1024 ** 2,
+        backupCount=1,
+        delay=False,
+    )
     file_handler.rotator = rotator
     file_handler.namer = namer
-    file_handler.setFormatter(formatter())
+    file_handler.setFormatter(get_formatter())
 
     stream_handler = StreamHandler(sys.stdout)
-    stream_handler.setFormatter(Formatter('%(message)s'))
+    stream_handler.setFormatter(Formatter("%(message)s"))
+
     return [file_handler, stream_handler]

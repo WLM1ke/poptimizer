@@ -13,9 +13,6 @@ class POptimizerError(Exception):
     """Базовое исключение."""
 
 
-# Конфигурация логгера
-logging.basicConfig(level=logging.INFO, handlers=get_handlers())
-
 # Устройство на котором будет производиться обучение
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -31,6 +28,12 @@ REPORTS_PATH = _root / "reports"
 
 # Путь к директории с портфелями
 PORT_PATH = _root / "portfolio"
+
+# Путь к директории с логами
+LOG_PATH = _root / "logs"
+
+# Конфигурация логгера
+logging.basicConfig(level=logging.INFO, handlers=get_handlers(LOG_PATH))
 
 
 def _load_config() -> dict[str, Union[int, float, str]]:
