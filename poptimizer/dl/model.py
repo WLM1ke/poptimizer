@@ -228,7 +228,7 @@ class Model:
         LOGGER.info(f"Epochs - {epochs:.2f} / Train size - {len(loader.dataset)}")
         modules = sum(1 for _ in model.modules())
         model_params = sum(tensor.numel() for tensor in model.parameters())
-        LOGGER.info(f"Количество слоев / параметров - {modules}/{model_params}")
+        LOGGER.info(f"Количество слоев / параметров - {modules} / {model_params}")
 
         llh_sum = 0
         llh_deque = collections.deque([0], maxlen=steps_per_epoch)
