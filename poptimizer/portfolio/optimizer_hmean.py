@@ -75,6 +75,7 @@ class Optimizer:
         rec, op = None, None
         # используется для определения цикла в операциях (получение портфеля который был ранее)
         ports_set = set()
+        turnover = None
         while True:
             cur_metrics = metrics.MetricsResample(cur_prot)
             grads = cur_metrics.all_gradients.iloc[:-2]
@@ -86,7 +87,12 @@ class Optimizer:
             # гармоническое среднее сильнее штрафует за низкие значения (близкие к 0),
             # но его использование не принципиально - можно заменить на просто среднее или медиану
             hmean_q_trans_grads = stats.hmean(q_trans_grads, axis=1)
-            rec = pd.Series(data=hmean_q_trans_grads, index=grads.index).to_frame(name="PRIORITY")
+            # учёт оборота при ранжировании
+            if turnover is None:
+                turnover = quantile_transform(cur_prot.turnover_factor.loc[grads.index].values.reshape(-1, 1),
+                                              n_quantiles=grads.shape[0])
+            priority = stats.hmean(np.hstack([hmean_q_trans_grads.reshape(-1, 1), turnover]), axis=1)
+            rec = pd.Series(data=priority, index=grads.index).to_frame(name="PRIORITY")
             rec.sort_values(["PRIORITY"], ascending=[False], inplace=True)
 
             # так как все операции производятся в лотах, нужно знать стоимость лота и текущее количество лотов
