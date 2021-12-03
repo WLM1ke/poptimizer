@@ -1,10 +1,10 @@
 """Оптимизатор портфеля на основе рангов отдельных акций и гармонического среднего прогнозов."""
+import logging
 import numpy as np
 import pandas as pd
 from scipy import stats
 from sklearn.preprocessing import quantile_transform
 
-from poptimizer import config
 from poptimizer.portfolio import metrics
 from poptimizer.portfolio.portfolio import CASH, Portfolio
 
@@ -29,6 +29,7 @@ class Optimizer:
         self._portfolio = portfolio
         self._wl_portfolio = wl_portfolio
         self._metrics = metrics.MetricsResample(portfolio)
+        self._logger = logging.getLogger()
         self.rec = None
 
     def __str__(self) -> str:
@@ -66,9 +67,9 @@ class Optimizer:
         )
         return cur_prot
 
-    def _for_trade(self, serialize=True) -> dict[str, pd.DataFrame]:
+    def _for_trade(self) -> dict[str, pd.DataFrame]:
         """Осуществляет расчет рекомендуемых операций."""
-        print("\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ\n")
+        self._logger.info("\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ\n")
 
         cur_prot = self.portfolio
         rec, op = None, None
@@ -97,7 +98,7 @@ class Optimizer:
 
             rec['is_acceptable'] = True
             if self._wl_portfolio is not None:
-                # поммечаем все такеры, которых нет в white list portfolio
+                # помечаем все тикеры, которых нет в white list portfolio
                 # также продаём все недопустимые позиции
                 banned_tickers = rec.index.difference(self._wl_portfolio.index)
                 rec.loc[banned_tickers, 'is_acceptable'] = False
@@ -120,7 +121,11 @@ class Optimizer:
                 cash += rec.loc[bot_share, "LOT_price"]
                 op = ("SELL", bot_share)
             cur_prot = self._update_portfolio(rec, cash)
-            print(len(ports_set) + 1, *op, f"{cash:.0f}")
+            log_str = '\t'.join([f'{str(len(ports_set) + 1): <7}',
+                                 f'{op[0]: <4}', f'{op[1]: <7}',
+                                 f"PRIORITY: {rec.loc[op[1], 'PRIORITY']:.3f}",
+                                 f"CASH: {cash:.0f}"])
+            self._logger.info(log_str)
             # проверка цикла
             port_tuple = tuple(cur_prot.shares.drop(CASH).tolist())
             if port_tuple in ports_set:

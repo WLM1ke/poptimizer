@@ -1,4 +1,5 @@
 """Информация об актуальности данных по дивидендам."""
+import logging
 import math
 from datetime import datetime
 from typing import Callable, Final
@@ -17,6 +18,7 @@ RET_TOL: Final = 2e-3
 
 DivSource = Callable[[str], pd.DataFrame]
 
+LOGGER = logging.getLogger()
 
 def _new_div_all(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.DataFrame:
     """Информация по дивидендам с smart-lab.ru."""
@@ -70,8 +72,8 @@ def new_dividends(tickers: tuple[str, ...]) -> set[str]:
             status.add(ticker)
 
     if status:
-        print("\nДАННЫЕ ПО ДИВИДЕНДАМ ТРЕБУЮТ ОБНОВЛЕНИЯ\n")  # noqa: WPS421
-        print(", ".join(status))  # noqa: WPS421
+        LOGGER.info("\nДАННЫЕ ПО ДИВИДЕНДАМ ТРЕБУЮТ ОБНОВЛЕНИЯ\n")  # noqa: WPS421
+        LOGGER.info(", ".join(status))  # noqa: WPS421
 
     return status
 
@@ -116,6 +118,6 @@ def dividends_validation(ticker: str) -> pd.DataFrame:
     df_comp = df_comp.loc[first_quote:]
 
     comp_str = f"\nСравнение интернет источников с локальными данными - {ticker}\n\n{df_comp}"
-    print(comp_str)  # noqa: WPS421
+    LOGGER.info(comp_str)  # noqa: WPS421
 
     return df_comp

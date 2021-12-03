@@ -114,3 +114,6 @@ ENV/
 
 # Config data
 /config/config.yaml
+
+# Poptimizer logs
+/logs/

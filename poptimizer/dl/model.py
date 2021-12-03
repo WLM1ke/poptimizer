@@ -2,6 +2,7 @@
 import collections
 import io
 import itertools
+import logging
 import sys
 from typing import Optional
 
@@ -25,6 +26,8 @@ LLH_DRAW_DOWN = 1
 
 # Максимальный размер документа в MongoDB
 MAX_SIZE = 2 * (2 ** 10) ** 2
+
+LOGGER = logging.getLogger()
 
 
 class TooLongHistoryError(ModelError):
@@ -81,7 +84,6 @@ class Model:
         self._end = end
         self._phenotype = phenotype
         self._pickled_model = pickled_model
-
         self._model = None
         self._llh = None
 
@@ -223,10 +225,10 @@ class Model:
         scheduler_params["total_steps"] = total_steps
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer, **scheduler_params)
 
-        print(f"Epochs - {epochs:.2f} / Train size - {len(loader.dataset)}")
+        LOGGER.info(f"Epochs - {epochs:.2f} / Train size - {len(loader.dataset)}")
         modules = sum(1 for _ in model.modules())
         model_params = sum(tensor.numel() for tensor in model.parameters())
-        print(f"Количество слоев / параметров - {modules}/{model_params}")
+        LOGGER.info(f"Количество слоев / параметров - {modules} / {model_params}")
 
         llh_sum = 0
         llh_deque = collections.deque([0], maxlen=steps_per_epoch)
@@ -339,16 +341,15 @@ def _opt_port(
     std_plan = (w.reshape(1, -1) @ sigma @ w.reshape(-1, 1)).item() ** 0.5
     dd = std_plan ** 2 / ret_plan
 
-    print(
-        f"RET = {ret:.2%}",
-        f"MEAN = {labels.mean():.2%}",
-        f"PLAN = {ret_plan:.2%}",
-        f"STD = {std_plan:.2%}",
-        f"DD = {dd:.2%}",
-        f"POS = {(w > 0).sum()}",
-        f"MAX = {w.max():.2%}",
-        sep=" / ",
-    )
+    LOGGER.info(" / ".join([f"RET = {ret:.2%}",
+                            f"MEAN = {labels.mean():.2%}",
+                            f"PLAN = {ret_plan:.2%}",
+                            f"STD = {std_plan:.2%}",
+                            f"DD = {dd:.2%}",
+                            f"POS = {(w > 0).sum()}",
+                            f"MAX = {w.max():.2%}"]
+                           )
+                )
 
     return ret
 

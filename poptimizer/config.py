@@ -2,10 +2,11 @@
 import logging
 import pathlib
 from typing import Union
-
 import pandas as pd
 import torch
 import yaml
+
+from poptimizer.shared.log import get_handlers
 
 
 class POptimizerError(Exception):
@@ -13,7 +14,7 @@ class POptimizerError(Exception):
 
 
 # Конфигурация логгера
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, handlers=get_handlers())
 
 # Устройство на котором будет производиться обучение
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
