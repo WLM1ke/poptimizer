@@ -75,7 +75,7 @@ class Evolution:  # noqa: WPS214
             for n_org in range(1, self._target_population + 1):
                 self._logger.info(f"Создаются базовые организмы — {n_org}")  # noqa: WPS421
                 org = population.create_new_organism()
-                self._logger.info(org, "\n")  # noqa: WPS421
+                self._logger.info(f"{org}\n")
 
     def _step_setup(
         self,
