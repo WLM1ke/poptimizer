@@ -1,8 +1,6 @@
 Оптимизация долгосрочного портфеля акций
 ========================================
-
 [![image](https://github.com/WLM1ke/poptimizer/workflows/tests/badge.svg)](https://github.com/WLM1ke/poptimizer/actions)
-
 [![image](https://codecov.io/gh/WLM1ke/poptimizer/branch/master/graph/badge.svg)](https://codecov.io/gh/WLM1ke/poptimizer)
 
 О проекте
