@@ -158,7 +158,12 @@ class Evolution:  # noqa: WPS214
         Если организм новый, то он оценивается для минимального количества дат из истории, необходимых
         для последовательного тестирования.
         """
-        self._logger.info(str(organism) + "\n")  # noqa: WPS421
+        try:
+            self._logger.info(str(organism) + "\n")  # noqa: WPS421
+        except AttributeError as error:
+            organism.die()
+            error = error.__class__.__name__
+            self._logger.error(f"Удаляю - {error}\n")
 
         if organism.date == self._end:
             return organism
