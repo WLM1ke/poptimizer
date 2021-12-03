@@ -164,6 +164,7 @@ class Evolution:  # noqa: WPS214
             organism.die()
             error = error.__class__.__name__
             self._logger.error(f"Удаляю - {error}\n")
+            return None
 
         if organism.date == self._end:
             return organism
