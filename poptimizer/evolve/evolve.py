@@ -58,9 +58,9 @@ class Evolution:  # noqa: WPS214
             step, current = self._step_setup(step, current)
 
             date = self._end.date()
-            self._logger.info(f"***{date}: Шаг эволюции — {step}***")  # noqa: WPS421
+            self._logger.info(f"***{date}: Шаг эволюции — {step}***")
             population.print_stat()
-            self._logger.info(f"Доля принятых - {self._scale:.2%}\n")  # noqa: WPS421
+            self._logger.info(f"Доля принятых - {self._scale:.2%}\n")
 
             next_, new = self._step(current)
 
@@ -73,7 +73,7 @@ class Evolution:  # noqa: WPS214
     def _setup(self) -> None:
         if population.count() == 0:
             for n_org in range(1, self._target_population + 1):
-                self._logger.info(f"Создаются базовые организмы — {n_org}")  # noqa: WPS421
+                self._logger.info(f"Создаются базовые организмы — {n_org}")
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")
 
@@ -125,7 +125,7 @@ class Evolution:  # noqa: WPS214
         Смена родителя происходит на основе алгоритма Метрополиса — Гастингса для более широкого
         исследования пространства признаков.
         """
-        self._logger.info("Родитель:")  # noqa: WPS421
+        self._logger.info("Родитель:")
         if self._eval_organism(hunter) is None:
             return self._next_org(None)
 
@@ -133,7 +133,7 @@ class Evolution:  # noqa: WPS214
         label = ""
         if new:
             label = " - новый организм"
-        self._logger.info(f"Претендент{label}:")  # noqa: WPS421
+        self._logger.info(f"Претендент{label}:")
         if self._eval_organism(prey) is None:
             return hunter, new
 
@@ -146,7 +146,7 @@ class Evolution:  # noqa: WPS214
             label = "Новый"
             sign = ">"
 
-        self._logger.info(f"{label} родитель - timer ratio={llh_ratio:.2%} {sign} rnd={rnd:.2%}" + "\n")
+        self._logger.info(f"{label} родитель - timer ratio={llh_ratio:.2%}" + f" {sign} rnd={rnd:.2%}\n")
 
         return hunter, new
 
@@ -159,11 +159,12 @@ class Evolution:  # noqa: WPS214
         для последовательного тестирования.
         """
         try:
-            self._logger.info(str(organism) + "\n")  # noqa: WPS421
-        except AttributeError as error:
+            self._logger.info(f"{organism}\n")
+        except AttributeError as err:
             organism.die()
-            error = error.__class__.__name__
-            self._logger.error(f"Удаляю - {error}\n")
+            err = err.__class__.__name__
+            self._logger.error(f"Удаляю - {err}\n")
+
             return None
 
         if organism.date == self._end:
@@ -181,7 +182,7 @@ class Evolution:  # noqa: WPS214
             except (ModelError, AttributeError) as error:
                 organism.die()
                 error = error.__class__.__name__
-                self._logger.error(f"Удаляю - {error}\n")  # noqa: WPS421
+                self._logger.error(f"Удаляю - {error}\n")
 
                 return None
 
@@ -204,17 +205,24 @@ class Evolution:  # noqa: WPS214
                 metric=metric,
             )
 
-            self._logger.info(  # noqa: WPS421
-                f"{metric} worst difference: median - {median:0.4f}, upper - {upper:0.4f}, max - {maximum:0.4f}"
+            self._logger.info(
+                " ".join(
+                    [
+                        f"{metric} worst difference:",
+                        f"median - {median:0.4f},",
+                        f"upper - {upper:0.4f},",
+                        f"max - {maximum:0.4f}",
+                    ],
+                ),
             )
 
             if upper < 0:
                 org.die()
-                self._logger.info("Умер...\n")  # noqa: WPS421
+                self._logger.info("Умер...\n")
 
                 return True
 
-        self._logger.info("Жив...\n")  # noqa: WPS421
+        self._logger.info("Жив...\n")
 
         return False
 
