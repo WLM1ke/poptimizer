@@ -18,19 +18,26 @@ class Optimizer:
     портфеля оптимизация может занять много времени.
     """
 
-    def __init__(self, portfolio: Portfolio, wl_portfolio: Portfolio = None):
+    def __init__(self, portfolio: Portfolio, wl_portfolio: Portfolio = None,
+                 step_sz=0.01, turnover_thresh=0.1):
         """Учитывается градиент, его ошибку и ликвидность бумаг.
 
         :param portfolio:
             Оптимизируемый портфель.
         :param wl_portfolio:
             Портфель, содержащий список всех допустимых тикеров (white list), используется для фильтрации рекомендаций.
+        :param step_sz:
+            Размер оптимизационного шага в доле от портфеля
+        :param turnover_thresh:
+            Максимальны суммарный оборот в доле от портфеля в процессе оптимизации
         """
         self._portfolio = portfolio
         self._wl_portfolio = wl_portfolio
         self._metrics = metrics.MetricsResample(portfolio)
         self._logger = logging.getLogger()
         self.rec = None
+        self._turnover_thresh = turnover_thresh * self.portfolio.value["PORTFOLIO"]
+        self._step_sz = step_sz * self.portfolio.value["PORTFOLIO"]
 
     def __str__(self) -> str:
         """Информация о позициях, градиенты которых значимо отличны от 0."""
@@ -102,7 +109,7 @@ class Optimizer:
                 2
             )
 
-            rec['is_acceptable'] = True
+            rec['is_acceptable'] = rec['LOT_price'] < self._step_sz
             if self._wl_portfolio is not None:
                 # помечаем все тикеры, которых нет в white list portfolio
                 # также продаём все недопустимые позиции
@@ -117,14 +124,22 @@ class Optimizer:
             # иначе - продажа худшго тикера из тех, что в наличии
 
             top_share = rec.loc[rec['is_acceptable']].index[0]
-            bot_share = rec.loc[rec["lots"] > 0].index[-1]
-            if cash > rec.loc[top_share, "LOT_price"]:
-                rec.loc[top_share, "lots"] += 1
-                cash -= rec.loc[top_share, "LOT_price"]
+            top_share_lots = self._step_sz // rec.loc[top_share, "LOT_price"]
+            top_share_sum = top_share_lots * rec.loc[top_share, "LOT_price"]
+
+            if cash > top_share_sum:
+                rec.loc[top_share, "lots"] += top_share_lots
+                cash -= top_share_sum
                 op = ("BUY", top_share)
+                self._turnover_thresh -= top_share_sum
             else:
-                rec.loc[bot_share, "lots"] -= 1
-                cash += rec.loc[bot_share, "LOT_price"]
+                bot_share = rec.loc[rec["lots"] > 0].index[-1]
+                bot_share_lots = int(np.ceil((top_share_sum - cash) / rec.loc[bot_share, 'LOT_price']))
+                bot_share_lots = min(rec.loc[bot_share, 'lots'], bot_share_lots)
+                bot_share_sum = rec.loc[bot_share, 'LOT_price'] * bot_share_lots
+                self._turnover_thresh -= bot_share_sum
+                rec.loc[bot_share, "lots"] -= bot_share_lots
+                cash += bot_share_sum
                 op = ("SELL", bot_share)
             cur_prot = self._update_portfolio(rec, cash)
             log_str = '\t'.join([f'{str(len(ports_set) + 1): <7}',
@@ -134,7 +149,7 @@ class Optimizer:
             self._logger.info(log_str)
             # проверка цикла
             port_tuple = tuple(cur_prot.shares.drop(CASH).tolist())
-            if port_tuple in ports_set:
+            if port_tuple in ports_set or self._turnover_thresh < 0:
                 break
             ports_set.add(port_tuple)
 
