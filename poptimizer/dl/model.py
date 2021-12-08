@@ -4,7 +4,7 @@ import io
 import itertools
 import logging
 import sys
-from typing import Optional
+from typing import Final, Optional
 
 import numpy as np
 import pandas as pd
@@ -25,7 +25,9 @@ from poptimizer.dl.models.wave_net import GradientsError, ModelError
 LLH_DRAW_DOWN = 1
 
 # Максимальный размер документа в MongoDB
-MAX_SIZE = 2 * (2 ** 10) ** 2
+MAX_SIZE: Final = 2 * (2 ** 10) ** 2
+
+DAY_IN_SECONDS: Final = 24 * 60 ** 2
 
 LOGGER = logging.getLogger()
 
@@ -96,7 +98,7 @@ class Model:
             return b""
 
         buffer = io.BytesIO()
-        self._model.to('cpu')
+        self._model.to("cpu")
         state_dict = self._model.state_dict()
         torch.save(state_dict, buffer)
         return buffer.getvalue()
@@ -264,9 +266,15 @@ class Model:
 
             if llh_min is None:
                 llh_min = llh - LLH_DRAW_DOWN
+
+            total_time = bars.format_dict
+            total_time = total_time["total"] / (1 + total_time["n"]) * total_time["elapsed"]
+            if total_time > DAY_IN_SECONDS:
+                raise DegeneratedModelError(f"Большое время тренировки: {total_time} > {DAY_IN_SECONDS}")
+
             # Такое условие позволяет отсеять NaN
             if not (llh > llh_min):
-                raise GradientsError(llh)
+                raise GradientsError(f"Начальное llh: {llh_min + LLH_DRAW_DOWN}")
 
         return model
 
@@ -341,15 +349,19 @@ def _opt_port(
     std_plan = (w.reshape(1, -1) @ sigma @ w.reshape(-1, 1)).item() ** 0.5
     dd = std_plan ** 2 / ret_plan
 
-    LOGGER.info(" / ".join([f"RET = {ret:.2%}",
-                            f"MEAN = {labels.mean():.2%}",
-                            f"PLAN = {ret_plan:.2%}",
-                            f"STD = {std_plan:.2%}",
-                            f"DD = {dd:.2%}",
-                            f"POS = {(w > 0).sum()}",
-                            f"MAX = {w.max():.2%}"]
-                           )
-                )
+    LOGGER.info(
+        " / ".join(
+            [
+                f"RET = {ret:.2%}",
+                f"MEAN = {labels.mean():.2%}",
+                f"PLAN = {ret_plan:.2%}",
+                f"STD = {std_plan:.2%}",
+                f"DD = {dd:.2%}",
+                f"POS = {(w > 0).sum()}",
+                f"MAX = {w.max():.2%}",
+            ]
+        )
+    )
 
     return ret
 
