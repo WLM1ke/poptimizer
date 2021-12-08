@@ -1,8 +1,11 @@
+"""Содержит стандартные настройки логирования.
+
+Логирование идет stderr и файл с ротацией.
+"""
 import datetime
-import gzip
 import os
-import shutil
 import sys
+import zlib
 from logging import Formatter, StreamHandler
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -20,16 +23,16 @@ class UtcMicrosecondsFormatter(Formatter):
 
 
 def rotator(source, dest):
-    if os.path.exists(source):
-        os.rename(source, dest)
-        with open(dest, "rb") as f_in, gzip.open(dest + ".gz", "wb") as f_out:
-            shutil.copyfileobj(f_in, f_out)
-        os.remove(dest)
+    with open(source, "rb") as sf:
+        data = sf.read()
+        compressed = zlib.compress(data, 9)
+        with open(dest, "wb") as df:
+            df.write(compressed)
+    os.remove(source)
 
 
-def namer(default_name):
-    name = default_name.split(".")[0]
-    return name + "_" + datetime.datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S_%f") + ".log"
+def namer(default_name: str) -> str:
+    return default_name + ".gz"
 
 
 def get_formatter():
@@ -39,13 +42,13 @@ def get_formatter():
     )
 
 
-def get_handlers(logs_path: Path, rotate_mega_bytes: int = 2):
+def get_handlers(logs_path: Path, rotate_mega_bytes: int = 2, rotate_count: int = 5):
     logs_path.mkdir(exist_ok=True)
     file_handler = RotatingFileHandler(
         filename=logs_path / "log.log",
         encoding="utf-8",
         maxBytes=rotate_mega_bytes * 1024 ** 2,
-        backupCount=1,
+        backupCount=rotate_count,
         delay=False,
     )
     file_handler.rotator = rotator
