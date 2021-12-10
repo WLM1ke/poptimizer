@@ -139,7 +139,9 @@ class Model:
         n_tickers = len(self._tickers)
         days, rez = divmod(len(loader.dataset), n_tickers)
         if rez:
-            raise TooLongHistoryError
+            history = int(self._phenotype["data"]["history_days"])
+
+            raise TooLongHistoryError(f"Слишком большая длинна истории - {history}")
 
         model = self.prepare_model(loader)
         model.to(DEVICE)
@@ -194,8 +196,8 @@ class Model:
         model_type = getattr(models, self._phenotype["type"])
         model = model_type(loader.history_days, loader.features_description, **self._phenotype["model"])
 
-        if sum(tensor.numel() for tensor in model.parameters()) > MAX_SIZE:
-            raise TooLargeModelError()
+        if (n_par := sum(tensor.numel() for tensor in model.parameters())) > MAX_SIZE:
+            raise TooLargeModelError(f"Очень много параметров: {n_par}")
 
         return model
 
@@ -211,10 +213,12 @@ class Model:
                 data_params.TrainParams,
             )
         except ValueError:
-            raise TooLongHistoryError
+            history = int(self._phenotype["data"]["history_days"])
+
+            raise TooLongHistoryError(f"Слишком большая длина истории: {history}")
 
         if len(loader.features_description) == 1:
-            raise DegeneratedModelError()
+            raise DegeneratedModelError("Отсутствуют активные признаки в генотипе")
 
         model = self._make_untrained_model(loader)
         model.to(DEVICE)
@@ -274,7 +278,7 @@ class Model:
 
             # Такое условие позволяет отсеять NaN
             if not (llh > llh_min):
-                raise GradientsError(f"Начальное llh: {llh_min + LLH_DRAW_DOWN}")
+                raise GradientsError(f"LLH снизилось - начальное: {llh_min + LLH_DRAW_DOWN:0.5f}")
 
         return model
 

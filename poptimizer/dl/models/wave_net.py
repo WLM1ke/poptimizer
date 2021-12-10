@@ -337,7 +337,7 @@ class WaveNet(nn.Module):
         try:
             weights_dist = distributions.Categorical(logits=logits)
         except ValueError as err:
-            raise GradientsError(err)
+            raise GradientsError(f"Ошибка при обновлении градиентов: {err}")
 
         comp_dist = distributions.LogNormal(mean, std)
 
