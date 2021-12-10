@@ -1,7 +1,7 @@
 """Основные настраиваемые параметры."""
 import logging
 import pathlib
-from typing import Union
+from typing import Union, cast
 import pandas as pd
 import torch
 import yaml
@@ -40,8 +40,8 @@ def _load_config() -> dict[str, Union[int, float, str]]:
     cfg = {}
     path = _root / "config" / "config.yaml"
     if path.exists():
-        with path.open() as path:
-            cfg = yaml.safe_load(path)
+        with path.open() as file:
+            cfg = yaml.safe_load(file)
 
     logging.getLogger("Config").info(f"{cfg}")
 
@@ -56,11 +56,11 @@ YEAR_IN_TRADING_DAYS = 12 * MONTH_IN_TRADING_DAYS
 
 # Загрузка конфигурации
 TARGET_POPULATION = _cfg.get("TARGET_POPULATION", 100)
-FORECAST_DAYS = _cfg.get("FORECAST_DAYS", 21)
-HISTORY_DAYS_MIN = _cfg.get("HISTORY_DAYS_MIN", 63)
-P_VALUE = _cfg.get("P_VALUE", 0.05)
-COSTS = _cfg.get("COSTS", 0.025) / 100 * (YEAR_IN_TRADING_DAYS / FORECAST_DAYS)
-MARKET_IMPACT_FACTOR = _cfg.get("MARKET_IMPACT_FACTOR", 1)
-START_EVOLVE_HOUR = _cfg.get("START_EVOLVE_HOUR", 1)
-STOP_EVOLVE_HOUR = _cfg.get("STOP_EVOLVE_HOUR", 1)
-OPTIMIZER = _cfg.get("OPTIMIZER", "resample")
+FORECAST_DAYS = cast(int, _cfg.get("FORECAST_DAYS", 21))
+HISTORY_DAYS_MIN = cast(int, _cfg.get("HISTORY_DAYS_MIN", 63))
+P_VALUE = cast(float, _cfg.get("P_VALUE", 0.05))
+COSTS = cast(float, _cfg.get("COSTS", 0.025)) / 100 * (YEAR_IN_TRADING_DAYS / FORECAST_DAYS)
+MARKET_IMPACT_FACTOR = cast(float, _cfg.get("MARKET_IMPACT_FACTOR", 1))
+START_EVOLVE_HOUR = cast(int, _cfg.get("START_EVOLVE_HOUR", 1))
+STOP_EVOLVE_HOUR = cast(int, _cfg.get("STOP_EVOLVE_HOUR", 1))
+OPTIMIZER = cast(str, _cfg.get("OPTIMIZER", "resample"))
