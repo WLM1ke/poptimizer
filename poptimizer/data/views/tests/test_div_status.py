@@ -1,4 +1,6 @@
 """Тесты для проверки статуса дивидендов."""
+import logging
+
 import pandas as pd
 import pytest
 
@@ -54,26 +56,26 @@ KZOS_DF = pd.DataFrame()
 PLZL_DF = pd.DataFrame([4], columns=["PLZL"], index=["2020-10-02"])
 
 
-def test_new_dividends(mocker, capsys):
+def test_new_dividends(mocker, caplog):
     """Различные варианты включения и не включения в статус."""
     mocker.patch.object(div_status, "_new_div_all", return_value=SMART_LAB_DF)
     mocker.patch.object(div, "dividends", side_effect=[PLZL_DF, T_DF, KZOS_DF, TTLK_DF])
 
-    assert div_status.new_dividends(("TTLK", "T-RM", "KZOS", "PLZL")) == {"PLZL", "KZOS"}
-    captured = capsys.readouterr()
-    assert "ДАННЫЕ ПО ДИВИДЕНДАМ ТРЕБУЮТ ОБНОВЛЕНИЯ" in captured.out
+    with caplog.at_level(logging.INFO):
+        assert div_status.new_dividends(("TTLK", "T-RM", "KZOS", "PLZL")) == {"PLZL", "KZOS"}
+        assert "ДАННЫЕ ПО ДИВИДЕНДАМ ТРЕБУЮТ ОБНОВЛЕНИЯ" in caplog.records[0].msg
 
 
-def test_new_dividends_no_output(mocker, capsys):
+def test_new_dividends_no_output(mocker, caplog):
     """Не печатается результат, если по запрашиваемым тикерам нет обновления."""
     mocker.patch.object(div_status, "_new_div_all", return_value=SMART_LAB_DF)
 
-    assert not div_status.new_dividends(("GAZP",))
-    captured = capsys.readouterr()
-    assert not captured.out
+    with caplog.at_level(logging.INFO):
+        assert not div_status.new_dividends(("GAZP",))
+        assert not caplog.records
 
 
-def test_compare(capsys):
+def test_compare():
     """Сравнение и распечатка результатов."""
     df = div_status._compare(
         pd.DataFrame([1, 2], columns=["a"]),
@@ -89,7 +91,7 @@ def test_compare(capsys):
     )
 
 
-def test_compare_all_empty(capsys):
+def test_compare_all_empty():
     """Регрессионный тест на ошибку в сравнении пустых DataFrame."""
     df = div_status._compare(
         pd.DataFrame(columns=[1]),
@@ -102,7 +104,7 @@ def test_compare_all_empty(capsys):
     )
 
 
-def test_compare_with_empty(capsys):
+def test_compare_with_empty():
     """Регрессионный тест на ошибку в сравнении с пустым DataFrame."""
     df = div_status._compare(
         pd.DataFrame([1, 2], columns=[3]),

@@ -20,6 +20,7 @@ DivSource = Callable[[str], pd.DataFrame]
 
 LOGGER = logging.getLogger()
 
+
 def _new_div_all(viewer: viewers.Viewer = bootstrap.VIEWER) -> pd.DataFrame:
     """Информация по дивидендам с smart-lab.ru."""
     raw_data = viewer.get_df(ports.DIV_NEW, ports.DIV_NEW)

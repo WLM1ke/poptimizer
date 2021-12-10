@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -60,13 +61,15 @@ def fake_securities_with_reg_number():
     return pd.Index(["SBER", "SBERP"])
 
 
-def test_portfolio_add_tickers(monkeypatch, port, capsys):
+def test_portfolio_add_tickers(monkeypatch, port, caplog):
     monkeypatch.setattr(portfolio.listing, "securities", fake_securities_with_reg_number)
-    port.add_tickers()
-    captured = capsys.readouterr()
-    assert "ДЛЯ ДОБАВЛЕНИЯ" in captured.out
-    assert "SBER" in captured.out
-    assert "SBERP" in captured.out
+
+    with caplog.at_level(logging.INFO):
+        port.add_tickers()
+
+    assert "ДЛЯ ДОБАВЛЕНИЯ" in caplog.records[0].msg
+    assert "SBER" in caplog.records[0].msg
+    assert "SBERP" in caplog.records[0].msg
 
 
 def test_load_from_yaml(monkeypatch):

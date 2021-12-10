@@ -1,3 +1,4 @@
+import logging
 from typing import Iterable
 
 import pandas as pd
@@ -199,9 +200,9 @@ def test_get_oldest():
     assert len(list(organisms)) == 6
 
 
-def test_print_stat(capsys):
-    population.print_stat()
-    captured = capsys.readouterr()
+def test_print_stat(caplog):
+    with caplog.at_level(logging.INFO):
+        population.print_stat()
 
-    assert "LLH" in captured.out
-    assert "Максимум оценок" in captured.out
+    assert "LLH" in caplog.records[0].msg
+    assert "Максимум оценок" in caplog.records[2].msg
