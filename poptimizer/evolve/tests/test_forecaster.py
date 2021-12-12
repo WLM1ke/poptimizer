@@ -44,4 +44,4 @@ def test_prepare_forecasts(mocker):
     fake_organisms = [mocker.MagicMock() for _ in range(100)]
     mocker.patch.object(forecaster.population, "get_oldest", return_value=fake_organisms)
 
-    assert len(forecaster._prepare_forecasts("", "", 12)) == 12
+    assert len(forecaster._prepare_forecasts("", "")) == 100
