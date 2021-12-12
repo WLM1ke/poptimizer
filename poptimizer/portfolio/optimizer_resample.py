@@ -83,9 +83,12 @@ class Optimizer:  # noqa: WPS214
         return rez
 
     def _break_even(self, conf_int):
-        non_zero_positions = self._portfolio.shares.iloc[:-2] > 0
+        lower = (conf_int[_LOWER] - conf_int[_COSTS]).max()
 
-        return conf_int[_UPPER].loc[non_zero_positions].min()
+        non_zero_positions = self._portfolio.shares.iloc[:-2] > 0
+        upper = conf_int[_UPPER].loc[non_zero_positions].min()
+
+        return min(lower, upper)
 
     def _select_buy(self, break_even, conf_int):
         buy = conf_int[_PRIORITY] >= break_even  # noqa: WPS465
