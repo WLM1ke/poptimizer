@@ -8,11 +8,10 @@ def test_setup_needed(mocker):
     fake_population = mocker.patch.object(evolve, "population")
     fake_population.count.return_value = 0
 
-    ev = evolve.Evolution(target_population=4)
+    ev = evolve.Evolution(initial_population=4)
 
     ev._setup()
 
-    fake_population.count.assert_called_once_with()
     assert fake_population.create_new_organism.call_count == 4
 
 
@@ -21,11 +20,10 @@ def test_setup_not_needed(mocker):
     fake_population = mocker.patch.object(evolve, "population")
     fake_population.count.return_value = 4
 
-    ev = evolve.Evolution(target_population=4)
+    ev = evolve.Evolution(initial_population=4)
 
     ev._setup()
 
-    fake_population.count.assert_called_once_with()
     assert not fake_population.create_new_organism.called
 
 

@@ -14,10 +14,6 @@ from poptimizer.dl import ModelError
 from poptimizer.evolve import population, seq
 from poptimizer.portfolio.portfolio import load_tickers
 
-DECAY = 1 / config.TARGET_POPULATION
-# Делается поправка на множественное тестирование для одностороннего теста для двух метрик
-ALFA = config.P_VALUE * 2 / (config.TARGET_POPULATION * 2)
-
 
 class Evolution:  # noqa: WPS214
     """Эволюция параметров модели.
@@ -36,12 +32,12 @@ class Evolution:  # noqa: WPS214
     Масштаб окрестности изменяется, если организмы принимаются слишком часто или редко.
     """
 
-    def __init__(self, target_population: int = config.TARGET_POPULATION):
+    def __init__(self, initial_population: int = 5):
         """Сохраняет предельный размер популяции."""
-        self._target_population = target_population
+        self._target_population = initial_population
+        self._scale = 1 / max(population.count(), initial_population)
         self._tickers = None
         self._end = None
-        self._scale = DECAY
         self._logger = logging.getLogger()
 
     def evolve(self) -> None:
@@ -66,7 +62,9 @@ class Evolution:  # noqa: WPS214
 
             if new:
                 accepted = next_.id != current.id
-                self._scale = self._scale * (1 - DECAY) + accepted * DECAY
+
+                decay = 1 / population.count()
+                self._scale = self._scale * (1 - decay) + accepted * decay
 
             current = next_
 
@@ -162,7 +160,6 @@ class Evolution:  # noqa: WPS214
             self._logger.info(f"{organism}\n")
         except AttributeError as err:
             organism.die()
-            err = err.__class__.__name__
             self._logger.error(f"Удаляю - {err}\n")
 
             return None
@@ -172,7 +169,10 @@ class Evolution:  # noqa: WPS214
 
         dates = [self._end]
         if not organism.llh:
-            bounding_n = seq.minimum_bounding_n(ALFA)
+            # Тестирование одностороннее, поэтому p-value нужно умножить на 2, но проводится 2 *
+            # generations_count тестов, поэтому 2 сокращается.
+            alfa = config.P_VALUE / population.generations_count()
+            bounding_n = seq.minimum_bounding_n(alfa)
             dates = indexes.mcftrr(listing.last_history_date()).loc[: self._end]
             dates = dates.index[-bounding_n:].tolist()
 
@@ -181,7 +181,6 @@ class Evolution:  # noqa: WPS214
                 organism.evaluate_fitness(self._tickers, date)
             except (ModelError, AttributeError) as error:
                 organism.die()
-                error = error.__class__.__name__
                 self._logger.error(f"Удаляю - {error}\n")
 
                 return None
@@ -280,6 +279,8 @@ def _aligned_tests(target: dict, candidate: dict, metric: str) -> tuple[float, f
 
 def _test_diff(target: list[float], candidate: list[float]) -> tuple[float, float, float]:
     diff = list(map(operator.sub, candidate, target))
-    _, upper = seq.median_conf_bound(diff, ALFA)
+    # Тестирование одностороннее, поэтому p-value нужно умножить на 2, но проводится 2 *
+    # generations_count тестов, поэтому 2 сокращается.
+    _, upper = seq.median_conf_bound(diff, config.P_VALUE / population.generations_count())
 
     return np.median(diff), upper, np.max(diff)
