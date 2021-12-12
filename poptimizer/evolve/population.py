@@ -20,6 +20,7 @@ TIME_TO_SEC = 10 ** 9
 
 LOGGER = logging.getLogger()
 
+
 class ReevaluationError(config.POptimizerError):
     """Попытка сделать вторую оценку для заданной даты."""
 
@@ -200,18 +201,13 @@ def _get_parents() -> tuple[Organism, Organism]:
         {"$sample": {"size": 2}},
     ]
 
-    parent1, parent2 = [Organism(**doc) for doc in collection.aggregate(pipeline)]
-
-    if parent1.genotype == parent2.genotype:
-        return Organism(), Organism()
-
-    return parent1, parent2
+    return tuple(Organism(**doc) for doc in collection.aggregate(pipeline))
 
 
 def _aggregate_oldest(limit: int, first_step: Optional[dict] = None):
     """Берет первые документы по возрастанию id.
 
-    При наличие добавляет первый шаг агрегации.
+    При наличии добавляет первый шаг агрегации.
     """
     pipeline = [
         {"$project": {"ir": True, "llh": True, "date": True}},
@@ -238,14 +234,38 @@ def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
     return doc and Organism(_id=doc["_id"])
 
 
+def generations_count() -> int:
+    """Количество поколений.
+
+    Чем дольше организм живет, тем больше он имеет wins. Разница между максимальным и минимальным wins
+    грубо показывает количество выживших поколений. Так переход от 1 к 2 поколениям очень резко влияет
+    на уровень значимости в тестах минимальное количество поколений 2.
+    """
+    collection = store.get_collection()
+
+    pipeline = [
+        {
+            "$group": {
+                "_id": {},
+                "min": {"$min": "$wins"},
+                "max": {"$max": "$wins"},
+            },
+        },
+    ]
+    doc = next(collection.aggregate(pipeline))
+    gens = 1 + (doc["max"] or 0) - (doc["min"] or 0)
+
+    return max(2, gens)
+
+
 def base_pop_metrics() -> Iterable[dict[str, list[float]]]:
     """Данные по доходности базовой популяции."""
-    yield from _aggregate_oldest(config.TARGET_POPULATION, {"$match": {"date": {"$exists": True}}})
+    yield from _aggregate_oldest(generations_count(), {"$match": {"date": {"$exists": True}}})
 
 
 def get_oldest() -> Iterable[Organism]:
     """Получить самые старые."""
-    for doc in list(_aggregate_oldest(config.TARGET_POPULATION ** 2)):
+    for doc in list(_aggregate_oldest(count())):
         with contextlib.suppress(store.IdError):
             yield Organism(_id=doc["_id"])
 
@@ -323,4 +343,6 @@ def _print_wins_stats() -> None:
         max_wins, *_ = wins
         max_wins = max_wins["wins"]
 
-    LOGGER.info(f"Организмов - {count()} / Максимум оценок - {max_wins}")  # noqa: WPS421
+    LOGGER.info(
+        f"Организмов - {count()} / Максимум оценок - {max_wins} / Поколений - {generations_count()}",
+    )
