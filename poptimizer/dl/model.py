@@ -274,7 +274,8 @@ class Model:
             total_time = bars.format_dict
             total_time = total_time["total"] / (1 + total_time["n"]) * total_time["elapsed"]
             if total_time > DAY_IN_SECONDS:
-                raise DegeneratedModelError(f"Большое время тренировки: {total_time} > {DAY_IN_SECONDS}")
+                raise DegeneratedModelError(f"Большое время тренировки: {total_time:.0f} >"
+                                            f" {DAY_IN_SECONDS}")
 
             # Такое условие позволяет отсеять NaN
             if not (llh > llh_min):
