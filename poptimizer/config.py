@@ -55,7 +55,6 @@ MONTH_IN_TRADING_DAYS = 21
 YEAR_IN_TRADING_DAYS = 12 * MONTH_IN_TRADING_DAYS
 
 # Загрузка конфигурации
-TARGET_POPULATION = _cfg.get("TARGET_POPULATION", 100)
 FORECAST_DAYS = cast(int, _cfg.get("FORECAST_DAYS", 21))
 HISTORY_DAYS_MIN = cast(int, _cfg.get("HISTORY_DAYS_MIN", 63))
 P_VALUE = cast(float, _cfg.get("P_VALUE", 0.05))
