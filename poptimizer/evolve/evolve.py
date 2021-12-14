@@ -35,7 +35,7 @@ class Evolution:  # noqa: WPS214
     def __init__(self, initial_population: int = 5):
         """Сохраняет предельный размер популяции."""
         self._target_population = initial_population
-        self._scale = 1 / max(population.count(), initial_population)
+        self._scale = 1
         self._tickers = None
         self._end = None
         self._logger = logging.getLogger()
@@ -74,6 +74,8 @@ class Evolution:  # noqa: WPS214
                 self._logger.info(f"Создаются базовые организмы — {n_org}")
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")
+
+        self._scale = 1 / population.count() ** 0.5
 
     def _step_setup(
         self,
