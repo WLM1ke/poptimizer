@@ -52,7 +52,9 @@ positions:
   FESH: 0
   FIVE: 0
   FLOT: 0
+  FXCN: 0
   FXGD: 0
+  FXIT: 0
   FXMM: 0
   FXRB: 0
   FXRU: 0
@@ -92,8 +94,8 @@ positions:
   LSNG: 0
   LSNGP: 0
   LSRG: 0
+  MA-RM: 0
   MAGN: 0
-  MAIL: 0
   MCD-RM: 0
   MDMG: 0
   MGNT: 0
@@ -190,7 +192,6 @@ positions:
   UNKL: 0
   UPRO: 0
   USBN: 0
-  UWGN: 0
   V-RM: 0
   VSMO: 0
   VTBB: 0
