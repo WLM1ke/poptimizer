@@ -4,7 +4,7 @@ import io
 import itertools
 import logging
 import sys
-from typing import Final, Optional
+from typing import Final, Optional, Callable
 
 import numpy as np
 import pandas as pd
@@ -15,7 +15,7 @@ from torch import nn, optim
 
 from poptimizer import config
 from poptimizer.config import DEVICE, YEAR_IN_TRADING_DAYS
-from poptimizer.dl import data_loader, ledoit_wolf, models
+from poptimizer.dl import data_loader, ledoit_wolf, models, PhenotypeData
 from poptimizer.dl.features import data_params
 from poptimizer.dl.forecast import Forecast
 from poptimizer.dl.models.wave_net import GradientsError, ModelError
@@ -172,7 +172,14 @@ class Model:
         all_labels = torch.cat(all_labels).cpu().numpy().flatten()
         llh = llh_sum / weight_sum + llh_adj
 
-        ir = _opt_port(all_means, all_vars, all_labels, self._tickers, self._end, loader.history_days)
+        ir = _opt_port(
+            all_means,
+            all_vars,
+            all_labels,
+            self._tickers,
+            self._end,
+            self._phenotype,
+        )
 
         return llh, ir
 
@@ -274,8 +281,7 @@ class Model:
             total_time = bars.format_dict
             total_time = total_time["total"] / (1 + total_time["n"]) * total_time["elapsed"]
             if total_time > DAY_IN_SECONDS:
-                raise DegeneratedModelError(f"Большое время тренировки: {total_time:.0f} >"
-                                            f" {DAY_IN_SECONDS}")
+                raise DegeneratedModelError(f"Большое время тренировки: {total_time:.0f} >" f" {DAY_IN_SECONDS}")
 
             # Такое условие позволяет отсеять NaN
             if not (llh > llh_min):
@@ -329,7 +335,7 @@ def _opt_port(
     labels: np.array,
     tickers: tuple[str],
     end: pd.Timestamp,
-    history_days: int,
+    phenotype: PhenotypeData,
 ) -> float:
     """Доходность портфеля с максимальными ожидаемыми темпами роста.
 
@@ -348,7 +354,7 @@ def _opt_port(
     var *= YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS
     labels *= YEAR_IN_TRADING_DAYS / data_params.FORECAST_DAYS
 
-    w, sigma = _opt_weight(mean, var, tickers, end, history_days)
+    w, sigma = _opt_weight(mean, var, tickers, end, phenotype)
     ret = (w * labels).sum()
     ret_plan = (w * mean).sum()
     std_plan = (w.reshape(1, -1) @ sigma @ w.reshape(-1, 1)).item() ** 0.5
@@ -364,8 +370,8 @@ def _opt_port(
                 f"DD = {dd:.2%}",
                 f"POS = {(w > 0).sum()}",
                 f"MAX = {w.max():.2%}",
-            ]
-        )
+            ],
+        ),
     )
 
     return ret
@@ -376,7 +382,7 @@ def _opt_weight(
     variance: np.array,
     tickers: tuple[str],
     end: pd.Timestamp,
-    history_days: int,
+    phenotype: PhenotypeData,
 ) -> tuple[np.array, np.array]:
     """Веса портфеля с максимальными темпами роста и использовавшаяся ковариационная матрица..
 
@@ -384,33 +390,49 @@ def _opt_weight(
     логарифма доходности. Дополнительно накладывается ограничение на полною отсутствие кэша и
     неотрицательные веса отдельных активов.
     """
+    history_days = phenotype["data"]["history_days"]
     mean = mean.reshape(-1, 1)
 
-    sigma, *_ = ledoit_wolf.ledoit_wolf_cor(tickers, end, history_days, config.FORECAST_DAYS)
+    sigma = ledoit_wolf.ledoit_wolf_cor(tickers, end, history_days, config.FORECAST_DAYS)[0]
     std = variance ** 0.5
     sigma = std.reshape(1, -1) * sigma * std.reshape(-1, 1)
 
     w = np.ones_like(mean).flatten()
 
     rez = optimize.minimize(
-        _expected_ln_return,
+        _make_utility_func(phenotype, mean, sigma),
         w,
-        (mean, sigma),
         bounds=[(0, None) for _ in w],
     )
 
     return rez.x / rez.x.sum(), sigma
 
 
-def _expected_ln_return(w: np.array, mean: np.array, sigma: np.array) -> np.array:
-    """Приблизительное значение минус логарифма доходности.
+def _make_utility_func(
+    phenotype: PhenotypeData,
+    mean: np.array,
+    sigma: np.array,
+) -> Callable[[float, float], float]:
+    """Функция полезности.
 
-    Математическое ожидание логарифма доходности можно приблизить с помощью разложения Тейлора,
-    как математическое ожидание доходности минус половина дисперсии. Входящие веса нормируются на
-    сумму, чтобы гарантировать отсутствие кэша в портфеле.
+    Оптимизация портфеля осуществляется с использованием функции полезности следующего вида:
 
-    Для целей дальнейшего использование возвращается мис указанная величина.
+    U = r - risk_aversion / 2 * s ** 2 - error_tolerance * s, где
+
+    risk_aversion - классическая нелюбовь к риску в задачах mean-variance оптимизации. При значении 1 в первом
+    приближении максимизируется логарифм доходности или ожидаемые темпы роста портфеля.
+
+    error_tolerance - величина минимальной требуемой величины коэффициента Шарпа или мера возможной достоверности оценок
+    доходности. В рамках второй интерпретации происходит максимизация нижней границы доверительного интервала.
     """
-    w = w.reshape(-1, 1) / w.sum()
+    risk_aversion = phenotype["utility"]["risk_aversion"]
+    error_tolerance = phenotype["utility"]["error_tolerance"]
 
-    return ((w.T @ sigma @ w) / 2 - w.T @ mean).item()
+    def utility_func(w: np.array) -> float:
+        w = w.reshape(-1, 1) / w.sum()
+        ret = (w.T @ mean).item()
+        variance = (w.T @ sigma @ w).item()
+
+        return ret - risk_aversion / 2 * variance - error_tolerance * variance ** 0.5
+
+    return utility_func
