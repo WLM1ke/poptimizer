@@ -21,6 +21,7 @@ ALL_CHROMOSOMES_TYPES = (
     chromosomes.Model,
     chromosomes.Optimizer,
     chromosomes.Scheduler,
+    chromosomes.Utility,
 )
 
 # Представление данных в генотипе

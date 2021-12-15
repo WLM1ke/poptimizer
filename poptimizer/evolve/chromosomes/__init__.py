@@ -4,3 +4,4 @@ from poptimizer.evolve.chromosomes.data import Data
 from poptimizer.evolve.chromosomes.model import Model
 from poptimizer.evolve.chromosomes.optimizer import Optimizer
 from poptimizer.evolve.chromosomes.scheduler import Scheduler
+from poptimizer.evolve.chromosomes.utility import Utility
