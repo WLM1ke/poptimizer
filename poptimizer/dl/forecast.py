@@ -19,6 +19,8 @@ class Forecast:
     cov: np.array = dataclasses.field(init=False)
     cor: float = dataclasses.field(init=False)
     shrinkage: float = dataclasses.field(init=False)
+    risk_aversion: float
+    error_tolerance: float
 
     def __post_init__(self):
         sigma, self.cor, self.shrinkage = ledoit_wolf_cor(self.tickers, self.date, self.history_days)

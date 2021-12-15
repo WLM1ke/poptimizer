@@ -326,6 +326,8 @@ class Model:
             history_days=self._phenotype["data"]["history_days"],
             mean=means,
             std=stds,
+            risk_aversion=self._phenotype["utility"]["risk_aversion"],
+            error_tolerance=self._phenotype["utility"]["error_tolerance"],
         )
 
 

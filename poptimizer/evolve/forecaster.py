@@ -5,7 +5,6 @@ from typing import Iterator, Optional
 import pandas as pd
 import tqdm
 
-from poptimizer import config
 from poptimizer.dl import Forecast
 from poptimizer.evolve import population
 from poptimizer.store import database
@@ -31,9 +30,7 @@ class Forecasts(Iterable):
         self._forecasts = forecasts or _prepare_forecasts(tickers, date)
         if not self._forecasts:
             diff = set(next(population.get_oldest())._doc.tickers).symmetric_difference(set(tickers))
-            raise population.ForecastError(
-                f"Отсутствуют прогнозы - необходимо обучить модели. SymDiff: {diff}"
-            )
+            raise population.ForecastError(f"Отсутствуют прогнозы - необходимо обучить модели. SymDiff: {diff}")
 
     def __iter__(self) -> Iterator[Forecast]:
         """Возвращает отдельные прогнозы."""
