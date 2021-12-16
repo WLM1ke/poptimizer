@@ -5,7 +5,7 @@
 import datetime
 import os
 import sys
-import zlib
+import gzip
 from logging import Formatter, Handler, LogRecord, StreamHandler, handlers
 from pathlib import Path
 from typing import Optional
@@ -31,7 +31,7 @@ class _UtcMicrosecondsFormatter(Formatter):
 
 def _rotator(source: str, dest: str) -> None:
     with open(source, "rb") as sf:
-        compressed = zlib.compress(sf.read(), 9)
+        compressed = gzip.compress(sf.read(), 9)
         with open(dest, "wb") as df:
             df.write(compressed)
     os.remove(source)
