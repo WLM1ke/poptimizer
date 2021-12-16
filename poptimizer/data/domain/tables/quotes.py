@@ -37,9 +37,9 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
         При наличие старых и новых данных, они склеиваются.
         """
         df_new = await self._load_df(event)
+        df_new = df_new.sort_values(by=[col.DATE, col.TURNOVER])
 
         if (df := self._df) is None:
-            df_new = df_new.sort_values(by=[col.DATE, col.TURNOVER])
             return df_new.groupby(col.DATE).last()
 
         if df_new.empty:
