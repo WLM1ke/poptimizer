@@ -29,7 +29,7 @@ class MetricsSingle:  # noqa: WPS214
 
     def __str__(self) -> str:
         """Текстовое представление метрик портфеля."""
-        frames = [self.mean, self.std, self.beta, self.r_geom, self.gradient]
+        frames = [self.mean, self.std, self.beta, self.r_adj, self.gradient]
         df = pd.concat(frames, axis=1)
 
         return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n\n{df}"
@@ -48,6 +48,16 @@ class MetricsSingle:  # noqa: WPS214
     def shrinkage(self) -> float:
         """Среднее сжатие корреляционной матрицы."""
         return self._forecast.shrinkage
+
+    @functools.cached_property
+    def risk_aversion(self) -> float:
+        """Не любовь к риску."""
+        return self._forecast.risk_aversion
+
+    @functools.cached_property
+    def error_tolerance(self) -> float:
+        """Не любовь к ошибкам."""
+        return self._forecast.error_tolerance
 
     @functools.cached_property
     def rf(self) -> float:
@@ -100,27 +110,49 @@ class MetricsSingle:  # noqa: WPS214
         return beta
 
     @functools.cached_property
-    def r_geom(self) -> pd.Series:
-        """Приближенная оценка геометрической доходности.
+    def r_adj(self) -> pd.Series:
+        """Скорректированная с учетом риска доходность.
+
+        Для портфеля рассчитывается по следующей формуле:
+
+        r_adj = r - risk_aversion / 2 * s ** 2 - error_tolerance * s
 
         Для портфеля равна арифметической доходности минус половина квадрата СКО. Для остальных
-        активов рассчитывается как сумма градиента и показателя для портфеля.
+        активов рассчитывается, как сумма градиента и показателя для портфеля.
 
         При правильной реализации взвешенная по долям отдельных позиций геометрическая доходность
         равна значению по портфелю в целом.
         """
-        jensen_correction = self.std[PORTFOLIO] ** 2 * (self.beta - 0.5)
-        r_geom = self.mean.sub(jensen_correction)
-        r_geom.name = "R_GEOM"
+        r_adj_portfolio = (
+            self.mean[PORTFOLIO]
+            - self.risk_aversion / 2 * self.std[PORTFOLIO] ** 2
+            - self.error_tolerance * self.std[PORTFOLIO]
+        )
+        r_adj = r_adj_portfolio + self.gradient
+        r_adj.name = "R_ADJ"
 
-        return r_geom
+        return r_adj
 
     @functools.cached_property
     def gradient(self) -> pd.Series:
-        """Рассчитывает производную приближенного значения геометрической доходности по долям акций.
+        """Рассчитывает производную скорректированной с учетом риска доходности.
 
-        В общем случае равна (m - mp) - (b - 1) * sp ** 2, m и mp - доходность актива и портфеля,
-        соответственно, sp - СКО портфеля, b - бета актива.
+         r_adj = r - risk_aversion / 2 * s ** 2 - error_tolerance * s, где
+
+        risk_aversion - классическая нелюбовь к риску в задачах mean-variance оптимизации. При значении 1 в первом
+        приближении максимизируется логарифм доходности или ожидаемые темпы роста портфеля.
+
+        error_tolerance - величина минимальной требуемой величины коэффициента Шарпа или мера возможной достоверности
+        оценок доходности. В рамках второй интерпретации происходит максимизация нижней границы доверительного
+        интервала.
+
+        Соответственно градиент может быть рассчитан по следующей формуле:
+
+        gradient = (m - mp) - risk_aversion * sp ** 2 * (b - 1) - error_tolerance * sp * (b - 1), где
+
+        m и mp - доходность актива и портфеля, соответственно,
+        sp - СКО портфеля,
+        b - бета актива.
 
         Долю актива с максимальным градиентом необходимо наращивать, а с минимальным сокращать. Так как
         важную роль в градиенте играет бета, то во многих случаях выгодно наращивать долю той бумаги,
@@ -131,8 +163,14 @@ class MetricsSingle:  # noqa: WPS214
         """
         mean = self.mean
         mean_gradient = mean - mean[PORTFOLIO]
-        risk_gradient = self.beta.sub(1) * self.std[PORTFOLIO] ** 2
-        gradient = mean_gradient - risk_gradient
+
+        risk_aversion_gradient = self.risk_aversion * self.std[PORTFOLIO] ** 2
+        risk_aversion_gradient = risk_aversion_gradient * self.beta.sub(1)
+
+        error_tolerance_gradient = self.error_tolerance * self.std[PORTFOLIO]
+        error_tolerance_gradient = error_tolerance_gradient * self.beta.sub(1)
+
+        gradient = mean_gradient - risk_aversion_gradient - error_tolerance_gradient
         gradient.name = "GRAD"
 
         return gradient
@@ -161,6 +199,8 @@ class MetricsResample:  # noqa: WPS214
             self._history_block(),
             self._cor_block(),
             self._shrinkage_block(),
+            self._risk_aversion_block(),
+            self._error_tolerance(),
             self._main_block(),
             self._grad_summary(),
         ]
@@ -200,11 +240,11 @@ class MetricsResample:  # noqa: WPS214
         return beta
 
     @functools.cached_property
-    def r_geom(self) -> pd.Series:
-        """Медиана для всех прогнозов приближенные оценки геометрической доходности."""
-        all_r_geom = [metric.r_geom for metric in self._metrics]
+    def r_adj(self) -> pd.Series:
+        """Медиана для всех прогнозов приближенные оценки скорректированной доходности."""
+        all_r_geom = [metric.r_adj for metric in self._metrics]
         r_geom = pd.concat(all_r_geom, axis=1).median(axis=1)
-        r_geom.name = "R_GEOM"
+        r_geom.name = "R_ADJ"
 
         return r_geom
 
@@ -228,7 +268,7 @@ class MetricsResample:  # noqa: WPS214
         quantile = list(map(lambda num: f"{num:.0f}", quantile))
         quantile = " <-> ".join(quantile)
 
-        return f"Дней в истории - ({quantile})"
+        return f"History days - ({quantile})"
 
     def _cor_block(self) -> str:
         """Разброс средней корреляции."""
@@ -237,7 +277,7 @@ class MetricsResample:  # noqa: WPS214
         quantile = list(map(lambda num: f"{num:.2%}", quantile))
         quantile = " <-> ".join(quantile)
 
-        return f"Корреляция - ({quantile})"
+        return f"Correlation - ({quantile})"
 
     def _shrinkage_block(self) -> str:
         """Разброс среднего сжатия."""
@@ -246,7 +286,25 @@ class MetricsResample:  # noqa: WPS214
         quantile = list(map(lambda num: f"{num:.2%}", quantile))
         quantile = " <-> ".join(quantile)
 
-        return f"Сжатие - ({quantile})"
+        return f"Shrinkage - ({quantile})"
+
+    def _risk_aversion_block(self) -> str:
+        """Разброс нелюбви к риску."""
+        quantile = [0, 0.5, 1]
+        quantile = np.quantile([met.risk_aversion for met in self._metrics], quantile)
+        quantile = list(map(lambda num: f"{num:.2f}", quantile))
+        quantile = " <-> ".join(quantile)
+
+        return f"Risk aversion - ({quantile})"
+
+    def _error_tolerance(self) -> str:
+        """Разброс нелюбви к ошибке."""
+        quantile = [0, 0.5, 1]
+        quantile = np.quantile([met.error_tolerance for met in self._metrics], quantile)
+        quantile = list(map(lambda num: f"{num:.2f}", quantile))
+        quantile = " <-> ".join(quantile)
+
+        return f"Error tolerance - ({quantile})"
 
     def _main_block(self) -> str:
         """Основная информация о метриках."""
@@ -254,7 +312,7 @@ class MetricsResample:  # noqa: WPS214
             self.mean,
             self.std,
             self.beta,
-            self.r_geom,
+            self.r_adj,
             self.gradient,
         ]
         df = pd.concat(frames, axis=1)
@@ -268,8 +326,8 @@ class MetricsResample:  # noqa: WPS214
         risk = pd.concat([metric.std for metric in self._metrics], axis=1)
         risk = risk.loc[PORTFOLIO].quantile(1 - config.P_VALUE)
 
-        r_geom = pd.concat([metric.r_geom for metric in self._metrics], axis=1)
-        r_geom = r_geom.loc[PORTFOLIO].quantile(config.P_VALUE)
+        r_adj = pd.concat([metric.r_adj for metric in self._metrics], axis=1)
+        r_adj = r_adj.loc[PORTFOLIO].quantile(config.P_VALUE)
 
         dd = self.std[PORTFOLIO] ** 2 / self.mean[PORTFOLIO]
 
@@ -277,7 +335,7 @@ class MetricsResample:  # noqa: WPS214
             "",
             _text_with_data("Консервативная доходность: ", return_),
             _text_with_data("Консервативный риск:       ", risk),
-            _text_with_data("Консервативная метрика:    ", r_geom),
+            _text_with_data("Консервативная метрика:    ", r_adj),
             _text_with_data("Оценка просадки:           ", dd),
         ]
 

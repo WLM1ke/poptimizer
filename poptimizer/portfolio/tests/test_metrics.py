@@ -69,7 +69,7 @@ class TestMetricsSingle:
 
     def test_metrics(self, single):
         """Проверка значений метрики."""
-        sharpe = single.r_geom
+        sharpe = single.r_adj
         assert isinstance(sharpe, pd.Series)
         assert sharpe.name == "R_GEOM"
         assert len(sharpe) == 5
@@ -184,7 +184,7 @@ class TestMetricsResample:
 
     def test_metrics(self, resample):
         """Проверка метрики, в том числе значения для кэша."""
-        sharpe = resample.r_geom
+        sharpe = resample.r_adj
         assert isinstance(sharpe, pd.Series)
         assert sharpe.name == "R_GEOM"
         assert len(sharpe) == 4
