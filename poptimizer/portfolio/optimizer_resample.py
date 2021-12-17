@@ -48,7 +48,7 @@ class Optimizer:  # noqa: WPS214
             "\nОПТИМИЗАЦИЯ ПОРТФЕЛЯ",
             f"\nforecasts = {forecasts}",
             f"p-value = {self._p_value:.2%}",
-            f"impact = {config.MARKET_IMPACT_FACTOR:.2f}",
+            f"trading interval = {config.TRADING_INTERVAL}",
             f"\n{df}",
         ]
         return "\n".join(blocks)
@@ -160,20 +160,22 @@ class Optimizer:  # noqa: WPS214
         impact_scale = 1.5
 
         return (
-            # Размер рыночного воздействие в дневном СКО для дневного оборот
-            config.MARKET_IMPACT_FACTOR
-            # Дневное СКО
-            * (self.metrics.std / config.YEAR_IN_TRADING_DAYS ** 0.5)
-            # Зависимость общих издержек от воздействия пропорционален степени 1.5 от нормированного на
-            # дневной оборот объема. Совершается покупка на кэш сейчас и увеличиваются издержки на
-            # ликвидацию позиции
-            * (cash ** impact_scale + (weight_cash ** impact_scale - weight ** impact_scale))
-            # Делим на объем операции для получения удельных издержек
-            / cash
+            (
+                # Обычные издержки в две стороны
+                config.COSTS * 2
+                # Дневное СКО
+                + (self.metrics.std / config.YEAR_IN_TRADING_DAYS ** 0.5)
+                # Зависимость общих издержек от воздействия пропорционален степени 1.5 от нормированного на
+                # дневной оборот объема. Совершается покупка на кэш сейчас и увеличиваются издержки на
+                # ликвидацию позиции
+                * (cash ** impact_scale + (weight_cash ** impact_scale - weight ** impact_scale))
+                # Делим на объем операции для получения удельных издержек
+                / cash
+            )
             # Умножаем на коэффициент пересчета в годовые значения
             * (config.YEAR_IN_TRADING_DAYS / config.FORECAST_DAYS)
-            # Обычные издержки в две стороны
-            + config.COSTS * 2
+            # Уменьшаем издержки в годовом выражении, если торговля идет не каждый день
+            / config.TRADING_INTERVAL
         )
 
 
