@@ -435,6 +435,6 @@ def _make_utility_func(
         ret = (w.T @ mean).item()
         variance = (w.T @ sigma @ w).item()
 
-        return ret - risk_aversion / 2 * variance - error_tolerance * variance ** 0.5
+        return -(ret - risk_aversion / 2 * variance - error_tolerance * variance ** 0.5)
 
     return utility_func
