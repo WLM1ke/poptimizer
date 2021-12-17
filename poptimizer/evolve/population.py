@@ -172,7 +172,7 @@ def _format_scores_list(scores: list[float]) -> str:
 
         score = np.median(np.array(scores))
 
-        block = f"{score:0.4f}: {scores_all}"
+        block = f"{score: .4f}: {scores_all}"
 
     return block
 
