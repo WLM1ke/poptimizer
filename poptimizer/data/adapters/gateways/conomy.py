@@ -29,7 +29,7 @@ async def _load_ticker_page(page: Page, ticker: str) -> None:
     """Вводит в поле поиска тикер и переходит на страницу с информацией по эмитенту."""
     await page.goto(SEARCH_URL)
     await page.waitForXPath(SEARCH_FIELD)
-    element, *_ = await page.xpath(SEARCH_FIELD)
+    element = (await page.xpath(SEARCH_FIELD))[0]
     await element.type(ticker)
     await element.press("Enter")
 
@@ -37,7 +37,7 @@ async def _load_ticker_page(page: Page, ticker: str) -> None:
 async def _load_dividends_table(page: Page) -> None:
     """Выбирает на странице эмитента меню дивиденды и дожидается загрузки таблиц с ними."""
     await page.waitForXPath(DIVIDENDS_MENU)
-    element, *_ = await page.xpath(DIVIDENDS_MENU)
+    element = (await page.xpath(DIVIDENDS_MENU))[0]
     await element.click()
     await page.waitForXPath(DIVIDENDS_TABLE)
 

@@ -3,9 +3,9 @@
 Логирование идет stdout и файл с ротацией.
 """
 import datetime
+import gzip
 import os
 import sys
-import gzip
 from logging import Formatter, Handler, LogRecord, StreamHandler, handlers
 from pathlib import Path
 from typing import Optional

@@ -42,14 +42,14 @@ def _get_raw_df(table: str, cols_desc: Descriptions) -> pd.DataFrame:
     raw_name = cols_desc[0].raw_name
     num_of_headers = len(raw_name)
     header_nums = list(range(num_of_headers))
-    df, *_ = pd.read_html(
+
+    return pd.read_html(
         table,
         header=header_nums,
         converters=converters,
         thousands=" ",
         displayed_only=False,
-    )
-    return df
+    )[0]
 
 
 def _validate_header(columns: pd.Index, cols_desc: Descriptions) -> None:
