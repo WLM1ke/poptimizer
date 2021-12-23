@@ -1,9 +1,9 @@
-package log_test
+package lgr_test
 
 import (
 	"testing"
 
-	"github.com/WLM1ke/poptimizer/data/pkg/log"
+	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 )
 
 const (
@@ -22,10 +22,10 @@ func (m MockWriter) Write(b []byte) (int, error) {
 }
 
 func BenchmarkLogger(b *testing.B) {
-	logger := log.WithOptions(
-		log.Name("test"),
-		log.Writer(MockWriter{}),
-		log.TimeWithSeconds(),
+	logger := lgr.WithOptions(
+		lgr.Name("test"),
+		lgr.Writer(MockWriter{}),
+		lgr.TimeWithSeconds(),
 	)
 
 	b.ReportAllocs()

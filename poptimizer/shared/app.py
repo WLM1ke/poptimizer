@@ -106,7 +106,7 @@ def _shutdown_tasks(loop: asyncio.AbstractEventLoop) -> None:
     После ошибки происходит отмена всех заданий, чтобы не захламлять сообщение об ошибке множеством
     сообщений, о том, что результат выполнения задания не был awaited.
 
-    Идея кода позаимствована из реализации asyncio.run.
+    Идея кода позаимствована из реализации asyncio.app.
     """
     to_cancel = asyncio.all_tasks(loop)
     if not to_cancel:

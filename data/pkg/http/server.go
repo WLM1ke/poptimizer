@@ -4,23 +4,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/data/pkg/log"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
 	"net/http"
 	"time"
+
+	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 )
 
 // Server представляет http сервер.
 type Server struct {
-	log             *log.Logger
+	log             *lgr.Logger
 	addr            string
 	requestTimeouts time.Duration
 	handler         http.Handler
 }
 
 // NewServer - создает http сервер.
-func NewServer(log *log.Logger, addr string, requestTimeouts time.Duration, handler http.Handler) *Server {
+func NewServer(log *lgr.Logger, addr string, requestTimeouts time.Duration, handler http.Handler) *Server {
 	return &Server{log: log, addr: addr, requestTimeouts: requestTimeouts, handler: handler}
 }
 

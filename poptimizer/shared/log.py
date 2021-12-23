@@ -49,7 +49,7 @@ def get_handlers(
     """Настраивает логирование в stdout и файл с ротацией."""
     logs_path.mkdir(exist_ok=True)
     file_handler = handlers.RotatingFileHandler(
-        filename=logs_path / "log.log",
+        filename=logs_path / "lgr.lgr",
         encoding="utf-8",
         maxBytes=rotate_mega_bytes * 1024 ** 2,
         backupCount=rotate_count,

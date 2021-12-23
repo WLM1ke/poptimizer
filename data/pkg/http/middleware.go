@@ -1,14 +1,15 @@
 package http
 
 import (
-	"github.com/WLM1ke/poptimizer/data/pkg/log"
-	"github.com/go-chi/chi/middleware"
 	"net/http"
 	"time"
+
+	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
+	"github.com/go-chi/chi/middleware"
 )
 
 // Middleware реализует логирование запроса.
-func Middleware(logger *log.Logger) func(http.Handler) http.Handler {
+func Middleware(logger *lgr.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		handlerFunc := func(writer http.ResponseWriter, request *http.Request) {
 			writerWithStats := middleware.NewWrapResponseWriter(writer, request.ProtoMajor)
