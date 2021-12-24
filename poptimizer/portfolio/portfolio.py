@@ -15,9 +15,10 @@ from poptimizer.dl.features import data_params
 VALUE_REL_TOL = 2.0e-4
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
-LIQUIDITY_DAYS = int((config.HISTORY_DAYS_MIN + data_params.FORECAST_DAYS) * 1.8)
+LIQUIDITY_DAYS = int((config.HISTORY_DAYS_MIN + data_params.FORECAST_DAYS) * 1.4)
 
 LOGGER = logging.getLogger()
+
 
 class Portfolio:
     """Основные количественные и стоимостные характеристики портфеля.
@@ -150,9 +151,7 @@ class Portfolio:
         try:
             price = price.loc[self.date]
         except KeyError:
-            raise config.POptimizerError(
-                f"Для даты {self._date.date()} отсутствуют исторические " f"котировки"
-            )
+            raise config.POptimizerError(f"Для даты {self._date.date()} отсутствуют исторические " f"котировки")
         price[CASH] = 1
         price[PORTFOLIO] = (self.shares[:-1] * price).sum(axis=0)
         price.name = "PRICE"
