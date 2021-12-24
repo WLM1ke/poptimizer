@@ -25,7 +25,10 @@ from poptimizer.dl.models.wave_net import GradientsError, ModelError
 LLH_DRAW_DOWN = 1
 
 # Максимальный размер документа в MongoDB
-MAX_SIZE: Final = 2 * (2 ** 10) ** 2
+MAX_DOC_SIZE: Final = 2 * (2 ** 10) ** 2
+
+# Максимальный размер батча GB
+MAX_BATCH_SIZE: Final = 197
 
 DAY_IN_SECONDS: Final = 24 * 60 ** 2
 
@@ -203,7 +206,7 @@ class Model:
         model_type = getattr(models, self._phenotype["type"])
         model = model_type(loader.history_days, loader.features_description, **self._phenotype["model"])
 
-        if (n_par := sum(tensor.numel() for tensor in model.parameters())) > MAX_SIZE:
+        if (n_par := sum(tensor.numel() for tensor in model.parameters())) > MAX_DOC_SIZE:
             raise TooLargeModelError(f"Очень много параметров: {n_par}")
 
         return model
@@ -242,6 +245,10 @@ class Model:
         modules = sum(1 for _ in model.modules())
         model_params = sum(tensor.numel() for tensor in model.parameters())
         LOGGER.info(f"Количество слоев / параметров - {modules} / {model_params}")
+
+        batch_size = (model_params * 4) * self._phenotype["data"]["batch_size"] / (2 ** 10) ** 3
+        if batch_size > MAX_BATCH_SIZE:
+            raise TooLargeModelError(f"Размер батча {batch_size} > {MAX_BATCH_SIZE}Gb")
 
         llh_sum = 0
         llh_deque = collections.deque([0], maxlen=steps_per_epoch)
