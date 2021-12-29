@@ -348,7 +348,7 @@ def _print_wins_stats() -> None:
     wins = list(db_find(**request))
     max_wins = None
     if wins:
-        max_wins, *_ = wins
+        max_wins = wins[0]
         max_wins = max_wins["wins"]
 
     LOGGER.info(
