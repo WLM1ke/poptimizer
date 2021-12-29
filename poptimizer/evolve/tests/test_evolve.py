@@ -8,19 +8,19 @@ def test_setup_needed(mocker):
     fake_population = mocker.patch.object(evolve, "population")
     fake_population.count.return_value = 0
 
-    ev = evolve.Evolution(initial_population=4)
+    ev = evolve.Evolution()
 
     ev._setup()
 
-    assert fake_population.create_new_organism.call_count == 4
+    assert fake_population.create_new_organism.call_count == 1
 
 
 def test_setup_not_needed(mocker):
     """Если организмов достаточно, то они не создаются."""
     fake_population = mocker.patch.object(evolve, "population")
-    fake_population.count.return_value = 4
+    fake_population.count.return_value = 1
 
-    ev = evolve.Evolution(initial_population=4)
+    ev = evolve.Evolution()
 
     ev._setup()
 
