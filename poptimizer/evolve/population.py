@@ -193,7 +193,10 @@ def create_new_organism() -> Organism:
 
 
 def _get_parents() -> tuple[Organism, Organism]:
-    """Получить родителей с разным генотипом."""
+    """Получить родителей.
+
+    Если популяция меньше 2 организмов, то используются два организма с базовыми случайными генотипами.
+    """
     collection = store.get_collection()
 
     pipeline = [
@@ -201,7 +204,12 @@ def _get_parents() -> tuple[Organism, Organism]:
         {"$sample": {"size": 2}},
     ]
 
-    return tuple(Organism(**doc) for doc in collection.aggregate(pipeline))
+    parents = tuple(Organism(**doc) for doc in collection.aggregate(pipeline))
+
+    if len(parents) == 2:
+        return parents[0], parents[1]
+
+    return Organism(), Organism()
 
 
 def _aggregate_oldest(limit: int, first_step: Optional[dict] = None):
