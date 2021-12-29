@@ -218,7 +218,7 @@ def _aggregate_oldest(limit: int, first_step: Optional[dict] = None):
     При наличии добавляет первый шаг агрегации.
     """
     pipeline = [
-        {"$project": {"ir": True, "llh": True, "date": True}},
+        {"$project": {"ir": True, "llh": True, "date": True, "timer": True}},
         {"$sort": {"_id": pymongo.ASCENDING}},
         {"$limit": limit},
     ]
