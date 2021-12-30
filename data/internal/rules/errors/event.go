@@ -1,20 +1,22 @@
-package events
+package errors
 
-// Err - событие ошибки при обновлении таблицы.
+import "github.com/WLM1ke/poptimizer/data/internal/rules/events"
+
+// Err - событие-ошибка при обновлении таблицы.
 //
 // Содержит ее id и ошибку.
 type Err struct {
-	id  ID
+	id  events.ID
 	err error
 }
 
 // NewErr создает новое событие ошибки.
-func NewErr(id ID, err error) *Err {
+func NewErr(id events.ID, err error) *Err {
 	return &Err{id: id, err: err}
 }
 
 // ID таблицы, при обновлении которой произошла ошибка.
-func (e Err) ID() ID {
+func (e Err) ID() events.ID {
 	return e.id
 }
 

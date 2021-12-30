@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/WLM1ke/poptimizer/data/internal/events"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/events"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 )
 
@@ -36,8 +37,12 @@ type EventBus struct {
 	wg sync.WaitGroup
 }
 
-// NewEventBus создает шину событий.
-func NewEventBus(logger *lgr.Logger, rules ...Rule) *EventBus {
+// NewEventBus создает шину событий со всеми правилами обработки событий.
+func NewEventBus(logger *lgr.Logger) *EventBus {
+	rules := []Rule{
+		errors.New(logger),
+	}
+
 	return &EventBus{
 		logger:    logger,
 		rules:     rules,
