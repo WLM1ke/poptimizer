@@ -42,6 +42,7 @@ positions:
   DIS-RM: 0
   DSKY: 0
   EA-RM: 0
+  EBAY-RM: 0
   EELT: 0
   ENPG: 0
   ENRU: 0
@@ -99,7 +100,6 @@ positions:
   MCD-RM: 0
   MDMG: 0
   MGNT: 0
-  MGTS: 0
   MGTSP: 0
   MOEX: 0
   MRKC: 0
@@ -109,6 +109,7 @@ positions:
   MRKV: 0
   MRKY: 0
   MRKZ: 0
+  MRNA-RM: 0
   MRSB: 0
   MSFT-RM: 0
   MSNG: 0
