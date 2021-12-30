@@ -248,7 +248,7 @@ class Model:
 
         batch_size = (model_params * 4) * self._phenotype["data"]["batch_size"] / (2 ** 10) ** 3
         if batch_size > MAX_BATCH_SIZE:
-            raise TooLargeModelError(f"Размер батча {batch_size} > {MAX_BATCH_SIZE}Gb")
+            raise TooLargeModelError(f"Размер батча {batch_size:.0f} > {MAX_BATCH_SIZE}Gb")
 
         llh_sum = 0
         llh_deque = collections.deque([0], maxlen=steps_per_epoch)

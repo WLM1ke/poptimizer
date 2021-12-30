@@ -48,9 +48,7 @@ class SubBlock(nn.Module):
             kernel_size=kernels,
             stride=1,
         )
-        self.output_conv = nn.Conv1d(
-            in_channels=gate_channels, out_channels=residual_channels, kernel_size=1
-        )
+        self.output_conv = nn.Conv1d(in_channels=gate_channels, out_channels=residual_channels, kernel_size=1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -112,9 +110,7 @@ class Block(nn.Module):
                     residual_channels=residual_channels,
                 )
             )
-        self.skip_convs = nn.Conv1d(
-            in_channels=residual_channels, out_channels=skip_channels, kernel_size=1
-        )
+        self.skip_convs = nn.Conv1d(in_channels=residual_channels, out_channels=skip_channels, kernel_size=1)
         self.dilated_pad = nn.ConstantPad1d(padding=(1, 0), value=0.0)
         self.dilated_convs = nn.Conv1d(
             in_channels=residual_channels,
@@ -208,13 +204,9 @@ class WaveNet(nn.Module):
             if feature_type is FeatureType.SEQUENCE:
                 sequence_count += 1
             if feature_type is FeatureType.EMBEDDING_SEQUENCE:
-                self.embedding_seq_dict[key] = nn.Embedding(
-                    num_embeddings=size, embedding_dim=residual_channels
-                )
+                self.embedding_seq_dict[key] = nn.Embedding(num_embeddings=size, embedding_dim=residual_channels)
             if feature_type is FeatureType.EMBEDDING:
-                self.embedding_dict[key] = nn.Embedding(
-                    num_embeddings=size, embedding_dim=residual_channels
-                )
+                self.embedding_dict[key] = nn.Embedding(num_embeddings=size, embedding_dim=residual_channels)
 
         if start_bn:
             self.bn = nn.BatchNorm1d(sequence_count)
@@ -241,9 +233,7 @@ class WaveNet(nn.Module):
                 )
             )
 
-        self.final_skip_conv = nn.Conv1d(
-            in_channels=residual_channels, out_channels=skip_channels, kernel_size=1
-        )
+        self.final_skip_conv = nn.Conv1d(in_channels=residual_channels, out_channels=skip_channels, kernel_size=1)
 
         self.end_conv = nn.Conv1d(in_channels=skip_channels, out_channels=end_channels, kernel_size=1)
 
@@ -336,8 +326,8 @@ class WaveNet(nn.Module):
 
         try:
             weights_dist = distributions.Categorical(logits=logits)
-        except ValueError as err:
-            raise GradientsError(f"Ошибка при обновлении градиентов: {err}")
+        except ValueError:
+            raise GradientsError(f"Ошибка при обновлении градиентов: NaN in Categorical distribution")
 
         comp_dist = distributions.LogNormal(mean, std)
 
