@@ -12,7 +12,15 @@ STD = pd.Series([0.15, 0.25, 0.35], index=list(TICKERS))
 
 
 def test_forecast():
-    data = forecast.Forecast(tickers=TICKERS, date=DATE, history_days=30, mean=MEAN, std=STD)
+    data = forecast.Forecast(
+        tickers=TICKERS,
+        date=DATE,
+        history_days=30,
+        mean=MEAN,
+        std=STD,
+        risk_aversion=1.1,
+        error_tolerance=0.2,
+    )
 
     assert data.cov.shape == (3, 3)
     assert np.allclose(np.diag(data.cov), STD.values ** 2)

@@ -44,6 +44,7 @@ PREPARE_CASES = (
             columns=COLUMNS,
         ),
         pd.DataFrame(
+            index=pd.Index([], name=col.DATE),
             columns=COLUMNS,
         ),
         pd.DataFrame(

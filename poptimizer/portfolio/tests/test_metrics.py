@@ -24,6 +24,8 @@ def make_metrics():
     fake_forecast = SimpleNamespace()
     fake_forecast.mean = mean
     fake_forecast.cov = cov
+    fake_forecast.risk_aversion = 1
+    fake_forecast.error_tolerance = 0
     # noinspection PyTypeChecker
     yield metrics.MetricsSingle(port, fake_forecast)
 
@@ -71,7 +73,7 @@ class TestMetricsSingle:
         """Проверка значений метрики."""
         sharpe = single.r_adj
         assert isinstance(sharpe, pd.Series)
-        assert sharpe.name == "R_GEOM"
+        assert sharpe.name == "R_ADJ"
         assert len(sharpe) == 5
         assert sharpe["BSPB"] == pytest.approx(0.08810069206524088)
         assert sharpe["FESH"] == pytest.approx(0.0689255960895227)
@@ -124,6 +126,8 @@ def make_resample():
                 history_days=1,
                 cor=0.4,
                 shrinkage=0.3,
+                risk_aversion=1,
+                error_tolerance=0,
             ),
             SimpleNamespace(
                 mean=mean2,
@@ -131,6 +135,8 @@ def make_resample():
                 history_days=2,
                 cor=0.5,
                 shrinkage=0.2,
+                risk_aversion=1,
+                error_tolerance=0,
             ),
         )
 
@@ -186,7 +192,7 @@ class TestMetricsResample:
         """Проверка метрики, в том числе значения для кэша."""
         sharpe = resample.r_adj
         assert isinstance(sharpe, pd.Series)
-        assert sharpe.name == "R_GEOM"
+        assert sharpe.name == "R_ADJ"
         assert len(sharpe) == 4
         assert sharpe["BSPB"] == pytest.approx(0.055987097298463726)
         assert sharpe["FESH"] == pytest.approx(0.07795604209192372)
