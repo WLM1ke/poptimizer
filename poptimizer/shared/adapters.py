@@ -58,11 +58,9 @@ EntityType = TypeVar("EntityType", bound=domain.BaseEntity)
 class Mapper(Generic[EntityType]):
     """Сохраняет и загружает доменные объекты из MongoDB."""
 
-    _identity_map: ClassVar[
-        MutableMapping[
-            domain.ID,
-            EntityType,
-        ]
+    _identity_map: MutableMapping[
+        domain.ID,
+        EntityType,
     ] = weakref.WeakValueDictionary()
     _logger = AsyncLogger()
 
