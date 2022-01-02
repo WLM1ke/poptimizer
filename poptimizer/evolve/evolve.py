@@ -58,7 +58,7 @@ class Evolution:  # noqa: WPS214
             population.print_stat()
 
             scale = 1 / self._scale
-            jump = self._jump / self._scale
+            jump = self._jump
             self._logger.info(f"Scale - {scale:.2%} / Jump - {jump:.2%}\n")  # noqa: WPS221
 
             current = self._step(current)
@@ -129,15 +129,16 @@ class Evolution:  # noqa: WPS214
 
         label = "Старый"
         sign = "<"
-        if (min_margin := -self._jump / self._scale) < delta:
+        if (min_margin := -self._jump) < delta:
             self._jump = 0
             hunter = prey
             label = "Новый"
             sign = ">"
 
-        self._jump += 1
         if prey_margin < 0:
             self._scale += 1
+
+        self._jump += 1 / self._scale
 
         self._logger.info(f"{label} родитель - delta={delta:.2%} {sign} {min_margin:.2%}\n")  # noqa: WPS221
 
