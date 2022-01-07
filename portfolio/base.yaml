@@ -33,6 +33,7 @@ positions:
   CBOM: 0
   CHMF: 0
   CHMK: 0
+  CMCSA-RM: 0
   CNTL: 0
   CNTLP: 0
   CRM-RM: 0
@@ -68,6 +69,7 @@ positions:
   GM-RM: 0
   GMKN: 0
   GOOG-RM: 0
+  GPS-RM: 0
   GTRK: 0
   HHRU: 0
   HIMCP: 0
@@ -90,6 +92,7 @@ positions:
   KZOS: 0
   LIFE: 0
   LKOH: 0
+  LNTA: 0
   LNZL: 0
   LNZLP: 0
   LSNG: 0
@@ -178,7 +181,6 @@ positions:
   TCSG: 0
   TGKA: 0
   TGKB: 0
-  TGKBP: 0
   TGKD: 0
   TGKN: 0
   TGT-RM: 0
