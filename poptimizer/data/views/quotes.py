@@ -28,14 +28,14 @@ def prices(
     :return:
         Цены закрытия.
     """
-    df = _prices(tickers, price_type)
+    df = all_prices(tickers, price_type)
     df = df.loc[:last_date]
     df.columns = tickers
 
     return df.replace(to_replace=[np.nan, 0], method="ffill")
 
 
-def _prices(tickers: tuple[str, ...], price_type: col.PriceType = col.CLOSE) -> pd.DataFrame:
+def all_prices(tickers: tuple[str, ...], price_type: col.PriceType = col.CLOSE) -> pd.DataFrame:
     quotes_list = not_div.quotes(tickers)
 
     return pd.concat(

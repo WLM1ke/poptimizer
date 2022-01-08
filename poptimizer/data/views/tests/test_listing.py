@@ -13,6 +13,21 @@ def test_last_history_date():
     assert date > pd.Timestamp.now() - pd.DateOffset(days=10)
 
 
+ALL_HISTORY_CASES = (
+    (("AKRN", "GAZP"), "2021-12-30", "2022-01-07", 5),
+    (("AKRN", "GAZP"), "2021-12-31", "2022-01-07", 4),
+    (("AKRN", "GAZP", "T-RM"), "2021-12-30", "2022-01-07", 6),
+    (("AKRN", "GAZP", "T-RM"), "2021-12-31", "2022-01-07", 5),
+)
+
+
+@pytest.mark.parametrize("tickers, start, end, len_", ALL_HISTORY_CASES)
+def test_all_history_date(tickers, start, end, len_):
+    dates = listing.all_history_date(tickers, start=start, end=end)
+    assert isinstance(dates, pd.Index)
+    assert len(dates) == len_
+
+
 def test_securities_with_reg_number():
     """Проверка типа, количества и присутствия ДР."""
     securities = listing.securities()
