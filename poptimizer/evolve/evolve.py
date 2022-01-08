@@ -8,7 +8,7 @@ from typing import Optional
 import numpy as np
 
 from poptimizer import config
-from poptimizer.data.views import indexes, listing
+from poptimizer.data.views import listing
 from poptimizer.dl import ModelError
 from poptimizer.evolve import population, seq
 from poptimizer.portfolio.portfolio import load_tickers
@@ -76,7 +76,7 @@ class Evolution:  # noqa: WPS214
             self._tickers = load_tickers()
             org = self._next_org()
 
-        dates = indexes.mcftrr(listing.last_history_date()).loc[self._end :].index
+        dates = listing.all_history_date(self._tickers, start=self._end)
         if (d_min != d_max) or (len(dates) == 1):
             return step + 1, org
 
@@ -169,8 +169,8 @@ class Evolution:  # noqa: WPS214
             # generations_count тестов, поэтому 2 сокращается.
             alfa = config.P_VALUE / population.generations_count()
             bounding_n = seq.minimum_bounding_n(alfa)
-            dates = indexes.mcftrr(listing.last_history_date()).loc[: self._end]
-            dates = dates.index[-bounding_n:].tolist()
+            dates = listing.all_history_date(self._tickers, end=self._end)
+            dates = dates[-bounding_n:].tolist()
 
         for date in dates:
             try:
