@@ -5,18 +5,20 @@ from typing import Generator, Tuple
 
 import pandas as pd
 
-import poptimizer.data.views.quotes
 from poptimizer import config
+from poptimizer.data.views import quotes
 
 FORECAST_DAYS = config.FORECAST_DAYS
 
 
 def div_price_train_size(
-    tickers: Tuple[str, ...], end: pd.Timestamp
+    tickers: Tuple[str, ...],
+    end: pd.Timestamp,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, int]:
     """Данные по дивидендам, ценам и количество дней в тренировочном наборе."""
-    div, price = poptimizer.data.views.quotes.div_and_prices(tickers, end)
+    div, price = quotes.div_and_prices(tickers, end)
     train_size = len(price) - FORECAST_DAYS
+
     return div, price, train_size
 
 
@@ -45,20 +47,12 @@ class DataParams(abc.ABC):
         self._end = end
         self._params = copy.deepcopy(params)
         div, price = self._div_price(tickers, end)
-        self._div = dict()
-        self._price = dict()
+        self._div = {}
+        self._price = {}
         for ticker in tickers:
             start = price[ticker].first_valid_index()
             self._div[ticker] = div.loc[start:, ticker]
             self._price[ticker] = price.loc[start:, ticker]
-
-    @abc.abstractmethod
-    def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """Данные о дивидендах и стоимости акций для указанных тикеров и конечной даты.
-
-        Метод должен реализовывать необходимую обрезку с учетом конкретного класса - для обучения,
-        валидации, тестирования или тренировки. При необходимости изменять параметры.
-        """
 
     @property
     def cache(self) -> dict:
@@ -95,13 +89,19 @@ class DataParams(abc.ABC):
         return self._params["batch_size"]
 
     def price(self, ticker: str) -> pd.Series:
-        """Цены для тикера и диапазона дат, которых будут использоваться для построения признаков,
-        с учетом возможного отсутствия котировок в начале."""
+        """Цены для тикера.
+
+        Обрезаются с учетом диапазона дат, который будет использоваться для построения признаков, с учетом возможного
+        отсутствия котировок в начале.
+        """
         return self._price[ticker]
 
     def div(self, ticker: str) -> pd.Series:
-        """Дивиденды для тикера и диапазона дат, которых будут использоваться для построения
-        признаков, с учетом возможного отсутствия котировок в начале."""
+        """Дивиденды для тикера.
+
+        Обрезаются с учетом диапазона дат, который будет использоваться для построения признаков, с учетом возможного
+        отсутствия котировок в начале.
+        """
         return self._div[ticker]
 
     def len(self, ticker) -> int:
@@ -116,31 +116,40 @@ class DataParams(abc.ABC):
         """Получить параметры для признака."""
         return self._params["features"][feat_name]
 
+    @abc.abstractmethod
+    def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """Данные о дивидендах и стоимости акций для указанных тикеров и конечной даты.
+
+        Метод должен реализовывать необходимую обрезку с учетом конкретного класса - для обучения,
+        валидации, тестирования или тренировки. При необходимости изменять параметры.
+        """
+
 
 class TrainParams(DataParams):
     """Используются признаки, как есть для начальной части семпла."""
-
-    def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        div, price, train_size = div_price_train_size(tickers, end)
-        div = div.iloc[:train_size]
-        price = price.iloc[:train_size]
-        return div, price
 
     @property
     def shuffle(self):
         """Нужно перемешивать данные."""
         return True
 
+    def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        div, price, train_size = div_price_train_size(tickers, end)
+        div = div.iloc[:train_size]
+        price = price.iloc[:train_size]
+
+        return div, price
+
 
 class TestParams(DataParams):
-    """Метки имеют длину 1 день в независимости от реального значения параметров для конечной части
-    семпла, чтобы метки не пересекались с TRAIN."""
+    """Параметры для тестирования."""
 
     def _div_price(self, tickers, end) -> Tuple[pd.DataFrame, pd.DataFrame]:
         history_days = self.history_days
         div, price, train_size = div_price_train_size(tickers, end)
         div = div.iloc[train_size - history_days :]
         price = price.iloc[train_size - history_days :]
+
         return div, price
 
 
@@ -156,5 +165,6 @@ class ForecastParams(DataParams):
         div, price, train_size = div_price_train_size(tickers, end)
         div = div.iloc[-history_days:]
         price = price.iloc[-history_days:]
-        del self._params["features"]["Label"]
+        self._params["features"].pop("Label")
+
         return div, price
