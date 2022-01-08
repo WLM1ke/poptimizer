@@ -28,14 +28,20 @@ def prices(
     :return:
         Цены закрытия.
     """
+    df = _prices(tickers, price_type)
+    df = df.loc[:last_date]
+    df.columns = tickers
+
+    return df.replace(to_replace=[np.nan, 0], method="ffill")
+
+
+def _prices(tickers: tuple[str, ...], price_type: col.PriceType = col.CLOSE) -> pd.DataFrame:
     quotes_list = not_div.quotes(tickers)
-    df = pd.concat(
+
+    return pd.concat(
         [df[price_type] for df in quotes_list],
         axis=1,
     )
-    df = df.loc[:last_date]
-    df.columns = tickers
-    return df.replace(to_replace=[np.nan, 0], method="ffill")
 
 
 @functools.lru_cache(maxsize=1)
@@ -94,4 +100,5 @@ def div_and_prices(
     div_data.index = div_data.index.map(functools.partial(_t2_shift, index=price.index))
     # Может образоваться несколько одинаковых дат, если часть дивидендов приходится на выходные
     div_data = div_data.groupby(by=lambda date: date).sum()
+
     return div_data.reindex(index=price.index, fill_value=0), price
