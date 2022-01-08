@@ -1,4 +1,4 @@
-package handler
+package api
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// GetBSON основной обработчик отдающий данные в формате BSON.
+// GetBSON основной обработчик отдающий данные в формате BSON для http-сервера.
 func GetBSON() http.Handler {
 	router := chi.NewRouter()
 	router.Get("/{group}/{name}", func(w http.ResponseWriter, r *http.Request) {
