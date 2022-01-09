@@ -18,19 +18,17 @@ type tableDAO [R]struct {
 }
 
 func NewTableDAO[R comparable](table domain.Table[R]) tableDAO[R] {
-	return tableDAO{
-		Name: table.Name,
-		Date: table.Date,
+	return tableDAO[R]{
+		Name: table.Name(),
+		Date: table.Date(),
 		Rows: table.Rows,
 	}
 }
 
-func (d tableDAO[R]) toTable(group domain.Group) domain.Table[R] {
-	return domain.Table{
-		Group: group,
-		Name:  d.Name,
-		Date:  d.Date,
-		Rows:  d.Rows,
+func (d tableDAO[R]) toTable(id domain.ID) domain.Table[R] {
+	return domain.Table[R]{
+		Version: domain.NewVersion(id, d.Date),
+		Rows:    d.Rows,
 	}
 }
 
@@ -50,29 +48,29 @@ func NewMongo[R comparable](db *mongo.Database) *Mongo[R] {
 func (r *Mongo[R]) Get(ctx context.Context, id domain.ID) (domain.Table[R], error) {
 	var dao tableDAO[R]
 
-	collection := r.db.Collection(string(id.Group))
-	err := collection.FindOne(ctx, bson.M{"_id": string(id.Name)}).Decode(&dao)
+	collection := r.db.Collection(string(id.Group()))
+	err := collection.FindOne(ctx, bson.M{"_id": string(id.Name())}).Decode(&dao)
 
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
 		return nil, fmt.Errorf(
 			"%w: %s", ErrTableNotFound, id)
 	case err != nil:
-		return nil, fmt.Errorf("%w: %s - %s", ErrInternal, id, err)
+		return nil, fmt.Errorf("%w: %#v - %s", ErrInternal, id, err)
 	}
 
-	return dao.toTable(id.Group), nil
+	return dao.toTable(id), nil
 }
 
 // Replace перезаписывает таблицу.
 func (r *Mongo[R]) Replace(ctx context.Context, table domain.Table[R]) error {
-	collection := r.db.Collection(string(table.Group))
+	collection := r.db.Collection(string(table.Group()))
 
 	filter := bson.M{"_id": table.Name}
 	update := bson.M{"$set": bson.M{"rows": table.Rows, "date": table.Date}}
 
 	if _, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
-		return fmt.Errorf("%w: %s - %s", ErrTableUpdate, table.ID, err)
+		return fmt.Errorf("%w: %#v - %s", ErrTableUpdate, table, err)
 	}
 
 	return nil
@@ -80,13 +78,13 @@ func (r *Mongo[R]) Replace(ctx context.Context, table domain.Table[R]) error {
 
 // Append добавляет строки в конец таблицы.
 func (r *Mongo[R]) Append(ctx context.Context, table domain.Table[R]) error {
-	collection := r.db.Collection(string(table.Group))
+	collection := r.db.Collection(string(table.Group()))
 
 	filter := bson.M{"_id": table.Name}
 	update := bson.M{"$push": bson.M{"rows": bson.M{"$each": table.Rows}}}
 
 	if _, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
-		return fmt.Errorf("%w: %s - %s", ErrTableUpdate, err, table.ID)
+		return fmt.Errorf("%w: %#v - %s", ErrTableUpdate, table, err)
 	}
 
 	return nil
@@ -94,7 +92,7 @@ func (r *Mongo[R]) Append(ctx context.Context, table domain.Table[R]) error {
 
 // GetJSON загружает ExtendedJSON представление таблицы.
 func (r *Mongo[R]) GetJSON(ctx context.Context, id domain.ID) ([]byte, error) {
-	collection := r.db.Collection(string(id.Group))
+	collection := r.db.Collection(string(id.Group()))
 
 	projections := options.FindOne().SetProjection(bson.M{"_id": 0, "rows": 1, "date": 1})
 
@@ -103,12 +101,12 @@ func (r *Mongo[R]) GetJSON(ctx context.Context, id domain.ID) ([]byte, error) {
 	case errors.Is(err, mongo.ErrNoDocuments):
 		return nil, fmt.Errorf("%w: %s", ErrTableNotFound, id)
 	case err != nil:
-		return nil, fmt.Errorf("%w: %s - %s", ErrInternal, id, err)
+		return nil, fmt.Errorf("%w: %#v - %s", ErrInternal, id, err)
 	}
 
 	json, err := bson.MarshalExtJSON(raw, true, true)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s - %s", ErrInternal, id, err)
+		return nil, fmt.Errorf("%w: %#v - %s", ErrInternal, id, err)
 	}
 
 	return json, nil
