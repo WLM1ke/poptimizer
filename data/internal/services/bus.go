@@ -1,4 +1,4 @@
-package bus
+package services
 
 import (
 	"context"
@@ -29,7 +29,9 @@ type EventBus struct {
 
 // NewEventBus создает шину событий со всеми правилами обработки событий.
 func NewEventBus(logger *lgr.Logger) *EventBus {
-	rules := []domain.Rule{}
+	rules := []domain.Rule{
+		NewErrorsRule(logger),
+	}
 
 	return &EventBus{
 		logger:    logger,
