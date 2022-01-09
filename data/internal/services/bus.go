@@ -9,6 +9,8 @@ import (
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 )
 
+const _timeFormat = "2006-01-02"
+
 // errUnprocessedEvent ошибка связанная с наличием необработанных ошибок в момент завершения работы шины событий.
 var errUnprocessedEvent = fmt.Errorf("unprocessed event")
 
@@ -31,6 +33,7 @@ type EventBus struct {
 func NewEventBus(logger *lgr.Logger) *EventBus {
 	rules := []domain.Rule{
 		NewErrorsRule(logger),
+		NewTickerRule(logger),
 	}
 
 	return &EventBus{
@@ -64,16 +67,17 @@ func (b *EventBus) Run(ctx context.Context) error {
 
 func (b *EventBus) activateConsumers() {
 	for _, rule := range b.rules {
+		rule := rule
 		consumer := make(chan domain.Event)
 		b.consumers = append(b.consumers, consumer)
 
 		b.wg.Add(1)
 
-		go func(rule domain.Rule) {
+		go func() {
 			defer b.wg.Done()
 
 			rule.Activate(consumer, b.inbox)
-		}(rule)
+		}()
 	}
 }
 
@@ -97,7 +101,12 @@ func (b *EventBus) formInboxToBroadcast(ctx context.Context) {
 
 			return
 		case event := <-b.inbox:
-			b.logger.Infof("EventBus: %v", event)
+			b.logger.Infof(
+				"EventBus: processing Event(%s, %s, %s)",
+				event.Group(),
+				event.Name(),
+				event.Date().UTC().Format(_timeFormat),
+			)
 			b.broadcast <- event
 		}
 	}
@@ -110,7 +119,7 @@ func (b *EventBus) drainUnprocessedEvents(inbox <-chan domain.Event) (count int)
 	}()
 
 	for event := range inbox {
-		b.logger.Warnf("EventBus: unprocessed %v", event)
+		b.logger.Warnf("EventBus: unprocessed %#v", event)
 		count++
 	}
 

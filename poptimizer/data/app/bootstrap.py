@@ -1,4 +1,4 @@
-"""Запуск приложения - инициализация event bus и viewer."""
+"""Запуск приложения - инициализация event services и viewer."""
 import datetime
 from typing import Final, Tuple
 
