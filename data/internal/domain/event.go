@@ -1,25 +1,31 @@
 package domain
 
+import "time"
+
 // Event - событие, произошедшее во время работы программы.
 type Event interface {
 	Version
 }
 
-// TableUpdated - событие удачного обновления таблицы.
-type TableUpdated struct {
+// UpdateCompleted - событие удачного обновления таблицы.
+type UpdateCompleted struct {
 	Version
 }
 
-func NewTableUpdated(ver Version) TableUpdated {
-	return TableUpdated{Version: ver}
+func NewUpdateCompleted(ver Version) UpdateCompleted {
+	return UpdateCompleted{Version: ver}
 }
 
-// UpdatedErrHappened - событие неудачного обновления таблицы.
-type UpdatedErrHappened struct {
+func NewUpdateCompletedFromID(id ID, time time.Time) UpdateCompleted {
+	return UpdateCompleted{Version: NewVersion(id, time)}
+}
+
+// ErrorOccurred - событие неудачного обновления таблицы.
+type ErrorOccurred struct {
 	Version
 	Err error
 }
 
-func NewUpdatedErrHappened(ver Version, err error) UpdatedErrHappened {
-	return UpdatedErrHappened{Version: ver, Err: err}
+func NewErrorOccurred(ver Version, err error) ErrorOccurred {
+	return ErrorOccurred{Version: ver, Err: err}
 }

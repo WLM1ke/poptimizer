@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/timer"
 	"sync"
 
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
@@ -32,8 +34,8 @@ type EventBus struct {
 // NewEventBus создает шину событий со всеми правилами обработки событий.
 func NewEventBus(logger *lgr.Logger) *EventBus {
 	rules := []domain.Rule{
-		NewErrorsRule(logger),
-		NewTickerRule(logger),
+		errors.New(logger),
+		timer.New(logger),
 	}
 
 	return &EventBus{
@@ -102,7 +104,8 @@ func (b *EventBus) formInboxToBroadcast(ctx context.Context) {
 			return
 		case event := <-b.inbox:
 			b.logger.Infof(
-				"EventBus: processing Event(%s, %s, %s)",
+				"EventBus: processing %T(%s, %s, %s)",
+				event,
 				event.Group(),
 				event.Name(),
 				event.Date().UTC().Format(_timeFormat),
@@ -119,7 +122,12 @@ func (b *EventBus) drainUnprocessedEvents(inbox <-chan domain.Event) (count int)
 	}()
 
 	for event := range inbox {
-		b.logger.Warnf("EventBus: unprocessed %#v", event)
+		b.logger.Warnf(
+			"EventBus: unprocessed %T(%s, %s, %s)", event,
+			event.Group(),
+			event.Name(),
+			event.Date().UTC().Format(_timeFormat),
+		)
 		count++
 	}
 
