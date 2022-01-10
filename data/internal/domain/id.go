@@ -28,3 +28,7 @@ func (id id) Group() Group {
 func (id id) Name() Name {
 	return id.name
 }
+
+func CompareID(id1, id2 ID) bool {
+	return (id1.Group() == id2.Group()) && (id1.Name() == id2.Name())
+}
