@@ -8,7 +8,7 @@ import (
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 )
 
-const _logInterval = time.Minute
+const _logInterval = time.Hour
 
 // GoroutineCounter - сервис, который выводит текуще количество горутин.
 type GoroutineCounter struct {
