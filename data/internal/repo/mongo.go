@@ -11,13 +11,13 @@ import (
 	"time"
 )
 
-type tableDAO [R]struct {
+type tableDAO [R any]struct {
 	Name domain.Name `bson:"_id"`
 	Date time.Time   `bson:"date"`
 	Rows []R         `bson:"rows"`
 }
 
-func NewTableDAO[R comparable](table domain.Table[R]) tableDAO[R] {
+func NewTableDAO[R any](table domain.Table[R]) tableDAO[R] {
 	return tableDAO[R]{
 		Name: table.Name(),
 		Date: table.Date(),
@@ -33,12 +33,12 @@ func (d tableDAO[R]) toTable(id domain.ID) domain.Table[R] {
 }
 
 // Mongo обеспечивает хранение и загрузку таблиц.
-type Mongo[R comparable] struct {
+type Mongo[R any] struct {
 	db *mongo.Database
 }
 
 // NewMongo - создает новый репозиторий на основе MongoDB.
-func NewMongo[R comparable](db *mongo.Database) *Mongo[R] {
+func NewMongo[R any](db *mongo.Database) *Mongo[R] {
 	return &Mongo[R]{
 		db: db,
 	}

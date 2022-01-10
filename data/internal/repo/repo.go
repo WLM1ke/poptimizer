@@ -13,19 +13,19 @@ var (
 )
 
 // Read осуществляет загрузку таблиц.
-type Read[R comparable] interface {
+type Read[R any] interface {
 	// Get загружает таблицу.
 	Get(ctx context.Context, id domain.ID) (domain.Table[R], error)
 }
 
 // ReadJSON осуществляет загрузку таблицы в виде ExtendedJSON.
-type ReadJSON[R comparable] interface {
+type ReadJSON[R any] interface {
 	// GetJSON загружает ExtendedJSON представление таблицы.
 	GetJSON(ctx context.Context, id domain.ID) ([]byte, error)
 }
 
 // ReadWrite осуществляет загрузку и сохранение таблиц.
-type ReadWrite[R comparable] interface {
+type ReadWrite[R any] interface {
 	Read[R]
 	// Replace перезаписывает таблицу.
 	Replace(ctx context.Context, table domain.Table[R]) error
