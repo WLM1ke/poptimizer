@@ -6,6 +6,8 @@ import (
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 )
 
+const _timeFormat = "2006-01-02"
+
 // Rule - правило обработки ошибок.
 type Rule struct {
 	logger *lgr.Logger
@@ -26,7 +28,13 @@ func (r *Rule) Activate(in <-chan domain.Event, _ chan<- domain.Event) {
 	for event := range in {
 		event, ok := event.(domain.ErrorOccurred)
 		if ok {
-			r.logger.Panicf("Rule: %#v", event)
+			r.logger.Panicf(
+				"ErrorRule: error %s with ID(%s, %s, %s)",
+				event.Err,
+				event.Group(),
+				event.Name(),
+				event.Date().UTC().Format(_timeFormat),
+			)
 		}
 	}
 }
