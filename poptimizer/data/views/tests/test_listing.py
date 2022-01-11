@@ -5,14 +5,6 @@ import pytest
 from poptimizer.data.views import listing
 
 
-def test_last_history_date():
-    """Проверка на тип и относительную корректность результата."""
-    date = listing.last_history_date()
-    assert isinstance(date, pd.Timestamp)
-    assert date < pd.Timestamp.now()
-    assert date > pd.Timestamp.now() - pd.DateOffset(days=10)
-
-
 ALL_HISTORY_CASES = (
     (("AKRN", "GAZP"), "2021-12-30", "2022-01-07", 5),
     (("AKRN", "GAZP"), "2021-12-31", "2022-01-07", 4),

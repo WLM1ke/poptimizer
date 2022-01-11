@@ -72,8 +72,8 @@ class Evolution:  # noqa: WPS214
 
         d_min, d_max = population.min_max_date()
         if org is None:
-            self._end = d_max or listing.last_history_date()
             self._tickers = load_tickers()
+            self._end = d_max or listing.all_history_date(self._tickers)[-1]
             org = self._next_org()
 
         dates = listing.all_history_date(self._tickers, start=self._end)
