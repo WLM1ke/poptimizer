@@ -135,9 +135,8 @@ class Evolution:  # noqa: WPS214
             label = "Новый"
             sign = ">"
 
-        if prey_margin < 0:
-            self._scale += 1
-
+        self._scale += ((prey_margin < 0) - 0.5) * 2
+        self._scale = max(1, self._scale)
         self._jump += 1 / self._scale
 
         self._logger.info(f"{label} родитель - delta={delta:.2%} {sign} {min_margin:.2%}\n")  # noqa: WPS221
