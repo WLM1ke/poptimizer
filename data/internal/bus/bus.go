@@ -1,11 +1,16 @@
-package services
+// Package bus содержит реализацию шины обработки событий.
+package bus
 
 import (
 	"context"
 	"fmt"
+	"github.com/WLM1ke/gomoex"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/dates"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/timer"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/end"
+	"go.mongodb.org/mongo-driver/mongo"
 	"sync"
+	"time"
 
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
@@ -32,10 +37,11 @@ type EventBus struct {
 }
 
 // NewEventBus создает шину событий со всеми правилами обработки событий.
-func NewEventBus(logger *lgr.Logger) *EventBus {
+func NewEventBus(logger *lgr.Logger, db *mongo.Database, iss *gomoex.ISSClient, timeout time.Duration) *EventBus {
 	rules := []domain.Rule{
 		errors.New(logger),
-		timer.New(logger),
+		end.New(logger),
+		dates.New(logger, db, iss, timeout),
 	}
 
 	return &EventBus{
