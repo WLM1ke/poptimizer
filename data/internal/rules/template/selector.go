@@ -5,4 +5,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 )
 
-type Selector func(ctx context.Context, event domain.Event) ([]domain.ID, error)
+type Selector interface {
+	Select(ctx context.Context, event domain.Event) ([]domain.ID, error)
+}

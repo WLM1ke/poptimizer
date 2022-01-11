@@ -5,11 +5,11 @@ import (
 	"time"
 )
 
-// eventCtxFunc - функция, создающие контексты для обработки отбельных событий.
-type eventCtxFunc func() (context.Context, context.CancelFunc)
+// EventCtxFunc - функция, создающие контексты для обработки отдельных событий.
+type EventCtxFunc func() (context.Context, context.CancelFunc)
 
-func eventCtxWithTimeout(ctx context.Context, timeout time.Duration) eventCtxFunc {
+func EventCtxFuncWithTimeout(timeout time.Duration) EventCtxFunc {
 	return func() (context.Context, context.CancelFunc) {
-		return context.WithTimeout(ctx, timeout)
+		return context.WithTimeout(context.Background(), timeout)
 	}
 }

@@ -6,4 +6,6 @@ import (
 	"time"
 )
 
-type Gateway[R any] func(ctx context.Context, table domain.Table[R], date time.Time) ([]R, error)
+type Gateway[R any] interface {
+	Get(ctx context.Context, table domain.Table[R], date time.Time) ([]R, error)
+}
