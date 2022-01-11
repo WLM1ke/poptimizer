@@ -7,10 +7,10 @@ from typing import Final, Optional
 import aiohttp
 import psutil
 from motor import motor_asyncio
-
+import os
 # Настройки сервера MongoDB
 _MONGO_PATH: Final = pathlib.Path(__file__).parents[2] / "db"
-_MONGO_URI: Final = "mongodb://localhost:27017"
+MONGO_URI: Final = os.getenv("MONGODB_URI","mongodb://localhost:27017")
 
 # Размер пула http-соединений - при большем размере многие сайты ругаются
 _POOL_SIZE: Final = 20
@@ -54,7 +54,7 @@ def http_session_factory(pool_size: int) -> aiohttp.ClientSession:
     atexit.register(_clean_up, session)
     return session
 
-
-start_mongo_server()
-MONGO_CLIENT: Final = motor_asyncio.AsyncIOMotorClient(_MONGO_URI, tz_aware=False)
+if not os.getenv("MONGODB_URI", False):
+    start_mongo_server()
+MONGO_CLIENT: Final = motor_asyncio.AsyncIOMotorClient(MONGO_URI, tz_aware=False)
 HTTP_SESSION: Final = http_session_factory(_POOL_SIZE)

@@ -1,0 +1,10 @@
+.git
+.cache
+Dockerfile
+db
+db_config
+portfolio
+docker-compose.yml
+logs
+reports
+.venv

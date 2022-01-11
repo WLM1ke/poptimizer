@@ -1,0 +1,40 @@
+version: "3.8"
+services:
+  poptimizer:
+    build: .
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities:
+              - gpu
+    volumes:
+      - ./portfolio:/home/user/portfolio
+      - ./logs:/home/user/logs
+      - ./reports:/home/user/reports
+      - ./config:/home/user/config
+      - ./dump:/home/user/dump
+    environment:
+      MONGODB_URI: "mongodb://poptimizer:poptimizer@mongodb:27017"
+      REPORTS_PATH: "/home/user/reports"
+      PORTFOLIO_PATH: "/home/user/portfolio"
+      LOG_PATH: "/home/user/logs"
+      CONFIG_PATH: "/home/user/config"
+      DUMP_PATH: "/home/user/dump"
+    privileged: true
+    user: "${UID}:${GID}"
+    cap_add:
+      - mknod
+      - sys_admin
+    user:
+      "root"
+    restart: always
+  
+  mongodb:
+    image: mongo:5.0
+    volumes:
+      - ./db:/data/db
+      - ./db_config:/data/configdb  
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: poptimizer
+      MONGO_INITDB_ROOT_PASSWORD: poptimizer
