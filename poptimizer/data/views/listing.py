@@ -27,11 +27,15 @@ def all_history_date(
     *,
     start: Optional[pd.Timestamp] = None,
     end: Optional[pd.Timestamp] = None,
+    bus: bootstrap.TableBus = bootstrap.BUS,
 ) -> pd.Index:
     """Перечень дат для которых есть котировки.
 
     Может быть ограничен сверху или снизу.
     """
+    event = events.DateCheckRequired()
+    bus.handle_event(event)
+
     return quotes.all_prices(tickers).loc[start:end].index
 
 
