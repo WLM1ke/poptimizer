@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/dates"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/end"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"sync"
 	"time"
@@ -16,7 +16,7 @@ import (
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 )
 
-const _timeFormat = "2006-01-02"
+const _timeFormat = "2006-01-02 15:04:05.000 MST"
 
 // errUnprocessedEvent ошибка связанная с наличием необработанных ошибок в момент завершения работы шины событий.
 var errUnprocessedEvent = fmt.Errorf("unprocessed event")
