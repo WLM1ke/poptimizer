@@ -23,7 +23,6 @@ var ID = domain.NewId(_group, _group)
 // Данные события могут использоваться для запуска некоторых действий на регулярной основе
 type Rule struct {
 	logger *lgr.Logger
-	ticker *time.Ticker
 
 	last time.Time
 	loc  *time.Location
@@ -35,13 +34,15 @@ func New(logger *lgr.Logger) *Rule {
 		panic("can't load time zone")
 	}
 
-	return &Rule{logger: logger, ticker: time.NewTicker(_tickerDuration), loc: loc}
+	return &Rule{logger: logger, loc: loc}
 }
 
 func (r *Rule) Activate(in <-chan domain.Event, out chan<- domain.Event) {
 	r.logger.Infof("DayEndedRule: started")
 	defer r.logger.Infof("DayEndedRule: stopped")
-	defer r.ticker.Stop()
+
+	ticker := time.NewTicker(_tickerDuration)
+	defer ticker.Stop()
 
 	r.sendIfStart(out)
 
@@ -51,7 +52,7 @@ func (r *Rule) Activate(in <-chan domain.Event, out chan<- domain.Event) {
 			if !ok {
 				return
 			}
-		case <-r.ticker.C:
+		case <-ticker.C:
 			r.sendIfStart(out)
 		}
 	}
@@ -66,10 +67,10 @@ func (r *Rule) sendIfStart(out chan<- domain.Event) {
 		delta = 1
 	}
 
-	newLast := time.Date(now.Year(), now.Month(), now.Day()-delta, 0, 0, 0, 0, time.UTC)
-	if r.last.Before(newLast) {
-		r.last = newLast
+	lastNew := time.Date(now.Year(), now.Month(), now.Day()-delta, 0, 0, 0, 0, time.UTC)
+	if r.last.Before(lastNew) {
+		r.last = lastNew
 
-		out <- domain.NewUpdateCompletedFromID(ID, newLast)
+		out <- domain.NewUpdateCompletedFromID(ID, lastNew)
 	}
 }
