@@ -8,6 +8,7 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/rules/dates"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/end"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/usd"
 	"go.mongodb.org/mongo-driver/mongo"
 	"sync"
 	"time"
@@ -42,6 +43,7 @@ func NewEventBus(logger *lgr.Logger, db *mongo.Database, iss *gomoex.ISSClient, 
 		errors.New(logger),
 		end.New(logger),
 		dates.New(logger, db, iss, timeout),
+		usd.New(logger, db, iss, timeout),
 	}
 
 	return &EventBus{
