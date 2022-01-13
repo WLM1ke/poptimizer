@@ -103,7 +103,7 @@ func (r Rule[R]) updateTableToVer(ctx context.Context, ver domain.Version) domai
 		return domain.NewErrorOccurred(ver, err)
 	}
 
-	if len(rows) == 0 {
+	if !r.haveNewRows(rows) {
 		return nil
 	}
 
@@ -123,4 +123,16 @@ func (r Rule[R]) updateTableToVer(ctx context.Context, ver domain.Version) domai
 	}
 
 	return domain.NewUpdateCompleted(ver)
+}
+
+func (r Rule[R]) haveNewRows(rows []R) bool {
+	if len(rows) == 0 {
+		return false
+	}
+
+	if r.append && (len(rows) == 1) {
+		return false
+	}
+
+	return true
 }

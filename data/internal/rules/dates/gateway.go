@@ -17,11 +17,11 @@ func (g gateway) Get(ctx context.Context, table domain.Table[gomoex.Date], _ tim
 	switch {
 	case err != nil:
 		return nil, err
-	case len(table.Rows) == 0:
-		return rows, err
-	case table.Rows[0].Till.Before(rows[0].Till):
-		return rows, err
+	case table.IsEmpty():
+		return rows, nil
+	case table.LastRow().Till.Before(rows[0].Till):
+		return rows, nil
+	default:
+		return nil, nil
 	}
-
-	return nil, nil
 }

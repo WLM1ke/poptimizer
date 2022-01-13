@@ -18,8 +18,8 @@ type gateway struct {
 
 func (g gateway) Get(ctx context.Context, table domain.Table[gomoex.Candle], date time.Time) ([]gomoex.Candle, error) {
 	start := ""
-	if n := len(table.Rows); n > 0 {
-		start = table.Rows[n-1].Begin.Format(_format)
+	if !table.IsEmpty() {
+		start = table.LastRow().Begin.Format(_format)
 	}
 
 	end := date.Format(_format)
