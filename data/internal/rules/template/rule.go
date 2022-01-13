@@ -71,20 +71,20 @@ func (r Rule[R]) handleEvent(out chan<- domain.Event, event domain.Event) {
 
 	ids, err := r.selector.Select(ctx, event)
 	if err != nil {
-		out <- domain.NewErrorOccurred(event, err)
+		out <- domain.ErrorOccurred{Version: event.Ver(), Err: err}
 
 		return
 	}
 
 	for _, id := range ids {
-		id := id
-
 		wg.Add(1)
+
+		ver := domain.Version{ID: id, Date: event.Ver().Date}
 
 		go func() {
 			defer wg.Done()
 
-			if newEvent := r.updateTableToVer(ctx, domain.NewVersion(id, event.Date())); newEvent != nil {
+			if newEvent := r.updateTableToVer(ctx, ver); newEvent != nil {
 				out <- newEvent
 			}
 
@@ -93,14 +93,14 @@ func (r Rule[R]) handleEvent(out chan<- domain.Event, event domain.Event) {
 }
 
 func (r Rule[R]) updateTableToVer(ctx context.Context, ver domain.Version) domain.Event {
-	table, err := r.repo.Get(ctx, ver)
+	table, err := r.repo.Get(ctx, ver.ID)
 	if err != nil {
-		return domain.NewErrorOccurred(ver, err)
+		return domain.ErrorOccurred{Version: ver, Err: err}
 	}
 
-	rows, err := r.gateway.Get(ctx, table, ver.Date())
+	rows, err := r.gateway.Get(ctx, table, ver.Date)
 	if err != nil {
-		return domain.NewErrorOccurred(ver, err)
+		return domain.ErrorOccurred{Version: ver, Err: err}
 	}
 
 	if !r.haveNewRows(rows) {
@@ -109,7 +109,7 @@ func (r Rule[R]) updateTableToVer(ctx context.Context, ver domain.Version) domai
 
 	err = r.validator(table, rows)
 	if err != nil {
-		return domain.NewErrorOccurred(ver, err)
+		return domain.ErrorOccurred{Version: ver, Err: err}
 	}
 
 	if r.append {
@@ -119,10 +119,10 @@ func (r Rule[R]) updateTableToVer(ctx context.Context, ver domain.Version) domai
 	}
 
 	if err != nil {
-		return domain.NewErrorOccurred(ver, err)
+		return domain.ErrorOccurred{Version: ver, Err: err}
 	}
 
-	return domain.NewUpdateCompleted(ver)
+	return domain.UpdateCompleted{Version: ver}
 }
 
 func (r Rule[R]) haveNewRows(rows []R) bool {

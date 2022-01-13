@@ -8,7 +8,7 @@ import (
 
 const _group = "usd"
 
-var ID = domain.NewId(_group, _group)
+var ID = domain.ID{Group: _group, Name: _group}
 
 type selector struct {
 }
@@ -16,7 +16,7 @@ type selector struct {
 func (s selector) Select(_ context.Context, event domain.Event) (ids []domain.ID, err error) {
 	switch selected := event.(type) {
 	case domain.UpdateCompleted:
-		if domain.CompareID(selected, dates.ID) {
+		if selected.ID == dates.ID {
 			ids = append(ids, ID)
 		}
 	}

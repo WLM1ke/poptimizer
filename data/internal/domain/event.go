@@ -1,10 +1,13 @@
 package domain
 
-import "time"
+import "fmt"
+
+const _timeFormat = "2006-01-02 15:04:05.000 MST"
 
 // Event - событие, произошедшее во время работы программы.
 type Event interface {
-	Version
+	Ver() Version
+	fmt.Stringer
 }
 
 // UpdateCompleted - событие удачного обновления таблицы.
@@ -12,12 +15,14 @@ type UpdateCompleted struct {
 	Version
 }
 
-func NewUpdateCompleted(ver Version) UpdateCompleted {
-	return UpdateCompleted{Version: ver}
-}
-
-func NewUpdateCompletedFromID(id ID, time time.Time) UpdateCompleted {
-	return UpdateCompleted{Version: NewVersion(id, time)}
+func (u UpdateCompleted) String() string {
+	return fmt.Sprintf(
+		"%T(%s, %s, %s)",
+		u,
+		u.Group,
+		u.Name,
+		u.Date.UTC().Format(_timeFormat),
+	)
 }
 
 // ErrorOccurred - событие неудачного обновления таблицы.
@@ -26,6 +31,13 @@ type ErrorOccurred struct {
 	Err error
 }
 
-func NewErrorOccurred(ver Version, err error) ErrorOccurred {
-	return ErrorOccurred{Version: ver, Err: err}
+func (e ErrorOccurred) String() string {
+	return fmt.Sprintf(
+		"%T(%s, %s, %s, %s)",
+		e,
+		e.Group,
+		e.Name,
+		e.Date.UTC().Format(_timeFormat),
+		e.Err,
+	)
 }

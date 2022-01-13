@@ -17,21 +17,6 @@ type tableDAO[R any] struct {
 	Rows []R         `bson:"rows"`
 }
 
-func newTableDAO[R any](table domain.Table[R]) tableDAO[R] {
-	return tableDAO[R]{
-		Name: table.Name(),
-		Date: table.Date(),
-		Rows: table.Rows,
-	}
-}
-
-func (d tableDAO[R]) toTable(id domain.ID) domain.Table[R] {
-	return domain.Table[R]{
-		Version: domain.NewVersion(id, d.Date),
-		Rows:    d.Rows,
-	}
-}
-
 // Mongo обеспечивает хранение и загрузку таблиц.
 type Mongo[R any] struct {
 	db *mongo.Database
@@ -45,31 +30,36 @@ func NewMongo[R any](db *mongo.Database) *Mongo[R] {
 }
 
 // Get загружает таблицу.
-func (r *Mongo[R]) Get(ctx context.Context, id domain.ID) (domain.Table[R], error) {
+func (r *Mongo[R]) Get(ctx context.Context, id domain.ID) (table domain.Table[R], err error) {
 	var dao tableDAO[R]
 
-	collection := r.db.Collection(string(id.Group()))
-	err := collection.FindOne(ctx, bson.M{"_id": string(id.Name())}).Decode(&dao)
+	collection := r.db.Collection(string(id.Group))
+	err = collection.FindOne(ctx, bson.M{"_id": string(id.Name)}).Decode(&dao)
 
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
-		return domain.NewTable[R](id), nil
+		err = nil
+		table.ID = id
 	case err != nil:
-		return domain.Table[R]{}, fmt.Errorf("%w: %#v - %s", ErrInternal, id, err)
+		err = fmt.Errorf("%w: %#v -> %s", ErrInternal, id, err)
+	default:
+		table.ID = id
+		table.Date = dao.Date
+		table.Rows = dao.Rows
 	}
 
-	return dao.toTable(id), nil
+	return table, err
 }
 
 // Replace перезаписывает таблицу.
 func (r *Mongo[R]) Replace(ctx context.Context, table domain.Table[R]) error {
-	collection := r.db.Collection(string(table.Group()))
+	collection := r.db.Collection(string(table.Group))
 
-	filter := bson.M{"_id": table.Name()}
-	update := bson.M{"$set": bson.M{"rows": table.Rows, "date": table.Date()}}
+	filter := bson.M{"_id": table.Name}
+	update := bson.M{"$set": bson.M{"rows": table.Rows, "date": table.Date}}
 
 	if _, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
-		return fmt.Errorf("%w: %#v - %s", ErrTableUpdate, table, err)
+		return fmt.Errorf("%w: %#v -> %s", ErrTableUpdate, table.ID, err)
 	}
 
 	return nil
@@ -77,13 +67,13 @@ func (r *Mongo[R]) Replace(ctx context.Context, table domain.Table[R]) error {
 
 // Append добавляет строки в конец таблицы.
 func (r *Mongo[R]) Append(ctx context.Context, table domain.Table[R]) error {
-	collection := r.db.Collection(string(table.Group()))
+	collection := r.db.Collection(string(table.Group))
 
-	filter := bson.M{"_id": table.Name()}
-	update := bson.M{"$push": bson.M{"rows": bson.M{"$each": table.Rows}}, "$set": bson.M{"date": table.Date()}}
+	filter := bson.M{"_id": table.Name}
+	update := bson.M{"$push": bson.M{"rows": bson.M{"$each": table.Rows}}, "$set": bson.M{"date": table.Date}}
 
 	if _, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
-		return fmt.Errorf("%w: %#v - %s", ErrTableUpdate, table, err)
+		return fmt.Errorf("%w: %#v -> %s", ErrTableUpdate, table.ID, err)
 	}
 
 	return nil
@@ -91,7 +81,7 @@ func (r *Mongo[R]) Append(ctx context.Context, table domain.Table[R]) error {
 
 // GetJSON загружает ExtendedJSON представление таблицы.
 func (r *Mongo[R]) GetJSON(ctx context.Context, id domain.ID) ([]byte, error) {
-	collection := r.db.Collection(string(id.Group()))
+	collection := r.db.Collection(string(id.Group))
 
 	projections := options.FindOne().SetProjection(bson.M{"_id": 0, "rows": 1, "date": 1})
 
@@ -100,12 +90,12 @@ func (r *Mongo[R]) GetJSON(ctx context.Context, id domain.ID) ([]byte, error) {
 	case errors.Is(err, mongo.ErrNoDocuments):
 		return nil, fmt.Errorf("%w: %s", ErrTableNotFound, id)
 	case err != nil:
-		return nil, fmt.Errorf("%w: %#v - %s", ErrInternal, id, err)
+		return nil, fmt.Errorf("%w: %#v -> %s", ErrInternal, id, err)
 	}
 
 	json, err := bson.MarshalExtJSON(raw, true, true)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %#v - %s", ErrInternal, id, err)
+		return nil, fmt.Errorf("%w: %#v -> %s", ErrInternal, id, err)
 	}
 
 	return json, nil

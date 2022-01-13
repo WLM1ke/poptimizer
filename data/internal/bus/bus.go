@@ -17,8 +17,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 )
 
-const _timeFormat = "2006-01-02 15:04:05.000 MST"
-
 // errUnprocessedEvent ошибка связанная с наличием необработанных ошибок в момент завершения работы шины событий.
 var errUnprocessedEvent = fmt.Errorf("unprocessed event")
 
@@ -111,13 +109,7 @@ func (b *EventBus) formInboxToBroadcast(ctx context.Context) {
 
 			return
 		case event := <-b.inbox:
-			b.logger.Infof(
-				"EventBus: processing %T(%s, %s, %s)",
-				event,
-				event.Group(),
-				event.Name(),
-				event.Date().UTC().Format(_timeFormat),
-			)
+			b.logger.Infof("EventBus: processing %s", event)
 			b.broadcast <- event
 		}
 	}
@@ -131,11 +123,7 @@ func (b *EventBus) drainUnprocessedEvents(inbox <-chan domain.Event) (count int)
 
 	for event := range inbox {
 		b.logger.Warnf(
-			"EventBus: unprocessed %T(%s, %s, %s)", event,
-			event.Group(),
-			event.Name(),
-			event.Date().UTC().Format(_timeFormat),
-		)
+			"EventBus: unprocessed %s", event)
 		count++
 	}
 
