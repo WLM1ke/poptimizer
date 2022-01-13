@@ -13,10 +13,13 @@ var ID = domain.NewId(_group, _group)
 type selector struct {
 }
 
-func (s selector) Select(_ context.Context, event domain.Event) ([]domain.ID, error) {
-	if domain.CompareID(event, dates.ID) {
-		return []domain.ID{ID}, nil
+func (s selector) Select(_ context.Context, event domain.Event) (ids []domain.ID, err error) {
+	switch selected := event.(type) {
+	case domain.UpdateCompleted:
+		if domain.CompareID(selected, dates.ID) {
+			ids = append(ids, ID)
+		}
 	}
 
-	return nil, nil
+	return ids, err
 }
