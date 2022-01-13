@@ -130,14 +130,14 @@ class Evolution:  # noqa: WPS214
         label = "Старый"
         sign = "<"
         if (min_margin := -self._jump) < delta:
-            self._jump = 0
+            if hunter_margin > 0 > prey_margin:
+                self._jump = 1 / (1 / self._jump + 1)
             hunter = prey
             label = "Новый"
             sign = ">"
 
         self._scale += ((prey_margin < 0) - 0.5) * 2
         self._scale = max(1, self._scale)
-        self._jump += 1 / self._scale
 
         self._logger.info(f"{label} родитель - delta={delta:.2%} {sign} {min_margin:.2%}\n")  # noqa: WPS221
 

@@ -36,6 +36,7 @@ def prices(
 
 
 def all_prices(tickers: tuple[str, ...], price_type: col.PriceType = col.CLOSE) -> pd.DataFrame:
+    """Все цены определенного типа для набора тикеров."""
     quotes_list = not_div.quotes(tickers)
 
     return pd.concat(

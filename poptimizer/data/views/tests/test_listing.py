@@ -4,17 +4,40 @@ import pytest
 
 from poptimizer.data.views import listing
 
-
 ALL_HISTORY_CASES = (
-    (("AKRN", "GAZP"), "2021-12-30", "2022-01-07", 5),
-    (("AKRN", "GAZP"), "2021-12-31", "2022-01-07", 4),
-    (("AKRN", "GAZP", "T-RM"), "2021-12-30", "2022-01-07", 6),
-    (("AKRN", "GAZP", "T-RM"), "2021-12-31", "2022-01-07", 5),
+    (
+        ("AKRN", "GAZP"),
+        "2021-12-30",
+        "2022-01-07",
+        5,
+    ),
+    (
+        ("AKRN", "GAZP"),
+        "2021-12-31",
+        "2022-01-07",
+        4,
+    ),
+    (
+        ("AKRN", "GAZP", "T-RM"),
+        "2021-12-30",
+        "2022-01-07",
+        6,
+    ),
+    (
+        ("AKRN", "GAZP", "T-RM"),
+        "2021-12-31",
+        "2022-01-07",
+        5,
+    ),
 )
 
 
 @pytest.mark.parametrize("tickers, start, end, len_", ALL_HISTORY_CASES)
 def test_all_history_date(tickers, start, end, len_):
+    """Проверка корректности учета торговых дат для ограниченного набора тикеров.
+
+    Только иностранные акции торговались 2022-01-07.
+    """
     dates = listing.all_history_date(tickers, start=start, end=end)
     assert isinstance(dates, pd.Index)
     assert len(dates) == len_

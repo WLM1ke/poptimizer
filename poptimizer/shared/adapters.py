@@ -3,7 +3,7 @@ import asyncio
 import logging
 import weakref
 from collections.abc import MutableMapping
-from typing import Any, Callable, ClassVar, Final, Generic, NamedTuple, Optional, TypeVar
+from typing import Any, Callable, Final, Generic, NamedTuple, Optional, TypeVar
 
 from motor import motor_asyncio
 from pymongo.collection import Collection
