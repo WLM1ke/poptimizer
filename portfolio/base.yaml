@@ -88,7 +88,6 @@ positions:
   KMAZ: 0
   KO-RM: 0
   KRKNP: 0
-  KRSB: 0
   KZOS: 0
   LIFE: 0
   LKOH: 0
@@ -137,6 +136,7 @@ positions:
   NVDA-RM: 0
   NVTK: 0
   OGKB: 0
+  ORCL-RM: 0
   ORUP: 0
   OZON: 0
   PFE-RM: 0
@@ -152,6 +152,7 @@ positions:
   QIWI: 0
   RASP: 0
   RBCM: 0
+  REGN-RM: 0
   RGSS: 0
   RNFT: 0
   ROLO: 0
@@ -162,9 +163,11 @@ positions:
   RTKMP: 0
   RUAL: 0
   RUGR: 0
+  RUSE: 0
   RZSB: 0
   SBER: 0
   SBERP: 0
+  SBGB: 0
   SBRB: 0
   SELG: 0
   SFIN: 0
