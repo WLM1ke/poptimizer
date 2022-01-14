@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
@@ -9,18 +10,19 @@ import (
 
 const _timeout = 30 * time.Second
 
-func MongoDB(uri string, db string) *mongo.Database {
+func MongoDB(uri, db string) *mongo.Database {
 	ctx, cancel := context.WithTimeout(context.Background(), _timeout)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	opt := options.Client().ApplyURI(uri)
+	client, err := mongo.Connect(ctx, opt)
 	if err != nil {
-		panic("can't start MongoDb client")
+		panic(fmt.Sprintf("can't start MongoDB client -> %s", err))
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		panic("can't ping MongoDb server")
+		panic(fmt.Sprintf("can't ping MongoDB server -> %s", err))
 	}
 
 	return client.Database(db)
