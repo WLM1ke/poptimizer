@@ -1,5 +1,7 @@
 github.com/WLM1ke/gomoex v1.2.0 h1:IKcIKT81VHaK/uko9Bi7IPhF3NQTaDIwFoQ/lUkFOGQ=
 github.com/WLM1ke/gomoex v1.2.0/go.mod h1:Uu8Larue05CJ8k6K/j9owBn8ADgLEHoycuMSMzzsRR8=
+github.com/caarlos0/env/v6 v6.9.1 h1:zOkkjM0F6ltnQ5eBX6IPI41UP/KDGEK7rRPwGCNos8k=
+github.com/caarlos0/env/v6 v6.9.1/go.mod h1:hvp/ryKXKipEkcuYjs9mI4bBCg+UI0Yhgm5Zu0ddvwc=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -43,8 +45,8 @@ github.com/xdg-go/stringprep v1.0.2/go.mod h1:8F9zXuvzgwmyT5DUm4GUfZGDdT3W+LCvS6
 github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d h1:splanxYIlg+5LfHAM6xpdFEAYOk8iySO56hMFq6uLyA=
 github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d/go.mod h1:rHwXgn7JulP+udvsHwJoVG1YGAP6VLg4y9I5dyZdqmA=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
-go.mongodb.org/mongo-driver v1.8.1 h1:OZE4Wni/SJlrcmSIBRYNzunX5TKxjrTS4jKSnA99oKU=
-go.mongodb.org/mongo-driver v1.8.1/go.mod h1:0sQWfOeY63QTntERDJJ/0SuKK0T1uVSgKCuAROlKEPY=
+go.mongodb.org/mongo-driver v1.8.2 h1:8ssUXufb90ujcIvR6MyE1SchaNj0SFxsakiZgxIyrMk=
+go.mongodb.org/mongo-driver v1.8.2/go.mod h1:0sQWfOeY63QTntERDJJ/0SuKK0T1uVSgKCuAROlKEPY=
 go.uber.org/goleak v1.1.12 h1:gZAh5/EyT/HQwlpkCy6wTpqfH9H8Lz8zbm3dZh+OyzA=
 go.uber.org/goleak v1.1.12/go.mod h1:cwTWslyiVhfpKIDGSZEM2HlOvcqm+tG4zioyIeLoqMQ=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=

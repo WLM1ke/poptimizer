@@ -1,45 +1,52 @@
 package main
 
 import (
-	"github.com/WLM1ke/poptimizer/data/pkg/client"
-	"time"
-
 	"github.com/WLM1ke/poptimizer/data/internal/api"
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/pkg/app"
+	"github.com/WLM1ke/poptimizer/data/pkg/client"
 	"github.com/WLM1ke/poptimizer/data/pkg/http"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
+	"time"
 )
 
-const (
-	_appName = "data"
-
-	_serverAddr    = "localhost:3000"
-	_serverTimeout = time.Second
-
-	_clientTimeout = 30 * time.Second
-	_mongoURI      = "mongodb://localhost:27017"
-	_mongoDB       = "data_new"
-
-	_issConn = 20
-)
+type Config struct {
+	App    string `envDefault:"data"`
+	Server struct {
+		Addr    string        `envDefault:"localhost:3000"`
+		Timeout time.Duration `envDefault:"1s"`
+	}
+	Events struct {
+		Timeout time.Duration `envDefault:"30s"`
+	}
+	MongoDB struct {
+		URI string `env:"URI,unset" envDefault:"mongodb://localhost:27017"`
+		DB  string `envDefault:"data"`
+	}
+	ISS struct {
+		Connections int `envDefault:"20"`
+	}
+}
 
 func main() {
-	logger := lgr.New(_appName)
+	var cfg Config
+	app.LoadConfig(&cfg)
+
+	logger := lgr.New(cfg.App)
 
 	services := []app.Service{
 		app.NewGoroutineCounter(logger),
 		http.NewServer(
 			logger,
-			_serverAddr,
-			_serverTimeout,
+			cfg.Server.Addr,
+			cfg.Server.Timeout,
 			api.GetBSON(),
 		),
 		bus.NewEventBus(
 			logger,
-			client.MongoDB(_mongoURI, _mongoDB),
-			client.ISS(_issConn),
-			_clientTimeout),
+			client.MongoDB(cfg.MongoDB.URI, cfg.MongoDB.DB),
+			client.ISS(cfg.ISS.Connections),
+			cfg.Events.Timeout),
 	}
 
 	app.Run(logger, services...)

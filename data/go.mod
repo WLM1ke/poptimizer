@@ -4,9 +4,10 @@ go 1.18
 
 require (
 	github.com/WLM1ke/gomoex v1.2.0
+	github.com/caarlos0/env/v6 v6.9.1
 	github.com/go-chi/chi v1.5.4
 	github.com/stretchr/testify v1.7.0
-	go.mongodb.org/mongo-driver v1.8.1
+	go.mongodb.org/mongo-driver v1.8.2
 	go.uber.org/goleak v1.1.12
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
