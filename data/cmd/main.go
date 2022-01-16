@@ -7,8 +7,9 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/pkg/app"
 	"github.com/WLM1ke/poptimizer/data/pkg/client"
-	"github.com/WLM1ke/poptimizer/data/pkg/http"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
+	"github.com/WLM1ke/poptimizer/data/pkg/mux"
+	"net/http"
 	"time"
 )
 
@@ -35,14 +36,24 @@ func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service)
 		logger.Panicf("%s", err)
 	}
 
+	httpClient := client.NewHTTPClient(d.ISS.Connections)
+
 	resource := []app.ResourceCloseFunc{
 		func(ctx context.Context) error {
+			// Драйвер MongoDB использует дефолтный клиент под капотом
+			http.DefaultClient.CloseIdleConnections()
+
 			return mongo.Disconnect(ctx)
+		},
+		func(ctx context.Context) error {
+			httpClient.CloseIdleConnections()
+
+			return nil
 		},
 	}
 
 	services := []app.Service{
-		http.NewServer(
+		mux.NewServer(
 			logger,
 			d.Server.Addr,
 			d.Server.Timeout,
@@ -51,7 +62,7 @@ func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service)
 		bus.NewEventBus(
 			logger,
 			mongo.Database(d.MongoDB.DB),
-			gomoex.NewISSClient(client.NewHTTPClient(d.ISS.Connections)),
+			gomoex.NewISSClient(httpClient),
 			d.Events.Timeout,
 		),
 	}

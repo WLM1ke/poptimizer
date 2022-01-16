@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
+	"go.uber.org/goleak"
 	"os"
 	"strings"
 )
@@ -66,6 +67,17 @@ func (a *App) Run() {
 
 	a.runServices()
 	a.closeResources()
+
+	if a.code == 0 {
+		a.checkLeaks()
+	}
+}
+
+func (a *App) checkLeaks() {
+	if err := goleak.Find(); err != nil {
+		a.code = 1
+		a.logger.Warnf("App: %v", err)
+	}
 }
 
 func shortType(value interface{}) string {

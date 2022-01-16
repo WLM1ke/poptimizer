@@ -130,11 +130,12 @@ class Evolution:  # noqa: WPS214
         label = "Старый"
         sign = "<"
         if (min_margin := -self._jump) < delta:
-            if hunter_margin > 0 > prey_margin:
+            if prey_margin < 0:
                 self._jump = 1 / (1 / self._jump + 1)
-            hunter = prey
-            label = "Новый"
-            sign = ">"
+            else:
+                hunter = prey
+                label = "Новый"
+                sign = ">"
 
         self._scale += ((prey_margin < 0) - 0.5) * 2
         self._scale = max(1, self._scale)
@@ -224,10 +225,10 @@ class Evolution:  # noqa: WPS214
 
 
 def _time_delta(org):
-    """Штраф за время, если организм медленнее самого медленного в популяции."""
-    max_timer = max(doc["timer"] for doc in population.base_pop_metrics())
+    """Штраф за время, если организм медленнее медианного в популяции."""
+    median = np.median([doc["timer"] for doc in population.base_pop_metrics()])
 
-    return max((org.timer / max_timer - 1), 0)
+    return max((org.timer / median - 1), 0)
 
 
 def _check_time_range() -> bool:
