@@ -10,20 +10,20 @@ import (
 
 const _timeout = 30 * time.Second
 
-func MongoDB(uri, db string) *mongo.Database {
+func MongoDB(uri string) (*mongo.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), _timeout)
 	defer cancel()
 
 	opt := options.Client().ApplyURI(uri)
 	client, err := mongo.Connect(ctx, opt)
 	if err != nil {
-		panic(fmt.Sprintf("can't start MongoDB client -> %s", err))
+		return nil, fmt.Errorf("can't start MongoDB client -> %w", err)
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		panic(fmt.Sprintf("can't ping MongoDB server -> %s", err))
+		return nil, fmt.Errorf("can't ping MongoDB server -> %w", err)
 	}
 
-	return client.Database(db)
+	return client, nil
 }

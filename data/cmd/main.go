@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/api"
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/pkg/app"
@@ -10,8 +12,7 @@ import (
 	"time"
 )
 
-type Config struct {
-	App    string `envDefault:"data"`
+type data struct {
 	Server struct {
 		Addr    string        `envDefault:"localhost:3000"`
 		Timeout time.Duration `envDefault:"1s"`
@@ -28,26 +29,38 @@ type Config struct {
 	}
 }
 
-func main() {
-	var cfg Config
-	app.LoadConfig(&cfg)
+func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service) {
+	mongo, err := client.MongoDB(d.MongoDB.URI)
+	if err != nil {
+		logger.Panicf("%s", err)
+	}
 
-	logger := lgr.New(cfg.App)
+	resource := []app.ResourceCloseFunc{
+		func(ctx context.Context) error {
+			return mongo.Disconnect(ctx)
+		},
+	}
 
 	services := []app.Service{
-		app.NewGoroutineCounter(logger),
 		http.NewServer(
 			logger,
-			cfg.Server.Addr,
-			cfg.Server.Timeout,
+			d.Server.Addr,
+			d.Server.Timeout,
 			api.GetBSON(),
 		),
 		bus.NewEventBus(
 			logger,
-			client.MongoDB(cfg.MongoDB.URI, cfg.MongoDB.DB),
-			client.ISS(cfg.ISS.Connections),
-			cfg.Events.Timeout),
+			mongo.Database(d.MongoDB.DB),
+			gomoex.NewISSClient(client.NewHTTPClient(d.ISS.Connections)),
+			d.Events.Timeout,
+		),
 	}
 
-	app.Run(logger, services...)
+	return resource, services
+}
+
+func main() {
+	var cfg data
+
+	app.New(&cfg).Run()
 }
