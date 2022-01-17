@@ -2,13 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/api"
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/pkg/app"
 	"github.com/WLM1ke/poptimizer/data/pkg/client"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
-	"github.com/WLM1ke/poptimizer/data/pkg/mux"
 	"net/http"
 	"time"
 )
@@ -52,17 +50,19 @@ func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service)
 		},
 	}
 
+	db := mongo.Database(d.MongoDB.DB)
+
 	services := []app.Service{
-		mux.NewServer(
+		api.NewHTTPServer(
 			logger,
+			db,
 			d.Server.Addr,
 			d.Server.Timeout,
-			api.GetBSON(),
 		),
 		bus.NewEventBus(
 			logger,
-			mongo.Database(d.MongoDB.DB),
-			gomoex.NewISSClient(httpClient),
+			db,
+			httpClient,
 			d.Events.Timeout,
 		),
 	}

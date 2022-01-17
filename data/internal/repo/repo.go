@@ -18,8 +18,8 @@ type Read[R any] interface {
 	Get(ctx context.Context, id domain.ID) (domain.Table[R], error)
 }
 
-// ReadJSON осуществляет загрузку таблицы в виде ExtendedJSON.
-type ReadJSON[R any] interface {
+// JSONViewer осуществляет загрузку таблицы в виде ExtendedJSON.
+type JSONViewer interface {
 	// GetJSON загружает ExtendedJSON представление таблицы.
 	GetJSON(ctx context.Context, id domain.ID) ([]byte, error)
 }

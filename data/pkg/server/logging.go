@@ -1,4 +1,4 @@
-package mux
+package server
 
 import (
 	"net/http"
@@ -17,7 +17,7 @@ func Middleware(logger *lgr.Logger) func(http.Handler) http.Handler {
 
 			defer func() {
 				logger.Infof(
-					"Request: method - %s, uri - %s, status - %d, size - %d, time - %s",
+					"Request: %s %s %d %db %s",
 					request.Method,
 					request.RequestURI,
 					writerWithStats.Status(),
