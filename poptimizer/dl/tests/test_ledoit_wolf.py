@@ -33,7 +33,7 @@ def test_ledoit_wolf_cor():
     cor, average_cor, shrink = ledoit_wolf.ledoit_wolf_cor(
         ("CHEP", "MTSS", "PLZL"),
         pd.Timestamp("2020-05-19"),
-        30,
+        31,
     )
 
     assert cor.shape == (3, 3)

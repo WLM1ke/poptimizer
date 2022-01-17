@@ -5,7 +5,7 @@ import pandas as pd
 from poptimizer.data.views import quotes
 
 
-def shrinkage(returns: np.array) -> tuple[np.array, float, float]:
+def shrinkage(returns: np.array) -> tuple[np.array, float, float]:  # noqa: WPS210
     """Shrinks sample covariance matrix towards constant correlation unequal variance matrix.
 
     Ledoit & Wolf ("Honey, I shrunk the sample covariance matrix", Portfolio Management, 30(2004),
@@ -25,28 +25,28 @@ def shrinkage(returns: np.array) -> tuple[np.array, float, float]:
     :return:
         Covariance matrix, sample average correlation, shrinkage.
     """
-    t, n = returns.shape
+    t, n = returns.shape  # noqa: WPS111
     mean_returns = np.mean(returns, axis=0, keepdims=True)
     returns -= mean_returns
     sample_cov = returns.transpose() @ returns / t
 
     # sample average correlation
-    var = np.diag(sample_cov).reshape(-1, 1)
-    sqrt_var = var ** 0.5
+    variance = np.diag(sample_cov).reshape(-1, 1)
+    sqrt_var = variance ** 0.5
     unit_cor_var = sqrt_var * sqrt_var.transpose()
-    average_cor = ((sample_cov / unit_cor_var).sum() - n) / n / (n - 1)
+    average_cor = ((sample_cov / unit_cor_var).sum() - n) / n / (n - 1)  # noqa: WPS221
     prior = average_cor * unit_cor_var
-    np.fill_diagonal(prior, var)
+    np.fill_diagonal(prior, variance)
 
     # pi-hat
-    y = returns ** 2
+    y = returns ** 2  # noqa: WPS111
     phi_mat = (y.transpose() @ y) / t - sample_cov ** 2
     phi = phi_mat.sum()
 
     # rho-hat
-    theta_mat = ((returns ** 3).transpose() @ returns) / t - var * sample_cov
+    theta_mat = ((returns ** 3).transpose() @ returns) / t - variance * sample_cov  # noqa: WPS221
     np.fill_diagonal(theta_mat, 0)
-    rho = np.diag(phi_mat).sum() + average_cor * (1 / sqrt_var @ sqrt_var.transpose() * theta_mat).sum()
+    rho = np.diag(phi_mat).sum() + average_cor * (1 / sqrt_var @ sqrt_var.transpose() * theta_mat).sum()  # noqa: WPS221
 
     # gamma-hat
     gamma = np.linalg.norm(sample_cov - prior, "fro") ** 2
@@ -67,12 +67,16 @@ def ledoit_wolf_cor(
     history_days: int,
     forecast_days: int = 0,
 ) -> tuple[np.array, float, float]:
-    """Корреляционная матрица на основе Ledoit Wolf."""
+    """Корреляционная матрица на основе Ledoit Wolf.
+
+    В расчете учитывается, что при использовании котировок за history_days могут быть получены доходности за
+    history_days - 1 день.
+    """
     div, p1 = quotes.div_and_prices(tickers, date)
     p0 = p1.shift(1)
     returns = (p1 + div) / p0
-    returns = returns.iloc[-history_days - forecast_days :]
-    returns = returns.iloc[:history_days]
+    returns = returns.iloc[-(history_days - 1) - forecast_days :]
+    returns = returns.iloc[: history_days - 1]
     returns = (returns - returns.mean()) / returns.std(ddof=0)
 
     return shrinkage(returns.values)
