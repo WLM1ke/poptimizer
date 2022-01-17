@@ -132,6 +132,7 @@ class Evolution:  # noqa: WPS214
         if (min_margin := -self._jump) < delta:
             if prey_margin < 0:
                 self._jump = 1 / (1 / self._jump + 1)
+                sign = ">(negative jump)"
             else:
                 hunter = prey
                 label = "Новый"
