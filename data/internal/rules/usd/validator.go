@@ -18,15 +18,16 @@ func validator(table domain.Table[gomoex.Candle], rows []gomoex.Candle) error {
 		return fmt.Errorf("%w: not increasing dates %+v", template.ErrNewRowsValidation, prev)
 	}
 
-	n := len(table.Rows)
-	if n == 0 {
+	if table.IsEmpty() {
 		return nil
 	}
 
-	lastRow := table.Rows[n-1]
-	firstRow := rows[0]
-	if lastRow != firstRow {
-		return fmt.Errorf("%w: old rows %+v not match new %+v", template.ErrNewRowsValidation, lastRow, firstRow)
+	if table.LastRow() != rows[0] {
+		return fmt.Errorf(
+			"%w: old rows %+v not match new %+v",
+			template.ErrNewRowsValidation,
+			table.LastRow(),
+			rows[0])
 	}
 
 	return nil

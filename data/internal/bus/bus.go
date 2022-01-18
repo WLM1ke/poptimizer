@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/WLM1ke/gomoex"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/cpi"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/dates"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/end"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
@@ -45,6 +46,7 @@ func NewEventBus(logger *lgr.Logger, db *mongo.Database, client *http.Client, ti
 		end.New(logger),
 		dates.New(logger, db, iss, timeout),
 		usd.New(logger, db, iss, timeout),
+		cpi.New(logger, db, client, timeout),
 	}
 
 	return &EventBus{
