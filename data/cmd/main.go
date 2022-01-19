@@ -23,18 +23,22 @@ type data struct {
 		URI string `env:"URI,unset" envDefault:"mongodb://localhost:27017"`
 		DB  string `envDefault:"data"`
 	}
-	ISS struct {
+	HTTPClient struct {
 		Connections int `envDefault:"20"`
+	}
+	Telegram struct {
+		Token  string `env:"TOKEN,unset"`
+		ChatID string `env:"CHAT_ID,unset"`
 	}
 }
 
 func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service) {
 	mongo, err := client.MongoDB(d.MongoDB.URI)
 	if err != nil {
-		logger.Panicf("%s", err)
+		logger.Panicf("App: %s", err)
 	}
 
-	httpClient := client.NewHTTPClient(d.ISS.Connections)
+	httpClient := client.NewHTTPClient(d.HTTPClient.Connections)
 
 	resource := []app.ResourceCloseFunc{
 		func(ctx context.Context) error {
@@ -52,6 +56,11 @@ func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service)
 
 	db := mongo.Database(d.MongoDB.DB)
 
+	telega, err := client.NewTelegram(httpClient, d.Telegram.Token, d.Telegram.ChatID)
+	if err != nil {
+		logger.Panicf("App: %s", err)
+	}
+
 	services := []app.Service{
 		api.NewHTTPServer(
 			logger,
@@ -63,6 +72,7 @@ func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service)
 			logger,
 			db,
 			httpClient,
+			telega,
 			d.Events.Timeout,
 		),
 	}
