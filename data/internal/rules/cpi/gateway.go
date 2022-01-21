@@ -6,13 +6,17 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
 	"github.com/xuri/excelize/v2"
+	"golang.org/x/text/encoding/charmap"
+	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strconv"
 	"time"
 )
 
 const (
-	_url   = `https://rosstat.gov.ru/storage/mediabank/i_ipc_1991-2021.xlsx`
+	_pricesURL = `https://rosstat.gov.ru/storage/mediabank/ind_potreb_cen_12.html`
+
 	_sheet = `ИПЦ`
 
 	_headerRow = 3
@@ -22,20 +26,23 @@ const (
 	_firstDataCol = 1
 )
 
-var _months = [12]string{
-	`январь`,
-	`февраль`,
-	`март`,
-	`апрель`,
-	`май`,
-	`июнь`,
-	`июль`,
-	`август`,
-	`сентябрь`,
-	`октябрь`,
-	`ноябрь`,
-	`декабрь`,
-}
+var (
+	_urlRE  = regexp.MustCompile(`https://rosstat.gov.ru/.+i_ipc.+xlsx`)
+	_months = [12]string{
+		`январь`,
+		`февраль`,
+		`март`,
+		`апрель`,
+		`май`,
+		`июнь`,
+		`июль`,
+		`август`,
+		`сентябрь`,
+		`октябрь`,
+		`ноябрь`,
+		`декабрь`,
+	}
+)
 
 type gateway struct {
 	client *http.Client
@@ -76,29 +83,83 @@ func (g gateway) Get(ctx context.Context, table domain.Table[CPI], _ time.Time) 
 }
 
 func (g gateway) getXLSX(ctx context.Context) (*excelize.File, error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _url, http.NoBody)
+	url, err := g.getURL(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"%w: can't create request -> %s",
+			template.ErrRuleGateway,
+			err,
+		)
 	}
 
 	resp, err := g.client.Do(request)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(
+			"%w: can't make request -> %s",
+			template.ErrRuleGateway,
+			err,
+		)
 	}
 
 	defer resp.Body.Close()
 
-
 	if resp.StatusCode != http.StatusOK {
-		return nil,  fmt.Errorf(
+		return nil, fmt.Errorf(
 			"%w: bad respond status %s",
 			template.ErrRuleGateway,
 			resp.Status,
 		)
 	}
 
-
 	return excelize.OpenReader(resp.Body)
+}
+
+func (g gateway) getURL(ctx context.Context) (string, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _pricesURL, http.NoBody)
+	if err != nil {
+		return "", fmt.Errorf(
+			"%w: can't create request -> %s",
+			template.ErrRuleGateway,
+			err,
+		)
+	}
+
+	resp, err := g.client.Do(request)
+	if err != nil {
+		return "", fmt.Errorf(
+			"%w: can't make request -> %s",
+			template.ErrRuleGateway,
+			err,
+		)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf(
+			"%w: bad respond status %s",
+			template.ErrRuleGateway,
+			resp.Status,
+		)
+	}
+
+	decoder := charmap.Windows1252.NewDecoder()
+	reader := decoder.Reader(resp.Body)
+	page, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", fmt.Errorf(
+			"%w: can't decode cp1252 %s",
+			template.ErrRuleGateway,
+			err,
+		)
+	}
+
+	return string(_urlRE.Find(page)), nil
 }
 
 func validateMonths(rows [][]string) error {
