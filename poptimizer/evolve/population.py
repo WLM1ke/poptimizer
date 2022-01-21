@@ -154,9 +154,10 @@ class Organism:  # noqa: WPS214
 
         model = Model(tickers, end, self.genotype.get_phenotype(), pickled_model)
         forecast = model.forecast()
-        if np.any(np.isnan(forecast.cov)):
+        if np.any(np.isnan(forecast.cov)) or np.any(np.isinf(forecast.cov)):
             self.die()
             raise ForecastError
+
         return forecast
 
     def save(self) -> None:
