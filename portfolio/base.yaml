@@ -44,7 +44,6 @@ positions:
   DSKY: 0
   EA-RM: 0
   EBAY-RM: 0
-  EELT: 0
   ENPG: 0
   ENRU: 0
   ETLN: 0
@@ -58,6 +57,7 @@ positions:
   FXCN: 0
   FXGD: 0
   FXIT: 0
+  FXKZ: 0
   FXMM: 0
   FXRB: 0
   FXRU: 0
@@ -177,6 +177,7 @@ positions:
   SNGSP: 0
   SBUX-RM: 0
   STSBP: 0
+  SUGB: 0
   SVAV: 0
   T-RM: 0
   TATN: 0
@@ -192,9 +193,11 @@ positions:
   TRUR: 0
   TSLA-RM: 0
   TTLK: 0
+  TTWO-RM: 0
   TWTR-RM: 0
   UBER-RM: 0
   UNAC: 0
+  UNH-RM: 0
   UNKL: 0
   UPRO: 0
   USBN: 0
