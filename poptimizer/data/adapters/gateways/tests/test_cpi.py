@@ -6,19 +6,6 @@ from poptimizer.data.adapters.gateways import cpi
 from poptimizer.shared import col
 
 
-@pytest.mark.asyncio
-async def test_load_xlsx(mocker):
-    """Парсинг Excel с необходимыми параметрами."""
-    fake_read_excel = mocker.patch.object(cpi.pd, "read_excel")
-
-    await cpi._load_xlsx(mocker.MagicMock())
-
-    fake_read_excel.assert_called_once()
-
-    _, kwargs = fake_read_excel.call_args
-    assert kwargs == cpi.PARSING_PARAMETERS
-
-
 VALID_CASES = (
     (
         pd.DataFrame([1]),
@@ -75,20 +62,3 @@ def test_clean_up():
     assert df_clean.columns == [col.CPI]
     assert df_clean.index[0] == pd.Timestamp("1992-01-31")
     assert df_clean.index[-1] == pd.Timestamp("1992-04-30")
-
-
-@pytest.mark.asyncio
-async def test_loader(mocker):
-    """Основной вариант работы загрузчика."""
-    fake_session = mocker.MagicMock()
-    fake_load_xlsx = mocker.patch.object(cpi, "_load_xlsx")
-    fake_validate = mocker.patch.object(cpi, "_validate")
-    fake_clean_up = mocker.patch.object(cpi, "_clean_up")
-
-    loader = cpi.CPIGateway(fake_session)
-
-    assert await loader.__call__() is fake_clean_up.return_value
-
-    fake_load_xlsx.assert_called_once_with(fake_session)
-    fake_validate.assert_called_once_with(fake_load_xlsx.return_value)
-    fake_clean_up.assert_called_once_with(fake_load_xlsx.return_value)

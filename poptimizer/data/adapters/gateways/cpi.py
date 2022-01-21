@@ -1,4 +1,5 @@
 """Загрузка данных по потребительской инфляции."""
+import re
 import types
 
 import aiohttp
@@ -9,9 +10,8 @@ from poptimizer.data.adapters.gateways import gateways
 from poptimizer.shared import adapters, col
 
 # Параметры загрузки валидации данных
-# Был адрес URL = "https://rosstat.gov.ru/storage/mediabank/i_ipc_1991-2021(1).xlsx"
-# Был адрес URL = "https://rosstat.gov.ru/storage/mediabank/i_ipc-1991-2021.xlsx"
-URL = "https://rosstat.gov.ru/storage/mediabank/i_ipc_1991-2021.xlsx"
+CPI_PAGE = "https://rosstat.gov.ru/storage/mediabank/ind_potreb_cen_12.html"
+LINK = re.compile("https://rosstat.gov.ru/.+i_ipc.+xlsx")
 END_OF_JAN = 31
 PARSING_PARAMETERS = types.MappingProxyType(
     {
@@ -32,14 +32,31 @@ class CPIGatewayError(config.POptimizerError):
     """Ошибки, связанные с загрузкой данных по инфляции."""
 
 
-async def _load_xlsx(session: aiohttp.ClientSession) -> pd.DataFrame:
+async def _load_and_parse_xlsx(session: aiohttp.ClientSession) -> pd.DataFrame:
     """Загрузка Excel-файла с данными по инфляции."""
-    async with session.get(URL) as resp:
-        xls_file = await resp.read()
+    page = await _loap_cpi_page(session)
+
+    if not (search_result := LINK.search(page)):
+        raise CPIGatewayError("Не могу найти ссылку на таблицу с инфляцией")
+
+    url = search_result.group(0)
+
+    xls_file = await _load_xlsx(session, url)
+
     return pd.read_excel(
         xls_file,
         **PARSING_PARAMETERS,
     )
+
+
+async def _loap_cpi_page(session: aiohttp.ClientSession) -> str:
+    async with session.get(CPI_PAGE) as resp:
+        return await resp.text("cp1251")
+
+
+async def _load_xlsx(session: aiohttp.ClientSession, url: str) -> bytes:
+    async with session.get(url) as resp:
+        return await resp.read()
 
 
 def _validate(df: pd.DataFrame) -> None:
@@ -75,9 +92,10 @@ class CPIGateway(gateways.BaseGateway):
     _logger = adapters.AsyncLogger()
 
     async def __call__(self) -> pd.DataFrame:
-        """Получение данных по  инфляции."""
+        """Получение данных по инфляции."""
         self._logger("Загрузка инфляции")
 
-        df = await _load_xlsx(self._session)
+        df = await _load_and_parse_xlsx(self._session)
         _validate(df)
+
         return _clean_up(df)
