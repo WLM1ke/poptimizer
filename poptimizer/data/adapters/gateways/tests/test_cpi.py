@@ -5,7 +5,6 @@ import pytest
 from poptimizer.data.adapters.gateways import cpi
 from poptimizer.shared import col
 
-
 VALID_CASES = (
     (
         pd.DataFrame([1]),
