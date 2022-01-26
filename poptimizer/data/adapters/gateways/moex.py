@@ -96,19 +96,19 @@ IISJson = List[Dict[str, Union[str, int, float]]]
 
 
 def _format_candles_df(json: IISJson) -> pd.DataFrame:
-    df = pd.DataFrame(
-        columns=[
-            "begin",
-            "open",
-            "close",
-            "high",
-            "low",
-            "value",
-            "end",
-            "volume",
-        ],
-    )
-    df = df.append(json)
+    """Так как может прийти пустой json, необходимо принудительно создать наименование колонок."""
+    df = pd.DataFrame(json)
+    columns = [
+        "begin",
+        "open",
+        "close",
+        "high",
+        "low",
+        "value",
+        "end",
+        "volume",
+    ]
+    df = df.reindex(columns, axis=1)
     df = df.drop(["end", "volume"], axis=1)
     df.columns = [
         col.DATE,
@@ -119,6 +119,7 @@ def _format_candles_df(json: IISJson) -> pd.DataFrame:
         col.TURNOVER,
     ]
     df[col.DATE] = pd.to_datetime(df[col.DATE])
+
     return df.set_index(col.DATE)
 
 

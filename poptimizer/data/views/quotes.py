@@ -78,10 +78,12 @@ def _t2_shift(date: pd.Timestamp, index: pd.DatetimeIndex) -> pd.Timestamp:
     вперед и на два назад. Это не эквивалентно сдвигу на один день назад для выходных.
     """
     if date <= index[-1]:
-        position = index.get_loc(date, "ffill")
+        position = index.get_indexer([date], "ffill", limit=1)[0]
+
         return index[position - 1]
 
     next_b_day = date + offsets.BDay()
+
     return next_b_day - 2 * offsets.BDay()
 
 
