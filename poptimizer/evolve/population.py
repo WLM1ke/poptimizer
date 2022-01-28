@@ -182,7 +182,7 @@ def count() -> int:
     """Количество организмов в популяции."""
     collection = store.get_collection()
 
-    return collection.count_documents({})
+    return collection.count_documents({}) - 1
 
 
 def create_new_organism() -> Organism:
@@ -277,6 +277,29 @@ def get_oldest() -> Iterable[Organism]:
     for doc in list(_aggregate_oldest(count())):
         with contextlib.suppress(store.IdError):
             yield Organism(_id=doc["_id"])
+
+
+def count_negative() -> int:
+    """Исторический максимум количества моделей с отрицательной средней доходностью."""
+    collection = store.get_collection()
+    pipeline = [
+        {"$project": {"ir": {"$avg": "$ir"}}},
+        {"$match": {"ir": {"$lt": 0}}},
+        {"$count": "ir"},
+    ]
+
+    current = next(collection.aggregate(pipeline))["ir"]
+    if prev := (collection.find_one({"_id": "_stat"}) or 0):
+        prev = prev["neg_count"]
+
+    current = max(current, prev)
+    collection.find_one_and_update(
+        {"_id": "_stat"},
+        {"$set": {"neg_count": current}},
+        upsert=True,
+    )
+
+    return current
 
 
 def min_max_date() -> tuple[Optional[pd.Timestamp], Optional[pd.Timestamp]]:
