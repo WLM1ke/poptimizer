@@ -50,7 +50,7 @@ class Dividends(base.AbstractTable[DivEvents]):
 
     def _update_cond(self, event: DivEvents) -> bool:
         """Если дивиденды отсутствуют и поступила команда обновления, то их надо загрузить."""
-        return self._df is None or isinstance(event, events.UpdateDivCommand)
+        return True
 
     async def _prepare_df(self, event: DivEvents) -> pd.DataFrame:
         """Загружает новый DataFrame полностью."""
