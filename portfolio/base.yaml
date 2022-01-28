@@ -26,6 +26,7 @@ positions:
   BELU: 0
   BIDU-RM: 0
   BIIB-RM: 0
+  BLNG: 0
   BMY-RM: 0
   BRZL: 0
   BSPB: 0
@@ -53,6 +54,7 @@ positions:
   FEES: 0
   FESH: 0
   FIVE: 0
+  FIXP: 0
   FLOT: 0
   FXCN: 0
   FXGD: 0
@@ -112,7 +114,6 @@ positions:
   MRKY: 0
   MRKZ: 0
   MRNA-RM: 0
-  MRSB: 0
   MSFT-RM: 0
   MSNG: 0
   MSRS: 0
@@ -188,6 +189,7 @@ positions:
   TGKD: 0
   TGKN: 0
   TGT-RM: 0
+  TMUS-RM: 0
   TRMK: 0
   TRNFP: 0
   TRUR: 0
