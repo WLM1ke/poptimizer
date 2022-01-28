@@ -214,13 +214,13 @@ def _get_parents() -> tuple[Organism, Organism]:
 
 
 def _aggregate_oldest(limit: int, first_step: Optional[dict] = None):
-    """Берет первые документы по возрастанию id.
+    """Берет первые документы по убыванию побед и возрастанию id.
 
     При наличии добавляет первый шаг агрегации.
     """
     pipeline = [
-        {"$project": {"ir": True, "llh": True, "date": True, "timer": True}},
-        {"$sort": {"_id": pymongo.ASCENDING}},
+        {"$project": {"wins": True, "ir": True, "llh": True, "date": True, "timer": True}},
+        {"$sort": {"wins": pymongo.DESCENDING, "_id": pymongo.ASCENDING}},
         {"$limit": limit},
     ]
     if first_step:
