@@ -33,7 +33,6 @@ func (g gateway) Get(ctx context.Context, table domain.Table[gomoex.Candle], dat
 		end,
 		gomoex.IntervalDay,
 	)
-
 	if err != nil {
 		return nil, err
 	}
