@@ -3,7 +3,7 @@ from poptimizer.evolve.chromosomes import chromosome
 
 RISK_AVERSION = chromosome.GeneParams(
     name="risk_aversion",
-    default_range=(1 - 10 ** -6, 1 + 10 ** -6),
+    default_range=(0, 1),
     lower_bound=0,
     upper_bound=None,
     path=("utility", "risk_aversion"),
@@ -12,7 +12,7 @@ RISK_AVERSION = chromosome.GeneParams(
 
 ERROR_TOLERANCE = chromosome.GeneParams(
     name="error_tolerance",
-    default_range=(0, 10 ** -6),
+    default_range=(0, 1),
     lower_bound=0,
     upper_bound=None,
     path=("utility", "error_tolerance"),
