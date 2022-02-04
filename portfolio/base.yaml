@@ -10,6 +10,7 @@ positions:
   AFKS: 0
   AFLT: 0
   AGRO: 0
+  AKMB: 0
   AKRN: 0
   ALRS: 0
   AMD-RM: 0
@@ -38,6 +39,7 @@ positions:
   CNTL: 0
   CNTLP: 0
   CRM-RM: 0
+  COST-RM: 0
   CSCO-RM: 0
   CVX-RM: 0
   DIOD: 0
