@@ -83,7 +83,7 @@ class Organism:  # noqa: WPS214
     @property
     def scores(self) -> int:
         """Количество оценок LLH."""
-        return len(self.llh)
+        return self._doc.wins
 
     @property
     def llh(self) -> list[float]:
@@ -94,6 +94,15 @@ class Organism:  # noqa: WPS214
     def ir(self) -> list[float]:
         """List of information ratios."""
         return self._doc.ir
+
+    def clear(self) -> None:
+        """Создает необученный клон текущего организма."""
+        doc = self._doc
+        doc.model = None
+        doc.llh = []
+        doc.ir = []
+        doc.date = None
+        doc.tickers = None
 
     def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp) -> list[float]:
         """Вычисляет качество организма.
@@ -243,33 +252,9 @@ def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
     return doc and Organism(_id=doc["_id"])
 
 
-def generations_count() -> int:
-    """Количество поколений.
-
-    Чем дольше организм живет, тем больше он имеет wins. Разница между максимальным и минимальным wins
-    грубо показывает количество выживших поколений. Так переход от 1 к 2 поколениям очень резко влияет
-    на уровень значимости в тестах минимальное количество поколений 2.
-    """
-    collection = store.get_collection()
-
-    pipeline = [
-        {
-            "$group": {
-                "_id": {},
-                "min": {"$min": "$wins"},
-                "max": {"$max": "$wins"},
-            },
-        },
-    ]
-    doc = next(collection.aggregate(pipeline))
-    gens = 1 + (doc["max"] or 0) - (doc["min"] or 0)
-
-    return max(2, gens)
-
-
 def base_pop_metrics() -> Iterable[dict[str, list[float]]]:
     """Данные по доходности базовой популяции."""
-    yield from _aggregate_oldest(generations_count(), {"$match": {"date": {"$exists": True}}})
+    yield from _aggregate_oldest(count(), {"$match": {"date": {"$exists": True}}})
 
 
 def get_oldest() -> Iterable[Organism]:
@@ -353,5 +338,5 @@ def _print_wins_stats() -> None:
         max_wins = max_wins["wins"]
 
     LOGGER.info(
-        f"Организмов - {count()} / Максимум оценок - {max_wins} / Поколений - {generations_count()}",
+        f"Организмов - {count()} / Максимум оценок - {max_wins}",
     )
