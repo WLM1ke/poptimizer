@@ -38,7 +38,10 @@ class Evolution:  # noqa: WPS214
         """Инициализирует необходимые параметры."""
         self._scale = 1
         # TODO: убрать корректировку
-        self._cor = min(0, min([len(doc["llh"]) for doc in population.base_pop_metrics()]) + 2 - population.count())
+        self._delta = 4
+        self._cor = min(
+            0, min([len(doc["llh"]) for doc in population.base_pop_metrics()]) + self._delta - population.count()
+        )
         self._lead = 1
         self._tickers = None
         self._end = None
@@ -77,7 +80,8 @@ class Evolution:  # noqa: WPS214
     ) -> tuple[int, population.Organism]:
         # TODO: убрать корректировку
         self._cor = max(
-            self._cor, min(0, min([len(doc["llh"]) for doc in population.base_pop_metrics()]) + 2 - population.count())
+            self._cor,
+            min(0, min([len(doc["llh"]) for doc in population.base_pop_metrics()]) + self._delta - population.count()),
         )
         self._setup()
 
