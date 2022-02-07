@@ -29,5 +29,5 @@ def test_forecast():
     cor, *_ = ledoit_wolf.ledoit_wolf_cor(TICKERS, DATE, HISTORY_DAYS)
     assert np.allclose(cor, data.cov / STD.values.reshape(1, -1) / STD.values.reshape(-1, 1))
 
-    assert np.allclose(data.cor, 0.3009843442553877)
-    assert np.allclose(data.shrinkage, 0.8625220790109036)
+    assert np.allclose(data.cor, 0.1579351254545552)
+    assert np.allclose(data.shrinkage, 0.7074063618114778)
