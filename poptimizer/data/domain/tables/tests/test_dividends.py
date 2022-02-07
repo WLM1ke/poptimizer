@@ -31,14 +31,14 @@ DIV_UPDATE_CASES = (
     (
         pd.DataFrame(),
         events.TickerTraded("TICKER", "ISIN", "M1", date(2020, 12, 17), pd.DataFrame()),
-        False,
+        True,
     ),
 )
 
 
 @pytest.mark.parametrize("df, event, rez", DIV_UPDATE_CASES)
 def test_update_cond(div_table, df, event, rez):
-    """Если дивиденды отсутствуют и поступила команда обновления, то их надо загрузить."""
+    """Если дивиденды обновляются при двух событиях."""
     div_table._df = df
 
     assert div_table._update_cond(event) is rez
