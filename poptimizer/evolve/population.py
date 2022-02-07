@@ -257,7 +257,7 @@ def base_pop_metrics() -> Iterable[dict[str, list[float]]]:
     yield from _aggregate_oldest(count(), {"$match": {"date": {"$exists": True}}})
 
 
-def get_oldest() -> Iterable[Organism]:
+def get_all() -> Iterable[Organism]:
     """Получить самые старые."""
     for doc in list(_aggregate_oldest(count())):
         with contextlib.suppress(store.IdError):

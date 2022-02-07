@@ -122,7 +122,7 @@ class Evolution:  # noqa: WPS214
         if (org := population.get_next_one(self._end)) is not None:
             return org
 
-        for _, org in zip(range(2), population.get_oldest()):
+        for _, org in zip(range(2), population.get_all()):
             if 0 < org.scores:
                 # TODO: объединить условие и убрать корректировку
                 if org.scores < population.count() + self._cor:

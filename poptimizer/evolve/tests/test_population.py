@@ -189,7 +189,7 @@ def test_get_oldest():
     org._doc.wins = 2
     org.save()
 
-    organisms = population.get_oldest()
+    organisms = population.get_all()
     assert isinstance(organisms, Iterable)
 
     organisms = list(organisms)

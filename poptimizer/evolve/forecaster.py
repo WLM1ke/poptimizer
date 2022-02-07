@@ -29,7 +29,7 @@ class Forecasts(Iterable):
 
         self._forecasts = forecasts or _prepare_forecasts(tickers, date)
         if not self._forecasts:
-            diff = set(next(population.get_oldest())._doc.tickers).symmetric_difference(set(tickers))
+            diff = set(next(population.get_all())._doc.tickers).symmetric_difference(set(tickers))
             raise population.ForecastError(f"Отсутствуют прогнозы - необходимо обучить модели. SymDiff: {diff}")
 
     def __iter__(self) -> Iterator[Forecast]:
@@ -56,7 +56,7 @@ def _prepare_forecasts(
     date: pd.Timestamp,
 ) -> list[Forecast]:
     forecasts = []
-    for organism in tqdm.tqdm(population.get_oldest(), desc="Forecasts"):
+    for organism in tqdm.tqdm(population.get_all(), desc="Forecasts"):
         try:
             forecast = organism.forecast(tickers, date)
         except (population.ForecastError, AttributeError):
