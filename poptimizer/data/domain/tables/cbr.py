@@ -25,6 +25,7 @@ class RF(base.AbstractTable[events.TradingDayEnded]):
             return True
 
         next_update = df.index[-1] + pd.DateOffset(days=10)
+        next_update = next_update.date()
 
         return cast(bool, next_update <= event.date)
 

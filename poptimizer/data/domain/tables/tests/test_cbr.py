@@ -1,5 +1,5 @@
 """Проверка таблицы с максимальными ставками по депозитам в крупнейших банках."""
-from datetime import datetime
+from datetime import date
 
 import pandas as pd
 import pytest
@@ -10,24 +10,24 @@ from poptimizer.data.domain.tables import base, cbr
 
 _TEST_DF = pd.DataFrame(
     index=[
-        datetime(2020, 10, 1),
-        datetime(2020, 10, 11),
+        date(2020, 10, 1),
+        date(2020, 10, 11),
     ],
 )
 UPDATE_CASES = (
     (
         None,
-        datetime(2020, 12, 14),
+        date(2020, 12, 14),
         True,
     ),
     (
         _TEST_DF,
-        datetime(2020, 10, 20),
+        date(2020, 10, 20),
         False,
     ),
     (
         _TEST_DF,
-        datetime(2020, 10, 21),
+        date(2020, 10, 21),
         True,
     ),
 )
