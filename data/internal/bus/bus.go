@@ -10,6 +10,7 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/rules/end"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/securities"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/status"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/usd"
 	"github.com/WLM1ke/poptimizer/data/pkg/client"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -56,6 +57,7 @@ func NewEventBus(
 		usd.New(logger, db, iss, timeout),
 		cpi.New(logger, db, client, timeout),
 		securities.New(logger, db, iss, timeout),
+		status.New(logger, db, client, timeout),
 	}
 
 	return &EventBus{
