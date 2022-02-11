@@ -69,6 +69,7 @@ positions:
   GCHE: 0
   GE-RM: 0
   GEMA: 0
+  GILD-RM: 0
   GLTR: 0
   GM-RM: 0
   GMKN: 0
@@ -150,6 +151,7 @@ positions:
   PMSBP: 0
   POGR: 0
   POLY: 0
+  PTR-RM: 0
   PYPL-RM: 0
   QCOM-RM: 0
   QIWI: 0
@@ -179,7 +181,6 @@ positions:
   SNGS: 0
   SNGSP: 0
   SBUX-RM: 0
-  STSBP: 0
   SUGB: 0
   SVAV: 0
   T-RM: 0
@@ -207,6 +208,7 @@ positions:
   USBN: 0
   V-RM: 0
   VKCO: 0
+  VRSB: 0
   VSMO: 0
   VTBB: 0
   VTBM: 0
