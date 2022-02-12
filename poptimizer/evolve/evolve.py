@@ -38,7 +38,7 @@ class Evolution:  # noqa: WPS214
         """Инициализирует необходимые параметры."""
         self._scale = 1
         # TODO: убрать корректировку
-        self._delta = 4
+        self._delta = 8
         self._cor = min(
             0, min([len(doc["llh"]) for doc in population.base_pop_metrics()]) + self._delta - population.count()
         )
