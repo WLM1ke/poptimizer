@@ -4,7 +4,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/dates"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/securities"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"go.mongodb.org/mongo-driver/mongo"
