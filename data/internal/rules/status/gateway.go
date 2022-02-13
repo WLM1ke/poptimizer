@@ -112,7 +112,20 @@ func parceCSV(reader *csv.Reader, date time.Time) (rows []DivStatus, err error) 
 		})
 	}
 
-	sort.Slice(rows, func(i, j int) bool { return rows[i].Ticker < rows[j].Ticker })
+	sort.Slice(
+		rows,
+		func(i, j int) bool {
+			if rows[i].Ticker < rows[j].Ticker {
+				return true
+			}
+
+			if (rows[i].Ticker == rows[j].Ticker) && rows[i].Date.Before(rows[j].Date) {
+				return true
+			}
+
+			return false
+		},
+	)
 
 	return rows, nil
 }
