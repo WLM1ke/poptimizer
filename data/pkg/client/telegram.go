@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"net/http"
+	"regexp"
 	"sync"
 	"time"
 )
@@ -20,7 +21,10 @@ const (
 	_pingTimeout = time.Second * 5
 )
 
-var errTelegramAPI = errors.New(`telegram api error`)
+var (
+	errTelegramAPI = errors.New(`telegram api error`)
+	escapeRe       = regexp.MustCompile(`[()-.>]`)
+)
 
 // Telegram - клиент для рассылки с помощью бота сообщения в определенный чат.
 //
@@ -62,23 +66,12 @@ func (t *Telegram) ping(ctx context.Context) error {
 }
 
 // Send посылает сообщение в формате MarkdownV2.
-func (t *Telegram) Send(ctx context.Context, markdown string) error {
-	t.Mutex.Lock()
-	defer t.Mutex.Unlock()
-
-	cmd := fmt.Sprintf(_sendCmd, t.chatID, markdown)
-
-	return t.apiCall(ctx, cmd)
-}
-
-// SendMany посылает несколько сообщение в формате MarkdownV2.
-//
-// При данном вызове гарантируется, что не будут вклиниваться сообщения из других вызовов.
-func (t *Telegram) SendMany(ctx context.Context, markdowns ...string) error {
+func (t *Telegram) Send(ctx context.Context, markdowns ...string) error {
 	t.Mutex.Lock()
 	defer t.Mutex.Unlock()
 
 	for _, msg := range markdowns {
+		msg = escapeRe.ReplaceAllStringFunc(msg, func(ex string) string { return `\` + ex })
 		cmd := fmt.Sprintf(_sendCmd, t.chatID, msg)
 
 		err := t.apiCall(ctx, cmd)
@@ -120,5 +113,6 @@ func (t *Telegram) parseError(r io.Reader) error {
 	if err := json.NewDecoder(r).Decode(&tgErr); err != nil {
 		return fmt.Errorf("%w: can't parse error body -> %s", errTelegramAPI, err)
 	}
+
 	return fmt.Errorf("%w: status code %d -> %s", errTelegramAPI, tgErr.Code, tgErr.Description)
 }

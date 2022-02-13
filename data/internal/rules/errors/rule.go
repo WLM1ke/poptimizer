@@ -45,6 +45,6 @@ func (r *Rule) process(event domain.ErrorOccurred) {
 
 	err := r.telegram.Send(ctx, fmt.Sprint(event))
 	if err != nil {
-		r.logger.Warnf("ErrorRule: can't send to telegram %s", event)
+		r.logger.Warnf("ErrorRule: can't send to telegram %s -> %s", event, err)
 	}
 }
