@@ -33,8 +33,8 @@ func NewMongo[R any](db *mongo.Database) *Mongo[R] {
 func (r *Mongo[R]) Get(ctx context.Context, id domain.ID) (table domain.Table[R], err error) {
 	var dao tableDAO[R]
 
-	collection := r.db.Collection(string(id.Group))
-	err = collection.FindOne(ctx, bson.M{"_id": string(id.Name)}).Decode(&dao)
+	collection := r.db.Collection(string(id.Group()))
+	err = collection.FindOne(ctx, bson.M{"_id": string(id.Name())}).Decode(&dao)
 
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
@@ -53,7 +53,7 @@ func (r *Mongo[R]) Get(ctx context.Context, id domain.ID) (table domain.Table[R]
 
 // Replace перезаписывает таблицу.
 func (r *Mongo[R]) Replace(ctx context.Context, table domain.Table[R]) error {
-	collection := r.db.Collection(string(table.Group))
+	collection := r.db.Collection(string(table.Group()))
 
 	filter := bson.M{"_id": table.Name}
 	update := bson.M{"$set": bson.M{"rows": table.Rows, "date": table.Date}}
@@ -67,7 +67,7 @@ func (r *Mongo[R]) Replace(ctx context.Context, table domain.Table[R]) error {
 
 // Append добавляет строки в конец таблицы.
 func (r *Mongo[R]) Append(ctx context.Context, table domain.Table[R]) error {
-	collection := r.db.Collection(string(table.Group))
+	collection := r.db.Collection(string(table.Group()))
 
 	filter := bson.M{"_id": table.Name}
 	update := bson.M{"$push": bson.M{"rows": bson.M{"$each": table.Rows}}, "$set": bson.M{"date": table.Date}}
@@ -93,7 +93,7 @@ func NewMongoJSON(db *mongo.Database) *MongoJSON {
 
 // GetJSON загружает ExtendedJSON представление таблицы.
 func (r *MongoJSON) GetJSON(ctx context.Context, id domain.ID) ([]byte, error) {
-	collection := r.db.Collection(string(id.Group))
+	collection := r.db.Collection(string(id.Group()))
 
 	projections := options.FindOne().SetProjection(bson.M{"_id": 0, "rows": 1, "date": 1})
 

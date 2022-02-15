@@ -13,7 +13,7 @@ import (
 
 const _group = "usd"
 
-var ID = domain.ID{Group: _group, Name: _group}
+var ID = domain.NewID(_group, _group)
 
 func New(logger *lgr.Logger, db *mongo.Database, iss *gomoex.ISSClient, timeout time.Duration) domain.Rule {
 	return template.NewRule[gomoex.Candle](

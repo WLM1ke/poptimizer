@@ -13,7 +13,7 @@ import (
 
 const _group = "status"
 
-var ID = domain.ID{Group: _group, Name: _group}
+var ID = domain.NewID(_group, _group)
 
 type DivStatus struct {
 	Ticker string

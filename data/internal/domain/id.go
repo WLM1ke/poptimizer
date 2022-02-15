@@ -8,6 +8,18 @@ type (
 )
 
 type ID struct {
-	Group Group
-	Name  Name
+	group Group
+	name  Name
+}
+
+func NewID(group, name string) ID {
+	return ID{group: Group(group), name: Name(name)}
+}
+
+func (id ID) Group() Group {
+	return id.group
+}
+
+func (id ID) Name() Name {
+	return id.name
 }

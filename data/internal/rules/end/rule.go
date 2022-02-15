@@ -16,7 +16,7 @@ const (
 	_issMinute = 45
 )
 
-var ID = domain.ID{Group: _group, Name: _group}
+var ID = domain.NewID(_group, _group)
 
 // Rule - правило, сообщающее о возможном появлении новых данных.
 //

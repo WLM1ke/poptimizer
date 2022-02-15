@@ -25,7 +25,7 @@ func (g gateway) Get(ctx context.Context, table domain.Table[gomoex.Quote], date
 		ctx,
 		gomoex.EngineStock,
 		gomoex.MarketIndex,
-		string(table.Name),
+		string(table.Name()),
 		start,
 		end,
 	)

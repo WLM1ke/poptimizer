@@ -13,7 +13,7 @@ import (
 
 const _group = "cpi"
 
-var ID = domain.ID{Group: _group, Name: _group}
+var ID = domain.NewID(_group, _group)
 
 type CPI struct {
 	Date  time.Time

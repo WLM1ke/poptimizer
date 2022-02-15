@@ -17,12 +17,12 @@ import (
 func jsonHandler(logger *lgr.Logger, viewer repo.JSONViewer) http.Handler {
 	router := chi.NewRouter()
 	router.Get("/{group}/{name}", func(w http.ResponseWriter, r *http.Request) {
-		group := domain.Group(chi.URLParam(r, "group"))
-		name := domain.Name(chi.URLParam(r, "name"))
+		group := chi.URLParam(r, "group")
+		name := chi.URLParam(r, "name")
 
 		ctx := r.Context()
 
-		json, err := viewer.GetJSON(ctx, domain.ID{Group: group, Name: name})
+		json, err := viewer.GetJSON(ctx, domain.NewID(group, name))
 		switch {
 		case errors.Is(err, repo.ErrTableNotFound):
 			logger.Warnf("Server: can't get data from repo -> %s", err)

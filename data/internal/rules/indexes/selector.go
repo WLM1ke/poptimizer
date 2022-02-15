@@ -8,7 +8,7 @@ import (
 
 const _group = "indexes"
 
-var indexes = []domain.Name{
+var indexes = []string{
 	`MCFTRR`,
 	`MEOGTRR`,
 	`IMOEX`,
@@ -23,10 +23,7 @@ func (s selector) Select(_ context.Context, event domain.Event) (ids []domain.ID
 	case domain.UpdateCompleted:
 		if selected.ID == dates.ID {
 			for _, index := range indexes {
-				ids = append(ids, domain.ID{
-					Group: _group,
-					Name:  index,
-				})
+				ids = append(ids, domain.NewID(_group, index))
 			}
 
 		}
