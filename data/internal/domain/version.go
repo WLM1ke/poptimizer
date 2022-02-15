@@ -1,12 +1,41 @@
 package domain
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
-type Version struct {
-	ID
-	Date time.Time
+type Versioned interface {
+	ID() ID
+	Date() time.Time
 }
 
-func (v Version) Ver() Version {
-	return v
+type ver struct {
+	id   ID
+	date time.Time
+}
+
+func (v ver) Group() Group {
+	return v.id.group
+}
+
+func (v ver) Name() Name {
+	return v.id.name
+}
+
+func (v ver) ID() ID {
+	return v.id
+}
+
+func (v ver) Date() time.Time {
+	return v.date
+}
+
+func (v ver) String() string {
+	return fmt.Sprintf(
+		"%s, %s, %s",
+		v.Group(),
+		v.Name(),
+		v.Date().UTC().Format(_timeFormat),
+	)
 }

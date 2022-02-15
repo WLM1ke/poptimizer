@@ -127,7 +127,7 @@ func (b *EventBus) formInboxToBroadcast(ctx context.Context) {
 
 			return
 		case event := <-b.inbox:
-			b.logger.Infof("EventBus: processing %s", event)
+			b.logger.Infof("EventBus: processing event %s", event)
 			b.broadcast <- event
 		}
 	}
@@ -141,7 +141,7 @@ func (b *EventBus) drainUnprocessedEvents(inbox <-chan domain.Event) (count int)
 
 	for event := range inbox {
 		b.logger.Warnf(
-			"EventBus: unprocessed %s", event)
+			"EventBus: unprocessed event %s", event)
 		count++
 	}
 

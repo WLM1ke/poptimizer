@@ -71,6 +71,6 @@ func (r *Rule) sendIfStart(out chan<- domain.Event) {
 	if r.last.Before(lastNew) {
 		r.last = lastNew
 
-		out <- domain.UpdateCompleted{Version: domain.Version{ID: ID, Date: lastNew}}
+		out <- domain.NewUpdateCompleted(ID, lastNew)
 	}
 }

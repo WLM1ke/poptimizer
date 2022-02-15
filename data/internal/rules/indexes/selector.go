@@ -21,7 +21,7 @@ type selector struct {
 func (s selector) Select(_ context.Context, event domain.Event) (ids []domain.ID, err error) {
 	switch selected := event.(type) {
 	case domain.UpdateCompleted:
-		if selected.ID == dates.ID {
+		if selected.ID() == dates.ID {
 			for _, index := range indexes {
 				ids = append(ids, domain.NewID(_group, index))
 			}

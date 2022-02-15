@@ -21,7 +21,7 @@ func NewSelectOnTableUpdate(on domain.ID, update domain.ID) SelectOnTableUpdate 
 func (s SelectOnTableUpdate) Select(_ context.Context, event domain.Event) (ids []domain.ID, err error) {
 	switch selected := event.(type) {
 	case domain.UpdateCompleted:
-		if selected.ID == s.on {
+		if selected.ID() == s.on {
 			ids = append(ids, s.update)
 		}
 	}

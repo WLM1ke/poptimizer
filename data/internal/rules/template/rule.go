@@ -71,7 +71,7 @@ func (r Rule[R]) handleEvent(out chan<- domain.Event, event domain.Event) {
 
 	ids, err := r.selector.Select(ctx, event)
 	if err != nil {
-		out <- domain.ErrorOccurred{Version: event.Ver(), Err: err}
+		out <- domain.NewErrorOccurred(event, err)
 
 		return
 	}
@@ -79,12 +79,12 @@ func (r Rule[R]) handleEvent(out chan<- domain.Event, event domain.Event) {
 	for _, id := range ids {
 		wg.Add(1)
 
-		ver := domain.Version{ID: id, Date: event.Ver().Date}
+		update := domain.NewUpdateCompleted(id, event.Date())
 
 		go func() {
 			defer wg.Done()
 
-			if newEvent := r.updateTableToVer(ctx, ver); newEvent != nil {
+			if newEvent := r.handleUpdate(ctx, update); newEvent != nil {
 				out <- newEvent
 			}
 
@@ -92,15 +92,15 @@ func (r Rule[R]) handleEvent(out chan<- domain.Event, event domain.Event) {
 	}
 }
 
-func (r Rule[R]) updateTableToVer(ctx context.Context, ver domain.Version) domain.Event {
-	table, err := r.repo.Get(ctx, ver.ID)
+func (r Rule[R]) handleUpdate(ctx context.Context, update domain.UpdateCompleted) domain.Event {
+	table, err := r.repo.Get(ctx, update.ID())
 	if err != nil {
-		return domain.ErrorOccurred{Version: ver, Err: err}
+		return domain.NewErrorOccurred(update, err)
 	}
 
-	rows, err := r.gateway.Get(ctx, table, ver.Date)
+	rows, err := r.gateway.Get(ctx, table, update.Date())
 	if err != nil {
-		return domain.ErrorOccurred{Version: ver, Err: err}
+		return domain.NewErrorOccurred(update, err)
 	}
 
 	if !r.haveNewRows(rows) {
@@ -109,20 +109,20 @@ func (r Rule[R]) updateTableToVer(ctx context.Context, ver domain.Version) domai
 
 	err = r.validator(table, rows)
 	if err != nil {
-		return domain.ErrorOccurred{Version: ver, Err: err}
+		return domain.NewErrorOccurred(update, err)
 	}
 
 	if r.append {
-		err = r.repo.Append(ctx, domain.Table[R]{ver, rows[1:]})
+		err = r.repo.Append(ctx, domain.NewTable(update.ID(), update.Date(), rows[1:]))
 	} else {
-		err = r.repo.Replace(ctx, domain.Table[R]{ver, rows})
+		err = r.repo.Replace(ctx, domain.NewTable(update.ID(), update.Date(), rows))
 	}
 
 	if err != nil {
-		return domain.ErrorOccurred{Version: ver, Err: err}
+		return domain.NewErrorOccurred(update, err)
 	}
 
-	return domain.UpdateCompleted{Version: ver}
+	return update
 }
 
 func (r Rule[R]) haveNewRows(rows []R) bool {

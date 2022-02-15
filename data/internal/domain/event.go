@@ -1,43 +1,51 @@
 package domain
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 const _timeFormat = "2006-01-02"
 
 // Event - событие, произошедшее во время работы программы.
 type Event interface {
-	Ver() Version
+	Versioned
 	fmt.Stringer
 }
 
 // UpdateCompleted - событие удачного обновления таблицы.
 type UpdateCompleted struct {
-	Version
+	ver
+}
+
+func NewUpdateCompleted(id ID, date time.Time) UpdateCompleted {
+	return UpdateCompleted{ver: ver{id: id, date: date}}
 }
 
 func (u UpdateCompleted) String() string {
 	return fmt.Sprintf(
-		"%T(%s, %s, %s)",
-		u,
-		u.Group(),
-		u.Name(),
-		u.Date.UTC().Format(_timeFormat),
+		"UpdateCompleted(%s)",
+		u.ver,
 	)
 }
 
 // ErrorOccurred - событие неудачного обновления таблицы.
 type ErrorOccurred struct {
-	Version
-	Err error
+	ver
+	err error
+}
+
+func NewErrorOccurred(v Versioned, err error) ErrorOccurred {
+	return ErrorOccurred{
+		ver: ver{id: v.ID(), date: v.Date()},
+		err: err,
+	}
 }
 
 func (e ErrorOccurred) String() string {
 	return fmt.Sprintf(
-		"%T(%s, %s, %s, %s)",
-		e,
-		e.Group,
-		e.Name,
-		e.Date.UTC().Format(_timeFormat),
-		e.Err,
+		"ErrorOccurred(%s, %s)",
+		e.ver,
+		e.err,
 	)
 }
