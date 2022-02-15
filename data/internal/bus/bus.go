@@ -9,6 +9,7 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/rules/dates"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/end"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/indexes"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/securities"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/status"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/usd"
@@ -58,6 +59,7 @@ func NewEventBus(
 		cpi.New(logger, db, client, timeout),
 		securities.New(logger, db, iss, timeout),
 		status.New(logger, db, client, timeout),
+		indexes.New(logger, db, iss, timeout),
 	}
 
 	return &EventBus{
