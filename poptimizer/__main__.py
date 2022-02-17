@@ -22,17 +22,19 @@ def dividends(ticker: str) -> None:
     div_status.dividends_validation(ticker)
 
 
-def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD")) -> None:
+def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD"), for_sell: int = 1) -> None:
     """Optimize portfolio."""
     port = load_from_yaml(date)
-    opt_type = {
-        "resample": optimizer_resample.Optimizer,
-        "hmean": optimizer_hmean.Optimizer,
-    }[config.OPTIMIZER]
-    opt = opt_type(port)
+
+    if config.OPTIMIZER == "resample":
+        opt = optimizer_resample.Optimizer(port, for_sell=for_sell)
+    else:
+        opt = optimizer_hmean.Optimizer(port)
+
     LOGGER.info(opt.portfolio)
     LOGGER.info(opt.metrics)
     LOGGER.info(opt)
+
     div_status.new_dividends(tuple(port.index[:-2]))
 
 

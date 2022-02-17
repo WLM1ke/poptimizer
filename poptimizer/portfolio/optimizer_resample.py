@@ -24,21 +24,24 @@ class Optimizer:  # noqa: WPS214
     """Предлагает сделки для улучшения метрики портфеля.
 
     Использует множество предсказаний и статистические тесты для выявления только статистически значимых
-    улучшений портфеля, которые покрывают транзакционные издержки и импакт на рыночные котировки.
+    улучшений портфеля, которые покрывают транзакционные издержки и воздействие на рыночные котировки.
     Рекомендации даются в сокращенном виде без конкретизации конкретных сделок.
     """
 
-    def __init__(self, portfolio: Portfolio, p_value: float = config.P_VALUE):
+    def __init__(self, portfolio: Portfolio, *, p_value: float = config.P_VALUE, for_sell: int = 1):
         """Учитывается градиент, его ошибку и ликвидность бумаг.
 
         :param portfolio:
             Оптимизируемый портфель.
         :param p_value:
             Требуемая значимость отклонения градиента от нуля.
+        :param for_sell:
+            Количество претендентов на продажу.
         """
         self._portfolio = portfolio
         self._p_value = p_value
         self._metrics = metrics.MetricsResample(portfolio)
+        self._for_sell = for_sell - 1
 
     def __str__(self) -> str:
         """Информация о позициях, градиенты которых значимо отличны от 0."""
@@ -86,7 +89,7 @@ class Optimizer:  # noqa: WPS214
         lower = (conf_int[_LOWER] - conf_int[_COSTS]).max()
 
         non_zero_positions = self._portfolio.shares.iloc[:-2] > 0
-        upper = conf_int[_UPPER].loc[non_zero_positions].min()
+        upper = conf_int[_UPPER].loc[non_zero_positions].sort_values()[self._for_sell]
 
         return min(lower, upper)
 
@@ -164,11 +167,11 @@ class Optimizer:  # noqa: WPS214
                 # Обычные издержки в две стороны
                 config.COSTS * 2
                 # Дневное СКО
-                + (self.metrics.std / config.YEAR_IN_TRADING_DAYS ** 0.5)
+                + (self.metrics.std / config.YEAR_IN_TRADING_DAYS**0.5)
                 # Зависимость общих издержек от воздействия пропорционален степени 1.5 от нормированного на
                 # дневной оборот объема. Совершается покупка на кэш сейчас и увеличиваются издержки на
                 # ликвидацию позиции
-                * (cash ** impact_scale + (weight_cash ** impact_scale - weight ** impact_scale))
+                * (cash**impact_scale + (weight_cash**impact_scale - weight**impact_scale))
                 # Делим на объем операции для получения удельных издержек
                 / cash
             )
