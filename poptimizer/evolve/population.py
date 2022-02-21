@@ -3,7 +3,7 @@ import contextlib
 import datetime
 import logging
 import time
-from typing import Iterable, Optional
+from typing import Iterable, Iterator, Optional
 
 import bson
 import numpy as np
@@ -16,7 +16,7 @@ from poptimizer.evolve import store
 from poptimizer.evolve.genotype import Genotype
 
 # Преобразование времени в секунды
-TIME_TO_SEC = 10 ** 9
+TIME_TO_SEC = 10**9
 
 LOGGER = logging.getLogger()
 
@@ -96,7 +96,7 @@ class Organism:  # noqa: WPS214
         return self._doc.ir
 
     def clear(self) -> None:
-        """Создает необученный клон текущего организма."""
+        """Сбрасывает результаты обучения и оценки, но сохраняет информацию о количестве оценок."""
         doc = self._doc
         doc.model = None
         doc.llh = []
@@ -252,13 +252,13 @@ def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
     return doc and Organism(_id=doc["_id"])
 
 
-def base_pop_metrics() -> Iterable[dict[str, list[float]]]:
-    """Данные по доходности базовой популяции."""
+def get_metrics() -> Iterable[dict[str, list[float]]]:
+    """Данные о ключевых параметрах популяции."""
     yield from _aggregate_oldest(count(), {"$match": {"date": {"$exists": True}}})
 
 
-def get_all() -> Iterable[Organism]:
-    """Получить самые старые."""
+def get_all() -> Iterator[Organism]:
+    """Получить все организмы."""
     for doc in list(_aggregate_oldest(count())):
         with contextlib.suppress(store.IdError):
             yield Organism(_id=doc["_id"])
@@ -337,6 +337,4 @@ def _print_wins_stats() -> None:
         max_wins = wins[0]
         max_wins = max_wins["wins"]
 
-    LOGGER.info(
-        f"Организмов - {count()} / Максимум оценок - {max_wins}",
-    )
+    LOGGER.info(f"Организмов - {count()} / Максимум оценок - {max_wins}")

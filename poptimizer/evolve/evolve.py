@@ -1,6 +1,5 @@
 """Эволюция параметров модели."""
 import datetime
-import functools
 import logging
 import operator
 from typing import Optional
@@ -19,30 +18,22 @@ class Evolution:  # noqa: WPS214
 
     Эволюция состоит из бесконечного создания организмов и сравнения их с базовой популяцией по качеству прогноза.
     Сравнение осуществляется с помощью последовательного теста для медиан, который учитывает изменение значимости тестов
-    при множественном тестировании в течении по мери появления данных за очередной период времени. Дополнительно
-    осуществляется коррекция на множественное тестирования с учетом размера базовой популяции.
+    при множественном тестировании по мере появления данных за очередной период времени. Дополнительно осуществляется
+    коррекция на множественное тестирование на разницу llh и доходности.
 
     За основу выбора следующего организма взяты подходы из алгоритма имитации отжига:
     - Текущий организм порождает потомка в некой окрестности пространства генов.
-    - Производится сравнение с базовой популяцией. Если новый организм оказывается лучше родителя, то он становится
-    текущим. Если новый организм оказывается хуже родителя, то он становится текущим, если ухудшение не очень большое.
-    Иначе сохраняется прежний родитель и увеличивается допустимое снижение качество, чтобы эволюция не залипала на
-    необычно хорошем родителе для сохранения генетического разнообразия, но в среднем дрейфовала в сторону более
-    удачных потомков.
-    - Организмы, уступающие базовой популяции погибают, при этом сужается окрестность порождения потомков, чтобы новые
-    потомки были ближе к родителю по характеристикам, что повышает вероятность создания новых организмов минимально
-    приемлемого качества.
+    - Производится сравнение с самым старым в популяции, а для самого старого со вторым. Если новый организм оказывается
+    лучше родителя, то он становится текущим. Если новый организм оказывается хуже родителя, то он сохраняется в
+    популяции, если ухудшение не очень большое.
+    - Организмы тестируются для истории равной размеру популяции, но не меньше минимального размера дней, необходимого
+    для проведения теста.
     """
 
     def __init__(self):
         """Инициализирует необходимые параметры."""
         self._scale = 1
-        # TODO: убрать корректировку
-        self._delta = 8
-        self._cor = min(
-            0, min([len(doc["llh"]) for doc in population.base_pop_metrics()]) + self._delta - population.count()
-        )
-        self._lead = 1
+        self._count = seq.minimum_bounding_n(config.P_VALUE)
         self._tickers = None
         self._end = None
         self._logger = logging.getLogger()
@@ -63,26 +54,16 @@ class Evolution:  # noqa: WPS214
             population.print_stat()
 
             scale = 1 / self._scale
-            retrained = self._lead - 1
-            self._logger.info(f"Scale - {scale:.2%} / Retrained - {retrained}\n")  # noqa: WPS221
+            self._logger.info(f"Scale - {scale:.2%}\n")  # noqa: WPS221
 
+            current = self._maybe_clear(current)
             current = self._step(current)
-            if 0 < current.scores:
-                # TODO: объединить условие и убрать корректировку
-                if current.scores < population.count() + self._cor:
-                    self._lead += 1
-                    current.clear()
 
     def _step_setup(
         self,
         step: int,
         org: Optional[population.Organism],
     ) -> tuple[int, population.Organism]:
-        # TODO: убрать корректировку
-        self._cor = max(
-            self._cor,
-            min(0, min([len(doc["llh"]) for doc in population.base_pop_metrics()]) + self._delta - population.count()),
-        )
         self._setup()
 
         d_min, d_max = population.min_max_date()
@@ -92,51 +73,56 @@ class Evolution:  # noqa: WPS214
             org = self._next_org()
 
         dates = listing.all_history_date(self._tickers, start=self._end)
-        if (d_min != d_max) or (len(dates) == 1):
+        if (d_min != self._end) or (len(dates) == 1):
             return step + 1, org
 
         self._scale = 1
-        self._lead = 1
         self._tickers = load_tickers()
         self._end = dates[1]
 
         return 1, org
 
     def _setup(self) -> None:
-        target_pop = seq.minimum_bounding_n(config.P_VALUE) - self._lead
-        while population.count() < target_pop:
-            self._logger.info("Создается базовый организм")
-            org = population.create_new_organism()
-            self._logger.info(f"{org}\n")
+        if population.count() == 0:
+            while population.count() < seq.minimum_bounding_n(config.P_VALUE):
+                self._logger.info("Создается базовый организм:")
+                org = population.create_new_organism()
+                self._logger.info(f"{org}\n")
 
     def _next_org(
         self,
         current: Optional[population.Organism] = None,
     ) -> population.Organism:
-        """Возвращает следующий организм и информацию новый ли он.
+        """Возвращает следующий организм.
 
-        В первую очередь берутся не переоцененные существующие организмы. При их отсутствии создается
-        потомок текущего в окрестности. При отсутствии текущего (обычно после возобновления прерванной
-        эволюции) берется самый старый организм.
+        В первую проверяется, что первые два организма имеют достаточно оценок. Потом берутся не переоцененные для
+        последней даты существующие организмы. При их отсутствии создается потомок текущего в окрестности. При
+        отсутствии текущего (обычно после возобновления прерванной эволюции) берется самый старый организм.
+
+        Если организмы имеют мало оценок для текущего размера популяции, их оценки сбрасываются для проведения оценки
+        для более длинного периода времени.
         """
-        if (org := population.get_next_one(self._end)) is not None:
-            return org
+        return self._select_next(current)
 
-        for _, org in zip(range(2), population.get_all()):
-            if 0 < org.scores:
-                # TODO: объединить условие и убрать корректировку
-                if org.scores < population.count() + self._cor:
-                    self._lead += 1
-                    org.clear()
+    def _maybe_clear(self, org: population.Organism) -> population.Organism:
+        if (org.date == self._end) and (0 < org.scores < self._n_test()):
+            org.clear()
 
-                    return org
+        if (org.date != self._end) and (0 < org.scores < self._n_test() - 1):
+            org.clear()
 
-        if current is not None:
-            return current.make_child(1 / self._scale)
+        return org
 
-        return population.get_next_one(None)
+    def _select_next(
+        self,
+        current: Optional[population.Organism] = None,
+    ) -> population.Organism:
+        if current is None:
+            return next(population.get_all())
 
-    def _step(self, hunter: population.Organism) -> population.Organism:
+        return population.get_next_one(self._end) or current.make_child(1 / self._scale)
+
+    def _step(self, hunter: population.Organism) -> Optional[population.Organism]:
         """Один шаг эволюции."""
         label = ""
         if not hunter.llh:
@@ -145,9 +131,10 @@ class Evolution:  # noqa: WPS214
                 label = " - повторное обучение"
         self._logger.info(f"Родитель{label}:")
         if (hunter_margin := self._eval_organism(hunter)) is None:
-            return self._next_org(None)
+            return None
         if hunter_margin[0] < 0:
-            return self._next_org(None)
+            return None
+
         hunter_margin = hunter_margin[0] - hunter_margin[1]
 
         prey = self._next_org(hunter)
@@ -161,6 +148,7 @@ class Evolution:  # noqa: WPS214
         self._logger.info(f"Претендент{label}:")
         if (prey_margin := self._eval_organism(prey)) is None:
             return hunter
+
         prey_margin = prey_margin[0] - prey_margin[1]
 
         delta = prey_margin - hunter_margin
@@ -172,7 +160,7 @@ class Evolution:  # noqa: WPS214
             label = "Новый"
             sign = ">"
 
-        self._scale += ((prey_margin < 0) - 0.5) * 2
+        self._scale += (prey_margin < 0) * 2 - 1
         self._scale = max(1, self._scale)
 
         self._logger.info(f"{label} родитель - delta={delta:.2%} {sign} 0\n")  # noqa: WPS221
@@ -182,10 +170,10 @@ class Evolution:  # noqa: WPS214
     def _eval_organism(self, organism: population.Organism) -> Optional[tuple[float, float]]:
         """Оценка организмов.
 
-        Если организм уже оценен для данной даты, то он не оценивается.
-        Если организм старый, то оценивается один раз.
-        Если организм новый, то он оценивается для минимального количества дат из истории, необходимых
-        для последовательного тестирования.
+        - Если организм уже оценен для данной даты, то он не оценивается.
+        - Если организм старый, то оценивается один раз.
+        - Если организм новый, то он оценивается для минимального количества дат из истории, необходимых для
+          последовательного тестирования.
         """
         try:
             self._logger.info(f"{organism}\n")
@@ -201,8 +189,7 @@ class Evolution:  # noqa: WPS214
         dates = [self._end]
         if not organism.llh:
             dates = listing.all_history_date(self._tickers, end=self._end)
-            # TODO: убрать минимакс
-            dates = dates[-(population.count() + self._cor + self._lead) :].tolist()
+            dates = dates[-self._n_test() :].tolist()
 
         for date in dates:
             try:
@@ -224,13 +211,13 @@ class Evolution:  # noqa: WPS214
         """
         margin = np.inf
 
-        pop = list(population.base_pop_metrics())
+        pop = list(population.get_metrics())
         oldest = pop[0]
-        if (len(pop) > 1) and (pop[0]["_id"] == org.id):
+        if (len(pop) > 1) and (oldest["_id"] == org.id):
             oldest = pop[1]
 
         for metric in ("LLH", "RET"):
-            maximum, median, upper = _select_worst_bound(
+            median, upper, maximum = _select_worst_bound(
                 targets=oldest,
                 candidate={"date": org.date, "llh": org.llh, "ir": org.ir},
                 metric=metric,
@@ -250,6 +237,9 @@ class Evolution:  # noqa: WPS214
             valid = upper != median
             margin = min(margin, valid and (upper / (upper - median)))
 
+        if margin == np.inf:
+            margin = 0
+
         time_delta = _time_delta(org)
 
         self._logger.info(f"Margin - {margin:.2%}, Time excess - {time_delta:.2%}\n")  # noqa: WPS221
@@ -260,10 +250,13 @@ class Evolution:  # noqa: WPS214
 
         return margin, time_delta
 
+    def _n_test(self) -> int:
+        return max(population.count(), seq.minimum_bounding_n(config.P_VALUE), self._scale)
+
 
 def _time_delta(org):
     """Штраф за время, если организм медленнее медианного в популяции."""
-    median = np.median([doc["timer"] for doc in population.base_pop_metrics()])
+    median = np.median([doc["timer"] for doc in population.get_metrics()])
 
     return max((org.timer / median - 1), 0)
 
@@ -289,14 +282,15 @@ def _select_worst_bound(targets: dict, candidate: dict, metric: str) -> tuple[fl
     Если данный организм не уступает целевому организму, то верхняя граница будет положительной.
     """
     diff = _aligned_diff(targets, candidate, metric)
-    bounds = map(lambda n: _test_diff(diff[:n]), range(1, len(diff) + 1))
+    bounds = map(
+        lambda size: _test_diff(diff[:size]),
+        range(1, len(diff) + 1),
+    )
 
-    median, upper, maximum = min(
+    return min(
         bounds,
         key=lambda bound: bound[1] or np.inf,
     )
-
-    return maximum, median, upper
 
 
 def _aligned_diff(target: dict, candidate: dict, metric: str) -> list[float]:
