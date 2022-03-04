@@ -15,7 +15,7 @@ from poptimizer.dl.features import data_params
 VALUE_REL_TOL = 2.0e-4
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
-LIQUIDITY_DAYS = int((config.HISTORY_DAYS_MIN + data_params.FORECAST_DAYS) * 1.4)
+LIQUIDITY_DAYS = (config.HISTORY_DAYS_MIN + data_params.FORECAST_DAYS + 100) * 2
 
 LOGGER = logging.getLogger()
 
