@@ -1,9 +1,11 @@
 """Парсер html-таблиц."""
+import ssl
 from datetime import datetime
 from typing import Callable, List, Union
 
 import aiohttp
 import bs4
+import certifi
 import pandas as pd
 
 from poptimizer.data.adapters.html import description
@@ -18,7 +20,9 @@ async def get_html(
     session: aiohttp.ClientSession = connections.HTTP_SESSION,
 ) -> str:
     """Загружает html-код страницы."""
-    async with session.get(url) as respond:
+    ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+    async with session.get(url, ssl_context=ssl_context) as respond:
         try:
             respond.raise_for_status()
         except aiohttp.ClientResponseError:
