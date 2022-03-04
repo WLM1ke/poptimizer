@@ -58,7 +58,11 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         repo: AnyTableRepo,
     ) -> list[domain.AbstractEvent]:
         """Запускает обновление необходимых таблиц в конце торгового дня и создает дочерние события."""
-        table_groups = [ports.CPI, ports.RF, ports.DIV_NEW, ports.USD]
+        table_groups = [
+            ports.CPI,
+            ports.DIV_NEW,
+            ports.USD,
+        ]
         table_ids = [base.create_id(group) for group in table_groups]
         aws = [_load_by_id_and_handle_event(repo, id_, event) for id_ in table_ids]
         return [

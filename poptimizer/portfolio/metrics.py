@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 
 from poptimizer import config, evolve
-from poptimizer.data.views import indexes
 from poptimizer.dl import Forecast
 from poptimizer.portfolio.portfolio import CASH, PORTFOLIO, Portfolio
 
@@ -25,7 +24,6 @@ class MetricsSingle:  # noqa: WPS214
         """
         self._portfolio = portfolio
         self._forecast = forecast
-        self._rf = indexes.rf(portfolio.date)
 
     def __str__(self) -> str:
         """Текстовое представление метрик портфеля."""
@@ -58,11 +56,6 @@ class MetricsSingle:  # noqa: WPS214
     def error_tolerance(self) -> float:
         """Не любовь к ошибкам."""
         return self._forecast.error_tolerance
-
-    @functools.cached_property
-    def rf(self) -> float:
-        """Безрисковая ставка."""
-        return self._rf
 
     @functools.cached_property
     def mean(self) -> pd.Series:

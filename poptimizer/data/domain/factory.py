@@ -7,7 +7,6 @@ import pandas as pd
 
 from poptimizer.data.domain.tables import (  # noqa: WPS235
     base,
-    cbr,
     cpi,
     dividends,
     indexes,
@@ -30,7 +29,6 @@ _TABLE_TYPES: Final = cast(
         quotes.Quotes,
         indexes.Indexes,
         cpi.CPI,
-        cbr.RF,
         dividends.Dividends,
         dividends.DivNew,
         dividends.DivExt,
