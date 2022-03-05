@@ -23,7 +23,7 @@ const (
 
 var (
 	errTelegramAPI = errors.New(`telegram api error`)
-	escapeRe       = regexp.MustCompile(`[()-.>]`)
+	escapeRe       = regexp.MustCompile(`[()-.>{}]`)
 )
 
 // Telegram - клиент для рассылки с помощью бота сообщения в определенный чат.
