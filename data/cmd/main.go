@@ -17,7 +17,7 @@ type data struct {
 		Timeout time.Duration `envDefault:"1s"`
 	}
 	Events struct {
-		Timeout time.Duration `envDefault:"30s"`
+		Timeout time.Duration `envDefault:"5m"`
 	}
 	MongoDB struct {
 		URI string `env:"URI,unset" envDefault:"mongodb://localhost:27017"`
