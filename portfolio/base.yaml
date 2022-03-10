@@ -11,6 +11,7 @@ positions:
   AFLT: 0
   AGRO: 0
   AKMB: 0
+  AKME: 0
   AKRN: 0
   ALRS: 0
   AMD-RM: 0
@@ -175,11 +176,11 @@ positions:
   RTKMP: 0
   RUAL: 0
   RUGR: 0
-  RUSE: 0
   RZSB: 0
   SBER: 0
   SBERP: 0
   SBGB: 0
+  SBMX: 0
   SBRB: 0
   SBUX-RM: 0
   SELG: 0
@@ -200,6 +201,7 @@ positions:
   TGKD: 0
   TGKN: 0
   TGT-RM: 0
+  TMOS: 0
   TMUS-RM: 0
   TRMK: 0
   TRNFP: 0
@@ -221,6 +223,7 @@ positions:
   VTBB: 0
   VTBM: 0
   VTBR: 0
+  VTBX: 0
   VTRS-RM: 0
   WMT-RM: 0
   XOM-RM: 0
