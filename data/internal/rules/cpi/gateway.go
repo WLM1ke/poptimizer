@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	_pricesURL = `https://rosstat.gov.ru/storage/mediabank/ind_potreb_cen_12.html`
+	_pricesURL = `https://rosstat.gov.ru/storage/mediabank/ind_potreb_cen_02.html`
 
 	_sheet = `ИПЦ`
 
@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	_urlRE  = regexp.MustCompile(`https://rosstat.gov.ru/.+i_ipc.+xlsx`)
+	_urlRE  = regexp.MustCompile(`https://rosstat.gov.ru/.+ipc.+xlsx`)
 	_months = [12]string{
 		`январь`,
 		`февраль`,

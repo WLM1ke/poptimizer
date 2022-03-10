@@ -10,8 +10,9 @@ from poptimizer.data.adapters.gateways import gateways
 from poptimizer.shared import adapters, col
 
 # Параметры загрузки валидации данных
-CPI_PAGE = "https://rosstat.gov.ru/storage/mediabank/ind_potreb_cen_12.html"
-LINK = re.compile("https://rosstat.gov.ru/.+i_ipc.+xlsx")
+# https://rosstat.gov.ru/storage/mediabank/ind_potreb_cen_12.html
+CPI_PAGE = "https://rosstat.gov.ru/storage/mediabank/ind_potreb_cen_02.html"
+LINK = re.compile("https://rosstat.gov.ru/.+ipc.+xlsx")
 END_OF_JAN = 31
 PARSING_PARAMETERS = types.MappingProxyType(
     {
