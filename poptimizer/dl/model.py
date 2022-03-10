@@ -25,12 +25,12 @@ from poptimizer.dl.models.wave_net import GradientsError, ModelError
 LLH_DRAW_DOWN = 1
 
 # Максимальный размер документа в MongoDB
-MAX_DOC_SIZE: Final = 2 * (2 ** 10) ** 2
+MAX_DOC_SIZE: Final = 2 * (2**10) ** 2
 
 # Максимальный размер батча GB
 MAX_BATCH_SIZE: Final = 170
 
-DAY_IN_SECONDS: Final = 24 * 60 ** 2
+DAY_IN_SECONDS: Final = 24 * 60**2
 
 LOGGER = logging.getLogger()
 
@@ -246,7 +246,7 @@ class Model:
         model_params = sum(tensor.numel() for tensor in model.parameters())
         LOGGER.info(f"Количество слоев / параметров - {modules} / {model_params}")
 
-        batch_size = (model_params * 4) * self._phenotype["data"]["batch_size"] / (2 ** 10) ** 3
+        batch_size = (model_params * 4) * self._phenotype["data"]["batch_size"] / (2**10) ** 3
         if batch_size > MAX_BATCH_SIZE:
             raise TooLargeModelError(f"Размер батча {batch_size:.0f} > {MAX_BATCH_SIZE}Gb")
 
@@ -316,7 +316,7 @@ class Model:
                 dist = model.dist(batch)
 
                 means.append(dist.mean - torch.tensor(1.0))
-                stds.append(dist.variance ** 0.5)
+                stds.append(dist.variance**0.5)
 
         means = torch.cat(means, dim=0).cpu().numpy().flatten()
         stds = torch.cat(stds, dim=0).cpu().numpy().flatten()
@@ -365,15 +365,18 @@ def _opt_port(
 
     w, sigma = _opt_weight(mean, var, tickers, end, phenotype)
     ret = (w * labels).sum()
+    ave = labels.mean()
+    delta = ret - ave
     ret_plan = (w * mean).sum()
     std_plan = (w.reshape(1, -1) @ sigma @ w.reshape(-1, 1)).item() ** 0.5
-    dd = std_plan ** 2 / ret_plan
+    dd = std_plan**2 / ret_plan
 
     LOGGER.info(
         " / ".join(
             [
+                f"Delta = {delta:.2%}",
                 f"RET = {ret:.2%}",
-                f"MEAN = {labels.mean():.2%}",
+                f"AVE = {ave:.2%}",
                 f"PLAN = {ret_plan:.2%}",
                 f"STD = {std_plan:.2%}",
                 f"DD = {dd:.2%}",
@@ -383,7 +386,7 @@ def _opt_port(
         ),
     )
 
-    return ret
+    return delta
 
 
 def _opt_weight(
@@ -393,7 +396,7 @@ def _opt_weight(
     end: pd.Timestamp,
     phenotype: PhenotypeData,
 ) -> tuple[np.array, np.array]:
-    """Веса портфеля с максимальными темпами роста и использовавшаяся ковариационная матрица..
+    """Веса портфеля с максимальными темпами роста и использовавшаяся ковариационная матрица.
 
     Задача максимизации темпов роста портфеля сводится к максимизации математического ожидания
     логарифма доходности. Дополнительно накладывается ограничение на полною отсутствие кэша и
@@ -403,7 +406,7 @@ def _opt_weight(
     mean = mean.reshape(-1, 1)
 
     sigma = ledoit_wolf.ledoit_wolf_cor(tickers, end, history_days, config.FORECAST_DAYS)[0]
-    std = variance ** 0.5
+    std = variance**0.5
     sigma = std.reshape(1, -1) * sigma * std.reshape(-1, 1)
 
     w = np.ones_like(mean).flatten()
@@ -442,6 +445,6 @@ def _make_utility_func(
         ret = (w.T @ mean).item()
         variance = (w.T @ sigma @ w).item()
 
-        return -(ret - risk_aversion / 2 * variance - error_tolerance * variance ** 0.5)
+        return -(ret - risk_aversion / 2 * variance - error_tolerance * variance**0.5)
 
     return utility_func
