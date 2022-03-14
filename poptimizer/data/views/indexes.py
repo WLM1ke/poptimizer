@@ -1,12 +1,7 @@
 """Индексы потребительских цен и MOEX."""
-from typing import cast
-
 import pandas as pd
 
-from poptimizer.data import ports
-from poptimizer.data.app import bootstrap, viewers
 from poptimizer.data.views.crop import not_div
-from poptimizer.shared import col
 
 
 def cpi(date: pd.Timestamp) -> pd.Series:

@@ -6,7 +6,6 @@ from poptimizer.data.app import bootstrap
 from poptimizer.data.views import indexes
 from poptimizer.shared import col
 
-
 CPI_CASES = (
     ("2020-09-30", 0.9993),
     ("2018-11-30", 1.005),
