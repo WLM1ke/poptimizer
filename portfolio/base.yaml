@@ -38,7 +38,6 @@ positions:
   CBOM: 0
   CHMF: 0
   CHMK: 0
-  CI-RM: 0
   CMCSA-RM: 0
   CNTL: 0
   CNTLP: 0
@@ -84,13 +83,11 @@ positions:
   HYDR: 0
   IBM-RM: 0
   ILMN-RM: 0
-  INCY-RM: 0
   INGR: 0
   INTC-RM: 0
   IRAO: 0
   IRKT: 0
   ISKJ: 0
-  ISRG-RM: 0
   JNJ-RM: 0
   KAZT: 0
   KHC-RM: 0
@@ -115,7 +112,6 @@ positions:
   MGNT: 0
   MGTSP: 0
   MOEX: 0
-  MOS-RM: 0
   MRKC: 0
   MRKP: 0
   MRKS: 0
@@ -189,7 +185,6 @@ positions:
   SMLT: 0
   SNGS: 0
   SNGSP: 0
-  SPLK-RM: 0
   SUGB: 0
   SVAV: 0
   T-RM: 0
