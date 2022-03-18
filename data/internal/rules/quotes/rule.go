@@ -11,17 +11,14 @@ import (
 )
 
 func New(logger *lgr.Logger, db *mongo.Database, iss *gomoex.ISSClient, timeout time.Duration) domain.Rule {
-	sg := &selectorWithGateway{
-		iss:  iss,
-		repo: repo.NewMongo[gomoex.Security](db),
-	}
+	secRepo := repo.NewMongo[gomoex.Security](db)
 
 	return template.NewRule[gomoex.Candle](
 		"QuotesRule",
 		logger,
 		repo.NewMongo[gomoex.Candle](db),
-		sg,
-		sg,
+		selector{secRepo},
+		gateway{iss: iss, secRepo: secRepo},
 		validator,
 		true,
 		template.EventCtxFuncWithTimeout(timeout),

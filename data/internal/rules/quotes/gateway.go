@@ -6,9 +6,9 @@ import (
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/securities"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
 	"sort"
-	"sync"
 	"time"
 )
 
@@ -20,15 +20,12 @@ var boardToMarket = map[string]string{
 	gomoex.BoardFQBR: gomoex.MarketForeignShares,
 }
 
-type selectorWithGateway struct {
-	iss  *gomoex.ISSClient
-	repo repo.Read[gomoex.Security]
-
-	lock       sync.RWMutex
-	securities []gomoex.Security
+type gateway struct {
+	iss     *gomoex.ISSClient
+	secRepo repo.Read[gomoex.Security]
 }
 
-func (s *selectorWithGateway) Get(ctx context.Context, table domain.Table[gomoex.Candle], date time.Time) ([]gomoex.Candle, error) {
+func (s gateway) Get(ctx context.Context, table domain.Table[gomoex.Candle], date time.Time) ([]gomoex.Candle, error) {
 	start := ""
 	if !table.IsEmpty() {
 		start = table.LastRow().Begin.Format(_format)
@@ -37,7 +34,7 @@ func (s *selectorWithGateway) Get(ctx context.Context, table domain.Table[gomoex
 	end := date.Format(_format)
 	ticker := string(table.Name())
 
-	market, err := s.getMarket(ticker)
+	market, err := s.getMarket(ctx, ticker)
 	if err != nil {
 		return nil, err
 	}
@@ -60,15 +57,19 @@ func (s *selectorWithGateway) Get(ctx context.Context, table domain.Table[gomoex
 	return rows, nil
 }
 
-func (s *selectorWithGateway) getMarket(ticker string) (string, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+func (s gateway) getMarket(ctx context.Context, ticker string) (string, error) {
+	table, err := s.secRepo.Get(ctx, securities.ID)
+	if err != nil {
+		return "", err
+	}
 
-	n := sort.Search(len(s.securities), func(i int) bool {
-		return s.securities[i].Ticker >= ticker
+	sec := table.Rows()
+
+	n := sort.Search(len(sec), func(i int) bool {
+		return sec[i].Ticker >= ticker
 	})
 
-	m, ok := boardToMarket[s.securities[n].Board]
+	m, ok := boardToMarket[sec[n].Board]
 	if ok {
 		return m, nil
 	}
@@ -77,6 +78,6 @@ func (s *selectorWithGateway) getMarket(ticker string) (string, error) {
 		"%w: wrong board for ticker %s - %s",
 		template.ErrRuleGateway,
 		ticker,
-		s.securities[n].Board,
+		sec[n].Board,
 	)
 }

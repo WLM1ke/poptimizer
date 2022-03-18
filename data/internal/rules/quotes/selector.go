@@ -2,28 +2,30 @@ package quotes
 
 import (
 	"context"
+	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
+	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/securities"
 )
 
-const _group = "quotes"
+const Group = "quotes"
 
-func (s *selectorWithGateway) Select(ctx context.Context, event domain.Event) (ids []domain.ID, err error) {
+type selector struct {
+	securities repo.Read[gomoex.Security]
+}
+
+func (s selector) Select(ctx context.Context, event domain.Event) (ids []domain.ID, err error) {
 	switch selected := event.(type) {
 	case domain.UpdateCompleted:
 		if selected.ID() == securities.ID {
-			s.lock.Lock()
-			defer s.lock.Unlock()
 
-			sec, err := s.repo.Get(ctx, securities.ID)
+			sec, err := s.securities.Get(ctx, securities.ID)
 			if err != nil {
 				return ids, err
 			}
 
-			s.securities = sec.Rows()
-
 			for _, s := range sec.Rows() {
-				ids = append(ids, domain.NewID(_group, s.Ticker))
+				ids = append(ids, domain.NewID(Group, s.Ticker))
 			}
 		}
 	}
