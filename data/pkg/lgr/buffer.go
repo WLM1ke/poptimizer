@@ -24,7 +24,7 @@ func newPool() pool {
 }
 
 func (p *pool) get() *buffer {
-	return p.pool.Get().(*buffer)
+	return p.pool.Get().(*buffer) //nolint:forcetypeassert
 }
 
 func (p *pool) put(b *buffer) {

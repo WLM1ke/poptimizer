@@ -3,10 +3,11 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
-	"go.uber.org/goleak"
 	"os"
 	"strings"
+
+	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
+	"go.uber.org/goleak"
 )
 
 // Service представляет компоненту приложения.
@@ -41,7 +42,6 @@ type App struct {
 //
 // Ресурсы и службы не инициализируются в момент создания.
 func New(config Config) *App {
-
 	return &App{
 		config: config,
 	}

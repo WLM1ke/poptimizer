@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
 	"regexp"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -42,7 +43,7 @@ type Telegram struct {
 //
 // При создании проверяет корректность введенного токена и id.
 func NewTelegram(client *http.Client, token, chatID string) (*Telegram, error) {
-	t := Telegram{
+	telegram := Telegram{
 		client: client,
 		token:  token,
 		chatID: chatID,
@@ -51,12 +52,11 @@ func NewTelegram(client *http.Client, token, chatID string) (*Telegram, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), _pingTimeout)
 	defer cancel()
 
-	err := t.ping(ctx)
-	if err != nil {
+	if err := telegram.ping(ctx); err != nil {
 		return nil, err
 	}
 
-	return &t, nil
+	return &telegram, nil
 }
 
 func (t *Telegram) ping(ctx context.Context) error {
@@ -95,7 +95,7 @@ func (t *Telegram) apiCall(ctx context.Context, cmd string) error {
 	if err != nil {
 		return fmt.Errorf("%w: can't make request -> %s", errTelegramAPI, err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode != http.StatusOK {
 		return t.parseError(resp.Body)
@@ -104,15 +104,15 @@ func (t *Telegram) apiCall(ctx context.Context, cmd string) error {
 	return nil
 }
 
-func (t *Telegram) parseError(r io.Reader) error {
+func (t *Telegram) parseError(reader io.Reader) error {
 	var tgErr struct {
-		Code        int    `json:"error_code"`
+		ErrorCode   int    `json:"error_code"`
 		Description string `json:"description"`
 	}
 
-	if err := json.NewDecoder(r).Decode(&tgErr); err != nil {
+	if err := json.NewDecoder(reader).Decode(&tgErr); err != nil {
 		return fmt.Errorf("%w: can't parse error body -> %s", errTelegramAPI, err)
 	}
 
-	return fmt.Errorf("%w: status code %d -> %s", errTelegramAPI, tgErr.Code, tgErr.Description)
+	return fmt.Errorf("%w: status code %d -> %s", errTelegramAPI, tgErr.ErrorCode, tgErr.Description)
 }

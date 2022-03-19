@@ -3,10 +3,11 @@ package app
 import (
 	"bufio"
 	"errors"
-	"github.com/caarlos0/env/v6"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/caarlos0/env/v6"
 )
 
 const (
@@ -30,6 +31,7 @@ func (a *App) loadConfig() {
 
 func (a *App) readEnvFile() map[string]string {
 	file, err := os.Open(_envPath)
+
 	switch {
 	case errors.Is(err, os.ErrNotExist):
 		a.logger.Panicf("no %s file - using defaults", _envPath)
@@ -62,6 +64,7 @@ func (a *App) parse(file io.Reader) map[string]string {
 		}
 
 		line := scanner.Text()
+
 		switch {
 		case len(line) == 0:
 			continue
@@ -76,7 +79,6 @@ func (a *App) parse(file io.Reader) map[string]string {
 		}
 
 		envs[line[:index]] = line[index+1:]
-
 	}
 
 	return envs

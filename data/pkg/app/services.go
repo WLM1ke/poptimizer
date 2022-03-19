@@ -2,17 +2,17 @@ package app
 
 import (
 	"context"
-	"golang.org/x/sync/errgroup"
 	"os/signal"
 	"runtime"
 	"syscall"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 const _counterInterval = time.Hour
 
 func (a *App) runServices() {
-
 	group, ctx := errgroup.WithContext(a.ctx())
 
 	group.Go(func() error {

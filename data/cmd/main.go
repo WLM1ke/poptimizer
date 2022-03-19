@@ -33,7 +33,7 @@ type data struct {
 }
 
 func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service) {
-	mongo, err := client.MongoDB(d.MongoDB.URI)
+	mongo, err := client.NewMongoDB(d.MongoDB.URI)
 	if err != nil {
 		logger.Panicf("App: %s", err)
 	}
