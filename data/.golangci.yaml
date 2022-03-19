@@ -1,0 +1,45 @@
+run:
+  # Include test files or not.
+  # Default: true
+  tests: true
+  # Define the Go version limit.
+  # Mainly related to generics support in go1.18.
+  # Default: 1.17
+  go: 1.18
+
+linters-settings:
+  tagliatelle:
+    # Check the struck tag name case.
+    case:
+      # Use the struct field name to check the name of the struct tag.
+      # Default: false
+      use-field-name: true
+      rules:
+        # Any struct tag type can be used.
+        # Support string case: `camel`, `pascal`, `kebab`, `snake`, `goCamel`, `goPascal`, `goKebab`, `goSnake`, `upper`, `lower`
+        json: snake
+
+linters:
+  # Enable all available linters.
+  # Default: false
+  enable-all: true
+  # Disable specific linter
+  # https://golangci-lint.run/usage/linters/#disabled-by-default-linters--e--enable
+  disable:
+    - golint
+    - maligned
+    - scopelint
+    - interfacer
+    - testpackage
+    - paralleltest
+    - contextcheck
+    - exhaustivestruct
+
+issues:
+  # Independently of option `exclude` we use default exclude patterns,
+  # it can be disabled by this option.
+  # To list all excluded by default patterns execute `golangci-lint run --help`.
+  # Default: true.
+  exclude-use-default: false
+  # Fix found issues (if it's supported by the linter).
+  fix: true

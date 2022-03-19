@@ -5,15 +5,7 @@ update:
 	brew upgrade go
 	brew upgrade golangci-lint
 lint:
-	golangci-lint run --no-config --enable-all --fix --tests=true --exclude-use-default=false \
-	--disable golint \
-	--disable maligned \
-	--disable scopelint \
-    --disable interfacer \
-    --disable testpackage \
-    --disable paralleltest \
-    --disable contextcheck \
-    --disable exhaustivestruct
+	golangci-lint run
 test:
 	make lint
 	go test -v -covermode=atomic -race ./...
@@ -23,3 +15,5 @@ bench:
 	go test -count=5 -run=None -bench . -benchmem ./...
 build:
 	go build -o .bin/podata -x cmd/main.go
+run:
+	go run ./cmd
