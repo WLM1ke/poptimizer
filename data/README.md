@@ -2,7 +2,7 @@
 
 Прототип в разработке - не используется в основном коде
 
-## Поток событий
+## Потоки событий
 ```mermaid
 flowchart
     Timer[\Timer/]-->End
@@ -15,7 +15,7 @@ flowchart
 
 	USD-->Securities
     Securities-->Quotes
-	Quotes-->Dividends
+	Securities-.->Dividends
     
     Input[\Input/]-.->DivRaw
     DivRaw-.->Dividends
