@@ -15,7 +15,7 @@ flowchart
 
 	USD-->Securities
     Securities-->Quotes
-	Securities-.->Dividends
+	Securities-->Dividends
     
     Input[\Input/]-.->DivRaw
     DivRaw-.->Dividends

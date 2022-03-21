@@ -7,6 +7,7 @@ import (
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/cpi"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/dates"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/dividends"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/end"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/indexes"
@@ -62,6 +63,7 @@ func NewEventBus(
 		status.New(logger, db, client, timeout),
 		indexes.New(logger, db, iss, timeout),
 		quotes.New(logger, db, iss, timeout),
+		dividends.New(logger, db, timeout),
 	}
 
 	return &EventBus{
