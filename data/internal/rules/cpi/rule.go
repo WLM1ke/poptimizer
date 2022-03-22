@@ -3,7 +3,6 @@ package cpi
 import (
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/dates"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -11,16 +10,12 @@ import (
 	"time"
 )
 
-const _group = "cpi"
-
-var ID = domain.NewID(_group, _group)
-
 func New(logger *lgr.Logger, db *mongo.Database, client *http.Client, timeout time.Duration) domain.Rule {
 	return template.NewRule[domain.CPI](
 		"CPIRule",
 		logger,
 		repo.NewMongo[domain.CPI](db),
-		template.NewSelectOnTableUpdate(dates.ID, ID),
+		selector{},
 		gateway{client: client},
 		validator,
 		false,

@@ -3,17 +3,12 @@ package status
 import (
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/dates"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 	"time"
 )
-
-const _group = "status"
-
-var ID = domain.NewID(_group, _group)
 
 // Возможные альтернативные источники:
 // - https://smart-lab.ru/dividends/index/order_by_yield/desc/
@@ -26,7 +21,7 @@ func New(logger *lgr.Logger, db *mongo.Database, client *http.Client, timeout ti
 		"DivStatus",
 		logger,
 		repo.NewMongo[domain.DivStatus](db),
-		template.NewSelectOnTableUpdate(dates.ID, ID),
+		selector{},
 		gateway{client: client},
 		validator,
 		false,
