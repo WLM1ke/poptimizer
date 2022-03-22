@@ -20,7 +20,7 @@ flowchart
     Input[\Input/]-.->DivRaw
     DivRaw-.->Dividends
     
-    DivStatus-.->DivRaw
+    DivStatus-->DivRaw
     DivStatus-.->CloseReestry
     DivStatus-.->NASDAQ
 ```

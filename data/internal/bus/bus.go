@@ -12,6 +12,7 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/indexes"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/quotes"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/raw_div"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/securities"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/status"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/usd"
@@ -64,6 +65,7 @@ func NewEventBus(
 		indexes.New(logger, db, iss, timeout),
 		quotes.New(logger, db, iss, timeout),
 		dividends.New(logger, db, timeout),
+		raw_div.New(logger, db, timeout),
 	}
 
 	return &EventBus{

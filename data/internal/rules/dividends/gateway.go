@@ -6,6 +6,7 @@ import (
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/raw_div"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/usd"
 	"golang.org/x/exp/slices"
@@ -14,9 +15,8 @@ import (
 )
 
 const (
-	USD     = `USD`
-	RUR     = `RUR`
-	_rawDiv = `raw_div`
+	USD = `USD`
+	RUR = `RUR`
 )
 
 type gateway struct {
@@ -25,7 +25,7 @@ type gateway struct {
 }
 
 func (s gateway) Get(ctx context.Context, table domain.Table[domain.Dividend], _ time.Time) ([]domain.Dividend, error) {
-	raw, err := s.rawRepo.Get(ctx, domain.NewID(_rawDiv, string(table.Name())))
+	raw, err := s.rawRepo.Get(ctx, domain.NewID(raw_div.Group, string(table.Name())))
 	if err != nil {
 		return nil, err
 	}
