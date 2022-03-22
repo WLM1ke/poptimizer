@@ -13,7 +13,7 @@ type gateway struct {
 	iss *gomoex.ISSClient
 }
 
-func (g gateway) Get(ctx context.Context, table domain.Table[gomoex.Quote], date time.Time) ([]gomoex.Quote, error) {
+func (g gateway) Get(ctx context.Context, table domain.Table[domain.Index], date time.Time) ([]domain.Index, error) {
 	start := ""
 	if !table.IsEmpty() {
 		start = table.LastRow().Date.Format(_format)

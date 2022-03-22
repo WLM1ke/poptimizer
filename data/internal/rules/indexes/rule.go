@@ -11,10 +11,10 @@ import (
 )
 
 func New(logger *lgr.Logger, db *mongo.Database, iss *gomoex.ISSClient, timeout time.Duration) domain.Rule {
-	return template.NewRule[gomoex.Quote](
+	return template.NewRule[domain.Index](
 		"IndexesRule",
 		logger,
-		repo.NewMongo[gomoex.Quote](db),
+		repo.NewMongo[domain.Index](db),
 		selector{},
 		gateway{iss: iss},
 		validator,

@@ -25,7 +25,7 @@ type gateway struct {
 	secRepo repo.Read[gomoex.Security]
 }
 
-func (s gateway) Get(ctx context.Context, table domain.Table[gomoex.Candle], date time.Time) ([]gomoex.Candle, error) {
+func (s gateway) Get(ctx context.Context, table domain.Table[domain.Quote], date time.Time) ([]domain.Quote, error) {
 	start := ""
 	if !table.IsEmpty() {
 		start = table.LastRow().Begin.Format(_format)

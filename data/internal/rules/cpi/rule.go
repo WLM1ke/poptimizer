@@ -15,16 +15,11 @@ const _group = "cpi"
 
 var ID = domain.NewID(_group, _group)
 
-type CPI struct {
-	Date  time.Time
-	Close float64
-}
-
 func New(logger *lgr.Logger, db *mongo.Database, client *http.Client, timeout time.Duration) domain.Rule {
-	return template.NewRule[CPI](
+	return template.NewRule[domain.CPI](
 		"CPIRule",
 		logger,
-		repo.NewMongo[CPI](db),
+		repo.NewMongo[domain.CPI](db),
 		template.NewSelectOnTableUpdate(dates.ID, ID),
 		gateway{client: client},
 		validator,

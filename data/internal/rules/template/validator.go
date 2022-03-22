@@ -7,4 +7,4 @@ import (
 
 var ErrNewRowsValidation = errors.New("new rows validation error")
 
-type Validator[R any] func(table domain.Table[R], rows []R) error
+type Validator[R domain.Row] func(table domain.Table[R], rows []R) error

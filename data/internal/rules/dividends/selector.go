@@ -2,7 +2,6 @@ package dividends
 
 import (
 	"context"
-	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/securities"
@@ -11,7 +10,7 @@ import (
 const Group = "dividends"
 
 type selector struct {
-	securities repo.Read[gomoex.Security]
+	securities repo.Read[domain.Security]
 }
 
 func (s selector) Select(ctx context.Context, event domain.Event) (ids []domain.ID, err error) {

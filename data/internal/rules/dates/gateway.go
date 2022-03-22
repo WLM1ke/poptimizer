@@ -11,7 +11,7 @@ type gateway struct {
 	iss *gomoex.ISSClient
 }
 
-func (g gateway) Get(ctx context.Context, table domain.Table[gomoex.Date], _ time.Time) ([]gomoex.Date, error) {
+func (g gateway) Get(ctx context.Context, table domain.Table[domain.Date], _ time.Time) ([]domain.Date, error) {
 	rows, err := g.iss.MarketDates(ctx, gomoex.EngineStock, gomoex.MarketShares)
 
 	switch {

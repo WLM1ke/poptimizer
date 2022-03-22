@@ -13,31 +13,18 @@ import (
 	"time"
 )
 
-type Currency string
-
 const (
 	USD     = `USD`
 	RUR     = `RUR`
 	_rawDiv = `raw_div`
 )
 
-type RawDiv struct {
-	Date     time.Time
-	Value    float64
-	Currency Currency
-}
-
-type Dividend struct {
-	Date  time.Time
-	Value float64
-}
-
 type gateway struct {
-	rawRepo repo.Read[RawDiv]
-	usdRepo repo.Read[gomoex.Candle]
+	rawRepo repo.Read[domain.RawDiv]
+	usdRepo repo.Read[domain.USD]
 }
 
-func (s gateway) Get(ctx context.Context, table domain.Table[Dividend], _ time.Time) ([]Dividend, error) {
+func (s gateway) Get(ctx context.Context, table domain.Table[domain.Dividend], _ time.Time) ([]domain.Dividend, error) {
 	raw, err := s.rawRepo.Get(ctx, domain.NewID(_rawDiv, string(table.Name())))
 	if err != nil {
 		return nil, err
@@ -64,13 +51,13 @@ func (s gateway) Get(ctx context.Context, table domain.Table[Dividend], _ time.T
 	return div, nil
 }
 
-func (s gateway) prepareDiv(raw []RawDiv, rates []gomoex.Candle) (dividends []Dividend, err error) {
+func (s gateway) prepareDiv(raw []domain.RawDiv, rates []gomoex.Candle) (dividends []domain.Dividend, err error) {
 	var date time.Time
 
 	for _, div := range raw {
 		if !div.Date.Equal(date) {
 			date = div.Date
-			dividends = append(dividends, Dividend{Date: date})
+			dividends = append(dividends, domain.Dividend{Date: date})
 		}
 
 		switch div.Currency {

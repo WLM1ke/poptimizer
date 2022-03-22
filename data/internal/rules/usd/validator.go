@@ -2,12 +2,11 @@ package usd
 
 import (
 	"fmt"
-	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
 )
 
-func validator(table domain.Table[gomoex.Candle], rows []gomoex.Candle) error {
+func validator(table domain.Table[domain.USD], rows []domain.USD) error {
 	prev := rows[0].Begin
 	for _, row := range rows[1:] {
 		if prev.Before(row.Begin) {

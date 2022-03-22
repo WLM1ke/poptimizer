@@ -48,7 +48,7 @@ type gateway struct {
 	client *http.Client
 }
 
-func (g gateway) Get(ctx context.Context, table domain.Table[CPI], _ time.Time) ([]CPI, error) {
+func (g gateway) Get(ctx context.Context, table domain.Table[domain.CPI], _ time.Time) ([]domain.CPI, error) {
 	xlsx, err := g.getXLSX(ctx)
 	if err != nil {
 		return nil, err
@@ -201,8 +201,8 @@ func getYears(header []string) ([]int, error) {
 	return years, nil
 }
 
-func parsedData(years []int, data [][]string) ([]CPI, error) {
-	cpi := make([]CPI, 0, 1024)
+func parsedData(years []int, data [][]string) ([]domain.CPI, error) {
+	cpi := make([]domain.CPI, 0, 1024)
 
 	for col, year := range years {
 		for month := 0; month < 12; month++ {
@@ -215,9 +215,9 @@ func parsedData(years []int, data [][]string) ([]CPI, error) {
 				return nil, err
 			}
 
-			cpi = append(cpi, CPI{
+			cpi = append(cpi, domain.CPI{
 				Date:  lastDayOfMonth(year, month),
-				Close: value / 100.0,
+				Value: value / 100.0,
 			})
 		}
 	}

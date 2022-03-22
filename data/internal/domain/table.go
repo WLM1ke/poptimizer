@@ -3,18 +3,18 @@ package domain
 import "time"
 
 // Table представляет таблицу с данными, актуальными на конкретную дату.
-type Table[R any] struct {
+type Table[R Row] struct {
 	ver
 	rows []R
 }
 
-func NewEmptyTable[R any](id ID) Table[R] {
+func NewEmptyTable[R Row](id ID) Table[R] {
 	return Table[R]{
 		ver: ver{id: id},
 	}
 }
 
-func NewTable[R any](id ID, date time.Time, rows []R) Table[R] {
+func NewTable[R Row](id ID, date time.Time, rows []R) Table[R] {
 	return Table[R]{
 		ver:  ver{id: id, date: date},
 		rows: rows,

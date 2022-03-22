@@ -16,10 +16,10 @@ const _group = "usd"
 var ID = domain.NewID(_group, _group)
 
 func New(logger *lgr.Logger, db *mongo.Database, iss *gomoex.ISSClient, timeout time.Duration) domain.Rule {
-	return template.NewRule[gomoex.Candle](
+	return template.NewRule[domain.USD](
 		"USDRule",
 		logger,
-		repo.NewMongo[gomoex.Candle](db),
+		repo.NewMongo[domain.USD](db),
 		template.NewSelectOnTableUpdate(dates.ID, ID),
 		gateway{iss: iss},
 		validator,

@@ -13,7 +13,7 @@ var (
 )
 
 // Read осуществляет загрузку таблиц.
-type Read[R any] interface {
+type Read[R domain.Row] interface {
 	// Get загружает таблицу.
 	Get(ctx context.Context, id domain.ID) (domain.Table[R], error)
 }
@@ -25,7 +25,7 @@ type JSONViewer interface {
 }
 
 // ReadWrite осуществляет загрузку и сохранение таблиц.
-type ReadWrite[R any] interface {
+type ReadWrite[R domain.Row] interface {
 	Read[R]
 	// Replace перезаписывает таблицу.
 	Replace(ctx context.Context, table domain.Table[R]) error

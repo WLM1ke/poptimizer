@@ -15,11 +15,6 @@ const _group = "status"
 
 var ID = domain.NewID(_group, _group)
 
-type DivStatus struct {
-	Ticker string
-	Date   time.Time
-}
-
 // Возможные альтернативные источники:
 // - https://smart-lab.ru/dividends/index/order_by_yield/desc/
 // - https://закрытияреестров.рф
@@ -27,10 +22,10 @@ type DivStatus struct {
 // Теоретически можно проверять коректность распознования тикеров, но в этом кажется нет необходимости
 // Тесты для VEON-RX, AKRN и T-RM
 func New(logger *lgr.Logger, db *mongo.Database, client *http.Client, timeout time.Duration) domain.Rule {
-	return template.NewRule[DivStatus](
+	return template.NewRule[domain.DivStatus](
 		"DivStatus",
 		logger,
-		repo.NewMongo[DivStatus](db),
+		repo.NewMongo[domain.DivStatus](db),
 		template.NewSelectOnTableUpdate(dates.ID, ID),
 		gateway{client: client},
 		validator,

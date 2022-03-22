@@ -2,12 +2,11 @@ package indexes
 
 import (
 	"fmt"
-	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
 )
 
-func validator(table domain.Table[gomoex.Quote], rows []gomoex.Quote) error {
+func validator(table domain.Table[domain.Index], rows []domain.Index) error {
 	prev := rows[0].Date
 	for _, row := range rows[1:] {
 		if prev.Before(row.Date) {

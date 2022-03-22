@@ -9,6 +9,6 @@ import (
 
 var ErrRuleGateway = errors.New("rule gateway error")
 
-type Gateway[R any] interface {
+type Gateway[R domain.Row] interface {
 	Get(ctx context.Context, table domain.Table[R], date time.Time) ([]R, error)
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
 )
 
-func validator(_ domain.Table[DivStatus], rows []DivStatus) error {
+func validator(_ domain.Table[domain.DivStatus], rows []domain.DivStatus) error {
 	prev := rows[0]
 	for _, row := range rows[1:] {
 		if prev.Ticker > row.Ticker {

@@ -28,9 +28,9 @@ type gateway struct {
 
 func (g gateway) Get(
 	ctx context.Context,
-	_ domain.Table[DivStatus],
+	_ domain.Table[domain.DivStatus],
 	date time.Time,
-) ([]DivStatus, error) {
+) ([]domain.DivStatus, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -65,7 +65,7 @@ func (g gateway) Get(
 	return parceCSV(reader, date)
 }
 
-func parceCSV(reader *csv.Reader, date time.Time) (rows []DivStatus, err error) {
+func parceCSV(reader *csv.Reader, date time.Time) (rows []domain.DivStatus, err error) {
 	header := true
 
 	for record, err := reader.Read(); err != io.EOF; record, err = reader.Read() {
@@ -106,7 +106,7 @@ func parceCSV(reader *csv.Reader, date time.Time) (rows []DivStatus, err error) 
 			)
 		}
 
-		rows = append(rows, DivStatus{
+		rows = append(rows, domain.DivStatus{
 			Ticker: ticker[1],
 			Date:   divDate,
 		})

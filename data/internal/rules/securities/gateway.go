@@ -25,7 +25,7 @@ type gateway struct {
 
 func (g gateway) Get(
 	ctx context.Context,
-	_ domain.Table[gomoex.Security],
+	_ domain.Table[domain.Security],
 	_ time.Time,
 ) (allRows []gomoex.Security, err error) {
 	for _, mb := range marketsBoards {

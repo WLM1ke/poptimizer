@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-type Rule[R any] struct {
+type Rule[R domain.Row] struct {
 	name      string
 	logger    *lgr.Logger
 	repo      repo.ReadWrite[R]
@@ -19,7 +19,7 @@ type Rule[R any] struct {
 	ctxFunc   EventCtxFunc
 }
 
-func NewRule[R any](
+func NewRule[R domain.Row](
 	name string,
 	logger *lgr.Logger,
 	repo repo.ReadWrite[R],

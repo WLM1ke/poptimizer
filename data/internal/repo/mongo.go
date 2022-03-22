@@ -11,19 +11,19 @@ import (
 	"time"
 )
 
-type tableDAO[R any] struct {
+type tableDAO[R domain.Row] struct {
 	Name domain.Name `bson:"_id"`
 	Date time.Time   `bson:"date"`
 	Rows []R         `bson:"rows"`
 }
 
 // Mongo обеспечивает хранение и загрузку таблиц.
-type Mongo[R any] struct {
+type Mongo[R domain.Row] struct {
 	db *mongo.Database
 }
 
 // NewMongo - создает новый репозиторий на основе MongoDB.
-func NewMongo[R any](db *mongo.Database) *Mongo[R] {
+func NewMongo[R domain.Row](db *mongo.Database) *Mongo[R] {
 	return &Mongo[R]{
 		db: db,
 	}

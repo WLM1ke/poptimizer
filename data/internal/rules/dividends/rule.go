@@ -1,7 +1,6 @@
 package dividends
 
 import (
-	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
@@ -11,14 +10,14 @@ import (
 )
 
 func New(logger *lgr.Logger, db *mongo.Database, timeout time.Duration) domain.Rule {
-	return template.NewRule[Dividend](
+	return template.NewRule[domain.Dividend](
 		"DividendsRule",
 		logger,
-		repo.NewMongo[Dividend](db),
-		selector{repo.NewMongo[gomoex.Security](db)},
+		repo.NewMongo[domain.Dividend](db),
+		selector{repo.NewMongo[domain.Security](db)},
 		gateway{
-			rawRepo: repo.NewMongo[RawDiv](db),
-			usdRepo: repo.NewMongo[gomoex.Candle](db),
+			rawRepo: repo.NewMongo[domain.RawDiv](db),
+			usdRepo: repo.NewMongo[domain.USD](db),
 		},
 		validator,
 		false,

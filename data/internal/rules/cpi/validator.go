@@ -6,7 +6,7 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
 )
 
-func validator(table domain.Table[CPI], rows []CPI) error {
+func validator(table domain.Table[domain.CPI], rows []domain.CPI) error {
 	if table.IsEmpty() {
 		return nil
 	}
