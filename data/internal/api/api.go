@@ -5,18 +5,14 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
-	"github.com/WLM1ke/poptimizer/data/pkg/server"
-	"go.mongodb.org/mongo-driver/mongo"
-	"net/http"
-	"time"
-
 	"github.com/go-chi/chi"
+	"net/http"
 )
 
 // jsonHandler основной обработчик отдающий данные в формате BSON для http-сервера.
 func jsonHandler(logger *lgr.Logger, viewer repo.JSONViewer) http.Handler {
 	router := chi.NewRouter()
-	router.Get("/api/{group}/{name}", func(w http.ResponseWriter, r *http.Request) {
+	router.Get("/{group}/{name}", func(w http.ResponseWriter, r *http.Request) {
 		group := chi.URLParam(r, "group")
 		name := chi.URLParam(r, "name")
 
@@ -41,15 +37,4 @@ func jsonHandler(logger *lgr.Logger, viewer repo.JSONViewer) http.Handler {
 	})
 
 	return router
-}
-
-func NewHTTPServer(logger *lgr.Logger, db *mongo.Database, addr string, requestTimeouts time.Duration) *server.Server {
-	srv := server.NewServer(
-		logger,
-		addr,
-		jsonHandler(logger, repo.NewMongoJSON(db)),
-		requestTimeouts,
-	)
-
-	return srv
 }
