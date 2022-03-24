@@ -14,7 +14,7 @@ func New(logger *lgr.Logger, db *mongo.Database, timeout time.Duration) domain.R
 		"DividendsRule",
 		logger,
 		repo.NewMongo[domain.Dividend](db),
-		selector{repo.NewMongo[domain.Security](db)},
+		selector{},
 		gateway{
 			rawRepo: repo.NewMongo[domain.RawDiv](db),
 			usdRepo: repo.NewMongo[domain.USD](db),
