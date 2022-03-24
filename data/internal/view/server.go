@@ -1,6 +1,7 @@
-package api
+package view
 
 import (
+	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/WLM1ke/poptimizer/data/pkg/server"
@@ -12,7 +13,7 @@ import (
 func NewHTTPServer(logger *lgr.Logger, db *mongo.Database, addr string, requestTimeouts time.Duration) *server.Server {
 	router := chi.NewRouter()
 	router.Mount("/api", jsonHandler(logger, repo.NewMongoJSON(db)))
-	router.Mount("/edit", editHandler(logger))
+	router.Mount("/edit", editHandler(logger, repo.NewMongo[domain.RawDiv](db)))
 
 	srv := server.NewServer(
 		logger,

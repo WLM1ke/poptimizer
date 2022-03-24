@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"github.com/WLM1ke/poptimizer/data/internal/api"
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
+	"github.com/WLM1ke/poptimizer/data/internal/view"
 	"github.com/WLM1ke/poptimizer/data/pkg/app"
 	"github.com/WLM1ke/poptimizer/data/pkg/client"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
@@ -62,7 +62,7 @@ func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service)
 	}
 
 	services := []app.Service{
-		api.NewHTTPServer(
+		view.NewHTTPServer(
 			logger,
 			db,
 			d.Server.Addr,

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dividends: {{ .Ticker }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+    <script src="https://unpkg.com/htmx.org"></script>
+</head>
+    <body>
+        <h2>Dividends: {{ .Ticker }}</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Value</th>
+                    <th>Currency</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .Rows }}
+                <tr>
+                    <td> {{ .Date.Format "2006-01-02" }} </td>
+                    <td> {{ .Value }} </td>
+                    <td> {{ .Currency}} </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </body>
+</html>
