@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const _timeFormat = "2006-01-02"
+
 type Versioned interface {
 	ID() ID
 	Date() time.Time

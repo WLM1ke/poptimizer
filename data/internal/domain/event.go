@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-const _timeFormat = "2006-01-02"
-
 // Event - событие, произошедшее во время работы программы.
 type Event interface {
 	Versioned
