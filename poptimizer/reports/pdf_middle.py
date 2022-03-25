@@ -15,6 +15,15 @@ from poptimizer.reports.pdf_upper import get_investors_names
 # В правой расположена диаграмма
 _LEFT_PART_OF_BLOCK: Final = 1 / 3
 
+_DPI: Final = 300
+
+_MONTH_IN_YEAR: Final = 12
+
+_SECOND_COLUMN: Final = (1, 0), (1, -1)
+_SECOND_AND_THIRD_ROW: Final = (0, 1), (-1, 2)
+_FIRST_COLUMN: Final = (0, 0), (-1, 0)
+_SECOND_TO_LAST_COLUMN: Final = (1, 1), (-1, -1)
+
 
 def portfolio_cum_return(df: pd.DataFrame) -> pd.DataFrame:
     """Кумулятивная доходность портфеля."""
@@ -43,13 +52,17 @@ def index_cum_return(df: pd.DataFrame) -> pd.DataFrame:
 
 def make_plot(df: pd.DataFrame, width: float, height: float) -> platypus.Image:
     """Строит график стоимости портфеля и возвращает объект pdf-изображения."""
-    _, ax = plt.subplots(1, 1, figsize=(width / inch, height / inch))
+    _, ax = plt.subplots(
+        1,
+        1,
+        figsize=(width / inch, height / inch),
+    )
     ax.spines["top"].set_visible(False)
     ax.spines["bottom"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
     ax.yaxis.set_major_formatter(plt.FuncFormatter("{:.0f}%".format))
-    plt.grid(True, "major", lw=0.5, c="black", alpha=0.3)
+    plt.grid(visible=True, which="major", lw=0.5, c="black", alpha=0.3)
     plt.tick_params(bottom=False, top=False, left=False, right=False)
 
     portfolio = portfolio_cum_return(df) * 100 - 100
@@ -57,7 +70,7 @@ def make_plot(df: pd.DataFrame, width: float, height: float) -> platypus.Image:
     plt.plot(portfolio.values)
     plt.plot(total_return_index.values)
     x = total_return_index.index.astype(str).str.slice(stop=7)
-    x_ticks_loc = range(0, len(x), 12)
+    x_ticks_loc = range(0, len(x), _MONTH_IN_YEAR)
     x_ticks_labels = x[x_ticks_loc]
     plt.yticks(fontsize=8)
     plt.xticks(x_ticks_loc, x_ticks_labels, fontsize=8)
@@ -67,33 +80,43 @@ def make_plot(df: pd.DataFrame, width: float, height: float) -> platypus.Image:
         frameon=False,
     )
 
-    file = BytesIO()
-    plt.savefig(file, dpi=300, format="png", transparent=True)
+    chart = BytesIO()
+    plt.savefig(chart, dpi=_DPI, format="png", transparent=True)
 
-    return platypus.Image(file, width, height)
+    return platypus.Image(chart, width, height)
 
 
-def make_list_of_lists_table(df: pd.DataFrame) -> list[list[str]]:
+def make_list_of_lists_table(df: pd.DataFrame) -> list[list[str]]:  # noqa: WPS210
     """Создает таблицу доходности портфеля и индекса в виде списка списков."""
     portfolio = portfolio_cum_return(df)
     portfolio_return = portfolio.iloc[-1] / portfolio * 100 - 100
+
     index = index_cum_return(df)
     index_return = index.iloc[-1] / index * 100 - 100
+
     list_of_lists = [["Period", "Portfolio", "MOEX"]]
-    i = 1
-    while i < len(df):
-        if i == 1:
+    month = 1
+
+    while month < len(df):
+        if month == 1:
             name = "1M"
         else:
-            year = i // 12
+            year = month // _MONTH_IN_YEAR
             name = f"{year}Y"
-        portfolio = portfolio_return.iloc[-i - 1]
-        index = index_return.iloc[-i - 1]
-        list_of_lists.append([f"{name}", f"{portfolio: .1f}%", f"{index: .1f}%"])
-        if i == 1:
-            i = 12
+        portfolio = portfolio_return.iloc[-month - 1]
+        index = index_return.iloc[-month - 1]
+        list_of_lists.append(
+            [
+                f"{name}",
+                f"{portfolio: .1f}%",
+                f"{index: .1f}%",
+            ],
+        )
+
+        if month == 1:
+            month = _MONTH_IN_YEAR
         else:
-            i += 12
+            month += _MONTH_IN_YEAR
 
     return list_of_lists
 
@@ -103,11 +126,11 @@ def make_pdf_table(df: pd.DataFrame) -> platypus.Table:
     list_of_lists_table = make_list_of_lists_table(df)
     style = platypus.TableStyle(
         [
-            ("LINEBEFORE", (1, 0), (1, -1), LINE_WIDTH, LINE_COLOR),
-            ("LINEABOVE", (0, 1), (-1, 2), LINE_WIDTH, LINE_COLOR),
-            ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
-            ("ALIGN", (0, 0), (-1, 0), "CENTRE"),
-        ]
+            ("LINEBEFORE", *_SECOND_COLUMN, LINE_WIDTH, LINE_COLOR),
+            ("LINEABOVE", *_SECOND_AND_THIRD_ROW, LINE_WIDTH, LINE_COLOR),
+            ("ALIGN", *_SECOND_TO_LAST_COLUMN, "RIGHT"),
+            ("ALIGN", *_FIRST_COLUMN, "CENTRE"),
+        ],
     )
     table = platypus.Table(list_of_lists_table, style=style)
     table.hAlign = "LEFT"
