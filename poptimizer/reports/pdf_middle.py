@@ -1,6 +1,6 @@
 """Формирование блока pdf-файла с информацией о доходности портфеля."""
-
 from io import BytesIO
+from typing import Final
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -13,10 +13,10 @@ from poptimizer.reports.pdf_upper import get_investors_names
 
 # Доля левой части блока - используется для таблицы
 # В правой расположена диаграмма
-LEFT_PART_OF_BLOCK = 1 / 3
+_LEFT_PART_OF_BLOCK: Final = 1 / 3
 
 
-def portfolio_cum_return(df: pd.DataFrame):
+def portfolio_cum_return(df: pd.DataFrame) -> pd.DataFrame:
     """Кумулятивная доходность портфеля."""
     names = get_investors_names(df)
     # После внесения средств
@@ -25,10 +25,11 @@ def portfolio_cum_return(df: pd.DataFrame):
     pre_value = post_value.subtract(df[names].sum(axis=1), fill_value=0)
     portfolio_return = pre_value / post_value.shift(1)
     portfolio_return.iloc[0] = 1
+
     return portfolio_return.cumprod()
 
 
-def index_cum_return(df):
+def index_cum_return(df: pd.DataFrame) -> pd.DataFrame:
     """Кумулятивная доходность индекса привязанная к отчетным периодам."""
     date = df.index[-1]
     index = indexes.mcftrr(date)
@@ -40,7 +41,7 @@ def index_cum_return(df):
     return index / index.iloc[0]
 
 
-def make_plot(df: pd.DataFrame, width: float, height: float):
+def make_plot(df: pd.DataFrame, width: float, height: float) -> platypus.Image:
     """Строит график стоимости портфеля и возвращает объект pdf-изображения."""
     _, ax = plt.subplots(1, 1, figsize=(width / inch, height / inch))
     ax.spines["top"].set_visible(False)
@@ -68,10 +69,11 @@ def make_plot(df: pd.DataFrame, width: float, height: float):
 
     file = BytesIO()
     plt.savefig(file, dpi=300, format="png", transparent=True)
+
     return platypus.Image(file, width, height)
 
 
-def make_list_of_lists_table(df: pd.DataFrame):
+def make_list_of_lists_table(df: pd.DataFrame) -> list[list[str]]:
     """Создает таблицу доходности портфеля и индекса в виде списка списков."""
     portfolio = portfolio_cum_return(df)
     portfolio_return = portfolio.iloc[-1] / portfolio * 100 - 100
@@ -92,10 +94,11 @@ def make_list_of_lists_table(df: pd.DataFrame):
             i = 12
         else:
             i += 12
+
     return list_of_lists
 
 
-def make_pdf_table(df: pd.DataFrame):
+def make_pdf_table(df: pd.DataFrame) -> platypus.Table:
     """Формирует и форматирует pdf-таблицу доходности портфеля и индекса."""
     list_of_lists_table = make_list_of_lists_table(df)
     style = platypus.TableStyle(
@@ -108,10 +111,11 @@ def make_pdf_table(df: pd.DataFrame):
     )
     table = platypus.Table(list_of_lists_table, style=style)
     table.hAlign = "LEFT"
+
     return table
 
 
-def portfolio_return_block(df: pd.DataFrame, block_position: BlockPosition):
+def portfolio_return_block(df: pd.DataFrame, block_position: BlockPosition) -> None:
     """Формирует блок pdf-файла с информацией доходности портфеля и индекса.
 
     В левой части располагается табличка, а в правой части диаграмма.
@@ -121,7 +125,7 @@ def portfolio_return_block(df: pd.DataFrame, block_position: BlockPosition):
     frame = platypus.Frame(
         block_position.x,
         block_position.y,
-        block_position.width * LEFT_PART_OF_BLOCK,
+        block_position.width * _LEFT_PART_OF_BLOCK,
         block_position.height,
         leftPadding=0,
         bottomPadding=0,
@@ -130,9 +134,9 @@ def portfolio_return_block(df: pd.DataFrame, block_position: BlockPosition):
         showBoundary=0,
     )
     frame.addFromList([block_header, table], block_position.canvas)
-    image = make_plot(df, block_position.width * (1 - LEFT_PART_OF_BLOCK), block_position.height)
+    image = make_plot(df, block_position.width * (1 - _LEFT_PART_OF_BLOCK), block_position.height)
     image.drawOn(
         block_position.canvas,
-        block_position.x + block_position.width * LEFT_PART_OF_BLOCK,
+        block_position.x + block_position.width * _LEFT_PART_OF_BLOCK,
         block_position.y,
     )
