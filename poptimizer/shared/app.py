@@ -115,7 +115,7 @@ def _shutdown_tasks(loop: asyncio.AbstractEventLoop) -> None:
     for task in to_cancel:
         task.cancel()
 
-    loop.run_until_complete(asyncio.gather(*to_cancel, loop=loop, return_exceptions=True))  # type: ignore
+    loop.run_until_complete(asyncio.gather(*to_cancel, loop=loop, return_exceptions=True))
 
     for canceled_task in to_cancel:
         if canceled_task.cancelled():
