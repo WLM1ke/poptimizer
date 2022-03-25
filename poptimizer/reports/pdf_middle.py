@@ -32,7 +32,11 @@ def index_cum_return(df):
     """Кумулятивная доходность индекса привязанная к отчетным периодам."""
     date = df.index[-1]
     index = indexes.mcftrr(date)
-    index = index[df.index]
+    index = index.reindex(
+        index=df.index,
+        method="ffill",
+    )
+
     return index / index.iloc[0]
 
 
