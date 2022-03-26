@@ -2,11 +2,12 @@ package view
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/go-chi/chi"
-	"net/http"
 )
 
 // jsonHandler основной обработчик отдающий данные в формате BSON для http-сервера.
@@ -33,7 +34,6 @@ func jsonHandler(logger *lgr.Logger, viewer repo.JSONViewer) http.Handler {
 				logger.Warnf("Server: can't write respond -> %s", err)
 			}
 		}
-
 	})
 
 	return router
