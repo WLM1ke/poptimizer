@@ -3,10 +3,11 @@ package edit
 import (
 	"time"
 
+	"github.com/WLM1ke/poptimizer/data/internal/domain"
 )
 
 type model struct {
-	id string
+	ID string
 
 	Ticker string
 	Rows   []domain.RawDiv

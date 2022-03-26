@@ -26,7 +26,7 @@
                 {{end}}
             </tbody>
         </table>
-        <form hx-target="#rows" hx-swap="beforeend" hx-post="{{ .Ticker }}/add">
+        <form hx-target="#rows" hx-swap="beforeend" hx-post="{{ .Ticker }}/add" hx-headers='{"Model": "{{ .ID }}"}'>
             <label>Date
                 <input type="date" name="date" value={{ .Last.Date.Format "2006-01-02" }}>
             </label>
