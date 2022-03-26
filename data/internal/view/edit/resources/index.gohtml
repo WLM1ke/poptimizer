@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dividends: {{ .Ticker }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+    <script src="https://unpkg.com/htmx.org"></script>
+</head>
+<body>
+    <h2>Dividends: {{ .Ticker }}</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Value</th>
+                <th>Currency</th>
+            </tr>
+        </thead>
+        <tbody id="rows">
+        {{- /*gotype: github.com/WLM1ke/poptimizer/data/internal/view/edit.model*/ -}}
+        {{ range .Rows }}
+            <tr>
+                <td>{{ .Date.Format "2006-01-02" }}</td>
+                <td>{{ .Value }}</td>
+                <td>{{ .Currency}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    <form>
+        <label>Date
+            <input type="date" name="date" value={{ .Last.Date.Format "2006-01-02" }}>
+        </label>
+        <label>
+            Value
+            <input type="text" pattern="\d+|\d+\.\d+" step="any" name="value" value={{ .Last.Value }}>
+        </label>
+        <label>
+            Currency
+            <select name="currency">
+                <option value="RUR" {{if eq .Last.Currency "RUR"}}selected{{end}}>RUR</option>
+                <option value="USD" {{if eq .Last.Currency "USD"}}selected{{end}}>USD</option>
+            </select>
+        </label>
+        <div>
+            <button hx-target="#rows" hx-swap="beforeend" hx-post="{{ .Ticker }}/add" hx-vals='{"id": "{{ .ID }}"}'>Add row</button>
+            <button type=“submit” formaction="{{ .Ticker }}/save">Save data</button>
+            <button type=“submit” formaction="{{ .Ticker }}" formmethod="post">Reload data</button>
+        </div>
+    </form>
+</body>
+</html>

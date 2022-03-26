@@ -4,14 +4,13 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/jellydator/ttlcache/v3"
-
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/raw_div"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/jellydator/ttlcache/v3"
 )
 
 type handler struct {
@@ -60,15 +59,15 @@ func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) handleAddRow(w http.ResponseWriter, r *http.Request) {
-	id, ok := r.Header["Model"]
-	if !ok || len(id) == 0 {
-		h.logger.Warnf("Server: wrong header")
+	id, row, err := parseForm(r)
+	if err != nil {
+		h.logger.Warnf("Server: can't parse form -> %s", err)
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
-	item := h.cache.Get(id[0])
+	item := h.cache.Get(id)
 	if item == nil {
 		h.logger.Warnf("Server: wrong header")
 		w.WriteHeader(http.StatusBadRequest)
@@ -77,14 +76,6 @@ func (h *handler) handleAddRow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	model := item.Value()
-
-	row, err := parseForm(r)
-	if err != nil {
-		h.logger.Warnf("Server: can't parse form -> %s", err)
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
 
 	model.addRow(row)
 

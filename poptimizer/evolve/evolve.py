@@ -102,7 +102,7 @@ class Evolution:  # noqa: WPS214
         Если организмы имеют мало оценок для текущего размера популяции, их оценки сбрасываются для проведения оценки
         для более длинного периода времени.
         """
-        return self._select_next(current)
+        return self._maybe_clear(self._select_next(current))
 
     def _maybe_clear(self, org: population.Organism) -> population.Organism:
         if (org.date == self._end) and (0 < org.scores < self._n_test()):
@@ -119,6 +119,10 @@ class Evolution:  # noqa: WPS214
     ) -> population.Organism:
         if current is None:
             return next(population.get_all())
+
+        for _, org in zip(range(2), population.get_all()):
+            if org.scores < self._n_test():
+                return org
 
         return population.get_next_one(self._end) or current.make_child(1 / self._scale)
 

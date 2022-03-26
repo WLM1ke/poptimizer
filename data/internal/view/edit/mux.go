@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	//go:embed resources/index.html
+	//go:embed resources/index.gohtml
 	_index string
-	//go:embed resources/row.html
+	//go:embed resources/row.gohtml
 	_row string
 )
 
@@ -33,6 +33,7 @@ func Handler(logger *lgr.Logger, read repo.Read[domain.RawDiv]) http.Handler {
 
 	router := chi.NewRouter()
 	router.Get("/{ticker}", handler.handleIndex)
+	router.Post("/{ticker}", handler.handleIndex)
 	router.Post("/{ticker}/add", handler.handleAddRow)
 
 	return router
