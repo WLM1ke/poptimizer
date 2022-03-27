@@ -27,26 +27,27 @@
         {{end}}
         </tbody>
     </table>
-    <form id="form">
-        <label>Date
-            <input type="date" name="date" value={{ .Last.Date.Format "2006-01-02" }}>
-        </label>
-        <label>
-            Value
-            <input type="text" pattern="\d+|\d+\.\d+" step="any" name="value" value={{ .Last.Value }}>
-        </label>
-        <label>
-            Currency
-            <select name="currency">
-                <option value="RUR" {{if eq .Last.Currency "RUR"}}selected{{end}}>RUR</option>
-                <option value="USD" {{if eq .Last.Currency "USD"}}selected{{end}}>USD</option>
-            </select>
-        </label>
-        <div>
-            <button type="submit" hx-target="#rows" hx-swap="beforeend" hx-post="{{ .Ticker }}/add" hx-vals='{"id": "{{ .ID }}"}'>Add row</button>
-            <button hx-target="#form" hx-swap="outerHTML" hx-post="{{ .Ticker }}/save" hx-vals='{"id": "{{ .ID }}"}'>Save data</button>
-            <button hx-target="#rows" hx-post="{{ .Ticker }}/reload" hx-vals='{"id": "{{ .ID }}"}'>Reload data</button>
-        </div>
-    </form>
+    <div id="form">
+        <form hx-post="{{ .Ticker }}/add" hx-target="#rows" hx-swap="beforeend" hx-post="{{ .Ticker }}/add" hx-vals='{"id": "{{ .ID }}"}'>
+            <label>
+                Date
+                <input type="date" name="date" value={{ .Last.Date.Format "2006-01-02" }}>
+            </label>
+            <label>
+                Value
+                <input type="text" pattern="\d+|\d+\.\d+" step="any" name="value" value={{ .Last.Value }}>
+            </label>
+            <label>
+                Currency
+                <select name="currency">
+                    <option value="RUR" {{if eq .Last.Currency "RUR"}}selected{{end}}>RUR</option>
+                    <option value="USD" {{if eq .Last.Currency "USD"}}selected{{end}}>USD</option>
+                </select>
+            </label>
+            <input type="submit" value="Add row">
+        </form>
+        <button hx-target="#form" hx-swap="outerHTML" hx-post="{{ .Ticker }}/save" hx-vals='{"id": "{{ .ID }}"}'>Save data</button>
+        <button hx-target="#rows" hx-post="{{ .Ticker }}/reload" hx-vals='{"id": "{{ .ID }}"}'>Reload data</button>
+    </div>
 </body>
 </html>
