@@ -20,9 +20,10 @@ type handler struct {
 
 	cache *ttlcache.Cache[string, *model]
 
-	index *template.Template
-	row   *template.Template
-	save  *template.Template
+	index  *template.Template
+	row    *template.Template
+	reload *template.Template
+	save   *template.Template
 }
 
 func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -82,6 +83,46 @@ func (h *handler) handleAddRow(w http.ResponseWriter, r *http.Request) {
 	model.addRow(row)
 
 	if err := h.row.Execute(w, model.Last()); err != nil {
+		h.logger.Warnf("Server: can't render add row -> %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *handler) handleReload(w http.ResponseWriter, r *http.Request) {
+	id, _, err := parseForm(r)
+	if err != nil {
+		h.logger.Warnf("Server: can't parse form -> %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	item := h.cache.Get(id)
+	if item == nil {
+		h.logger.Warnf("Server: wrong header")
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	model := item.Value()
+
+	div, err := h.repo.Get(r.Context(), domain.NewID(raw_div.Group, model.Ticker))
+	if err != nil {
+		h.logger.Warnf("Server: can't load dividends -> %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	model.Rows = div.Rows()
+
+	if err := h.reload.Execute(w, model); err != nil {
 		h.logger.Warnf("Server: can't render add row -> %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 
