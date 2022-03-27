@@ -10,8 +10,8 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// jsonHandler основной обработчик отдающий данные в формате BSON для http-сервера.
-func jsonHandler(logger *lgr.Logger, viewer repo.JSONViewer) http.Handler {
+// newJSONHandler основной обработчик отдающий данные в формате BSON для http-сервера.
+func newJSONHandler(logger *lgr.Logger, viewer repo.JSONViewer) http.Handler {
 	router := chi.NewRouter()
 	router.Get("/{group}/{name}", func(w http.ResponseWriter, r *http.Request) {
 		group := chi.URLParam(r, "group")

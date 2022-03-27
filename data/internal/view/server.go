@@ -14,8 +14,8 @@ import (
 
 func NewHTTPServer(logger *lgr.Logger, db *mongo.Database, addr string, requestTimeouts time.Duration) *server.Server {
 	router := chi.NewRouter()
-	router.Mount("/api", jsonHandler(logger, repo.NewMongoJSON(db)))
-	router.Mount("/edit", edit.Handler(logger, repo.NewMongo[domain.RawDiv](db)))
+	router.Mount("/api", newJSONHandler(logger, repo.NewMongoJSON(db)))
+	router.Mount("/edit", edit.NewEditHandler(logger, repo.NewMongo[domain.RawDiv](db)))
 
 	srv := server.NewServer(
 		logger,

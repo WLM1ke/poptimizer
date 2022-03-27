@@ -25,8 +25,8 @@ var (
 	_reload string
 )
 
-// Handler - обрабатывает запросы связанные с изменением дивидендов.
-func Handler(logger *lgr.Logger, read repo.Read[domain.RawDiv]) http.Handler {
+// NewEditHandler - обрабатывает запросы связанные с изменением дивидендов.
+func NewEditHandler(logger *lgr.Logger, read repo.Read[domain.RawDiv]) http.Handler {
 	handler := handler{
 		logger: logger,
 		repo:   read,
