@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 
@@ -21,6 +22,7 @@ type handler struct {
 
 	index *template.Template
 	row   *template.Template
+	save  *template.Template
 }
 
 func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +82,7 @@ func (h *handler) handleAddRow(w http.ResponseWriter, r *http.Request) {
 	model.addRow(row)
 
 	if err := h.row.Execute(w, model.Last()); err != nil {
-		h.logger.Warnf("Server: can't render index -> %s", err)
+		h.logger.Warnf("Server: can't render add row -> %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
@@ -88,4 +90,38 @@ func (h *handler) handleAddRow(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *handler) handleSave(w http.ResponseWriter, r *http.Request) {
+	id, _, err := parseForm(r)
+	if err != nil {
+		h.logger.Warnf("Server: can't parse form -> %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	item := h.cache.Get(id)
+	if item == nil {
+		h.logger.Warnf("Server: wrong header")
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	model := item.Value()
+
+	if err := h.save.Execute(w, fakeSave(model)); err != nil {
+		h.logger.Warnf("Server: can't render save data -> %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+}
+
+func fakeSave(model *model) string {
+	return fmt.Sprintf("Saved successfully: %s - count %d", model.Ticker, len(model.Rows))
 }
