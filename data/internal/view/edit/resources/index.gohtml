@@ -24,10 +24,10 @@
                 <td>{{ .Value }}</td>
                 <td>{{ .Currency}}</td>
             </tr>
-            {{end}}
+        {{end}}
         </tbody>
     </table>
-    <form id="add_row">
+    <form id="form">
         <label>Date
             <input type="date" name="date" value={{ .Last.Date.Format "2006-01-02" }}>
         </label>
@@ -43,8 +43,8 @@
             </select>
         </label>
         <div>
-            <button hx-target="#rows" hx-swap="beforeend" hx-post="{{ .Ticker }}/add" hx-vals='{"id": "{{ .ID }}"}'>Add row</button>
-            <button hx-target="#add_row" hx-swap="outerHTML" hx-post="{{ .Ticker }}/save" hx-vals='{"id": "{{ .ID }}"}'>Save data</button>
+            <button type="submit" hx-target="#rows" hx-swap="beforeend" hx-post="{{ .Ticker }}/add" hx-vals='{"id": "{{ .ID }}"}'>Add row</button>
+            <button hx-target="#form" hx-swap="outerHTML" hx-post="{{ .Ticker }}/save" hx-vals='{"id": "{{ .ID }}"}'>Save data</button>
             <button hx-target="#rows" hx-post="{{ .Ticker }}/reload" hx-vals='{"id": "{{ .ID }}"}'>Reload data</button>
         </div>
     </form>

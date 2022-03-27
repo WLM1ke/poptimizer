@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
@@ -13,6 +15,8 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/jellydator/ttlcache/v3"
 )
+
+const _timeFormat = "2006-01-02"
 
 type handler struct {
 	logger *lgr.Logger
@@ -62,25 +66,12 @@ func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) handleAddRow(w http.ResponseWriter, r *http.Request) {
-	id, row, err := parseForm(r)
-	if err != nil {
-		h.logger.Warnf("Server: can't parse form -> %s", err)
+	model := h.loadModelAndAppend(r, true)
+	if model == nil {
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
-
-	item := h.cache.Get(id)
-	if item == nil {
-		h.logger.Warnf("Server: wrong header")
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	model := item.Value()
-
-	model.addRow(row)
 
 	if err := h.row.Execute(w, model.Last()); err != nil {
 		h.logger.Warnf("Server: can't render add row -> %s", err)
@@ -94,23 +85,12 @@ func (h *handler) handleAddRow(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) handleReload(w http.ResponseWriter, r *http.Request) {
-	id, _, err := parseForm(r)
-	if err != nil {
-		h.logger.Warnf("Server: can't parse form -> %s", err)
+	model := h.loadModelAndAppend(r, false)
+	if model == nil {
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
-
-	item := h.cache.Get(id)
-	if item == nil {
-		h.logger.Warnf("Server: wrong header")
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	model := item.Value()
 
 	div, err := h.repo.Get(r.Context(), domain.NewID(raw_div.Group, model.Ticker))
 	if err != nil {
@@ -134,23 +114,12 @@ func (h *handler) handleReload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) handleSave(w http.ResponseWriter, r *http.Request) {
-	id, _, err := parseForm(r)
-	if err != nil {
-		h.logger.Warnf("Server: can't parse form -> %s", err)
+	model := h.loadModelAndAppend(r, false)
+	if model == nil {
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
-
-	item := h.cache.Get(id)
-	if item == nil {
-		h.logger.Warnf("Server: wrong header")
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	model := item.Value()
 
 	if err := h.save.Execute(w, fakeSave(model)); err != nil {
 		h.logger.Warnf("Server: can't render save data -> %s", err)
@@ -161,6 +130,55 @@ func (h *handler) handleSave(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *handler) loadModelAndAppend(r *http.Request, addRow bool) *model {
+	if err := r.ParseForm(); err != nil {
+		h.logger.Warnf("Server: can't parse request -> %s", err)
+
+		return nil
+	}
+
+	id := r.PostForm.Get("id")
+	item := h.cache.Get(id)
+
+	if item == nil {
+		h.logger.Warnf("Server: wrong model id - %s", id)
+
+		return nil
+	}
+
+	model := item.Value()
+
+	if !addRow {
+		return model
+	}
+
+	var (
+		err error
+		row domain.RawDiv
+	)
+
+	row.Date, err = time.Parse(_timeFormat, r.PostForm.Get("date"))
+
+	if err != nil {
+		h.logger.Warnf("Server: can't parse request -> %s", err)
+
+		return nil
+	}
+
+	row.Value, err = strconv.ParseFloat(r.PostForm.Get("value"), 64)
+	if err != nil {
+		h.logger.Warnf("Server: can't parse request -> %s", err)
+
+		return nil
+	}
+
+	row.Currency = r.PostForm.Get("currency")
+
+	model.addRow(row)
+
+	return model
 }
 
 func fakeSave(model *model) string {
