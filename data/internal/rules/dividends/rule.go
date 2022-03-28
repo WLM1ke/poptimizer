@@ -21,6 +21,6 @@ func New(logger *lgr.Logger, db *mongo.Database, timeout time.Duration) domain.R
 		},
 		validator,
 		false,
-		template.EventCtxFuncWithTimeout(timeout),
+		timeout,
 	)
 }

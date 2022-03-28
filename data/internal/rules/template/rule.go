@@ -2,12 +2,15 @@ package template
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
-	"sync"
 )
 
+// Rule - шаблон правила по обновлению большинства таблиц.
 type Rule[R domain.Row] struct {
 	name      string
 	logger    *lgr.Logger
@@ -16,9 +19,10 @@ type Rule[R domain.Row] struct {
 	gateway   Gateway[R]
 	validator Validator[R]
 	append    bool
-	ctxFunc   EventCtxFunc
+	timeout   time.Duration
 }
 
+// NewRule создает правило на основе шаблона.
 func NewRule[R domain.Row](
 	name string,
 	logger *lgr.Logger,
@@ -27,7 +31,7 @@ func NewRule[R domain.Row](
 	gateway Gateway[R],
 	validator Validator[R],
 	append bool,
-	ctxFunc EventCtxFunc,
+	timeout time.Duration,
 ) Rule[R] {
 	return Rule[R]{
 		name:      name,
@@ -37,33 +41,40 @@ func NewRule[R domain.Row](
 		gateway:   gateway,
 		validator: validator,
 		append:    append,
-		ctxFunc:   ctxFunc,
+		timeout:   timeout,
 	}
 }
 
-func (r Rule[R]) Activate(in <-chan domain.Event, out chan<- domain.Event) {
-	r.logger.Infof("%s: started", r.name)
-	defer r.logger.Infof("%s: stopped", r.name)
+// Activate шаблонное правило.
+func (r Rule[R]) Activate(inbox <-chan domain.Event) <-chan domain.Event {
+	out := make(chan domain.Event)
 
-	var wg sync.WaitGroup
-	defer wg.Wait()
+	go func() {
+		r.logger.Infof("%s: started", r.name)
+		defer r.logger.Infof("%s: stopped", r.name)
 
-	for event := range in {
-		wg.Add(1)
+		defer close(out)
 
-		event := event
+		var wg sync.WaitGroup
+		defer wg.Wait()
+		for event := range inbox {
+			event := event
 
-		go func() {
-			defer wg.Done()
+			wg.Add(1)
 
-			r.handleEvent(out, event)
-		}()
-	}
+			go func() {
+				defer wg.Done()
 
+				r.handleEvent(out, event)
+			}()
+		}
+	}()
+
+	return out
 }
 
 func (r Rule[R]) handleEvent(out chan<- domain.Event, event domain.Event) {
-	ctx, cancel := r.ctxFunc()
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
 	var wg sync.WaitGroup
@@ -87,7 +98,6 @@ func (r Rule[R]) handleEvent(out chan<- domain.Event, event domain.Event) {
 			if newEvent := r.handleUpdate(ctx, update); newEvent != nil {
 				out <- newEvent
 			}
-
 		}()
 	}
 }

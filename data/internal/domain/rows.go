@@ -1,8 +1,9 @@
 package domain
 
 import (
-	"github.com/WLM1ke/gomoex"
 	"time"
+
+	"github.com/WLM1ke/gomoex"
 )
 
 type (

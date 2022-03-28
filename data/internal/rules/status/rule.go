@@ -25,6 +25,6 @@ func New(logger *lgr.Logger, db *mongo.Database, client *http.Client, timeout ti
 		gateway{client: client},
 		validator,
 		false,
-		template.EventCtxFuncWithTimeout(timeout),
+		timeout,
 	)
 }

@@ -19,6 +19,6 @@ func New(logger *lgr.Logger, db *mongo.Database, iss *gomoex.ISSClient, timeout 
 		gateway{iss: iss},
 		validator,
 		true,
-		template.EventCtxFuncWithTimeout(timeout),
+		timeout,
 	)
 }

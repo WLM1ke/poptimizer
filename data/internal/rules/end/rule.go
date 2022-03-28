@@ -2,9 +2,10 @@
 package end
 
 import (
+	"time"
+
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
-	"time"
 )
 
 const (
@@ -16,46 +17,59 @@ const (
 	_issMinute = 45
 )
 
+// ID события окончания дня (необязательно торгового). Окончания дня привязано к моменту публикации итогов торгов.
 var ID = domain.NewID(_group, _group)
 
 // Rule - правило, сообщающее о возможном появлении новых данных.
 //
-// Данные события могут использоваться для запуска некоторых действий на регулярной основе
+// Данные события могут использоваться для запуска некоторых действий на регулярной основе.
 type Rule struct {
-	logger *lgr.Logger
+	logger  *lgr.Logger
+	timeout time.Duration
 
 	last time.Time
 	loc  *time.Location
 }
 
-func New(logger *lgr.Logger) *Rule {
+// New правило окончания дня (необязательно торгового). Окончания дня привязано к моменту публикации итогов торгов.
+func New(logger *lgr.Logger, timeout time.Duration) *Rule {
 	loc, err := time.LoadLocation(_issTZ)
 	if err != nil {
 		panic("can't load time zone")
 	}
 
-	return &Rule{logger: logger, loc: loc}
+	return &Rule{logger: logger, timeout: timeout, loc: loc}
 }
 
-func (r *Rule) Activate(in <-chan domain.Event, out chan<- domain.Event) {
-	r.logger.Infof("DayEndedRule: started")
-	defer r.logger.Infof("DayEndedRule: stopped")
+// Activate возвращает исходящий канал с событиями об окончании дня.
+//
+// Если это был торговый день, то была опубликована информация о результатах торгов.
+func (r *Rule) Activate(inbox <-chan domain.Event) <-chan domain.Event {
+	out := make(chan domain.Event)
 
-	ticker := time.NewTicker(_tickerDuration)
-	defer ticker.Stop()
+	go func() {
+		r.logger.Infof("DayEndedRule: started")
+		defer r.logger.Infof("DayEndedRule: stopped")
 
-	r.sendIfStart(out)
+		defer close(out)
 
-	for {
-		select {
-		case _, ok := <-in:
-			if !ok {
-				return
-			}
-		case <-ticker.C:
+		ticker := time.NewTicker(_tickerDuration)
+		defer ticker.Stop()
+
+		for {
 			r.sendIfStart(out)
+
+			select {
+			case _, ok := <-inbox:
+				if !ok {
+					return
+				}
+			case <-ticker.C:
+			}
 		}
-	}
+	}()
+
+	return out
 }
 
 func (r *Rule) sendIfStart(out chan<- domain.Event) {

@@ -3,15 +3,16 @@ package cpi
 import (
 	"context"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/data/internal/domain"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
-	"github.com/xuri/excelize/v2"
-	"golang.org/x/text/encoding/charmap"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/WLM1ke/poptimizer/data/internal/domain"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
+	"github.com/xuri/excelize/v2"
+	"golang.org/x/text/encoding/charmap"
 )
 
 const (

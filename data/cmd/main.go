@@ -2,22 +2,20 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"time"
+
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/internal/view"
 	"github.com/WLM1ke/poptimizer/data/pkg/app"
 	"github.com/WLM1ke/poptimizer/data/pkg/client"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
-	"net/http"
-	"time"
 )
 
 type data struct {
 	Server struct {
 		Addr    string        `envDefault:"localhost:3000"`
 		Timeout time.Duration `envDefault:"1s"`
-	}
-	Events struct {
-		Timeout time.Duration `envDefault:"5m"`
 	}
 	MongoDB struct {
 		URI string `env:"URI,unset" envDefault:"mongodb://localhost:27017"`
@@ -73,7 +71,6 @@ func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service)
 			db,
 			httpClient,
 			telega,
-			d.Events.Timeout,
 		),
 	}
 
