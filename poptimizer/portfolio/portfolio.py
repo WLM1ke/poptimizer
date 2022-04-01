@@ -209,8 +209,13 @@ class Portfolio:
         last_turnover = last_turnover.reindex(index)
         last_turnover = last_turnover.astype("int")
 
-        returns_new = self._norm_ret(tuple(index))
-        returns_old = self._norm_ret(tuple(self.index[:-2]))
+        returns = self._norm_ret(tuple(all_tickers))
+
+        index = returns.columns.difference(self.index)
+
+        returns_new = returns.reindex(columns=index)
+        returns_old = returns.reindex(columns=self.index[:-2])
+
         corr_max = (returns_new.T @ returns_old / LIQUIDITY_DAYS).max(axis=1)
 
         rez = pd.concat([corr_max, last_turnover], axis=1)
@@ -226,7 +231,7 @@ class Portfolio:
         returns_new = returns_new.iloc[-LIQUIDITY_DAYS:]
         returns_new = returns_new - returns_new.mean(axis=0)
 
-        return returns_new / returns_new.std(axis=0, ddof=0)
+        return (returns_new / returns_new.std(axis=0, ddof=0)).dropna(axis=1)
 
 
 def load_from_yaml(date: Union[str, pd.Timestamp], ports: set = None) -> Portfolio:
