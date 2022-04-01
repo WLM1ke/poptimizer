@@ -5,39 +5,44 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
+	"github.com/WLM1ke/gomoex"
+	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/cpi"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/dates"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/dividends"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/end"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/indexes"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/quotes"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/raw_div"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/securities"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/status"
-
 	"github.com/WLM1ke/poptimizer/data/internal/rules/usd"
-
-	"github.com/WLM1ke/gomoex"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/dates"
-	"go.mongodb.org/mongo-driver/mongo"
-
-	"github.com/WLM1ke/poptimizer/data/internal/domain"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/end"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
 	"github.com/WLM1ke/poptimizer/data/pkg/channels"
 	"github.com/WLM1ke/poptimizer/data/pkg/client"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const _timeout = 3 * time.Minute
 
-// errUnprocessedEvent ошибка связанная с наличием необработанных ошибок в момент завершения работы шины событий.
-var errUnprocessedEvent = fmt.Errorf("unprocessed event")
+var (
+	errBusStopped       = fmt.Errorf("bus stopped")
+	errUnprocessedEvent = fmt.Errorf("unprocessed event")
+)
 
 // EventBus осуществляет перенаправление исходящих событий правилам по их обработке.
 type EventBus struct {
 	logger *lgr.Logger
 	rules  []domain.Rule
+
+	broadcast chan domain.Event
+
+	lock    sync.RWMutex
+	stopped bool
 }
 
 // NewEventBus создает шину событий со всеми правилами обработки событий.
@@ -64,17 +69,16 @@ func NewEventBus(
 	}
 
 	return &EventBus{
-		logger: logger,
-		rules:  rules,
+		logger:    logger,
+		rules:     rules,
+		broadcast: make(chan domain.Event),
 	}
 }
 
 // Run запускает шину событий.
 func (b *EventBus) Run(ctx context.Context) error {
-	broadcast := make(chan domain.Event)
-	inbox := b.activateConsumers(broadcast)
-
-	b.formInboxToBroadcast(ctx, inbox, broadcast)
+	inbox := b.activateConsumers()
+	b.formInboxToBroadcast(ctx, inbox)
 
 	if count := b.drainUnprocessedEvents(inbox); count != 0 {
 		return fmt.Errorf("%w: count %d", errUnprocessedEvent, count)
@@ -83,8 +87,8 @@ func (b *EventBus) Run(ctx context.Context) error {
 	return nil
 }
 
-func (b *EventBus) activateConsumers(broadcast <-chan domain.Event) <-chan domain.Event {
-	in := channels.FanOut(broadcast, len(b.rules))
+func (b *EventBus) activateConsumers() <-chan domain.Event {
+	in := channels.FanOut(b.broadcast, len(b.rules))
 	out := make([]<-chan domain.Event, 0, len(b.rules))
 
 	for n, rule := range b.rules {
@@ -94,18 +98,26 @@ func (b *EventBus) activateConsumers(broadcast <-chan domain.Event) <-chan domai
 	return channels.FanIn(out...)
 }
 
-func (b *EventBus) formInboxToBroadcast(ctx context.Context, inbox <-chan domain.Event, broadcast chan<- domain.Event) {
+func (b *EventBus) formInboxToBroadcast(ctx context.Context, inbox <-chan domain.Event) {
 	for {
 		select {
 		case <-ctx.Done():
-			close(broadcast)
+			b.prepareStop()
 
 			return
 		case event := <-inbox:
 			b.logger.Infof("EventBus: processing event %s", event)
-			broadcast <- event
+			b.broadcast <- event
 		}
 	}
+}
+
+func (b *EventBus) prepareStop() {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	b.stopped = true
+	close(b.broadcast)
 }
 
 func (b *EventBus) drainUnprocessedEvents(inbox <-chan domain.Event) (count int) {
@@ -115,4 +127,18 @@ func (b *EventBus) drainUnprocessedEvents(inbox <-chan domain.Event) (count int)
 	}
 
 	return count
+}
+
+// BroadCastEvent рассылает сообщение для последующей обработки бизнес-правилами.
+func (b *EventBus) BroadCastEvent(event domain.Event) error {
+	b.lock.RLock()
+	defer b.lock.RLock()
+
+	if b.stopped {
+		return errBusStopped
+	}
+
+	b.broadcast <- event
+
+	return nil
 }
