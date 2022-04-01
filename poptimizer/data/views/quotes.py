@@ -42,6 +42,7 @@ def all_prices(tickers: tuple[str, ...], price_type: col.PriceType = col.CLOSE) 
     return pd.concat(
         [df[price_type] for df in quotes_list],
         axis=1,
+        sort=True,
     )
 
 
@@ -62,9 +63,11 @@ def turnovers(tickers: tuple[str, ...], last_date: pd.Timestamp) -> pd.DataFrame
     df = pd.concat(
         [df[col.TURNOVER] for df in quotes_list],
         axis=1,
+        sort=True,
     )
     df = df.loc[:last_date]
     df.columns = tickers
+
     return df.fillna(0, axis=0)
 
 

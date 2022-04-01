@@ -37,7 +37,8 @@ def dividends_all(
     dfs = viewer.get_dfs(ports.DIVIDENDS, tickers)
     dfs = [df.loc[bootstrap.START_DATE :] for df in dfs]  # type: ignore
 
-    df = pd.concat(dfs, axis=1)
+    df = pd.concat(dfs, axis=1, sort=True)
     df = df.reindex(columns=tickers)
     df = df.fillna(0, axis=0)
+
     return df.mul(bootstrap.AFTER_TAX)

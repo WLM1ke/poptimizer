@@ -86,7 +86,7 @@ def _row_comp(row: pd.Series, rel_tol: float = RET_TOL) -> bool:
 
 def _compare(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     """Сравнивает данные по дивидендам из двух источников."""
-    df = pd.concat([df1, df2], axis="columns")
+    df = pd.concat([df1, df2], axis="columns", sort=True)
     df["STATUS"] = "ERROR"
 
     if not df.empty:
@@ -113,6 +113,7 @@ def dividends_validation(ticker: str) -> pd.DataFrame:
     df_comp = pd.concat(
         [div_ex.iloc[:, :-1], df_comp],
         axis=1,
+        sort=True,
     )
 
     first_quote = not_div.quotes((ticker,))[0].index[0]

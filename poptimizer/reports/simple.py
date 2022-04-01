@@ -65,7 +65,7 @@ def income(report_name: str, investor_name: str, months: int):
 def monthly_returns(report_name: str, months: int) -> pd.DataFrame:
     """Необходимое количество месяцев для анализа."""
     df = pdf_middle.portfolio_cum_return(pdf.read_data(report_name).iloc[-months - 1 :])
-    df = pd.concat([df, pdf_middle.index_cum_return(df)], axis=1).pct_change().dropna()
+    df = pd.concat([df, pdf_middle.index_cum_return(df)], axis=1, sort=True).pct_change().dropna()
     df.columns = ["Portfolio", "MOEX"]
     return df
 
@@ -82,7 +82,7 @@ def stats(report_name: str, months: int):
     df = monthly_returns(report_name, months)
     results = dict()
     results["MEAN"] = df.mean() * 12
-    results["STD"] = df.std() * 12 ** 0.5
+    results["STD"] = df.std() * 12**0.5
 
     results[""] = ["", ""]
     results["G_MEAN"] = df.add(1).product(axis=0) ** (12 / len(df)) - 1
