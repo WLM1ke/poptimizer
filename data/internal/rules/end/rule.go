@@ -1,4 +1,4 @@
-// Package end содержит правило, порождающее события через определенные промежутки времени.
+// Package end содержит правило, порождающее событие о возможной публикации торговой статистики.
 package end
 
 import (
@@ -11,14 +11,10 @@ import (
 const (
 	_tickerDuration = time.Minute
 	_group          = "day_ended"
-	// Информация о торгах публикуется на MOEX ISS в 0:45 по московскому времени на следующий день.
-	_issTZ     = "Europe/Moscow"
-	_issHour   = 0
-	_issMinute = 45
 )
 
 // ID события окончания дня (необязательно торгового). Окончания дня привязано к моменту публикации итогов торгов.
-var ID = domain.NewID(_group, _group)
+var ID = domain.NewID(_group, _group) //nolint:gochecknoglobals,varnamelen
 
 // Rule - правило, сообщающее о возможном появлении новых данных.
 //
@@ -28,17 +24,11 @@ type Rule struct {
 	timeout time.Duration
 
 	last time.Time
-	loc  *time.Location
 }
 
 // New правило окончания дня (необязательно торгового). Окончания дня привязано к моменту публикации итогов торгов.
 func New(logger *lgr.Logger, timeout time.Duration) *Rule {
-	loc, err := time.LoadLocation(_issTZ)
-	if err != nil {
-		panic("can't load time zone")
-	}
-
-	return &Rule{logger: logger, timeout: timeout, loc: loc}
+	return &Rule{logger: logger, timeout: timeout}
 }
 
 // Activate возвращает исходящий канал с событиями об окончании дня.
@@ -57,7 +47,7 @@ func (r *Rule) Activate(inbox <-chan domain.Event) <-chan domain.Event {
 		defer ticker.Stop()
 
 		for {
-			r.sendIfStart(out)
+			r.sendIfNewDay(out)
 
 			select {
 			case _, ok := <-inbox:
@@ -72,16 +62,8 @@ func (r *Rule) Activate(inbox <-chan domain.Event) <-chan domain.Event {
 	return out
 }
 
-func (r *Rule) sendIfStart(out chan<- domain.Event) {
-	now := time.Now().In(r.loc)
-	end := time.Date(now.Year(), now.Month(), now.Day(), _issHour, _issMinute, 0, 0, r.loc)
-
-	delta := 2
-	if end.Before(now) {
-		delta = 1
-	}
-
-	lastNew := time.Date(now.Year(), now.Month(), now.Day()-delta, 0, 0, 0, 0, time.UTC)
+func (r *Rule) sendIfNewDay(out chan<- domain.Event) {
+	lastNew := domain.LastTradingDate()
 	if r.last.Before(lastNew) {
 		r.last = lastNew
 
