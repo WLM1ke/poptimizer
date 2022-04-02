@@ -48,7 +48,7 @@ type EventBus struct {
 // NewEventBus создает шину событий со всеми правилами обработки событий.
 func NewEventBus(
 	logger *lgr.Logger,
-	db *mongo.Database,
+	dataBase *mongo.Database,
 	client *http.Client,
 	telegram *client.Telegram,
 ) *EventBus {
@@ -57,15 +57,15 @@ func NewEventBus(
 	rules := []domain.Rule{
 		errors.New(logger, telegram, _timeout),
 		end.New(logger, _timeout),
-		dates.New(logger, db, iss, _timeout),
-		usd.New(logger, db, iss, _timeout),
-		cpi.New(logger, db, client, _timeout),
-		securities.New(logger, db, iss, _timeout),
-		status.New(logger, db, client, _timeout),
-		indexes.New(logger, db, iss, _timeout),
-		quotes.New(logger, db, iss, _timeout),
-		dividends.New(logger, db, _timeout),
-		raw_div.New(logger, db, _timeout),
+		dates.New(logger, dataBase, iss, _timeout),
+		usd.New(logger, dataBase, iss, _timeout),
+		cpi.New(logger, dataBase, client, _timeout),
+		securities.New(logger, dataBase, iss, _timeout),
+		status.New(logger, dataBase, client, _timeout),
+		indexes.New(logger, dataBase, iss, _timeout),
+		quotes.New(logger, dataBase, iss, _timeout),
+		dividends.New(logger, dataBase, _timeout),
+		raw_div.New(logger, dataBase, _timeout),
 	}
 
 	return &EventBus{
@@ -106,8 +106,7 @@ func (b *EventBus) formInboxToBroadcast(ctx context.Context, inbox <-chan domain
 
 			return
 		case event := <-inbox:
-			b.logger.Infof("EventBus: processing event %s", event)
-			b.broadcast <- event
+			b.broadcastEvent(event)
 		}
 	}
 }
@@ -120,6 +119,11 @@ func (b *EventBus) prepareStop() {
 	close(b.broadcast)
 }
 
+func (b *EventBus) broadcastEvent(event domain.Event) {
+	b.logger.Infof("EventBus: processing event %s", event)
+	b.broadcast <- event
+}
+
 func (b *EventBus) drainUnprocessedEvents(inbox <-chan domain.Event) (count int) {
 	for event := range inbox {
 		b.logger.Warnf("EventBus: unprocessed event %s", event)
@@ -129,8 +133,8 @@ func (b *EventBus) drainUnprocessedEvents(inbox <-chan domain.Event) (count int)
 	return count
 }
 
-// BroadCastEvent рассылает сообщение для последующей обработки бизнес-правилами.
-func (b *EventBus) BroadCastEvent(event domain.Event) error {
+// Send рассылает сообщение для последующей обработки бизнес-правилами.
+func (b *EventBus) Send(event domain.Event) error {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 
@@ -138,7 +142,7 @@ func (b *EventBus) BroadCastEvent(event domain.Event) error {
 		return errBusStopped
 	}
 
-	b.broadcast <- event
+	b.broadcastEvent(event)
 
 	return nil
 }
