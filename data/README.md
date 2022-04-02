@@ -2,7 +2,17 @@
 
 Прототип в разработке - не используется в основном коде
 
-## Потоки событий
+## Endpoints
+
+### api/{group}/{ticker}
+
+Получение данных в формате MongoDB Extended JSON (v2)
+
+### edit/{ticker}
+
+Frontend для дополнения данных по дивидендам
+
+## Event streams
 ```mermaid
 flowchart
     Timer[\Timer/]-->End
@@ -17,7 +27,7 @@ flowchart
     Securities-->Quotes
 	Quotes-->Dividends
     
-    Input[\Input/]-.->DivRaw
+    Input[\Input/]-->DivRaw
     DivRaw-.->Dividends
     
     DivStatus-->DivRaw
