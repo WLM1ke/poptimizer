@@ -132,7 +132,7 @@ func (b *EventBus) drainUnprocessedEvents(inbox <-chan domain.Event) (count int)
 // BroadCastEvent рассылает сообщение для последующей обработки бизнес-правилами.
 func (b *EventBus) BroadCastEvent(event domain.Event) error {
 	b.lock.RLock()
-	defer b.lock.RLock()
+	defer b.lock.RUnlock()
 
 	if b.stopped {
 		return errBusStopped
