@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"os/exec"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -29,4 +30,35 @@ func NewMongoDB(uri string) (*mongo.Client, error) {
 	}
 
 	return client, nil
+}
+
+// MongoDBBackUpCmd создает команду для сохранения коллекции.
+func MongoDBBackUpCmd(ctx context.Context, folder, uri, db, collection string) *exec.Cmd {
+	return exec.CommandContext(
+		ctx,
+		"mongodump",
+		"--out",
+		folder,
+		"--uri",
+		fmt.Sprintf("\"%s\"", uri),
+		"--db",
+		db,
+		"--collection",
+		collection,
+	)
+}
+
+// MongoDBRestoreCmd создает команду для восстановления коллекции.
+func MongoDBRestoreCmd(ctx context.Context, folder, uri, db, collection string) *exec.Cmd {
+	return exec.CommandContext(
+		ctx,
+		"mongorestore",
+		"--uri",
+		fmt.Sprintf("\"%s\"", uri),
+		"--db",
+		db,
+		"--collection",
+		collection,
+		folder,
+	)
 }
