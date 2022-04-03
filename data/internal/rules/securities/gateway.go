@@ -2,10 +2,10 @@ package securities
 
 import (
 	"context"
+	"sort"
+
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
-	"sort"
-	"time"
 )
 
 const _engine = gomoex.EngineStock
@@ -26,13 +26,13 @@ type gateway struct {
 func (g gateway) Get(
 	ctx context.Context,
 	_ domain.Table[domain.Security],
-	_ time.Time,
 ) (allRows []gomoex.Security, err error) {
 	for _, mb := range marketsBoards {
 		rows, err := g.iss.BoardSecurities(ctx, _engine, mb.market, mb.board)
 		if err != nil {
 			return nil, err
 		}
+
 		allRows = append(allRows, rows...)
 	}
 

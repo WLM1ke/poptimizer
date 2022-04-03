@@ -3,6 +3,9 @@ package dividends
 import (
 	"context"
 	"fmt"
+	"sort"
+	"time"
+
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
@@ -10,8 +13,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/usd"
 	"golang.org/x/exp/slices"
-	"sort"
-	"time"
 )
 
 const (
@@ -24,7 +25,7 @@ type gateway struct {
 	usdRepo repo.Read[domain.USD]
 }
 
-func (s gateway) Get(ctx context.Context, table domain.Table[domain.Dividend], _ time.Time) ([]domain.Dividend, error) {
+func (s gateway) Get(ctx context.Context, table domain.Table[domain.Dividend]) ([]domain.Dividend, error) {
 	raw, err := s.rawRepo.Get(ctx, domain.NewID(raw_div.Group, string(table.Name())))
 	if err != nil {
 		return nil, err

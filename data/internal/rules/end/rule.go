@@ -67,6 +67,6 @@ func (r *Rule) sendIfNewDay(out chan<- domain.Event) {
 	if r.last.Before(lastNew) {
 		r.last = lastNew
 
-		out <- domain.NewUpdateCompleted(ID, lastNew)
+		out <- domain.NewUpdateCompleted(ID)
 	}
 }

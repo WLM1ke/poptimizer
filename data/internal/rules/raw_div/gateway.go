@@ -3,12 +3,12 @@ package raw_div
 import (
 	"context"
 	"fmt"
+	"sort"
+
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/status"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
-	"sort"
-	"time"
 )
 
 const _format = `2006-01-02`
@@ -17,7 +17,7 @@ type gateway struct {
 	statusRepo repo.Read[domain.DivStatus]
 }
 
-func (s gateway) Get(ctx context.Context, table domain.Table[domain.RawDiv], _ time.Time) ([]domain.RawDiv, error) {
+func (s gateway) Get(ctx context.Context, table domain.Table[domain.RawDiv]) ([]domain.RawDiv, error) {
 	divStatus, err := s.statusRepo.Get(ctx, status.ID)
 	if err != nil {
 		return nil, err

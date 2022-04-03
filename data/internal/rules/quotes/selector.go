@@ -2,6 +2,7 @@ package quotes
 
 import (
 	"context"
+
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
@@ -18,7 +19,6 @@ func (s selector) Select(ctx context.Context, event domain.Event) (ids []domain.
 	switch selected := event.(type) {
 	case domain.UpdateCompleted:
 		if selected.ID() == securities.ID {
-
 			sec, err := s.securities.Get(ctx, securities.ID)
 			if err != nil {
 				return ids, err

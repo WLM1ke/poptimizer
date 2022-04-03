@@ -57,10 +57,11 @@ func (r Rule[R]) Activate(inbox <-chan domain.Event) <-chan domain.Event {
 
 		var wg sync.WaitGroup
 		defer wg.Wait()
-		for event := range inbox {
-			event := event
 
+		for event := range inbox {
 			wg.Add(1)
+
+			event := event
 
 			go func() {
 				defer wg.Done()
@@ -82,35 +83,34 @@ func (r Rule[R]) handleEvent(out chan<- domain.Event, event domain.Event) {
 
 	ids, err := r.selector.Select(ctx, event)
 	if err != nil {
-		out <- domain.NewErrorOccurred(event, err)
+		out <- domain.NewErrorOccurred(event.ID(), err)
 
 		return
 	}
 
 	for _, id := range ids {
 		wg.Add(1)
-
-		update := domain.NewUpdateCompleted(id, event.Date())
+		id := id
 
 		go func() {
 			defer wg.Done()
 
-			if newEvent := r.handleUpdate(ctx, update); newEvent != nil {
+			if newEvent := r.handleUpdate(ctx, id); newEvent != nil {
 				out <- newEvent
 			}
 		}()
 	}
 }
 
-func (r Rule[R]) handleUpdate(ctx context.Context, update domain.UpdateCompleted) domain.Event {
-	table, err := r.repo.Get(ctx, update.ID())
+func (r Rule[R]) handleUpdate(ctx context.Context, id domain.ID) domain.Event {
+	table, err := r.repo.Get(ctx, id)
 	if err != nil {
-		return domain.NewErrorOccurred(update, err)
+		return domain.NewErrorOccurred(id, err)
 	}
 
-	rows, err := r.gateway.Get(ctx, table, update.Date())
+	rows, err := r.gateway.Get(ctx, table)
 	if err != nil {
-		return domain.NewErrorOccurred(update, err)
+		return domain.NewErrorOccurred(id, err)
 	}
 
 	if !r.haveNewRows(rows) {
@@ -119,20 +119,20 @@ func (r Rule[R]) handleUpdate(ctx context.Context, update domain.UpdateCompleted
 
 	err = r.validator(table, rows)
 	if err != nil {
-		return domain.NewErrorOccurred(update, err)
+		return domain.NewErrorOccurred(id, err)
 	}
 
 	if r.append {
-		err = r.repo.Append(ctx, domain.NewTable(update.ID(), update.Date(), rows[1:]))
+		err = r.repo.Append(ctx, domain.NewTable(id, time.Now(), rows[1:]))
 	} else {
-		err = r.repo.Replace(ctx, domain.NewTable(update.ID(), update.Date(), rows))
+		err = r.repo.Replace(ctx, domain.NewTable(id, time.Now(), rows))
 	}
 
 	if err != nil {
-		return domain.NewErrorOccurred(update, err)
+		return domain.NewErrorOccurred(id, err)
 	}
 
-	return update
+	return domain.NewUpdateCompleted(id)
 }
 
 func (r Rule[R]) haveNewRows(rows []R) bool {

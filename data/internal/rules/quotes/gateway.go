@@ -9,7 +9,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/rules/securities"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
 	"sort"
-	"time"
 )
 
 const _format = `2006-01-02`
@@ -25,13 +24,13 @@ type gateway struct {
 	secRepo repo.Read[gomoex.Security]
 }
 
-func (s gateway) Get(ctx context.Context, table domain.Table[domain.Quote], date time.Time) ([]domain.Quote, error) {
+func (s gateway) Get(ctx context.Context, table domain.Table[domain.Quote]) ([]domain.Quote, error) {
 	start := ""
 	if !table.IsEmpty() {
 		start = table.LastRow().Begin.Format(_format)
 	}
 
-	end := date.Format(_format)
+	end := domain.LastTradingDate().Format(_format)
 	ticker := string(table.Name())
 
 	market, err := s.getMarket(ctx, ticker)

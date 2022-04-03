@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
-	"time"
 )
 
 const _format = `2006-01-02`
@@ -13,13 +12,13 @@ type gateway struct {
 	iss *gomoex.ISSClient
 }
 
-func (g gateway) Get(ctx context.Context, table domain.Table[domain.Index], date time.Time) ([]domain.Index, error) {
+func (g gateway) Get(ctx context.Context, table domain.Table[domain.Index]) ([]domain.Index, error) {
 	start := ""
 	if !table.IsEmpty() {
 		start = table.LastRow().Date.Format(_format)
 	}
 
-	end := date.Format(_format)
+	end := domain.LastTradingDate().Format(_format)
 
 	rows, err := g.iss.MarketHistory(
 		ctx,

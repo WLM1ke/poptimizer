@@ -3,7 +3,6 @@ package template
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 )
@@ -13,5 +12,5 @@ var ErrRuleGateway = errors.New("rule gateway error")
 
 // Gateway загружает необходимые данные и формирует слайс новых строк.
 type Gateway[R domain.Row] interface {
-	Get(ctx context.Context, table domain.Table[R], date time.Time) ([]R, error)
+	Get(ctx context.Context, table domain.Table[R]) ([]R, error)
 }

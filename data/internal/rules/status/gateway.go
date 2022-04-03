@@ -3,15 +3,17 @@ package status
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/data/internal/domain"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
-	"golang.org/x/text/encoding/charmap"
 	"io"
 	"net/http"
 	"regexp"
 	"sort"
 	"time"
+
+	"github.com/WLM1ke/poptimizer/data/internal/domain"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
+	"golang.org/x/text/encoding/charmap"
 )
 
 const (
@@ -29,7 +31,6 @@ type gateway struct {
 func (g gateway) Get(
 	ctx context.Context,
 	_ domain.Table[domain.DivStatus],
-	date time.Time,
 ) ([]domain.DivStatus, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _url, http.NoBody)
 	if err != nil {
@@ -62,13 +63,13 @@ func (g gateway) Get(
 	decoder := charmap.Windows1251.NewDecoder()
 	reader := csv.NewReader(decoder.Reader(resp.Body))
 
-	return parceCSV(reader, date)
+	return parceCSV(reader)
 }
 
-func parceCSV(reader *csv.Reader, date time.Time) (rows []domain.DivStatus, err error) {
+func parceCSV(reader *csv.Reader) (rows []domain.DivStatus, err error) {
 	header := true
 
-	for record, err := reader.Read(); err != io.EOF; record, err = reader.Read() {
+	for record, err := reader.Read(); errors.Is(err, io.EOF); record, err = reader.Read() {
 		switch {
 		case err != nil:
 			return nil, fmt.Errorf(
@@ -79,6 +80,7 @@ func parceCSV(reader *csv.Reader, date time.Time) (rows []domain.DivStatus, err 
 			)
 		case header:
 			header = false
+
 			continue
 		}
 
@@ -92,7 +94,7 @@ func parceCSV(reader *csv.Reader, date time.Time) (rows []domain.DivStatus, err 
 			)
 		}
 
-		if divDate.Before(date.AddDate(0, 0, -_pastDays)) {
+		if divDate.Before(domain.LastTradingDate().AddDate(0, 0, -_pastDays)) {
 			continue
 		}
 

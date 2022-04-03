@@ -49,7 +49,7 @@ type gateway struct {
 	client *http.Client
 }
 
-func (g gateway) Get(ctx context.Context, table domain.Table[domain.CPI], _ time.Time) ([]domain.CPI, error) {
+func (g gateway) Get(ctx context.Context, table domain.Table[domain.CPI]) ([]domain.CPI, error) {
 	xlsx, err := g.getXLSX(ctx)
 	if err != nil {
 		return nil, err
@@ -71,6 +71,7 @@ func (g gateway) Get(ctx context.Context, table domain.Table[domain.CPI], _ time
 	}
 
 	cpi, err := parsedData(years, rows[_firstDataRow:_firstDataRow+12])
+
 	switch {
 	case err != nil:
 		return nil, err

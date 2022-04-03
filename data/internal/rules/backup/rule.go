@@ -16,7 +16,7 @@ const (
 	_folder = "dump"
 )
 
-var id = domain.NewID(_group, _group) //nolint:gochecknoglobals
+var id = domain.NewID(_group, _group) //nolint:gochecknoglobals,varnamelen
 
 // Cmd - команда для сохранения данных.
 type Cmd func(ctx context.Context) error
@@ -57,10 +57,9 @@ func (r *Rule) Activate(inbox <-chan domain.Event) <-chan domain.Event {
 		defer close(out)
 
 		for event := range inbox {
-			switch selected := event.(type) {
-			case domain.UpdateCompleted:
+			if selected, ok := event.(domain.UpdateCompleted); ok {
 				if selected.Group() == raw_div.Group {
-					r.backup(out, domain.NewUpdateCompleted(id, event.Date()))
+					r.backup(out)
 				}
 			}
 		}
@@ -69,14 +68,12 @@ func (r *Rule) Activate(inbox <-chan domain.Event) <-chan domain.Event {
 	return out
 }
 
-func (r *Rule) backup(out chan<- domain.Event, event domain.Event) {
+func (r *Rule) backup(out chan<- domain.Event) {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	err := r.cmd(ctx)
-	if err != nil {
-		out <- domain.NewErrorOccurred(event, err)
-
+	if err := r.cmd(ctx); err != nil {
+		out <- domain.NewErrorOccurred(id, err)
 		return
 	}
 

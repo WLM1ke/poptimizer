@@ -2,6 +2,7 @@ package raw_div
 
 import (
 	"context"
+
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/status"
@@ -17,7 +18,6 @@ func (s selector) Select(ctx context.Context, event domain.Event) (ids []domain.
 	switch selected := event.(type) {
 	case domain.UpdateCompleted:
 		if selected.ID() == status.ID {
-
 			sec, err := s.repo.Get(ctx, status.ID)
 			if err != nil {
 				return ids, err

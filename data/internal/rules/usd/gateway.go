@@ -2,8 +2,6 @@ package usd
 
 import (
 	"context"
-	"time"
-
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 )
@@ -17,13 +15,13 @@ type gateway struct {
 	iss *gomoex.ISSClient
 }
 
-func (g gateway) Get(ctx context.Context, table domain.Table[domain.USD], date time.Time) ([]domain.USD, error) {
+func (g gateway) Get(ctx context.Context, table domain.Table[domain.USD]) ([]domain.USD, error) {
 	start := ""
 	if !table.IsEmpty() {
 		start = table.LastRow().Begin.Format(_format)
 	}
 
-	end := date.Format(_format)
+	end := domain.LastTradingDate().Format(_format)
 
 	rows, err := g.iss.MarketCandles(
 		ctx,
