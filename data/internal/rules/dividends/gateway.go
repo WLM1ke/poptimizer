@@ -15,11 +15,6 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const (
-	USD = `USD`
-	RUR = `RUR`
-)
-
 type gateway struct {
 	rawRepo repo.Read[domain.RawDiv]
 	usdRepo repo.Read[domain.USD]
@@ -62,9 +57,9 @@ func (s gateway) prepareDiv(raw []domain.RawDiv, rates []gomoex.Candle) (dividen
 		}
 
 		switch div.Currency {
-		case RUR:
+		case raw_div.RUR:
 			dividends[len(dividends)-1].Value += div.Value
-		case USD:
+		case raw_div.USD:
 			n := sort.Search(
 				len(rates),
 				func(i int) bool { return rates[i].Begin.After(date) },

@@ -8,7 +8,11 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/rules/status"
 )
 
-const Group = "raw_div"
+const (
+	Group = "raw_div"
+	USD   = `USD`
+	RUR   = `RUR`
+)
 
 type selector struct {
 	repo repo.Read[domain.DivStatus]
