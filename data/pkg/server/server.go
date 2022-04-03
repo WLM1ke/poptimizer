@@ -22,7 +22,6 @@ func NewServer(log *lgr.Logger, addr string, handler http.Handler, requestTimeou
 	router := chi.NewRouter()
 	router.Use(middleware.Timeout(requestTimeouts))
 	router.Use(Middleware(log))
-	router.Use(middleware.RequestID)
 	router.Use(middleware.RedirectSlashes)
 	router.Mount("/", handler)
 
