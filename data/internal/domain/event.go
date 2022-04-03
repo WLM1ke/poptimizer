@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 )
+
 // Информация о торгах публикуется на MOEX ISS в 0:45 по московскому времени на следующий день.
 const (
 	_issTZ     = "Europe/Moscow"
@@ -45,8 +46,8 @@ type UpdateCompleted struct {
 }
 
 // NewUpdateCompleted создает событие об обновлении таблицы.
-func NewUpdateCompleted(id ID, date time.Time) UpdateCompleted {
-	return UpdateCompleted{ver: ver{id: id, date: date}}
+func NewUpdateCompleted(id ID) UpdateCompleted {
+	return UpdateCompleted{ver: ver{id: id, date: time.Now()}}
 }
 
 func (u UpdateCompleted) String() string {
@@ -63,9 +64,9 @@ type ErrorOccurred struct {
 }
 
 // NewErrorOccurred создает событие об ошибке при обновлении таблицы.
-func NewErrorOccurred(v Versioned, err error) ErrorOccurred {
+func NewErrorOccurred(id ID, err error) ErrorOccurred {
 	return ErrorOccurred{
-		ver: ver{id: v.ID(), date: v.Date()},
+		ver: ver{id: id, date: time.Now()},
 		err: err,
 	}
 }
