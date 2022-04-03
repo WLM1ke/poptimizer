@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/WLM1ke/poptimizer/data/internal/rules/backup"
+
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/cpi"
@@ -49,6 +51,7 @@ type EventBus struct {
 func NewEventBus(
 	logger *lgr.Logger,
 	dataBase *mongo.Database,
+	cmd backup.Cmd,
 	client *http.Client,
 	telegram *client.Telegram,
 ) *EventBus {
@@ -66,6 +69,7 @@ func NewEventBus(
 		quotes.New(logger, dataBase, iss, _timeout),
 		dividends.New(logger, dataBase, _timeout),
 		raw_div.New(logger, dataBase, _timeout),
+		backup.New(logger, cmd, _timeout),
 	}
 
 	return &EventBus{

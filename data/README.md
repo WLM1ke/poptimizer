@@ -29,6 +29,7 @@ flowchart
     
     Input[\Input/]-->DivRaw
     DivRaw-.->Dividends
+    DivRaw-->Backup
     
     DivStatus-->DivRaw
     DivStatus-.->CloseReestry
