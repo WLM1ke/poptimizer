@@ -1,4 +1,4 @@
-package view
+package handlers
 
 import (
 	"errors"
@@ -13,9 +13,10 @@ import (
 // newJSONHandler основной обработчик отдающий данные в формате BSON для http-сервера.
 func newJSONHandler(logger *lgr.Logger, viewer repo.JSONViewer) http.Handler {
 	router := chi.NewRouter()
-	router.Get("/{group}/{name}", func(w http.ResponseWriter, r *http.Request) {
+	pattern := "/{group}/{ticker}"
+	router.Get(pattern, func(w http.ResponseWriter, r *http.Request) {
 		group := chi.URLParam(r, "group")
-		name := chi.URLParam(r, "name")
+		name := chi.URLParam(r, "ticker")
 
 		ctx := r.Context()
 
