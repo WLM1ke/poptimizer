@@ -1,11 +1,12 @@
 package edit
 
 import (
+	"html/template"
+	"net/http"
+
 	"github.com/WLM1ke/poptimizer/data/internal/services"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/go-chi/chi"
-	"html/template"
-	"net/http"
 )
 
 type handler struct {
@@ -65,7 +66,7 @@ func (h *handler) handleAddRow(w http.ResponseWriter, r *http.Request) {
 		r.PostForm.Get("currency"),
 	)
 	if err != nil {
-		h.logger.Warnf("Server: can't add row for session id %s-> %s", id, err)
+		h.logger.Warnf("Server: can't add row -> %s", err)
 		w.WriteHeader(http.StatusBadRequest)
 
 		return

@@ -6,6 +6,12 @@
     <title>Dividends: {{ .Ticker }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
     <script src="https://unpkg.com/htmx.org"></script>
+    <script>
+        document.addEventListener("htmx:responseError", function(evt) {
+                alert("Error: reloading page!!!");
+                location.reload();
+        });
+    </script>
 </head>
 <body hx-headers='{"X-Request-ID": "{{ .SessionID }}"}'>
     <h2>Dividends: {{ .Ticker }}</h2>
