@@ -69,7 +69,7 @@ func (g gateway) Get(
 func parceCSV(reader *csv.Reader) (rows []domain.DivStatus, err error) {
 	header := true
 
-	for record, err := reader.Read(); errors.Is(err, io.EOF); record, err = reader.Read() {
+	for record, err := reader.Read(); !errors.Is(err, io.EOF); record, err = reader.Read() {
 		switch {
 		case err != nil:
 			return nil, fmt.Errorf(
