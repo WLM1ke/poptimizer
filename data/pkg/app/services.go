@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"os/signal"
 	"runtime"
 	"syscall"
@@ -28,7 +29,12 @@ func (a *App) runServices() {
 			a.logger.Infof("%s: started", name)
 			defer a.logger.Infof("%s: stopped", name)
 
-			return service.Run(ctx) //nolint:wrapcheck
+			err := service.Run(ctx)
+			if err != nil {
+				return fmt.Errorf("app error in service %s -> %w", name, err)
+			}
+
+			return nil
 		})
 	}
 

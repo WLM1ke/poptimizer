@@ -33,7 +33,7 @@ func NewMongoDB(uri string) (*mongo.Client, error) {
 }
 
 // MongoDBBackUpCmd создает команду для сохранения коллекции.
-func MongoDBBackUpCmd(ctx context.Context, folder, uri, db, collection string) *exec.Cmd {
+func MongoDBBackUpCmd(ctx context.Context, folder, uri, database, collection string) *exec.Cmd {
 	return exec.CommandContext(
 		ctx,
 		"mongodump",
@@ -42,21 +42,21 @@ func MongoDBBackUpCmd(ctx context.Context, folder, uri, db, collection string) *
 		"--uri",
 		fmt.Sprintf("\"%s\"", uri),
 		"--db",
-		db,
+		database,
 		"--collection",
 		collection,
 	)
 }
 
 // MongoDBRestoreCmd создает команду для восстановления коллекции.
-func MongoDBRestoreCmd(ctx context.Context, folder, uri, db, collection string) *exec.Cmd {
+func MongoDBRestoreCmd(ctx context.Context, folder, uri, database, collection string) *exec.Cmd {
 	return exec.CommandContext(
 		ctx,
 		"mongorestore",
 		"--uri",
 		fmt.Sprintf("\"%s\"", uri),
 		"--db",
-		db,
+		database,
 		"--collection",
 		collection,
 		folder,

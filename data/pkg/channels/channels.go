@@ -5,22 +5,23 @@ import "sync"
 // FanIn - сливает данные из нескольких входящих каналов в один исходящий.
 //
 // Если все входящие каналы закрываются, то закрывается исходящий.
-func FanIn[T any](in ...<-chan T) <-chan T {
+func FanIn[T any](inbox ...<-chan T) <-chan T {
 	out := make(chan T)
 
-	var wg sync.WaitGroup
-	wg.Add(len(in))
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(len(inbox))
 
 	go func() {
-		wg.Wait()
+		waitGroup.Wait()
 		close(out)
 	}()
 
-	for _, c := range in {
+	for _, c := range inbox {
 		c := c
 
 		go func() {
-			defer wg.Done()
+			defer waitGroup.Done()
 
 			for v := range c {
 				out <- v
@@ -34,7 +35,7 @@ func FanIn[T any](in ...<-chan T) <-chan T {
 // FanOut - копирует данные из одного входящего канала в несколько исходящих.
 //
 // Если входящий канал закрывается, то закрываются все исходящие.
-func FanOut[T any](in <-chan T, n int) []chan T {
+func FanOut[T any](inbox <-chan T, n int) []chan T {
 	out := make([]chan T, 0, n)
 
 	for i := 0; i < n; i++ {
@@ -42,25 +43,25 @@ func FanOut[T any](in <-chan T, n int) []chan T {
 	}
 
 	go func() {
-		var wg sync.WaitGroup
+		var waitGroup sync.WaitGroup
 
 		defer func() {
-			wg.Wait()
+			waitGroup.Wait()
 
 			for _, c := range out {
 				close(c)
 			}
 		}()
 
-		for v := range in {
-			for _, c := range out {
-				c := c
+		for value := range inbox {
+			for _, channel := range out {
+				channel := channel
 
-				wg.Add(1)
+				waitGroup.Add(1)
 
 				go func() {
-					defer wg.Done()
-					c <- v
+					defer waitGroup.Done()
+					channel <- value
 				}()
 			}
 		}

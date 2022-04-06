@@ -15,8 +15,7 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/raw_div"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/div/raw"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 )
 
@@ -25,7 +24,7 @@ const (
 	_timeFormat = "2006-01-02"
 )
 
-var errWrongSessionID = errors.New("wrong session id")
+var errService = errors.New("service error")
 
 // RawDivTableDTO представление информации о редактируемой таблице.
 //
@@ -45,7 +44,7 @@ func (d RawDivTableDTO) NewRow() domain.RawDiv {
 	return domain.RawDiv{
 		Date:     time.Now(),
 		Value:    1,
-		Currency: raw_div.RUR,
+		Currency: raw.RUR,
 	}
 }
 
@@ -96,9 +95,13 @@ func (r *RawDivUpdate) Run(ctx context.Context) error {
 func (r *RawDivUpdate) GetByTicker(ctx context.Context, ticker string) (dto RawDivTableDTO, err error) {
 	sessionID := primitive.NewObjectID().Hex()
 
-	table, err := r.repo.Get(ctx, domain.NewID(raw_div.Group, ticker))
+	table, err := r.repo.Get(ctx, domain.NewID(raw.Group, ticker))
 	if err != nil {
-		return dto, err
+		return dto, fmt.Errorf(
+			"%w: can't load data from repo -> %s",
+			errService,
+			err,
+		)
 	}
 
 	dto = RawDivTableDTO{
@@ -115,9 +118,12 @@ func (r *RawDivUpdate) GetByTicker(ctx context.Context, ticker string) (dto RawD
 // AddRow добавляет новые строки в таблицу в рамках пользовательской сессии.
 func (r *RawDivUpdate) AddRow(sessionID, date, value, currency string) (row RowDTO, err error) {
 	item := r.cache.Get(sessionID)
-
 	if item == nil {
-		return row, fmt.Errorf("%w - %s", errWrongSessionID, sessionID)
+		return row, fmt.Errorf(
+			"%w: wrong id - %s",
+			errService,
+			sessionID,
+		)
 	}
 
 	tableDTO := item.Value()
@@ -136,17 +142,29 @@ func (r *RawDivUpdate) AddRow(sessionID, date, value, currency string) (row RowD
 func parseRow(date string, value string, currency string) (row RowDTO, err error) {
 	row.Date, err = time.Parse(_timeFormat, date)
 	if err != nil {
-		return row, err
+		return row, fmt.Errorf(
+			"%w: can't parse -> %s",
+			errService,
+			err,
+		)
 	}
 
 	row.Value, err = strconv.ParseFloat(value, 64)
 	if err != nil {
-		return row, err
+		return row, fmt.Errorf(
+			"%w: can't parse -> %s",
+			errService,
+			err,
+		)
 	}
 
 	row.Currency = currency
-	if currency != raw_div.USD && currency != raw_div.RUR {
-		return row, fmt.Errorf("%w: incorrect currency - %s", template.ErrNewRowsValidation, currency)
+	if currency != raw.USD && currency != raw.RUR {
+		return row, fmt.Errorf(
+			"%w: incorrect currency - %s",
+			errService,
+			currency,
+		)
 	}
 
 	return row, nil
@@ -156,14 +174,22 @@ func parseRow(date string, value string, currency string) (row RowDTO, err error
 func (r *RawDivUpdate) Reload(ctx context.Context, sessionID string) (dto RawDivTableDTO, err error) {
 	item := r.cache.Get(sessionID)
 	if item == nil {
-		return dto, fmt.Errorf("%w: %s", errWrongSessionID, sessionID)
+		return dto, fmt.Errorf(
+			"%w: wrong id - %s",
+			errService,
+			sessionID,
+		)
 	}
 
 	ticker := item.Value().Ticker
 
-	table, err := r.repo.Get(ctx, domain.NewID(raw_div.Group, ticker))
+	table, err := r.repo.Get(ctx, domain.NewID(raw.Group, ticker))
 	if err != nil {
-		return dto, err
+		return dto, fmt.Errorf(
+			"%w: can't load data from repo -> %s",
+			errService,
+			err,
+		)
 	}
 
 	dto = RawDivTableDTO{
@@ -182,28 +208,28 @@ func (r *RawDivUpdate) Save(ctx context.Context, sessionID string) (status []Sta
 
 	item := r.cache.Get(sessionID)
 	if item == nil {
-		return append(status, StatusDTO{"Loaded from cache", errWrongSessionID.Error()})
+		return append(status, StatusDTO{"Loaded from cache", "wrong tableID"})
 	}
 
 	status = append(status, StatusDTO{"Loaded from cache", "OK"})
 
 	dto := item.Value()
 
-	id := domain.NewID(raw_div.Group, dto.Ticker)
+	tableID := domain.NewID(raw.Group, dto.Ticker)
 
 	rows := dto.Rows
 	sort.Slice(rows, func(i, j int) bool { return rows[i].Date.Before(rows[j].Date) })
 
 	date := domain.LastTradingDate()
 
-	err := r.repo.Replace(ctx, domain.NewTable(id, date, rows))
+	err := r.repo.Replace(ctx, domain.NewTable(tableID, date, rows))
 	if err != nil {
 		return append(status, StatusDTO{"Saved to repo", err.Error()})
 	}
 
 	status = append(status, StatusDTO{"Saved to repo", "OK"})
 
-	err = r.bus.Send(domain.NewUpdateCompleted(id))
+	err = r.bus.Send(domain.NewUpdateCompleted(tableID))
 	if err != nil {
 		return append(status, StatusDTO{"Sent update event", err.Error()})
 	}

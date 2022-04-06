@@ -95,7 +95,7 @@ func (t *Telegram) apiCall(ctx context.Context, cmd string) error {
 	if err != nil {
 		return fmt.Errorf("%w: can't make request -> %s", errTelegramAPI, err)
 	}
-	defer resp.Body.Close() //nolint:errcheck
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return t.parseError(resp.Body)

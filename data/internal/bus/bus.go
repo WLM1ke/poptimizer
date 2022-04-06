@@ -8,21 +8,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/WLM1ke/poptimizer/data/internal/rules/backup"
-
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/app/backup"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/app/end"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/app/errors"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/cpi"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/dates"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/dividends"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/end"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/errors"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/indexes"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/quotes"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/raw_div"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/securities"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/status"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/usd"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/div/dividends"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/div/raw"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/div/status"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/iss/dates"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/iss/indexes"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/iss/quotes"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/iss/securities"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/iss/usd"
 	"github.com/WLM1ke/poptimizer/data/pkg/channels"
 	"github.com/WLM1ke/poptimizer/data/pkg/client"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
@@ -68,7 +67,7 @@ func NewEventBus(
 		indexes.New(logger, dataBase, iss, _timeout),
 		quotes.New(logger, dataBase, iss, _timeout),
 		dividends.New(logger, dataBase, _timeout),
-		raw_div.New(logger, dataBase, _timeout),
+		raw.New(logger, dataBase, _timeout),
 		backup.New(logger, cmd, _timeout),
 	}
 

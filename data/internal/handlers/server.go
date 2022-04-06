@@ -18,13 +18,13 @@ import (
 // /edit/{ticker} - frontend для добавления данных по дивидендам.
 func NewHTTPServer(
 	logger *lgr.Logger,
-	db *mongo.Database,
+	database *mongo.Database,
 	service *services.RawDivUpdate,
 	addr string,
 	requestTimeouts time.Duration,
 ) *server.Server {
 	router := chi.NewRouter()
-	router.Mount("/api", newJSONHandler(logger, repo.NewMongoJSON(db)))
+	router.Mount("/api", newJSONHandler(logger, repo.NewMongoJSON(database)))
 	router.Mount("/edit", edit.NewEditHandler(logger, service))
 
 	srv := server.NewServer(

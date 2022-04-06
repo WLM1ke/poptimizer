@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/template"
 	"github.com/xuri/excelize/v2"
 	"golang.org/x/text/encoding/charmap"
 )
@@ -27,23 +26,7 @@ const (
 	_firstDataCol = 1
 )
 
-var (
-	_urlRE  = regexp.MustCompile(`https://rosstat.gov.ru/.+ipc.+xlsx`)
-	_months = [12]string{
-		`январь`,
-		`февраль`,
-		`март`,
-		`апрель`,
-		`май`,
-		`июнь`,
-		`июль`,
-		`август`,
-		`сентябрь`,
-		`октябрь`,
-		`ноябрь`,
-		`декабрь`,
-	}
-)
+var _urlRE = regexp.MustCompile(`https://rosstat.gov.ru/.+ipc.+xlsx`)
 
 type gateway struct {
 	client *http.Client
@@ -57,7 +40,11 @@ func (g gateway) Get(ctx context.Context, table domain.Table[domain.CPI]) ([]dom
 
 	rows, err := xlsx.GetRows(_sheet, excelize.Options{RawCellValue: true})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(
+			"%w: can't extract rows -> %s",
+			domain.ErrRule,
+			err,
+		)
 	}
 
 	err = validateMonths(rows)
@@ -94,7 +81,7 @@ func (g gateway) getXLSX(ctx context.Context) (*excelize.File, error) {
 	if err != nil {
 		return nil, fmt.Errorf(
 			"%w: can't create request -> %s",
-			template.ErrRuleGateway,
+			domain.ErrRule,
 			err,
 		)
 	}
@@ -103,7 +90,7 @@ func (g gateway) getXLSX(ctx context.Context) (*excelize.File, error) {
 	if err != nil {
 		return nil, fmt.Errorf(
 			"%w: can't make request -> %s",
-			template.ErrRuleGateway,
+			domain.ErrRule,
 			err,
 		)
 	}
@@ -113,12 +100,20 @@ func (g gateway) getXLSX(ctx context.Context) (*excelize.File, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(
 			"%w: bad respond status %s",
-			template.ErrRuleGateway,
+			domain.ErrRule,
 			resp.Status,
 		)
 	}
+	reader, err := excelize.OpenReader(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"%w: can't parse xlsx -> %s",
+			domain.ErrRule,
+			err,
+		)
+	}
 
-	return excelize.OpenReader(resp.Body)
+	return reader, nil
 }
 
 func (g gateway) getURL(ctx context.Context) (string, error) {
@@ -126,7 +121,7 @@ func (g gateway) getURL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf(
 			"%w: can't create request -> %s",
-			template.ErrRuleGateway,
+			domain.ErrRule,
 			err,
 		)
 	}
@@ -135,7 +130,7 @@ func (g gateway) getURL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf(
 			"%w: can't make request -> %s",
-			template.ErrRuleGateway,
+			domain.ErrRule,
 			err,
 		)
 	}
@@ -145,7 +140,7 @@ func (g gateway) getURL(ctx context.Context) (string, error) {
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf(
 			"%w: bad respond status %s",
-			template.ErrRuleGateway,
+			domain.ErrRule,
 			resp.Status,
 		)
 	}
@@ -156,7 +151,7 @@ func (g gateway) getURL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf(
 			"%w: can't decode cp1252 %s",
-			template.ErrRuleGateway,
+			domain.ErrRule,
 			err,
 		)
 	}
@@ -165,11 +160,25 @@ func (g gateway) getURL(ctx context.Context) (string, error) {
 }
 
 func validateMonths(rows [][]string) error {
-	for n, month := range _months {
+	months := [12]string{
+		`январь`,
+		`февраль`,
+		`март`,
+		`апрель`,
+		`май`,
+		`июнь`,
+		`июль`,
+		`август`,
+		`сентябрь`,
+		`октябрь`,
+		`ноябрь`,
+		`декабрь`,
+	}
+	for n, month := range months {
 		if rows[_firstDataRow+n][0] != month {
 			return fmt.Errorf(
 				"%w: wrong month name %s vs %s",
-				template.ErrRuleGateway,
+				domain.ErrRule,
 				rows[_firstDataRow+n][0],
 				month,
 			)
@@ -182,18 +191,22 @@ func validateMonths(rows [][]string) error {
 func getYears(header []string) ([]int, error) {
 	years := make([]int, 0, 64)
 
-	for n, value := range header {
+	for position, value := range header {
 		year, err := strconv.Atoi(value)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf(
+				"%w: can't parse -> %s",
+				domain.ErrRule,
+				err,
+			)
 		}
 
-		if year != _firstYear+n {
+		if year != _firstYear+position {
 			return nil, fmt.Errorf(
 				"%w: wrong year %d vs %d",
-				template.ErrNewRowsValidation,
+				domain.ErrRule,
 				year,
-				_firstYear+n,
+				_firstYear+position,
 			)
 		}
 
@@ -204,22 +217,29 @@ func getYears(header []string) ([]int, error) {
 }
 
 func parsedData(years []int, data [][]string) ([]domain.CPI, error) {
-	cpi := make([]domain.CPI, 0, 1024)
+	monthsInYear := 12
+	cpi := make([]domain.CPI, 0, monthsInYear*len(years))
 
 	for col, year := range years {
-		for month := 0; month < 12; month++ {
+		for month := 0; month < monthsInYear; month++ {
 			if len(data[month]) == _firstDataCol+col {
 				return cpi, nil
 			}
 
 			value, err := strconv.ParseFloat(data[month][_firstDataCol+col], 64)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf(
+					"%w: can't parse -> %s",
+					domain.ErrRule,
+					err,
+				)
 			}
+
+			var percent = 100.0
 
 			cpi = append(cpi, domain.CPI{
 				Date:  lastDayOfMonth(year, month),
-				Value: value / 100.0,
+				Value: value / percent,
 			})
 		}
 	}
@@ -228,7 +248,8 @@ func parsedData(years []int, data [][]string) ([]domain.CPI, error) {
 }
 
 func lastDayOfMonth(year int, month int) time.Time {
-	date := time.Date(year, time.Month(month+2), 1, 0, 0, 0, 0, time.UTC)
+	afterFullMonth := 2
+	date := time.Date(year, time.Month(month+afterFullMonth), 1, 0, 0, 0, 0, time.UTC)
 
 	return date.AddDate(0, 0, -1)
 }

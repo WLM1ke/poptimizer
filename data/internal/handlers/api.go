@@ -14,23 +14,23 @@ import (
 func newJSONHandler(logger *lgr.Logger, viewer repo.JSONViewer) http.Handler {
 	router := chi.NewRouter()
 	pattern := "/{group}/{ticker}"
-	router.Get(pattern, func(w http.ResponseWriter, r *http.Request) {
-		group := chi.URLParam(r, "group")
-		name := chi.URLParam(r, "ticker")
+	router.Get(pattern, func(responseWriter http.ResponseWriter, request *http.Request) {
+		group := chi.URLParam(request, "group")
+		name := chi.URLParam(request, "ticker")
 
-		ctx := r.Context()
+		ctx := request.Context()
 
 		json, err := viewer.GetJSON(ctx, domain.NewID(group, name))
 		switch {
 		case errors.Is(err, repo.ErrTableNotFound):
 			logger.Warnf("Server: can't get data from repo -> %s", err)
-			http.NotFound(w, r)
+			http.NotFound(responseWriter, request)
 		case err != nil:
 			logger.Warnf("Server: can't get data from repo -> %s", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
 		default:
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			_, err = w.Write(json)
+			responseWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
+			_, err = responseWriter.Write(json)
 			if err != nil {
 				logger.Warnf("Server: can't write respond -> %s", err)
 			}

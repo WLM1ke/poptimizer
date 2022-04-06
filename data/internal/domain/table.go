@@ -34,6 +34,6 @@ func (t Table[R]) IsEmpty() bool {
 }
 
 // LastRow возвращает последнюю строку таблицы. Предварительно необходимо убедиться, что таблица не пустая.
-func (t Table[R]) LastRow() R {
+func (t Table[R]) LastRow() R { //nolint:ireturn
 	return t.rows[len(t.rows)-1]
 }

@@ -1,0 +1,43 @@
+package indexes
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/WLM1ke/gomoex"
+	"github.com/WLM1ke/poptimizer/data/internal/domain"
+)
+
+const _format = `2006-01-02`
+
+type gateway struct {
+	iss *gomoex.ISSClient
+}
+
+func (g gateway) Get(ctx context.Context, table domain.Table[domain.Index]) ([]domain.Index, error) {
+	start := ""
+	if !table.IsEmpty() {
+		start = table.LastRow().Date.Format(_format)
+	}
+
+	end := domain.LastTradingDate().Format(_format)
+
+	rows, err := g.iss.MarketHistory(
+		ctx,
+		gomoex.EngineStock,
+		gomoex.MarketIndex,
+		string(table.Name()),
+		start,
+		end,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"%w: can't download new %s data -> %s",
+			domain.ErrRule,
+			table.Name(),
+			err,
+		)
+	}
+
+	return rows, nil
+}

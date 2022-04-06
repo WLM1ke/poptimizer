@@ -2,15 +2,17 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/internal/handlers"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/backup"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/app/backup"
 	"github.com/WLM1ke/poptimizer/data/internal/services"
 	"github.com/WLM1ke/poptimizer/data/pkg/app"
 	"github.com/WLM1ke/poptimizer/data/pkg/client"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
-	"net/http"
-	"time"
 )
 
 type data struct {
@@ -44,7 +46,12 @@ func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service)
 			// Драйвер MongoDB использует дефолтный клиент под капотом
 			http.DefaultClient.CloseIdleConnections()
 
-			return mongo.Disconnect(ctx) //nolint:wrapcheck
+			err := mongo.Disconnect(ctx)
+			if err != nil {
+				return fmt.Errorf("can't stop DefaultClient -> %w", err)
+			}
+
+			return nil
 		},
 		func(ctx context.Context) error {
 			httpClient.CloseIdleConnections()
@@ -53,7 +60,7 @@ func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service)
 		},
 	}
 
-	db := mongo.Database(d.MongoDB.DB)
+	database := mongo.Database(d.MongoDB.DB)
 
 	telega, err := client.NewTelegram(httpClient, d.Telegram.Token, d.Telegram.ChatID)
 	if err != nil {
@@ -62,20 +69,20 @@ func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service)
 
 	eventBus := bus.NewEventBus(
 		logger,
-		db,
+		database,
 		backup.CreateCMD(d.MongoDB.URI, d.MongoDB.DB),
 		httpClient,
 		telega,
 	)
 
-	rawDiv := services.NewRawDivUpdate(logger, db, eventBus)
+	rawDiv := services.NewRawDivUpdate(logger, database, eventBus)
 
 	return resource, []app.Service{
 		eventBus,
 		rawDiv,
 		handlers.NewHTTPServer(
 			logger,
-			db,
+			database,
 			rawDiv,
 			d.Server.Addr,
 			d.Server.Timeout,

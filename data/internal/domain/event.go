@@ -12,7 +12,7 @@ const (
 	_issMinute = 45
 )
 
-var loc = func() *time.Location { //nolint:gochecknoglobals
+var loc = func() *time.Location {
 	loc, err := time.LoadLocation(_issTZ)
 	if err != nil {
 		panic("can't load time zone")

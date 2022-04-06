@@ -4,6 +4,12 @@ run:
   tests: true
 
 linters-settings:
+  gomnd:
+    # List of numbers to exclude from analysis.
+    # The numbers should be written as string.
+    # Values always ignored: "1", "1.0", "0" and "0.0"
+    ignored-numbers:
+      - "64"
   tagliatelle:
     # Check the struck tag name case.
     case:
@@ -14,6 +20,19 @@ linters-settings:
         # Any struct tag type can be used.
         # Support string case: `camel`, `pascal`, `kebab`, `snake`, `goCamel`, `goPascal`, `goKebab`, `goSnake`, `upper`, `lower`
         json: snake
+  varnamelen:
+    ignore-names:
+      - err
+      - id
+    # Optional list of variable declarations that should be ignored completely.
+    # Entries must be in one of the following forms (see below for examples):
+    # - for variables, parameters, named return values, method receivers, or type parameters:
+    #   <name> <type>  (<type> can also be a pointer/slice/map/chan/...)
+    # - for constants: const <name>
+    #
+    # Default: []
+    ignore-decls:
+      - wg sync.WaitGroup
 
 linters:
   # Enable all available linters.
@@ -36,6 +55,6 @@ issues:
   # it can be disabled by this option.
   # To list all excluded by default patterns execute `golangci-lint run --help`.
   # Default: true.
-  exclude-use-default: false
+  exclude-use-default: true
   # Fix found issues (if it's supported by the linter).
   fix: true

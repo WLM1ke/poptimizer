@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"errors"
+
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 )
 

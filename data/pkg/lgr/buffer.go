@@ -8,7 +8,6 @@ import (
 
 const _size = 128
 
-// pool позволяет переиспользовать буферы.
 type pool struct {
 	pool *sync.Pool
 }

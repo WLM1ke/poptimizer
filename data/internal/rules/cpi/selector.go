@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/dates"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/iss/dates"
 )
 
 const _group = "cpi"

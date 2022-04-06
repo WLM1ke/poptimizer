@@ -11,7 +11,7 @@ import (
 )
 
 // Rule - шаблон правила по обновлению большинства таблиц.
-type Rule[R domain.Row] struct {
+type Rule[R domain.Row] struct { //nolint:varnamelen
 	name      string
 	logger    *lgr.Logger
 	repo      repo.ReadWrite[R]
@@ -23,14 +23,14 @@ type Rule[R domain.Row] struct {
 }
 
 // NewRule создает правило на основе шаблона.
-func NewRule[R domain.Row](
+func NewRule[R domain.Row]( //nolint:varnamelen
 	name string,
 	logger *lgr.Logger,
 	repo repo.ReadWrite[R],
 	selector Selector,
 	gateway Gateway[R],
 	validator Validator[R],
-	append bool,
+	appendRows bool,
 	timeout time.Duration,
 ) Rule[R] {
 	return Rule[R]{
@@ -40,7 +40,7 @@ func NewRule[R domain.Row](
 		selector:  selector,
 		gateway:   gateway,
 		validator: validator,
-		append:    append,
+		append:    appendRows,
 		timeout:   timeout,
 	}
 }
@@ -102,7 +102,7 @@ func (r Rule[R]) handleEvent(out chan<- domain.Event, event domain.Event) {
 	}
 }
 
-func (r Rule[R]) handleUpdate(ctx context.Context, id domain.ID) domain.Event {
+func (r Rule[R]) handleUpdate(ctx context.Context, id domain.ID) domain.Event { //nolint:ireturn
 	table, err := r.repo.Get(ctx, id)
 	if err != nil {
 		return domain.NewErrorOccurred(id, err)

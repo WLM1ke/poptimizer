@@ -11,7 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func New(logger *lgr.Logger, db *mongo.Database, client *http.Client, timeout time.Duration) domain.Rule {
+// New создает правило загрузки информации о месячной инфляции.
+func New(logger *lgr.Logger, db *mongo.Database, client *http.Client, timeout time.Duration) template.Rule[domain.CPI] {
 	return template.NewRule[domain.CPI](
 		"CPIRule",
 		logger,
