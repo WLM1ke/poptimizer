@@ -8,12 +8,12 @@
     <script src="https://unpkg.com/htmx.org"></script>
     <script>
         document.addEventListener("htmx:responseError", function(evt) {
-                alert("Error: reloading page!!!");
+                alert("Error: " + evt.detail.xhr.responseText + "\nReloading page...");
                 location.reload();
         });
     </script>
 </head>
-<body hx-headers='{"X-Request-ID": "{{ .SessionID }}"}'>
+<body>
     <h2>Dividends: {{ .Ticker }}</h2>
     <table>
         <thead>
