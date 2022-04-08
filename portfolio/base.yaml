@@ -47,6 +47,7 @@ positions:
   CVX-RM: 0
   DIOD: 0
   DIS-RM: 0
+  DIVD: 0
   DSKY: 0
   EA-RM: 0
   EBAY-RM: 0
@@ -99,7 +100,6 @@ positions:
   LIFE: 0
   LKOH: 0
   LLY-RM: 0
-  LNTA: 0
   LNZL: 0
   LNZLP: 0
   LSNG: 0
@@ -216,6 +216,7 @@ positions:
   VRSB: 0
   VSMO: 0
   VTBB: 0
+  VTBG: 0
   VTBM: 0
   VTBR: 0
   VTBX: 0
