@@ -3,52 +3,93 @@ run:
   # Default: true
   tests: true
 
-linters-settings:
-  gomnd:
-    # List of numbers to exclude from analysis.
-    # The numbers should be written as string.
-    # Values always ignored: "1", "1.0", "0" and "0.0"
-    ignored-numbers:
-      - "64"
-  tagliatelle:
-    # Check the struck tag name case.
-    case:
-      # Use the struct field name to check the name of the struct tag.
-      # Default: false
-      use-field-name: true
-      rules:
-        # Any struct tag type can be used.
-        # Support string case: `camel`, `pascal`, `kebab`, `snake`, `goCamel`, `goPascal`, `goKebab`, `goSnake`, `upper`, `lower`
-        json: snake
-  varnamelen:
-    ignore-names:
-      - err
-      - id
-    # Optional list of variable declarations that should be ignored completely.
-    # Entries must be in one of the following forms (see below for examples):
-    # - for variables, parameters, named return values, method receivers, or type parameters:
-    #   <name> <type>  (<type> can also be a pointer/slice/map/chan/...)
-    # - for constants: const <name>
-    #
-    # Default: []
-    ignore-decls:
-      - wg sync.WaitGroup
-
 linters:
-  # Enable all available linters.
-  # Default: false
-  enable-all: true
+  enable:
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - contextcheck
+    - cyclop
+    - deadcode
+    - depguard
+    - dogsled
+    - dupl
+    - durationcheck
+    - errcheck
+    - errname
+    - errorlint
+    - exportloopref
+    - forbidigo
+    - forcetypeassert
+#    - funlen
+#    - gci
+#    - gochecknoglobals
+#    - gochecknoinits
+#    - gocognit
+#    - goconst
+#    - gocritic
+#    - gocyclo
+#    - godot
+#    - godox
+#    - goerr113
+#    - gofmt
+#    - gofumpt
+#    - goheader
+#    - goimports
+#    - golint
+#    - gomnd
+#    - gomoddirectives
+#    - gomodguard
+#    - goprintffuncname
+#    - gosec
+#    - gosimple
+#    - govet
+#    - ifshort
+#    - importas
+#    - ineffassign
+#    - interfacer
+#    - ireturn
+#    - lll
+#    - makezero
+#    - maligned
+#    - misspell
+#    - nakedret
+#    - nestif
+#    - nilerr
+#    - nilnil
+#    - nlreturn
+#    - noctx
+#    - nolintlint
+#    - paralleltest
+#    - prealloc
+#    - predeclared
+#    - promlinter
+#    - revive
+#    - rowserrcheck
+#    - scopelint
+#    - sqlclosecheck
+#    - staticcheck
+#    - structcheck
+#    - stylecheck
+#    - tagliatelle
+#    - tenv
+#    - testpackage
+#    - thelper
+#    - tparallel
+#    - typecheck
+#    - unconvert
+#    - unparam
+#    - unused
+#    - varcheck
+#    - varnamelen
+    - wastedassign
+    - whitespace
+    - wrapcheck
+    - wsl
   # Disable specific linter
   # https://golangci-lint.run/usage/linters/#disabled-by-default-linters--e--enable
   disable:
-    - golint
-    - maligned
-    - scopelint
-    - interfacer
-    - testpackage
-    - paralleltest
-    - contextcheck
-    - exhaustivestruct
+    - exhaustive
 
 issues:
   # Independently of option `exclude` we use default exclude patterns,
@@ -56,5 +97,14 @@ issues:
   # To list all excluded by default patterns execute `golangci-lint run --help`.
   # Default: true.
   exclude-use-default: true
-  # Fix found issues (if it's supported by the linter).
+  # List of regexps of issue texts to exclude.
+  #
+  # But independently of this option we use default exclude patterns,
+  # it can be disabled by `exclude-use-default: false`.
+  # To list all excluded by default patterns execute `golangci-lint run --help`
+  #
+  # Default: []
+  exclude:
+    # exclude-use-default EXC0001 errcheck: Almost all programs ignore errors on these functions and in most cases it's ok
+    - Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*print(f|ln)?|os\.(Un)?Setenv). is not checked
   fix: true

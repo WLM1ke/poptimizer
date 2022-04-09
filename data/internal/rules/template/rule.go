@@ -90,6 +90,7 @@ func (r Rule[R]) handleEvent(out chan<- domain.Event, event domain.Event) {
 
 	for _, id := range ids {
 		wg.Add(1)
+
 		id := id
 
 		go func() {

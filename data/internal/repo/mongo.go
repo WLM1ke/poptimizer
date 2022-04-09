@@ -97,6 +97,7 @@ func (r *MongoJSON) GetJSON(ctx context.Context, id domain.ID) ([]byte, error) {
 	projections := options.FindOne().SetProjection(bson.M{"_id": 0, "rows": 1, "date": 1})
 
 	raw, err := collection.FindOne(ctx, bson.M{"_id": id.Name()}, projections).DecodeBytes()
+
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
 		return nil, fmt.Errorf("%w: %#v", ErrTableNotFound, id)

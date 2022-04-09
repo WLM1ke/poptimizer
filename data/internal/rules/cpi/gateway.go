@@ -104,6 +104,7 @@ func (g gateway) getXLSX(ctx context.Context) (*excelize.File, error) {
 			resp.Status,
 		)
 	}
+
 	reader, err := excelize.OpenReader(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -148,6 +149,7 @@ func (g gateway) getURL(ctx context.Context) (string, error) {
 	decoder := charmap.Windows1252.NewDecoder()
 	reader := decoder.Reader(resp.Body)
 	page, err := ioutil.ReadAll(reader)
+
 	if err != nil {
 		return "", fmt.Errorf(
 			"%w: can't decode cp1252 %s",
@@ -235,11 +237,9 @@ func parsedData(years []int, data [][]string) ([]domain.CPI, error) {
 				)
 			}
 
-			var percent = 100.0
-
 			cpi = append(cpi, domain.CPI{
 				Date:  lastDayOfMonth(year, month),
-				Value: value / percent,
+				Value: value / 100.0,
 			})
 		}
 	}
