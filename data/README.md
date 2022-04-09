@@ -19,6 +19,11 @@ Frontend для дополнения данных по дивидендам
 которое обрабатывается специальным правилом записывающим сообщение в лог и Telegram.
 ```mermaid
 flowchart
+    Input[\Input/]-->InputRaw{{InputRaw}}
+    Input[\Input/]-.->Port{{Port}}
+    InputRaw-->Backup
+    Port-.->Backup
+    
     Timer[\Timer/]-->End
     End-->Dates
     
@@ -31,11 +36,7 @@ flowchart
     Securities-->Quotes
 	Quotes-->Dividends
     
-    Input[\Input/]-->DivRaw
-    DivRaw-.->Dividends
-    DivRaw-->Backup
-    
-    DivStatus-->DivRaw
+    DivStatus-->CheckRaw
     DivStatus-.->CloseReestry
     DivStatus-.->NASDAQ
 ```

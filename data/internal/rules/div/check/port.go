@@ -1,4 +1,4 @@
-package raw
+package check
 
 var _portfolio = map[string]bool{
 	"AAL-RM":   true,

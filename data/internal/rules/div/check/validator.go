@@ -1,4 +1,4 @@
-package raw
+package check
 
 import (
 	"github.com/WLM1ke/poptimizer/data/internal/domain"

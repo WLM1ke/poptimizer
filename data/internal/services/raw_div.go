@@ -16,7 +16,7 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/div/raw"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/div/check"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 )
 
@@ -45,7 +45,7 @@ func (d RawDivTableDTO) NewRow() domain.RawDiv {
 	return domain.RawDiv{
 		Date:     time.Now(),
 		Value:    1,
-		Currency: raw.RUR,
+		Currency: check.RUR,
 	}
 }
 
@@ -97,7 +97,7 @@ func (r *RawDivUpdate) Run(ctx context.Context) error {
 func (r *RawDivUpdate) GetByTicker(ctx context.Context, ticker string) (dto RawDivTableDTO, err error) {
 	sessionID := primitive.NewObjectID().Hex()
 
-	table, err := r.repo.Get(ctx, domain.NewID(raw.Group, ticker))
+	table, err := r.repo.Get(ctx, domain.NewID(check.Group, ticker))
 	if err != nil {
 		return dto, fmt.Errorf(
 			"%w: can't load data from repo -> %s",
@@ -164,7 +164,7 @@ func parseRow(date string, value string, currency string) (row RowDTO, err error
 	}
 
 	row.Currency = currency
-	if currency != raw.USD && currency != raw.RUR {
+	if currency != check.USD && currency != check.RUR {
 		return row, fmt.Errorf(
 			"%w: incorrect currency - %s",
 			errService,
@@ -191,7 +191,7 @@ func (r *RawDivUpdate) Reload(ctx context.Context, sessionID string) (dto RawDiv
 
 	ticker := item.Value().Ticker
 
-	table, err := r.repo.Get(ctx, domain.NewID(raw.Group, ticker))
+	table, err := r.repo.Get(ctx, domain.NewID(check.Group, ticker))
 	if err != nil {
 		return dto, fmt.Errorf(
 			"%w: can't load data from repo -> %s",
@@ -226,7 +226,7 @@ func (r *RawDivUpdate) Save(ctx context.Context, sessionID string) (status []Sta
 
 	dto := item.Value()
 
-	tableID := domain.NewID(raw.Group, dto.Ticker)
+	tableID := domain.NewID(check.Group, dto.Ticker)
 
 	rows := dto.Rows
 	sort.Slice(rows, func(i, j int) bool { return rows[i].Date.Before(rows[j].Date) })

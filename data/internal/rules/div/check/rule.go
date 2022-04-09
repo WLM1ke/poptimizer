@@ -1,4 +1,4 @@
-package raw
+package check
 
 import (
 	"time"
@@ -10,11 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// New создает правило проверки, что во вручную введенных дивидендах есть все новые дивиденды из статуса.
 func New(logger *lgr.Logger, db *mongo.Database, timeout time.Duration) domain.Rule {
 	statusRepo := repo.NewMongo[domain.DivStatus](db)
 
 	return template.NewRule[domain.RawDiv](
-		"RawDivRule",
+		"CheckRawRule",
 		logger,
 		repo.NewMongo[domain.RawDiv](db),
 		selector{statusRepo},

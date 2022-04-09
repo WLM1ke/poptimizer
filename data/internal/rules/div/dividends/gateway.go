@@ -9,7 +9,7 @@ import (
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/div/raw"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/div/check"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/iss/usd"
 	"golang.org/x/exp/slices"
 )
@@ -20,7 +20,7 @@ type gateway struct {
 }
 
 func (s gateway) Get(ctx context.Context, table domain.Table[domain.Dividend]) ([]domain.Dividend, error) {
-	rawDiv, err := s.rawRepo.Get(ctx, domain.NewID(raw.Group, string(table.Name())))
+	rawDiv, err := s.rawRepo.Get(ctx, domain.NewID(check.Group, string(table.Name())))
 	if err != nil {
 		return nil, fmt.Errorf(
 			"%w: can't load from repo -> %s",
@@ -65,9 +65,9 @@ func (s gateway) prepareDiv(rawDivs []domain.RawDiv, rates []gomoex.Candle) (div
 		}
 
 		switch row.Currency {
-		case raw.RUR:
+		case check.RUR:
 			dividends[len(dividends)-1].Value += row.Value
-		case raw.USD:
+		case check.USD:
 			n := sort.Search(
 				len(rates),
 				func(i int) bool { return rates[i].Begin.After(date) },
