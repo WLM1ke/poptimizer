@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/jellydator/ttlcache/v3"
@@ -65,6 +66,7 @@ type RawDivUpdate struct {
 	logger *lgr.Logger
 	repo   repo.ReadWrite[domain.RawDiv]
 	cache  *ttlcache.Cache[string, RawDivTableDTO]
+	lock   sync.Mutex
 	bus    *bus.EventBus
 }
 
@@ -117,6 +119,9 @@ func (r *RawDivUpdate) GetByTicker(ctx context.Context, ticker string) (dto RawD
 
 // AddRow добавляет новые строки в таблицу в рамках пользовательской сессии.
 func (r *RawDivUpdate) AddRow(sessionID, date, value, currency string) (row RowDTO, err error) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
 	item := r.cache.Get(sessionID)
 	if item == nil {
 		return row, fmt.Errorf(
@@ -172,6 +177,9 @@ func parseRow(date string, value string, currency string) (row RowDTO, err error
 
 // Reload сбрасывает результаты редактирования в рамках пользовательской сессии и возвращает не измененную таблицу.
 func (r *RawDivUpdate) Reload(ctx context.Context, sessionID string) (dto RawDivTableDTO, err error) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
 	item := r.cache.Get(sessionID)
 	if item == nil {
 		return dto, fmt.Errorf(
@@ -204,6 +212,9 @@ func (r *RawDivUpdate) Reload(ctx context.Context, sessionID string) (dto RawDiv
 
 // Save сохраняет результаты редактирования и информирует об успешности отдельных этапов этого процесса.
 func (r *RawDivUpdate) Save(ctx context.Context, sessionID string) (status []StatusDTO) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
 	defer r.cache.Delete(sessionID)
 
 	item := r.cache.Get(sessionID)
