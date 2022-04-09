@@ -13,7 +13,7 @@
         });
     </script>
 </head>
-<body>
+<body hx-vals='{"sessionID": "{{ .SessionID }}"}'>
     <h2>Dividends: {{ .Ticker }}</h2>
     <table>
         <thead>

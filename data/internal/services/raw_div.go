@@ -2,14 +2,12 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/jellydator/ttlcache/v3"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -20,12 +18,7 @@ import (
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 )
 
-const (
-	_cacheTTL   = time.Minute * 10
-	_timeFormat = "2006-01-02"
-)
-
-var errService = errors.New("service error")
+const _timeFormat = "2006-01-02"
 
 // RawDivTableDTO представление информации о редактируемой таблице.
 //
@@ -65,9 +58,11 @@ type StatusDTO struct {
 type RawDivUpdate struct {
 	logger *lgr.Logger
 	repo   repo.ReadWrite[domain.RawDiv]
-	cache  *ttlcache.Cache[string, RawDivTableDTO]
-	lock   sync.Mutex
-	bus    *bus.EventBus
+
+	lock     sync.Mutex
+	tableDTO RawDivTableDTO
+
+	bus *bus.EventBus
 }
 
 // NewRawDivUpdate инициализирует сервис.
@@ -75,46 +70,30 @@ func NewRawDivUpdate(logger *lgr.Logger, db *mongo.Database, bus *bus.EventBus) 
 	return &RawDivUpdate{
 		logger: logger,
 		repo:   repo.NewMongo[domain.RawDiv](db),
-		cache:  ttlcache.New[string, RawDivTableDTO](ttlcache.WithTTL[string, RawDivTableDTO](_cacheTTL)),
 		bus:    bus,
 	}
 }
 
-// Run - запускает сервис.
-func (r *RawDivUpdate) Run(ctx context.Context) error {
-	go func() {
-		r.cache.Start()
-	}()
-
-	<-ctx.Done()
-
-	r.cache.Stop()
-
-	return nil
-}
-
 // GetByTicker - возвращает сохраненные данные и создает пользовательскую сессию.
-func (r *RawDivUpdate) GetByTicker(ctx context.Context, ticker string) (dto RawDivTableDTO, err error) {
-	sessionID := primitive.NewObjectID().Hex()
-
+func (r *RawDivUpdate) GetByTicker(ctx context.Context, ticker string) (RawDivTableDTO, error) {
 	table, err := r.repo.Get(ctx, domain.NewID(check.Group, ticker))
 	if err != nil {
-		return dto, fmt.Errorf(
-			"%w: can't load data from repo -> %s",
-			errService,
+		return RawDivTableDTO{}, fmt.Errorf(
+			"can't load raw dividends from repo -> %w",
 			err,
 		)
 	}
 
-	dto = RawDivTableDTO{
-		SessionID: sessionID,
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	r.tableDTO = RawDivTableDTO{
+		SessionID: primitive.NewObjectID().Hex(),
 		Ticker:    ticker,
 		Rows:      table.Rows(),
 	}
 
-	r.cache.Set(sessionID, dto, ttlcache.DefaultTTL)
-
-	return dto, nil
+	return r.tableDTO, nil
 }
 
 // AddRow добавляет новые строки в таблицу в рамках пользовательской сессии.
@@ -122,24 +101,19 @@ func (r *RawDivUpdate) AddRow(sessionID, date, value, currency string) (row RowD
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	item := r.cache.Get(sessionID)
-	if item == nil {
+	if sessionID != r.tableDTO.SessionID {
 		return row, fmt.Errorf(
-			"%w: wrong id - %s",
-			errService,
+			"wrong session id - %s",
 			sessionID,
 		)
 	}
-
-	tableDTO := item.Value()
 
 	row, err = parseRow(date, value, currency)
 	if err != nil {
 		return row, err
 	}
 
-	tableDTO.Rows = append(tableDTO.Rows, domain.RawDiv(row))
-	r.cache.Set(sessionID, tableDTO, ttlcache.DefaultTTL)
+	r.tableDTO.Rows = append(r.tableDTO.Rows, domain.RawDiv(row))
 
 	return row, nil
 }
@@ -148,8 +122,7 @@ func parseRow(date string, value string, currency string) (row RowDTO, err error
 	row.Date, err = time.Parse(_timeFormat, date)
 	if err != nil {
 		return row, fmt.Errorf(
-			"%w: can't parse -> %s",
-			errService,
+			"can't parse -> %w",
 			err,
 		)
 	}
@@ -157,8 +130,7 @@ func parseRow(date string, value string, currency string) (row RowDTO, err error
 	row.Value, err = strconv.ParseFloat(value, 64)
 	if err != nil {
 		return row, fmt.Errorf(
-			"%w: can't parse -> %s",
-			errService,
+			"can't parse -> %w",
 			err,
 		)
 	}
@@ -166,8 +138,7 @@ func parseRow(date string, value string, currency string) (row RowDTO, err error
 	row.Currency = currency
 	if currency != check.USD && currency != check.RUR {
 		return row, fmt.Errorf(
-			"%w: incorrect currency - %s",
-			errService,
+			"incorrect currency - %s",
 			currency,
 		)
 	}
@@ -180,34 +151,28 @@ func (r *RawDivUpdate) Reload(ctx context.Context, sessionID string) (dto RawDiv
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	item := r.cache.Get(sessionID)
-	if item == nil {
+	if sessionID != r.tableDTO.SessionID {
 		return dto, fmt.Errorf(
-			"%w: wrong id - %s",
-			errService,
+			"wrong session id - %s",
 			sessionID,
 		)
 	}
 
-	ticker := item.Value().Ticker
-
-	table, err := r.repo.Get(ctx, domain.NewID(check.Group, ticker))
+	table, err := r.repo.Get(ctx, domain.NewID(check.Group, r.tableDTO.Ticker))
 	if err != nil {
 		return dto, fmt.Errorf(
-			"%w: can't load data from repo -> %s",
-			errService,
+			"can't load data from repo -> %w",
 			err,
 		)
 	}
 
-	dto = RawDivTableDTO{
+	r.tableDTO = RawDivTableDTO{
 		SessionID: sessionID,
-		Ticker:    ticker,
+		Ticker:    string(table.Name()),
 		Rows:      table.Rows(),
 	}
-	r.cache.Set(sessionID, dto, ttlcache.DefaultTTL)
 
-	return dto, nil
+	return r.tableDTO, nil
 }
 
 // Save сохраняет результаты редактирования и информирует об успешности отдельных этапов этого процесса.
@@ -215,20 +180,17 @@ func (r *RawDivUpdate) Save(ctx context.Context, sessionID string) (status []Sta
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	defer r.cache.Delete(sessionID)
+	defer func() { r.tableDTO.SessionID = "" }()
 
-	item := r.cache.Get(sessionID)
-	if item == nil {
-		return append(status, StatusDTO{"Loaded from cache", "wrong tableID"})
+	if sessionID != r.tableDTO.SessionID {
+		return append(status, StatusDTO{"Loaded from cache", "wrong sessionID"})
 	}
 
 	status = append(status, StatusDTO{"Loaded from cache", "OK"})
 
-	dto := item.Value()
+	tableID := domain.NewID(check.Group, r.tableDTO.Ticker)
 
-	tableID := domain.NewID(check.Group, dto.Ticker)
-
-	rows := dto.Rows
+	rows := r.tableDTO.Rows
 	sort.Slice(rows, func(i, j int) bool { return rows[i].Date.Before(rows[j].Date) })
 
 	date := domain.LastTradingDate()

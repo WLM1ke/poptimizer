@@ -75,15 +75,12 @@ func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service)
 		telega,
 	)
 
-	rawDiv := services.NewRawDivUpdate(logger, database, eventBus)
-
 	return resource, []app.Service{
 		eventBus,
-		rawDiv,
 		handlers.NewHTTPServer(
 			logger,
 			database,
-			rawDiv,
+			services.NewRawDivUpdate(logger, database, eventBus),
 			d.Server.Addr,
 			d.Server.Timeout,
 		),
