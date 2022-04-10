@@ -10,8 +10,9 @@ from poptimizer.data.adapters.gateways import gateways
 from poptimizer.shared import adapters, col
 
 # Параметры загрузки валидации данных
-# https://rosstat.gov.ru/storage/mediabank/ind_potreb_cen_12.html
-CPI_PAGE = "https://rosstat.gov.ru/storage/mediabank/ind_potreb_cen_02.html"
+PRICES_PAGE = "https://rosstat.gov.ru/price"
+CPI_PAGE = re.compile("/storage/mediabank/ind_potreb_cen_.+html")
+HOST = "https://rosstat.gov.ru"
 LINK = re.compile("https://rosstat.gov.ru/.+ipc.+xlsx")
 END_OF_JAN = 31
 PARSING_PARAMETERS = types.MappingProxyType(
@@ -51,8 +52,19 @@ async def _load_and_parse_xlsx(session: aiohttp.ClientSession) -> pd.DataFrame:
 
 
 async def _loap_cpi_page(session: aiohttp.ClientSession) -> str:
-    async with session.get(CPI_PAGE) as resp:
+    path = await _find_cpi_page(session)
+
+    async with session.get(HOST + path) as resp:
         return await resp.text("cp1251")
+
+
+async def _find_cpi_page(session) -> str:
+    async with session.get(PRICES_PAGE) as resp:
+        html = await resp.text()
+    if not (search_result := CPI_PAGE.search(html)):
+        raise CPIGatewayError("Не могу найти ссылку на страницу с инфляцией")
+
+    return search_result.group(0)
 
 
 async def _load_xlsx(session: aiohttp.ClientSession, url: str) -> bytes:

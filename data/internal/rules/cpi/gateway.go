@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	_pricesURL = `https://rosstat.gov.ru/storage/mediabank/ind_potreb_cen_02.html`
+	_pricesURL = `https://rosstat.gov.ru/price`
+	_cpiHost   = `https://rosstat.gov.ru`
 
 	_sheet = `ИПЦ`
 
@@ -26,7 +27,10 @@ const (
 	_firstDataCol = 1
 )
 
-var _urlRE = regexp.MustCompile(`https://rosstat.gov.ru/.+ipc.+xlsx`)
+var (
+	_cpiPathRE = regexp.MustCompile(`/storage/mediabank/ind_potreb_cen_.+html`)
+	_urlRE     = regexp.MustCompile(`https://rosstat.gov.ru/.+ipc.+xlsx`)
+)
 
 type gateway struct {
 	client *http.Client
@@ -117,8 +121,46 @@ func (g gateway) getXLSX(ctx context.Context) (*excelize.File, error) {
 	return reader, nil
 }
 
-func (g gateway) getURL(ctx context.Context) (string, error) {
+func (g gateway) makeCPIPageURL(ctx context.Context) (string, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _pricesURL, http.NoBody)
+	if err != nil {
+		return "", fmt.Errorf(
+			"%w: can't create request -> %s",
+			domain.ErrRule,
+			err,
+		)
+	}
+
+	resp, err := g.client.Do(request)
+	if err != nil {
+		return "", fmt.Errorf(
+			"%w: can't make request -> %s",
+			domain.ErrRule,
+			err,
+		)
+	}
+
+	defer resp.Body.Close()
+
+	page, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf(
+			"%w: can't read prices page -> %s",
+			domain.ErrRule,
+			err,
+		)
+	}
+
+	return fmt.Sprintf("%s%s", _cpiHost, _cpiPathRE.Find(page)), nil
+}
+
+func (g gateway) getURL(ctx context.Context) (string, error) {
+	url, err := g.makeCPIPageURL(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return "", fmt.Errorf(
 			"%w: can't create request -> %s",
