@@ -29,8 +29,7 @@ func (s selector) Select(ctx context.Context, event domain.Event) (ids []domain.
 			sec, err := s.repo.Get(ctx, status.NewID())
 			if err != nil {
 				return ids, fmt.Errorf(
-					"%w: can't load dividends status from repo -> %s",
-					domain.ErrRule,
+					"can't load dividends status from repo -> %w",
 					err,
 				)
 			}

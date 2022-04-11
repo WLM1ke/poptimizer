@@ -23,8 +23,7 @@ func (s gateway) Get(ctx context.Context, table domain.Table[domain.Dividend]) (
 	rawDiv, err := s.rawRepo.Get(ctx, domain.NewID(check.Group, string(table.Name())))
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%w: can't load from repo -> %s",
-			domain.ErrRule,
+			"can't load from repo -> %w",
 			err,
 		)
 	}
@@ -36,8 +35,7 @@ func (s gateway) Get(ctx context.Context, table domain.Table[domain.Dividend]) (
 	rate, err := s.usdRepo.Get(ctx, usd.ID)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%w: can't load from repo -> %s",
-			domain.ErrRule,
+			"can't load from repo -> %w",
 			err,
 		)
 	}
@@ -75,8 +73,7 @@ func (s gateway) prepareDiv(rawDivs []domain.RawDiv, rates []gomoex.Candle) (div
 			dividends[len(dividends)-1].Value += row.Value * rates[n-1].Close
 		default:
 			return nil, fmt.Errorf(
-				"%w: unknown currency %+v",
-				domain.ErrRule,
+				"unknown currency %+v",
 				row.Currency,
 			)
 		}

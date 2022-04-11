@@ -9,8 +9,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 )
 
-const _engine = gomoex.EngineStock
-
 type gateway struct {
 	iss *gomoex.ISSClient
 }
@@ -29,11 +27,10 @@ func (g gateway) Get(
 	}
 
 	for _, mb := range marketsBoards {
-		rows, err := g.iss.BoardSecurities(ctx, _engine, mb.market, mb.board)
+		rows, err := g.iss.BoardSecurities(ctx, gomoex.EngineStock, mb.market, mb.board)
 		if err != nil {
 			return nil, fmt.Errorf(
-				"%w: can't download securities data -> %s",
-				domain.ErrRule,
+				"can't download securities data -> %w",
 				err,
 			)
 		}

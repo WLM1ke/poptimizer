@@ -20,8 +20,7 @@ func (s gateway) Get(ctx context.Context, table domain.Table[domain.RawDiv]) ([]
 	divStatus, err := s.statusRepo.Get(ctx, status.NewID())
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%w: can't load dividends status from repo -> %s",
-			domain.ErrRule,
+			"can't load dividends status from repo -> %w",
 			err,
 		)
 	}
@@ -48,8 +47,7 @@ func (s gateway) Get(ctx context.Context, table domain.Table[domain.RawDiv]) ([]
 
 		if (n == len(rawRows)) || !row.Date.Equal(rawRows[n].Date) {
 			return nil, fmt.Errorf(
-				"%w: %s missed dividend at %s",
-				domain.ErrRule,
+				"%s missed dividend at %s",
 				ticker,
 				row.Date.Format(_format),
 			)

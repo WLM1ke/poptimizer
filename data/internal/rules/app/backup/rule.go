@@ -26,8 +26,7 @@ func CreateCMD(uri, db string) func(ctx context.Context) error {
 		err := client.MongoDBBackUpCmd(ctx, _folder, uri, db, check.Group).Run()
 		if err != nil {
 			return fmt.Errorf(
-				"%w: can't back up data from MongoDB -> %s",
-				domain.ErrRule,
+				"can't back up data from MongoDB -> %w",
 				err,
 			)
 		}

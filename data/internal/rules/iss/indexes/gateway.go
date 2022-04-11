@@ -32,8 +32,7 @@ func (g gateway) Get(ctx context.Context, table domain.Table[domain.Index]) ([]d
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%w: can't download new %s data -> %s",
-			domain.ErrRule,
+			"can't download new %s data -> %w",
 			table.Name(),
 			err,
 		)

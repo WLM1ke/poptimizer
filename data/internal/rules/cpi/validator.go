@@ -14,8 +14,7 @@ func validator(table domain.Table[domain.CPI], rows []domain.CPI) error {
 	for num, row := range table.Rows() {
 		if row != rows[num] {
 			return fmt.Errorf(
-				"%w: old row %+v not match new %+v",
-				domain.ErrRule,
+				"old row %+v not match new %+v",
 				row,
 				rows[num],
 			)

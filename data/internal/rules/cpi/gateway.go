@@ -45,8 +45,7 @@ func (g gateway) Get(ctx context.Context, table domain.Table[domain.CPI]) ([]dom
 	rows, err := xlsx.GetRows(_sheet, excelize.Options{RawCellValue: true})
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%w: can't extract rows -> %s",
-			domain.ErrRule,
+			"can't extract rows -> %w",
 			err,
 		)
 	}
@@ -84,8 +83,7 @@ func (g gateway) getXLSX(ctx context.Context) (*excelize.File, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%w: can't create request -> %s",
-			domain.ErrRule,
+			"can't create request -> %w",
 			err,
 		)
 	}
@@ -93,8 +91,7 @@ func (g gateway) getXLSX(ctx context.Context) (*excelize.File, error) {
 	resp, err := g.client.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%w: can't make request -> %s",
-			domain.ErrRule,
+			"can't make request -> %w",
 			err,
 		)
 	}
@@ -103,8 +100,7 @@ func (g gateway) getXLSX(ctx context.Context) (*excelize.File, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(
-			"%w: bad respond status %s",
-			domain.ErrRule,
+			"bad respond status %s",
 			resp.Status,
 		)
 	}
@@ -112,8 +108,7 @@ func (g gateway) getXLSX(ctx context.Context) (*excelize.File, error) {
 	reader, err := excelize.OpenReader(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%w: can't parse xlsx -> %s",
-			domain.ErrRule,
+			"can't parse xlsx -> %w",
 			err,
 		)
 	}
@@ -125,8 +120,7 @@ func (g gateway) makeCPIPageURL(ctx context.Context) (string, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _pricesURL, http.NoBody)
 	if err != nil {
 		return "", fmt.Errorf(
-			"%w: can't create request -> %s",
-			domain.ErrRule,
+			"can't create request -> %w",
 			err,
 		)
 	}
@@ -134,8 +128,7 @@ func (g gateway) makeCPIPageURL(ctx context.Context) (string, error) {
 	resp, err := g.client.Do(request)
 	if err != nil {
 		return "", fmt.Errorf(
-			"%w: can't make request -> %s",
-			domain.ErrRule,
+			"can't make request -> %w",
 			err,
 		)
 	}
@@ -145,8 +138,7 @@ func (g gateway) makeCPIPageURL(ctx context.Context) (string, error) {
 	page, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf(
-			"%w: can't read prices page -> %s",
-			domain.ErrRule,
+			"can't read prices page -> %w",
 			err,
 		)
 	}
@@ -163,8 +155,7 @@ func (g gateway) getURL(ctx context.Context) (string, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return "", fmt.Errorf(
-			"%w: can't create request -> %s",
-			domain.ErrRule,
+			"can't create request -> %w",
 			err,
 		)
 	}
@@ -172,8 +163,7 @@ func (g gateway) getURL(ctx context.Context) (string, error) {
 	resp, err := g.client.Do(request)
 	if err != nil {
 		return "", fmt.Errorf(
-			"%w: can't make request -> %s",
-			domain.ErrRule,
+			"can't make request -> %w",
 			err,
 		)
 	}
@@ -182,8 +172,7 @@ func (g gateway) getURL(ctx context.Context) (string, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf(
-			"%w: bad respond status %s",
-			domain.ErrRule,
+			"bad respond status %w",
 			resp.Status,
 		)
 	}
@@ -194,8 +183,7 @@ func (g gateway) getURL(ctx context.Context) (string, error) {
 
 	if err != nil {
 		return "", fmt.Errorf(
-			"%w: can't decode cp1252 %s",
-			domain.ErrRule,
+			"can't decode cp1252 -> %w",
 			err,
 		)
 	}
@@ -221,8 +209,7 @@ func validateMonths(rows [][]string) error {
 	for n, month := range months {
 		if rows[_firstDataRow+n][0] != month {
 			return fmt.Errorf(
-				"%w: wrong month name %s vs %s",
-				domain.ErrRule,
+				"wrong month name %s vs %s",
 				rows[_firstDataRow+n][0],
 				month,
 			)
@@ -239,16 +226,14 @@ func getYears(header []string) ([]int, error) {
 		year, err := strconv.Atoi(value)
 		if err != nil {
 			return nil, fmt.Errorf(
-				"%w: can't parse -> %s",
-				domain.ErrRule,
+				"can't parse -> %w",
 				err,
 			)
 		}
 
 		if year != _firstYear+position {
 			return nil, fmt.Errorf(
-				"%w: wrong year %d vs %d",
-				domain.ErrRule,
+				"wrong year %d vs %d",
 				year,
 				_firstYear+position,
 			)
@@ -273,8 +258,7 @@ func parsedData(years []int, data [][]string) ([]domain.CPI, error) {
 			value, err := strconv.ParseFloat(data[month][_firstDataCol+col], 64)
 			if err != nil {
 				return nil, fmt.Errorf(
-					"%w: can't parse -> %s",
-					domain.ErrRule,
+					"can't parse -> %w",
 					err,
 				)
 			}

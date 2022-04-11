@@ -23,8 +23,7 @@ func (s selector) Select(ctx context.Context, event domain.Event) (ids []domain.
 			sec, err := s.securities.Get(ctx, securities.ID)
 			if err != nil {
 				return ids, fmt.Errorf(
-					"%w: can't load from repo -> %s",
-					domain.ErrRule,
+					"can't load from repo -> %w",
 					err,
 				)
 			}

@@ -15,7 +15,7 @@ func validator(table domain.Table[domain.Index], rows []domain.Index) error {
 			continue
 		}
 
-		return fmt.Errorf("%w: not increasing dates %+v and %+v", domain.ErrRule, prev, row.Date)
+		return fmt.Errorf("not increasing dates %+v and %+v", prev, row.Date)
 	}
 
 	if table.IsEmpty() {
@@ -24,8 +24,7 @@ func validator(table domain.Table[domain.Index], rows []domain.Index) error {
 
 	if table.LastRow() != rows[0] {
 		return fmt.Errorf(
-			"%w: old rows %+v not match new %+v",
-			domain.ErrRule,
+			"old rows %+v not match new %+v",
 			table.LastRow(),
 			rows[0])
 	}

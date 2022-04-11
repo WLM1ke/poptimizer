@@ -36,8 +36,7 @@ func (g gateway) Get(ctx context.Context, table domain.Table[domain.USD]) ([]dom
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%w: can't download usd data -> %s",
-			domain.ErrRule,
+			"can't download usd data -> %w",
 			err,
 		)
 	}

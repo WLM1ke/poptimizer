@@ -15,7 +15,7 @@ func validator(_ domain.Table[domain.Dividend], rows []domain.Dividend) error {
 			continue
 		}
 
-		return fmt.Errorf("%w: not increasing dates %+v and %+v", domain.ErrRule, prev, row.Date)
+		return fmt.Errorf("not increasing dates %+v and %+v", prev, row.Date)
 	}
 
 	return nil

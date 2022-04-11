@@ -21,7 +21,7 @@ linters:
     - exportloopref
     - forbidigo
     - forcetypeassert
-#    - funlen
+    - funlen
 #    - gci
 #    - gochecknoglobals
 #    - gochecknoinits

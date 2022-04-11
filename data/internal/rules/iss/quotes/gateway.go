@@ -43,8 +43,7 @@ func (s gateway) Get(ctx context.Context, table domain.Table[domain.Quote]) ([]d
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%w: can't download quotes -> %s",
-			domain.ErrRule,
+			"can't download quotes -> %w",
 			err,
 		)
 	}
@@ -58,8 +57,7 @@ func (s gateway) getMarket(ctx context.Context, ticker string) (string, error) {
 	table, err := s.secRepo.Get(ctx, securities.ID)
 	if err != nil {
 		return "", fmt.Errorf(
-			"%w: can't load from repo -> %s",
-			domain.ErrRule,
+			"can't load from repo -> %w",
 			err,
 		)
 	}
@@ -78,9 +76,8 @@ func (s gateway) getMarket(ctx context.Context, ticker string) (string, error) {
 	}
 
 	return "", fmt.Errorf(
-		"%w: wrong board for ticker %s - %s",
-		domain.ErrRule,
-		ticker,
+		"wrong board %s for ticker %s",
 		sec[position].Board,
+		ticker,
 	)
 }

@@ -34,8 +34,7 @@ func (g gateway) Get(
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%w: can't create request -> %s",
-			domain.ErrRule,
+			"can't create request -> %w",
 			err,
 		)
 	}
@@ -43,8 +42,7 @@ func (g gateway) Get(
 	resp, err := g.client.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%w: can't make request -> %s",
-			domain.ErrRule,
+			"can't make request -> %w",
 			err,
 		)
 	}
@@ -53,8 +51,7 @@ func (g gateway) Get(
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(
-			"%w: bad respond status %s",
-			domain.ErrRule,
+			"bad respond status %s",
 			resp.Status,
 		)
 	}
@@ -72,8 +69,7 @@ func parceCSV(reader *csv.Reader) (rows []domain.DivStatus, err error) {
 		switch {
 		case err != nil:
 			return nil, fmt.Errorf(
-				"%w: can't parse row %s -> %s",
-				domain.ErrRule,
+				"can't parse row %s -> %w",
 				record,
 				err,
 			)
@@ -86,8 +82,7 @@ func parceCSV(reader *csv.Reader) (rows []domain.DivStatus, err error) {
 		divDate, err := time.Parse(_dateFormat, record[1])
 		if err != nil {
 			return nil, fmt.Errorf(
-				"%w: can't parse date %s ->  %s",
-				domain.ErrRule,
+				"can't parse date %s ->  %w",
 				record[1],
 				err,
 			)
@@ -100,8 +95,7 @@ func parceCSV(reader *csv.Reader) (rows []domain.DivStatus, err error) {
 		ticker := reTicker.FindStringSubmatch(record[0])
 		if ticker == nil {
 			return nil, fmt.Errorf(
-				"%w: can't parse ticker %s ->  %s",
-				domain.ErrRule,
+				"can't parse ticker %s ->  %w",
 				record[0],
 				err,
 			)

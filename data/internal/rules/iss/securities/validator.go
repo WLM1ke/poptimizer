@@ -15,7 +15,7 @@ func validator(_ domain.Table[domain.Security], rows []domain.Security) error {
 			continue
 		}
 
-		return fmt.Errorf("%w: not increasing tickers %+v", domain.ErrRule, prev)
+		return fmt.Errorf("not increasing tickers %+v", prev)
 	}
 
 	return nil

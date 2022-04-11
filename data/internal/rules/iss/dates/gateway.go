@@ -17,7 +17,7 @@ func (g gateway) Get(ctx context.Context, table domain.Table[domain.Date]) ([]do
 
 	switch {
 	case err != nil:
-		return nil, fmt.Errorf("%w: can't download trading dates info -> %s", domain.ErrRule, err)
+		return nil, fmt.Errorf("can't download trading dates info -> %w", err)
 	case table.IsEmpty():
 		return rows, nil
 	case table.LastRow().Till.Before(rows[0].Till):
