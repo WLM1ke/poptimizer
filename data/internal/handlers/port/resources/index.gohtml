@@ -1,0 +1,67 @@
+{{- /*gotype: github.com/WLM1ke/poptimizer/data/internal/services.TickersDTO*/ -}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Portfolio tickers</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+    <script src="https://unpkg.com/htmx.org"></script>
+    <script>
+        document.addEventListener("htmx:responseError", function(evt) {
+                alert("Error: " + evt.detail.xhr.responseText + "\nReloading page...");
+                location.reload();
+        });
+    </script>
+    <style>
+        .remove svg:hover {
+            stroke-width: 12%;
+            stroke: indianred;
+        }
+        .remove svg:not(:hover) {
+            stroke-width: 6%;
+            stroke: dimgray;
+        }
+        .add svg:hover {
+            stroke-width: 12%;
+            stroke: mediumseagreen;
+        }
+        .add svg:not(:hover) {
+            stroke-width: 6%;
+            stroke: dimgray;
+        }
+        .flex-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1em;
+        }
+    </style>
+</head>
+<body id="save" hx-vals='{"sessionID": "{{ .SessionID }}"}'>
+    <div id="tickers">
+        <h2>Portfolio</h2>
+        <div id="portfolio" class="flex-container remove">
+            {{ range .Tickers }}
+                <code title="Remove">
+                    <svg x=0 y=0 width=1em height=1em hx-post="remove/{{ . }}" hx-target="#portfolio">
+                        <line x1=35% y1=35% x2=95% y2=95% />
+                        <line x1=35% y1=95% x2=95% y2=35% />
+                    </svg>
+                    {{ . }}
+                </code>
+            {{end}}
+        </div>
+        <h2>Search</h2>
+        <label>
+            <input type="search"
+                   name="pattern"
+                   placeholder="Type to search tickers..."
+                   hx-post="search"
+                   hx-trigger="keyup changed delay:100ms, search, click from:#tickers"
+                   hx-target="#new">
+        </label>
+        <div id="new" class="flex-container add"></div>
+    </div>
+    <hr>
+    <button hx-post="save" hx-target="#save" >Save</button>
+</body>
+</html>

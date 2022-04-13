@@ -1,0 +1,10 @@
+{{- /*gotype: github.com/WLM1ke/poptimizer/data/internal/services.TickersDTO*/ -}}
+{{ range .Tickers }}
+    <code title="Add">
+        <svg x=0 y=0 width=1em height=1em hx-post="add/{{ . }}" hx-target="#portfolio">
+            <line x1=35% y1=65% x2=95% y2=65% />
+            <line x1=65% y1=95% x2=65% y2=35% />
+        </svg>
+        {{ . }}
+    </code>
+{{end}}

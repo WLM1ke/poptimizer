@@ -9,7 +9,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/internal/handlers"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/app/backup"
-	"github.com/WLM1ke/poptimizer/data/internal/services"
 	"github.com/WLM1ke/poptimizer/data/pkg/app"
 	"github.com/WLM1ke/poptimizer/data/pkg/client"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
@@ -80,7 +79,7 @@ func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service)
 		handlers.NewHTTPServer(
 			logger,
 			database,
-			services.NewRawDivUpdate(logger, database, eventBus),
+			eventBus,
 			d.Server.Addr,
 			d.Server.Timeout,
 		),

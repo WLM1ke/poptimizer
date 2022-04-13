@@ -25,6 +25,9 @@ type CPI struct {
 	Value float64
 }
 
+// Ticker - для которого нужно отслеживать статус дивидендов.
+type Ticker string
+
 // DivStatus - информация об ожидаемых датах выплаты дивидендов.
 type DivStatus struct {
 	Ticker string
@@ -46,5 +49,5 @@ type Dividend struct {
 
 // Row - строки данных в таблицах.
 type Row interface {
-	Date | CPI | Index | USD | Security | DivStatus | RawDiv | Dividend
+	Date | CPI | Index | USD | Security | Ticker | DivStatus | RawDiv | Dividend
 }
