@@ -8,13 +8,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 )
 
-const (
-	// USD - наименование валюты доллара.
-	USD = `USD`
-	// RUR - наименование валюты рубля.
-	RUR = `RUR`
-)
-
 type selector struct {
 	repo repo.Read[domain.DivStatus]
 }

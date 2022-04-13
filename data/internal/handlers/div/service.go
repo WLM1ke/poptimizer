@@ -11,7 +11,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/div/check"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -37,7 +36,7 @@ func (d rawDivTableDTO) NewRow() domain.RawDiv {
 	return domain.RawDiv{
 		Date:     time.Now(),
 		Value:    1,
-		Currency: check.RUR,
+		Currency: domain.RURCurrency,
 	}
 }
 
@@ -129,7 +128,7 @@ func parseRow(date string, value string, currency string) (row rowDTO, err error
 	}
 
 	row.Currency = currency
-	if currency != check.USD && currency != check.RUR {
+	if currency != domain.USDCurrency && currency != domain.RURCurrency {
 		return row, fmt.Errorf(
 			"incorrect currency - %s",
 			currency,

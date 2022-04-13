@@ -91,8 +91,14 @@ type RawDiv struct {
 	Currency string
 }
 
-// RawDivGroup - группа таблиц с вручную введенными дивидендами.
-const RawDivGroup = `raw_div`
+const (
+	// USDCurrency - наименование валюты доллара.
+	USDCurrency = `USD`
+	// RURCurrency - наименование валюты рубля.
+	RURCurrency = `RUR`
+	// RawDivGroup - группа таблиц с вручную введенными дивидендами.
+	RawDivGroup = `raw_div`
+)
 
 // NewRawDivID создает ID вручную введенных дивидендов тикера.
 func NewRawDivID(ticker string) ID {

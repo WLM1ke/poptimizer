@@ -9,7 +9,6 @@ import (
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/div/check"
 	"golang.org/x/exp/slices"
 )
 
@@ -62,9 +61,9 @@ func (s gateway) prepareDiv(rawDivs []domain.RawDiv, rates []gomoex.Candle) (div
 		}
 
 		switch row.Currency {
-		case check.RUR:
+		case domain.RURCurrency:
 			dividends[len(dividends)-1].Value += row.Value
-		case check.USD:
+		case domain.USDCurrency:
 			n := sort.Search(
 				len(rates),
 				func(i int) bool { return rates[i].Begin.After(date) },
