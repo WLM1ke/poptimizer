@@ -3,6 +3,12 @@ package services
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"sort"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
@@ -10,11 +16,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"regexp"
-	"sort"
-	"strings"
-	"sync"
-	"time"
 )
 
 const _group = `port`

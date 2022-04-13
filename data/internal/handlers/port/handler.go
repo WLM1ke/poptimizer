@@ -2,12 +2,12 @@ package port
 
 import (
 	"fmt"
-	"github.com/go-chi/chi"
 	"html/template"
 	"net/http"
 
 	"github.com/WLM1ke/poptimizer/data/internal/services"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
+	"github.com/go-chi/chi"
 )
 
 type handler struct {

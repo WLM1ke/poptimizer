@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"time"
+
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/internal/handlers/div"
 	"github.com/WLM1ke/poptimizer/data/internal/handlers/port"
-	"time"
-
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/internal/services"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"

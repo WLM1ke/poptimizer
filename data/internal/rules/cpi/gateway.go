@@ -172,7 +172,7 @@ func (g gateway) getURL(ctx context.Context) (string, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf(
-			"bad respond status %w",
+			"bad respond status %s",
 			resp.Status,
 		)
 	}
