@@ -50,7 +50,7 @@ type EventBus struct {
 func NewEventBus(
 	logger *lgr.Logger,
 	dataBase *mongo.Database,
-	cmd backup.Cmd,
+	cmd backup.CollectionCmd,
 	client *http.Client,
 	telegram *client.Telegram,
 ) *EventBus {

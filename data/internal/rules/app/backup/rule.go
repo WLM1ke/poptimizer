@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/div/check"
 	"github.com/WLM1ke/poptimizer/data/pkg/client"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 )
@@ -17,13 +16,13 @@ const (
 	_folder = "dump"
 )
 
-// Cmd - команда для сохранения данных.
-type Cmd func(ctx context.Context) error
+// CollectionCmd - команда для сохранения коллекции данных.
+type CollectionCmd func(ctx context.Context, collection string) error
 
-// CreateCMD создает команду для сохранения введенных вручную дивидендов.
-func CreateCMD(uri, db string) func(ctx context.Context) error {
-	return func(ctx context.Context) error {
-		err := client.MongoDBBackUpCmd(ctx, _folder, uri, db, check.Group).Run()
+// CreateCMD создает команду для сохранения коллекции данных.
+func CreateCMD(uri, db string) CollectionCmd {
+	return func(ctx context.Context, collection string) error {
+		err := client.MongoDBBackUpCmd(ctx, _folder, uri, db, collection).Run()
 		if err != nil {
 			return fmt.Errorf(
 				"can't back up data from MongoDB -> %w",
@@ -39,11 +38,11 @@ func CreateCMD(uri, db string) func(ctx context.Context) error {
 type Rule struct {
 	logger  *lgr.Logger
 	timeout time.Duration
-	cmd     Cmd
+	cmd     CollectionCmd
 }
 
-// New правило, сохраняющее в ручную введенные данные после их обновления.
-func New(logger *lgr.Logger, cmd Cmd, timeout time.Duration) *Rule {
+// New создает правило, сохраняющее в ручную введенные данные после их обновления.
+func New(logger *lgr.Logger, cmd CollectionCmd, timeout time.Duration) *Rule {
 	return &Rule{logger: logger, cmd: cmd, timeout: timeout}
 }
 
@@ -59,8 +58,9 @@ func (r *Rule) Activate(inbox <-chan domain.Event) <-chan domain.Event {
 
 		for event := range inbox {
 			if selected, ok := event.(domain.UpdateCompleted); ok {
-				if selected.Group() == check.Group {
-					r.backup(out)
+				group := selected.Group()
+				if group == domain.RawDivGroup || selected.ID() == domain.NewPositionsID() {
+					r.backup(out, group)
 				}
 			}
 		}
@@ -69,15 +69,15 @@ func (r *Rule) Activate(inbox <-chan domain.Event) <-chan domain.Event {
 	return out
 }
 
-func (r *Rule) backup(out chan<- domain.Event) {
+func (r *Rule) backup(out chan<- domain.Event, collection domain.Group) {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	if err := r.cmd(ctx); err != nil {
+	if err := r.cmd(ctx, string(collection)); err != nil {
 		out <- domain.NewErrorOccurred(domain.NewID(_group, _group), err)
 
 		return
 	}
 
-	r.logger.Infof("BackupRule: backup of raw dividends completed")
+	r.logger.Infof("BackupRule: backup of %s collection completed", collection)
 }
