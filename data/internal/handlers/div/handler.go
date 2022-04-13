@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/WLM1ke/poptimizer/data/internal/services"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/go-chi/chi"
 )
@@ -13,7 +12,7 @@ import (
 type handler struct {
 	logger *lgr.Logger
 
-	service *services.RawDivUpdate
+	service *rawDivEdit
 
 	index  *template.Template
 	add    *template.Template

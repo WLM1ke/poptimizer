@@ -1,4 +1,4 @@
-package services
+package div
 
 import (
 	"context"
@@ -19,17 +19,17 @@ import (
 
 const _timeFormat = "2006-01-02"
 
-// RawDivTableDTO представление информации о редактируемой таблице.
+// rawDivTableDTO представление информации о редактируемой таблице.
 //
 // Кроме данных таблицы хранит ID пользовательской сессии.
-type RawDivTableDTO struct {
+type rawDivTableDTO struct {
 	SessionID string
 	Ticker    string
 	Rows      []domain.RawDiv
 }
 
 // NewRow шаблон для создания новой строки.
-func (d RawDivTableDTO) NewRow() domain.RawDiv {
+func (d rawDivTableDTO) NewRow() domain.RawDiv {
 	if len(d.Rows) > 0 {
 		return d.Rows[len(d.Rows)-1]
 	}
@@ -41,26 +41,26 @@ func (d RawDivTableDTO) NewRow() domain.RawDiv {
 	}
 }
 
-// RowDTO - представление добавляемой строки.
-type RowDTO domain.RawDiv
+// rowDTO - представление добавляемой строки.
+type rowDTO domain.RawDiv
 
-// RawDivUpdate - сервис, обрабатывающая запросы по изменению таблицы с дивидендами.
+// rawDivEdit - сервис, обрабатывающая запросы по изменению таблицы с дивидендами.
 //
 // Позволяет загрузить существующую таблицу с данными и создать соответсвующую пользовательскую сессию по
 // редактированию. Добавлять новые строки, сбрасывать и сохранять изменения в рамках пользовательской сессии.
-type RawDivUpdate struct {
+type rawDivEdit struct {
 	logger *lgr.Logger
 	repo   repo.ReadWrite[domain.RawDiv]
 
 	lock     sync.Mutex
-	tableDTO RawDivTableDTO
+	tableDTO rawDivTableDTO
 
 	bus *bus.EventBus
 }
 
-// NewRawDivEdit инициализирует сервис ручного ввода дивидендов.
-func NewRawDivEdit(logger *lgr.Logger, db *mongo.Database, bus *bus.EventBus) *RawDivUpdate {
-	return &RawDivUpdate{
+// newRawDivEdit инициализирует сервис ручного ввода дивидендов.
+func newRawDivEdit(logger *lgr.Logger, db *mongo.Database, bus *bus.EventBus) *rawDivEdit {
+	return &rawDivEdit{
 		logger: logger,
 		repo:   repo.NewMongo[domain.RawDiv](db),
 		bus:    bus,
@@ -68,10 +68,10 @@ func NewRawDivEdit(logger *lgr.Logger, db *mongo.Database, bus *bus.EventBus) *R
 }
 
 // GetByTicker - возвращает сохраненные данные и создает пользовательскую сессию.
-func (r *RawDivUpdate) GetByTicker(ctx context.Context, ticker string) (RawDivTableDTO, error) {
+func (r *rawDivEdit) GetByTicker(ctx context.Context, ticker string) (rawDivTableDTO, error) {
 	table, err := r.repo.Get(ctx, domain.NewRawDivID(ticker))
 	if err != nil {
-		return RawDivTableDTO{}, fmt.Errorf(
+		return rawDivTableDTO{}, fmt.Errorf(
 			"can't load raw dividends from repo -> %w",
 			err,
 		)
@@ -80,7 +80,7 @@ func (r *RawDivUpdate) GetByTicker(ctx context.Context, ticker string) (RawDivTa
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	r.tableDTO = RawDivTableDTO{
+	r.tableDTO = rawDivTableDTO{
 		SessionID: primitive.NewObjectID().Hex(),
 		Ticker:    ticker,
 		Rows:      table.Rows(),
@@ -90,7 +90,7 @@ func (r *RawDivUpdate) GetByTicker(ctx context.Context, ticker string) (RawDivTa
 }
 
 // AddRow добавляет новые строки в таблицу в рамках пользовательской сессии.
-func (r *RawDivUpdate) AddRow(sessionID, date, value, currency string) (row RowDTO, err error) {
+func (r *rawDivEdit) AddRow(sessionID, date, value, currency string) (row rowDTO, err error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -111,7 +111,7 @@ func (r *RawDivUpdate) AddRow(sessionID, date, value, currency string) (row RowD
 	return row, nil
 }
 
-func parseRow(date string, value string, currency string) (row RowDTO, err error) {
+func parseRow(date string, value string, currency string) (row rowDTO, err error) {
 	row.Date, err = time.Parse(_timeFormat, date)
 	if err != nil {
 		return row, fmt.Errorf(
@@ -140,7 +140,7 @@ func parseRow(date string, value string, currency string) (row RowDTO, err error
 }
 
 // Reload сбрасывает результаты редактирования в рамках пользовательской сессии и возвращает не измененную таблицу.
-func (r *RawDivUpdate) Reload(ctx context.Context, sessionID string) (dto RawDivTableDTO, err error) {
+func (r *rawDivEdit) Reload(ctx context.Context, sessionID string) (dto rawDivTableDTO, err error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -159,7 +159,7 @@ func (r *RawDivUpdate) Reload(ctx context.Context, sessionID string) (dto RawDiv
 		)
 	}
 
-	r.tableDTO = RawDivTableDTO{
+	r.tableDTO = rawDivTableDTO{
 		SessionID: sessionID,
 		Ticker:    string(table.Name()),
 		Rows:      table.Rows(),
@@ -169,7 +169,7 @@ func (r *RawDivUpdate) Reload(ctx context.Context, sessionID string) (dto RawDiv
 }
 
 // Save сохраняет результаты редактирования.
-func (r *RawDivUpdate) Save(ctx context.Context, sessionID string) error {
+func (r *rawDivEdit) Save(ctx context.Context, sessionID string) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 

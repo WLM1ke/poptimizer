@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/WLM1ke/poptimizer/data/internal/services"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/go-chi/chi"
 )
@@ -13,7 +12,7 @@ import (
 type handler struct {
 	logger *lgr.Logger
 
-	service *services.PortfolioTickersEdit
+	service *portfolioTickersEdit
 
 	index     *template.Template
 	search    *template.Template

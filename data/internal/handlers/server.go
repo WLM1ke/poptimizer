@@ -7,7 +7,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/handlers/div"
 	"github.com/WLM1ke/poptimizer/data/internal/handlers/port"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
-	"github.com/WLM1ke/poptimizer/data/internal/services"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/WLM1ke/poptimizer/data/pkg/server"
 	"github.com/go-chi/chi"
@@ -34,12 +33,12 @@ func NewHTTPServer(
 
 	router.Mount(
 		"/edit/div",
-		div.NewEditHandler(logger, services.NewRawDivEdit(logger, database, bus)),
+		div.NewEditHandler(logger, database, bus),
 	)
 
 	router.Mount(
 		"/edit/port",
-		port.NewPortfolioTickersHandler(logger, services.NewPortfolioTickersEdit(logger, database, bus)),
+		port.NewPortfolioTickersHandler(logger, database, bus),
 	)
 
 	return server.NewServer(

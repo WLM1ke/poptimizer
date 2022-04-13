@@ -1,4 +1,4 @@
-package services
+package port
 
 import (
 	"context"
@@ -17,24 +17,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// TickersDTO содержит перечень тикеров в рамках сессии по редактированию портфеля.
-type TickersDTO struct {
+// tickersDTO содержит перечень тикеров в рамках сессии по редактированию портфеля.
+type tickersDTO struct {
 	SessionID string
 	tickers   map[domain.Position]bool
 }
 
-// NewTickersDTO создает новый перечень тикеров, привязанный к сессии.
-func NewTickersDTO(sessionID string, tickers []domain.Position) TickersDTO {
+// newTickersDTO создает новый перечень тикеров, привязанный к сессии.
+func newTickersDTO(sessionID string, tickers []domain.Position) tickersDTO {
 	tickersMap := make(map[domain.Position]bool, len(tickers))
 	for _, ticker := range tickers {
 		tickersMap[ticker] = true
 	}
 
-	return TickersDTO{SessionID: sessionID, tickers: tickersMap}
+	return tickersDTO{SessionID: sessionID, tickers: tickersMap}
 }
 
 // Tickers возвращает отсортированный перечень тикеров.
-func (t TickersDTO) Tickers() []domain.Position {
+func (t tickersDTO) Tickers() []domain.Position {
 	tickers := make([]domain.Position, 0, len(t.tickers))
 	for ticker := range t.tickers {
 		tickers = append(tickers, ticker)
@@ -45,27 +45,27 @@ func (t TickersDTO) Tickers() []domain.Position {
 	return tickers
 }
 
-// PortfolioTickersEdit сервис по редактированию перечня тикеров в портфеле.
+// portfolioTickersEdit сервис по редактированию перечня тикеров в портфеле.
 //
 // Редактирование осуществляется в рамках изолированной сессии. Начало нового редактирования сбрасывает предыдущую
 // сессию. Результат редактирования сохраняется только после вызова соответствующего метода.
 // Для тикеров в портфеле отслеживается появление новых дивидендов.
-type PortfolioTickersEdit struct {
+type portfolioTickersEdit struct {
 	logger *lgr.Logger
 
 	portfolio  repo.ReadWrite[domain.Position]
 	securities repo.ReadWrite[domain.Security]
 
 	lock sync.Mutex
-	port TickersDTO
-	add  TickersDTO
+	port tickersDTO
+	add  tickersDTO
 
 	bus *bus.EventBus
 }
 
-// NewPortfolioTickersEdit инициализирует сервис ручного ввода информации о тикерах в портфеле.
-func NewPortfolioTickersEdit(logger *lgr.Logger, db *mongo.Database, bus *bus.EventBus) *PortfolioTickersEdit {
-	return &PortfolioTickersEdit{
+// newPortfolioTickersEdit инициализирует сервис ручного ввода информации о тикерах в портфеле.
+func newPortfolioTickersEdit(logger *lgr.Logger, db *mongo.Database, bus *bus.EventBus) *portfolioTickersEdit {
+	return &portfolioTickersEdit{
 		logger:     logger,
 		portfolio:  repo.NewMongo[domain.Position](db),
 		securities: repo.NewMongo[domain.Security](db),
@@ -74,15 +74,15 @@ func NewPortfolioTickersEdit(logger *lgr.Logger, db *mongo.Database, bus *bus.Ev
 }
 
 // GetTickers создает новую сессию (удаляет старую) и возвращает перечень тикеров в текущем портфеле.
-func (p *PortfolioTickersEdit) GetTickers(ctx context.Context) (TickersDTO, error) {
+func (p *portfolioTickersEdit) GetTickers(ctx context.Context) (tickersDTO, error) {
 	port, err := p.portfolio.Get(ctx, domain.NewPositionsID())
 	if err != nil {
-		return TickersDTO{}, fmt.Errorf("can't load portfolio -> %w", err)
+		return tickersDTO{}, fmt.Errorf("can't load portfolio -> %w", err)
 	}
 
 	sec, err := p.securities.Get(ctx, domain.NewSecuritiesID())
 	if err != nil {
-		return TickersDTO{}, fmt.Errorf("can't load securities -> %w", err)
+		return tickersDTO{}, fmt.Errorf("can't load securities -> %w", err)
 	}
 
 	p.lock.Lock()
@@ -90,8 +90,8 @@ func (p *PortfolioTickersEdit) GetTickers(ctx context.Context) (TickersDTO, erro
 
 	id := primitive.NewObjectID().Hex()
 
-	p.port = NewTickersDTO(id, port.Rows())
-	p.add = NewTickersDTO(id, nil)
+	p.port = newTickersDTO(id, port.Rows())
+	p.add = newTickersDTO(id, nil)
 
 	for _, row := range sec.Rows() {
 		ticker := domain.Position(row.Ticker)
@@ -105,11 +105,11 @@ func (p *PortfolioTickersEdit) GetTickers(ctx context.Context) (TickersDTO, erro
 }
 
 // SearchTickers возвращает перечень тикеров, начинающихся с указанных букв, которые могут быть добавлены в портфель.
-func (p *PortfolioTickersEdit) SearchTickers(sessionID, pattern string) (TickersDTO, error) {
+func (p *portfolioTickersEdit) SearchTickers(sessionID, pattern string) (tickersDTO, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	dto := NewTickersDTO(sessionID, nil)
+	dto := newTickersDTO(sessionID, nil)
 
 	if p.port.SessionID != sessionID {
 		return dto, fmt.Errorf("wrong session id - %s", sessionID)
@@ -134,16 +134,16 @@ func (p *PortfolioTickersEdit) SearchTickers(sessionID, pattern string) (Tickers
 }
 
 // AddTicker добавляет тикер в текущий портфель и возвращает его состав.
-func (p *PortfolioTickersEdit) AddTicker(sessionID, ticker string) (TickersDTO, error) {
+func (p *portfolioTickersEdit) AddTicker(sessionID, ticker string) (tickersDTO, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
 	if p.port.SessionID != sessionID {
-		return TickersDTO{}, fmt.Errorf("wrong session id - %s", sessionID)
+		return tickersDTO{}, fmt.Errorf("wrong session id - %s", sessionID)
 	}
 
 	if !p.add.tickers[domain.Position(ticker)] {
-		return TickersDTO{}, fmt.Errorf("incorrect ticker to add - %s", ticker)
+		return tickersDTO{}, fmt.Errorf("incorrect ticker to add - %s", ticker)
 	}
 
 	delete(p.add.tickers, domain.Position(ticker))
@@ -154,16 +154,16 @@ func (p *PortfolioTickersEdit) AddTicker(sessionID, ticker string) (TickersDTO, 
 }
 
 // RemoveTicker удаляет тикер из портфеля и возвращает его состав.
-func (p *PortfolioTickersEdit) RemoveTicker(sessionID, ticker string) (TickersDTO, error) {
+func (p *portfolioTickersEdit) RemoveTicker(sessionID, ticker string) (tickersDTO, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
 	if p.port.SessionID != sessionID {
-		return TickersDTO{}, fmt.Errorf("wrong session id - %s", sessionID)
+		return tickersDTO{}, fmt.Errorf("wrong session id - %s", sessionID)
 	}
 
 	if !p.port.tickers[domain.Position(ticker)] {
-		return TickersDTO{}, fmt.Errorf("incorrect ticker to remove - %s", ticker)
+		return tickersDTO{}, fmt.Errorf("incorrect ticker to remove - %s", ticker)
 	}
 
 	delete(p.port.tickers, domain.Position(ticker))
@@ -174,7 +174,7 @@ func (p *PortfolioTickersEdit) RemoveTicker(sessionID, ticker string) (TickersDT
 }
 
 // Save сохраняет результаты редактирования, обнуляет сессию и возвращает количество тикеров в портфеле.
-func (p *PortfolioTickersEdit) Save(ctx context.Context, sessionID string) (int, error) {
+func (p *portfolioTickersEdit) Save(ctx context.Context, sessionID string) (int, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
