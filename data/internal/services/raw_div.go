@@ -69,7 +69,7 @@ func NewRawDivEdit(logger *lgr.Logger, db *mongo.Database, bus *bus.EventBus) *R
 
 // GetByTicker - возвращает сохраненные данные и создает пользовательскую сессию.
 func (r *RawDivUpdate) GetByTicker(ctx context.Context, ticker string) (RawDivTableDTO, error) {
-	table, err := r.repo.Get(ctx, domain.NewID(check.Group, ticker))
+	table, err := r.repo.Get(ctx, domain.NewRawDivID(ticker))
 	if err != nil {
 		return RawDivTableDTO{}, fmt.Errorf(
 			"can't load raw dividends from repo -> %w",
@@ -151,7 +151,7 @@ func (r *RawDivUpdate) Reload(ctx context.Context, sessionID string) (dto RawDiv
 		)
 	}
 
-	table, err := r.repo.Get(ctx, domain.NewID(check.Group, r.tableDTO.Ticker))
+	table, err := r.repo.Get(ctx, domain.NewRawDivID(r.tableDTO.Ticker))
 	if err != nil {
 		return dto, fmt.Errorf(
 			"can't load data from repo -> %w",
@@ -182,7 +182,7 @@ func (r *RawDivUpdate) Save(ctx context.Context, sessionID string) error {
 		)
 	}
 
-	tableID := domain.NewID(check.Group, r.tableDTO.Ticker)
+	tableID := domain.NewRawDivID(r.tableDTO.Ticker)
 
 	rows := r.tableDTO.Rows
 	sort.Slice(rows, func(i, j int) bool { return rows[i].Date.Before(rows[j].Date) })

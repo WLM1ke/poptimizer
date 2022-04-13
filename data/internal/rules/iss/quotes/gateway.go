@@ -8,7 +8,6 @@ import (
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/iss/securities"
 )
 
 const _format = `2006-01-02`
@@ -54,7 +53,7 @@ func (s gateway) Get(ctx context.Context, table domain.Table[domain.Quote]) ([]d
 }
 
 func (s gateway) getMarket(ctx context.Context, ticker string) (string, error) {
-	table, err := s.secRepo.Get(ctx, securities.ID)
+	securities, err := s.secRepo.Get(ctx, domain.NewSecuritiesID())
 	if err != nil {
 		return "", fmt.Errorf(
 			"can't load from repo -> %w",
@@ -62,7 +61,7 @@ func (s gateway) getMarket(ctx context.Context, ticker string) (string, error) {
 		)
 	}
 
-	sec := table.Rows()
+	sec := securities.Rows()
 
 	position := sort.Search(len(sec), func(i int) bool {
 		return sec[i].Ticker >= ticker

@@ -12,23 +12,20 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/iss/securities"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const _group = `port`
-
 // TickersDTO содержит перечень тикеров в рамках сессии по редактированию портфеля.
 type TickersDTO struct {
 	SessionID string
-	tickers   map[domain.Ticker]bool
+	tickers   map[domain.Position]bool
 }
 
 // NewTickersDTO создает новый перечень тикеров, привязанный к сессии.
-func NewTickersDTO(sessionID string, tickers []domain.Ticker) TickersDTO {
-	tickersMap := make(map[domain.Ticker]bool, len(tickers))
+func NewTickersDTO(sessionID string, tickers []domain.Position) TickersDTO {
+	tickersMap := make(map[domain.Position]bool, len(tickers))
 	for _, ticker := range tickers {
 		tickersMap[ticker] = true
 	}
@@ -37,8 +34,8 @@ func NewTickersDTO(sessionID string, tickers []domain.Ticker) TickersDTO {
 }
 
 // Tickers возвращает отсортированный перечень тикеров.
-func (t TickersDTO) Tickers() []domain.Ticker {
-	tickers := make([]domain.Ticker, 0, len(t.tickers))
+func (t TickersDTO) Tickers() []domain.Position {
+	tickers := make([]domain.Position, 0, len(t.tickers))
 	for ticker := range t.tickers {
 		tickers = append(tickers, ticker)
 	}
@@ -56,7 +53,7 @@ func (t TickersDTO) Tickers() []domain.Ticker {
 type PortfolioTickersEdit struct {
 	logger *lgr.Logger
 
-	portfolio  repo.ReadWrite[domain.Ticker]
+	portfolio  repo.ReadWrite[domain.Position]
 	securities repo.ReadWrite[domain.Security]
 
 	lock sync.Mutex
@@ -70,7 +67,7 @@ type PortfolioTickersEdit struct {
 func NewPortfolioTickersEdit(logger *lgr.Logger, db *mongo.Database, bus *bus.EventBus) *PortfolioTickersEdit {
 	return &PortfolioTickersEdit{
 		logger:     logger,
-		portfolio:  repo.NewMongo[domain.Ticker](db),
+		portfolio:  repo.NewMongo[domain.Position](db),
 		securities: repo.NewMongo[domain.Security](db),
 		bus:        bus,
 	}
@@ -78,12 +75,12 @@ func NewPortfolioTickersEdit(logger *lgr.Logger, db *mongo.Database, bus *bus.Ev
 
 // GetTickers создает новую сессию (удаляет старую) и возвращает перечень тикеров в текущем портфеле.
 func (p *PortfolioTickersEdit) GetTickers(ctx context.Context) (TickersDTO, error) {
-	port, err := p.portfolio.Get(ctx, domain.NewID(_group, _group))
+	port, err := p.portfolio.Get(ctx, domain.NewPositionsID())
 	if err != nil {
 		return TickersDTO{}, fmt.Errorf("can't load portfolio -> %w", err)
 	}
 
-	sec, err := p.securities.Get(ctx, securities.ID)
+	sec, err := p.securities.Get(ctx, domain.NewSecuritiesID())
 	if err != nil {
 		return TickersDTO{}, fmt.Errorf("can't load securities -> %w", err)
 	}
@@ -97,7 +94,7 @@ func (p *PortfolioTickersEdit) GetTickers(ctx context.Context) (TickersDTO, erro
 	p.add = NewTickersDTO(id, nil)
 
 	for _, row := range sec.Rows() {
-		ticker := domain.Ticker(row.Ticker)
+		ticker := domain.Position(row.Ticker)
 
 		if !p.port.tickers[ticker] {
 			p.add.tickers[ticker] = true
@@ -145,13 +142,13 @@ func (p *PortfolioTickersEdit) AddTicker(sessionID, ticker string) (TickersDTO, 
 		return TickersDTO{}, fmt.Errorf("wrong session id - %s", sessionID)
 	}
 
-	if !p.add.tickers[domain.Ticker(ticker)] {
+	if !p.add.tickers[domain.Position(ticker)] {
 		return TickersDTO{}, fmt.Errorf("incorrect ticker to add - %s", ticker)
 	}
 
-	delete(p.add.tickers, domain.Ticker(ticker))
+	delete(p.add.tickers, domain.Position(ticker))
 
-	p.port.tickers[domain.Ticker(ticker)] = true
+	p.port.tickers[domain.Position(ticker)] = true
 
 	return p.port, nil
 }
@@ -165,13 +162,13 @@ func (p *PortfolioTickersEdit) RemoveTicker(sessionID, ticker string) (TickersDT
 		return TickersDTO{}, fmt.Errorf("wrong session id - %s", sessionID)
 	}
 
-	if !p.port.tickers[domain.Ticker(ticker)] {
+	if !p.port.tickers[domain.Position(ticker)] {
 		return TickersDTO{}, fmt.Errorf("incorrect ticker to remove - %s", ticker)
 	}
 
-	delete(p.port.tickers, domain.Ticker(ticker))
+	delete(p.port.tickers, domain.Position(ticker))
 
-	p.add.tickers[domain.Ticker(ticker)] = true
+	p.add.tickers[domain.Position(ticker)] = true
 
 	return p.port, nil
 }
@@ -187,12 +184,12 @@ func (p *PortfolioTickersEdit) Save(ctx context.Context, sessionID string) (int,
 		return 0, fmt.Errorf("wrong session id - %s", sessionID)
 	}
 
-	err := p.portfolio.Replace(ctx, domain.NewTable(domain.NewID(_group, _group), time.Now(), p.port.Tickers()))
+	err := p.portfolio.Replace(ctx, domain.NewTable(domain.NewPositionsID(), time.Now(), p.port.Tickers()))
 	if err != nil {
 		return 0, fmt.Errorf("can't save portfolio -> %w", err)
 	}
 
-	err = p.bus.Send(domain.NewUpdateCompleted(domain.NewID(_group, _group)))
+	err = p.bus.Send(domain.NewUpdateCompleted(domain.NewPositionsID()))
 	if err != nil {
 		return 0, fmt.Errorf("can't send update event -> %w", err)
 	}

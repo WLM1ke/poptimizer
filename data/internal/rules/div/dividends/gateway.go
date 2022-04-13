@@ -10,7 +10,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/div/check"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/iss/usd"
 	"golang.org/x/exp/slices"
 )
 
@@ -20,7 +19,7 @@ type gateway struct {
 }
 
 func (s gateway) Get(ctx context.Context, table domain.Table[domain.Dividend]) ([]domain.Dividend, error) {
-	rawDiv, err := s.rawRepo.Get(ctx, domain.NewID(check.Group, string(table.Name())))
+	rawDiv, err := s.rawRepo.Get(ctx, domain.NewRawDivID(string(table.Name())))
 	if err != nil {
 		return nil, fmt.Errorf(
 			"can't load from repo -> %w",
@@ -32,7 +31,7 @@ func (s gateway) Get(ctx context.Context, table domain.Table[domain.Dividend]) (
 		return nil, nil
 	}
 
-	rate, err := s.usdRepo.Get(ctx, usd.ID)
+	rate, err := s.usdRepo.Get(ctx, domain.NewUsdID())
 	if err != nil {
 		return nil, fmt.Errorf(
 			"can't load from repo -> %w",

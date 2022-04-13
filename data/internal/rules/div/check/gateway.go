@@ -7,7 +7,6 @@ import (
 
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/div/status"
 )
 
 const _format = `2006-01-02`
@@ -17,7 +16,7 @@ type gateway struct {
 }
 
 func (s gateway) Get(ctx context.Context, table domain.Table[domain.RawDiv]) ([]domain.RawDiv, error) {
-	divStatus, err := s.statusRepo.Get(ctx, status.NewID())
+	divStatus, err := s.statusRepo.Get(ctx, domain.NewDivStatusID())
 	if err != nil {
 		return nil, fmt.Errorf(
 			"can't load dividends status from repo -> %w",

@@ -8,13 +8,7 @@ import (
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 )
 
-const (
-	_tickerDuration = time.Minute
-	_group          = "day_ended"
-)
-
-// ID события окончания дня (необязательно торгового). Окончания дня привязано к моменту публикации итогов торгов.
-var ID = domain.NewID(_group, _group)
+const _tickerDuration = time.Minute
 
 // Rule - правило, сообщающее о возможном появлении новых данных.
 //
@@ -67,6 +61,6 @@ func (r *Rule) sendIfNewDay(out chan<- domain.Event) {
 	if r.last.Before(lastNew) {
 		r.last = lastNew
 
-		out <- domain.NewUpdateCompleted(ID)
+		out <- domain.NewUpdateCompleted(domain.NewDayEndedID())
 	}
 }
