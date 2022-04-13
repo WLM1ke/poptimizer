@@ -1,6 +1,7 @@
-package edit
+package div
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 
@@ -101,7 +102,12 @@ func (h *handler) handleSave(responseWriter http.ResponseWriter, request *http.R
 		return
 	}
 
-	status := h.service.Save(request.Context(), request.PostForm.Get("sessionID"))
+	status := "Saved successfully"
+
+	err := h.service.Save(request.Context(), request.PostForm.Get("sessionID"))
+	if err != nil {
+		status = fmt.Sprintf("Error occured: %s", err)
+	}
 
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 

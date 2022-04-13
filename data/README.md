@@ -8,7 +8,7 @@
 
 Получение данных в формате MongoDB Extended JSON (v2)
 
-### edit/{ticker}
+### edit/div/{ticker}
 
 Frontend для дополнения данных по дивидендам
 

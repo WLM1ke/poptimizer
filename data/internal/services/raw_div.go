@@ -45,12 +45,6 @@ func (d RawDivTableDTO) NewRow() domain.RawDiv {
 // RowDTO - представление добавляемой строки.
 type RowDTO domain.RawDiv
 
-// StatusDTO - представление информации о сохранении измененной таблицы.
-type StatusDTO struct {
-	Name   string
-	Status string
-}
-
 // RawDivUpdate - сервис, обрабатывающая запросы по изменению таблицы с дивидендами.
 //
 // Позволяет загрузить существующую таблицу с данными и создать соответсвующую пользовательскую сессию по
@@ -65,8 +59,8 @@ type RawDivUpdate struct {
 	bus *bus.EventBus
 }
 
-// NewRawDivUpdate инициализирует сервис.
-func NewRawDivUpdate(logger *lgr.Logger, db *mongo.Database, bus *bus.EventBus) *RawDivUpdate {
+// NewRawDivEdit инициализирует сервис ручного ввода дивидендов.
+func NewRawDivEdit(logger *lgr.Logger, db *mongo.Database, bus *bus.EventBus) *RawDivUpdate {
 	return &RawDivUpdate{
 		logger: logger,
 		repo:   repo.NewMongo[domain.RawDiv](db),
@@ -175,37 +169,34 @@ func (r *RawDivUpdate) Reload(ctx context.Context, sessionID string) (dto RawDiv
 	return r.tableDTO, nil
 }
 
-// Save сохраняет результаты редактирования и информирует об успешности отдельных этапов этого процесса.
-func (r *RawDivUpdate) Save(ctx context.Context, sessionID string) (status []StatusDTO) {
+// Save сохраняет результаты редактирования.
+func (r *RawDivUpdate) Save(ctx context.Context, sessionID string) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	defer func() { r.tableDTO.SessionID = "" }()
 
 	if sessionID != r.tableDTO.SessionID {
-		return append(status, StatusDTO{"Loaded from cache", "wrong sessionID"})
+		return fmt.Errorf(
+			"wrong session id - %s",
+			sessionID,
+		)
 	}
-
-	status = append(status, StatusDTO{"Loaded from cache", "OK"})
 
 	tableID := domain.NewID(check.Group, r.tableDTO.Ticker)
 
 	rows := r.tableDTO.Rows
 	sort.Slice(rows, func(i, j int) bool { return rows[i].Date.Before(rows[j].Date) })
 
-	date := domain.LastTradingDate()
-
-	err := r.repo.Replace(ctx, domain.NewTable(tableID, date, rows))
+	err := r.repo.Replace(ctx, domain.NewTable(tableID, time.Now(), rows))
 	if err != nil {
-		return append(status, StatusDTO{"Saved to repo", err.Error()})
+		return fmt.Errorf("can't save to repo -> %w", err)
 	}
-
-	status = append(status, StatusDTO{"Saved to repo", "OK"})
 
 	err = r.bus.Send(domain.NewUpdateCompleted(tableID))
 	if err != nil {
-		return append(status, StatusDTO{"Sent update event", err.Error()})
+		return fmt.Errorf("can't send update event -> %w", err)
 	}
 
-	return append(status, StatusDTO{"Sent update event", "OK"})
+	return nil
 }
