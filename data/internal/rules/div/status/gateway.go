@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"io"
 	"net/http"
 	"regexp"
@@ -25,6 +26,7 @@ var reTicker = regexp.MustCompile(`, ([A-Z]+-[A-Z]+|[A-Z]+) \[`)
 
 type gateway struct {
 	client *http.Client
+	repo   repo.Read[domain.Position]
 }
 
 func (g gateway) Get(
@@ -59,11 +61,16 @@ func (g gateway) Get(
 	decoder := charmap.Windows1251.NewDecoder()
 	reader := csv.NewReader(decoder.Reader(resp.Body))
 
-	return parceCSV(reader)
+	return g.parceCSV(ctx, reader)
 }
 
-func parceCSV(reader *csv.Reader) (rows []domain.DivStatus, err error) {
+func (g gateway) parceCSV(ctx context.Context, reader *csv.Reader) (rows []domain.DivStatus, err error) {
 	header := true
+
+	positions, err := g.getPositions(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	for record, err := reader.Read(); !errors.Is(err, io.EOF); record, err = reader.Read() {
 		switch {
@@ -101,10 +108,12 @@ func parceCSV(reader *csv.Reader) (rows []domain.DivStatus, err error) {
 			)
 		}
 
-		rows = append(rows, domain.DivStatus{
-			Ticker: ticker[1],
-			Date:   divDate,
-		})
+		if positions[ticker[1]] {
+			rows = append(rows, domain.DivStatus{
+				Ticker: ticker[1],
+				Date:   divDate,
+			})
+		}
 	}
 
 	sort.Slice(
@@ -123,4 +132,19 @@ func parceCSV(reader *csv.Reader) (rows []domain.DivStatus, err error) {
 	)
 
 	return rows, nil
+}
+
+func (g gateway) getPositions(ctx context.Context) (map[string]bool, error) {
+	positions, err := g.repo.Get(ctx, domain.NewPositionsID())
+	if err != nil {
+		return nil, fmt.Errorf("can't load positions -> %w", err)
+	}
+
+	rez := make(map[string]bool, len(positions.Rows()))
+
+	for _, ticker := range positions.Rows() {
+		rez[string(ticker)] = true
+	}
+
+	return rez, nil
 }

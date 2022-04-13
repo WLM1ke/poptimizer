@@ -24,7 +24,7 @@ func New(logger *lgr.Logger, db *mongo.Database, client *http.Client, timeout ti
 		logger,
 		repo.NewMongo[domain.DivStatus](db),
 		selector{},
-		gateway{client: client},
+		gateway{client: client, repo: repo.NewMongo[domain.Position](db)},
 		validator,
 		false,
 		timeout,

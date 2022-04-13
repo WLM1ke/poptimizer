@@ -32,10 +32,7 @@ func (s selector) Select(ctx context.Context, event domain.Event) (ids []domain.
 			}
 
 			for _, s := range sec.Rows() {
-				ticker := s.Ticker
-				if _, ok := _portfolio[ticker]; ok {
-					ids = append(ids, domain.NewRawDivID(ticker))
-				}
+				ids = append(ids, domain.NewRawDivID(s.Ticker))
 			}
 		}
 	}
