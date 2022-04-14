@@ -5,7 +5,6 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"io"
 	"net/http"
 	"regexp"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
+	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"golang.org/x/text/encoding/charmap"
 )
 
@@ -61,7 +61,27 @@ func (g gateway) Get(
 	decoder := charmap.Windows1251.NewDecoder()
 	reader := csv.NewReader(decoder.Reader(resp.Body))
 
-	return g.parceCSV(ctx, reader)
+	rows, err := g.parceCSV(ctx, reader)
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(
+		rows,
+		func(i, j int) bool {
+			if rows[i].Ticker < rows[j].Ticker {
+				return true
+			}
+
+			if (rows[i].Ticker == rows[j].Ticker) && rows[i].Date.Before(rows[j].Date) {
+				return true
+			}
+
+			return false
+		},
+	)
+
+	return rows, nil
 }
 
 func (g gateway) parceCSV(ctx context.Context, reader *csv.Reader) (rows []domain.DivStatus, err error) {
@@ -115,21 +135,6 @@ func (g gateway) parceCSV(ctx context.Context, reader *csv.Reader) (rows []domai
 			})
 		}
 	}
-
-	sort.Slice(
-		rows,
-		func(i, j int) bool {
-			if rows[i].Ticker < rows[j].Ticker {
-				return true
-			}
-
-			if (rows[i].Ticker == rows[j].Ticker) && rows[i].Date.Before(rows[j].Date) {
-				return true
-			}
-
-			return false
-		},
-	)
 
 	return rows, nil
 }

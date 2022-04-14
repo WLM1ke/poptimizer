@@ -23,10 +23,10 @@ linters:
     - forcetypeassert
     - funlen
     - gci
-#    - gochecknoglobals
-#    - gochecknoinits
-#    - gocognit
-#    - goconst
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - goconst
 #    - gocritic
 #    - gocyclo
 #    - godot

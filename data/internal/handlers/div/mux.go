@@ -2,13 +2,13 @@ package div
 
 import (
 	"embed"
-	"github.com/WLM1ke/poptimizer/data/internal/bus"
-	"go.mongodb.org/mongo-driver/mongo"
 	"html/template"
 	"net/http"
 
+	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/go-chi/chi"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 //go:embed resources
