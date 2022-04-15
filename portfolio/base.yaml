@@ -49,6 +49,7 @@ positions:
   DIS-RM: 0
   DIVD: 0
   DSKY: 0
+  DVEC: 0
   EA-RM: 0
   EBAY-RM: 0
   ENPG: 0
@@ -90,6 +91,7 @@ positions:
   ISKJ: 0
   JNJ-RM: 0
   KAZT: 0
+  KAZTP: 0
   KHC-RM: 0
   KLSB: 0
   KMAZ: 0
@@ -99,7 +101,6 @@ positions:
   KZOSP: 0
   LIFE: 0
   LKOH: 0
-  LLY-RM: 0
   LNZL: 0
   LNZLP: 0
   LSNG: 0
