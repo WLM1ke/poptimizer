@@ -26,9 +26,9 @@ type (
 	Quote = gomoex.Candle
 )
 
-// NewDateID создает ID информации о торговых днях.
-func NewDateID() ID {
-	return NewID("dates", "dates")
+// NewTradingDateID создает ID информации о торговых днях.
+func NewTradingDateID() ID {
+	return NewID("trading_dates", "trading_dates")
 }
 
 // NewIndexID создает ID индексов.

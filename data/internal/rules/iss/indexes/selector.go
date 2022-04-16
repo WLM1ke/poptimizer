@@ -8,15 +8,22 @@ import (
 
 type selector struct{}
 
-func (s selector) Select(_ context.Context, event domain.Event) (ids []domain.ID, err error) {
-	switch selected := event.(type) {
-	case domain.UpdateCompleted:
-		if selected.ID() == domain.NewDateID() {
-			for _, index := range [4]string{`MCFTRR`, `MEOGTRR`, `IMOEX`, `RVI`} {
-				ids = append(ids, domain.NewIndexID(index))
-			}
+func (s selector) Select(_ context.Context, event domain.Event) ([]domain.ID, error) {
+	if selected, ok := event.(domain.UpdateCompleted); ok {
+		if selected.ID() == domain.NewTradingDateID() {
+			return s.ids()
 		}
 	}
 
-	return ids, err
+	return nil, nil
+}
+
+func (s selector) ids() ([]domain.ID, error) {
+	var ids []domain.ID
+
+	for _, index := range [4]string{`MCFTRR`, `MEOGTRR`, `IMOEX`, `RVI`} {
+		ids = append(ids, domain.NewIndexID(index))
+	}
+
+	return ids, nil
 }

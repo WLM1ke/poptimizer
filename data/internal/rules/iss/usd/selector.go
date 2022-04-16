@@ -9,12 +9,11 @@ import (
 type selector struct{}
 
 func (s selector) Select(_ context.Context, event domain.Event) (ids []domain.ID, err error) {
-	switch selected := event.(type) {
-	case domain.UpdateCompleted:
-		if selected.ID() == domain.NewDateID() {
-			ids = append(ids, domain.NewUsdID())
+	if selected, ok := event.(domain.UpdateCompleted); ok {
+		if selected.ID() == domain.NewTradingDateID() {
+			return []domain.ID{domain.NewUsdID()}, nil
 		}
 	}
 
-	return ids, err
+	return nil, nil
 }

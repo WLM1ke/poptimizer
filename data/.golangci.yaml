@@ -27,10 +27,10 @@ linters:
     - gochecknoinits
     - gocognit
     - goconst
-#    - gocritic
-#    - gocyclo
-#    - godot
-#    - godox
+    - gocritic
+    - gocyclo
+    - godot
+    - godox
 #    - goerr113
 #    - gofmt
 #    - gofumpt
@@ -96,7 +96,7 @@ issues:
   # it can be disabled by this option.
   # To list all excluded by default patterns execute `golangci-lint run --help`.
   # Default: true.
-  exclude-use-default: true
+  exclude-use-default: false
   # List of regexps of issue texts to exclude.
   #
   # But independently of this option we use default exclude patterns,

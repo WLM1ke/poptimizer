@@ -15,27 +15,34 @@ type selector struct {
 	repo repo.Read[domain.DivStatus]
 }
 
-func (s selector) Select(ctx context.Context, event domain.Event) (ids []domain.ID, err error) {
-	switch selected := event.(type) {
-	case domain.UpdateCompleted:
+func (s selector) Select(ctx context.Context, event domain.Event) ([]domain.ID, error) {
+	if selected, ok := event.(domain.UpdateCompleted); ok {
 		if selected.ID() == domain.NewDivStatusID() {
-			sec, err := s.repo.Get(ctx, domain.NewDivStatusID())
-			if err != nil {
-				return ids, fmt.Errorf(
-					"can't load dividends status from repo -> %w",
-					err,
-				)
-			}
-
-			for _, s := range sec.Rows() {
-				if isForeignShare(s.Ticker) {
-					ids = append(ids, domain.NewNASDAQDivID(s.Ticker))
-				}
-			}
+			return s.ids(ctx)
 		}
 	}
 
-	return ids, err
+	return nil, nil
+}
+
+func (s selector) ids(ctx context.Context) ([]domain.ID, error) {
+	sec, err := s.repo.Get(ctx, domain.NewDivStatusID())
+	if err != nil {
+		return nil, fmt.Errorf(
+			"can't load dividends status from repo -> %w",
+			err,
+		)
+	}
+
+	var ids []domain.ID
+
+	for _, s := range sec.Rows() {
+		if isForeignShare(s.Ticker) {
+			ids = append(ids, domain.NewNASDAQDivID(s.Ticker))
+		}
+	}
+
+	return ids, nil
 }
 
 func isForeignShare(ticker string) bool {

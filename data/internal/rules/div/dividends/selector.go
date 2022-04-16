@@ -8,13 +8,12 @@ import (
 
 type selector struct{}
 
-func (s selector) Select(ctx context.Context, event domain.Event) (ids []domain.ID, err error) {
-	switch selected := event.(type) {
-	case domain.UpdateCompleted:
+func (s selector) Select(_ context.Context, event domain.Event) ([]domain.ID, error) {
+	if selected, ok := event.(domain.UpdateCompleted); ok {
 		if selected.ID().Group() == domain.QuotesGroup {
-			ids = append(ids, domain.NewDividendsID(string(selected.Name())))
+			return []domain.ID{domain.NewDividendsID(string(selected.Name()))}, nil
 		}
 	}
 
-	return ids, err
+	return nil, nil
 }

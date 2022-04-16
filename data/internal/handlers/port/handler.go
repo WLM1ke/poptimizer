@@ -86,7 +86,7 @@ func (h *handler) handleAdd(responseWriter http.ResponseWriter, request *http.Re
 
 		return
 	}
-	// TODO: как-то должен обновляться список тикеров на добавление
+
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
 	if err := h.portfolio.Execute(responseWriter, tickers); err != nil {
@@ -115,7 +115,6 @@ func (h *handler) handleRemove(responseWriter http.ResponseWriter, request *http
 		return
 	}
 
-	// TODO: как-то должен обновляться список тикеров на добавление
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
 	if err := h.portfolio.Execute(responseWriter, tickers); err != nil {

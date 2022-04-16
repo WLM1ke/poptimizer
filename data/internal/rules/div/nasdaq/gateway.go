@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/exp/slices"
 	"net/http"
 	"sort"
 	"strconv"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -132,6 +132,7 @@ func parseRequest(respond *http.Response) ([]domain.CurrencyDiv, error) {
 		if row.Date == _noDate {
 			continue
 		}
+
 		date, err := time.Parse(_apiDate, row.Date)
 		if err != nil {
 			return nil, fmt.Errorf("can't parse date %s -> %w", row.Date, err)
