@@ -84,8 +84,8 @@ func NewDivStatusID() ID {
 	return NewID("status", "status")
 }
 
-// RawDiv - введенные вручную данные о дивидендах с указанием валюты выплаты.
-type RawDiv struct {
+// CurrencyDiv - данные о дивидендах с указанием валюты выплаты.
+type CurrencyDiv struct {
 	Date     time.Time
 	Value    float64
 	Currency string
@@ -105,6 +105,11 @@ func NewRawDivID(ticker string) ID {
 	return NewID(RawDivGroup, ticker)
 }
 
+// NewNASDAQDivID создает ID для дивидендов с NASDAQ.
+func NewNASDAQDivID(ticker string) ID {
+	return NewID("nasdaq", ticker)
+}
+
 // Dividend - данные о дивидендах переведенные в рубли и объединенные при нескольких выплатах в одну дату.
 type Dividend struct {
 	Date  time.Time
@@ -118,5 +123,5 @@ func NewDividendsID(ticker string) ID {
 
 // Row - строки данных в таблицах.
 type Row interface {
-	Date | CPI | Index | USD | Security | Position | DivStatus | RawDiv | Dividend
+	Date | CPI | Index | USD | Security | Position | DivStatus | CurrencyDiv | Dividend
 }

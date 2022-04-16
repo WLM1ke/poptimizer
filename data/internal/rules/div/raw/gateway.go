@@ -1,4 +1,4 @@
-package check
+package raw
 
 import (
 	"context"
@@ -15,7 +15,7 @@ type gateway struct {
 	statusRepo repo.Read[domain.DivStatus]
 }
 
-func (s gateway) Get(ctx context.Context, table domain.Table[domain.RawDiv]) ([]domain.RawDiv, error) {
+func (s gateway) Get(ctx context.Context, table domain.Table[domain.CurrencyDiv]) ([]domain.CurrencyDiv, error) {
 	divStatus, err := s.statusRepo.Get(ctx, domain.NewDivStatusID())
 	if err != nil {
 		return nil, fmt.Errorf(

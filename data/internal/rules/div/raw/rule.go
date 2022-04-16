@@ -1,4 +1,4 @@
-package check
+package raw
 
 import (
 	"time"
@@ -14,10 +14,10 @@ import (
 func New(logger *lgr.Logger, db *mongo.Database, timeout time.Duration) domain.Rule {
 	statusRepo := repo.NewMongo[domain.DivStatus](db)
 
-	return template.NewRule[domain.RawDiv](
-		"CheckRawRule",
+	return template.NewRule[domain.CurrencyDiv](
+		"CheckRawDivRule",
 		logger,
-		repo.NewMongo[domain.RawDiv](db),
+		repo.NewMongo[domain.CurrencyDiv](db),
 		selector{statusRepo},
 		gateway{statusRepo: statusRepo},
 		validator,

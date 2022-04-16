@@ -24,16 +24,16 @@ const _timeFormat = "2006-01-02"
 type rawDivTableDTO struct {
 	SessionID string
 	Ticker    string
-	Rows      []domain.RawDiv
+	Rows      []domain.CurrencyDiv
 }
 
 // NewRow шаблон для создания новой строки.
-func (d rawDivTableDTO) NewRow() domain.RawDiv {
+func (d rawDivTableDTO) NewRow() domain.CurrencyDiv {
 	if len(d.Rows) > 0 {
 		return d.Rows[len(d.Rows)-1]
 	}
 
-	return domain.RawDiv{
+	return domain.CurrencyDiv{
 		Date:     time.Now(),
 		Value:    1,
 		Currency: domain.RURCurrency,
@@ -41,7 +41,7 @@ func (d rawDivTableDTO) NewRow() domain.RawDiv {
 }
 
 // rowDTO - представление добавляемой строки.
-type rowDTO domain.RawDiv
+type rowDTO domain.CurrencyDiv
 
 // rawDivEdit - сервис, обрабатывающая запросы по изменению таблицы с дивидендами.
 //
@@ -49,7 +49,7 @@ type rowDTO domain.RawDiv
 // редактированию. Добавлять новые строки, сбрасывать и сохранять изменения в рамках пользовательской сессии.
 type rawDivEdit struct {
 	logger *lgr.Logger
-	repo   repo.ReadWrite[domain.RawDiv]
+	repo   repo.ReadWrite[domain.CurrencyDiv]
 
 	lock     sync.Mutex
 	tableDTO rawDivTableDTO
@@ -61,7 +61,7 @@ type rawDivEdit struct {
 func newRawDivEdit(logger *lgr.Logger, db *mongo.Database, bus *bus.EventBus) *rawDivEdit {
 	return &rawDivEdit{
 		logger: logger,
-		repo:   repo.NewMongo[domain.RawDiv](db),
+		repo:   repo.NewMongo[domain.CurrencyDiv](db),
 		bus:    bus,
 	}
 }
@@ -105,7 +105,7 @@ func (r *rawDivEdit) AddRow(sessionID, date, value, currency string) (row rowDTO
 		return row, err
 	}
 
-	r.tableDTO.Rows = append(r.tableDTO.Rows, domain.RawDiv(row))
+	r.tableDTO.Rows = append(r.tableDTO.Rows, domain.CurrencyDiv(row))
 
 	return row, nil
 }

@@ -4,6 +4,8 @@ package bus
 import (
 	"context"
 	"fmt"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/div/nasdaq"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/div/raw"
 	"net/http"
 	"sync"
 	"time"
@@ -14,7 +16,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/rules/app/end"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/app/errors"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/cpi"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/div/check"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/div/dividends"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/div/status"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/iss/dates"
@@ -67,7 +68,8 @@ func NewEventBus(
 		indexes.New(logger, dataBase, iss, _timeout),
 		quotes.New(logger, dataBase, iss, _timeout),
 		dividends.New(logger, dataBase, _timeout),
-		check.New(logger, dataBase, _timeout),
+		raw.New(logger, dataBase, _timeout),
+		nasdaq.New(logger, dataBase, client, _timeout),
 		backup.New(logger, cmd, _timeout),
 	}
 

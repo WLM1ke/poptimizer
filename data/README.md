@@ -23,24 +23,24 @@ Frontend для изменения перечня бумаг в портфеле
 которое обрабатывается специальным правилом записывающим сообщение в лог и Telegram.
 ```mermaid
 flowchart
-    Input[\Input/]-->InputRaw{{InputRaw}}
-    Input[\Input/]-.->Port{{Port}}
-    InputRaw-->Backup
-    Port-.->Backup
+    Input[\Input/]-->Service:Raw{{Service:Raw}}
+    Input[\Input/]-->Service:Port{{Service:Port}}
+    Service:Raw-->Rule:Backup
+    Service:Port-->Rule:Backup
     
-    Timer[\Timer/]-->End
-    End-->Dates
+    Timer[\Timer/]-->Rule:End
+    Rule:End-->Rule:Dates
     
-    Dates-->CPI
-    Dates-->Indexes
-    Dates-->USD
-	Dates-->DivStatus
+    Rule:Dates-->Rule:CPI
+    Rule:Dates-->Rule:Indexes
+    Rule:Dates-->Rule:USD
+	Rule:Dates-->Rule:DivStatus
 
-	USD-->Securities
-    Securities-->Quotes
-	Quotes-->Dividends
+	Rule:USD-->Rule:Securities
+    Rule:Securities-->Rule:Quotes
+	Rule:Quotes-->Rule:Dividends
     
-    DivStatus-->CheckRaw
-    DivStatus-.->CloseReestry
-    DivStatus-.->NASDAQ
+    Rule:DivStatus-->Rule:CheckRaw
+    Rule:DivStatus-.->Rule:CheckReestry
+    Rule:DivStatus-->Rule:CheckNASDAQ
 ```
