@@ -28,7 +28,7 @@ async def test_get_html(mocker):
 
     html = await parser.get_html(BAD_URL, fake_session)
 
-    fake_session.get.assert_called_once_with(BAD_URL)
+    fake_session.get.assert_called_once()
 
     context_mng = fake_session.get.return_value
     context_mng.__aenter__.assert_called_once()  # noqa: WPS609

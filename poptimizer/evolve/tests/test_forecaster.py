@@ -37,11 +37,3 @@ def test_forecasts_is_none(mocker):
     assert forecasts.date == date
 
     fake_prepare_forecasts.assert_called_once_with(tickers, date)
-
-
-def test_prepare_forecasts(mocker):
-    """Создается ограниченное число прогнозов."""
-    fake_organisms = [mocker.MagicMock() for _ in range(100)]
-    mocker.patch.object(forecaster.population, "get_oldest", return_value=fake_organisms)
-
-    assert len(forecaster._prepare_forecasts("", "")) == 100

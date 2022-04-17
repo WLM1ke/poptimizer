@@ -38,9 +38,7 @@ def test_portfolio(monkeypatch, port):
         port.weight,
         [0.257_950_085_844_95, 0.050_708_129_601_95, 0.691_071_449_329_312, 0.000_270_335_223_788, 1],
     )
-    assert np.allclose(
-        port.turnover_factor, [1006.594863, 0.007234170197424721, 0.844742, 1007.446839, 1007.446839]
-    )
+    assert np.allclose(port.turnover_factor, [1006.594863, 0.007234170197424721, 0.844742, 1007.446839, 1007.446839])
 
 
 def test_portfolio_wrong_value():
@@ -50,26 +48,8 @@ def test_portfolio_wrong_value():
     assert "Введенная стоимость портфеля 123" in str(error.value)
 
 
-def test_portfolio_wrong_date():
-    PARAMS["date"] = "2018-12-09"
-    with pytest.raises(POptimizerError) as error:
-        portfolio.Portfolio(**PARAMS)
-    assert "Для даты 2018-12-09 отсутствуют исторические котировки" == str(error.value)
-
-
 def fake_securities_with_reg_number():
     return pd.Index(["SBER", "SBERP"])
-
-
-def test_portfolio_add_tickers(monkeypatch, port, caplog):
-    monkeypatch.setattr(portfolio.listing, "securities", fake_securities_with_reg_number)
-
-    with caplog.at_level(logging.INFO):
-        port.add_tickers()
-
-    assert "ДЛЯ ДОБАВЛЕНИЯ" in caplog.records[0].msg
-    assert "SBER" in caplog.records[0].msg
-    assert "SBERP" in caplog.records[0].msg
 
 
 def test_load_from_yaml(monkeypatch):
