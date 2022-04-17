@@ -58,7 +58,7 @@ async def _loap_cpi_page(session: aiohttp.ClientSession) -> str:
         return await resp.text("cp1251")
 
 
-async def _find_cpi_page(session) -> str:
+async def _find_cpi_page(session: aiohttp.ClientSession) -> str:
     async with session.get(PRICES_PAGE) as resp:
         html = await resp.text()
     if not (search_result := CPI_PAGE.search(html)):
