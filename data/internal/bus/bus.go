@@ -4,6 +4,7 @@ package bus
 import (
 	"context"
 	"fmt"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/div/reestry"
 	"net/http"
 	"sync"
 	"time"
@@ -70,6 +71,7 @@ func NewEventBus(
 		dividends.New(logger, dataBase, _timeout),
 		raw.New(logger, dataBase, _timeout),
 		nasdaq.New(logger, dataBase, client, _timeout),
+		reestry.New(logger, dataBase, client, _timeout),
 		backup.New(logger, cmd, _timeout),
 	}
 

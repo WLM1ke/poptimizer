@@ -110,6 +110,11 @@ func NewNASDAQDivID(ticker string) ID {
 	return NewID("nasdaq", ticker)
 }
 
+// NewReestryDivID создает ID для дивидендов с https://закрытияреестров.рф.
+func NewReestryDivID(ticker string) ID {
+	return NewID("reestry", ticker)
+}
+
 // Dividend - данные о дивидендах переведенные в рубли и объединенные при нескольких выплатах в одну дату.
 type Dividend struct {
 	Date  time.Time

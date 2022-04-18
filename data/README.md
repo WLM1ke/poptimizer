@@ -41,6 +41,6 @@ flowchart
 	Rule:Quotes-->Rule:Dividends
     
     Rule:DivStatus-->Rule:CheckRaw
-    Rule:DivStatus-.->Rule:CheckReestry
+    Rule:DivStatus-->Rule:CheckReestry
     Rule:DivStatus-->Rule:CheckNASDAQ
 ```
