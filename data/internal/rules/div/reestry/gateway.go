@@ -21,8 +21,8 @@ const (
 	_preferredType   = `2`
 	_preferredSuffix = `P`
 
-	_RUAL  = `_RUAL`
-	_RUALR = `_RUALR`
+	_rual  = `_RUAL`
+	_rualr = `_RUALR`
 
 	_dateFormat = `_2.01.2006`
 )
@@ -143,8 +143,8 @@ func makeURL(ticker string, preferred bool) string {
 		ticker = strings.TrimSuffix(ticker, _preferredSuffix)
 	}
 
-	if ticker == _RUAL {
-		return fmt.Sprintf(_url, _RUALR)
+	if ticker == _rual {
+		return fmt.Sprintf(_url, _rualr)
 	}
 
 	return fmt.Sprintf(_url, ticker)

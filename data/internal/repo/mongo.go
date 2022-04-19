@@ -58,7 +58,7 @@ func (r *Mongo[R]) Replace(ctx context.Context, table domain.Table[R]) error {
 	update := bson.M{"$set": bson.M{"rows": table.Rows(), "date": table.Date()}}
 
 	if _, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
-		return fmt.Errorf("%w: %#v -> %s", ErrTableUpdate, table.ID(), err)
+		return fmt.Errorf("%w: %#v -> %s", ErrInternal, table.ID(), err)
 	}
 
 	return nil
@@ -72,7 +72,7 @@ func (r *Mongo[R]) Append(ctx context.Context, table domain.Table[R]) error {
 	update := bson.M{"$push": bson.M{"rows": bson.M{"$each": table.Rows()}}, "$set": bson.M{"date": table.Date()}}
 
 	if _, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
-		return fmt.Errorf("%w: %#v -> %s", ErrTableUpdate, table.ID(), err)
+		return fmt.Errorf("%w: %#v -> %s", ErrInternal, table.ID(), err)
 	}
 
 	return nil

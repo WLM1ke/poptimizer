@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// New создает правило загрузки данных о торгующихся ценных бумагах.
 func New(logger *lgr.Logger, db *mongo.Database, iss *gomoex.ISSClient, timeout time.Duration) domain.Rule {
 	return template.NewRule[domain.Security](
 		"SecuritiesRule",

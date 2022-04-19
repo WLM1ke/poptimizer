@@ -8,9 +8,10 @@ import (
 )
 
 var (
+	// ErrTableNotFound ошибка при отсутствии сохраненных данных.
 	ErrTableNotFound = errors.New("table not found")
-	ErrInternal      = errors.New("repo internal error")
-	ErrTableUpdate   = errors.New("table update error")
+	// ErrInternal ошибка работы репозитория.
+	ErrInternal = errors.New("repo internal error")
 )
 
 // Read осуществляет загрузку таблиц.

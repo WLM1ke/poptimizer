@@ -10,6 +10,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// New создает правила обновления данных о дивидендах на основе вручную введенных дивидендов.
+//
+// Значения дивидендов пересчитываются в рубли для выплат в доллары и убирается информация о валюте.
 func New(logger *lgr.Logger, db *mongo.Database, timeout time.Duration) domain.Rule {
 	return template.NewRule[domain.Dividend](
 		"DividendsRule",
