@@ -4,7 +4,6 @@ package bus
 import (
 	"context"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/div/reestry"
 	"net/http"
 	"sync"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/rules/div/dividends"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/div/nasdaq"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/div/raw"
+	"github.com/WLM1ke/poptimizer/data/internal/rules/div/reestry"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/div/status"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/iss/dates"
 	"github.com/WLM1ke/poptimizer/data/internal/rules/iss/indexes"

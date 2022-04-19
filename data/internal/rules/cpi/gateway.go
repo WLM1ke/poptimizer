@@ -179,8 +179,8 @@ func (g gateway) getURL(ctx context.Context) (string, error) {
 
 	decoder := charmap.Windows1252.NewDecoder()
 	reader := decoder.Reader(resp.Body)
-	page, err := ioutil.ReadAll(reader)
 
+	page, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return "", fmt.Errorf(
 			"can't decode cp1252 -> %w",

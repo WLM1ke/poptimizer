@@ -51,7 +51,6 @@ func (h *handler) handleSearch(responseWriter http.ResponseWriter, request *http
 		request.PostForm.Get("sessionID"),
 		request.PostForm.Get("pattern"),
 	)
-
 	if err != nil {
 		h.logger.Warnf("Server: can't find tickers -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
@@ -79,7 +78,6 @@ func (h *handler) handleAdd(responseWriter http.ResponseWriter, request *http.Re
 		request.PostForm.Get("sessionID"),
 		chi.URLParam(request, "ticker"),
 	)
-
 	if err != nil {
 		h.logger.Warnf("Server: can't add ticker -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
@@ -107,7 +105,6 @@ func (h *handler) handleRemove(responseWriter http.ResponseWriter, request *http
 		request.PostForm.Get("sessionID"),
 		chi.URLParam(request, "ticker"),
 	)
-
 	if err != nil {
 		h.logger.Warnf("Server: can't remove ticker -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusBadRequest)

@@ -31,11 +31,11 @@ linters:
     - gocyclo
     - godot
     - godox
-#    - goerr113
-#    - gofmt
-#    - gofumpt
-#    - goheader
-#    - goimports
+    - goerr113
+    - gofmt
+    - gofumpt
+    - goheader
+    - goimports
 #    - golint
 #    - gomnd
 #    - gomoddirectives
@@ -97,14 +97,12 @@ issues:
   # To list all excluded by default patterns execute `golangci-lint run --help`.
   # Default: true.
   exclude-use-default: false
-  # List of regexps of issue texts to exclude.
-  #
-  # But independently of this option we use default exclude patterns,
-  # it can be disabled by `exclude-use-default: false`.
-  # To list all excluded by default patterns execute `golangci-lint run --help`
-  #
-  # Default: []
-  exclude:
-    # exclude-use-default EXC0001 errcheck: Almost all programs ignore errors on these functions and in most cases it's ok
-    - Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*print(f|ln)?|os\.(Un)?Setenv). is not checked
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    - linters:
+      - errcheck
+      text: ".Body.Close()"
+    - linters:
+      - goerr113
+      text: "err113: do not define dynamic errors, use wrapped static errors instead:"
   fix: true

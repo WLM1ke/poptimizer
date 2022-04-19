@@ -3,6 +3,7 @@ package quotes
 import (
 	"context"
 	"fmt"
+
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"

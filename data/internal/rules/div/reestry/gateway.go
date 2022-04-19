@@ -3,21 +3,22 @@ package reestry
 import (
 	"context"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/WLM1ke/poptimizer/data/internal/domain"
-	"github.com/WLM1ke/poptimizer/data/internal/repo"
-	"golang.org/x/exp/slices"
 	"net/http"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/WLM1ke/poptimizer/data/internal/domain"
+	"github.com/WLM1ke/poptimizer/data/internal/repo"
+	"golang.org/x/exp/slices"
 )
 
 const (
 	_url             = `https://закрытияреестров.рф/%s/`
-	_preferredType = `2`
+	_preferredType   = `2`
 	_preferredSuffix = `P`
 
 	_RUAL  = `_RUAL`
@@ -127,7 +128,7 @@ func (s gateway) isPreferred(ctx context.Context, ticker string) (bool, error) {
 
 	tickerPosition := sort.Search(
 		len(rows),
-		func(i int) bool { return rows[i].Ticker >= ticker  },
+		func(i int) bool { return rows[i].Ticker >= ticker },
 	)
 
 	if tickerPosition < len(rows) && rows[tickerPosition].Ticker == ticker {
@@ -202,7 +203,6 @@ func validateHeader(selection *goquery.Selection, preferred bool) error {
 
 	return nil
 }
-
 
 func parseRow(s *goquery.Document, preferred bool) (row domain.CurrencyDiv, err error) {
 	dateStr := s.Find("td:nth-child(1)").Text()
