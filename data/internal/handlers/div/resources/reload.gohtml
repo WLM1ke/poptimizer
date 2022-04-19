@@ -1,8 +1,0 @@
-{{- /*gotype: github.com/WLM1ke/poptimizer/data/internal/services.RawDivTableDTO*/ -}}
-{{ range .Rows }}
-    <tr>
-        <td>{{ .Date.Format "2006-01-02" }}</td>
-        <td>{{ .Value }}</td>
-        <td>{{ .Currency}}</td>
-    </tr>
-{{end}}

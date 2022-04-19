@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"strings"
 	"time"
 
 	"github.com/WLM1ke/gomoex"
@@ -103,6 +104,16 @@ const (
 // NewRawDivID создает ID вручную введенных дивидендов тикера.
 func NewRawDivID(ticker string) ID {
 	return NewID(RawDivGroup, ticker)
+}
+
+// IsForeignTicker - проверяет, является ли тикер иностранной акцией.
+func IsForeignTicker(ticker string) bool {
+	return strings.HasSuffix(ticker, "-RM")
+}
+
+// FirstDividendDate - дата с которой ведется статистика по дивидендам.
+func FirstDividendDate() time.Time {
+	return time.Date(2015, time.January, 1, 0, 0, 0, 0, time.UTC)
 }
 
 // NewNASDAQDivID создает ID для дивидендов с NASDAQ.

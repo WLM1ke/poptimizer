@@ -16,6 +16,8 @@ import (
 )
 
 const (
+	_foreignSuffix = `-RM`
+
 	_url        = `https://api.nasdaq.com/api/quote/%s/dividends?assetclass=stocks`
 	_agentKey   = `User-Agent`
 	_agentValue = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15`

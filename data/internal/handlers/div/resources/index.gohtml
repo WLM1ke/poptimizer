@@ -12,6 +12,16 @@
                 location.reload();
         });
     </script>
+    <!--suppress CssUnresolvedCustomProperty -->
+    <style>
+        thead {
+            background-color: var(--background-body);
+            position: -webkit-sticky;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+    </style>
 </head>
 <body hx-vals='{"sessionID": "{{ .SessionID }}"}'>
     <h2>Dividends: {{ .Ticker }}</h2>
@@ -31,10 +41,17 @@
                 <td>{{ .Currency}}</td>
             </tr>
         {{end}}
+        {{ range .Missed }}
+            <tr>
+                <td>{{ .Date.Format "2006-01-02" }} <em>(missed)</em></td>
+                <td>{{ .Value }}</td>
+                <td>{{ .Currency}}</td>
+            </tr>
+        {{end}}
         </tbody>
     </table>
     <div id="form">
-        <form hx-post="{{ .Ticker }}/add" hx-target="#rows" hx-swap="beforeend">
+        <form hx-post="{{ .Ticker }}/add" hx-target="#rows">
             <label>
                 Date
                 <input type="date" name="date" value={{ .NewRow.Date.Format "2006-01-02" }}>

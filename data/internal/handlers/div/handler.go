@@ -14,10 +14,9 @@ type handler struct {
 
 	service *rawDivEdit
 
-	index  *template.Template
-	add    *template.Template
-	reload *template.Template
-	save   *template.Template
+	index *template.Template
+	rows  *template.Template
+	save  *template.Template
 }
 
 func (h *handler) handleIndex(responseWriter http.ResponseWriter, request *http.Request) {
@@ -63,8 +62,8 @@ func (h *handler) handleAddRow(responseWriter http.ResponseWriter, request *http
 
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
-	if err := h.add.Execute(responseWriter, row); err != nil {
-		h.logger.Warnf("Server: can't render add template -> %s", err)
+	if err := h.rows.Execute(responseWriter, row); err != nil {
+		h.logger.Warnf("Server: can't render rows template -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -87,8 +86,8 @@ func (h *handler) handleReload(responseWriter http.ResponseWriter, request *http
 
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
-	if err := h.reload.Execute(responseWriter, div); err != nil {
-		h.logger.Warnf("Server: can't render reload template -> %s", err)
+	if err := h.rows.Execute(responseWriter, div); err != nil {
+		h.logger.Warnf("Server: can't render rows template -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
 	}
 }

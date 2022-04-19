@@ -20,8 +20,7 @@ func NewEditHandler(logger *lgr.Logger, database *mongo.Database, bus *bus.Event
 		logger:  logger,
 		service: newRawDivEdit(logger, database, bus),
 		index:   template.Must(template.ParseFS(_resources, "resources/index.gohtml")),
-		add:     template.Must(template.ParseFS(_resources, "resources/add.gohtml")),
-		reload:  template.Must(template.ParseFS(_resources, "resources/reload.gohtml")),
+		rows:    template.Must(template.ParseFS(_resources, "resources/rows.gohtml")),
 		save:    template.Must(template.ParseFS(_resources, "resources/save.gohtml")),
 	}
 

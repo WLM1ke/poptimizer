@@ -1,0 +1,15 @@
+{{- /*gotype: github.com/WLM1ke/poptimizer/data/internal/handlers/div.rawDivTableDTO*/ -}}
+{{ range .Rows }}
+  <tr>
+    <td>{{ .Date.Format "2006-01-02" }}</td>
+    <td>{{ .Value }}</td>
+    <td>{{ .Currency}}</td>
+  </tr>
+{{end}}
+{{ range .Missed }}
+  <tr>
+    <td>{{ .Date.Format "2006-01-02" }} <em>(missed)</em></td>
+    <td>{{ .Value }}</td>
+    <td>{{ .Currency}}</td>
+  </tr>
+{{end}}

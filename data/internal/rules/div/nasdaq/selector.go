@@ -3,13 +3,10 @@ package nasdaq
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 )
-
-const _foreignSuffix = `-RM`
 
 type selector struct {
 	repo repo.Read[domain.DivStatus]
@@ -37,14 +34,10 @@ func (s selector) ids(ctx context.Context) ([]domain.ID, error) {
 	var ids []domain.ID
 
 	for _, s := range sec.Rows() {
-		if isForeignShare(s.Ticker) {
+		if domain.IsForeignTicker(s.Ticker) {
 			ids = append(ids, domain.NewNASDAQDivID(s.Ticker))
 		}
 	}
 
 	return ids, nil
-}
-
-func isForeignShare(ticker string) bool {
-	return strings.HasSuffix(ticker, _foreignSuffix)
 }
