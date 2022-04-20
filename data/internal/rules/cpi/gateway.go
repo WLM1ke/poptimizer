@@ -220,7 +220,7 @@ func validateMonths(rows [][]string) error {
 }
 
 func getYears(header []string) ([]int, error) {
-	years := make([]int, 0, 64)
+	years := make([]int, 0, len(header))
 
 	for position, value := range header {
 		year, err := strconv.Atoi(value)
@@ -255,7 +255,7 @@ func parsedData(years []int, data [][]string) ([]domain.CPI, error) {
 				return cpi, nil
 			}
 
-			value, err := strconv.ParseFloat(data[month][_firstDataCol+col], 64)
+			percents, err := strconv.ParseFloat(data[month][_firstDataCol+col], 64)
 			if err != nil {
 				return nil, fmt.Errorf(
 					"can't parse -> %w",
@@ -265,7 +265,7 @@ func parsedData(years []int, data [][]string) ([]domain.CPI, error) {
 
 			cpi = append(cpi, domain.CPI{
 				Date:  lastDayOfMonth(year, month),
-				Value: value / 100.0,
+				Value: percents / 100, //nolint:gomnd
 			})
 		}
 	}

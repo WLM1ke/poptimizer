@@ -218,7 +218,7 @@ func parseRow(s *goquery.Document, preferred bool) (row domain.CurrencyDiv, err 
 	}
 
 	values := _divPattern.FindStringSubmatch(valueStr)
-	if len(values) != 3 {
+	if values == nil {
 		return domain.CurrencyDiv{}, fmt.Errorf("can't parse value %s -> %w", valueStr, err)
 	}
 

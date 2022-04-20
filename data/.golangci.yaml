@@ -36,11 +36,10 @@ linters:
     - gofumpt
     - goheader
     - goimports
-    - golint
-#    - gomnd
-#    - gomoddirectives
-#    - gomodguard
-#    - goprintffuncname
+    - gomnd
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
 #    - gosec
 #    - gosimple
 #    - govet
@@ -90,6 +89,7 @@ linters:
   # https://golangci-lint.run/usage/linters/#disabled-by-default-linters--e--enable
   disable:
     - exhaustive
+    - golint
 
 issues:
   # Independently of option `exclude` we use default exclude patterns,
@@ -101,8 +101,11 @@ issues:
   exclude-rules:
     - linters:
       - errcheck
-      text: ".Body.Close()"
+      text: ".Body.Close"
     - linters:
       - goerr113
       text: "err113: do not define dynamic errors, use wrapped static errors instead:"
+    - linters:
+      - gomnd
+      source: "strconv.ParseFloat"
   fix: true
