@@ -32,9 +32,9 @@ func NewMongoDB(uri string) (*mongo.Client, error) {
 	return client, nil
 }
 
-// MongoDBBackUpCmd создает команду для сохранения коллекции.
-func MongoDBBackUpCmd(ctx context.Context, folder, uri, database, collection string) *exec.Cmd {
-	return exec.CommandContext(
+// MongoDBBackup создает команду для сохранения коллекции.
+func MongoDBBackup(ctx context.Context, folder, uri, database, collection string) error {
+	err := exec.CommandContext(
 		ctx,
 		"mongodump",
 		"--out",
@@ -45,20 +45,38 @@ func MongoDBBackUpCmd(ctx context.Context, folder, uri, database, collection str
 		database,
 		"--collection",
 		collection,
-	)
+	).Run()
+	if err != nil {
+		err = fmt.Errorf(
+			"can't back up %s collection -> %w",
+			fmt.Sprintf("%s.%s", database, collection),
+			err,
+		)
+	}
+
+	return err
 }
 
-// MongoDBRestoreCmd создает команду для восстановления коллекции.
-func MongoDBRestoreCmd(ctx context.Context, folder, uri, database, collection string) *exec.Cmd {
-	return exec.CommandContext(
+// MongoDBRestore создает команду для восстановления коллекции.
+func MongoDBRestore(ctx context.Context, folder, uri, database, collection string) error {
+	collection = fmt.Sprintf("%s.%s", database, collection)
+
+	err := exec.CommandContext(
 		ctx,
 		"mongorestore",
 		"--uri",
 		fmt.Sprintf("\"%s\"", uri),
-		"--db",
-		database,
-		"--collection",
+		"--nsInclude",
 		collection,
 		folder,
-	)
+	).Run()
+	if err != nil {
+		err = fmt.Errorf(
+			"can't restore %s collection -> %w",
+			collection,
+			err,
+		)
+	}
+
+	return err
 }

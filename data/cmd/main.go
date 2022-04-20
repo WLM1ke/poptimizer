@@ -8,7 +8,6 @@ import (
 
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/internal/handlers"
-	"github.com/WLM1ke/poptimizer/data/internal/rules/app/backup"
 	"github.com/WLM1ke/poptimizer/data/pkg/app"
 	"github.com/WLM1ke/poptimizer/data/pkg/client"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
@@ -68,8 +67,8 @@ func (d data) Build(logger *lgr.Logger) ([]app.ResourceCloseFunc, []app.Service)
 
 	eventBus := bus.NewEventBus(
 		logger,
+		d.MongoDB.URI,
 		database,
-		backup.CreateCMD(d.MongoDB.URI, d.MongoDB.DB),
 		httpClient,
 		telega,
 	)

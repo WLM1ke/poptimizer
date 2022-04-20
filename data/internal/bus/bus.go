@@ -51,8 +51,8 @@ type EventBus struct {
 // NewEventBus создает шину событий со всеми правилами обработки событий.
 func NewEventBus(
 	logger *lgr.Logger,
-	dataBase *mongo.Database,
-	cmd backup.CollectionCmd,
+	uri string,
+	database *mongo.Database,
 	client *http.Client,
 	telegram *client.Telegram,
 ) *EventBus {
@@ -61,18 +61,18 @@ func NewEventBus(
 	rules := []domain.Rule{
 		errors.New(logger, telegram, _timeout),
 		end.New(logger, _timeout),
-		dates.New(logger, dataBase, iss, _timeout),
-		usd.New(logger, dataBase, iss, _timeout),
-		cpi.New(logger, dataBase, client, _timeout),
-		securities.New(logger, dataBase, iss, _timeout),
-		status.New(logger, dataBase, client, _timeout),
-		indexes.New(logger, dataBase, iss, _timeout),
-		quotes.New(logger, dataBase, iss, _timeout),
-		dividends.New(logger, dataBase, _timeout),
-		raw.New(logger, dataBase, _timeout),
-		nasdaq.New(logger, dataBase, client, _timeout),
-		reestry.New(logger, dataBase, client, _timeout),
-		backup.New(logger, cmd, _timeout),
+		dates.New(logger, database, iss, _timeout),
+		usd.New(logger, database, iss, _timeout),
+		cpi.New(logger, database, client, _timeout),
+		securities.New(logger, database, iss, _timeout),
+		status.New(logger, database, client, _timeout),
+		indexes.New(logger, database, iss, _timeout),
+		quotes.New(logger, database, iss, _timeout),
+		dividends.New(logger, database, _timeout),
+		raw.New(logger, database, _timeout),
+		nasdaq.New(logger, database, client, _timeout),
+		reestry.New(logger, database, client, _timeout),
+		backup.New(logger, uri, database, _timeout),
 	}
 
 	return &EventBus{
