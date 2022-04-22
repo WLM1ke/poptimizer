@@ -33,7 +33,6 @@ positions:
   BMY-RM: 0
   BRZL: 0
   BSPB: 0
-  BSX-RM: 0
   CAT-RM: 0
   CBOM: 0
   CHMF: 0
@@ -97,6 +96,7 @@ positions:
   KMAZ: 0
   KO-RM: 0
   KRKNP: 0
+  KUZB: 0
   KZOS: 0
   KZOSP: 0
   LIFE: 0
@@ -179,6 +179,7 @@ positions:
   SBGB: 0
   SBMX: 0
   SBRB: 0
+  SBRI: 0
   SBUX-RM: 0
   SELG: 0
   SFIN: 0
