@@ -39,7 +39,7 @@ func (l *Logger) logf(level, format string, args ...interface{}) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
-	l.writer.Write(buf.bs) //nolint:errcheck
+	l.writer.Write(buf.bs) //nolint:errcheck,gosec
 }
 
 // Infof записывает в лог сообщение, не требующее реакции разработчика.

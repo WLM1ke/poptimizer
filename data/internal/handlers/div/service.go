@@ -46,8 +46,7 @@ func (d rawDivTableDTO) Missed() (missed []domain.CurrencyDiv) {
 
 // NewRow шаблон для создания новой строки.
 func (d rawDivTableDTO) NewRow() domain.CurrencyDiv {
-	missed := d.Missed()
-	if len(missed) > 0 {
+	if missed := d.Missed(); len(missed) > 0 {
 		return missed[0]
 	}
 

@@ -40,13 +40,12 @@ linters:
     - gomoddirectives
     - gomodguard
     - goprintffuncname
-#    - gosec
-#    - gosimple
-#    - govet
-#    - ifshort
-#    - importas
-#    - ineffassign
-#    - interfacer
+    - gosec
+    - gosimple
+    - govet
+    - ifshort
+    - importas
+    - ineffassign
 #    - ireturn
 #    - lll
 #    - makezero
@@ -90,6 +89,7 @@ linters:
   disable:
     - exhaustive
     - golint
+    - interfacer
 
 issues:
   # Independently of option `exclude` we use default exclude patterns,
@@ -108,4 +108,7 @@ issues:
     - linters:
       - gomnd
       source: "strconv.ParseFloat"
+    - linters:
+      - gosec
+      text: "G204: Subprocess launched with a potential tainted input or cmd arguments"
   fix: true
