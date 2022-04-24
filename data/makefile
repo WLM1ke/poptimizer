@@ -1,21 +1,22 @@
+PKG_MNG=brew
+TOOLS=go golangci-lint
+
+SRC=./cmd
+BIN=./bin/data
+
 new:
-	brew install go
-	brew install golangci-lint
+	$(PKG_MNG) install $(TOOLS)
 update:
-	brew upgrade go
-	brew upgrade golangci-lint
-lint:
+	$(PKG_MNG) upgrade $(TOOLS)
 	go get -u -t -v ./...
 	go mod tidy -v
+lint:
 	golangci-lint run
-test:
-	make lint
+test: lint
 	go test -v -covermode=atomic -race ./...
 bench:
-	make lint
 	go test -count=5 -run=None -bench . -benchmem ./...
 build:
-	make test
-	go build -o .bin/podata -x cmd/main.go
-run:
-	go run ./cmd
+	go build -o $(BIN) -x $(SRC)
+run: build
+	(export $$(cat .env | grep -o '^[^#]\+' | xargs) && $(BIN))

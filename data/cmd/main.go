@@ -19,15 +19,15 @@ type data struct {
 		Timeout time.Duration `envDefault:"1s"`
 	}
 	MongoDB struct {
-		URI string `env:"URI,unset" envDefault:"mongodb://localhost:27017"`
+		URI string `env:"PO_URI,unset" envDefault:"mongodb://localhost:27017"`
 		DB  string `envDefault:"data"`
 	}
 	HTTPClient struct {
 		Connections int `envDefault:"20"`
 	}
 	Telegram struct {
-		Token  string `env:"TOKEN,unset"`
-		ChatID string `env:"CHAT_ID,unset"`
+		Token  string `env:"PO_TOKEN,unset"`
+		ChatID string `env:"PO_CHAT_ID,unset"`
 	}
 }
 
