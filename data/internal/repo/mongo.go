@@ -94,7 +94,7 @@ func NewMongoJSON(db *mongo.Database) *MongoJSON {
 func (r *MongoJSON) GetJSON(ctx context.Context, id domain.ID) ([]byte, error) {
 	collection := r.db.Collection(string(id.Group()))
 
-	projections := options.FindOne().SetProjection(bson.M{"_id": 0, "rows": 1, "date": 1})
+	projections := options.FindOne().SetProjection(bson.M{"_id": 0, "rows": 1})
 
 	raw, err := collection.FindOne(ctx, bson.M{"_id": id.Name()}, projections).DecodeBytes()
 
