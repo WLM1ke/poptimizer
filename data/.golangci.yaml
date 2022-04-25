@@ -46,29 +46,26 @@ linters:
     - ifshort
     - importas
     - ineffassign
-#    - ireturn
-#    - lll
-#    - makezero
-#    - maligned
-#    - misspell
-#    - nakedret
-#    - nestif
-#    - nilerr
-#    - nilnil
-#    - nlreturn
-#    - noctx
-#    - nolintlint
-#    - paralleltest
-#    - prealloc
-#    - predeclared
-#    - promlinter
-#    - revive
-#    - rowserrcheck
-#    - scopelint
-#    - sqlclosecheck
-#    - staticcheck
-#    - structcheck
-#    - stylecheck
+    - lll
+    - makezero
+    - misspell
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnil
+    - nlreturn
+    - noctx
+    - nolintlint
+    - paralleltest
+    - prealloc
+    - predeclared
+    - promlinter
+    - revive
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - structcheck
+    - stylecheck
 #    - tagliatelle
 #    - tenv
 #    - testpackage
@@ -90,6 +87,9 @@ linters:
     - exhaustive
     - golint
     - interfacer
+    - ireturn
+    - maligned
+    - scopelint
 
 issues:
   # Independently of option `exclude` we use default exclude patterns,

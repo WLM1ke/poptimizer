@@ -104,7 +104,7 @@ func (h *handler) handleSave(responseWriter http.ResponseWriter, request *http.R
 
 	err := h.service.Save(request.Context(), request.PostForm.Get("sessionID"))
 	if err != nil {
-		status = fmt.Sprintf("Error occured: %s", err)
+		status = fmt.Sprintf("Error occurred: %s", err)
 	}
 
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")

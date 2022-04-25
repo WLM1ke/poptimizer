@@ -19,9 +19,11 @@ func (s selector) Select(_ context.Context, event domain.Event) ([]domain.ID, er
 }
 
 func (s selector) ids() ([]domain.ID, error) {
-	var ids []domain.ID
+	indexes := [4]string{`MCFTRR`, `MEOGTRR`, `IMOEX`, `RVI`}
 
-	for _, index := range [4]string{`MCFTRR`, `MEOGTRR`, `IMOEX`, `RVI`} {
+	ids := make([]domain.ID, 0, len(indexes))
+
+	for _, index := range indexes {
 		ids = append(ids, domain.NewIndexID(index))
 	}
 

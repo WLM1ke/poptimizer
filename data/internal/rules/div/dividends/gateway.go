@@ -50,7 +50,10 @@ func (s gateway) Get(ctx context.Context, table domain.Table[domain.Dividend]) (
 	return div, nil
 }
 
-func (s gateway) prepareDiv(rawDivs []domain.CurrencyDiv, rates []gomoex.Candle) (dividends []domain.Dividend, err error) {
+func (s gateway) prepareDiv(
+	rawDivs []domain.CurrencyDiv,
+	rates []gomoex.Candle,
+) (dividends []domain.Dividend, err error) {
 	var date time.Time
 
 	for _, row := range rawDivs {

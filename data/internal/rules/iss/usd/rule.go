@@ -12,7 +12,12 @@ import (
 )
 
 // New создает правило загрузки котировок доллара.
-func New(logger *lgr.Logger, db *mongo.Database, iss *gomoex.ISSClient, timeout time.Duration) template.Rule[domain.USD] {
+func New(
+	logger *lgr.Logger,
+	db *mongo.Database,
+	iss *gomoex.ISSClient,
+	timeout time.Duration,
+) template.Rule[domain.USD] {
 	return template.NewRule[domain.USD](
 		"USDRule",
 		logger,

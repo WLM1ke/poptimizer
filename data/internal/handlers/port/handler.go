@@ -138,7 +138,7 @@ func (h *handler) handleSave(responseWriter http.ResponseWriter, request *http.R
 	if err != nil {
 		h.logger.Warnf("Server: can't save portfolio -> %s", err)
 
-		status = fmt.Sprintf("Error occured - %s", err)
+		status = fmt.Sprintf("Error occurred - %s", err)
 	}
 
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")

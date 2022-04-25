@@ -163,9 +163,10 @@ func parseRequest(respond *http.Response, preferred bool) ([]domain.CurrencyDiv,
 		return nil, err
 	}
 
-	var rows []domain.CurrencyDiv
+	nodes := table.Slice(1, goquery.ToEnd).Nodes
+	rows := make([]domain.CurrencyDiv, 0, len(nodes))
 
-	for _, node := range table.Slice(1, goquery.ToEnd).Nodes {
+	for _, node := range nodes {
 		htmlRow := goquery.NewDocumentFromNode(node)
 		if strings.Contains(htmlRow.Text(), "ИТОГО") {
 			continue

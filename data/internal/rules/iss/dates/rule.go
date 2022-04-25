@@ -12,7 +12,12 @@ import (
 )
 
 // New создает правило загрузки информации о торговых датах.
-func New(logger *lgr.Logger, db *mongo.Database, iss *gomoex.ISSClient, timeout time.Duration) template.Rule[domain.Date] {
+func New(
+	logger *lgr.Logger,
+	db *mongo.Database,
+	iss *gomoex.ISSClient,
+	timeout time.Duration,
+) template.Rule[domain.Date] {
 	return template.NewRule[domain.Date](
 		"DatesRule",
 		logger,

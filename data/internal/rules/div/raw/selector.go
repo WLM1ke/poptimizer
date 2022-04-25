@@ -31,7 +31,7 @@ func (s selector) ids(ctx context.Context) ([]domain.ID, error) {
 		)
 	}
 
-	var ids []domain.ID
+	ids := make([]domain.ID, 0, len(sec.Rows()))
 
 	for _, s := range sec.Rows() {
 		ids = append(ids, domain.NewRawDivID(s.Ticker))

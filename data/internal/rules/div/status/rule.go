@@ -18,7 +18,12 @@ import (
 // - https://dividend.company
 // Теоретически можно проверять корректность распознавания тикеров, но в этом кажется нет необходимости
 // Тесты для VEON-RX, AKRN и T-RM.
-func New(logger *lgr.Logger, db *mongo.Database, client *http.Client, timeout time.Duration) template.Rule[domain.DivStatus] {
+func New(
+	logger *lgr.Logger,
+	db *mongo.Database,
+	client *http.Client,
+	timeout time.Duration,
+) template.Rule[domain.DivStatus] {
 	return template.NewRule[domain.DivStatus](
 		"DivStatusRule",
 		logger,

@@ -12,7 +12,12 @@ import (
 )
 
 // New создает правило загрузки основных индексов.
-func New(logger *lgr.Logger, db *mongo.Database, iss *gomoex.ISSClient, timeout time.Duration) template.Rule[domain.Index] {
+func New(
+	logger *lgr.Logger,
+	db *mongo.Database,
+	iss *gomoex.ISSClient,
+	timeout time.Duration,
+) template.Rule[domain.Index] {
 	return template.NewRule[domain.Index](
 		"IndexesRule",
 		logger,

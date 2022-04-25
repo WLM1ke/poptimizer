@@ -20,7 +20,7 @@ const (
 
 	_url        = `https://api.nasdaq.com/api/quote/%s/dividends?assetclass=stocks`
 	_agentKey   = `User-Agent`
-	_agentValue = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15`
+	_agentValue = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15` //nolint:lll
 
 	_noDate         = `N/A`
 	_apiDate        = `01/02/2006`
@@ -128,7 +128,7 @@ func parseRequest(respond *http.Response) ([]domain.CurrencyDiv, error) {
 		return nil, fmt.Errorf("can't decode NASDAQ json -> %w", err)
 	}
 
-	var rows []domain.CurrencyDiv
+	rows := make([]domain.CurrencyDiv, 0, len(nasdaq.Data.Dividends.Rows))
 
 	for _, row := range nasdaq.Data.Dividends.Rows {
 		if row.Date == _noDate {

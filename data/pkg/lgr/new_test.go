@@ -8,6 +8,8 @@ import (
 )
 
 func TestLogger(t *testing.T) {
+	t.Parallel()
+
 	writer := bytes.NewBuffer([]byte{})
 	logger := WithOptions(Writer(writer), TimeWithSeconds(), Name("Some"))
 
@@ -39,6 +41,8 @@ func TestLogger(t *testing.T) {
 }
 
 func TestDefaultLoggers(t *testing.T) {
+	t.Parallel()
+
 	logs := []*Logger{
 		New("Some"),
 		NoOp(),
