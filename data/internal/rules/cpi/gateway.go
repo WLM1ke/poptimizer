@@ -29,7 +29,7 @@ const (
 
 var (
 	_cpiPathRE = regexp.MustCompile(`/storage/mediabank/ind_potreb_cen_.+html`)
-	_urlRE     = regexp.MustCompile(`https://rosstat.gov.ru/.+ipc.+xlsx`)
+	_urlRE     = regexp.MustCompile(`https://rosstat\.gov\.ru/.+ipc.+xlsx`)
 )
 
 type gateway struct {

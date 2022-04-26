@@ -3,13 +3,13 @@ run:
   # Default: true
   tests: true
 
-#linters-settings:
-#  gocritic:
-#    # Enable multiple checks by tags, run `GL_DEBUG=gocritic golangci-lint run` to see all tags and checks.
-#    # See https://github.com/go-critic/go-critic#usage -> section "Tags".
-#    # Default: []
-#    enabled-tags:
-#      - diagnostic
+linters-settings:
+  gocritic:
+    # Enable multiple checks by tags, run `GL_DEBUG=gocritic golangci-lint run` to see all tags and checks.
+    # See https://github.com/go-critic/go-critic#usage -> section "Tags".
+    # Default: []
+    enabled-tags:
+      - diagnostic
 #      - style
 #      - performance
 #      - experimental
