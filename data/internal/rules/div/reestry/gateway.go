@@ -29,7 +29,7 @@ const (
 
 var (
 	_datePattern = regexp.MustCompile(`\d{1,2}\.\d{2}\.\d{4}`)
-	_divPattern  = regexp.MustCompile(`(\d+|\d+,\d+).(руб|USD|\$)`)
+	_divPattern  = regexp.MustCompile(`(\d.*)[\x{00A0}\s](руб|USD|\$)`)
 )
 
 type gateway struct {
@@ -223,7 +223,10 @@ func parseRow(htmlRow *goquery.Document, preferred bool) (row domain.CurrencyDiv
 		return domain.CurrencyDiv{}, fmt.Errorf("can't parse value %s -> %w", valueStr, err)
 	}
 
-	row.Value, err = strconv.ParseFloat(strings.Replace(values[1], ",", ".", 1), 64)
+	values[1] = strings.Replace(values[1], ",", ".", 1)
+	values[1] = strings.Replace(values[1], " ", "", 1)
+
+	row.Value, err = strconv.ParseFloat(values[1], 64)
 	if err != nil {
 		return domain.CurrencyDiv{}, fmt.Errorf("can't parse dividend %s -> %w", values[1], err)
 	}
