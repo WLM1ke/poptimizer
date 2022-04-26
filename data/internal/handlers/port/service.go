@@ -119,13 +119,13 @@ func (p *portfolioTickersEdit) SearchTickers(sessionID, pattern string) (tickers
 		return dto, nil
 	}
 
-	re, err := regexp.Compile(fmt.Sprintf("^%s", strings.ToUpper(pattern)))
+	reTicker, err := regexp.Compile(fmt.Sprintf("^%s", strings.ToUpper(pattern)))
 	if err != nil {
 		return dto, fmt.Errorf("wrong pattern - %s", pattern)
 	}
 
 	for ticker := range p.add.tickers {
-		if re.MatchString(string(ticker)) {
+		if reTicker.MatchString(string(ticker)) {
 			dto.tickers[ticker] = true
 		}
 	}

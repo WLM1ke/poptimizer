@@ -14,14 +14,14 @@ import (
 // New создает правило обновления дивидендов на https://закрытияреестров.рф/.
 //
 // Обновление происходит только после появления новых дивидендов в статусе для российских акций.
-func New(logger *lgr.Logger, db *mongo.Database, client *http.Client, timeout time.Duration) domain.Rule {
-	status := repo.NewMongo[domain.DivStatus](db)
-	securities := repo.NewMongo[domain.Security](db)
+func New(logger *lgr.Logger, database *mongo.Database, client *http.Client, timeout time.Duration) domain.Rule {
+	status := repo.NewMongo[domain.DivStatus](database)
+	securities := repo.NewMongo[domain.Security](database)
 
 	return template.NewRule[domain.CurrencyDiv](
 		"CheckCloseReestryDivRule",
 		logger,
-		repo.NewMongo[domain.CurrencyDiv](db),
+		repo.NewMongo[domain.CurrencyDiv](database),
 		selector{status},
 		gateway{status: status, securities: securities, client: client},
 		validator,

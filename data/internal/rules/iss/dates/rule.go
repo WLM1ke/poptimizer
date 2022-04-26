@@ -14,14 +14,14 @@ import (
 // New создает правило загрузки информации о торговых датах.
 func New(
 	logger *lgr.Logger,
-	db *mongo.Database,
+	database *mongo.Database,
 	iss *gomoex.ISSClient,
 	timeout time.Duration,
 ) template.Rule[domain.Date] {
 	return template.NewRule[domain.Date](
 		"DatesRule",
 		logger,
-		repo.NewMongo[domain.Date](db),
+		repo.NewMongo[domain.Date](database),
 		selector{},
 		gateway{iss: iss},
 		validator,

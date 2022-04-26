@@ -3,6 +3,18 @@ run:
   # Default: true
   tests: true
 
+#linters-settings:
+#  gocritic:
+#    # Enable multiple checks by tags, run `GL_DEBUG=gocritic golangci-lint run` to see all tags and checks.
+#    # See https://github.com/go-critic/go-critic#usage -> section "Tags".
+#    # Default: []
+#    enabled-tags:
+#      - diagnostic
+#      - style
+#      - performance
+#      - experimental
+#      - opinionated
+
 linters:
   enable:
     - asciicheck
@@ -66,30 +78,22 @@ linters:
     - staticcheck
     - structcheck
     - stylecheck
-#    - tagliatelle
-#    - tenv
-#    - testpackage
-#    - thelper
-#    - tparallel
-#    - typecheck
-#    - unconvert
-#    - unparam
-#    - unused
-#    - varcheck
-#    - varnamelen
+    - tenv
+    - thelper
+    - tparallel
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - varnamelen
     - wastedassign
     - whitespace
     - wrapcheck
     - wsl
-  # Disable specific linter
-  # https://golangci-lint.run/usage/linters/#disabled-by-default-linters--e--enable
-  disable:
-    - exhaustive
-    - golint
-    - interfacer
-    - ireturn
-    - maligned
-    - scopelint
+  # Run only fast linters from enabled linters set (first run won't be fast)
+  # Default: false
+  fast: false
 
 issues:
   # Independently of option `exclude` we use default exclude patterns,

@@ -14,14 +14,14 @@ import (
 // New создает правило загрузки основных индексов.
 func New(
 	logger *lgr.Logger,
-	db *mongo.Database,
+	database *mongo.Database,
 	iss *gomoex.ISSClient,
 	timeout time.Duration,
 ) template.Rule[domain.Index] {
 	return template.NewRule[domain.Index](
 		"IndexesRule",
 		logger,
-		repo.NewMongo[domain.Index](db),
+		repo.NewMongo[domain.Index](database),
 		selector{},
 		gateway{iss: iss},
 		validator,

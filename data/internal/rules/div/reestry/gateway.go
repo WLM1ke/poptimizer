@@ -205,17 +205,17 @@ func validateHeader(selection *goquery.Selection, preferred bool) error {
 	return nil
 }
 
-func parseRow(s *goquery.Document, preferred bool) (row domain.CurrencyDiv, err error) {
-	dateStr := s.Find("td:nth-child(1)").Text()
+func parseRow(htmlRow *goquery.Document, preferred bool) (row domain.CurrencyDiv, err error) {
+	dateStr := htmlRow.Find("td:nth-child(1)").Text()
 
 	row.Date, err = time.Parse(_dateFormat, _datePattern.FindString(dateStr))
 	if err != nil {
 		return domain.CurrencyDiv{}, fmt.Errorf("can't parse date %s -> %w", dateStr, err)
 	}
 
-	valueStr := s.Find("td:nth-child(2)").Text()
+	valueStr := htmlRow.Find("td:nth-child(2)").Text()
 	if preferred {
-		valueStr = s.Find("td:nth-child(3)").Text()
+		valueStr = htmlRow.Find("td:nth-child(3)").Text()
 	}
 
 	values := _divPattern.FindStringSubmatch(valueStr)

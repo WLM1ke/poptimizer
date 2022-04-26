@@ -13,15 +13,15 @@ import (
 // New создает правила обновления данных о дивидендах на основе вручную введенных дивидендов.
 //
 // Значения дивидендов пересчитываются в рубли для выплат в доллары и убирается информация о валюте.
-func New(logger *lgr.Logger, db *mongo.Database, timeout time.Duration) domain.Rule {
+func New(logger *lgr.Logger, database *mongo.Database, timeout time.Duration) domain.Rule {
 	return template.NewRule[domain.Dividend](
 		"DividendsRule",
 		logger,
-		repo.NewMongo[domain.Dividend](db),
+		repo.NewMongo[domain.Dividend](database),
 		selector{},
 		gateway{
-			rawRepo: repo.NewMongo[domain.CurrencyDiv](db),
-			usdRepo: repo.NewMongo[domain.USD](db),
+			rawRepo: repo.NewMongo[domain.CurrencyDiv](database),
+			usdRepo: repo.NewMongo[domain.USD](database),
 		},
 		validator,
 		false,

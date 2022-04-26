@@ -31,20 +31,20 @@ func NewMongo[R domain.Row](db *mongo.Database) *Mongo[R] {
 }
 
 // Get загружает таблицу.
-func (r *Mongo[R]) Get(ctx context.Context, id domain.ID) (table domain.Table[R], err error) {
+func (r *Mongo[R]) Get(ctx context.Context, tableID domain.ID) (table domain.Table[R], err error) {
 	var dao tableDAO[R]
 
-	collection := r.db.Collection(string(id.Group()))
-	err = collection.FindOne(ctx, bson.M{"_id": string(id.Name())}).Decode(&dao)
+	collection := r.db.Collection(string(tableID.Group()))
+	err = collection.FindOne(ctx, bson.M{"_id": string(tableID.Name())}).Decode(&dao)
 
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
 		err = nil
-		table = domain.NewEmptyTable[R](id)
+		table = domain.NewEmptyTable[R](tableID)
 	case err != nil:
-		err = fmt.Errorf("%w: %#v -> %s", ErrInternal, id, err)
+		err = fmt.Errorf("%w: %#v -> %s", ErrInternal, tableID, err)
 	default:
-		table = domain.NewTable(id, dao.Date, dao.Rows)
+		table = domain.NewTable(tableID, dao.Date, dao.Rows)
 	}
 
 	return table, err
@@ -91,23 +91,23 @@ func NewMongoJSON(db *mongo.Database) *MongoJSON {
 }
 
 // GetJSON загружает ExtendedJSON представление таблицы.
-func (r *MongoJSON) GetJSON(ctx context.Context, id domain.ID) ([]byte, error) {
-	collection := r.db.Collection(string(id.Group()))
+func (r *MongoJSON) GetJSON(ctx context.Context, tableID domain.ID) ([]byte, error) {
+	collection := r.db.Collection(string(tableID.Group()))
 
 	projections := options.FindOne().SetProjection(bson.M{"_id": 0, "rows": 1})
 
-	raw, err := collection.FindOne(ctx, bson.M{"_id": id.Name()}, projections).DecodeBytes()
+	raw, err := collection.FindOne(ctx, bson.M{"_id": tableID.Name()}, projections).DecodeBytes()
 
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
-		return nil, fmt.Errorf("%w: %#v", ErrTableNotFound, id)
+		return nil, fmt.Errorf("%w: %#v", ErrTableNotFound, tableID)
 	case err != nil:
-		return nil, fmt.Errorf("%w: %#v -> %s", ErrInternal, id, err)
+		return nil, fmt.Errorf("%w: %#v -> %s", ErrInternal, tableID, err)
 	}
 
 	json, err := bson.MarshalExtJSON(raw, true, true)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %#v -> %s", ErrInternal, id, err)
+		return nil, fmt.Errorf("%w: %#v -> %s", ErrInternal, tableID, err)
 	}
 
 	return json, nil

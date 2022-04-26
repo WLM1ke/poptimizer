@@ -20,16 +20,16 @@ import (
 // Тесты для VEON-RX, AKRN и T-RM.
 func New(
 	logger *lgr.Logger,
-	db *mongo.Database,
+	database *mongo.Database,
 	client *http.Client,
 	timeout time.Duration,
 ) template.Rule[domain.DivStatus] {
 	return template.NewRule[domain.DivStatus](
 		"DivStatusRule",
 		logger,
-		repo.NewMongo[domain.DivStatus](db),
+		repo.NewMongo[domain.DivStatus](database),
 		selector{},
-		gateway{client: client, repo: repo.NewMongo[domain.Position](db)},
+		gateway{client: client, repo: repo.NewMongo[domain.Position](database)},
 		validator,
 		false,
 		timeout,

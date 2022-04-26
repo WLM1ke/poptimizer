@@ -14,16 +14,16 @@ import (
 // New создает правило загрузки котировок торгуемых ценных бумаг.
 func New(
 	logger *lgr.Logger,
-	db *mongo.Database,
+	database *mongo.Database,
 	iss *gomoex.ISSClient,
 	timeout time.Duration,
 ) template.Rule[domain.Quote] {
-	secRepo := repo.NewMongo[domain.Security](db)
+	secRepo := repo.NewMongo[domain.Security](database)
 
 	return template.NewRule[domain.Quote](
 		"QuotesRule",
 		logger,
-		repo.NewMongo[domain.Quote](db),
+		repo.NewMongo[domain.Quote](database),
 		selector{secRepo},
 		gateway{iss: iss, secRepo: secRepo},
 		validator,

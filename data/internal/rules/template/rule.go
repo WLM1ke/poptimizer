@@ -55,16 +55,16 @@ func (r Rule[R]) Activate(inbox <-chan domain.Event) <-chan domain.Event {
 
 		defer close(out)
 
-		var wg sync.WaitGroup
-		defer wg.Wait()
+		var waitGroup sync.WaitGroup
+		defer waitGroup.Wait()
 
 		for event := range inbox {
-			wg.Add(1)
+			waitGroup.Add(1)
 
 			event := event
 
 			go func() {
-				defer wg.Done()
+				defer waitGroup.Done()
 
 				r.handleEvent(out, event)
 			}()
@@ -78,9 +78,6 @@ func (r Rule[R]) handleEvent(out chan<- domain.Event, event domain.Event) {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	var wg sync.WaitGroup
-	defer wg.Wait()
-
 	ids, err := r.selector.Select(ctx, event)
 	if err != nil {
 		out <- domain.NewErrorOccurred(event.ID(), err)
@@ -88,13 +85,16 @@ func (r Rule[R]) handleEvent(out chan<- domain.Event, event domain.Event) {
 		return
 	}
 
-	for _, id := range ids {
-		wg.Add(1)
+	var waitGroup sync.WaitGroup
+	defer waitGroup.Wait()
 
-		id := id
+	for _, tableID := range ids {
+		waitGroup.Add(1)
+
+		id := tableID
 
 		go func() {
-			defer wg.Done()
+			defer waitGroup.Done()
 
 			if newEvent := r.handleUpdate(ctx, id); newEvent != nil {
 				out <- newEvent
@@ -103,15 +103,15 @@ func (r Rule[R]) handleEvent(out chan<- domain.Event, event domain.Event) {
 	}
 }
 
-func (r Rule[R]) handleUpdate(ctx context.Context, id domain.ID) domain.Event { //nolint:ireturn
-	table, err := r.repo.Get(ctx, id)
+func (r Rule[R]) handleUpdate(ctx context.Context, tableID domain.ID) domain.Event { //nolint:ireturn
+	table, err := r.repo.Get(ctx, tableID)
 	if err != nil {
-		return domain.NewErrorOccurred(id, err)
+		return domain.NewErrorOccurred(tableID, err)
 	}
 
 	rows, err := r.gateway.Get(ctx, table)
 	if err != nil {
-		return domain.NewErrorOccurred(id, err)
+		return domain.NewErrorOccurred(tableID, err)
 	}
 
 	if !r.haveNewRows(rows) {
@@ -120,20 +120,20 @@ func (r Rule[R]) handleUpdate(ctx context.Context, id domain.ID) domain.Event { 
 
 	err = r.validator(table, rows)
 	if err != nil {
-		return domain.NewErrorOccurred(id, err)
+		return domain.NewErrorOccurred(tableID, err)
 	}
 
 	if r.append {
-		err = r.repo.Append(ctx, domain.NewTable(id, time.Now(), rows[1:]))
+		err = r.repo.Append(ctx, domain.NewTable(tableID, time.Now(), rows[1:]))
 	} else {
-		err = r.repo.Replace(ctx, domain.NewTable(id, time.Now(), rows))
+		err = r.repo.Replace(ctx, domain.NewTable(tableID, time.Now(), rows))
 	}
 
 	if err != nil {
-		return domain.NewErrorOccurred(id, err)
+		return domain.NewErrorOccurred(tableID, err)
 	}
 
-	return domain.NewUpdateCompleted(id)
+	return domain.NewUpdateCompleted(tableID)
 }
 
 func (r Rule[R]) haveNewRows(rows []R) bool {
