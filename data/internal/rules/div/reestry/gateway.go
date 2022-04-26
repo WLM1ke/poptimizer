@@ -33,13 +33,13 @@ var (
 )
 
 type gateway struct {
-	statusRepo repo.Read[domain.DivStatus]
+	status     repo.Read[domain.DivStatus]
 	securities repo.Read[domain.Security]
 	client     *http.Client
 }
 
 func (s gateway) Get(ctx context.Context, table domain.Table[domain.CurrencyDiv]) ([]domain.CurrencyDiv, error) {
-	divStatus, err := s.statusRepo.Get(ctx, domain.NewDivStatusID())
+	divStatus, err := s.status.Get(ctx, domain.NewDivStatusID())
 	if err != nil {
 		return nil, fmt.Errorf(
 			"can't load dividends status from repo -> %w",

@@ -15,14 +15,15 @@ import (
 //
 // Обновление происходит только после появления новых дивидендов в статусе для российских акций.
 func New(logger *lgr.Logger, db *mongo.Database, client *http.Client, timeout time.Duration) domain.Rule {
-	statusRepo := repo.NewMongo[domain.DivStatus](db)
+	status := repo.NewMongo[domain.DivStatus](db)
+	securities := repo.NewMongo[domain.Security](db)
 
 	return template.NewRule[domain.CurrencyDiv](
 		"CheckCloseReestryDivRule",
 		logger,
 		repo.NewMongo[domain.CurrencyDiv](db),
-		selector{statusRepo},
-		gateway{statusRepo: statusRepo, client: client},
+		selector{status},
+		gateway{status: status, securities: securities, client: client},
 		validator,
 		false,
 		timeout,
