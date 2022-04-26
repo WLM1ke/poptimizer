@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
     <script src="https://unpkg.com/htmx.org"></script>
     <script>
+        htmx.config.useTemplateFragments = true;
         document.addEventListener("htmx:responseError", function(evt) {
                 alert("Error: " + evt.detail.xhr.responseText + "\nReloading page...");
                 location.reload();
@@ -51,7 +52,7 @@
         </tbody>
     </table>
     <div id="form">
-        <form hx-post="{{ .Ticker }}/add" hx-target="#rows">
+        <form id="add" hx-post="{{ .Ticker }}/add">
             <label>
                 Date
                 <input type="date" name="date" value={{ .NewRow.Date.Format "2006-01-02" }}>
@@ -70,7 +71,7 @@
             <input type="submit" value="Add row">
         </form>
         <button hx-post="{{ .Ticker }}/save" hx-target="#form" hx-swap="outerHTML" >Save data</button>
-        <button hx-post="{{ .Ticker }}/reload" hx-target="#rows" >Reload data</button>
+        <button hx-post="{{ .Ticker }}/reload" hx-target="#add" >Reload data</button>
     </div>
 </body>
 </html>
