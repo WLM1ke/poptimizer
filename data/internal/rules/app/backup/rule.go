@@ -4,6 +4,7 @@ package backup
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
@@ -41,13 +42,30 @@ func New(
 func (r *Rule) Activate(inbox <-chan domain.Event) <-chan domain.Event {
 	out := make(chan domain.Event)
 
+	initEvents := r.initCollections()
+
 	go func() {
 		r.logger.Infof("BackupRule: started")
 		defer r.logger.Infof("BackupRule: stopped")
 
 		defer close(out)
 
-		r.initCollections(out)
+		var waitGroup sync.WaitGroup
+		defer waitGroup.Wait()
+
+		waitGroup.Add(1)
+
+		go func() {
+			defer waitGroup.Done()
+
+			for _, event := range initEvents {
+				out <- event
+			}
+		}()
+
+		for _, event := range initEvents {
+			out <- event
+		}
 
 		for event := range inbox {
 			if selected, ok := event.(domain.UpdateCompleted); ok {
@@ -76,7 +94,7 @@ func (r *Rule) runBackup(out chan<- domain.Event, collection domain.Group) {
 	r.logger.Infof("BackupRule: backup of %s collection completed", collection)
 }
 
-func (r *Rule) initCollections(out chan<- domain.Event) {
+func (r *Rule) initCollections() (events []domain.Event) {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
@@ -84,7 +102,7 @@ func (r *Rule) initCollections(out chan<- domain.Event) {
 		count, err := r.database.Collection(collection).CountDocuments(ctx, bson.D{})
 		if err != nil {
 			err = fmt.Errorf("can't count documents in %s -> %w", collection, err)
-			out <- domain.NewErrorOccurred(domain.NewID(_group, _group), err)
+			events = append(events, domain.NewErrorOccurred(domain.NewID(_group, _group), err))
 
 			continue
 		}
@@ -95,11 +113,13 @@ func (r *Rule) initCollections(out chan<- domain.Event) {
 
 		err = client.MongoDBRestore(ctx, _folder, r.uri, r.database.Name(), collection)
 		if err != nil {
-			out <- domain.NewErrorOccurred(domain.NewID(_group, _group), err)
+			events = append(events, domain.NewErrorOccurred(domain.NewID(_group, _group), err))
 
 			continue
 		}
 
 		r.logger.Infof("BackupRule: default %s collection created", collection)
 	}
+
+	return events
 }
