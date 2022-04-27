@@ -123,8 +123,12 @@ func (r Rule[R]) handleUpdate(ctx context.Context, tableID domain.ID) domain.Eve
 		return domain.NewErrorOccurred(tableID, err)
 	}
 
+	if r.append && !table.IsEmpty() {
+		rows = rows[1:]
+	}
+
 	if r.append {
-		err = r.repo.Append(ctx, domain.NewTable(tableID, time.Now(), rows[1:]))
+		err = r.repo.Append(ctx, domain.NewTable(tableID, time.Now(), rows))
 	} else {
 		err = r.repo.Replace(ctx, domain.NewTable(tableID, time.Now(), rows))
 	}
