@@ -54,6 +54,8 @@ func FanOut[T any](inbox <-chan T, n int) []chan T {
 		}()
 
 		for value := range inbox {
+			value := value
+
 			for _, channel := range out {
 				channel := channel
 
