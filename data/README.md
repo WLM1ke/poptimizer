@@ -34,11 +34,11 @@ flowchart
     Rule:Dates-->Rule:CPI
     Rule:Dates-->Rule:Indexes
     Rule:Dates-->Rule:USD
-	Rule:Dates-->Rule:DivStatus
 
 	Rule:USD-->Rule:Securities
     Rule:Securities-->Rule:Quotes
 	Rule:Quotes-->Rule:Dividends
+	Rule:Securities-->Rule:DivStatus
     
     Rule:DivStatus-->Rule:CheckRaw
     Rule:DivStatus-->Rule:CheckReestry
