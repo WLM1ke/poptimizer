@@ -15,10 +15,10 @@ import (
 var _resources embed.FS
 
 // NewPortfolioTickersHandler - обрабатывает запросы связанные с изменением дивидендов.
-func NewPortfolioTickersHandler(logger *lgr.Logger, database *mongo.Database, bus *bus.EventBus) http.Handler {
+func NewPortfolioTickersHandler(logger *lgr.Logger, database *mongo.Database, eventBus *bus.EventBus) http.Handler {
 	handler := handler{
 		logger:    logger,
-		service:   newPortfolioTickersEdit(logger, database, bus),
+		service:   newPortfolioTickersEdit(logger, database, eventBus),
 		index:     template.Must(template.ParseFS(_resources, "resources/index.gohtml")),
 		search:    template.Must(template.ParseFS(_resources, "resources/search.gohtml")),
 		portfolio: template.Must(template.ParseFS(_resources, "resources/portfolio.gohtml")),

@@ -24,7 +24,7 @@ import (
 func NewHTTPServer(
 	logger *lgr.Logger,
 	database *mongo.Database,
-	bus *bus.EventBus,
+	eventBus *bus.EventBus,
 	addr string,
 	requestTimeouts time.Duration,
 ) *server.Server {
@@ -33,12 +33,12 @@ func NewHTTPServer(
 
 	router.Mount(
 		"/edit/div",
-		div.NewEditHandler(logger, database, bus),
+		div.NewEditHandler(logger, database, eventBus),
 	)
 
 	router.Mount(
 		"/edit/port",
-		port.NewPortfolioTickersHandler(logger, database, bus),
+		port.NewPortfolioTickersHandler(logger, database, eventBus),
 	)
 
 	return server.NewServer(

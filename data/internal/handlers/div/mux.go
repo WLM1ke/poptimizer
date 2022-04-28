@@ -15,10 +15,10 @@ import (
 var _resources embed.FS
 
 // NewEditHandler - обрабатывает запросы связанные с изменением дивидендов.
-func NewEditHandler(logger *lgr.Logger, database *mongo.Database, bus *bus.EventBus) http.Handler {
+func NewEditHandler(logger *lgr.Logger, database *mongo.Database, eventBus *bus.EventBus) http.Handler {
 	handler := handler{
 		logger:  logger,
-		service: newRawDivEdit(logger, database, bus),
+		service: newRawDivEdit(logger, database, eventBus),
 		index:   template.Must(template.ParseFS(_resources, "resources/index.gohtml")),
 		rows:    template.Must(template.ParseFS(_resources, "resources/rows.gohtml")),
 		save:    template.Must(template.ParseFS(_resources, "resources/save.gohtml")),

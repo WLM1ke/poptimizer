@@ -13,7 +13,7 @@ linters-settings:
 #      - style
 #      - performance
 #      - experimental
-#      - opinionated
+      - opinionated
 
 linters:
   enable:

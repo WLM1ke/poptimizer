@@ -26,7 +26,7 @@ type Rule[R domain.Row] struct { //nolint:varnamelen
 func NewRule[R domain.Row]( //nolint:varnamelen
 	name string,
 	logger *lgr.Logger,
-	repo repo.ReadWrite[R],
+	tableRepo repo.ReadWrite[R],
 	selector Selector,
 	gateway Gateway[R],
 	validator Validator[R],
@@ -36,7 +36,7 @@ func NewRule[R domain.Row]( //nolint:varnamelen
 	return Rule[R]{
 		name:      name,
 		logger:    logger,
-		repo:      repo,
+		repo:      tableRepo,
 		selector:  selector,
 		gateway:   gateway,
 		validator: validator,

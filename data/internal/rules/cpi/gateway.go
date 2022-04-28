@@ -273,7 +273,7 @@ func parsedData(years []int, data [][]string) ([]domain.CPI, error) {
 	return cpi, nil
 }
 
-func lastDayOfMonth(year int, month int) time.Time {
+func lastDayOfMonth(year, month int) time.Time {
 	afterFullMonth := 2
 	date := time.Date(year, time.Month(month+afterFullMonth), 1, 0, 0, 0, 0, time.UTC)
 

@@ -64,12 +64,12 @@ type portfolioTickersEdit struct {
 }
 
 // newPortfolioTickersEdit инициализирует сервис ручного ввода информации о тикерах в портфеле.
-func newPortfolioTickersEdit(logger *lgr.Logger, db *mongo.Database, bus *bus.EventBus) *portfolioTickersEdit {
+func newPortfolioTickersEdit(logger *lgr.Logger, db *mongo.Database, eventBus *bus.EventBus) *portfolioTickersEdit {
 	return &portfolioTickersEdit{
 		logger:     logger,
 		portfolio:  repo.NewMongo[domain.Position](db),
 		securities: repo.NewMongo[domain.Security](db),
-		bus:        bus,
+		bus:        eventBus,
 	}
 }
 

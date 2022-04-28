@@ -53,25 +53,25 @@ func NewEventBus(
 	logger *lgr.Logger,
 	uri string,
 	database *mongo.Database,
-	client *http.Client,
+	httpClient *http.Client,
 	telegram *client.Telegram,
 ) *EventBus {
-	iss := gomoex.NewISSClient(client)
+	iss := gomoex.NewISSClient(httpClient)
 
 	rules := []domain.Rule{
 		errors.New(logger, telegram, _timeout),
 		end.New(logger, _timeout),
 		dates.New(logger, database, iss, _timeout),
 		usd.New(logger, database, iss, _timeout),
-		cpi.New(logger, database, client, _timeout),
+		cpi.New(logger, database, httpClient, _timeout),
 		securities.New(logger, database, iss, _timeout),
-		status.New(logger, database, client, _timeout),
+		status.New(logger, database, httpClient, _timeout),
 		indexes.New(logger, database, iss, _timeout),
 		quotes.New(logger, database, iss, _timeout),
 		dividends.New(logger, database, _timeout),
 		raw.New(logger, database, _timeout),
-		nasdaq.New(logger, database, client, _timeout),
-		reestry.New(logger, database, client, _timeout),
+		nasdaq.New(logger, database, httpClient, _timeout),
+		reestry.New(logger, database, httpClient, _timeout),
 		backup.New(logger, uri, database, _timeout),
 	}
 

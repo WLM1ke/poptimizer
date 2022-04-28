@@ -76,11 +76,11 @@ type rawDivEdit struct {
 }
 
 // newRawDivEdit инициализирует сервис ручного ввода дивидендов.
-func newRawDivEdit(logger *lgr.Logger, db *mongo.Database, bus *bus.EventBus) *rawDivEdit {
+func newRawDivEdit(logger *lgr.Logger, db *mongo.Database, eventBus *bus.EventBus) *rawDivEdit {
 	return &rawDivEdit{
 		logger: logger,
 		repo:   repo.NewMongo[domain.CurrencyDiv](db),
-		bus:    bus,
+		bus:    eventBus,
 	}
 }
 
@@ -142,7 +142,7 @@ func (r *rawDivEdit) AddRow(sessionID, date, value, currency string) (rawDivTabl
 	return r.tableDTO, nil
 }
 
-func parseRow(date string, value string, currency string) (row domain.CurrencyDiv, err error) {
+func parseRow(date, value, currency string) (row domain.CurrencyDiv, err error) {
 	row.Date, err = time.Parse(_timeFormat, date)
 	if err != nil {
 		return row, fmt.Errorf(
