@@ -222,6 +222,9 @@ class Portfolio:
         rez.columns = ["Correlation", "Turnover"]
         rez = rez.sort_values("Correlation").dropna()
 
+        active = quotes.turnovers(tuple(rez.index), self.date).iloc[-1] > 0
+        rez = rez.loc[active]
+
         LOGGER.info(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{rez}")  # noqa: WPS421
 
     def _norm_ret(self, tickers):
