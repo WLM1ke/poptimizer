@@ -37,7 +37,7 @@ flowchart
 
 	Rule:USD-->Rule:Securities
     Rule:Securities-->Rule:Quotes
-	Rule:Quotes-->Rule:Dividends
+	Rule:Securities-->Rule:Dividends
 	Rule:Securities-->Rule:DivStatus
     
     Rule:DivStatus-->Rule:CheckRaw
