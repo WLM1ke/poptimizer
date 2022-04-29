@@ -33,35 +33,57 @@
             display: flex;
             flex-wrap: wrap;
             gap: 1em;
+            align-items: baseline;
+        }
+        aside {
+            float:left;
+            width: 25%;
+            box-decoration-break: clone;
+        }
+        input {
+            width: 80%;
+        }
+        .main_header {
+            background-color: var(--background-body);
+            position: -webkit-sticky;
+            position: sticky;
+            top: 0;
+            z-index: 2;
         }
     </style>
 </head>
 <body id="save" hx-vals='{"sessionID": "{{ .SessionID }}"}'>
     <div id="tickers">
-        <h2>Portfolio</h2>
-        <div id="portfolio" class="flex-container remove">
-            {{ range .Tickers }}
-                <code title="Remove">
-                    <svg x=0 y=0 width=1em height=1em hx-post="remove/{{ . }}" hx-target="#portfolio">
-                        <line x1=35% y1=35% x2=95% y2=95% />
-                        <line x1=35% y1=95% x2=95% y2=35% />
-                    </svg>
-                    {{ . }}
-                </code>
-            {{end}}
+        <aside class="main_header">
+            <h3>Add tickers</h3>
+            <label>
+                <input type="search"
+                       name="pattern"
+                       placeholder="Type to add..."
+                       hx-post="search"
+                       hx-trigger="keyup changed delay:100ms, search, click from:#tickers"
+                       hx-target="#new">
+            </label>
+            <div id="new" class="flex-container add"></div>
+        </aside>
+        <div>
+            <div class="flex-container main_header">
+                <h2>Portfolio</h2>
+                <button hx-post="save" hx-target="#save" >Save</button>
+            </div>
+            <br>
+            <div id="portfolio" class="flex-container remove">
+                {{ range .Tickers }}
+                    <code title="Remove">
+                        <svg x=0 y=0 width=1em height=1em hx-post="remove/{{ . }}" hx-target="#portfolio">
+                            <line x1=35% y1=35% x2=95% y2=95% />
+                            <line x1=35% y1=95% x2=95% y2=35% />
+                        </svg>
+                        {{ . }}
+                    </code>
+                {{end}}
+            </div>
         </div>
-        <h2>Search</h2>
-        <label>
-            <input type="search"
-                   name="pattern"
-                   placeholder="Type to search tickers..."
-                   hx-post="search"
-                   hx-trigger="keyup changed delay:100ms, search, click from:#tickers"
-                   hx-target="#new">
-        </label>
-        <div id="new" class="flex-container add"></div>
     </div>
-    <hr>
-    <button hx-post="save" hx-target="#save" >Save</button>
 </body>
 </html>
