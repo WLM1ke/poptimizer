@@ -79,10 +79,10 @@ positions:
   GTRK: 0
   HHRU: 0
   HIMCP: 0
-  HON-RM: 0
   HPQ-RM: 0
   HYDR: 0
   IBM-RM: 0
+  IGST: 0
   INGR: 0
   INTC-RM: 0
   IRAO: 0
@@ -106,6 +106,7 @@ positions:
   LSNG: 0
   LSNGP: 0
   LSRG: 0
+  LVHK: 0
   MA-RM: 0
   MAGN: 0
   MCD-RM: 0
