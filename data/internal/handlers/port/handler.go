@@ -5,25 +5,33 @@ import (
 	"html/template"
 	"net/http"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/go-chi/chi"
 )
+
+type page struct {
+	SessionID string
+	Search    []string
+	Portfolio []string
+	Status    string
+}
 
 type handler struct {
 	logger *lgr.Logger
 
 	service *portfolioTickersEdit
 
-	index     *template.Template
-	search    *template.Template
-	portfolio *template.Template
-	save      *template.Template
+	tmpl *template.Template
 }
 
 func (h *handler) handleIndex(responseWriter http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	tickers, err := h.service.GetTickers(ctx)
+	SessionID := primitive.NewObjectID().Hex()
+
+	tickers, err := h.service.GetTickers(ctx, SessionID)
 	if err != nil {
 		h.logger.Warnf("Server: can't load portfolio tickers -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
@@ -31,10 +39,16 @@ func (h *handler) handleIndex(responseWriter http.ResponseWriter, request *http.
 		return
 	}
 
+	page := page{
+		SessionID: SessionID,
+		Portfolio: tickers,
+		Status:    "not edited",
+	}
+
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
-	if err := h.index.Execute(responseWriter, tickers); err != nil {
-		h.logger.Warnf("Server: can't render index template -> %s", err)
+	if err := h.tmpl.ExecuteTemplate(responseWriter, "index", page); err != nil {
+		h.logger.Warnf("Server: can't render tmpl template -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -60,13 +74,13 @@ func (h *handler) handleSearch(responseWriter http.ResponseWriter, request *http
 
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
-	if err := h.search.Execute(responseWriter, tickers); err != nil {
+	if err := h.tmpl.ExecuteTemplate(responseWriter, "search", tickers); err != nil {
 		h.logger.Warnf("Server: can't render search template -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func (h *handler) handleAdd(responseWriter http.ResponseWriter, request *http.Request) { //nolint:dupl
+func (h *handler) handleAdd(responseWriter http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
 		h.logger.Warnf("Server: can't parse request form -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
@@ -85,15 +99,20 @@ func (h *handler) handleAdd(responseWriter http.ResponseWriter, request *http.Re
 		return
 	}
 
+	page := page{
+		Portfolio: tickers,
+		Status:    "edited",
+	}
+
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
-	if err := h.portfolio.Execute(responseWriter, tickers); err != nil {
+	if err := h.tmpl.ExecuteTemplate(responseWriter, "portfolio", page); err != nil {
 		h.logger.Warnf("Server: can't render portfolio template -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func (h *handler) handleRemove(responseWriter http.ResponseWriter, request *http.Request) { //nolint:dupl
+func (h *handler) handleRemove(responseWriter http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
 		h.logger.Warnf("Server: can't parse request form -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
@@ -112,9 +131,14 @@ func (h *handler) handleRemove(responseWriter http.ResponseWriter, request *http
 		return
 	}
 
+	page := page{
+		Portfolio: tickers,
+		Status:    "edited",
+	}
+
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
-	if err := h.portfolio.Execute(responseWriter, tickers); err != nil {
+	if err := h.tmpl.ExecuteTemplate(responseWriter, "portfolio", page); err != nil {
 		h.logger.Warnf("Server: can't render portfolio template -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
 	}
@@ -133,17 +157,19 @@ func (h *handler) handleSave(responseWriter http.ResponseWriter, request *http.R
 		request.PostForm.Get("sessionID"),
 	)
 
-	status := fmt.Sprintf("Saved successfully %d tickers", n)
+	status := fmt.Sprintf("%d tickers saved sucsessfully", n)
 
 	if err != nil {
 		h.logger.Warnf("Server: can't save portfolio -> %s", err)
 
-		status = fmt.Sprintf("Error occurred - %s", err)
+		responseWriter.WriteHeader(http.StatusInternalServerError)
+
+		status = fmt.Sprintf("%d tickers saved with error - %s", n, err)
 	}
 
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
-	if err := h.save.Execute(responseWriter, status); err != nil {
+	if err := h.tmpl.ExecuteTemplate(responseWriter, "footer", status); err != nil {
 		h.logger.Warnf("Server: can't render portfolio template -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
 	}

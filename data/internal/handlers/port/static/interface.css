@@ -1,0 +1,71 @@
+/* Main SPA formatting */
+
+body {
+  display: grid;
+  height: 100vh;
+  grid-template-columns: 150px calc(100vw - 150px);
+  grid-template-rows: 40px calc(100vh - 40px - 20px) 20px;
+  grid-template-areas:
+    "header header"
+    "aside main"
+    "footer footer"
+}
+
+header {
+  grid-area: header;
+  padding-left: var(--padding_bg);
+  background: var(--bg-dark);
+  color: var(--font-on-dark);
+}
+
+aside {
+  grid-area: aside;
+  padding: var(--padding_bg);
+  background: var(--bg-emphasis);
+  color: var(--font);
+  overflow: scroll;
+}
+
+main {
+  grid-area: main;
+  padding: var(--padding_bg);
+  overflow: scroll;
+}
+
+footer {
+  grid-area: footer;
+  padding-left: var(--padding_bg);
+  background: var(--bg-dark);
+  color: var(--font-on-dark);
+}
+
+/* Header navigation */
+
+header {
+  display: flex;
+  align-items: center;
+  gap: var(--padding_bg);
+}
+
+header>nav>ul {
+  display: flex;
+  align-items: center;
+  gap: var(--padding_bg);
+  list-style-type: none;
+}
+
+header li.selected a {
+  color: var(--font-on-dark);
+}
+
+header li.selected a:hover {
+  color: var(--link-hoover);
+  stroke: var(--link-hoover);
+}
+
+/* Footer */
+footer {
+  display: flex;
+  align-items: center;
+  gap: var(--padding_bg);
+}

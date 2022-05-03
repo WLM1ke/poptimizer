@@ -3,9 +3,10 @@ package handlers
 import (
 	"time"
 
+	"github.com/WLM1ke/poptimizer/data/internal/handlers/port"
+
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
 	"github.com/WLM1ke/poptimizer/data/internal/handlers/div"
-	"github.com/WLM1ke/poptimizer/data/internal/handlers/port"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/WLM1ke/poptimizer/data/pkg/server"
@@ -37,7 +38,7 @@ func NewHTTPServer(
 	)
 
 	router.Mount(
-		"/edit/port",
+		"/",
 		port.NewPortfolioTickersHandler(logger, database, eventBus),
 	)
 

@@ -1,0 +1,109 @@
+/* Default formatting */
+
+:root {
+  --bg: #ffffff;
+  --bg-emphasis: #e5e7eb;
+  --font: #111827;
+  --bg-dark: #1f2937;
+  --font-on-dark: #ffffff;
+  --link: #4b5563;
+  --link-hoover: #1e87f0;
+  --padding_sm: 6px;
+  --padding_bg: 1em;
+}
+
+* {
+  padding: 0;
+  margin: 0;
+}
+
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 1.36em;
+  margin-top: 0;
+  margin-bottom: var(--padding_sm);
+}
+
+h2 {
+  font-size: 1.30em;
+}
+
+h3 {
+  font-size: 1.24em;
+}
+
+h4 {
+  font-size: 1.18em;
+}
+h5 {
+  font-size: 1.12em;
+}
+h6 {
+  font-size: 1.06em;
+}
+
+svg {
+  width: 1em;
+  height: 1em;
+  stroke-width: 1px;
+}
+
+/* Forms */
+
+input {
+  border-radius: var(--padding_sm);
+  border-width: 1px;
+  border-color: var(--link);
+  border-style: solid;
+  color: var(--link);
+  outline: none;
+  padding-left: var(--padding_sm);
+  margin-bottom: var(--padding_sm);
+}
+
+input:focus {
+  border-color: var(--link-hoover);
+  box-shadow: 0 0 0 1px var(--link-hoover);
+}
+
+button {
+  border-radius: var(--padding_sm);
+  border-width: 1px;
+  border-color: var(--link);
+  border-style: solid;
+  background-color: var(--bg);
+  color: var(--link);
+  padding: var(--padding_sm) var(--padding_bg);
+}
+
+button:hover {
+  color: var(--link-hoover);
+  cursor: pointer;
+}
+
+a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--link-hoover);
+  stroke: var(--link-hoover);
+  cursor: pointer;
+}
+
+/* Badge */
+
+small {
+  background-color: var(--link-hoover);
+  border-radius: var(--padding_sm);
+  padding: 0 var(--padding_sm);
+  font-size: small;
+  font-weight: normal;
+  color: var(--bg)
+}

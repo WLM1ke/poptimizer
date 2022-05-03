@@ -1,0 +1,13 @@
+{{define "search"}}
+    {{range .}}
+        <li>
+            <a title="Add" hx-post="tickers/add/{{ . }}" hx-target="main" hx-swap="outerHTML">
+                {{.}}
+                <svg>
+                    <line x1=0% y1=65% x2=60% y2=65% />
+                    <line x1=30% y1=95% x2=30% y2=35% />
+                </svg>
+            </a>
+        </li>
+    {{end}}
+{{end}}

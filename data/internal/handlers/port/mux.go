@@ -3,6 +3,7 @@ package port
 import (
 	"embed"
 	"html/template"
+	"io/fs"
 	"net/http"
 
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
@@ -11,26 +12,29 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-//go:embed resources
+//go:embed static
 var _resources embed.FS
 
 // NewPortfolioTickersHandler - обрабатывает запросы связанные с изменением дивидендов.
 func NewPortfolioTickersHandler(logger *lgr.Logger, database *mongo.Database, eventBus *bus.EventBus) http.Handler {
+	static, err := fs.Sub(_resources, "static")
+	if err != nil {
+		logger.Panicf("can't find template dir -> %s", err)
+	}
+
 	handler := handler{
-		logger:    logger,
-		service:   newPortfolioTickersEdit(logger, database, eventBus),
-		index:     template.Must(template.ParseFS(_resources, "resources/index.gohtml")),
-		search:    template.Must(template.ParseFS(_resources, "resources/search.gohtml")),
-		portfolio: template.Must(template.ParseFS(_resources, "resources/portfolio.gohtml")),
-		save:      template.Must(template.ParseFS(_resources, "resources/save.gohtml")),
+		logger:  logger,
+		service: newPortfolioTickersEdit(logger, database, eventBus),
+		tmpl:    template.Must(template.ParseFS(static, "*.gohtml")),
 	}
 
 	router := chi.NewRouter()
 	router.Get("/tickers", handler.handleIndex)
-	router.Post("/search", handler.handleSearch)
-	router.Post("/add/{ticker}", handler.handleAdd)
-	router.Post("/remove/{ticker}", handler.handleRemove)
-	router.Post("/save", handler.handleSave)
+	router.Post("/tickers/search", handler.handleSearch)
+	router.Post("/tickers/add/{ticker}", handler.handleAdd)
+	router.Post("/tickers/remove/{ticker}", handler.handleRemove)
+	router.Post("/tickers/save", handler.handleSave)
+	router.Handle("/tickers/{file}.css", http.StripPrefix("/tickers/", http.FileServer(http.FS(static))))
 
 	return router
 }

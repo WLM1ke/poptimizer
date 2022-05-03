@@ -1,0 +1,41 @@
+@import url("base.css");
+@import url("interface.css");
+
+/* Sidebar*/
+
+aside {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+aside>div {
+  display: flex;
+  flex-direction: column;
+}
+
+aside>div>ul {
+  list-style-type: none;
+}
+
+aside>div>ul>li {
+  padding-bottom: var(--padding_sm);
+}
+
+aside :is(input, button) {
+  width: 100%;
+}
+
+/* Main */
+main>div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--padding_bg);
+}
+
+main>ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 10em);
+  gap: var(--padding_sm);
+  list-style-type: none;
+}

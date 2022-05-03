@@ -1,0 +1,50 @@
+{{- /*gotype: github.com/WLM1ke/poptimizer/data/internal/handlers/port_new.page*/ -}}
+{{define "index"}}
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <title>POptimizer</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="stylesheet" href="https://unpkg.com/normalize.css">
+            <link rel="stylesheet" href="tickers/tickers.css">
+            <!-- HTMX -->
+            <script src="https://unpkg.com/htmx.org"></script>
+            <!-- HTMX: enable swab-oob and reload on all errors -->
+            <script>
+            htmx.config.useTemplateFragments = true;
+            document.addEventListener("htmx:responseError", function(evt) {
+                    alert("Error: " + evt.detail.xhr.responseText + "\nReloading page...");
+                    location.reload();
+            });
+        </script>
+        </head>
+        <body hx-vals='{"sessionID": "{{.SessionID}}"}'>
+            <header>
+                <strong>⌘ POptimizer</strong>
+                <div>|</div>
+                {{template "nav" .}}
+            </header>
+            <aside>
+                <div>
+                    <h1>Add tickers</h1>
+                    <label>
+                        <input type="search"
+                               name="pattern"
+                               placeholder="Type to find..."
+                               hx-post="tickers/search"
+                               hx-trigger="keyup changed delay:100ms, search, click from:#portfolio, click from:#search"
+                               hx-target="#search">
+                    </label>
+                    <ul id="search">
+                        {{template "search" .Search}}
+                    </ul>
+                </div>
+                <button hx-post="tickers/save" hx-target="footer">
+                    Save
+                </button>
+            </aside>
+            {{template "portfolio" .}}
+        </body>
+    </html>
+{{end}}

@@ -3,7 +3,6 @@ package port
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -13,37 +12,8 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/domain"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
-// tickersDTO содержит перечень тикеров в рамках сессии по редактированию портфеля.
-type tickersDTO struct {
-	SessionID string
-	tickers   map[domain.Position]bool
-}
-
-// newTickersDTO создает новый перечень тикеров, привязанный к сессии.
-func newTickersDTO(sessionID string, tickers []domain.Position) tickersDTO {
-	tickersMap := make(map[domain.Position]bool, len(tickers))
-	for _, ticker := range tickers {
-		tickersMap[ticker] = true
-	}
-
-	return tickersDTO{SessionID: sessionID, tickers: tickersMap}
-}
-
-// Tickers возвращает отсортированный перечень тикеров.
-func (t tickersDTO) Tickers() []domain.Position {
-	tickers := make([]domain.Position, 0, len(t.tickers))
-	for ticker := range t.tickers {
-		tickers = append(tickers, ticker)
-	}
-
-	sort.Slice(tickers, func(i, j int) bool { return tickers[i] < tickers[j] })
-
-	return tickers
-}
 
 // portfolioTickersEdit сервис по редактированию перечня тикеров в портфеле.
 //
@@ -57,8 +27,10 @@ type portfolioTickersEdit struct {
 	securities repo.ReadWrite[domain.Security]
 
 	lock sync.Mutex
-	port tickersDTO
-	add  tickersDTO
+
+	id   string
+	port map[string]bool
+	add  map[string]bool
 
 	bus *bus.EventBus
 }
@@ -74,125 +46,163 @@ func newPortfolioTickersEdit(logger *lgr.Logger, db *mongo.Database, eventBus *b
 }
 
 // GetTickers создает новую сессию (удаляет старую) и возвращает перечень тикеров в текущем портфеле.
-func (p *portfolioTickersEdit) GetTickers(ctx context.Context) (tickersDTO, error) {
+func (p *portfolioTickersEdit) GetTickers(ctx context.Context, sessionID string) ([]string, error) {
 	port, err := p.portfolio.Get(ctx, domain.NewPositionsID())
 	if err != nil {
-		return tickersDTO{}, fmt.Errorf("can't load portfolio -> %w", err)
+		return nil, fmt.Errorf("can't load portfolio -> %w", err)
 	}
 
 	sec, err := p.securities.Get(ctx, domain.NewSecuritiesID())
 	if err != nil {
-		return tickersDTO{}, fmt.Errorf("can't load securities -> %w", err)
+		return nil, fmt.Errorf("can't load securities -> %w", err)
 	}
 
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	id := primitive.NewObjectID().Hex()
+	p.id = sessionID
 
-	p.port = newTickersDTO(id, port.Rows())
-	p.add = newTickersDTO(id, nil)
+	var rez []string
 
-	for _, row := range sec.Rows() {
-		ticker := domain.Position(row.Ticker)
+	p.port = make(map[string]bool)
+	for _, ticker := range port.Rows() {
+		p.port[string(ticker)] = true
 
-		if !p.port.tickers[ticker] {
-			p.add.tickers[ticker] = true
-		}
+		rez = append(rez, string(ticker))
 	}
 
-	return p.port, nil
+	p.add = make(map[string]bool)
+	for _, security := range sec.Rows() {
+		if p.port[security.Ticker] {
+			continue
+		}
+
+		p.add[security.Ticker] = true
+	}
+
+	return rez, nil
+}
+
+func (p *portfolioTickersEdit) sort(tickers map[string]bool) (sorted []string) {
+	for ticker := range tickers {
+		sorted = append(sorted, ticker)
+	}
+
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i] < sorted[j] })
+
+	return sorted
 }
 
 // SearchTickers возвращает перечень тикеров, начинающихся с указанных букв, которые могут быть добавлены в портфель.
-func (p *portfolioTickersEdit) SearchTickers(sessionID, pattern string) (tickersDTO, error) {
+func (p *portfolioTickersEdit) SearchTickers(sessionID, prefix string) ([]string, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	dto := newTickersDTO(sessionID, nil)
-
-	if p.port.SessionID != sessionID {
-		return dto, fmt.Errorf("wrong session id - %s", sessionID)
+	if p.id != sessionID {
+		return nil, fmt.Errorf("wrong session id - %s", sessionID)
 	}
 
-	if pattern == "" {
-		return dto, nil
+	if prefix == "" {
+		return nil, nil
 	}
 
-	reTicker, err := regexp.Compile(fmt.Sprintf("^%s", strings.ToUpper(pattern)))
-	if err != nil {
-		return dto, fmt.Errorf("wrong pattern - %s", pattern)
-	}
+	prefix = strings.ToUpper(prefix)
 
-	for ticker := range p.add.tickers {
-		if reTicker.MatchString(string(ticker)) {
-			dto.tickers[ticker] = true
+	var found []string
+
+	for ticker := range p.add {
+		if strings.HasPrefix(ticker, prefix) {
+			found = append(found, ticker)
 		}
 	}
 
-	return dto, nil
+	sort.Slice(found, func(i, j int) bool { return found[i] < found[j] })
+
+	return found, nil
 }
 
 // AddTicker добавляет тикер в текущий портфель и возвращает его состав.
-func (p *portfolioTickersEdit) AddTicker(sessionID, ticker string) (tickersDTO, error) {
+func (p *portfolioTickersEdit) AddTicker(sessionID, ticker string) ([]string, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	if p.port.SessionID != sessionID {
-		return tickersDTO{}, fmt.Errorf("wrong session id - %s", sessionID)
+	if p.id != sessionID {
+		return nil, fmt.Errorf("wrong session id - %s", sessionID)
 	}
 
-	if !p.add.tickers[domain.Position(ticker)] {
-		return tickersDTO{}, fmt.Errorf("incorrect ticker to add - %s", ticker)
+	if !p.add[ticker] {
+		return nil, fmt.Errorf("incorrect ticker to add - %s", ticker)
 	}
 
-	delete(p.add.tickers, domain.Position(ticker))
+	delete(p.add, ticker)
 
-	p.port.tickers[domain.Position(ticker)] = true
+	p.port[ticker] = true
 
-	return p.port, nil
+	var port []string
+
+	for ticker := range p.port {
+		port = append(port, ticker)
+	}
+
+	sort.Slice(port, func(i, j int) bool { return port[i] < port[j] })
+
+	return port, nil
 }
 
 // RemoveTicker удаляет тикер из портфеля и возвращает его состав.
-func (p *portfolioTickersEdit) RemoveTicker(sessionID, ticker string) (tickersDTO, error) {
+func (p *portfolioTickersEdit) RemoveTicker(sessionID, ticker string) ([]string, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	if p.port.SessionID != sessionID {
-		return tickersDTO{}, fmt.Errorf("wrong session id - %s", sessionID)
+	if p.id != sessionID {
+		return nil, fmt.Errorf("wrong session id - %s", sessionID)
 	}
 
-	if !p.port.tickers[domain.Position(ticker)] {
-		return tickersDTO{}, fmt.Errorf("incorrect ticker to remove - %s", ticker)
+	if !p.port[ticker] {
+		return nil, fmt.Errorf("incorrect ticker to remove - %s", ticker)
 	}
 
-	delete(p.port.tickers, domain.Position(ticker))
+	delete(p.port, ticker)
 
-	p.add.tickers[domain.Position(ticker)] = true
+	p.add[ticker] = true
 
-	return p.port, nil
+	var port []string
+
+	for ticker := range p.port {
+		port = append(port, ticker)
+	}
+
+	sort.Slice(port, func(i, j int) bool { return port[i] < port[j] })
+
+	return port, nil
 }
 
-// Save сохраняет результаты редактирования, обнуляет сессию и возвращает количество тикеров в портфеле.
+// Save сохраняет результаты редактирования и возвращает количество тикеров в портфеле.
 func (p *portfolioTickersEdit) Save(ctx context.Context, sessionID string) (int, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	defer func() { p.port.SessionID = "" }()
-
-	if p.port.SessionID != sessionID {
+	if p.id != sessionID {
 		return 0, fmt.Errorf("wrong session id - %s", sessionID)
 	}
 
-	err := p.portfolio.Replace(ctx, domain.NewTable(domain.NewPositionsID(), time.Now(), p.port.Tickers()))
+	var rows []domain.Position
+
+	for ticker := range p.port {
+		rows = append(rows, domain.Position(ticker))
+	}
+
+	sort.Slice(rows, func(i, j int) bool { return rows[i] < rows[j] })
+
+	err := p.portfolio.Replace(ctx, domain.NewTable(domain.NewPositionsID(), time.Now(), rows))
 	if err != nil {
 		return 0, fmt.Errorf("can't save portfolio -> %w", err)
 	}
 
 	err = p.bus.Send(domain.NewUpdateCompleted(domain.NewPositionsID()))
 	if err != nil {
-		return 0, fmt.Errorf("can't send update event -> %w", err)
+		return len(rows), fmt.Errorf("can't send update event -> %w", err)
 	}
 
-	return len(p.port.tickers), nil
+	return len(rows), nil
 }

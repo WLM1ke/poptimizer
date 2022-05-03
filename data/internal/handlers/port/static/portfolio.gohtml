@@ -1,0 +1,22 @@
+{{define "portfolio"}}
+    <main>
+        <h1>
+            Portfolio
+            <small>{{len .Portfolio}}</small>
+        </h1>
+        <ul>
+            {{range .Portfolio}}
+                <li>
+                    <a title="Remove" hx-post="tickers/remove/{{.}}" hx-target="main" hx-swap="outerHTML">
+                        {{.}}
+                        <svg>
+                            <line x1=0% y1=35% x2=60% y2=95% />
+                            <line x1=0% y1=95% x2=60% y2=35% />
+                        </svg>
+                    </a>
+                </li>
+            {{end}}
+        </ul>
+    </main>
+    {{template "footer" .Status}}
+{{end}}
