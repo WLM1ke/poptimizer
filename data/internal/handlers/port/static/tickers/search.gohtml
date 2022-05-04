@@ -1,7 +1,7 @@
 {{define "search"}}
     {{range .}}
         <li>
-            <a title="Add" hx-post="tickers/add/{{ . }}" hx-target="main" hx-swap="outerHTML">
+            <a title="Add" hx-post="tickers/add/{{ . }}" hx-target="main">
                 {{.}}
                 <svg>
                     <line x1=0% y1=65% x2=60% y2=65% />

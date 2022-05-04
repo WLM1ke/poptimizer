@@ -1,0 +1,17 @@
+@import url("https://unpkg.com/normalize.css");
+@import url("base.css");
+@import url("interface.css");
+
+/* Tickers */
+
+aside #tickers-search {
+  display: flex;
+  flex-direction: column;
+}
+
+main #tickers-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 10em);
+  gap: var(--padding_sm);
+  list-style-type: none;
+}

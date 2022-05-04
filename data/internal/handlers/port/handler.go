@@ -106,7 +106,7 @@ func (h *handler) handleAdd(responseWriter http.ResponseWriter, request *http.Re
 
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
-	if err := h.tmpl.ExecuteTemplate(responseWriter, "portfolio", page); err != nil {
+	if err := h.tmpl.ExecuteTemplate(responseWriter, "change", page); err != nil {
 		h.logger.Warnf("Server: can't render portfolio template -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
 	}
@@ -138,7 +138,7 @@ func (h *handler) handleRemove(responseWriter http.ResponseWriter, request *http
 
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
-	if err := h.tmpl.ExecuteTemplate(responseWriter, "portfolio", page); err != nil {
+	if err := h.tmpl.ExecuteTemplate(responseWriter, "change", page); err != nil {
 		h.logger.Warnf("Server: can't render portfolio template -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
 	}
@@ -167,9 +167,11 @@ func (h *handler) handleSave(responseWriter http.ResponseWriter, request *http.R
 		status = fmt.Sprintf("%d tickers saved with error - %s", n, err)
 	}
 
+	page := page{Status: status}
+
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
-	if err := h.tmpl.ExecuteTemplate(responseWriter, "footer", status); err != nil {
+	if err := h.tmpl.ExecuteTemplate(responseWriter, "status", page); err != nil {
 		h.logger.Warnf("Server: can't render portfolio template -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
 	}

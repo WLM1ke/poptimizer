@@ -6,8 +6,7 @@
             <title>POptimizer</title>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <link rel="stylesheet" href="https://unpkg.com/normalize.css">
-            <link rel="stylesheet" href="tickers/tickers.css">
+            <link rel="stylesheet" href="tickers/poptimizer.css">
             <!-- HTMX -->
             <script src="https://unpkg.com/htmx.org"></script>
             <!-- HTMX: enable swab-oob and reload on all errors -->
@@ -23,28 +22,20 @@
             <header>
                 <strong>⌘ POptimizer</strong>
                 <div>|</div>
-                {{template "nav" .}}
+                <nav>
+                    <ul>{{template "menu" .}}</ul>
+                </nav>
             </header>
             <aside>
-                <div>
-                    <h1>Add tickers</h1>
-                    <label>
-                        <input type="search"
-                               name="pattern"
-                               placeholder="Type to find..."
-                               hx-post="tickers/search"
-                               hx-trigger="keyup changed delay:100ms, search, click from:#portfolio, click from:#search"
-                               hx-target="#search">
-                    </label>
-                    <ul id="search">
-                        {{template "search" .Search}}
-                    </ul>
-                </div>
-                <button hx-post="tickers/save" hx-target="footer">
-                    Save
-                </button>
+                {{template "sidebar" .}}
             </aside>
-            {{template "portfolio" .}}
+            <main>
+                {{template "main" .}}
+            </main>
+            <footer>
+                <div>Status:</div>
+                <div>{{template "status" .}}</div>
+            </footer>
         </body>
     </html>
 {{end}}

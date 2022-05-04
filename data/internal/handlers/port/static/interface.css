@@ -23,13 +23,11 @@ aside {
   padding: var(--padding_bg);
   background: var(--bg-emphasis);
   color: var(--font);
-  overflow: scroll;
 }
 
 main {
   grid-area: main;
   padding: var(--padding_bg);
-  overflow: scroll;
 }
 
 footer {
@@ -61,6 +59,29 @@ header li.selected a {
 header li.selected a:hover {
   color: var(--link-hoover);
   stroke: var(--link-hoover);
+}
+
+/* Sidebar */
+
+aside {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: scroll;
+}
+
+aside ul {
+  list-style-type: none;
+}
+
+aside li {
+  padding-bottom: var(--padding_sm);
+}
+
+/* Main */
+
+main {
+  overflow: scroll;
 }
 
 /* Footer */

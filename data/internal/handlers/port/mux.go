@@ -25,7 +25,7 @@ func NewPortfolioTickersHandler(logger *lgr.Logger, database *mongo.Database, ev
 	handler := handler{
 		logger:  logger,
 		service: newPortfolioTickersEdit(logger, database, eventBus),
-		tmpl:    template.Must(template.ParseFS(static, "*.gohtml")),
+		tmpl:    template.Must(template.ParseFS(static, "*/*.gohtml")),
 	}
 
 	router := chi.NewRouter()

@@ -56,6 +56,7 @@ svg {
 /* Forms */
 
 input {
+  width: 100%;
   border-radius: var(--padding_sm);
   border-width: 1px;
   border-color: var(--link);
@@ -72,6 +73,7 @@ input:focus {
 }
 
 button {
+  width: 100%;
   border-radius: var(--padding_sm);
   border-width: 1px;
   border-color: var(--link);
@@ -101,7 +103,7 @@ a:hover {
 
 small {
   background-color: var(--link-hoover);
-  border-radius: var(--padding_sm);
+  border-radius: var(--padding_bg);
   padding: 0 var(--padding_sm);
   font-size: small;
   font-weight: normal;
