@@ -52,7 +52,7 @@ header>nav>ul {
   list-style-type: none;
 }
 
-header li.selected a {
+header li#selected a {
   color: var(--font-on-dark);
 }
 

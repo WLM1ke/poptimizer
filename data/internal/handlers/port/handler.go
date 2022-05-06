@@ -11,7 +11,12 @@ import (
 	"github.com/go-chi/chi"
 )
 
-type page struct {
+// Tickers - пункт меню с информацией о тикерах в портфеле.
+const Tickers = `Tickers`
+
+// Page содержит данные для генерации html-страницы.
+type Page struct {
+	Menu      string
 	SessionID string
 	Search    []string
 	Portfolio []string
@@ -39,7 +44,8 @@ func (h *handler) handleIndex(responseWriter http.ResponseWriter, request *http.
 		return
 	}
 
-	page := page{
+	page := Page{
+		Menu:      Tickers,
 		SessionID: SessionID,
 		Portfolio: tickers,
 		Status:    "not edited",
@@ -99,7 +105,7 @@ func (h *handler) handleAdd(responseWriter http.ResponseWriter, request *http.Re
 		return
 	}
 
-	page := page{
+	page := Page{
 		Portfolio: tickers,
 		Status:    "edited",
 	}
@@ -131,7 +137,7 @@ func (h *handler) handleRemove(responseWriter http.ResponseWriter, request *http
 		return
 	}
 
-	page := page{
+	page := Page{
 		Portfolio: tickers,
 		Status:    "edited",
 	}
@@ -167,7 +173,7 @@ func (h *handler) handleSave(responseWriter http.ResponseWriter, request *http.R
 		status = fmt.Sprintf("%d tickers saved with error - %s", n, err)
 	}
 
-	page := page{Status: status}
+	page := Page{Status: status}
 
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
