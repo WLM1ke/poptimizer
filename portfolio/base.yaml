@@ -41,7 +41,6 @@ positions:
   CNTL: 0
   CNTLP: 0
   CRM-RM: 0
-  COST-RM: 0
   CSCO-RM: 0
   CVX-RM: 0
   DIOD: 0
@@ -95,6 +94,7 @@ positions:
   KLSB: 0
   KMAZ: 0
   KO-RM: 0
+  KOGK: 0
   KRKNP: 0
   KUZB: 0
   KZOS: 0
@@ -215,6 +215,7 @@ positions:
   UPRO: 0
   USBN: 0
   V-RM: 0
+  VJGZP: 0
   VKCO: 0
   VRSB: 0
   VSMO: 0
