@@ -1,9 +1,11 @@
-package port
+package frontend
 
 import (
 	"fmt"
 	"html/template"
 	"net/http"
+
+	"github.com/WLM1ke/poptimizer/data/internal/services"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -11,32 +13,16 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// Tickers - пункт меню с информацией о тикерах в портфеле.
-const Tickers = `Tickers`
-
-// Page содержит данные для генерации html-страницы.
-type Page struct {
-	Menu      string
-	SessionID string
-	Search    []string
-	Portfolio []string
-	Status    string
+type tickersHandler struct {
+	logger  *lgr.Logger
+	service *services.TickersEdit
+	tmpl    *template.Template
 }
 
-type handler struct {
-	logger *lgr.Logger
-
-	service *portfolioTickersEdit
-
-	tmpl *template.Template
-}
-
-func (h *handler) handleIndex(responseWriter http.ResponseWriter, request *http.Request) {
-	ctx := request.Context()
-
+func (h *tickersHandler) handleIndex(responseWriter http.ResponseWriter, request *http.Request) {
 	SessionID := primitive.NewObjectID().Hex()
 
-	tickers, err := h.service.GetTickers(ctx, SessionID)
+	tickers, err := h.service.GetTickers(request.Context(), SessionID)
 	if err != nil {
 		h.logger.Warnf("Server: can't load portfolio tickers -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
@@ -45,9 +31,9 @@ func (h *handler) handleIndex(responseWriter http.ResponseWriter, request *http.
 	}
 
 	page := Page{
-		Menu:      Tickers,
+		Menu:      _tickers,
 		SessionID: SessionID,
-		Portfolio: tickers,
+		Main:      tickers,
 		Status:    "not edited",
 	}
 
@@ -59,7 +45,7 @@ func (h *handler) handleIndex(responseWriter http.ResponseWriter, request *http.
 	}
 }
 
-func (h *handler) handleSearch(responseWriter http.ResponseWriter, request *http.Request) {
+func (h *tickersHandler) handleSearch(responseWriter http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
 		h.logger.Warnf("Server: can't parse request form -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
@@ -86,7 +72,7 @@ func (h *handler) handleSearch(responseWriter http.ResponseWriter, request *http
 	}
 }
 
-func (h *handler) handleAdd(responseWriter http.ResponseWriter, request *http.Request) {
+func (h *tickersHandler) handleAdd(responseWriter http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
 		h.logger.Warnf("Server: can't parse request form -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
@@ -106,8 +92,8 @@ func (h *handler) handleAdd(responseWriter http.ResponseWriter, request *http.Re
 	}
 
 	page := Page{
-		Portfolio: tickers,
-		Status:    "edited",
+		Main:   tickers,
+		Status: "edited",
 	}
 
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
@@ -118,7 +104,7 @@ func (h *handler) handleAdd(responseWriter http.ResponseWriter, request *http.Re
 	}
 }
 
-func (h *handler) handleRemove(responseWriter http.ResponseWriter, request *http.Request) {
+func (h *tickersHandler) handleRemove(responseWriter http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
 		h.logger.Warnf("Server: can't parse request form -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
@@ -138,8 +124,8 @@ func (h *handler) handleRemove(responseWriter http.ResponseWriter, request *http
 	}
 
 	page := Page{
-		Portfolio: tickers,
-		Status:    "edited",
+		Main:   tickers,
+		Status: "edited",
 	}
 
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
@@ -150,7 +136,7 @@ func (h *handler) handleRemove(responseWriter http.ResponseWriter, request *http
 	}
 }
 
-func (h *handler) handleSave(responseWriter http.ResponseWriter, request *http.Request) {
+func (h *tickersHandler) handleSave(responseWriter http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
 		h.logger.Warnf("Server: can't parse request form -> %s", err)
 		http.Error(responseWriter, err.Error(), http.StatusBadRequest)

@@ -6,7 +6,7 @@
             <title>POptimizer</title>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <link rel="stylesheet" href="tickers/poptimizer.css">
+            <link rel="stylesheet" href="/poptimizer.css">
             <!-- HTMX -->
             <script src="https://unpkg.com/htmx.org"></script>
             <!-- HTMX: enable swap-oob and reload on all errors -->
@@ -26,7 +26,7 @@
                     <ul>
                         <li{{if eq .Menu "Tickers"}} id="selected"{{end}}><a href="/tickers">Tickers</a></li>
                         <li{{if eq .Menu "Dividends"}} id="selected"{{end}}><a href="/dividends">Dividends</a></li>
-                        <li{{if eq .Menu "Portfolio"}} id="selected"{{end}}><a href="/portfolio">Portfolio</a></li>
+                        <li{{if eq .Menu "Main"}} id="selected"{{end}}><a href="/portfolio">Portfolio</a></li>
                         <li{{if eq .Menu "Metrics"}} id="selected"{{end}}><a href="/metrics">Metrics</a></li>
                         <li{{if eq .Menu "Optimizer"}} id="selected"{{end}}><a href="/optimizer">Optimizer</a></li>
                         <li{{if eq .Menu "Reports"}} id="selected"{{end}}><a href="/reports">Reports</a></li>

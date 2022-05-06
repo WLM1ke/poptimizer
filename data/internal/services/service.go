@@ -1,4 +1,4 @@
-package port
+package services
 
 import (
 	"context"
@@ -15,12 +15,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// portfolioTickersEdit сервис по редактированию перечня тикеров в портфеле.
+// TickersEdit сервис по редактированию перечня тикеров в портфеле.
 //
 // Редактирование осуществляется в рамках изолированной сессии. Начало нового редактирования сбрасывает предыдущую
 // сессию. Результат редактирования сохраняется только после вызова соответствующего метода.
 // Для тикеров в портфеле отслеживается появление новых дивидендов.
-type portfolioTickersEdit struct {
+type TickersEdit struct {
 	logger *lgr.Logger
 
 	portfolio  repo.ReadWrite[domain.Position]
@@ -35,9 +35,9 @@ type portfolioTickersEdit struct {
 	bus *bus.EventBus
 }
 
-// newPortfolioTickersEdit инициализирует сервис ручного ввода информации о тикерах в портфеле.
-func newPortfolioTickersEdit(logger *lgr.Logger, db *mongo.Database, eventBus *bus.EventBus) *portfolioTickersEdit {
-	return &portfolioTickersEdit{
+// NewTickersEdit инициализирует сервис ручного ввода информации о тикерах в портфеле.
+func NewTickersEdit(logger *lgr.Logger, db *mongo.Database, eventBus *bus.EventBus) *TickersEdit {
+	return &TickersEdit{
 		logger:     logger,
 		portfolio:  repo.NewMongo[domain.Position](db),
 		securities: repo.NewMongo[domain.Security](db),
@@ -46,7 +46,7 @@ func newPortfolioTickersEdit(logger *lgr.Logger, db *mongo.Database, eventBus *b
 }
 
 // GetTickers создает новую сессию (удаляет старую) и возвращает перечень тикеров в текущем портфеле.
-func (p *portfolioTickersEdit) GetTickers(ctx context.Context, sessionID string) ([]string, error) {
+func (p *TickersEdit) GetTickers(ctx context.Context, sessionID string) ([]string, error) {
 	port, err := p.portfolio.Get(ctx, domain.NewPositionsID())
 	if err != nil {
 		return nil, fmt.Errorf("can't load portfolio -> %w", err)
@@ -83,7 +83,7 @@ func (p *portfolioTickersEdit) GetTickers(ctx context.Context, sessionID string)
 	return rez, nil
 }
 
-func (p *portfolioTickersEdit) sort(tickers map[string]bool) (sorted []string) {
+func (p *TickersEdit) sort(tickers map[string]bool) (sorted []string) {
 	for ticker := range tickers {
 		sorted = append(sorted, ticker)
 	}
@@ -94,7 +94,7 @@ func (p *portfolioTickersEdit) sort(tickers map[string]bool) (sorted []string) {
 }
 
 // SearchTickers возвращает перечень тикеров, начинающихся с указанных букв, которые могут быть добавлены в портфель.
-func (p *portfolioTickersEdit) SearchTickers(sessionID, prefix string) ([]string, error) {
+func (p *TickersEdit) SearchTickers(sessionID, prefix string) ([]string, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -122,7 +122,7 @@ func (p *portfolioTickersEdit) SearchTickers(sessionID, prefix string) ([]string
 }
 
 // AddTicker добавляет тикер в текущий портфель и возвращает его состав.
-func (p *portfolioTickersEdit) AddTicker(sessionID, ticker string) ([]string, error) {
+func (p *TickersEdit) AddTicker(sessionID, ticker string) ([]string, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -150,7 +150,7 @@ func (p *portfolioTickersEdit) AddTicker(sessionID, ticker string) ([]string, er
 }
 
 // RemoveTicker удаляет тикер из портфеля и возвращает его состав.
-func (p *portfolioTickersEdit) RemoveTicker(sessionID, ticker string) ([]string, error) {
+func (p *TickersEdit) RemoveTicker(sessionID, ticker string) ([]string, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -178,7 +178,7 @@ func (p *portfolioTickersEdit) RemoveTicker(sessionID, ticker string) ([]string,
 }
 
 // Save сохраняет результаты редактирования и возвращает количество тикеров в портфеле.
-func (p *portfolioTickersEdit) Save(ctx context.Context, sessionID string) (int, error) {
+func (p *TickersEdit) Save(ctx context.Context, sessionID string) (int, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 

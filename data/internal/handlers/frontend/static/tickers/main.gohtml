@@ -1,10 +1,10 @@
 {{define "main"}}
 <h1>
     Portfolio
-    <small>{{len .Portfolio}}</small>
+    <small>{{len .Main}}</small>
 </h1>
 <ul id="tickers-list">
-    {{range .Portfolio}}
+    {{range .Main}}
     <li>
         <a title="Remove" hx-post="tickers/remove/{{.}}" hx-target="main">
             {{.}}
