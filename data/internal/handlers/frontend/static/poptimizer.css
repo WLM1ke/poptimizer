@@ -2,6 +2,12 @@
 @import url("base.css");
 @import url("interface.css");
 
+/* Dividends */
+
+main td:nth-child(2) {
+  text-align: right;
+}
+
 /* Tickers */
 
 aside #tickers-sidebar {

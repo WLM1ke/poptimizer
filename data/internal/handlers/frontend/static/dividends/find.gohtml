@@ -1,0 +1,9 @@
+{{define "find"}}
+    {{range .}}
+        <li>
+            <a title="Select" hx-post="dividends/select/{{ . }}" hx-target="main">
+                {{.}}
+            </a>
+        </li>
+    {{end}}
+{{end}}

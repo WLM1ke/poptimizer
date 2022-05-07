@@ -56,7 +56,7 @@ header li#selected a {
   color: var(--font-on-dark);
 }
 
-header li.selected a:hover {
+header li#selected a:hover {
   color: var(--link-hoover);
   stroke: var(--link-hoover);
 }

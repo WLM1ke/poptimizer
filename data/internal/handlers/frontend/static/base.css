@@ -109,3 +109,25 @@ small {
   font-weight: normal;
   color: var(--bg)
 }
+
+/* Table */
+
+table {
+  border-collapse: collapse;
+}
+
+td,
+th {
+  padding: var(--padding_sm) var(--padding_bg);
+  text-align: center;
+}
+
+
+
+thead {
+  border-bottom: 1px solid var(--bg-emphasis);
+}
+
+tbody tr:nth-child(even) {
+  background-color: var(--bg-emphasis);
+}

@@ -35,7 +35,7 @@ func NewFrontend(logger *lgr.Logger, database *mongo.Database, eventBus *bus.Eve
 	tickers := tickersHandler{
 		logger:  logger,
 		service: services.NewTickersEdit(logger, database, eventBus),
-		tmpl:    template.Must(index.ParseFS(static, "tickers/*.gohtml")),
+		tmpl:    extendTemplate(index, static, "tickers/*.gohtml"),
 	}
 
 	router.Get("/tickers", tickers.handleIndex)
@@ -43,6 +43,16 @@ func NewFrontend(logger *lgr.Logger, database *mongo.Database, eventBus *bus.Eve
 	router.Post("/tickers/add/{ticker}", tickers.handleAdd)
 	router.Post("/tickers/remove/{ticker}", tickers.handleRemove)
 	router.Post("/tickers/save", tickers.handleSave)
+
+	dividends := dividendsHandler{
+		logger:  logger,
+		service: services.NewRawDivEdit(logger, database, eventBus),
+		tmpl:    extendTemplate(index, static, "dividends/*.gohtml"),
+	}
+
+	router.Get("/dividends", dividends.handleIndex)
+	router.Post("/dividends/find", dividends.handleFind)
+	router.Post("/dividends/select/{ticker}", dividends.handleSelect)
 
 	return router
 }
