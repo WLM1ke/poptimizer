@@ -7,8 +7,6 @@ import (
 
 	"github.com/WLM1ke/poptimizer/data/internal/services"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/go-chi/chi"
 )
@@ -20,7 +18,7 @@ type tickersHandler struct {
 }
 
 func (h *tickersHandler) handleIndex(responseWriter http.ResponseWriter, request *http.Request) {
-	SessionID := primitive.NewObjectID().Hex()
+	SessionID := createSessionID()
 
 	tickers, err := h.service.GetTickers(request.Context(), SessionID)
 	if err != nil {
@@ -30,7 +28,7 @@ func (h *tickersHandler) handleIndex(responseWriter http.ResponseWriter, request
 		return
 	}
 
-	page := Page{
+	page := page{
 		Menu:      _tickers,
 		SessionID: SessionID,
 		Main:      tickers,
@@ -91,7 +89,7 @@ func (h *tickersHandler) handleAdd(responseWriter http.ResponseWriter, request *
 		return
 	}
 
-	page := Page{
+	page := page{
 		Main:   tickers,
 		Status: "edited",
 	}
@@ -123,7 +121,7 @@ func (h *tickersHandler) handleRemove(responseWriter http.ResponseWriter, reques
 		return
 	}
 
-	page := Page{
+	page := page{
 		Main:   tickers,
 		Status: "edited",
 	}
@@ -159,7 +157,7 @@ func (h *tickersHandler) handleSave(responseWriter http.ResponseWriter, request 
 		status = fmt.Sprintf("%d tickers saved with error - %s", n, err)
 	}
 
-	page := Page{Status: status}
+	page := page{Status: status}
 
 	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
 

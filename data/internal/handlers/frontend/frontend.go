@@ -2,6 +2,7 @@ package frontend
 
 import (
 	"embed"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -26,8 +27,11 @@ const (
 	_reports   = `Reports`
 )
 
-// Page содержит данные для генерации html-страницы.
-type Page struct {
+func createSessionID() string {
+	return primitive.NewObjectID().Hex()
+}
+
+type page struct {
 	Menu      string
 	SessionID string
 	Sidebar   interface{}
