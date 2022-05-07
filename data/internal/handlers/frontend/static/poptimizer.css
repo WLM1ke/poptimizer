@@ -4,7 +4,7 @@
 
 /* Tickers */
 
-aside #tickers-search {
+aside #tickers-sidebar {
   display: flex;
   flex-direction: column;
 }

@@ -1,15 +1,15 @@
 {{define "sidebar"}}
-    <div id="tickers-search">
+    <div id="tickers-sidebar">
         <h1>Add tickers</h1>
         <label>
             <input type="search"
                    name="pattern"
                    placeholder="Type to find..."
                    hx-post="tickers/search"
-                   hx-trigger="keyup changed delay:100ms, search, click from:#portfolio, click from:#search"
-                   hx-target="#search">
+                   hx-trigger="keyup changed delay:100ms, search, click from:main, click from:aside>div>ul"
+                   hx-target="aside>div>ul">
         </label>
-        <ul id="search">
+        <ul>
             {{template "search" .Sidebar}}
         </ul>
     </div>
