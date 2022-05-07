@@ -4,6 +4,11 @@
 
 /* Dividends */
 
+aside #dividends-sidebar {
+  overflow: scroll;
+  height: 100%;
+}
+
 main td:nth-child(2) {
   text-align: right;
 }
@@ -11,8 +16,8 @@ main td:nth-child(2) {
 /* Tickers */
 
 aside #tickers-sidebar {
-  display: flex;
-  flex-direction: column;
+  overflow: scroll;
+  height: 100%;
 }
 
 main #tickers-list {

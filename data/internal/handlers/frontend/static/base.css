@@ -67,7 +67,7 @@ input {
   margin-bottom: var(--padding_sm);
 }
 
-input:focus {
+input:focus, input:hover {
   border-color: var(--link-hoover);
   box-shadow: 0 0 0 1px var(--link-hoover);
 }
@@ -84,8 +84,9 @@ button {
 }
 
 button:hover {
-  color: var(--link-hoover);
+  border-color: var(--link-hoover);
   cursor: pointer;
+  box-shadow: 0 0 0 1px var(--link-hoover);
 }
 
 a {

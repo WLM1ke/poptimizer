@@ -7,12 +7,12 @@
                    placeholder="Type to find..."
                    hx-post="dividends/find"
                    hx-trigger="keyup changed delay:100ms, search"
-                   hx-target="aside>div>ul">
+                   hx-target="aside>ul">
         </label>
-        <ul>
-            {{template "find" .Sidebar}}
-        </ul>
     </div>
+    <ul id="dividends-sidebar">
+        {{template "find" .Sidebar}}
+    </ul>
     <button hx-post="dividends/save" hx-target="footer>div:nth-child(2)">
         Save
     </button>
