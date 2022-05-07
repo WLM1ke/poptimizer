@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/WLM1ke/poptimizer/data/internal/services"
-
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/go-chi/chi"
 )
@@ -35,11 +34,8 @@ func (h *tickersHandler) handleIndex(responseWriter http.ResponseWriter, request
 		Status:    "not edited",
 	}
 
-	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
-
-	if err := h.tmpl.ExecuteTemplate(responseWriter, "index", page); err != nil {
-		h.logger.Warnf("Server: can't render tmpl template -> %s", err)
-		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
+	if err := execTemplate(h.tmpl, "index", page, responseWriter); err != nil {
+		h.logger.Warnf("Server: can't render template -> %s", err)
 	}
 }
 
@@ -62,11 +58,8 @@ func (h *tickersHandler) handleSearch(responseWriter http.ResponseWriter, reques
 		return
 	}
 
-	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
-
-	if err := h.tmpl.ExecuteTemplate(responseWriter, "search", tickers); err != nil {
-		h.logger.Warnf("Server: can't render search template -> %s", err)
-		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
+	if err := execTemplate(h.tmpl, "search", tickers, responseWriter); err != nil {
+		h.logger.Warnf("Server: can't render template -> %s", err)
 	}
 }
 
@@ -94,11 +87,8 @@ func (h *tickersHandler) handleAdd(responseWriter http.ResponseWriter, request *
 		Status: "edited",
 	}
 
-	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
-
-	if err := h.tmpl.ExecuteTemplate(responseWriter, "change", page); err != nil {
-		h.logger.Warnf("Server: can't render portfolio template -> %s", err)
-		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
+	if err := execTemplate(h.tmpl, "change", page, responseWriter); err != nil {
+		h.logger.Warnf("Server: can't render template -> %s", err)
 	}
 }
 
@@ -126,11 +116,8 @@ func (h *tickersHandler) handleRemove(responseWriter http.ResponseWriter, reques
 		Status: "edited",
 	}
 
-	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
-
-	if err := h.tmpl.ExecuteTemplate(responseWriter, "change", page); err != nil {
-		h.logger.Warnf("Server: can't render portfolio template -> %s", err)
-		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
+	if err := execTemplate(h.tmpl, "change", page, responseWriter); err != nil {
+		h.logger.Warnf("Server: can't render template -> %s", err)
 	}
 }
 
@@ -159,10 +146,7 @@ func (h *tickersHandler) handleSave(responseWriter http.ResponseWriter, request 
 
 	page := page{Status: status}
 
-	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
-
-	if err := h.tmpl.ExecuteTemplate(responseWriter, "status", page); err != nil {
-		h.logger.Warnf("Server: can't render portfolio template -> %s", err)
-		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
+	if err := execTemplate(h.tmpl, "status", page, responseWriter); err != nil {
+		h.logger.Warnf("Server: can't render template -> %s", err)
 	}
 }

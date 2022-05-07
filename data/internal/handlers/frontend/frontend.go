@@ -2,7 +2,6 @@ package frontend
 
 import (
 	"embed"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -16,28 +15,6 @@ import (
 
 //go:embed static
 var static embed.FS
-
-// Tickers - пункт меню с информацией о тикерах в портфеле.
-const (
-	_tickers   = `Tickers`
-	_dividends = `Dividends`
-	_main      = `Main`
-	_metrics   = `Metrics`
-	_optimizer = `Optimizer`
-	_reports   = `Reports`
-)
-
-func createSessionID() string {
-	return primitive.NewObjectID().Hex()
-}
-
-type page struct {
-	Menu      string
-	SessionID string
-	Sidebar   interface{}
-	Main      interface{}
-	Status    string
-}
 
 // NewFrontend создает обработчики отображающие frontend.
 func NewFrontend(logger *lgr.Logger, database *mongo.Database, eventBus *bus.EventBus) http.Handler {
