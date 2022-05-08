@@ -27,6 +27,8 @@ func NewFrontend(logger *lgr.Logger, database *mongo.Database, eventBus *bus.Eve
 
 	router := chi.NewRouter()
 
+	router.Handle("/", http.RedirectHandler("/tickers", http.StatusMovedPermanently))
+
 	router.Handle(
 		"/{file}.css",
 		http.StripPrefix("/", http.FileServer(http.FS(static))),
