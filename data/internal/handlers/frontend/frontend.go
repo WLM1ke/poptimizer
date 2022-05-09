@@ -55,6 +55,8 @@ func NewFrontend(logger *lgr.Logger, database *mongo.Database, eventBus *bus.Eve
 	router.Get("/dividends", dividends.handleIndex)
 	router.Post("/dividends/find", dividends.handleFind)
 	router.Post("/dividends/select/{ticker}", dividends.handleSelect)
+	router.Post("/dividends/add", dividends.handleAddRow)
+	router.Post("/dividends/save", dividends.handleSave)
 
 	return router
 }

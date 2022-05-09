@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 
@@ -92,78 +93,60 @@ func (d *dividendsHandler) handleSelect(responseWriter http.ResponseWriter, requ
 	}
 }
 
-// func (h *handler) handleAddRow(responseWriter http.ResponseWriter, request *http.Request) {
-//	if err := request.ParseForm(); err != nil {
-//		h.logger.Warnf("Server: can't parse request form -> %s", err)
-//		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
-//
-//		return
-//	}
-//
-//	row, err := h.service.AddRow(
-//		request.PostForm.Get("sessionID"),
-//		request.PostForm.Get("date"),
-//		request.PostForm.Get("value"),
-//		request.PostForm.Get("currency"),
-//	)
-//	if err != nil {
-//		h.logger.Warnf("Server: can't add row -> %s", err)
-//		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
-//
-//		return
-//	}
-//
-//	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
-//
-//	if err := h.rows.Execute(responseWriter, row); err != nil {
-//		h.logger.Warnf("Server: can't render rows template -> %s", err)
-//		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
-//	}
-//}
-//
-// func (h *handler) handleReload(responseWriter http.ResponseWriter, request *http.Request) {
-//	if err := request.ParseForm(); err != nil {
-//		h.logger.Warnf("Server: can't parse request form -> %s", err)
-//		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
-//
-//		return
-//	}
-//
-//	div, err := h.service.Reload(request.Context(), request.PostForm.Get("sessionID"))
-//	if err != nil {
-//		h.logger.Warnf("Server: can't reload page -> %s", err)
-//		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
-//
-//		return
-//	}
-//
-//	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
-//
-//	if err := h.rows.Execute(responseWriter, div); err != nil {
-//		h.logger.Warnf("Server: can't render rows template -> %s", err)
-//		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
-//	}
-//}
-//
-// func (h *handler) handleSave(responseWriter http.ResponseWriter, request *http.Request) {
-//	if err := request.ParseForm(); err != nil {
-//		h.logger.Warnf("Server: can't parse request form -> %s", err)
-//		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
-//
-//		return
-//	}
-//
-//	status := "Saved successfully"
-//
-//	err := h.service.Save(request.Context(), request.PostForm.Get("sessionID"))
-//	if err != nil {
-//		status = fmt.Sprintf("Error occurred: %s", err)
-//	}
-//
-//	responseWriter.Header().Set("Content-Type", "text/html; charset=UTF-8")
-//
-//	if err := h.save.Execute(responseWriter, status); err != nil {
-//		h.logger.Warnf("Server: can't render save template -> %s", err)
-//		http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
-//	}
-//}
+func (d *dividendsHandler) handleAddRow(responseWriter http.ResponseWriter, request *http.Request) {
+	if err := request.ParseForm(); err != nil {
+		d.logger.Warnf("Server: can't parse request form -> %s", err)
+		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
+
+		return
+	}
+
+	divInfo, err := d.service.AddRow(
+		request.PostForm.Get("sessionID"),
+		request.PostForm.Get("date"),
+		request.PostForm.Get("value"),
+		request.PostForm.Get("currency"),
+	)
+	if err != nil {
+		d.logger.Warnf("Server: can't add row -> %s", err)
+		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
+
+		return
+	}
+
+	page := page{
+		Main:   divInfo,
+		Status: "edited",
+	}
+
+	if err := execTemplate(d.tmpl, "add", page, responseWriter); err != nil {
+		d.logger.Warnf("Server: can't render template -> %s", err)
+	}
+}
+
+func (d *dividendsHandler) handleSave(responseWriter http.ResponseWriter, request *http.Request) {
+	if err := request.ParseForm(); err != nil {
+		d.logger.Warnf("Server: can't parse request form -> %s", err)
+		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
+
+		return
+	}
+
+	n, err := d.service.Save(request.Context(), request.PostForm.Get("sessionID"))
+
+	status := fmt.Sprintf("%d dividends saved sucsessfully", n)
+
+	if err != nil {
+		d.logger.Warnf("Server: can't save dividends -> %s", err)
+
+		responseWriter.WriteHeader(http.StatusInternalServerError)
+
+		status = fmt.Sprintf("%d dividends saved with error - %s", n, err)
+	}
+
+	page := page{Status: status}
+
+	if err := execTemplate(d.tmpl, "status", page, responseWriter); err != nil {
+		d.logger.Warnf("Server: can't render template -> %s", err)
+	}
+}

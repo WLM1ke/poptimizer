@@ -6,7 +6,6 @@ import (
 	"github.com/WLM1ke/poptimizer/data/internal/handlers/frontend"
 
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
-	"github.com/WLM1ke/poptimizer/data/internal/handlers/div"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/WLM1ke/poptimizer/data/pkg/server"
@@ -31,11 +30,6 @@ func NewHTTPServer(
 ) *server.Server {
 	router := chi.NewRouter()
 	router.Mount("/api", newJSONHandler(logger, repo.NewMongoJSON(database)))
-
-	router.Mount(
-		"/edit/div",
-		div.NewEditHandler(logger, database, eventBus),
-	)
 
 	router.Mount(
 		"/",

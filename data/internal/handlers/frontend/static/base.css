@@ -10,6 +10,7 @@
   --link-hoover: #1e87f0;
   --padding_sm: 6px;
   --padding_bg: 1em;
+  --max-width: 125px
 }
 
 * {
@@ -55,38 +56,61 @@ svg {
 
 /* Forms */
 
-input {
-  width: 100%;
+button,
+input[type="search"],
+input[type="date"],
+input[type="text"],
+input[type="submit"],
+select {
+  box-sizing: border-box;
+  height: 2em;
+  font-size: 1em;
   border-radius: var(--padding_sm);
   border-width: 1px;
-  border-color: var(--link);
   border-style: solid;
-  color: var(--link);
   outline: none;
-  padding-left: var(--padding_sm);
+  padding: var(--padding_sm);
   margin-bottom: var(--padding_sm);
 }
 
-input:focus, input:hover {
-  border-color: var(--link-hoover);
-  box-shadow: 0 0 0 1px var(--link-hoover);
-}
-
-button {
-  width: 100%;
-  border-radius: var(--padding_sm);
-  border-width: 1px;
-  border-color: var(--link);
-  border-style: solid;
+input[type="search"],
+input[type="date"],
+input[type="text"],
+select {
   background-color: var(--bg);
+  border-color: var(--link);
   color: var(--link);
-  padding: var(--padding_sm) var(--padding_bg);
+  appearance: none;
 }
 
+button,
+input[type="submit"] {
+  background-color: var(--link-hoover);
+  border-color: var(--link-hoover);
+  color: var(--bg);
+}
+
+button,
+input[type="submit"],
+input[type="search"],
+input[type="text"] {
+  width: var(--max-width);
+}
+
+input:focus,
+input:hover,
+select:focus,
+select:hover,
 button:hover {
   border-color: var(--link-hoover);
-  cursor: pointer;
   box-shadow: 0 0 0 1px var(--link-hoover);
+}
+
+button,
+select,
+input[type='submit'],
+input[type='reset'] {
+  cursor: pointer;
 }
 
 a {
@@ -119,6 +143,7 @@ table {
 
 td,
 th {
+  width: var(--max-width);
   padding: var(--padding_sm) var(--padding_bg);
   text-align: center;
 }

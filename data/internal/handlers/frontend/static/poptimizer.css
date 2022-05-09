@@ -9,8 +9,17 @@ aside #dividends-sidebar {
   height: 100%;
 }
 
-main td:nth-child(2) {
-  text-align: right;
+main #dividends-main{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+main #dividends-main form {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--padding_bg);
 }
 
 /* Tickers */

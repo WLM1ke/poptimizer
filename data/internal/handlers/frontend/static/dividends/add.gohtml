@@ -1,0 +1,4 @@
+{{define "add"}}
+    {{template "table" .}}
+    <div hx-swap-oob="innerHTML:footer>div:nth-child(2)">{{template "status" .}}</div>
+{{end}}

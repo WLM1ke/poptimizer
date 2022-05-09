@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -23,6 +25,7 @@ type RawDivInfo struct {
 	source    []domain.CurrencyDiv
 }
 
+// Missed возможные претенденты на добавление.
 func (d RawDivInfo) Missed() (missed []domain.CurrencyDiv) {
 	index := make(map[domain.CurrencyDiv]bool)
 
@@ -39,8 +42,8 @@ func (d RawDivInfo) Missed() (missed []domain.CurrencyDiv) {
 	return missed
 }
 
-// NewDiv шаблон для создания новой записи о дивидендах.
-func (d RawDivInfo) NewDiv() domain.CurrencyDiv {
+// NewRow шаблон для создания новой записи о дивидендах.
+func (d RawDivInfo) NewRow() domain.CurrencyDiv {
 	if missed := d.Missed(); len(missed) > 0 {
 		return missed[0]
 	}
@@ -182,84 +185,82 @@ func (r *RawDivEdit) GetDividends(ctx context.Context, sessionID, ticker string)
 	return r.div, nil
 }
 
-//// AddRow добавляет новые строки в таблицу в рамках пользовательской сессии.
-// func (r *RawDivEdit) AddRow(sessionID, date, value, currency string) (RawDivInfo, error) {
-//	r.lock.Lock()
-//	defer r.lock.Unlock()
-//
-//	if sessionID != r.div.SessionID {
-//		return r.div, fmt.Errorf(
-//			"wrong session id - %s",
-//			sessionID,
-//		)
-//	}
-//
-//	row, err := parseRow(date, value, currency)
-//	if err != nil {
-//		return r.div, err
-//	}
-//
-//	r.div.Dividends = append(r.div.Dividends, row)
-//
-//	return r.div, nil
-//}
-//
-// func parseRow(date, value, currency string) (row domain.CurrencyDiv, err error) {
-//	row.Date, err = time.Parse(_timeFormat, date)
-//	if err != nil {
-//		return row, fmt.Errorf(
-//			"can't parse -> %w",
-//			err,
-//		)
-//	}
-//
-//	row.Value, err = strconv.ParseFloat(value, 64)
-//	if err != nil {
-//		return row, fmt.Errorf(
-//			"can't parse -> %w",
-//			err,
-//		)
-//	}
-//
-//	row.Currency = currency
-//	if currency != domain.USDCurrency && currency != domain.RURCurrency {
-//		return row, fmt.Errorf(
-//			"incorrect currency - %s",
-//			currency,
-//		)
-//	}
-//
-//	return row, nil
-//}
-//
-//// Save сохраняет результаты редактирования.
-//func (r *RawDivEdit) Save(ctx context.Context, sessionID string) error {
-//	r.lock.Lock()
-//	defer r.lock.Unlock()
-//
-//	defer func() { r.div.SessionID = "" }()
-//
-//	if sessionID != r.div.SessionID {
-//		return fmt.Errorf(
-//			"wrong session id - %s",
-//			sessionID,
-//		)
-//	}
-//
-//	tableID := domain.NewRawDivID(r.div.Ticker)
-//
-//	rows := r.div.Dividends
-//	sort.Slice(rows, func(i, j int) bool { return rows[i].Date.Before(rows[j].Date) })
-//
-//	err := r.dividends.Replace(ctx, domain.NewTable(tableID, time.Now(), rows))
-//	if err != nil {
-//		return fmt.Errorf("can't save to dividends -> %w", err)
-//	}
-//
-//	err = r.bus.Send(domain.NewUpdateCompleted(tableID))
-//	if err != nil {
-//		return fmt.Errorf("can't send update event -> %w", err)
-//	}
-//
-//	return nil
-//}
+// AddRow добавляет новые строки в таблицу в рамках пользовательской сессии.
+func (r *RawDivEdit) AddRow(sessionID, date, value, currency string) (RawDivInfo, error) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	if sessionID != r.id {
+		return r.div, fmt.Errorf(
+			"wrong session id - %s",
+			sessionID,
+		)
+	}
+
+	row, err := parseRow(date, value, currency)
+	if err != nil {
+		return r.div, err
+	}
+
+	r.div.Dividends = append(r.div.Dividends, row)
+
+	return r.div, nil
+}
+
+func parseRow(date, value, currency string) (row domain.CurrencyDiv, err error) {
+	row.Date, err = time.Parse(_timeFormat, date)
+	if err != nil {
+		return row, fmt.Errorf(
+			"can't parse -> %w",
+			err,
+		)
+	}
+
+	row.Value, err = strconv.ParseFloat(value, 64)
+	if err != nil {
+		return row, fmt.Errorf(
+			"can't parse -> %w",
+			err,
+		)
+	}
+
+	row.Currency = currency
+	if currency != domain.USDCurrency && currency != domain.RURCurrency {
+		return row, fmt.Errorf(
+			"incorrect currency - %s",
+			currency,
+		)
+	}
+
+	return row, nil
+}
+
+// Save сохраняет результаты редактирования.
+func (r *RawDivEdit) Save(ctx context.Context, sessionID string) (int, error) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	if sessionID != r.id {
+		return 0, fmt.Errorf(
+			"wrong session id - %s",
+			sessionID,
+		)
+	}
+
+	tableID := domain.NewRawDivID(r.div.Ticker)
+
+	rows := r.div.Dividends
+	sort.Slice(rows, func(i, j int) bool { return rows[i].Date.Before(rows[j].Date) })
+
+	err := r.dividends.Replace(ctx, domain.NewTable(tableID, time.Now(), rows))
+	if err != nil {
+		return 0, fmt.Errorf("can't save to dividends -> %w", err)
+	}
+
+	err = r.bus.Send(domain.NewUpdateCompleted(tableID))
+	if err != nil {
+		return len(rows), fmt.Errorf("can't send update event -> %w", err)
+	}
+
+	return len(rows), nil
+}

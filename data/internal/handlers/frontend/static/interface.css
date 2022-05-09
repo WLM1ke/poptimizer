@@ -2,8 +2,7 @@
 
 body {
   display: grid;
-  height: 100vh;
-  grid-template-columns: 150px calc(100vw - 150px);
+  grid-template-columns: calc(var(--max-width) + 2 * var(--padding_bg))  calc(100vw - var(--max-width) - 2 * var(--padding_bg));
   grid-template-rows: 40px calc(100vh - 40px - 20px) 20px;
   grid-template-areas:
     "header header"
