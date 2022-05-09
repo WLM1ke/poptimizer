@@ -4,15 +4,19 @@
 
 ## Endpoints
 
-### api/{group}/{ticker}
+### /api/{group}/{ticker}
 
 Получение данных в формате MongoDB Extended JSON (v2)
 
-### edit/div/{ticker}
+### /
+
+Перенаправляет на Frontend
+
+### /dividends
 
 Frontend для дополнения данных по дивидендам
 
-### edit/port/tickers
+### /tickers
 
 Frontend для изменения перечня бумаг в портфеле, для которых необходимо отслеживать появление новых дивидендов
 
