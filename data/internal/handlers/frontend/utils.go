@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"fmt"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -11,10 +12,6 @@ import (
 const (
 	_tickers   = `Tickers`
 	_dividends = `Dividends`
-	_main      = `Main`
-	_metrics   = `Metrics`
-	_optimizer = `Optimizer`
-	_reports   = `Reports`
 )
 
 func createSessionID() string {
@@ -34,7 +31,7 @@ func execTemplate(tmpl *template.Template, name string, page interface{}, w http
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
-		return err
+		return fmt.Errorf("can't render template %s -> %w", name, err)
 	}
 
 	return nil

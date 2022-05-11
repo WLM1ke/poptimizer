@@ -36,7 +36,7 @@ type buffer struct {
 	bs []byte
 }
 
-func (b *buffer) Write(bs []byte) (n int, err error) {
+func (b *buffer) Write(bs []byte) (int, error) {
 	b.bs = append(b.bs, bs...)
 
 	return len(bs), nil

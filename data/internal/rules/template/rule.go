@@ -11,7 +11,7 @@ import (
 )
 
 // Rule - шаблон правила по обновлению большинства таблиц.
-type Rule[R domain.Row] struct { //nolint:varnamelen
+type Rule[R domain.Row] struct {
 	name      string
 	logger    *lgr.Logger
 	repo      repo.ReadWrite[R]
@@ -23,7 +23,7 @@ type Rule[R domain.Row] struct { //nolint:varnamelen
 }
 
 // NewRule создает правило на основе шаблона.
-func NewRule[R domain.Row]( //nolint:varnamelen
+func NewRule[R domain.Row](
 	name string,
 	logger *lgr.Logger,
 	tableRepo repo.ReadWrite[R],

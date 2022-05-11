@@ -5,10 +5,9 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/go-chi/chi"
-
 	"github.com/WLM1ke/poptimizer/data/internal/services"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
+	"github.com/go-chi/chi"
 )
 
 type dividendsHandler struct {
@@ -35,7 +34,7 @@ func (d *dividendsHandler) handleIndex(responseWriter http.ResponseWriter, reque
 	}
 
 	if err := execTemplate(d.tmpl, "index", page, responseWriter); err != nil {
-		d.logger.Warnf("Server: can't render template -> %s", err)
+		d.logger.Warnf("Server: %s", err)
 	}
 }
 
@@ -59,7 +58,7 @@ func (d *dividendsHandler) handleFind(responseWriter http.ResponseWriter, reques
 	}
 
 	if err := execTemplate(d.tmpl, "find", tickers, responseWriter); err != nil {
-		d.logger.Warnf("Server: can't render template -> %s", err)
+		d.logger.Warnf("Server: %s", err)
 	}
 }
 
@@ -89,7 +88,7 @@ func (d *dividendsHandler) handleSelect(responseWriter http.ResponseWriter, requ
 	}
 
 	if err := execTemplate(d.tmpl, "dividends", page, responseWriter); err != nil {
-		d.logger.Warnf("Server: can't render template -> %s", err)
+		d.logger.Warnf("Server: %s", err)
 	}
 }
 
@@ -120,7 +119,7 @@ func (d *dividendsHandler) handleAddRow(responseWriter http.ResponseWriter, requ
 	}
 
 	if err := execTemplate(d.tmpl, "add", page, responseWriter); err != nil {
-		d.logger.Warnf("Server: can't render template -> %s", err)
+		d.logger.Warnf("Server: %s", err)
 	}
 }
 
@@ -132,21 +131,21 @@ func (d *dividendsHandler) handleSave(responseWriter http.ResponseWriter, reques
 		return
 	}
 
-	n, err := d.service.Save(request.Context(), request.PostForm.Get("sessionID"))
+	count, err := d.service.Save(request.Context(), request.PostForm.Get("sessionID"))
 
-	status := fmt.Sprintf("%d dividends saved sucsessfully", n)
+	status := fmt.Sprintf("%d dividends saved sucsessfully", count)
 
 	if err != nil {
 		d.logger.Warnf("Server: can't save dividends -> %s", err)
 
 		responseWriter.WriteHeader(http.StatusInternalServerError)
 
-		status = fmt.Sprintf("%d dividends saved with error - %s", n, err)
+		status = fmt.Sprintf("%d dividends saved with error - %s", count, err)
 	}
 
 	page := page{Status: status}
 
 	if err := execTemplate(d.tmpl, "status", page, responseWriter); err != nil {
-		d.logger.Warnf("Server: can't render template -> %s", err)
+		d.logger.Warnf("Server: %s", err)
 	}
 }

@@ -129,19 +129,19 @@ func (h *tickersHandler) handleSave(responseWriter http.ResponseWriter, request 
 		return
 	}
 
-	n, err := h.service.Save(
+	count, err := h.service.Save(
 		request.Context(),
 		request.PostForm.Get("sessionID"),
 	)
 
-	status := fmt.Sprintf("%d tickers saved sucsessfully", n)
+	status := fmt.Sprintf("%d tickers saved sucsessfully", count)
 
 	if err != nil {
 		h.logger.Warnf("Server: can't save portfolio -> %s", err)
 
 		responseWriter.WriteHeader(http.StatusInternalServerError)
 
-		status = fmt.Sprintf("%d tickers saved with error - %s", n, err)
+		status = fmt.Sprintf("%d tickers saved with error - %s", count, err)
 	}
 
 	page := page{Status: status}

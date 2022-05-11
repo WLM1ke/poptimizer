@@ -3,9 +3,8 @@ package handlers
 import (
 	"time"
 
-	"github.com/WLM1ke/poptimizer/data/internal/handlers/frontend"
-
 	"github.com/WLM1ke/poptimizer/data/internal/bus"
+	"github.com/WLM1ke/poptimizer/data/internal/handlers/frontend"
 	"github.com/WLM1ke/poptimizer/data/internal/repo"
 	"github.com/WLM1ke/poptimizer/data/pkg/lgr"
 	"github.com/WLM1ke/poptimizer/data/pkg/server"

@@ -62,7 +62,7 @@ func (p *TickersEdit) GetTickers(ctx context.Context, sessionID string) ([]strin
 
 	p.id = sessionID
 
-	var rez []string
+	rez := make([]string, 0, len(port.Rows()))
 
 	p.port = make(map[string]bool)
 	for _, ticker := range port.Rows() {
@@ -81,16 +81,6 @@ func (p *TickersEdit) GetTickers(ctx context.Context, sessionID string) ([]strin
 	}
 
 	return rez, nil
-}
-
-func (p *TickersEdit) sort(tickers map[string]bool) (sorted []string) {
-	for ticker := range tickers {
-		sorted = append(sorted, ticker)
-	}
-
-	sort.Slice(sorted, func(i, j int) bool { return sorted[i] < sorted[j] })
-
-	return sorted
 }
 
 // SearchTickers возвращает перечень тикеров, начинающихся с указанных букв, которые могут быть добавлены в портфель.
@@ -138,7 +128,7 @@ func (p *TickersEdit) AddTicker(sessionID, ticker string) ([]string, error) {
 
 	p.port[ticker] = true
 
-	var port []string
+	port := make([]string, 0, len(p.port))
 
 	for ticker := range p.port {
 		port = append(port, ticker)
@@ -166,7 +156,7 @@ func (p *TickersEdit) RemoveTicker(sessionID, ticker string) ([]string, error) {
 
 	p.add[ticker] = true
 
-	var port []string
+	port := make([]string, 0, len(p.port))
 
 	for ticker := range p.port {
 		port = append(port, ticker)
@@ -186,7 +176,7 @@ func (p *TickersEdit) Save(ctx context.Context, sessionID string) (int, error) {
 		return 0, fmt.Errorf("wrong session id - %s", sessionID)
 	}
 
-	var rows []domain.Position
+	rows := make([]domain.Position, 0, len(p.port))
 
 	for ticker := range p.port {
 		rows = append(rows, domain.Position(ticker))
