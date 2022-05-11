@@ -3,7 +3,7 @@ import pandas as pd
 
 from poptimizer.dl import forecast, ledoit_wolf
 
-TICKERS = ("CHEP", "MTSS", "PLZL")
+TICKERS = ("BANEP", "MTSS", "PLZL")
 DATE = pd.Timestamp("2020-05-19")
 HISTORY_DAYS = 30
 
@@ -23,11 +23,11 @@ def test_forecast():
     )
 
     assert data.cov.shape == (3, 3)
-    assert np.allclose(np.diag(data.cov), STD.values ** 2)
+    assert np.allclose(np.diag(data.cov), STD.values**2)
     assert np.allclose(data.cov, data.cov.transpose())
 
     cor, *_ = ledoit_wolf.ledoit_wolf_cor(TICKERS, DATE, HISTORY_DAYS)
     assert np.allclose(cor, data.cov / STD.values.reshape(1, -1) / STD.values.reshape(-1, 1))
 
-    assert np.allclose(data.cor, 0.1579351254545552)
-    assert np.allclose(data.shrinkage, 0.7074063618114778)
+    assert np.allclose(data.cor, 0.1605639317251608)
+    assert np.allclose(data.shrinkage, 1)

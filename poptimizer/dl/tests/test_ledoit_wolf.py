@@ -31,7 +31,7 @@ def test_ledoit_wolf():
 
 def test_ledoit_wolf_cor():
     cor, average_cor, shrink = ledoit_wolf.ledoit_wolf_cor(
-        ("CHEP", "MTSS", "PLZL"),
+        ("GAZP", "MTSS", "PLZL"),
         pd.Timestamp("2020-05-19"),
         31,
     )
@@ -40,20 +40,20 @@ def test_ledoit_wolf_cor():
     assert np.allclose(cor, cor.transpose())
     assert np.allclose(np.diag(cor), 1)
 
-    assert np.allclose(average_cor, 0.3009843442553877)
+    assert np.allclose(average_cor, 0.3451296876579886)
     assert np.allclose(average_cor, (cor.sum() - 3) / 6)
 
-    assert np.allclose(shrink, 0.8625220790109036)
+    assert np.allclose(shrink, 0.5643370267153482)
 
 
 def test_ledoit_wolf_cor_forecast_days():
     sigma, average_cor, shrink = ledoit_wolf.ledoit_wolf_cor(
-        ("CHEP", "MTSS", "PLZL"),
+        ("MSRS", "MTSS", "PLZL"),
         pd.Timestamp("2021-09-30"),
         30,
     )
     sigma2, average_cor2, shrink2 = ledoit_wolf.ledoit_wolf_cor(
-        ("CHEP", "MTSS", "PLZL"),
+        ("MSRS", "MTSS", "PLZL"),
         pd.Timestamp("2021-10-01"),
         30,
         1,
