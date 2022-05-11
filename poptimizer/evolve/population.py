@@ -222,7 +222,7 @@ def _get_parents() -> tuple[Organism, Organism]:
     return Organism(), Organism()
 
 
-def _aggregate_oldest(limit: int, first_step: Optional[dict] = None):
+def _aggregate_oldest(limit: int, first_steps: Optional[list[dict]] = None):
     """Берет первые документы по возрастанию id.
 
     При наличии добавляет первый шаг агрегации.
@@ -232,20 +232,22 @@ def _aggregate_oldest(limit: int, first_step: Optional[dict] = None):
         {"$sort": {"_id": pymongo.ASCENDING}},
         {"$limit": limit},
     ]
-    if first_step:
-        pipeline = [first_step] + pipeline
+    if first_steps:
+        pipeline = first_steps + pipeline
 
     return store.get_collection().aggregate(pipeline)
 
 
 def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
-    """Последовательно выдает организмы с датой не равной данной и None при отсутствии.
+    """Выдает случайные организмы с датой не равной данной и None при отсутствии."""
+    pipeline = [
+        {"$match": {"date": {"$ne": date}}},
+        {"$project": {"_id": True}},
+        {"$sample": {"size": 1}},
+    ]
 
-    Организмы выдаются в порядке убывания возраста. Если в качестве параметра передается None выдается
-    самая старая модель, чтобы эволюция после перезапуска программы начиналась с проверенных организмов.
-    """
     doc = next(
-        _aggregate_oldest(1, {"$match": {"date": {"$ne": date}}}),
+        _aggregate_oldest(1, pipeline),
         None,
     )
 
@@ -254,7 +256,7 @@ def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
 
 def get_metrics() -> Iterable[dict[str, list[float]]]:
     """Данные о ключевых параметрах популяции."""
-    yield from _aggregate_oldest(count(), {"$match": {"date": {"$exists": True}}})
+    yield from _aggregate_oldest(count(), [{"$match": {"date": {"$exists": True}}}])
 
 
 def get_all() -> Iterator[Organism]:
