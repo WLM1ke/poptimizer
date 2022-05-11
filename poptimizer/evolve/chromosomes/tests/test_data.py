@@ -6,7 +6,7 @@ def test_init_no_data():
     chromo = data.Data({})
     assert len(chromo.data) == len(chromo._genes)
     assert 128 < chromo.data["batch_size"] < 512
-    assert config.HISTORY_DAYS_MIN < chromo.data["history_days"] < config.HISTORY_DAYS_MIN * 2
+    assert config.HISTORY_DAYS_MIN * 2 < chromo.data["history_days"] < config.HISTORY_DAYS_MIN * 12
     assert -1.0 < chromo.data["ticker_on"] < 1.0
     assert -1.0 < chromo.data["day_of_year_on"] < 1.0
     assert -1.0 < chromo.data["day_of_period_on"] < 1.0
@@ -77,7 +77,7 @@ def test_make_child(monkeypatch):
     base = data.Data(
         dict(
             batch_size=40,
-            history_days=config.HISTORY_DAYS_MIN,
+            history_days=config.HISTORY_DAYS_MIN * 5,
             ticker_on=1,
             day_of_year_on=1,
             day_of_period_on=2,
