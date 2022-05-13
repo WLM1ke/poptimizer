@@ -1,9 +1,34 @@
 {{define "dividends"}}
     <div id="dividends-main">
         <section>
-            {{template "table" .}}
+            <h1>{{.Main.Ticker}} <small>{{ len .Main.Dividends }}</small></h1>
+            <table>
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Value</th>
+                    <th>Currency</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{ range .Main.Dividends }}
+                    <tr>
+                        <td>{{ .Date.Format "2006-01-02" }}</td>
+                        <td>{{ .Value }}</td>
+                        <td>{{ .Currency }}</td>
+                    </tr>
+                {{end}}
+                {{ range .Main.Missed }}
+                    <tr>
+                        <td>{{ .Date.Format "2006-01-02" }} <em>(missed)</em></td>
+                        <td>{{ .Value }}</td>
+                        <td>{{ .Currency}}</td>
+                    </tr>
+                {{end}}
+                </tbody>
+            </table>
         </section>
-        <form hx-post="dividends/add" hx-target="main>div>section">
+        <form hx-post="dividends/add" hx-target="main>div">
             <label>
                 Date
                 <input type="date" name="date" value={{ .Main.NewRow.Date.Format "2006-01-02" }}>
