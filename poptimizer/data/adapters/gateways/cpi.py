@@ -10,6 +10,10 @@ from poptimizer.data.adapters.gateways import gateways
 from poptimizer.shared import adapters, col
 
 # Параметры загрузки валидации данных
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
+}
+
 PRICES_PAGE = "https://rosstat.gov.ru/price"
 CPI_PAGE = re.compile("/storage/mediabank/ind_potreb_cen_.+html")
 HOST = "https://rosstat.gov.ru"
@@ -54,12 +58,12 @@ async def _load_and_parse_xlsx(session: aiohttp.ClientSession) -> pd.DataFrame:
 async def _loap_cpi_page(session: aiohttp.ClientSession) -> str:
     path = await _find_cpi_page(session)
 
-    async with session.get(HOST + path) as resp:
+    async with session.get(HOST + path, headers=HEADERS) as resp:
         return await resp.text("cp1251")
 
 
 async def _find_cpi_page(session: aiohttp.ClientSession) -> str:
-    async with session.get(PRICES_PAGE) as resp:
+    async with session.get(PRICES_PAGE, headers=HEADERS) as resp:
         html = await resp.text()
     if not (search_result := CPI_PAGE.search(html)):
         raise CPIGatewayError("Не могу найти ссылку на страницу с инфляцией")
@@ -68,7 +72,7 @@ async def _find_cpi_page(session: aiohttp.ClientSession) -> str:
 
 
 async def _load_xlsx(session: aiohttp.ClientSession, url: str) -> bytes:
-    async with session.get(url) as resp:
+    async with session.get(url, headers=HEADERS) as resp:
         return await resp.read()
 
 
