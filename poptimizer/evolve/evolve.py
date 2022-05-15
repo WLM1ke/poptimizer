@@ -24,6 +24,7 @@ class Evolution:  # noqa: WPS214
 
     def __init__(self):
         """Инициализирует необходимые параметры."""
+        self._delta = 0
         self._tickers = None
         self._end = None
         self._logger = logging.getLogger()
@@ -42,7 +43,7 @@ class Evolution:  # noqa: WPS214
             date = self._end.date()
             self._logger.info(f"***{date}: Шаг эволюции — {step}***")
             population.print_stat()
-            self._logger.info("")
+            self._logger.info(f"Delta - {self._delta}\n")
 
             if org is None:
                 org = population.get_next_one(self._end) or population.get_next_one(None)
@@ -65,6 +66,7 @@ class Evolution:  # noqa: WPS214
             return step + 1
 
         self._end = dates[1]
+        self._delta = 0
 
         return 1
 
@@ -88,7 +90,7 @@ class Evolution:  # noqa: WPS214
             return None
         if margin[0] < 0:
             return None
-        if hunter.scores > start_scores:
+        if start_scores and hunter.scores > start_scores:
             return None
         if margin[0] - margin[1] < 0:
             self._logger.info("Медленный не размножается...\n")
@@ -101,7 +103,12 @@ class Evolution:  # noqa: WPS214
         if (margin := self._eval_organism(prey, hunter.scores)) is None:
             return None
         if margin[0] < 0:
+            self._delta += 1
+
             return None
+
+        self._delta = max(0, self._delta - 1)
+
         if margin[0] - margin[1] < 0:
             return None
 
@@ -129,7 +136,7 @@ class Evolution:  # noqa: WPS214
         dates = [self._end]
         if not organism.llh:
             dates = listing.all_history_date(self._tickers, end=self._end)
-            dates = dates[-_n_test() :].tolist()
+            dates = dates[-self._n_test() :].tolist()
 
         for date in dates:
             try:
@@ -186,9 +193,8 @@ class Evolution:  # noqa: WPS214
 
         return margin, time_delta
 
-
-def _n_test() -> int:
-    return max(seq.minimum_bounding_n(config.P_VALUE / population.count()), population.count())
+    def _n_test(self) -> int:
+        return max(seq.minimum_bounding_n(config.P_VALUE / population.count()), population.count() + self._delta)
 
 
 def _time_delta(org):
