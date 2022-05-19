@@ -22,7 +22,8 @@ const (
 	_pastDays   = 0
 )
 
-var reTicker = regexp.MustCompile(`, ([A-Z]+-[A-Z]+|[A-Z]+) \[`)
+// Акция со странным тикером nompp не торгуется, но попадает в отчеты.
+var reTicker = regexp.MustCompile(`, ([A-Z]+-[A-Z]+|[A-Z]+|nompp) \[`)
 
 type gateway struct {
 	client *http.Client
@@ -122,9 +123,8 @@ func (g gateway) parceCSV(ctx context.Context, reader *csv.Reader) (rows []domai
 		ticker := reTicker.FindStringSubmatch(record[0])
 		if ticker == nil {
 			return nil, fmt.Errorf(
-				"can't parse ticker %s ->  %w",
+				"can't parse ticker %s",
 				record[0],
-				err,
 			)
 		}
 
