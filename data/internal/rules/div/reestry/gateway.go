@@ -115,7 +115,7 @@ func (s gateway) download(ctx context.Context, ticker string) ([]domain.Currency
 		return nil, fmt.Errorf("get CloseReestry status %s for %s", respond.Status, ticker)
 	}
 
-	return parseRequest(respond, strings.HasSuffix(ticker, _preferredSuffix))
+	return parseRequest(respond, preferred)
 }
 
 func (s gateway) isPreferred(ctx context.Context, ticker string) (bool, error) {
