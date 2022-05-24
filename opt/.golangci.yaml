@@ -14,6 +14,12 @@ linters-settings:
       - performance
       - experimental
       - opinionated
+    # Which checks should be enabled; can't be combined with 'disabled-checks'.
+    # See https://go-critic.github.io/overview#checks-overview.
+    # To check which checks are enabled run `GL_DEBUG=gocritic golangci-lint run`.
+    # By default, list of stable checks is used.
+    disabled-checks:
+      - hugeParam
 
 linters:
   enable:
