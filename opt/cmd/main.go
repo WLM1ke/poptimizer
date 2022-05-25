@@ -4,7 +4,9 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
+	"time"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/bus"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
@@ -13,6 +15,9 @@ import (
 )
 
 type config struct {
+	App struct {
+		GoroutineInterval time.Duration `envDefault:"1m"`
+	}
 	HTTPClient struct {
 		Connections int `envDefault:"20"`
 	}
@@ -48,7 +53,7 @@ func main() {
 		logger.Panicf("can't create telegram client -> %s", err)
 	}
 
-	appCtx := createCtx(logger)
+	appCtx := createCtx(logger, cfg.App.GoroutineInterval)
 	bus.NewEventBus(logger.WithPrefix("EventBus"), telegramClient).Run(appCtx)
 }
 
@@ -62,7 +67,7 @@ func loadCfg(logger *lgr.Logger) (cfg config) {
 	return cfg
 }
 
-func createCtx(logger *lgr.Logger) context.Context {
+func createCtx(logger *lgr.Logger, interval time.Duration) context.Context {
 	ctx, appCancel := context.WithCancel(context.Background())
 
 	go func() {
@@ -71,9 +76,19 @@ func createCtx(logger *lgr.Logger) context.Context {
 		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer cancel()
 
-		<-ctx.Done()
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
 
-		logger.Infof("shutdown signal received")
+		for {
+			select {
+			case <-ticker.C:
+				logger.Infof("%d goroutines are running", runtime.NumGoroutine())
+			case <-ctx.Done():
+				logger.Infof("shutdown signal received")
+
+				return
+			}
+		}
 	}()
 
 	return ctx
