@@ -16,9 +16,37 @@ const (
 	_errorTimeout = time.Second * 30
 )
 
+// Filter для выбора сообщений.
+//
+// Если соответсвующее поле не заполнено, то подходит событие с любым значением соответствующего поля.
+type Filter struct {
+	BoundedCtx string
+	Aggregate  string
+	ID         string
+}
+
+// Match проверяет соответствие события фильтру.
+func (s Filter) Match(event domain.Event) bool {
+	switch {
+	case s.ID != "" && event.ID != s.ID:
+		return false
+	case s.Aggregate != "" && event.Aggregate != s.Aggregate:
+		return false
+	case s.BoundedCtx != "" && event.BoundedCtx != s.BoundedCtx:
+		return false
+	}
+
+	return true
+}
+
+// Subscriber - интерфейс подписки на сообщения соответствующего топика.
+type Subscriber interface {
+	Subscribe(filter Filter, handler domain.EventHandler)
+}
+
 type subscription struct {
-	subj    Subject
-	handler EventHandler
+	filter  Filter
+	handler domain.EventHandler
 }
 
 // EventBus - шина событий. Позволяет публиковать их и подписываться на заданный топик.
@@ -43,9 +71,9 @@ func NewEventBus(logger *lgr.Logger, telegram *clients.Telegram) *EventBus {
 }
 
 // Subscribe регистрирует обработчик для событий заданного топика.
-func (e *EventBus) Subscribe(subj Subject, handler EventHandler) {
+func (e *EventBus) Subscribe(filter Filter, handler domain.EventHandler) {
 	e.subscriptions = append(e.subscriptions, subscription{
-		subj:    subj,
+		filter:  filter,
 		handler: handler,
 	})
 }
@@ -93,7 +121,7 @@ func (e *EventBus) handle(event domain.Event) {
 	defer waitGroup.Wait()
 
 	for _, sub := range e.subscriptions {
-		if sub.subj.Match(event) {
+		if sub.filter.Match(event) {
 			handler := sub.handler
 
 			waitGroup.Add(1)

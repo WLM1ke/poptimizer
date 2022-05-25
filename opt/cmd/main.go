@@ -5,10 +5,12 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/bus"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/caarlos0/env/v6"
@@ -58,7 +60,20 @@ func main() {
 	}
 
 	appCtx := createCtx(logger, cfg.App.GoroutineInterval)
-	bus.NewEventBus(logger.WithPrefix("EventBus"), telegramClient).Run(appCtx)
+	eventBus := bus.NewEventBus(logger.WithPrefix("EventBus"), telegramClient)
+
+	var waitGroup sync.WaitGroup
+	defer waitGroup.Wait()
+
+	waitGroup.Add(1)
+
+	go func() {
+		defer waitGroup.Done()
+
+		data.NewDayEnded(logger.WithPrefix("DayEnded"), eventBus).Run(appCtx)
+	}()
+
+	eventBus.Run(appCtx)
 }
 
 func loadCfg(logger *lgr.Logger) (cfg config) {
