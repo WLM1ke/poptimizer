@@ -12,6 +12,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/caarlos0/env/v6"
+	"go.uber.org/goleak"
 )
 
 type config struct {
@@ -35,6 +36,8 @@ func main() {
 	logger := lgr.New("App")
 
 	defer func() {
+		checkLeaks(logger)
+
 		if r := recover(); r != nil {
 			logger.Warnf("stopped with exit code 1 -> %s", r)
 			os.Exit(1)
@@ -47,6 +50,7 @@ func main() {
 	cfg := loadCfg(logger)
 
 	httpClient := clients.NewHTTPClient(cfg.HTTPClient.Connections)
+	defer httpClient.CloseIdleConnections()
 
 	telegramClient, err := clients.NewTelegram(httpClient, cfg.Telegram.Token, cfg.Telegram.ChatID)
 	if err != nil {
@@ -92,4 +96,10 @@ func createCtx(logger *lgr.Logger, interval time.Duration) context.Context {
 	}()
 
 	return ctx
+}
+
+func checkLeaks(logger *lgr.Logger) {
+	if err := goleak.Find(); err != nil {
+		logger.Panicf("%v", err)
+	}
 }

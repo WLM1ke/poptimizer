@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/caarlos0/env/v6 v6.9.2
 	github.com/stretchr/testify v1.7.1
+	go.uber.org/goleak v1.1.12
 )
 
 require (
