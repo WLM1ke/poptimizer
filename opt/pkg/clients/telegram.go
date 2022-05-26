@@ -66,8 +66,7 @@ func (t *Telegram) Send(ctx context.Context, markdowns ...string) error {
 	defer t.lock.Unlock()
 
 	for _, msg := range markdowns {
-		msg = escapeRe.ReplaceAllStringFunc(msg, func(ex string) string { return `\` + ex })
-		cmd := fmt.Sprintf(_sendCmd, t.chatID, msg)
+		cmd := fmt.Sprintf(_sendCmd, t.chatID, prepareMsg(msg))
 
 		err := t.apiCall(ctx, cmd)
 		if err != nil {
@@ -78,36 +77,40 @@ func (t *Telegram) Send(ctx context.Context, markdowns ...string) error {
 	return nil
 }
 
+func prepareMsg(msg string) string {
+	return escapeRe.ReplaceAllStringFunc(msg, func(ex string) string { return `\` + ex })
+}
+
 func (t *Telegram) apiCall(ctx context.Context, cmd string) error {
 	url := fmt.Sprintf(t.apiTmpl, t.token, cmd)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
 	if err != nil {
-		return fmt.Errorf("can't create telegramm request -> %w", err)
+		return fmt.Errorf("can't create telegram request -> %w", err)
 	}
 
 	resp, err := t.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("can't make telegramm request -> %w", err)
+		return fmt.Errorf("can't make telegram request -> %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return t.parseError(resp.Body)
+		return parseError(resp.Body)
 	}
 
 	return nil
 }
 
-func (t *Telegram) parseError(reader io.Reader) error {
+func parseError(reader io.Reader) error {
 	var tgErr struct {
 		ErrorCode   int    `json:"error_code"`
 		Description string `json:"description"`
 	}
 
 	if err := json.NewDecoder(reader).Decode(&tgErr); err != nil {
-		return fmt.Errorf("can't parse telegramm error body -> %w", err)
+		return fmt.Errorf("can't parse telegram error body -> %w", err)
 	}
 
-	return fmt.Errorf("telegramm status code %d -> %s", tgErr.ErrorCode, tgErr.Description)
+	return fmt.Errorf("telegram status code %d -> %s", tgErr.ErrorCode, tgErr.Description)
 }
