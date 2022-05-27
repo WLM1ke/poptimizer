@@ -37,7 +37,6 @@ positions:
   CBOM: 0
   CHMF: 0
   CHMK: 0
-  CMCSA-RM: 0
   CNTL: 0
   CNTLP: 0
   CRM-RM: 0
@@ -167,6 +166,7 @@ positions:
   RBCM: 0
   RCMX: 0
   RGSS: 0
+  RKKE: 0
   RNFT: 0
   ROLO: 0
   ROSN: 0
@@ -186,6 +186,7 @@ positions:
   SBUX-RM: 0
   SELG: 0
   SFIN: 0
+  SGZH: 0
   SIBN: 0
   SMLT: 0
   SNGS: 0
