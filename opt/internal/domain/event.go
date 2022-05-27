@@ -8,11 +8,13 @@ import (
 
 const _timeFormat = "2006-01-02"
 
-// QualifiedID уникальный идентификатор объекта.
+// QualifiedID уникальный идентификатор сущности доменной области.
+//
+// Каждый доменный объект принадлежит к поддомену, группе однородных объектов и имеет уникальный ID в рамках группы.
 type QualifiedID struct {
-	BoundedCtx string
-	Aggregate  string
-	ID         string
+	Sub   string
+	Group string
+	ID    string
 }
 
 // Event представляет событие, с изменением объекта.
@@ -25,8 +27,8 @@ type Event struct {
 func (e Event) String() string {
 	return fmt.Sprintf(
 		"Event(%s, %s, %s, %s)",
-		e.BoundedCtx,
-		e.Aggregate,
+		e.Sub,
+		e.Group,
 		e.ID,
 		e.Timestamp.Format(_timeFormat),
 	)
@@ -39,5 +41,44 @@ type Publisher interface {
 
 // EventHandler обработчик события.
 type EventHandler interface {
-	Handler(ctx context.Context, event Event) error
+	Match(event Event) bool
+	Handle(ctx context.Context, event Event) error
+}
+
+// Filter для выбора сообщений.
+//
+// Если соответсвующее поле не заполнено, то подходит событие с любым значением соответствующего поля.
+type Filter struct {
+	Sub   string
+	Group string
+	ID    string
+}
+
+func (f Filter) String() string {
+	return fmt.Sprintf("Filter(%s, %s, %s)", f.Sub, f.Group, f.ID)
+}
+
+// Match проверяет соответствие события фильтру.
+func (f Filter) Match(event Event) bool {
+	switch {
+	case f.ID != "" && event.ID != f.ID:
+		return false
+	case f.Group != "" && event.Group != f.Group:
+		return false
+	case f.Sub != "" && event.Sub != f.Sub:
+		return false
+	}
+
+	return true
+}
+
+// Subscriber - интерфейс подписки на сообщения соответствующего топика.
+type Subscriber interface {
+	Subscribe(EventHandler)
+}
+
+// Bus - интерфейс шины сообщений.
+type Bus interface {
+	Subscriber
+	Publisher
 }

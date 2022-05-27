@@ -15,8 +15,8 @@ const (
 	_issHour   = 0
 	_issMinute = 45
 
-	BoundedCtx = `data`
-	DayEndedID = `day_ended`
+	// CheckDataGroup группа и id события о возможной публикации данных за новый торговый день.
+	CheckDataGroup = `check_data`
 )
 
 var loc = func() *time.Location { //nolint:gochecknoglobals // Загрузка зоны происходит медленно
@@ -28,25 +28,28 @@ var loc = func() *time.Location { //nolint:gochecknoglobals // Загрузка 
 	return loc
 }()
 
-type DayEnded struct {
+// CheckData - служба отслеживающая окончания торгового дня и рассылающая сообщение об этом.
+type CheckData struct {
 	logger    *lgr.Logger
 	last      time.Time
 	publisher domain.Publisher
 }
 
-func NewDayEnded(logger *lgr.Logger, publisher domain.Publisher) *DayEnded {
-	return &DayEnded{logger: logger, publisher: publisher}
+// NewCheckDataService - создает службу, публикующую сообщение о возможной публикации статистики.
+func NewCheckDataService(logger *lgr.Logger, publisher domain.Publisher) *CheckData {
+	return &CheckData{logger: logger, publisher: publisher}
 }
 
-func (r *DayEnded) Run(ctx context.Context) {
-	r.logger.Infof("started")
-	defer r.logger.Infof("stopped")
+// Run запускает рассылку о возможной публикации статистики после окончания торгового дня.
+func (c *CheckData) Run(ctx context.Context) {
+	c.logger.Infof("started")
+	defer c.logger.Infof("stopped")
 
 	ticker := time.NewTicker(_tickerDuration)
 	defer ticker.Stop()
 
 	for {
-		r.publishIfNewDay()
+		c.publishIfNewDay()
 
 		select {
 		case <-ctx.Done():
@@ -56,20 +59,20 @@ func (r *DayEnded) Run(ctx context.Context) {
 	}
 }
 
-func (r *DayEnded) publishIfNewDay() {
-	if lastNew := lastTradingDate(); r.last.Before(lastNew) {
-		r.last = lastNew
+func (c *CheckData) publishIfNewDay() {
+	if lastNew := lastTradingDate(); c.last.Before(lastNew) {
+		c.last = lastNew
 
 		event := domain.Event{
 			QualifiedID: domain.QualifiedID{
-				BoundedCtx: BoundedCtx,
-				Aggregate:  DayEndedID,
-				ID:         DayEndedID,
+				Sub:   Subdomain,
+				Group: CheckDataGroup,
+				ID:    CheckDataGroup,
 			},
 			Timestamp: lastNew,
 		}
 
-		r.publisher.Publish(event)
+		c.publisher.Publish(event)
 	}
 }
 

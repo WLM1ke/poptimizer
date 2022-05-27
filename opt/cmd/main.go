@@ -2,19 +2,21 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
-	"sync"
 	"syscall"
 	"time"
 
+	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/bus"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/caarlos0/env/v6"
 	"go.uber.org/goleak"
+	"golang.org/x/sync/errgroup"
 )
 
 type config struct {
@@ -26,7 +28,6 @@ type config struct {
 	}
 	MongoDB struct {
 		URI string `env:"URI,unset" envDefault:"mongodb://localhost:27017"`
-		DB  string `envDefault:"data"`
 	}
 	Telegram struct {
 		Token  string `env:"TOKEN,unset"`
@@ -37,43 +38,27 @@ type config struct {
 func main() {
 	logger := lgr.New("App")
 
-	defer func() {
-		checkLeaks(logger)
-
-		if r := recover(); r != nil {
-			logger.Warnf("stopped with exit code 1 -> %s", r)
-			os.Exit(1)
-		}
-
-		logger.Infof("stopped with exit code 0")
-		os.Exit(0)
-	}()
+	defer atExit(logger)
 
 	cfg := loadCfg(logger)
+	appCtx := createCtx(logger, cfg.App.GoroutineInterval)
 
-	httpClient := clients.NewHTTPClient(cfg.HTTPClient.Connections)
-	defer httpClient.CloseIdleConnections()
+	run(appCtx, cfg, logger)
+}
 
-	telegramClient, err := clients.NewTelegram(httpClient, cfg.Telegram.Token, cfg.Telegram.ChatID)
-	if err != nil {
-		logger.Panicf("can't create telegram client -> %s", err)
+func atExit(logger *lgr.Logger) {
+	if err := goleak.Find(); err != nil {
+		logger.Warnf("stopped with exit code 1 -> found leaked goroutines")
+		os.Exit(1)
 	}
 
-	appCtx := createCtx(logger, cfg.App.GoroutineInterval)
-	eventBus := bus.NewEventBus(logger.WithPrefix("EventBus"), telegramClient)
+	if r := recover(); r != nil {
+		logger.Warnf("stopped with exit code 1 -> %s", r)
+		os.Exit(1)
+	}
 
-	var waitGroup sync.WaitGroup
-	defer waitGroup.Wait()
-
-	waitGroup.Add(1)
-
-	go func() {
-		defer waitGroup.Done()
-
-		data.NewDayEnded(logger.WithPrefix("DayEnded"), eventBus).Run(appCtx)
-	}()
-
-	eventBus.Run(appCtx)
+	logger.Infof("stopped with exit code 0")
+	os.Exit(0)
 }
 
 func loadCfg(logger *lgr.Logger) (cfg config) {
@@ -113,8 +98,55 @@ func createCtx(logger *lgr.Logger, interval time.Duration) context.Context {
 	return ctx
 }
 
-func checkLeaks(logger *lgr.Logger) {
-	if err := goleak.Find(); err != nil {
-		logger.Panicf("%v", err)
+func run(appCtx context.Context, cfg config, logger *lgr.Logger) {
+	httpClient := clients.NewHTTPClient(cfg.HTTPClient.Connections)
+	defer httpClient.CloseIdleConnections()
+
+	telegramClient, err := clients.NewTelegram(httpClient, cfg.Telegram.Token, cfg.Telegram.ChatID)
+	if err != nil {
+		logger.Panicf("can't create telegram client -> %s", err)
+	}
+
+	mongoClient, err := clients.NewMongoClient(cfg.MongoDB.URI)
+	defer func() {
+		err := mongoClient.Disconnect(context.Background())
+		if err != nil {
+			logger.Panicf("can't stop MongoDB Client -> %s", err)
+		}
+
+		// Драйвер MongoDB использует дефолтный клиент под капотом
+		http.DefaultClient.CloseIdleConnections()
+	}()
+
+	if err != nil {
+		logger.Panicf("can't create MongDB client -> %s", err)
+	}
+
+	eventBus := bus.NewEventBus(
+		logger.WithPrefix("EventBus"),
+		telegramClient,
+		mongoClient,
+		gomoex.NewISSClient(httpClient),
+	)
+
+	var group errgroup.Group
+	defer func() {
+		err := group.Wait()
+		if err != nil {
+			logger.Panicf("can't stop services -> %s", err)
+		}
+	}()
+
+	for _, s := range []func(ctx context.Context){
+		eventBus.Run,
+		data.NewCheckDataService(logger.WithPrefix("CheckData"), eventBus).Run,
+	} {
+		service := s
+
+		group.Go(func() error {
+			service(appCtx)
+
+			return nil
+		})
 	}
 }

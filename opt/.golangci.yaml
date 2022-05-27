@@ -10,9 +10,9 @@ linters-settings:
     # Default: []
     enabled-tags:
       - diagnostic
-      - style
+#      - style
       - performance
-      - experimental
+#      - experimental
       - opinionated
     # Which checks should be enabled; can't be combined with 'disabled-checks'.
     # See https://go-critic.github.io/overview#checks-overview.
@@ -127,4 +127,7 @@ issues:
     - linters:
       - stylecheck
       text: "ST1000: at least one file in a package should have a package comment"
+    - linters:
+      - wrapcheck
+      text: "error returned from interface method should be wrapped:"
   fix: true

@@ -6,9 +6,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
@@ -16,66 +19,41 @@ const (
 	_errorTimeout = time.Second * 30
 )
 
-// Filter для выбора сообщений.
-//
-// Если соответсвующее поле не заполнено, то подходит событие с любым значением соответствующего поля.
-type Filter struct {
-	BoundedCtx string
-	Aggregate  string
-	ID         string
-}
-
-// Match проверяет соответствие события фильтру.
-func (s Filter) Match(event domain.Event) bool {
-	switch {
-	case s.ID != "" && event.ID != s.ID:
-		return false
-	case s.Aggregate != "" && event.Aggregate != s.Aggregate:
-		return false
-	case s.BoundedCtx != "" && event.BoundedCtx != s.BoundedCtx:
-		return false
-	}
-
-	return true
-}
-
-// Subscriber - интерфейс подписки на сообщения соответствующего топика.
-type Subscriber interface {
-	Subscribe(filter Filter, handler domain.EventHandler)
-}
-
-type subscription struct {
-	filter  Filter
-	handler domain.EventHandler
-}
-
 // EventBus - шина событий. Позволяет публиковать их и подписываться на заданный топик.
 type EventBus struct {
 	logger   *lgr.Logger
 	telegram *clients.Telegram
 
-	subscriptions []subscription
-	inbox         chan domain.Event
+	handlers []domain.EventHandler
+	inbox    chan domain.Event
 
 	lock    sync.RWMutex
 	stopped bool
 }
 
 // NewEventBus создает шину сообщений.
-func NewEventBus(logger *lgr.Logger, telegram *clients.Telegram) *EventBus {
-	return &EventBus{
+func NewEventBus(
+	logger *lgr.Logger,
+	telegram *clients.Telegram,
+	database *mongo.Client,
+	iss *gomoex.ISSClient,
+) *EventBus {
+	bus := EventBus{
 		logger:   logger,
 		telegram: telegram,
 		inbox:    make(chan domain.Event),
 	}
+
+	data.SubscribeHandlers(&bus, database, iss)
+
+	return &bus
 }
 
 // Subscribe регистрирует обработчик для событий заданного топика.
-func (e *EventBus) Subscribe(filter Filter, handler domain.EventHandler) {
-	e.subscriptions = append(e.subscriptions, subscription{
-		filter:  filter,
-		handler: handler,
-	})
+func (e *EventBus) Subscribe(handler domain.EventHandler) {
+	e.logger.Infof("registered handler for %s", handler)
+
+	e.handlers = append(e.handlers, handler)
 }
 
 // Run запускает шину.
@@ -120,9 +98,9 @@ func (e *EventBus) handle(event domain.Event) {
 	var waitGroup sync.WaitGroup
 	defer waitGroup.Wait()
 
-	for _, sub := range e.subscriptions {
-		if sub.filter.Match(event) {
-			handler := sub.handler
+	for _, h := range e.handlers {
+		if h.Match(event) {
+			handler := h
 
 			waitGroup.Add(1)
 
@@ -132,7 +110,7 @@ func (e *EventBus) handle(event domain.Event) {
 				ctx, cancel := context.WithTimeout(context.Background(), _eventTimeout)
 				defer cancel()
 
-				e.logErr(handler.Handler(ctx, event))
+				e.logErr(handler.Handle(ctx, event))
 			}()
 		}
 	}
