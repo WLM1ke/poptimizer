@@ -93,7 +93,7 @@ func (e *EventBus) stop() {
 }
 
 func (e *EventBus) handle(event domain.Event) {
-	e.logger.Infof("handling event -> %s", event)
+	e.logger.Infof("handling %s", event)
 
 	var waitGroup sync.WaitGroup
 	defer waitGroup.Wait()

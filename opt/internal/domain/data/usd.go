@@ -53,29 +53,27 @@ func NewUSDHandler(
 	}
 }
 
-// Handle проверят событие о возможной публикации торговых данных.
-//
-// Публикует событие о последней торговой дате в случае подтверждения наличия новых данных.
-func (u USDHandler) Handle(ctx context.Context, event domain.Event) error {
+// Handle реагирует на событие об обновлении курса и обновляет его.
+func (h USDHandler) Handle(ctx context.Context, event domain.Event) error {
 	qid := domain.QualifiedID{
 		Sub:   Subdomain,
 		Group: USDGroup,
 		ID:    USDGroup,
 	}
 
-	table, err := u.repo.Get(ctx, qid)
+	table, err := h.repo.Get(ctx, qid)
 	if err != nil {
 		return err
 	}
 
-	rowsRaw, err := u.download(ctx, event, table)
+	raw, err := h.download(ctx, event, table)
 	if err != nil {
 		return err
 	}
 
-	rows := u.convert(rowsRaw)
+	rows := h.convert(raw)
 
-	if err := u.validate(table, rows); err != nil {
+	if err := h.validate(table, rows); err != nil {
 		return err
 	}
 
@@ -90,11 +88,11 @@ func (u USDHandler) Handle(ctx context.Context, event domain.Event) error {
 		return nil
 	}
 
-	if err := u.repo.Append(ctx, table); err != nil {
+	if err := h.repo.Append(ctx, table); err != nil {
 		return err
 	}
 
-	u.pub.Publish(domain.Event{
+	h.pub.Publish(domain.Event{
 		QualifiedID: qid,
 		Timestamp:   event.Timestamp,
 	})
@@ -102,7 +100,7 @@ func (u USDHandler) Handle(ctx context.Context, event domain.Event) error {
 	return nil
 }
 
-func (u USDHandler) download(
+func (h USDHandler) download(
 	ctx context.Context,
 	event domain.Event,
 	table domain.Entity[Rows[USD]],
@@ -114,7 +112,7 @@ func (u USDHandler) download(
 
 	end := event.Timestamp.Format(_format)
 
-	rowsRaw, err := u.iss.MarketCandles(
+	rowsRaw, err := h.iss.MarketCandles(
 		ctx,
 		gomoex.EngineCurrency,
 		gomoex.MarketSelt,
@@ -130,7 +128,7 @@ func (u USDHandler) download(
 	return rowsRaw, nil
 }
 
-func (u USDHandler) convert(raw []gomoex.Candle) Rows[USD] {
+func (h USDHandler) convert(raw []gomoex.Candle) Rows[USD] {
 	rows := make(Rows[USD], 0, len(raw))
 
 	for _, row := range raw {
@@ -147,7 +145,7 @@ func (u USDHandler) convert(raw []gomoex.Candle) Rows[USD] {
 	return rows
 }
 
-func (u USDHandler) validate(table domain.Entity[Rows[USD]], rows Rows[USD]) error {
+func (h USDHandler) validate(table domain.Entity[Rows[USD]], rows Rows[USD]) error {
 	prev := rows[0].Date
 	for _, row := range rows[1:] {
 		if prev.Before(row.Date) {

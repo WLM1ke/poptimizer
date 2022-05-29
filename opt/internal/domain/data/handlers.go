@@ -15,4 +15,5 @@ const Subdomain = `data`
 func SubscribeHandlers(bus domain.Bus, db *mongo.Client, iss *gomoex.ISSClient) {
 	bus.Subscribe(NewTradingDateHandler(bus, domain.NewRepo[time.Time](db), iss))
 	bus.Subscribe(NewUSDHandler(bus, domain.NewRepo[Rows[USD]](db), iss))
+	bus.Subscribe(NewSecuritiesHandler(bus, domain.NewRepo[Rows[Security]](db), iss))
 }
