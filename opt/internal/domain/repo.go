@@ -89,9 +89,10 @@ func (r *Repo[D]) Save(ctx context.Context, entity Entity[D]) error {
 		"data":      entity.Data,
 	}}
 
-	if rez, err := collection.UpdateOne(ctx, filter, update); err != nil {
+	switch rez, err := collection.UpdateOne(ctx, filter, update); {
+	case err != nil:
 		return fmt.Errorf("can't replace %#v -> %w", entity.id, err)
-	} else if rez.MatchedCount == 0 {
+	case rez.MatchedCount == 0:
 		return fmt.Errorf("can't replace %#v -> %w", entity.id, ErrWrongVersion)
 	}
 
@@ -118,13 +119,14 @@ func (r *Repo[D]) Append(ctx context.Context, entity Entity[D]) error {
 		"$push": bson.M{"data": bson.M{"$each": entity.Data}},
 	}
 
-	if rez, err := collection.UpdateOne(ctx, filter, update); err != nil {
+	switch rez, err := collection.UpdateOne(ctx, filter, update); {
+	case err != nil:
 		return fmt.Errorf("can't append %#v -> %w", entity.id, err)
-	} else if rez.MatchedCount == 0 {
-		return fmt.Errorf("can't replace %#v -> %w", entity.id, ErrWrongVersion)
+	case rez.MatchedCount == 0:
+		return fmt.Errorf("can't append %#v -> %w", entity.id, ErrWrongVersion)
+	default:
+		return nil
 	}
-
-	return nil
 }
 
 func (r *Repo[D]) insert(ctx context.Context, entity Entity[D]) error {
@@ -137,9 +139,12 @@ func (r *Repo[D]) insert(ctx context.Context, entity Entity[D]) error {
 		"data":      entity.Data,
 	}
 
-	if _, err := collection.InsertOne(ctx, doc); err != nil {
+	switch _, err := collection.InsertOne(ctx, doc); {
+	case mongo.IsDuplicateKeyError(err):
+		return fmt.Errorf("can't insert %#v -> %w", entity.id, ErrWrongVersion)
+	case err != nil:
 		return fmt.Errorf("can't insert %#v -> %w", entity.id, err)
+	default:
+		return nil
 	}
-
-	return nil
 }

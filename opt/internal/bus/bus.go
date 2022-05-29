@@ -3,6 +3,7 @@ package bus
 import (
 	"context"
 	"fmt"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/port"
 	"sync"
 	"time"
 
@@ -45,6 +46,7 @@ func NewEventBus(
 	}
 
 	data.SubscribeHandlers(&bus, database, iss)
+	port.SubscribeHandlers(&bus, database)
 
 	return &bus
 }
