@@ -8,8 +8,9 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+var ErrWrongVersion = errors.New("wrong entity version")
 
 // ReadRepo осуществляет загрузку объекта.
 type ReadRepo[D any] interface {
@@ -33,6 +34,7 @@ type ReadAppendRepo[D any] interface {
 
 type entityDao[D any] struct {
 	ID        string    `bson:"_id"`
+	Ver       int64     `bson:"ver"`
 	Timestamp time.Time `bson:"date"`
 	Data      D         `bson:"data"`
 }
@@ -59,11 +61,11 @@ func (r *Repo[D]) Get(ctx context.Context, qid QualifiedID) (entity Entity[D], e
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
 		err = nil
-		entity = NewEmptyEntity[D](qid)
+		entity = newEmptyEntity[D](qid)
 	case err != nil:
 		err = fmt.Errorf("can't load %#v -> %w", qid, err)
 	default:
-		entity = NewTable(qid, dao.Timestamp, dao.Data)
+		entity = newTable(qid, dao.Timestamp, dao.Data)
 	}
 
 	return entity, err
@@ -71,13 +73,26 @@ func (r *Repo[D]) Get(ctx context.Context, qid QualifiedID) (entity Entity[D], e
 
 // Save перезаписывает таблицу.
 func (r *Repo[D]) Save(ctx context.Context, entity Entity[D]) error {
-	collection := r.client.Database(entity.Sub).Collection(entity.Group)
+	if entity.ver == 0 {
+		return r.insert(ctx, entity)
+	}
 
-	filter := bson.M{"_id": entity.ID}
-	update := bson.M{"$set": bson.M{"data": entity.Data, "timestamp": entity.Timestamp}}
+	collection := r.client.Database(entity.id.Sub).Collection(entity.id.Group)
 
-	if _, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
-		return fmt.Errorf("can't replace %#v -> %w", entity.QualifiedID, err)
+	filter := bson.M{
+		"_id": entity.id.ID,
+		"ver": entity.ver,
+	}
+	update := bson.M{"$set": bson.M{
+		"ver":       entity.ver + 1,
+		"timestamp": entity.Timestamp,
+		"data":      entity.Data,
+	}}
+
+	if rez, err := collection.UpdateOne(ctx, filter, update); err != nil {
+		return fmt.Errorf("can't replace %#v -> %w", entity.id, err)
+	} else if rez.MatchedCount == 0 {
+		return fmt.Errorf("can't replace %#v -> %w", entity.id, ErrWrongVersion)
 	}
 
 	return nil
@@ -85,13 +100,45 @@ func (r *Repo[D]) Save(ctx context.Context, entity Entity[D]) error {
 
 // Append добавляет строки в конец таблицы.
 func (r *Repo[D]) Append(ctx context.Context, entity Entity[D]) error {
-	collection := r.client.Database(entity.Sub).Collection(entity.Group)
+	if entity.ver == 0 {
+		return r.insert(ctx, entity)
+	}
 
-	filter := bson.M{"_id": entity.ID}
-	update := bson.M{"$push": bson.M{"data": bson.M{"$each": entity.Data}}, "$set": bson.M{"timestamp": entity.Timestamp}}
+	collection := r.client.Database(entity.id.Sub).Collection(entity.id.Group)
 
-	if _, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
-		return fmt.Errorf("can't append %#v -> %w", entity.QualifiedID, err)
+	filter := bson.M{
+		"_id": entity.id.ID,
+		"ver": entity.ver,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"ver":       entity.ver + 1,
+			"timestamp": entity.Timestamp,
+		},
+		"$push": bson.M{"data": bson.M{"$each": entity.Data}},
+	}
+
+	if rez, err := collection.UpdateOne(ctx, filter, update); err != nil {
+		return fmt.Errorf("can't append %#v -> %w", entity.id, err)
+	} else if rez.MatchedCount == 0 {
+		return fmt.Errorf("can't replace %#v -> %w", entity.id, ErrWrongVersion)
+	}
+
+	return nil
+}
+
+func (r *Repo[D]) insert(ctx context.Context, entity Entity[D]) error {
+	collection := r.client.Database(entity.id.Sub).Collection(entity.id.Group)
+
+	doc := bson.M{
+		"_id":       entity.id.ID,
+		"ver":       entity.ver,
+		"timestamp": entity.Timestamp,
+		"data":      entity.Data,
+	}
+
+	if _, err := collection.InsertOne(ctx, doc); err != nil {
+		return fmt.Errorf("can't insert %#v -> %w", entity.id, err)
 	}
 
 	return nil

@@ -4,23 +4,24 @@ import "time"
 
 // Entity представляет доменный объект с данными, актуальными на конкретную дату.
 type Entity[D any] struct {
-	QualifiedID
+	id        QualifiedID
+	ver       int
 	Timestamp time.Time
 	Data      D
 }
 
-// NewEmptyEntity создает пустую таблицу.
-func NewEmptyEntity[D any](id QualifiedID) Entity[D] {
+// newEmptyEntity создает пустую таблицу.
+func newEmptyEntity[D any](id QualifiedID) Entity[D] {
 	return Entity[D]{
-		QualifiedID: id,
+		id: id,
 	}
 }
 
-// NewTable создает заполненную таблицу.
-func NewTable[D any](id QualifiedID, timestamp time.Time, data D) Entity[D] {
+// newTable создает заполненную таблицу.
+func newTable[D any](id QualifiedID, timestamp time.Time, data D) Entity[D] {
 	return Entity[D]{
-		QualifiedID: id,
-		Timestamp:   timestamp,
-		Data:        data,
+		id:        id,
+		Timestamp: timestamp,
+		Data:      data,
 	}
 }
