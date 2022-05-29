@@ -9,7 +9,7 @@ import (
 )
 
 // Subdomain является наименованием поддомена сбора данных.
-const Subdomain = `data_new`
+const Subdomain = `data`
 
 // SubscribeHandlers регистрирует все обработчики событий поддомена сбора данных.
 func SubscribeHandlers(bus domain.Bus, db *mongo.Client, iss *gomoex.ISSClient) {

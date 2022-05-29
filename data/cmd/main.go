@@ -20,7 +20,7 @@ type data struct {
 	}
 	MongoDB struct {
 		URI string `env:"PO_URI,unset" envDefault:"mongodb://localhost:27017"`
-		DB  string `envDefault:"data"`
+		DB  string `envDefault:"data_old"`
 	}
 	HTTPClient struct {
 		Connections int `envDefault:"20"`
