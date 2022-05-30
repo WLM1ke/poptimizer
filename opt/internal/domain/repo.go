@@ -34,8 +34,8 @@ type ReadAppendRepo[D any] interface {
 
 type entityDao[D any] struct {
 	ID        string    `bson:"_id"`
-	Ver       int64     `bson:"ver"`
-	Timestamp time.Time `bson:"date"`
+	Ver       int       `bson:"ver"`
+	Timestamp time.Time `bson:"timestamp"`
 	Data      D         `bson:"data"`
 }
 
@@ -65,7 +65,7 @@ func (r *Repo[D]) Get(ctx context.Context, qid QualifiedID) (entity Entity[D], e
 	case err != nil:
 		err = fmt.Errorf("can't load %#v -> %w", qid, err)
 	default:
-		entity = newTable(qid, dao.Timestamp, dao.Data)
+		entity = newTable(qid, dao.Ver, dao.Timestamp, dao.Data)
 	}
 
 	return entity, err
@@ -134,7 +134,7 @@ func (r *Repo[D]) insert(ctx context.Context, entity Entity[D]) error {
 
 	doc := bson.M{
 		"_id":       entity.id.ID,
-		"ver":       entity.ver,
+		"ver":       entity.ver + 1,
 		"timestamp": entity.Timestamp,
 		"data":      entity.Data,
 	}
