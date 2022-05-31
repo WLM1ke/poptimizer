@@ -242,7 +242,6 @@ def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
     """Выдает случайные организмы с датой не равной данной и None при отсутствии."""
     pipeline = [
         {"$match": {"date": {"$ne": date}}},
-        {"$project": {"_id": True}},
         {"$sample": {"size": 1}},
     ]
 
