@@ -15,7 +15,7 @@ class MetricsSingle:  # noqa: WPS214
     def __init__(self, portfolio: Portfolio, forecast: Forecast) -> None:
         """Использует прогноз для построения основных метрик позиций портфеля.
 
-        Максимизирует отношение доходности к СКО портфеля.
+        Минимизирует СКО, если оно превышает целевой уровень, и максимизирует доходность в остальных случаях.
 
         :param portfolio:
             Портфель, для которого рассчитываются метрики.
@@ -27,7 +27,7 @@ class MetricsSingle:  # noqa: WPS214
 
     def __str__(self) -> str:
         """Текстовое представление метрик портфеля."""
-        frames = [self.mean, self.std, self.beta, self.r_adj, self.gradient]
+        frames = [self.mean, self.std, self.beta, self.gradient]
         df = pd.concat(frames, axis=1)
 
         return f"\nКЛЮЧЕВЫЕ МЕТРИКИ ПОРТФЕЛЯ\n\n{df}"
@@ -48,14 +48,9 @@ class MetricsSingle:  # noqa: WPS214
         return self._forecast.shrinkage
 
     @functools.cached_property
-    def risk_aversion(self) -> float:
-        """Не любовь к риску."""
-        return self._forecast.risk_aversion
-
-    @functools.cached_property
-    def error_tolerance(self) -> float:
-        """Не любовь к ошибкам."""
-        return self._forecast.error_tolerance
+    def max_std(self) -> float:
+        """Ограничение на СКО."""
+        return self._forecast.max_std
 
     @functools.cached_property
     def mean(self) -> pd.Series:
@@ -103,67 +98,29 @@ class MetricsSingle:  # noqa: WPS214
         return beta
 
     @functools.cached_property
-    def r_adj(self) -> pd.Series:
-        """Скорректированная с учетом риска доходность.
-
-        Для портфеля рассчитывается по следующей формуле:
-
-        r_adj = r - risk_aversion / 2 * s ** 2 - error_tolerance * s
-
-        Для портфеля равна арифметической доходности минус половина квадрата СКО. Для остальных
-        активов рассчитывается, как сумма градиента и показателя для портфеля.
-
-        При правильной реализации взвешенная по долям отдельных позиций геометрическая доходность
-        равна значению по портфелю в целом.
-        """
-        r_adj_portfolio = (
-            self.mean[PORTFOLIO]
-            - self.risk_aversion / 2 * self.std[PORTFOLIO] ** 2
-            - self.error_tolerance * self.std[PORTFOLIO]
-        )
-        r_adj = r_adj_portfolio + self.gradient
-        r_adj.name = "R_ADJ"
-
-        return r_adj
-
-    @functools.cached_property
     def gradient(self) -> pd.Series:
-        """Рассчитывает производную скорректированной с учетом риска доходности.
-
-         r_adj = r - risk_aversion / 2 * s ** 2 - error_tolerance * s, где
-
-        risk_aversion - классическая нелюбовь к риску в задачах mean-variance оптимизации. При значении 1 в первом
-        приближении максимизируется логарифм доходности или ожидаемые темпы роста портфеля.
-
-        error_tolerance - величина минимальной требуемой величины коэффициента Шарпа или мера возможной достоверности
-        оценок доходности. В рамках второй интерпретации происходит максимизация нижней границы доверительного
-        интервала.
+        """Рассчитывает производную СКО, если оно превышает целевой уровень, или доходности в остальных случаях.
 
         Соответственно градиент может быть рассчитан по следующей формуле:
 
-        gradient = (m - mp) - risk_aversion * sp ** 2 * (b - 1) - error_tolerance * sp * (b - 1), где
+        gradient = - sp * (b - 1)
+
+        или
+
+        gradient = m - mp, где
 
         m и mp - доходность актива и портфеля, соответственно,
         sp - СКО портфеля,
         b - бета актива.
 
-        Долю актива с максимальным градиентом необходимо наращивать, а с минимальным сокращать. Так как
-        важную роль в градиенте играет бета, то во многих случаях выгодно наращивать долю той бумаги,
-        у которой достаточно низкая бета при высокой ожидаемой доходности.
-
-        При правильной реализации взвешенный по долям отдельных позиций градиент равен градиенту по
-        портфелю в целом и равен 0.
+        Долю актива с максимальным градиентом необходимо наращивать. При правильной реализации взвешенный по долям
+        отдельных позиций градиент равен градиенту по портфелю в целом и равен 0.
         """
-        mean = self.mean
-        mean_gradient = mean - mean[PORTFOLIO]
+        if self.std[PORTFOLIO] < self.max_std:
+            gradient = self.mean - self.mean[PORTFOLIO]
+        else:
+            gradient = -self.std[PORTFOLIO] * self.beta.sub(1)
 
-        risk_aversion_gradient = self.risk_aversion * self.std[PORTFOLIO] ** 2
-        risk_aversion_gradient = risk_aversion_gradient * self.beta.sub(1)
-
-        error_tolerance_gradient = self.error_tolerance * self.std[PORTFOLIO]
-        error_tolerance_gradient = error_tolerance_gradient * self.beta.sub(1)
-
-        gradient = mean_gradient - risk_aversion_gradient - error_tolerance_gradient
         gradient.name = "GRAD"
 
         return gradient
@@ -192,8 +149,7 @@ class MetricsResample:  # noqa: WPS214
             self._history_block(),
             self._cor_block(),
             self._shrinkage_block(),
-            self._risk_aversion_block(),
-            self._error_tolerance(),
+            self._max_std(),
             self._main_block(),
             self._grad_summary(),
         ]
@@ -231,15 +187,6 @@ class MetricsResample:  # noqa: WPS214
         beta.name = "BETA"
 
         return beta
-
-    @functools.cached_property
-    def r_adj(self) -> pd.Series:
-        """Медиана для всех прогнозов приближенные оценки скорректированной доходности."""
-        all_r_geom = [metric.r_adj for metric in self._metrics]
-        r_geom = pd.concat(all_r_geom, axis=1).median(axis=1)
-        r_geom.name = "R_ADJ"
-
-        return r_geom
 
     @functools.cached_property
     def all_gradients(self) -> pd.DataFrame:
@@ -281,23 +228,14 @@ class MetricsResample:  # noqa: WPS214
 
         return f"Shrinkage - ({quantile})"
 
-    def _risk_aversion_block(self) -> str:
-        """Разброс нелюбви к риску."""
+    def _max_std(self) -> str:
+        """Разброс ограничения на СКО."""
         quantile = [0, 0.5, 1]
-        quantile = np.quantile([met.risk_aversion for met in self._metrics], quantile)
-        quantile = list(map(lambda num: f"{num:.2f}", quantile))
+        quantile = np.quantile([met.max_std for met in self._metrics], quantile)
+        quantile = list(map(lambda num: f"{num:.2%}", quantile))
         quantile = " <-> ".join(quantile)
 
-        return f"Risk aversion - ({quantile})"
-
-    def _error_tolerance(self) -> str:
-        """Разброс нелюбви к ошибке."""
-        quantile = [0, 0.5, 1]
-        quantile = np.quantile([met.error_tolerance for met in self._metrics], quantile)
-        quantile = list(map(lambda num: f"{num:.2f}", quantile))
-        quantile = " <-> ".join(quantile)
-
-        return f"Error tolerance - ({quantile})"
+        return f"Max std - ({quantile})"
 
     def _main_block(self) -> str:
         """Основная информация о метриках."""
@@ -305,7 +243,6 @@ class MetricsResample:  # noqa: WPS214
             self.mean,
             self.std,
             self.beta,
-            self.r_adj,
             self.gradient,
         ]
         df = pd.concat(frames, axis=1)
@@ -319,16 +256,12 @@ class MetricsResample:  # noqa: WPS214
         risk = pd.concat([metric.std for metric in self._metrics], axis=1)
         risk = risk.loc[PORTFOLIO].quantile(1 - config.P_VALUE)
 
-        r_adj = pd.concat([metric.r_adj for metric in self._metrics], axis=1)
-        r_adj = r_adj.loc[PORTFOLIO].quantile(config.P_VALUE)
-
         dd = self.std[PORTFOLIO] ** 2 / self.mean[PORTFOLIO]
 
         strings = [
             "",
             _text_with_data("Консервативная доходность: ", return_),
             _text_with_data("Консервативный риск:       ", risk),
-            _text_with_data("Консервативная метрика:    ", r_adj),
             _text_with_data("Оценка просадки:           ", dd),
         ]
 
