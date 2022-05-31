@@ -4,7 +4,7 @@ import io
 import itertools
 import logging
 import sys
-from typing import Final, Optional, Callable
+from typing import Final, Optional
 
 import numpy as np
 import pandas as pd
@@ -333,8 +333,7 @@ class Model:
             history_days=self._phenotype["data"]["history_days"],
             mean=means,
             std=stds,
-            risk_aversion=self._phenotype["utility"]["risk_aversion"],
-            error_tolerance=self._phenotype["utility"]["error_tolerance"],
+            max_std=self._phenotype["utility"]["max_std"],
         )
 
 
@@ -410,39 +409,24 @@ def _opt_weight(
     w = np.ones_like(mean).flatten()
 
     rez = optimize.minimize(
-        _make_utility_func(phenotype, mean, sigma),
+        lambda x: -(x.reshape(1, -1) @ mean).item(),
         w,
+        jac=lambda x: -mean.flatten(),
+        method="SLSQP",
         bounds=[(0, None) for _ in w],
+        constraints=[
+            {
+                "type": "eq",
+                "fun": lambda x: x.sum() - 1,
+                "jac": lambda x: np.ones_like(x),
+            },
+            {
+                "type": "ineq",
+                "fun": lambda x: phenotype["utility"]["max_std"] ** 2
+                - (x.reshape(1, -1) @ sigma @ x.reshape(-1, 1)).item(),
+                "jac": lambda x: (-2 * sigma @ x.reshape(-1, 1)).flatten(),
+            },
+        ],
     )
 
     return rez.x / rez.x.sum(), sigma
-
-
-def _make_utility_func(
-    phenotype: PhenotypeData,
-    mean: np.array,
-    sigma: np.array,
-) -> Callable[[float, float], float]:
-    """Функция полезности.
-
-    Оптимизация портфеля осуществляется с использованием функции полезности следующего вида:
-
-    U = r - risk_aversion / 2 * s ** 2 - error_tolerance * s, где
-
-    risk_aversion - классическая нелюбовь к риску в задачах mean-variance оптимизации. При значении 1 в первом
-    приближении максимизируется логарифм доходности или ожидаемые темпы роста портфеля.
-
-    error_tolerance - величина минимальной требуемой величины коэффициента Шарпа или мера возможной достоверности оценок
-    доходности. В рамках второй интерпретации происходит максимизация нижней границы доверительного интервала.
-    """
-    risk_aversion = phenotype["utility"]["risk_aversion"]
-    error_tolerance = phenotype["utility"]["error_tolerance"]
-
-    def utility_func(w: np.array) -> float:
-        w = w.reshape(-1, 1) / w.sum()
-        ret = (w.T @ mean).item()
-        variance = (w.T @ sigma @ w).item()
-
-        return -(ret - risk_aversion / 2 * variance - error_tolerance * variance**0.5)
-
-    return utility_func
