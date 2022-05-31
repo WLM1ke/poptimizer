@@ -18,8 +18,7 @@ def test_forecast():
         history_days=30,
         mean=MEAN,
         std=STD,
-        risk_aversion=1.1,
-        error_tolerance=0.2,
+        max_std=1.1,
     )
 
     assert data.cov.shape == (3, 3)
