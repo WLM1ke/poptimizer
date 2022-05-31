@@ -369,7 +369,6 @@ def _opt_port(
     delta = ret - ave
     ret_plan = (w * mean).sum()
     std_plan = (w.reshape(1, -1) @ sigma @ w.reshape(-1, 1)).item() ** 0.5
-    dd = std_plan**2 / ret_plan
 
     LOGGER.info(
         " / ".join(
@@ -379,8 +378,7 @@ def _opt_port(
                 f"AVE = {ave:.2%}",
                 f"PLAN = {ret_plan:.2%}",
                 f"STD = {std_plan:.2%}",
-                f"DD = {dd:.2%}",
-                f"POS = {(w > 0).sum()}",
+                f"POS = {int(1 / (w ** 2).sum())}",
                 f"MAX = {w.max():.2%}",
             ],
         ),
