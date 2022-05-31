@@ -15,7 +15,7 @@ from poptimizer.dl.features import data_params
 VALUE_REL_TOL = 2.0e-4
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
-LIQUIDITY_DAYS = (config.HISTORY_DAYS_MIN * 6 + data_params.FORECAST_DAYS) * 2
+LIQUIDITY_DAYS = config.YEAR_IN_TRADING_DAYS
 
 LOGGER = logging.getLogger()
 
@@ -200,7 +200,7 @@ class Portfolio:
     def add_tickers(self) -> None:
         """Претенденты для добавления."""
         all_tickers = listing.securities()
-        last_turnover = self._median_turnover(tuple(all_tickers), LIQUIDITY_DAYS)
+        last_turnover = self._median_turnover(tuple(all_tickers), LIQUIDITY_DAYS * 2)
         minimal_turnover = self.value[PORTFOLIO] / (len(self.index) - 2)
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]
 
