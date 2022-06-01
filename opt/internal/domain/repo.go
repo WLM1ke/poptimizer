@@ -65,7 +65,7 @@ func (r *Repo[D]) Get(ctx context.Context, qid QualifiedID) (entity Entity[D], e
 	case err != nil:
 		err = fmt.Errorf("can't load %#v -> %w", qid, err)
 	default:
-		entity = newTable(qid, dao.Ver, dao.Timestamp, dao.Data)
+		entity = newEntity(qid, dao.Ver, dao.Timestamp, dao.Data)
 	}
 
 	return entity, err

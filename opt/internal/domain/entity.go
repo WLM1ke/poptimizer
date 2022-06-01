@@ -17,8 +17,8 @@ func newEmptyEntity[D any](id QualifiedID) Entity[D] {
 	}
 }
 
-// newTable создает заполненную таблицу.
-func newTable[D any](id QualifiedID, ver int, timestamp time.Time, data D) Entity[D] {
+// newEntity создает заполненную таблицу.
+func newEntity[D any](id QualifiedID, ver int, timestamp time.Time, data D) Entity[D] {
 	return Entity[D]{
 		id:        id,
 		ver:       ver,
