@@ -1,0 +1,23 @@
+{{define "main"}}
+    <main hx-swap-oob="innerHTML:main">
+        <h1>
+            Portfolio
+            <small>
+                {{len .}}
+            </small>
+        </h1>
+        <ul>
+            {{range .}}
+                <li>
+                    <a title="Remove" hx-post="tickers/remove/{{.}}">
+                        {{.}}
+                        <svg>
+                            <line x1=0% y1=35% x2=60% y2=95% />
+                            <line x1=0% y1=95% x2=60% y2=35% />
+                        </svg>
+                    </a>
+                </li>
+            {{end}}
+        </ul>
+    </main>
+{{end}}

@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"github.com/WLM1ke/poptimizer/opt/internal/app"
+	"github.com/WLM1ke/poptimizer/opt/internal/front"
+	"github.com/WLM1ke/poptimizer/opt/pkg/servers"
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,7 +13,6 @@ import (
 	"time"
 
 	"github.com/WLM1ke/gomoex"
-	"github.com/WLM1ke/poptimizer/opt/internal/bus"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
@@ -22,6 +24,10 @@ import (
 type config struct {
 	App struct {
 		GoroutineInterval time.Duration `envDefault:"1m"`
+	}
+	Server struct {
+		Addr    string        `envDefault:"localhost:10000"`
+		Timeout time.Duration `envDefault:"1s"`
 	}
 	HTTPClient struct {
 		Connections int `envDefault:"20"`
@@ -122,11 +128,18 @@ func run(appCtx context.Context, cfg config, logger *lgr.Logger) {
 		logger.Panicf("can't create MongDB client -> %s", err)
 	}
 
-	eventBus := bus.NewEventBus(
+	eventBus := app.PrepareEventBus(
 		logger.WithPrefix("EventBus"),
 		telegramClient,
 		mongoClient,
 		gomoex.NewISSClient(httpClient),
+	)
+
+	httpServer := servers.NewHTTPServer(
+		logger.WithPrefix("Server"),
+		cfg.Server.Addr,
+		front.NewFrontend(logger.WithPrefix("Server"), mongoClient),
+		cfg.Server.Timeout,
 	)
 
 	var group errgroup.Group
@@ -137,16 +150,15 @@ func run(appCtx context.Context, cfg config, logger *lgr.Logger) {
 		}
 	}()
 
-	for _, s := range []func(ctx context.Context){
+	for _, s := range []func(ctx context.Context) error{
 		eventBus.Run,
 		data.NewCheckDataService(logger.WithPrefix("CheckData"), eventBus).Run,
+		httpServer.Run,
 	} {
 		service := s
 
 		group.Go(func() error {
-			service(appCtx)
-
-			return nil
+			return service(appCtx)
 		})
 	}
 }

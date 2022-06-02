@@ -1,0 +1,20 @@
+{{define "session"}}
+    <aside hx-swap-oob="innerHTML:aside">
+        <div>
+            <h1>Add tickers</h1>
+            <label>
+                <input type="search"
+                       name="prefix"
+                       placeholder="Type to find..."
+                       hx-post="tickers/search"
+                       hx-trigger="keyup changed delay:100ms, search, UpdateSearchEvent from:body"
+                >
+            </label>
+        </div>
+        {{template "search"}}
+        <button hx-post="tickers/save">
+            Save
+        </button>
+    </aside>
+    {{template "main" .}}
+{{end}}

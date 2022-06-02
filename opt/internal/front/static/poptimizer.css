@@ -1,0 +1,43 @@
+@import url("https://unpkg.com/normalize.css");
+@import url("base.css");
+@import url("interface.css");
+
+
+/* Tickers */
+
+#tickers>aside>ul {
+  overflow: scroll;
+  height: 100%;
+}
+
+#tickers>main>ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 10em);
+  gap: var(--padding_sm);
+  list-style-type: none;
+}
+
+#tickers a {
+  display: block;
+}
+
+/* Dividends */
+
+aside #dividends-sidebar {
+  overflow: scroll;
+  height: 100%;
+}
+
+main #dividends-main{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+main #dividends-main form {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--padding_bg);
+}
+
