@@ -1,5 +1,7 @@
 package data
 
+const Subdomain = `data`
+
 // Rows строчки данных с MOEX ISS.
 type Rows[R any] []R
 

@@ -1,9 +1,9 @@
-package bus
+package app
 
 import (
 	"context"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/port"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/port/selected"
 	"sync"
 	"time"
 
@@ -32,8 +32,8 @@ type EventBus struct {
 	stopped bool
 }
 
-// NewEventBus создает шину сообщений.
-func NewEventBus(
+// PrepareEventBus создает шину сообщений и настраивает все обработчики.
+func PrepareEventBus(
 	logger *lgr.Logger,
 	telegram *clients.Telegram,
 	database *mongo.Client,
@@ -45,8 +45,11 @@ func NewEventBus(
 		inbox:    make(chan domain.Event),
 	}
 
-	data.SubscribeHandlers(&bus, database, iss)
-	port.SubscribeHandlers(&bus, database)
+	bus.Subscribe(data.NewTradingDateHandler(&bus, domain.NewRepo[time.Time](database), iss))
+	bus.Subscribe(data.NewUSDHandler(&bus, domain.NewRepo[data.Rows[data.USD]](database), iss))
+	bus.Subscribe(data.NewSecuritiesHandler(&bus, domain.NewRepo[data.Rows[data.Security]](database), iss))
+
+	bus.Subscribe(selected.NewHandler(domain.NewRepo[selected.Tickers](database)))
 
 	return &bus
 }
@@ -61,7 +64,7 @@ func (e *EventBus) Subscribe(handler domain.EventHandler) {
 // Run запускает шину.
 //
 // Запуск допускается один раз. События обрабатываются конкурентно.
-func (e *EventBus) Run(ctx context.Context) {
+func (e *EventBus) Run(ctx context.Context) error {
 	e.logger.Infof("started")
 	defer e.logger.Infof("stopped")
 
@@ -81,7 +84,7 @@ func (e *EventBus) Run(ctx context.Context) {
 		case <-ctx.Done():
 			e.stop()
 
-			return
+			return nil
 		}
 	}
 }

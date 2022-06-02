@@ -70,7 +70,7 @@ func (h SecuritiesHandler) Handle(ctx context.Context, event domain.Event) error
 	rows := h.convert(raw)
 
 	table.Timestamp = event.Timestamp
-	table.Data = rows
+	table.Entity = rows
 
 	if err := h.repo.Save(ctx, table); err != nil {
 		return err
@@ -127,8 +127,8 @@ func (h SecuritiesHandler) convert(raw []gomoex.Security) Rows[Security] {
 	return rows
 }
 
-func (h SecuritiesHandler) publish(table domain.Entity[Rows[Security]]) {
-	for _, sec := range table.Data {
+func (h SecuritiesHandler) publish(table domain.Aggregate[Rows[Security]]) {
+	for _, sec := range table.Entity {
 		h.pub.Publish(domain.Event{
 			QualifiedID: domain.QualifiedID{
 				Sub:   Subdomain,
@@ -147,6 +147,6 @@ func (h SecuritiesHandler) publish(table domain.Entity[Rows[Security]]) {
 			ID:    SecuritiesGroup,
 		},
 		Timestamp: table.Timestamp,
-		Data:      table.Data,
+		Data:      table.Entity,
 	})
 }

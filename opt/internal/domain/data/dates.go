@@ -59,15 +59,15 @@ func (h TradingDateHandler) Handle(ctx context.Context, _ domain.Event) error {
 	}
 
 	if len(rows) != 1 {
-		return fmt.Errorf("wrong rows count %h", len(rows))
+		return fmt.Errorf("wrong rows count %d", len(rows))
 	}
 
 	date := rows[0].Till
-	if !date.After(table.Data) {
+	if !date.After(table.Entity) {
 		return nil
 	}
 
-	table.Data = date
+	table.Entity = date
 	table.Timestamp = date
 
 	if err := h.repo.Save(ctx, table); err != nil {

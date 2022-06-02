@@ -10,29 +10,29 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var ErrWrongVersion = errors.New("wrong entity version")
+var ErrWrongVersion = errors.New("wrong agg version")
 
 // ReadRepo осуществляет загрузку объекта.
 type ReadRepo[D any] interface {
 	// Get загружает объект.
-	Get(ctx context.Context, qid QualifiedID) (Entity[D], error)
+	Get(ctx context.Context, qid QualifiedID) (Aggregate[D], error)
 }
 
 // ReadWriteRepo осуществляет загрузку и сохранение объекта.
 type ReadWriteRepo[D any] interface {
 	ReadRepo[D]
 	// Save перезаписывает объект.
-	Save(ctx context.Context, entity Entity[D]) error
+	Save(ctx context.Context, agg Aggregate[D]) error
 }
 
 // ReadAppendRepo осуществляет загрузку и дополнение данных объекта.
 type ReadAppendRepo[D any] interface {
 	ReadRepo[D]
 	// Append добавляет данные в конец слайса с данными.
-	Append(ctx context.Context, entity Entity[D]) error
+	Append(ctx context.Context, agg Aggregate[D]) error
 }
 
-type entityDao[D any] struct {
+type aggDao[D any] struct {
 	ID        string    `bson:"_id"`
 	Ver       int       `bson:"ver"`
 	Timestamp time.Time `bson:"timestamp"`
@@ -52,8 +52,8 @@ func NewRepo[D any](db *mongo.Client) *Repo[D] {
 }
 
 // Get загружает объект.
-func (r *Repo[D]) Get(ctx context.Context, qid QualifiedID) (entity Entity[D], err error) {
-	var dao entityDao[D]
+func (r *Repo[D]) Get(ctx context.Context, qid QualifiedID) (agg Aggregate[D], err error) {
+	var dao aggDao[D]
 
 	collection := r.client.Database(qid.Sub).Collection(qid.Group)
 	err = collection.FindOne(ctx, bson.M{"_id": qid.ID}).Decode(&dao)
@@ -61,89 +61,89 @@ func (r *Repo[D]) Get(ctx context.Context, qid QualifiedID) (entity Entity[D], e
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
 		err = nil
-		entity = newEmptyEntity[D](qid)
+		agg = newEmptyAggregate[D](qid)
 	case err != nil:
 		err = fmt.Errorf("can't load %#v -> %w", qid, err)
 	default:
-		entity = newEntity(qid, dao.Ver, dao.Timestamp, dao.Data)
+		agg = newAggregate(qid, dao.Ver, dao.Timestamp, dao.Data)
 	}
 
-	return entity, err
+	return agg, err
 }
 
 // Save перезаписывает таблицу.
-func (r *Repo[D]) Save(ctx context.Context, entity Entity[D]) error {
-	if entity.ver == 0 {
-		return r.insert(ctx, entity)
+func (r *Repo[D]) Save(ctx context.Context, agg Aggregate[D]) error {
+	if agg.ver == 0 {
+		return r.insert(ctx, agg)
 	}
 
-	collection := r.client.Database(entity.id.Sub).Collection(entity.id.Group)
+	collection := r.client.Database(agg.id.Sub).Collection(agg.id.Group)
 
 	filter := bson.M{
-		"_id": entity.id.ID,
-		"ver": entity.ver,
+		"_id": agg.id.ID,
+		"ver": agg.ver,
 	}
 	update := bson.M{"$set": bson.M{
-		"ver":       entity.ver + 1,
-		"timestamp": entity.Timestamp,
-		"data":      entity.Data,
+		"ver":       agg.ver + 1,
+		"timestamp": agg.Timestamp,
+		"data":      agg.Entity,
 	}}
 
 	switch rez, err := collection.UpdateOne(ctx, filter, update); {
 	case err != nil:
-		return fmt.Errorf("can't replace %#v -> %w", entity.id, err)
+		return fmt.Errorf("can't replace %#v -> %w", agg.id, err)
 	case rez.MatchedCount == 0:
-		return fmt.Errorf("can't replace %#v -> %w", entity.id, ErrWrongVersion)
+		return fmt.Errorf("can't replace %#v -> %w", agg.id, ErrWrongVersion)
 	}
 
 	return nil
 }
 
 // Append добавляет строки в конец таблицы.
-func (r *Repo[D]) Append(ctx context.Context, entity Entity[D]) error {
-	if entity.ver == 0 {
-		return r.insert(ctx, entity)
+func (r *Repo[D]) Append(ctx context.Context, agg Aggregate[D]) error {
+	if agg.ver == 0 {
+		return r.insert(ctx, agg)
 	}
 
-	collection := r.client.Database(entity.id.Sub).Collection(entity.id.Group)
+	collection := r.client.Database(agg.id.Sub).Collection(agg.id.Group)
 
 	filter := bson.M{
-		"_id": entity.id.ID,
-		"ver": entity.ver,
+		"_id": agg.id.ID,
+		"ver": agg.ver,
 	}
 	update := bson.M{
 		"$set": bson.M{
-			"ver":       entity.ver + 1,
-			"timestamp": entity.Timestamp,
+			"ver":       agg.ver + 1,
+			"timestamp": agg.Timestamp,
 		},
-		"$push": bson.M{"data": bson.M{"$each": entity.Data}},
+		"$push": bson.M{"data": bson.M{"$each": agg.Entity}},
 	}
 
 	switch rez, err := collection.UpdateOne(ctx, filter, update); {
 	case err != nil:
-		return fmt.Errorf("can't append %#v -> %w", entity.id, err)
+		return fmt.Errorf("can't append %#v -> %w", agg.id, err)
 	case rez.MatchedCount == 0:
-		return fmt.Errorf("can't append %#v -> %w", entity.id, ErrWrongVersion)
+		return fmt.Errorf("can't append %#v -> %w", agg.id, ErrWrongVersion)
 	default:
 		return nil
 	}
 }
 
-func (r *Repo[D]) insert(ctx context.Context, entity Entity[D]) error {
-	collection := r.client.Database(entity.id.Sub).Collection(entity.id.Group)
+func (r *Repo[D]) insert(ctx context.Context, agg Aggregate[D]) error {
+	collection := r.client.Database(agg.id.Sub).Collection(agg.id.Group)
 
 	doc := bson.M{
-		"_id":       entity.id.ID,
-		"ver":       entity.ver + 1,
-		"timestamp": entity.Timestamp,
-		"data":      entity.Data,
+		"_id":       agg.id.ID,
+		"ver":       agg.ver + 1,
+		"timestamp": agg.Timestamp,
+		"data":      agg.Entity,
 	}
 
 	switch _, err := collection.InsertOne(ctx, doc); {
 	case mongo.IsDuplicateKeyError(err):
-		return fmt.Errorf("can't insert %#v -> %w", entity.id, ErrWrongVersion)
+		return fmt.Errorf("can't insert %#v -> %w", agg.id, ErrWrongVersion)
 	case err != nil:
-		return fmt.Errorf("can't insert %#v -> %w", entity.id, err)
+		return fmt.Errorf("can't insert %#v -> %w", agg.id, err)
 	default:
 		return nil
 	}

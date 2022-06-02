@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func TestRepoSave(t *testing.T) {
+func TestRepo_Save(t *testing.T) {
 	db, err := clients.NewMongoClient("mongodb://localhost:27017")
 	assert.Nil(t, err, "can't connect to test MongoDB -> %s", err)
 	defer func() {
@@ -28,58 +28,58 @@ func TestRepoSave(t *testing.T) {
 		ID:    "number",
 	}
 
-	entity, err := repo.Get(context.Background(), qid)
-	assert.Nil(t, err, "can't get new entity -> %s", err)
+	agg, err := repo.Get(context.Background(), qid)
+	assert.Nil(t, err, "can't get new agg -> %s", err)
 
-	assert.Equal(t, qid, entity.id, "incorrect id")
-	assert.Equal(t, 0, entity.ver, "incorrect version for new entity")
-	assert.Equal(t, time.Time{}, entity.Timestamp, "incorrect timestamp in new entity")
-	assert.Equal(t, 0, entity.Data, "incorrect data in new entity")
+	assert.Equal(t, qid, agg.id, "incorrect id")
+	assert.Equal(t, 0, agg.ver, "incorrect version for new agg")
+	assert.Equal(t, time.Time{}, agg.Timestamp, "incorrect timestamp in new agg")
+	assert.Equal(t, 0, agg.Entity, "incorrect data in new agg")
 
 	now := time.Now().UTC().Truncate(time.Second)
 
-	entity.Timestamp = now
-	entity.Data = 42
+	agg.Timestamp = now
+	agg.Entity = 42
 
-	assert.Nil(t, repo.Save(context.Background(), entity), "can't save entity -> %s", err)
+	assert.Nil(t, repo.Save(context.Background(), agg), "can't save agg -> %s", err)
 	assert.ErrorIs(
 		t,
-		repo.Save(context.Background(), entity),
+		repo.Save(context.Background(), agg),
 		ErrWrongVersion,
 		"error in optimistic concurrency control",
 	)
 
-	entity, err = repo.Get(context.Background(), qid)
-	assert.Nil(t, err, "can't get saved entity -> %s", err)
+	agg, err = repo.Get(context.Background(), qid)
+	assert.Nil(t, err, "can't get saved agg -> %s", err)
 
-	assert.Equal(t, qid, entity.id, "incorrect id")
-	assert.Equal(t, 1, entity.ver, "incorrect version for saved entity")
-	assert.Equal(t, now, entity.Timestamp, "incorrect timestamp in saved entity")
-	assert.Equal(t, 42, entity.Data, "incorrect data in saved entity")
+	assert.Equal(t, qid, agg.id, "incorrect id")
+	assert.Equal(t, 1, agg.ver, "incorrect version for saved agg")
+	assert.Equal(t, now, agg.Timestamp, "incorrect timestamp in saved agg")
+	assert.Equal(t, 42, agg.Entity, "incorrect data in saved agg")
 
 	now = time.Now().UTC().Truncate(time.Hour)
 
-	entity.Timestamp = now
-	entity.Data = 43
+	agg.Timestamp = now
+	agg.Entity = 43
 
-	assert.Nil(t, repo.Save(context.Background(), entity), "can't save entity -> %s", err)
+	assert.Nil(t, repo.Save(context.Background(), agg), "can't save agg -> %s", err)
 	assert.ErrorIs(
 		t,
-		repo.Save(context.Background(), entity),
+		repo.Save(context.Background(), agg),
 		ErrWrongVersion,
 		"error in optimistic concurrency control",
 	)
 
-	entity, err = repo.Get(context.Background(), qid)
-	assert.Nil(t, err, "can't get saved entity -> %s", err)
+	agg, err = repo.Get(context.Background(), qid)
+	assert.Nil(t, err, "can't get saved agg -> %s", err)
 
-	assert.Equal(t, qid, entity.id, "incorrect id")
-	assert.Equal(t, 2, entity.ver, "incorrect version for saved entity")
-	assert.Equal(t, now, entity.Timestamp, "incorrect timestamp in saved entity")
-	assert.Equal(t, 43, entity.Data, "incorrect data in saved entity")
+	assert.Equal(t, qid, agg.id, "incorrect id")
+	assert.Equal(t, 2, agg.ver, "incorrect version for saved agg")
+	assert.Equal(t, now, agg.Timestamp, "incorrect timestamp in saved agg")
+	assert.Equal(t, 43, agg.Entity, "incorrect data in saved agg")
 }
 
-func TestRepoAppend(t *testing.T) {
+func TestRepo_Append(t *testing.T) {
 	db, err := clients.NewMongoClient("mongodb://localhost:27017")
 	assert.Nil(t, err, "can't connect to test MongoDB -> %s", err)
 	defer func() {
@@ -98,58 +98,58 @@ func TestRepoAppend(t *testing.T) {
 		ID:    "number",
 	}
 
-	entity, err := repo.Get(context.Background(), qid)
-	assert.Nil(t, err, "can't get new entity -> %s", err)
+	agg, err := repo.Get(context.Background(), qid)
+	assert.Nil(t, err, "can't get new agg -> %s", err)
 
-	assert.Equal(t, qid, entity.id, "incorrect id")
-	assert.Equal(t, 0, entity.ver, "incorrect version for new entity")
-	assert.Equal(t, time.Time{}, entity.Timestamp, "incorrect timestamp in new entity")
-	assert.Equal(t, 0, len(entity.Data), "incorrect data in new entity")
+	assert.Equal(t, qid, agg.id, "incorrect id")
+	assert.Equal(t, 0, agg.ver, "incorrect version for new agg")
+	assert.Equal(t, time.Time{}, agg.Timestamp, "incorrect timestamp in new agg")
+	assert.Equal(t, 0, len(agg.Entity), "incorrect data in new agg")
 
 	now := time.Now().UTC().Truncate(time.Second)
 
-	entity.Timestamp = now
-	entity.Data = []int{42}
+	agg.Timestamp = now
+	agg.Entity = []int{42}
 
-	assert.Nil(t, repo.Append(context.Background(), entity), "can't save entity -> %s", err)
+	assert.Nil(t, repo.Append(context.Background(), agg), "can't save agg -> %s", err)
 	assert.ErrorIs(
 		t,
-		repo.Save(context.Background(), entity),
+		repo.Save(context.Background(), agg),
 		ErrWrongVersion,
 		"error in optimistic concurrency control",
 	)
 
-	entity, err = repo.Get(context.Background(), qid)
-	assert.Nil(t, err, "can't get saved entity -> %s", err)
+	agg, err = repo.Get(context.Background(), qid)
+	assert.Nil(t, err, "can't get saved agg -> %s", err)
 
-	assert.Equal(t, qid, entity.id, "incorrect id")
-	assert.Equal(t, 1, entity.ver, "incorrect version for saved entity")
-	assert.Equal(t, now, entity.Timestamp, "incorrect timestamp in saved entity")
-	assert.Equal(t, []int{42}, entity.Data, "incorrect data in saved entity")
+	assert.Equal(t, qid, agg.id, "incorrect id")
+	assert.Equal(t, 1, agg.ver, "incorrect version for saved agg")
+	assert.Equal(t, now, agg.Timestamp, "incorrect timestamp in saved agg")
+	assert.Equal(t, []int{42}, agg.Entity, "incorrect data in saved agg")
 
 	now = time.Now().UTC().Truncate(time.Hour)
 
-	entity.Timestamp = now
-	entity.Data = []int{43}
+	agg.Timestamp = now
+	agg.Entity = []int{43}
 
-	assert.Nil(t, repo.Append(context.Background(), entity), "can't save entity -> %s", err)
+	assert.Nil(t, repo.Append(context.Background(), agg), "can't save agg -> %s", err)
 	assert.ErrorIs(
 		t,
-		repo.Append(context.Background(), entity),
+		repo.Append(context.Background(), agg),
 		ErrWrongVersion,
 		"error in optimistic concurrency control",
 	)
 
-	entity, err = repo.Get(context.Background(), qid)
-	assert.Nil(t, err, "can't get saved entity -> %s", err)
+	agg, err = repo.Get(context.Background(), qid)
+	assert.Nil(t, err, "can't get saved agg -> %s", err)
 
-	assert.Equal(t, qid, entity.id, "incorrect id")
-	assert.Equal(t, 2, entity.ver, "incorrect version for saved entity")
-	assert.Equal(t, now, entity.Timestamp, "incorrect timestamp in saved entity")
-	assert.Equal(t, []int{42, 43}, entity.Data, "incorrect data in saved entity")
+	assert.Equal(t, qid, agg.id, "incorrect id")
+	assert.Equal(t, 2, agg.ver, "incorrect version for saved agg")
+	assert.Equal(t, now, agg.Timestamp, "incorrect timestamp in saved agg")
+	assert.Equal(t, []int{42, 43}, agg.Entity, "incorrect data in saved agg")
 }
 
-func TestRepoErrors(t *testing.T) {
+func TestRepo_Errors(t *testing.T) {
 	var db mongo.Client
 
 	repo := NewRepo[int](&db)
@@ -162,21 +162,21 @@ func TestRepoErrors(t *testing.T) {
 	_, err := repo.Get(context.Background(), qid)
 	assert.ErrorContains(t, err, "can't load", "no error on loading from bad db")
 
-	entity := Entity[int]{ver: 0}
-	err = repo.Save(context.Background(), entity)
+	agg := Aggregate[int]{ver: 0}
+	err = repo.Save(context.Background(), agg)
 	assert.ErrorContains(t, err, "can't insert", "no error on loading from bad db")
 	assert.NotErrorIs(t, err, ErrWrongVersion, "no error on loading from bad db")
 
-	err = repo.Append(context.Background(), entity)
+	err = repo.Append(context.Background(), agg)
 	assert.ErrorContains(t, err, "can't insert", "no error on inserting in bad db")
 	assert.NotErrorIs(t, err, ErrWrongVersion, "no error on inserting in bad db")
 
-	entity = Entity[int]{ver: 1}
-	err = repo.Save(context.Background(), entity)
+	agg = Aggregate[int]{ver: 1}
+	err = repo.Save(context.Background(), agg)
 	assert.ErrorContains(t, err, "can't replace", "no error on replacing in bad db")
 	assert.NotErrorIs(t, err, ErrWrongVersion, "no error on replacing in bad db")
 
-	err = repo.Append(context.Background(), entity)
+	err = repo.Append(context.Background(), agg)
 	assert.ErrorContains(t, err, "can't append", "no error on appending in bad db")
 	assert.NotErrorIs(t, err, ErrWrongVersion, "no error on appending in bad db")
 }

@@ -41,7 +41,7 @@ func NewCheckDataService(logger *lgr.Logger, publisher domain.Publisher) *CheckD
 }
 
 // Run запускает рассылку о возможной публикации статистики после окончания торгового дня.
-func (c *CheckData) Run(ctx context.Context) {
+func (c *CheckData) Run(ctx context.Context) error {
 	c.logger.Infof("started")
 	defer c.logger.Infof("stopped")
 
@@ -53,7 +53,7 @@ func (c *CheckData) Run(ctx context.Context) {
 
 		select {
 		case <-ctx.Done():
-			return
+			return nil
 		case <-ticker.C:
 		}
 	}

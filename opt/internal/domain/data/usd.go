@@ -19,10 +19,10 @@ const (
 
 // USD свечка с данными о курсе доллара.
 type USD struct {
-	Date  time.Time
-	Open  float64
-	Close float64
-	High  float64
+	Date     time.Time
+	Open     float64
+	Close    float64
+	High     float64
 	Low      float64
 	Turnover float64
 }
@@ -77,14 +77,14 @@ func (h USDHandler) Handle(ctx context.Context, event domain.Event) error {
 		return err
 	}
 
-	if !table.Data.IsEmpty() {
+	if !table.Entity.IsEmpty() {
 		rows = rows[1:]
 	}
 
 	table.Timestamp = event.Timestamp
-	table.Data = rows
+	table.Entity = rows
 
-	if table.Data.IsEmpty() {
+	if table.Entity.IsEmpty() {
 		return nil
 	}
 
@@ -103,11 +103,11 @@ func (h USDHandler) Handle(ctx context.Context, event domain.Event) error {
 func (h USDHandler) download(
 	ctx context.Context,
 	event domain.Event,
-	table domain.Entity[Rows[USD]],
+	table domain.Aggregate[Rows[USD]],
 ) ([]gomoex.Candle, error) {
 	start := ""
-	if !table.Data.IsEmpty() {
-		start = table.Data.LastRow().Date.Format(_format)
+	if !table.Entity.IsEmpty() {
+		start = table.Entity.LastRow().Date.Format(_format)
 	}
 
 	end := event.Timestamp.Format(_format)
@@ -145,7 +145,7 @@ func (h USDHandler) convert(raw []gomoex.Candle) Rows[USD] {
 	return rows
 }
 
-func (h USDHandler) validate(table domain.Entity[Rows[USD]], rows Rows[USD]) error {
+func (h USDHandler) validate(table domain.Aggregate[Rows[USD]], rows Rows[USD]) error {
 	prev := rows[0].Date
 	for _, row := range rows[1:] {
 		if prev.Before(row.Date) {
@@ -157,14 +157,14 @@ func (h USDHandler) validate(table domain.Entity[Rows[USD]], rows Rows[USD]) err
 		return fmt.Errorf("not increasing dates %+v", prev)
 	}
 
-	if table.Data.IsEmpty() {
+	if table.Entity.IsEmpty() {
 		return nil
 	}
 
-	if table.Data.LastRow() != rows[0] {
+	if table.Entity.LastRow() != rows[0] {
 		return fmt.Errorf(
 			"old rows %+v not match new %+v",
-			table.Data.LastRow(),
+			table.Entity.LastRow(),
 			rows[0])
 	}
 
