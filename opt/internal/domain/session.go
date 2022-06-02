@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
+	"go.mongodb.org/mongo-driver/mongo"
 	"sync"
 )
 
@@ -22,8 +23,8 @@ type Session[T any] struct {
 }
 
 // NewSession создает новую сессию.
-func NewSession[T any](logger *lgr.Logger, repo ReadWriteRepo[T]) *Session[T] {
-	return &Session[T]{logger: logger, repo: repo}
+func NewSession[T any](logger *lgr.Logger, client *mongo.Client) *Session[T] {
+	return &Session[T]{logger: logger, repo: NewRepo[T](client)}
 }
 
 // Init создает новую сессию для заданного агрегата. Повторное создание аннулирует предыдущую.
