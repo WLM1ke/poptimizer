@@ -22,8 +22,7 @@ const (
 
 // EventBus - шина событий. Позволяет публиковать их и подписываться на заданный топик.
 type EventBus struct {
-	logger   *lgr.Logger
-	telegram *clients.Telegram
+	logger *lgr.Logger
 
 	handlers []domain.EventHandler
 	inbox    chan domain.Event
@@ -40,16 +39,17 @@ func PrepareEventBus(
 	iss *gomoex.ISSClient,
 ) *EventBus {
 	bus := EventBus{
-		logger:   logger,
-		telegram: telegram,
-		inbox:    make(chan domain.Event),
+		logger: logger,
+		inbox:  make(chan domain.Event),
 	}
+
+	bus.Subscribe(NewErrorsHandler(logger, telegram))
 
 	bus.Subscribe(data.NewTradingDateHandler(&bus, domain.NewRepo[time.Time](database), iss))
 	bus.Subscribe(data.NewUSDHandler(&bus, domain.NewRepo[data.Rows[data.USD]](database), iss))
 	bus.Subscribe(data.NewSecuritiesHandler(&bus, domain.NewRepo[data.Rows[data.Security]](database), iss))
 
-	bus.Subscribe(selected.NewHandler(domain.NewRepo[selected.Tickers](database)))
+	bus.Subscribe(selected.NewHandler(&bus, domain.NewRepo[selected.Tickers](database)))
 
 	return &bus
 }
@@ -115,7 +115,7 @@ func (e *EventBus) handle(event domain.Event) {
 				ctx, cancel := context.WithTimeout(context.Background(), _eventTimeout)
 				defer cancel()
 
-				e.logErr(handler.Handle(ctx, event))
+				handler.Handle(ctx, event)
 			}()
 		}
 	}
@@ -127,25 +127,11 @@ func (e *EventBus) Publish(event domain.Event) {
 	defer e.lock.RUnlock()
 
 	if e.stopped {
-		e.logErr(fmt.Errorf("stopped before handling event %s", event))
+		err := fmt.Errorf("stopped before handling event %s", event)
+		e.logger.Warnf("can't handle event -> %s", err)
 
 		return
 	}
 
 	e.inbox <- event
-}
-
-func (e *EventBus) logErr(err error) {
-	if err == nil {
-		return
-	}
-
-	e.logger.Warnf("can't handle event -> %s", err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), _errorTimeout)
-	defer cancel()
-
-	if err = e.telegram.Send(ctx, err.Error()); err != nil {
-		e.logger.Warnf("can't send notification -> %s", err)
-	}
 }

@@ -41,43 +41,45 @@ func NewTradingDateHandler(
 // Handle проверят событие о возможной публикации торговых данных.
 //
 // Публикует событие о последней торговой дате в случае подтверждения наличия новых данных.
-func (h TradingDateHandler) Handle(ctx context.Context, _ domain.Event) error {
+func (h TradingDateHandler) Handle(ctx context.Context, event domain.Event) {
 	qid := domain.QualifiedID{
 		Sub:   Subdomain,
 		Group: TradingDateGroup,
 		ID:    TradingDateGroup,
 	}
 
+	event.QualifiedID = qid
+
 	table, err := h.repo.Get(ctx, qid)
 	if err != nil {
-		return err
+		event.Data = err
+		h.pub.Publish(event)
 	}
 
 	rows, err := h.iss.MarketDates(ctx, gomoex.EngineStock, gomoex.MarketShares)
 	if err != nil {
-		return fmt.Errorf("can't download trading dates info -> %w", err)
+		event.Data = fmt.Errorf("can't download trading dates info -> %w", err)
+		h.pub.Publish(event)
 	}
 
 	if len(rows) != 1 {
-		return fmt.Errorf("wrong rows count %d", len(rows))
+		event.Data = fmt.Errorf("wrong rows count %d", len(rows))
+		h.pub.Publish(event)
 	}
 
 	date := rows[0].Till
 	if !date.After(table.Entity) {
-		return nil
+		return
 	}
 
 	table.Entity = date
 	table.Timestamp = date
 
 	if err := h.repo.Save(ctx, table); err != nil {
-		return err
+		event.Data = err
+		h.pub.Publish(event)
 	}
 
-	h.pub.Publish(domain.Event{
-		QualifiedID: qid,
-		Timestamp:   date,
-	})
-
-	return nil
+	event.Timestamp = date
+	h.pub.Publish(event)
 }

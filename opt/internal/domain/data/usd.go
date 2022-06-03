@@ -54,27 +54,33 @@ func NewUSDHandler(
 }
 
 // Handle реагирует на событие об обновлении курса и обновляет его.
-func (h USDHandler) Handle(ctx context.Context, event domain.Event) error {
+func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
 	qid := domain.QualifiedID{
 		Sub:   Subdomain,
 		Group: USDGroup,
 		ID:    USDGroup,
 	}
 
+	event.QualifiedID = qid
+
 	table, err := h.repo.Get(ctx, qid)
 	if err != nil {
-		return err
+		event.Data = err
+		h.pub.Publish(event)
+
 	}
 
 	raw, err := h.download(ctx, event, table)
 	if err != nil {
-		return err
+		event.Data = err
+		h.pub.Publish(event)
 	}
 
 	rows := h.convert(raw)
 
 	if err := h.validate(table, rows); err != nil {
-		return err
+		event.Data = err
+		h.pub.Publish(event)
 	}
 
 	if !table.Entity.IsEmpty() {
@@ -85,19 +91,15 @@ func (h USDHandler) Handle(ctx context.Context, event domain.Event) error {
 	table.Entity = rows
 
 	if table.Entity.IsEmpty() {
-		return nil
+		return
 	}
 
 	if err := h.repo.Append(ctx, table); err != nil {
-		return err
+		event.Data = err
+		h.pub.Publish(event)
 	}
 
-	h.pub.Publish(domain.Event{
-		QualifiedID: qid,
-		Timestamp:   event.Timestamp,
-	})
-
-	return nil
+	h.pub.Publish(event)
 }
 
 func (h USDHandler) download(

@@ -50,21 +50,25 @@ func NewSecuritiesHandler(
 // Handle реагирует на событие об обновлении курса и обновляет данные о торгуемых бумагах.
 //
 // Рассылает отдельные события для каждой торгуемой бумаги.
-func (h SecuritiesHandler) Handle(ctx context.Context, event domain.Event) error {
+func (h SecuritiesHandler) Handle(ctx context.Context, event domain.Event) {
 	qid := domain.QualifiedID{
 		Sub:   Subdomain,
 		Group: SecuritiesGroup,
 		ID:    SecuritiesGroup,
 	}
 
+	event.QualifiedID = qid
+
 	table, err := h.repo.Get(ctx, qid)
 	if err != nil {
-		return err
+		event.Data = err
+		h.pub.Publish(event)
 	}
 
 	raw, err := h.download(ctx)
 	if err != nil {
-		return err
+		event.Data = err
+		h.pub.Publish(event)
 	}
 
 	rows := h.convert(raw)
@@ -73,12 +77,11 @@ func (h SecuritiesHandler) Handle(ctx context.Context, event domain.Event) error
 	table.Entity = rows
 
 	if err := h.repo.Save(ctx, table); err != nil {
-		return err
+		event.Data = err
+		h.pub.Publish(event)
 	}
 
 	h.publish(table)
-
-	return nil
 }
 
 func (h SecuritiesHandler) download(
