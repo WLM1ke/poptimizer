@@ -123,6 +123,7 @@ positions:
   MRKY: 0
   MRKZ: 0
   MRNA-RM: 0
+  MRSB: 0
   MSFT-RM: 0
   MSNG: 0
   MSRS: 0
@@ -188,6 +189,7 @@ positions:
   SFIN: 0
   SGZH: 0
   SIBN: 0
+  SLEN: 0
   SMLT: 0
   SNGS: 0
   SNGSP: 0
@@ -203,7 +205,6 @@ positions:
   TGKN: 0
   TGT-RM: 0
   TMOS: 0
-  TMUS-RM: 0
   TRMK: 0
   TRNFP: 0
   TRUR: 0
