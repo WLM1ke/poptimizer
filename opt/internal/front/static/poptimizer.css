@@ -6,15 +6,29 @@
 /* Tickers */
 
 #tickers>aside>ul {
+  padding-top: var(--padding_sm);
+  flex: 1 1 0;
   overflow: scroll;
-  height: 100%;
+}
+
+#tickers>main {
+  display: flex;
+  flex-direction: column;
 }
 
 #tickers>main>ul {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, 10em);
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: start;
   gap: var(--padding_sm);
   list-style-type: none;
+  overflow: scroll;
+}
+
+#tickers>main>ul>li {
+  width: var(--max-width);
 }
 
 #tickers a {

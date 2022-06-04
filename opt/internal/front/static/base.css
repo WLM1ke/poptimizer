@@ -70,7 +70,6 @@ select {
   border-style: solid;
   outline: none;
   padding: var(--padding_sm);
-  margin-bottom: var(--padding_sm);
 }
 
 input[type="search"],
@@ -147,8 +146,6 @@ th {
   padding: var(--padding_sm) var(--padding_bg);
   text-align: center;
 }
-
-
 
 thead {
   border-bottom: 1px solid var(--bg-emphasis);

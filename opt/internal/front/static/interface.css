@@ -76,12 +76,6 @@ aside li {
   padding-bottom: var(--padding_sm);
 }
 
-/* Main */
-
-main {
-  overflow: scroll;
-}
-
 /* Footer */
 footer {
   display: flex;
