@@ -10,20 +10,17 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/port/selected"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-)
-
-const (
-	_sessionKey = `POSession`
 )
 
 //go:embed static
 var static embed.FS
 
 // NewFrontend создает обработчики отображающие frontend.
-func NewFrontend(logger *lgr.Logger, client *mongo.Client) http.Handler {
+func NewFrontend(logger *lgr.Logger, smg *scs.SessionManager, client *mongo.Client) http.Handler {
 	static, err := fs.Sub(static, "static")
 	if err != nil {
 		logger.Panicf("can't load frontend data -> %s", err)
@@ -43,25 +40,25 @@ func NewFrontend(logger *lgr.Logger, client *mongo.Client) http.Handler {
 	router.Get("/{page}", indexHandlerFn(logger, index))
 
 	tickers := tickersHandler{
-		logger:  logger,
-		session: domain.NewSession[selected.Tickers](logger, client),
-		tmpl:    extendTemplate(index, static, "tickers/*.gohtml"),
+		logger: logger,
+		tmpl:   extendTemplate(index, static, "tickers/*.gohtml"),
+		smg:    smg,
+		repo:   domain.NewRepo[selected.Tickers](client),
 	}
-	router.Post("/tickers/session", tickers.handleCreateSession)
+	router.Post("/tickers", tickers.handleIndex)
 	router.Post("/tickers/search", tickers.handleSearch)
 	router.Post("/tickers/save", tickers.handleSave)
 	router.Post("/tickers/add/{ticker}", tickers.handleAdd)
 	router.Post("/tickers/remove/{ticker}", tickers.handleRemove)
 
-	return router
+	return smg.LoadAndSave(router)
 }
 
 func indexHandlerFn(logger *lgr.Logger, index *template.Template) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		page := map[string]any{
-			"Page":   chi.URLParam(request, "page"),
-			"Token":  primitive.NewObjectID().Hex(),
-			"Status": "Not edited",
+			"Page":  chi.URLParam(request, "page"),
+			"Token": primitive.NewObjectID().Hex(),
 		}
 
 		if err := execTemplate(writer, index, "index", page); err != nil {
@@ -87,9 +84,4 @@ func execTemplate(w http.ResponseWriter, tmpl *template.Template, name string, d
 	}
 
 	return nil
-}
-
-// Должно вызываться до записи тела ответа.
-func addEventToHeader(w http.ResponseWriter, event string) {
-	w.Header().Set("HX-Trigger", event)
 }

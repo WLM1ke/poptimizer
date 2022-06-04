@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"time"
@@ -47,6 +48,8 @@ type Repo[D any] struct {
 
 // NewRepo - создает новый репозиторий на основе MongoDB.
 func NewRepo[D any](db *mongo.Client) *Repo[D] {
+	gob.Register(newEmptyAggregate[D](QualifiedID{}))
+
 	return &Repo[D]{
 		client: db,
 	}

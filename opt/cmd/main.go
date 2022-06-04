@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,14 +9,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/WLM1ke/poptimizer/opt/internal/app"
-	"github.com/WLM1ke/poptimizer/opt/internal/front"
-	"github.com/WLM1ke/poptimizer/opt/pkg/servers"
-
 	"github.com/WLM1ke/gomoex"
+	"github.com/WLM1ke/poptimizer/opt/internal/app"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
+	"github.com/WLM1ke/poptimizer/opt/internal/front"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
+	"github.com/WLM1ke/poptimizer/opt/pkg/servers"
+	"github.com/alexedwards/scs/v2"
 	"github.com/caarlos0/env/v6"
 	"go.uber.org/goleak"
 	"golang.org/x/sync/errgroup"
@@ -28,8 +28,9 @@ type config struct {
 		GoroutineInterval time.Duration `envDefault:"1m"`
 	}
 	Server struct {
-		Addr    string        `envDefault:"localhost:10000"`
-		Timeout time.Duration `envDefault:"1s"`
+		Addr           string        `envDefault:"localhost:10000"`
+		RespondTimeout time.Duration `envDefault:"1s"`
+		SessionTimeout time.Duration `envDefault:"5m"`
 	}
 	HTTPClient struct {
 		Connections int `envDefault:"20"`
@@ -55,8 +56,9 @@ func main() {
 }
 
 func atExit(logger *lgr.Logger) {
-	if err := goleak.Find(); err != nil {
-		logger.Warnf("stopped with exit code 1 -> found leaked goroutines")
+	const leak = `github.com/alexedwards/scs/v2/memstore.(*MemStore).startCleanup`
+	if err := goleak.Find(goleak.IgnoreTopFunction(leak)); err != nil {
+		logger.Warnf("stopped with exit code 1 -> found leaked goroutines %s", err)
 		os.Exit(1)
 	}
 
@@ -139,11 +141,19 @@ func run(appCtx context.Context, cfg config, logger *lgr.Logger) {
 		iss,
 	)
 
+	sessionManager := scs.New()
+	sessionManager.IdleTimeout = cfg.Server.SessionTimeout
+	sessionManager.ErrorFunc = func(writer http.ResponseWriter, request *http.Request, err error) {
+		logger.WithPrefix("Server").Warnf("session error %s", err)
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+	}
+	sessionManager.Cookie.Persist = false
+
 	httpServer := servers.NewHTTPServer(
 		logger.WithPrefix("Server"),
 		cfg.Server.Addr,
-		front.NewFrontend(logger.WithPrefix("Server"), mongoClient),
-		cfg.Server.Timeout,
+		front.NewFrontend(logger.WithPrefix("Server"), sessionManager, mongoClient),
+		cfg.Server.RespondTimeout,
 	)
 
 	var group errgroup.Group

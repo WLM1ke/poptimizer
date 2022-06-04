@@ -21,9 +21,8 @@
         <body
             id="{{.Page}}"
             hx-trigger="load"
-            hx-post="{{.Page}}/session"
+            hx-post="{{.Page}}"
             hx-swap="none"
-            hx-vals='{"POSession": "{{.Token}}"}'
         >
             <header>
                 <strong>⌘ POptimizer</strong>
@@ -42,7 +41,7 @@
             </header>
             <aside></aside>
             <main></main>
-            {{template "status" .Status}}
+            <footer></footer>
         </body>
     </html>
 {{end}}
