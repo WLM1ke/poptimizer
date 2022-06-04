@@ -3,9 +3,10 @@ package domain
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"go.mongodb.org/mongo-driver/mongo"
-	"sync"
 )
 
 // Session позволяет длительно взаимодействовать одним доменным объектом.

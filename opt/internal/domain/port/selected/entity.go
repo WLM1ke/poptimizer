@@ -2,11 +2,12 @@ package selected
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/port"
 	"golang.org/x/exp/slices"
-	"strings"
 )
 
 // ID выбранных для анализа тикеров.

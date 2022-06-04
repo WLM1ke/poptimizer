@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// ErrWrongVersion ошибка попытки записи неверной версии агрегата в рамках optimistic concurrency control.
 var ErrWrongVersion = errors.New("wrong agg version")
 
 // ReadRepo осуществляет загрузку объекта.

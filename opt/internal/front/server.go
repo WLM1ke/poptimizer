@@ -3,15 +3,15 @@ package front
 import (
 	"embed"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/port/selected"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"html/template"
 	"io/fs"
 	"net/http"
 
+	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/port/selected"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/go-chi/chi"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 

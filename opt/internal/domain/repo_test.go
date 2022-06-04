@@ -2,26 +2,28 @@ package domain
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/mongo"
-	"testing"
-	"time"
 )
 
-func TestRepo_Save(t *testing.T) {
-	db, err := clients.NewMongoClient("mongodb://localhost:27017")
-	assert.Nil(t, err, "can't connect to test MongoDB -> %s", err)
+func TestRepo_Save(t *testing.T) { //nolint:paralleltest
+	client, err := clients.NewMongoClient("mongodb://localhost:27017")
 	defer func() {
 		assert.Nil(
 			t,
-			db.Database("test").Drop(context.Background()),
+			client.Database("test").Drop(context.Background()),
 			"can't drop test db -> %s",
 			err,
 		)
 	}()
 
-	repo := NewRepo[int](db)
+	assert.Nil(t, err, "can't connect to test MongoDB -> %s", err)
+
+	repo := NewRepo[int](client)
 	qid := QualifiedID{
 		Sub:   "test",
 		Group: "some",
@@ -79,19 +81,20 @@ func TestRepo_Save(t *testing.T) {
 	assert.Equal(t, 43, agg.Entity, "incorrect data in saved agg")
 }
 
-func TestRepo_Append(t *testing.T) {
-	db, err := clients.NewMongoClient("mongodb://localhost:27017")
-	assert.Nil(t, err, "can't connect to test MongoDB -> %s", err)
+func TestRepo_Append(t *testing.T) { //nolint:paralleltest
+	client, err := clients.NewMongoClient("mongodb://localhost:27017")
 	defer func() {
 		assert.Nil(
 			t,
-			db.Database("test").Drop(context.Background()),
-			"can't drop test db -> %s",
+			client.Database("test").Drop(context.Background()),
+			"can't drop db client -> %s",
 			err,
 		)
 	}()
 
-	repo := NewRepo[[]int](db)
+	assert.Nil(t, err, "can't connect to test MongoDB -> %s", err)
+
+	repo := NewRepo[[]int](client)
 	qid := QualifiedID{
 		Sub:   "test",
 		Group: "some",
@@ -150,9 +153,11 @@ func TestRepo_Append(t *testing.T) {
 }
 
 func TestRepo_Errors(t *testing.T) {
-	var db mongo.Client
+	t.Parallel()
 
-	repo := NewRepo[int](&db)
+	var client mongo.Client
+
+	repo := NewRepo[int](&client)
 	qid := QualifiedID{
 		Sub:   "test",
 		Group: "some",

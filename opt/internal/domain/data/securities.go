@@ -3,9 +3,10 @@ package data
 import (
 	"context"
 	"fmt"
+	"sort"
+
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"sort"
 )
 
 // SecuritiesGroup группа и id данных о торгуемых бумагах.

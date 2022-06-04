@@ -67,7 +67,6 @@ func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
 	if err != nil {
 		event.Data = err
 		h.pub.Publish(event)
-
 	}
 
 	raw, err := h.download(ctx, event, table)

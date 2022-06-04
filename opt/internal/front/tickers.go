@@ -1,12 +1,13 @@
 package front
 
 import (
+	"html/template"
+	"net/http"
+
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/port/selected"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/go-chi/chi"
-	"html/template"
-	"net/http"
 )
 
 const _updateSearchEvent = `UpdateSearchEvent`

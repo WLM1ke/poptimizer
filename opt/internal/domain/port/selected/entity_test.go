@@ -1,9 +1,10 @@
 package selected
 
 import (
+	"testing"
+
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func prepare() Tickers {
@@ -19,6 +20,8 @@ func prepare() Tickers {
 }
 
 func TestTickers_update(t *testing.T) {
+	t.Parallel()
+
 	tickers := prepare().update([]data.Security{
 		{Ticker: "AKRN"},
 		{Ticker: "GMKN"},
@@ -37,6 +40,8 @@ func TestTickers_update(t *testing.T) {
 }
 
 func TestTickers_Selected(t *testing.T) {
+	t.Parallel()
+
 	tickers := prepare().Selected()
 	out := []string{"AKRN", "GAZP", "UPRO"}
 
@@ -44,6 +49,8 @@ func TestTickers_Selected(t *testing.T) {
 }
 
 func TestTickers_NotSelected(t *testing.T) {
+	t.Parallel()
+
 	table := []struct {
 		prefix string
 		out    []string
@@ -67,6 +74,8 @@ func TestTickers_NotSelected(t *testing.T) {
 }
 
 func TestTickers_Add(t *testing.T) {
+	t.Parallel()
+
 	table := []struct {
 		ticker   string
 		err      bool
@@ -77,18 +86,19 @@ func TestTickers_Add(t *testing.T) {
 		{"NVTK", false, []string{"AKRN", "GAZP", "NVTK", "UPRO"}},
 	}
 
-	for _, c := range table {
+	for _, test := range table {
 		tickers := prepare()
-		err := tickers.Add(c.ticker)
+		err := tickers.Add(test.ticker)
 
 		assert.Equal(t, 7, len(tickers), "size of tickers must not change")
-		assert.Equal(t, c.err, err != nil, "wrong addition to selected tickers")
-		assert.Equal(t, c.selected, tickers.Selected(), "wrong addition to selected tickers")
+		assert.Equal(t, test.err, err != nil, "wrong addition to selected tickers")
+		assert.Equal(t, test.selected, tickers.Selected(), "wrong addition to selected tickers")
 	}
-
 }
 
 func TestTickers_Remove(t *testing.T) {
+	t.Parallel()
+
 	table := []struct {
 		ticker   string
 		err      bool
@@ -99,13 +109,12 @@ func TestTickers_Remove(t *testing.T) {
 		{"NVTK", true, []string{"AKRN", "GAZP", "UPRO"}},
 	}
 
-	for _, c := range table {
+	for _, test := range table {
 		tickers := prepare()
-		err := tickers.Remove(c.ticker)
+		err := tickers.Remove(test.ticker)
 
 		assert.Equal(t, 7, len(tickers), "size of tickers must not change")
-		assert.Equal(t, c.err, err != nil, "wrong removal to selected tickers")
-		assert.Equal(t, c.selected, tickers.Selected(), "wrong removal to selected tickers")
+		assert.Equal(t, test.err, err != nil, "wrong removal to selected tickers")
+		assert.Equal(t, test.selected, tickers.Selected(), "wrong removal to selected tickers")
 	}
-
 }

@@ -3,6 +3,7 @@ package selected
 import (
 	"context"
 	"fmt"
+
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/port"

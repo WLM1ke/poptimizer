@@ -1,5 +1,6 @@
 package data
 
+// Subdomain загрузки данных.
 const Subdomain = `data`
 
 // Rows строчки данных с MOEX ISS.
