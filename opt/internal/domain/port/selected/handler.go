@@ -43,12 +43,16 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 	if err != nil {
 		event.Data = err
 		h.pub.Publish(event)
+
+		return
 	}
 
 	sec, ok := event.Data.(data.Rows[data.Security])
 	if !ok {
 		event.Data = fmt.Errorf("can't parse event data %s", event)
 		h.pub.Publish(event)
+
+		return
 	}
 
 	agg.Timestamp = event.Timestamp

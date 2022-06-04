@@ -67,12 +67,16 @@ func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
 	if err != nil {
 		event.Data = err
 		h.pub.Publish(event)
+
+		return
 	}
 
 	raw, err := h.download(ctx, event, table)
 	if err != nil {
 		event.Data = err
 		h.pub.Publish(event)
+
+		return
 	}
 
 	rows := h.convert(raw)
@@ -80,22 +84,26 @@ func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
 	if err := h.validate(table, rows); err != nil {
 		event.Data = err
 		h.pub.Publish(event)
+
+		return
 	}
 
 	if !table.Entity.IsEmpty() {
 		rows = rows[1:]
 	}
 
-	table.Timestamp = event.Timestamp
-	table.Entity = rows
-
-	if table.Entity.IsEmpty() {
+	if rows.IsEmpty() {
 		return
 	}
+
+	table.Timestamp = event.Timestamp
+	table.Entity = rows
 
 	if err := h.repo.Append(ctx, table); err != nil {
 		event.Data = err
 		h.pub.Publish(event)
+
+		return
 	}
 
 	h.pub.Publish(event)

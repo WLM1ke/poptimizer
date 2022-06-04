@@ -64,12 +64,16 @@ func (h SecuritiesHandler) Handle(ctx context.Context, event domain.Event) {
 	if err != nil {
 		event.Data = err
 		h.pub.Publish(event)
+
+		return
 	}
 
 	raw, err := h.download(ctx)
 	if err != nil {
 		event.Data = err
 		h.pub.Publish(event)
+
+		return
 	}
 
 	rows := h.convert(raw)
@@ -80,6 +84,8 @@ func (h SecuritiesHandler) Handle(ctx context.Context, event domain.Event) {
 	if err := h.repo.Save(ctx, table); err != nil {
 		event.Data = err
 		h.pub.Publish(event)
+
+		return
 	}
 
 	h.publish(table)
