@@ -17,7 +17,6 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/WLM1ke/poptimizer/opt/pkg/servers"
-	"github.com/alexedwards/scs/v2"
 	"github.com/caarlos0/env/v6"
 	"go.uber.org/goleak"
 	"golang.org/x/sync/errgroup"
@@ -30,7 +29,6 @@ type config struct {
 	Server struct {
 		Addr           string        `envDefault:"localhost:10000"`
 		RespondTimeout time.Duration `envDefault:"1s"`
-		SessionTimeout time.Duration `envDefault:"5m"`
 	}
 	HTTPClient struct {
 		Connections int `envDefault:"20"`
@@ -50,13 +48,13 @@ func main() {
 	defer atExit(logger)
 
 	cfg := loadCfg(logger)
-	appCtx := createCtx(logger, cfg.App.GoroutineInterval)
 
-	run(appCtx, cfg, logger)
+	run(cfg, logger)
 }
 
 func atExit(logger *lgr.Logger) {
-	const leak = `github.com/alexedwards/scs/v2/memstore.(*MemStore).startCleanup`
+	leak := `github.com/alexedwards/scs/v2/memstore.(*MemStore).startCleanup`
+
 	if err := goleak.Find(goleak.IgnoreTopFunction(leak)); err != nil {
 		logger.Warnf("stopped with exit code 1 -> found leaked goroutines %s", err)
 		os.Exit(1)
@@ -81,34 +79,7 @@ func loadCfg(logger *lgr.Logger) (cfg config) {
 	return cfg
 }
 
-func createCtx(logger *lgr.Logger, interval time.Duration) context.Context {
-	ctx, appCancel := context.WithCancel(context.Background())
-
-	go func() {
-		defer appCancel()
-
-		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-		defer cancel()
-
-		ticker := time.NewTicker(interval)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ticker.C:
-				logger.Infof("%d goroutines are running", runtime.NumGoroutine())
-			case <-ctx.Done():
-				logger.Infof("shutdown signal received")
-
-				return
-			}
-		}
-	}()
-
-	return ctx
-}
-
-func run(appCtx context.Context, cfg config, logger *lgr.Logger) {
+func run(cfg config, logger *lgr.Logger) {
 	httpClient := clients.NewHTTPClient(cfg.HTTPClient.Connections)
 	defer httpClient.CloseIdleConnections()
 
@@ -141,21 +112,60 @@ func run(appCtx context.Context, cfg config, logger *lgr.Logger) {
 		iss,
 	)
 
-	sessionManager := scs.New()
-	sessionManager.IdleTimeout = cfg.Server.SessionTimeout
-	sessionManager.ErrorFunc = func(writer http.ResponseWriter, request *http.Request, err error) {
-		logger.WithPrefix("Server").Warnf("session error %s", err)
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-	}
-	sessionManager.Cookie.Persist = false
-
 	httpServer := servers.NewHTTPServer(
 		logger.WithPrefix("Server"),
 		cfg.Server.Addr,
-		front.NewFrontend(logger.WithPrefix("Server"), sessionManager, mongoClient),
+		front.NewFrontend(logger.WithPrefix("Server"), mongoClient),
 		cfg.Server.RespondTimeout,
 	)
 
+	tradingDatesService := data.NewTradingDateService(
+		logger.WithPrefix("TradingDateService"),
+		eventBus,
+		domain.NewRepo[time.Time](mongoClient),
+		iss,
+	)
+
+	ctx := createCtx(logger, cfg.App.GoroutineInterval)
+	services := []service{
+		eventBus.Run,
+		httpServer.Run,
+		tradingDatesService.Run,
+	}
+
+	runServices(ctx, logger, services)
+}
+
+type service func(ctx context.Context) error
+
+func createCtx(logger *lgr.Logger, interval time.Duration) context.Context {
+	ctx, appCancel := context.WithCancel(context.Background())
+
+	go func() {
+		defer appCancel()
+
+		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+		defer cancel()
+
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				logger.Infof("%d goroutines are running", runtime.NumGoroutine())
+			case <-ctx.Done():
+				logger.Infof("shutdown signal received")
+
+				return
+			}
+		}
+	}()
+
+	return ctx
+}
+
+func runServices(ctx context.Context, logger *lgr.Logger, services []service) {
 	var group errgroup.Group
 	defer func() {
 		err := group.Wait()
@@ -164,23 +174,9 @@ func run(appCtx context.Context, cfg config, logger *lgr.Logger) {
 		}
 	}()
 
-	repo := domain.NewRepo[time.Time](mongoClient)
-	tradingDatesService := data.NewTradingDateService(
-		logger.WithPrefix("TradingDateService"),
-		eventBus,
-		repo,
-		iss,
-	)
-
-	for _, s := range []func(ctx context.Context) error{
-		eventBus.Run,
-		tradingDatesService.Run,
-		httpServer.Run,
-	} {
+	for _, s := range services {
 		service := s
 
-		group.Go(func() error {
-			return service(appCtx)
-		})
+		group.Go(func() error { return service(ctx) })
 	}
 }

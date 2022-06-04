@@ -3,6 +3,7 @@ package domain
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"time"
 )
 
@@ -45,16 +46,16 @@ func (a Aggregate[E]) GobEncode() ([]byte, error) {
 		Entity:    a.Entity,
 	}
 
-	var b bytes.Buffer
-	if err := gob.NewEncoder(&b).Encode(&dao); err != nil {
-		return nil, err
+	var data bytes.Buffer
+	if err := gob.NewEncoder(&data).Encode(&dao); err != nil {
+		return nil, fmt.Errorf("can't encode aggregate %s -> %w", a.id, err)
 	}
 
-	return b.Bytes(), nil
+	return data.Bytes(), nil
 }
 
 // GobDecode поддержка декодирования скрытых полей.
-func (a *Aggregate[E]) GobDecode(b []byte) error {
+func (a *Aggregate[E]) GobDecode(data []byte) error {
 	dao := &struct {
 		ID        QualifiedID
 		Ver       int
@@ -62,9 +63,9 @@ func (a *Aggregate[E]) GobDecode(b []byte) error {
 		Entity    E
 	}{}
 
-	reader := bytes.NewReader(b)
+	reader := bytes.NewReader(data)
 	if err := gob.NewDecoder(reader).Decode(&dao); err != nil {
-		return err
+		return fmt.Errorf("can't decode aggregate -> %w", err)
 	}
 
 	a.id = dao.ID

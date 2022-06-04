@@ -9,7 +9,7 @@ linters-settings:
     # See https://github.com/go-critic/go-critic#usage -> section "Tags".
     # Default: []
     enabled-tags:
-      - diagnostic
+#      - diagnostic
 #      - style
       - performance
 #      - experimental

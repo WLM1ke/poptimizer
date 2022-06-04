@@ -9,6 +9,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 )
 
+// ErrorsHandler логирует и посылает в телеграм события с ошибками.
 type ErrorsHandler struct {
 	domain.Filter
 
@@ -16,6 +17,7 @@ type ErrorsHandler struct {
 	telegram *clients.Telegram
 }
 
+// NewErrorsHandler создает новый обработчик событий с ошибками.
 func NewErrorsHandler(logger *lgr.Logger, telegram *clients.Telegram) *ErrorsHandler {
 	return &ErrorsHandler{
 		Filter:   domain.Filter{Err: true},
@@ -24,6 +26,7 @@ func NewErrorsHandler(logger *lgr.Logger, telegram *clients.Telegram) *ErrorsHan
 	}
 }
 
+// Handle перехватывает события с ошибками, логирует и посылает их в телеграм.
 func (e ErrorsHandler) Handle(ctx context.Context, event domain.Event) {
 	err, ok := event.Data.(error)
 	if !ok {
@@ -32,7 +35,7 @@ func (e ErrorsHandler) Handle(ctx context.Context, event domain.Event) {
 
 	e.logger.Warnf("can't handle event -> %s", err)
 
-	ctx, cancel := context.WithTimeout(context.Background(), _errorTimeout)
+	ctx, cancel := context.WithTimeout(ctx, _errorTimeout)
 	defer cancel()
 
 	if err = e.telegram.Send(ctx, err.Error()); err != nil {

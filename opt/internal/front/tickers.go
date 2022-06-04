@@ -105,7 +105,7 @@ func (h *tickersHandler) handleSave(writer http.ResponseWriter, request *http.Re
 	h.render("update", writer, request)
 }
 
-func (h *tickersHandler) handleAdd(writer http.ResponseWriter, request *http.Request) {
+func (h *tickersHandler) handleAdd(writer http.ResponseWriter, request *http.Request) { //nolint:dupl
 	agg, ok := h.smg.Get(request.Context(), _tickersKey).(domain.Aggregate[selected.Tickers])
 	if !ok {
 		err := fmt.Errorf("can't decode session data")
@@ -130,7 +130,7 @@ func (h *tickersHandler) handleAdd(writer http.ResponseWriter, request *http.Req
 	h.render("update", writer, request)
 }
 
-func (h *tickersHandler) handleRemove(writer http.ResponseWriter, request *http.Request) {
+func (h *tickersHandler) handleRemove(writer http.ResponseWriter, request *http.Request) { //nolint:dupl
 	agg, ok := h.smg.Get(request.Context(), _tickersKey).(domain.Aggregate[selected.Tickers])
 	if !ok {
 		err := fmt.Errorf("can't decode session data")

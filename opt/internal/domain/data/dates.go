@@ -3,9 +3,9 @@ package data
 import (
 	"context"
 	"fmt"
-	"github.com/WLM1ke/gomoex"
 	"time"
 
+	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 )
@@ -133,7 +133,7 @@ func (s *TradingDateService) getTradingDate(ctx context.Context) (date time.Time
 
 	rows, err := s.iss.MarketDates(ctx, gomoex.EngineStock, gomoex.MarketShares)
 	if err != nil {
-		return date, err
+		return date, fmt.Errorf("cat' download trading dates -> %w", err)
 	}
 
 	if len(rows) != 1 {

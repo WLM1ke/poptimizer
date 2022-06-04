@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
+	"time"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/port/selected"
@@ -16,11 +17,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+const _sessionExp = time.Minute * 5
+
 //go:embed static
 var static embed.FS
 
 // NewFrontend создает обработчики отображающие frontend.
-func NewFrontend(logger *lgr.Logger, smg *scs.SessionManager, client *mongo.Client) http.Handler {
+func NewFrontend(logger *lgr.Logger, client *mongo.Client) http.Handler {
 	static, err := fs.Sub(static, "static")
 	if err != nil {
 		logger.Panicf("can't load frontend data -> %s", err)
@@ -38,6 +41,8 @@ func NewFrontend(logger *lgr.Logger, smg *scs.SessionManager, client *mongo.Clie
 	)
 
 	router.Get("/{page}", indexHandlerFn(logger, index))
+
+	smg := makeSessionManager(logger)
 
 	tickers := tickersHandler{
 		logger: logger,
@@ -65,6 +70,18 @@ func indexHandlerFn(logger *lgr.Logger, index *template.Template) http.HandlerFu
 			logger.Warnf("can't render template -> %s", err)
 		}
 	}
+}
+
+func makeSessionManager(logger *lgr.Logger) *scs.SessionManager {
+	smg := scs.New()
+	smg.IdleTimeout = _sessionExp
+	smg.ErrorFunc = func(writer http.ResponseWriter, request *http.Request, err error) {
+		logger.WithPrefix("Server").Warnf("session error %s", err)
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+	}
+	smg.Cookie.Persist = false
+
+	return smg
 }
 
 func extendTemplate(index *template.Template, files fs.FS, pattern string) *template.Template {
