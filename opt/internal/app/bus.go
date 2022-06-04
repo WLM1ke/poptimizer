@@ -3,13 +3,13 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/port/selected"
 	"sync"
 	"time"
 
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/port/selected"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -35,7 +35,7 @@ type EventBus struct {
 func PrepareEventBus(
 	logger *lgr.Logger,
 	telegram *clients.Telegram,
-	database *mongo.Client,
+	client *mongo.Client,
 	iss *gomoex.ISSClient,
 ) *EventBus {
 	bus := EventBus{
@@ -45,11 +45,10 @@ func PrepareEventBus(
 
 	bus.Subscribe(NewErrorsHandler(logger, telegram))
 
-	bus.Subscribe(data.NewTradingDateHandler(&bus, domain.NewRepo[time.Time](database), iss))
-	bus.Subscribe(data.NewUSDHandler(&bus, domain.NewRepo[data.Rows[data.USD]](database), iss))
-	bus.Subscribe(data.NewSecuritiesHandler(&bus, domain.NewRepo[data.Rows[data.Security]](database), iss))
+	bus.Subscribe(data.NewUSDHandler(&bus, domain.NewRepo[data.Rows[data.USD]](client), iss))
+	bus.Subscribe(data.NewSecuritiesHandler(&bus, domain.NewRepo[data.Rows[data.Security]](client), iss))
 
-	bus.Subscribe(selected.NewHandler(&bus, domain.NewRepo[selected.Tickers](database)))
+	bus.Subscribe(selected.NewHandler(&bus, domain.NewRepo[selected.Tickers](client)))
 
 	return &bus
 }

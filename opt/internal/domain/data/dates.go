@@ -3,83 +3,154 @@ package data
 import (
 	"context"
 	"fmt"
+	"github.com/WLM1ke/gomoex"
 	"time"
 
-	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 )
 
 // TradingDateGroup группа и id данных о последней торговой дате.
-const TradingDateGroup = "trading_date"
+const (
+	TradingDateGroup = "trading_date"
+	_timeout         = time.Second * 30
 
-// TradingDateHandler обработчик событий, отвечающий за загрузку информации о последней торговой дате.
-type TradingDateHandler struct {
-	domain.Filter
-	pub  domain.Publisher
-	repo domain.ReadWriteRepo[time.Time]
-	iss  *gomoex.ISSClient
+	_tickerDuration = time.Minute
+	// Информация о торгах публикуется на MOEX ISS в 0:45 по московскому времени на следующий день.
+	_issTZ     = "Europe/Moscow"
+	_issHour   = 0
+	_issMinute = 45
+)
+
+var loc = func() *time.Location { //nolint:gochecknoglobals // Загрузка зоны происходит медленно
+	loc, err := time.LoadLocation(_issTZ)
+	if err != nil {
+		panic("can't load time MOEX zone")
+	}
+
+	return loc
+}()
+
+// TradingDateService - служба отслеживающая окончания торгового дня и рассылающая сообщение об этом.
+type TradingDateService struct {
+	logger *lgr.Logger
+	repo   domain.ReadWriteRepo[time.Time]
+	iss    *gomoex.ISSClient
+	pub    domain.Publisher
+
+	tradingDate time.Time
 }
 
-// NewTradingDateHandler создает обработчик событий о последней торговой дате.
-func NewTradingDateHandler(
-	pub domain.Publisher,
+// NewTradingDateService - создает службу, публикующую сообщение о возможной публикации статистики.
+func NewTradingDateService(
+	logger *lgr.Logger,
+	publisher domain.Publisher,
 	repo domain.ReadWriteRepo[time.Time],
 	iss *gomoex.ISSClient,
-) *TradingDateHandler {
-	return &TradingDateHandler{
-		Filter: domain.Filter{
-			Sub:   Subdomain,
-			Group: CheckDataGroup,
-			ID:    CheckDataGroup,
-		},
-		iss:  iss,
-		repo: repo,
-		pub:  pub,
+) *TradingDateService {
+	return &TradingDateService{logger: logger, repo: repo, iss: iss, pub: publisher}
+}
+
+// Run запускает рассылку о возможной публикации статистики после окончания торгового дня.
+func (s *TradingDateService) Run(ctx context.Context) error {
+	s.logger.Infof("started")
+	defer s.logger.Infof("stopped")
+
+	ticker := time.NewTicker(_tickerDuration)
+	defer ticker.Stop()
+
+	for {
+		s.publishIfNewDay(ctx)
+
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+		}
 	}
 }
 
-// Handle проверят событие о возможной публикации торговых данных.
-//
-// Публикует событие о последней торговой дате в случае подтверждения наличия новых данных.
-func (h TradingDateHandler) Handle(ctx context.Context, event domain.Event) {
+func (s *TradingDateService) publishIfNewDay(ctx context.Context) {
+	newTradingDate := lastTradingDate()
+
+	if !s.tradingDate.Before(newTradingDate) {
+		return
+	}
+
+	event := domain.Event{
+		QualifiedID: domain.QualifiedID{
+			Sub:   Subdomain,
+			Group: TradingDateGroup,
+			ID:    TradingDateGroup,
+		},
+		Timestamp: newTradingDate,
+	}
+
+	newTradingDate, err := s.getTradingDate(ctx)
+	if err != nil {
+		event.Data = err
+		s.pub.Publish(event)
+
+		return
+	}
+
+	if !s.tradingDate.Before(newTradingDate) {
+		return
+	}
+
+	s.tradingDate = newTradingDate
+	event.Timestamp = newTradingDate
+
+	s.pub.Publish(event)
+}
+
+func lastTradingDate() time.Time {
+	now := time.Now().In(loc)
+	end := time.Date(now.Year(), now.Month(), now.Day(), _issHour, _issMinute, 0, 0, loc)
+
+	delta := 2
+	if end.Before(now) {
+		delta = 1
+	}
+
+	return time.Date(now.Year(), now.Month(), now.Day()-delta, 0, 0, 0, 0, time.UTC)
+}
+
+func (s *TradingDateService) getTradingDate(ctx context.Context) (date time.Time, err error) {
 	qid := domain.QualifiedID{
 		Sub:   Subdomain,
 		Group: TradingDateGroup,
 		ID:    TradingDateGroup,
 	}
 
-	event.QualifiedID = qid
+	ctx, cancel := context.WithTimeout(ctx, _timeout)
+	defer cancel()
 
-	table, err := h.repo.Get(ctx, qid)
+	table, err := s.repo.Get(ctx, qid)
 	if err != nil {
-		event.Data = err
-		h.pub.Publish(event)
+		return date, err
 	}
 
-	rows, err := h.iss.MarketDates(ctx, gomoex.EngineStock, gomoex.MarketShares)
+	rows, err := s.iss.MarketDates(ctx, gomoex.EngineStock, gomoex.MarketShares)
 	if err != nil {
-		event.Data = fmt.Errorf("can't download trading dates info -> %w", err)
-		h.pub.Publish(event)
+		return date, err
 	}
 
 	if len(rows) != 1 {
-		event.Data = fmt.Errorf("wrong rows count %d", len(rows))
-		h.pub.Publish(event)
+		return date, fmt.Errorf("wrong rows count %d", len(rows))
 	}
 
-	date := rows[0].Till
-	if !date.After(table.Entity) {
-		return
+	newDate := rows[0].Till
+	if !newDate.After(table.Timestamp) {
+		return date, nil
 	}
 
-	table.Entity = date
-	table.Timestamp = date
+	table.Timestamp = newDate
+	table.Entity = newDate
 
-	if err := h.repo.Save(ctx, table); err != nil {
-		event.Data = err
-		h.pub.Publish(event)
+	if err := s.repo.Save(ctx, table); err != nil {
+		return date, err
 	}
 
-	event.Timestamp = date
-	h.pub.Publish(event)
+	return newDate, nil
 }

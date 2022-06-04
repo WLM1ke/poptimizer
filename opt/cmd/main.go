@@ -2,15 +2,17 @@ package main
 
 import (
 	"context"
-	"github.com/WLM1ke/poptimizer/opt/internal/app"
-	"github.com/WLM1ke/poptimizer/opt/internal/front"
-	"github.com/WLM1ke/poptimizer/opt/pkg/servers"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
 	"time"
+
+	"github.com/WLM1ke/poptimizer/opt/internal/app"
+	"github.com/WLM1ke/poptimizer/opt/internal/front"
+	"github.com/WLM1ke/poptimizer/opt/pkg/servers"
 
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
@@ -128,11 +130,13 @@ func run(appCtx context.Context, cfg config, logger *lgr.Logger) {
 		logger.Panicf("can't create MongDB client -> %s", err)
 	}
 
+	iss := gomoex.NewISSClient(httpClient)
+
 	eventBus := app.PrepareEventBus(
 		logger.WithPrefix("EventBus"),
 		telegramClient,
 		mongoClient,
-		gomoex.NewISSClient(httpClient),
+		iss,
 	)
 
 	httpServer := servers.NewHTTPServer(
@@ -150,9 +154,17 @@ func run(appCtx context.Context, cfg config, logger *lgr.Logger) {
 		}
 	}()
 
+	repo := domain.NewRepo[time.Time](mongoClient)
+	tradingDatesService := data.NewTradingDateService(
+		logger.WithPrefix("TradingDateService"),
+		eventBus,
+		repo,
+		iss,
+	)
+
 	for _, s := range []func(ctx context.Context) error{
 		eventBus.Run,
-		data.NewCheckDataService(logger.WithPrefix("CheckData"), eventBus).Run,
+		tradingDatesService.Run,
 		httpServer.Run,
 	} {
 		service := s
