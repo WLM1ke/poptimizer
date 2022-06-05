@@ -2,7 +2,6 @@ package front
 
 import (
 	"embed"
-	"fmt"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -13,7 +12,6 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -44,30 +42,28 @@ func NewFrontend(logger *lgr.Logger, client *mongo.Client) http.Handler {
 
 	smg := makeSessionManager(logger)
 
-	tickers := tickersHandler{
+	tickers := handler[selected.TickersState]{
 		logger: logger,
-		tmpl:   extendTemplate(index, static, "tickers/*.gohtml"),
 		smg:    smg,
-		repo:   domain.NewRepo[selected.Tickers](client),
+		ctrl:   selected.NewTickersController(domain.NewRepo[selected.Tickers](client)),
+		tmpl:   extendTemplate(index, static, "tickers/*.gohtml"),
+		page:   "tickers",
 	}
-	router.Post("/tickers", tickers.handleIndex)
-	router.Post("/tickers/search", tickers.handleSearch)
-	router.Post("/tickers/save", tickers.handleSave)
-	router.Post("/tickers/add/{ticker}", tickers.handleAdd)
-	router.Post("/tickers/remove/{ticker}", tickers.handleRemove)
+	router.Post("/tickers", tickers.ServeHTTP)
+	router.Post("/tickers/{cmd}", tickers.ServeHTTP)
 
 	return smg.LoadAndSave(router)
 }
 
 func indexHandlerFn(logger *lgr.Logger, index *template.Template) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		page := map[string]any{
-			"Page":  chi.URLParam(request, "page"),
-			"Token": primitive.NewObjectID().Hex(),
-		}
+		writer.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
-		if err := execTemplate(writer, index, "index", page); err != nil {
-			logger.Warnf("can't render template -> %s", err)
+		err := index.ExecuteTemplate(writer, "index", chi.URLParam(request, "page"))
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+
+			logger.Warnf("can't render template index -> %s", err)
 		}
 	}
 }
@@ -88,17 +84,4 @@ func extendTemplate(index *template.Template, files fs.FS, pattern string) *temp
 	index = template.Must(index.Clone())
 
 	return template.Must(index.ParseFS(files, pattern))
-}
-
-func execTemplate(w http.ResponseWriter, tmpl *template.Template, name string, data any) error {
-	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-
-	err := tmpl.ExecuteTemplate(w, name, data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-
-		return fmt.Errorf("can't render template %s -> %w", name, err)
-	}
-
-	return nil
 }

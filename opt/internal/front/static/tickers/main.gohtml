@@ -9,7 +9,7 @@
         <ul>
             {{range .}}
                 <li>
-                    <a title="Remove" hx-post="tickers/remove/{{.}}">
+                    <a title="Remove" hx-post="tickers/remove"  hx-vals='{"ticker": "{{.}}"}'>
                         {{.}}
                         <svg>
                             <line x1=0% y1=35% x2=60% y2=95% />

@@ -47,8 +47,8 @@ func NewTickersController(
 // - search - поиск доступных для добавления
 // - save - сохранить текущие изменения
 // - add/remove - добавить/удалить определенный тикер
-func (c TickersController) Update(ctx domain.CtrlCtx, state *TickersState) (code int, err error) {
-	switch cmd := ctx.Cmd(); cmd {
+func (c TickersController) Update(ctx domain.CtrlCtx, cmd string, state *TickersState) (code int, err error) {
+	switch cmd {
 	case "tickers":
 		return c.tickers(ctx, state)
 	case "search":
