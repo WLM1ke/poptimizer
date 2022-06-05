@@ -7,8 +7,10 @@ import (
 	"time"
 )
 
+type Entity any
+
 // Aggregate представляет доменный объект с данными, актуальными на конкретную дату.
-type Aggregate[E any] struct {
+type Aggregate[E Entity] struct {
 	id        QualifiedID
 	ver       int
 	Timestamp time.Time
@@ -16,14 +18,14 @@ type Aggregate[E any] struct {
 }
 
 // newEmptyAggregate создает пустой агрегат.
-func newEmptyAggregate[E any](id QualifiedID) Aggregate[E] {
+func newEmptyAggregate[E Entity](id QualifiedID) Aggregate[E] {
 	return Aggregate[E]{
 		id: id,
 	}
 }
 
 // newAggregate создает агрегат, содержащий данные.
-func newAggregate[E any](id QualifiedID, ver int, timestamp time.Time, data E) Aggregate[E] {
+func newAggregate[E Entity](id QualifiedID, ver int, timestamp time.Time, data E) Aggregate[E] {
 	return Aggregate[E]{
 		id:        id,
 		ver:       ver,

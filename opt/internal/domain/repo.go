@@ -15,49 +15,49 @@ import (
 var ErrWrongVersion = errors.New("wrong agg version")
 
 // ReadRepo осуществляет загрузку объекта.
-type ReadRepo[D any] interface {
+type ReadRepo[E Entity] interface {
 	// Get загружает объект.
-	Get(ctx context.Context, qid QualifiedID) (Aggregate[D], error)
+	Get(ctx context.Context, qid QualifiedID) (Aggregate[E], error)
 }
 
 // ReadWriteRepo осуществляет загрузку и сохранение объекта.
-type ReadWriteRepo[D any] interface {
-	ReadRepo[D]
+type ReadWriteRepo[E Entity] interface {
+	ReadRepo[E]
 	// Save перезаписывает объект.
-	Save(ctx context.Context, agg Aggregate[D]) error
+	Save(ctx context.Context, agg Aggregate[E]) error
 }
 
 // ReadAppendRepo осуществляет загрузку и дополнение данных объекта.
-type ReadAppendRepo[D any] interface {
-	ReadRepo[D]
+type ReadAppendRepo[E Entity] interface {
+	ReadRepo[E]
 	// Append добавляет данные в конец слайса с данными.
-	Append(ctx context.Context, agg Aggregate[D]) error
+	Append(ctx context.Context, agg Aggregate[E]) error
 }
 
-type aggDao[D any] struct {
+type aggDao[E Entity] struct {
 	ID        string    `bson:"_id"`
 	Ver       int       `bson:"ver"`
 	Timestamp time.Time `bson:"timestamp"`
-	Data      D         `bson:"data"`
+	Data      E         `bson:"data"`
 }
 
 // Repo обеспечивает хранение и загрузку доменных объектов.
-type Repo[D any] struct {
+type Repo[E Entity] struct {
 	client *mongo.Client
 }
 
 // NewRepo - создает новый репозиторий на основе MongoDB.
-func NewRepo[D any](db *mongo.Client) *Repo[D] {
-	gob.Register(newEmptyAggregate[D](QualifiedID{}))
+func NewRepo[E Entity](db *mongo.Client) *Repo[E] {
+	gob.Register(newEmptyAggregate[E](QualifiedID{}))
 
-	return &Repo[D]{
+	return &Repo[E]{
 		client: db,
 	}
 }
 
 // Get загружает объект.
-func (r *Repo[D]) Get(ctx context.Context, qid QualifiedID) (agg Aggregate[D], err error) {
-	var dao aggDao[D]
+func (r *Repo[E]) Get(ctx context.Context, qid QualifiedID) (agg Aggregate[E], err error) {
+	var dao aggDao[E]
 
 	collection := r.client.Database(qid.Sub).Collection(qid.Group)
 	err = collection.FindOne(ctx, bson.M{"_id": qid.ID}).Decode(&dao)
@@ -65,7 +65,7 @@ func (r *Repo[D]) Get(ctx context.Context, qid QualifiedID) (agg Aggregate[D], e
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
 		err = nil
-		agg = newEmptyAggregate[D](qid)
+		agg = newEmptyAggregate[E](qid)
 	case err != nil:
 		err = fmt.Errorf("can't load %#v -> %w", qid, err)
 	default:
@@ -76,7 +76,7 @@ func (r *Repo[D]) Get(ctx context.Context, qid QualifiedID) (agg Aggregate[D], e
 }
 
 // Save перезаписывает таблицу.
-func (r *Repo[D]) Save(ctx context.Context, agg Aggregate[D]) error {
+func (r *Repo[E]) Save(ctx context.Context, agg Aggregate[E]) error {
 	if agg.ver == 0 {
 		return r.insert(ctx, agg)
 	}
@@ -104,7 +104,7 @@ func (r *Repo[D]) Save(ctx context.Context, agg Aggregate[D]) error {
 }
 
 // Append добавляет строки в конец таблицы.
-func (r *Repo[D]) Append(ctx context.Context, agg Aggregate[D]) error {
+func (r *Repo[E]) Append(ctx context.Context, agg Aggregate[E]) error {
 	if agg.ver == 0 {
 		return r.insert(ctx, agg)
 	}
@@ -133,7 +133,7 @@ func (r *Repo[D]) Append(ctx context.Context, agg Aggregate[D]) error {
 	}
 }
 
-func (r *Repo[D]) insert(ctx context.Context, agg Aggregate[D]) error {
+func (r *Repo[E]) insert(ctx context.Context, agg Aggregate[E]) error {
 	collection := r.client.Database(agg.id.Sub).Collection(agg.id.Group)
 
 	doc := bson.M{
