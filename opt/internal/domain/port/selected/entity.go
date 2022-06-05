@@ -14,8 +14,8 @@ import (
 func ID() domain.QualifiedID {
 	return domain.QualifiedID{
 		Sub:   port.Subdomain,
-		Group: _group,
-		ID:    _group,
+		Group: Group,
+		ID:    Group,
 	}
 }
 

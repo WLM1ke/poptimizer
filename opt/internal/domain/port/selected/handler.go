@@ -9,7 +9,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/port"
 )
 
-const _group = "selected"
+const Group = "selected"
 
 // Handler обработчик событий, отвечающий за обновление информации о выбранных для анализа тикерах.
 type Handler struct {
@@ -35,8 +35,8 @@ func NewHandler(pub domain.Publisher, repo domain.ReadWriteRepo[Tickers]) *Handl
 func (h Handler) Handle(ctx context.Context, event domain.Event) {
 	event.QualifiedID = domain.QualifiedID{
 		Sub:   port.Subdomain,
-		Group: _group,
-		ID:    _group,
+		Group: Group,
+		ID:    Group,
 	}
 
 	agg, err := h.repo.Get(ctx, ID())
