@@ -19,29 +19,43 @@
             </script>
         </head>
         <body
-            id="{{.}}"
+            class="page"
             hx-trigger="load"
             hx-post="{{.}}"
             hx-swap="none"
         >
-            <header>
+            <header class="page__menu">
                 <strong>⌘ POptimizer</strong>
                 <div>|</div>
                 <nav>
-                    <ul>
-                        <li{{if eq . "tickers"}} id="selected"{{end}}><a href="/tickers">Tickers</a></li>
-                        <li{{if eq . "accounts"}} id="selected"{{end}}><a href="/accounts">Accounts</a></li>
-                        <li{{if eq . "portfolio"}} id="selected"{{end}}><a href="/portfolio">Portfolio</a></li>
-                        <li{{if eq . "metrics"}} id="selected"{{end}}><a href="/metrics">Metrics</a></li>
-                        <li{{if eq . "optimizer"}} id="selected"{{end}}><a href="/optimizer">Optimizer</a></li>
-                        <li{{if eq . "dividends"}} id="selected"{{end}}><a href="/dividends">Dividends</a></li>
-                        <li{{if eq . "reports"}} id="selected"{{end}}><a href="/reports">Reports</a></li>
+                    <ul class="menu">
+                        <li>
+                            <a class="menu__link {{if eq . "tickers"}}menu__link_selected{{end}}" href="/tickers">Tickers</a>
+                        </li>
+                        <li>
+                            <a class="menu__link {{if eq . "accounts"}}menu__link_selected{{end}}" href="/accounts">Accounts</a>
+                        </li>
+                        <li>
+                            <a class="menu__link {{if eq . "portfolio"}}menu__link_selected{{end}}" href="/portfolio">Portfolio</a>
+                        </li>
+                        <li>
+                            <a class="menu__link {{if eq . "metrics"}}menu__link_selected{{end}}" href="/metrics">Metrics</a>
+                        </li>
+                        <li>
+                            <a class="menu__link {{if eq . "optimizer"}}menu__link_selected{{end}}" href="/optimizer">Optimizer</a>
+                        </li>
+                        <li>
+                            <a class="menu__link {{if eq . "dividends"}}menu__link_selected{{end}}" href="/dividends">Dividends</a>
+                        </li>
+                        <li>
+                            <a class="menu__link {{if eq . "reports"}}menu__link_selected{{end}}" href="/reports">Reports</a>
+                        </li>
                     </ul>
                 </nav>
             </header>
-            <aside></aside>
-            <main></main>
-            <footer></footer>
+            <aside class="page__sidebar"></aside>
+            <main class="page__main"></main>
+            <footer class="page__status"></footer>
         </body>
     </html>
 {{end}}

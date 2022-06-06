@@ -1,9 +1,10 @@
 {{define "index"}}
     <aside hx-swap-oob="innerHTML:aside">
         <div>
-            <h1>Add tickers</h1>
+            <h1 class="header">Add tickers</h1>
             <label>
-                <input type="search"
+                <input class="form form_input"
+                       type="search"
                        name="prefix"
                        placeholder="Type to find..."
                        value="{{.Prefix}}"
@@ -13,7 +14,7 @@
             </label>
         </div>
         {{template "search" .NotSelected}}
-        <button hx-post="tickers/save">
+        <button class="form form_button" hx-post="tickers/save">
             Save
         </button>
     </aside>

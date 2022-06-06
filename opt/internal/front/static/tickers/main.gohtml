@@ -1,17 +1,17 @@
 {{define "main"}}
     <main hx-swap-oob="innerHTML:main">
-        <h1>
+        <h1 class="header">
             Portfolio
-            <small>
+            <small class="badge">
                 {{len .}}
             </small>
         </h1>
-        <ul>
+        <ul class="menu menu_vertical menu_wrapped">
             {{range .}}
                 <li>
-                    <a title="Remove" hx-post="tickers/remove"  hx-vals='{"ticker": "{{.}}"}'>
+                    <a class="menu__link" title="Remove" hx-post="tickers/remove"  hx-vals='{"ticker": "{{.}}"}'>
                         {{.}}
-                        <svg>
+                        <svg class="menu__icon">
                             <line x1=0% y1=35% x2=60% y2=95% />
                             <line x1=0% y1=95% x2=60% y2=35% />
                         </svg>

@@ -1,10 +1,10 @@
 {{define "search"}}
-    <ul id="tickers-search" hx-swap-oob="innerHTML:#tickers-search">
+    <ul class="menu menu_vertical" id="tickers-search" hx-swap-oob="innerHTML:#tickers-search">
         {{range .}}
             <li>
-                <a title="Add" hx-post="tickers/add" hx-vals='{"ticker": "{{.}}"}'>
+                <a class="menu__link" title="Add" hx-post="tickers/add" hx-vals='{"ticker": "{{.}}"}'>
                     {{.}}
-                    <svg>
+                    <svg class="menu__icon">
                         <line x1=0% y1=65% x2=60% y2=65% />
                         <line x1=30% y1=95% x2=30% y2=35% />
                     </svg>

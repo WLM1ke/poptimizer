@@ -1,57 +1,187 @@
-@import url("https://unpkg.com/normalize.css");
-@import url("base.css");
-@import url("interface.css");
+/* Main SPA formatting */
 
-
-/* Tickers */
-
-#tickers>aside>ul {
-  padding-top: var(--padding_sm);
-  flex: 1 1 0;
-  overflow: scroll;
+:root {
+    --bg: #ffffff;
+    --bg-emphasis: #e5e7eb;
+    --font: #111827;
+    --bg-dark: #1f2937;
+    --font-on-dark: #ffffff;
+    --link: #4b5563;
+    --link-hoover: #1e87f0;
+    --gap_sm: 0.5em;
+    --gap_bg: 1em;
+    --button-width: 125px
 }
 
-#tickers>main {
-  display: flex;
-  flex-direction: column;
+.page {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+
+    display: grid;
+    grid-template-areas:
+    "menu menu"
+    "sidebar main"
+    "status status";
+
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 3rem 1fr 1.5rem;
+
 }
 
-#tickers>main>ul {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-  align-content: start;
-  gap: var(--padding_sm);
-  list-style-type: none;
-  overflow: scroll;
+.page__menu {
+    grid-area: menu;
+
+    padding-left: var(--gap_bg);
+
+    background: var(--bg-dark);
+    color: var(--font-on-dark);
+
+    display: flex;
+    align-items: center;
+    gap: var(--gap_bg);
 }
 
-#tickers>main>ul>li {
-  width: var(--max-width);
+.page__sidebar {
+    grid-area: sidebar;
+
+    width: var(--button-width);
+    padding: var(--gap_bg);
+
+    background: var(--bg-emphasis);
+    color: var(--font);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    gap: var(--gap_sm);
 }
 
-#tickers a {
-  display: block;
+.page__main {
+    grid-area: main;
+
+    padding: var(--gap_bg);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
 }
 
-/* Dividends */
+.page__status {
+    grid-area: status;
 
-aside #dividends-sidebar {
-  overflow: scroll;
-  height: 100%;
+    padding-left: var(--gap_bg);
+
+    background: var(--bg-dark);
+    color: var(--font-on-dark);
+
+    display: flex;
+    align-items: center;
+    gap: var(--gap_bg);
+    overflow: hidden;
 }
 
-main #dividends-main{
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
+/* Menus */
+
+.menu {
+    display: flex;
+    gap: var(--gap_bg);
+    padding: 0;
+    margin: 0;
+
+    list-style-type: none;
 }
 
-main #dividends-main form {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--padding_bg);
+.menu_vertical {
+    flex-direction: column;
+    gap: var(--gap_sm);
+    flex-grow: 1;
+    overflow: scroll;
 }
 
+.menu_wrapped {
+    flex-wrap: wrap;
+}
+
+.menu__link {
+    stroke-width: 1px;
+    color: var(--link);
+    stroke: var(--link);
+    text-decoration: none;
+    display: block;
+}
+
+.menu__link_selected {
+    color: var(--font-on-dark);
+}
+
+.menu__link:hover {
+    color: var(--link-hoover);
+    stroke: var(--link-hoover);
+}
+
+.menu__icon {
+    width: 1em;
+    height: 1em;
+}
+
+/* Header */
+
+.header {
+    font-size: 1.36rem;
+    margin: 0 0 var(--gap_sm) 0;
+}
+
+/* Badge */
+
+.badge {
+    background-color: var(--link-hoover);
+    border-radius: var(--gap_bg);
+    padding: 0 var(--gap_sm);
+    font-size: small;
+    font-weight: normal;
+    color: var(--bg)
+}
+
+/* Form */
+
+.form {
+    box-sizing: border-box;
+    width: var(--button-width);
+    height: 2rem;
+    min-height: 2rem;
+    padding: 0 var(--gap_sm);
+    font-size: 1rem;
+
+    border-radius: var(--gap_sm);
+    border-width: 1px;
+    border-style: solid;
+
+    outline: none;
+}
+
+.form_button {
+    color: var(--font-on-dark);
+    background-color: var(--link-hoover);
+    border-color: var(--link-hoover);
+    cursor: pointer;
+}
+
+.form_button:hover {
+    box-shadow: 0 0 0 1px var(--link-hoover);
+}
+
+.form_input {
+    color: var(--link);
+    background-color: var(--bg);
+    border-color: var(--link);
+}
+
+.form_input:hover {
+    border-color: var(--link-hoover);
+    box-shadow: 0 0 0 1px var(--link-hoover);
+}
