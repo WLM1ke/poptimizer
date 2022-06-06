@@ -43,6 +43,7 @@ type Publisher interface {
 type EventHandler interface {
 	Match(event Event) bool
 	Handle(ctx context.Context, event Event)
+	fmt.Stringer
 }
 
 // Filter для выбора сообщений.
@@ -56,7 +57,7 @@ type Filter struct {
 }
 
 func (f Filter) String() string {
-	return fmt.Sprintf("Filter(%q, %q, %q, %t)", f.Sub, f.Group, f.ID, f.Err)
+	return fmt.Sprintf("Filter(%q, %q, %q)", f.Sub, f.Group, f.ID)
 }
 
 // Match проверяет соответствие события фильтру.
@@ -70,9 +71,7 @@ func (f Filter) Match(event Event) bool {
 		return false
 	}
 
-	_, ok := event.Data.(error)
-
-	return ok == f.Err
+	return true
 }
 
 // Subscriber - интерфейс подписки на сообщения соответствующего топика.

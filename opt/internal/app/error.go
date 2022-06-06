@@ -11,16 +11,26 @@ import (
 
 // ErrorsHandler логирует и посылает в телеграм события с ошибками.
 type ErrorsHandler struct {
-	domain.Filter
-
 	logger   *lgr.Logger
 	telegram *clients.Telegram
+}
+
+// Match выбирает события, содержащие ошибки.
+func (e ErrorsHandler) Match(event domain.Event) bool {
+	if _, ok := event.Data.(error); ok {
+		return true
+	}
+
+	return false
+}
+
+func (e ErrorsHandler) String() string {
+	return "Filter(error)"
 }
 
 // NewErrorsHandler создает новый обработчик событий с ошибками.
 func NewErrorsHandler(logger *lgr.Logger, telegram *clients.Telegram) *ErrorsHandler {
 	return &ErrorsHandler{
-		Filter:   domain.Filter{Err: true},
 		logger:   logger,
 		telegram: telegram,
 	}
