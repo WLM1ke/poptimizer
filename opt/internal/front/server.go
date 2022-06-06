@@ -21,7 +21,7 @@ const _sessionExp = time.Minute * 5
 var static embed.FS
 
 // NewFrontend создает обработчики отображающие frontend.
-func NewFrontend(logger *lgr.Logger, client *mongo.Client) http.Handler {
+func NewFrontend(logger *lgr.Logger, client *mongo.Client, pub domain.Publisher) http.Handler {
 	static, err := fs.Sub(static, "static")
 	if err != nil {
 		logger.Panicf("can't load frontend data -> %s", err)
@@ -45,7 +45,7 @@ func NewFrontend(logger *lgr.Logger, client *mongo.Client) http.Handler {
 	tickers := handler[selected.TickersState]{
 		logger: logger,
 		smg:    smg,
-		ctrl:   selected.NewTickersController(domain.NewRepo[selected.Tickers](client)),
+		ctrl:   selected.NewTickersController(domain.NewRepo[selected.Tickers](client), pub),
 		tmpl:   extendTemplate(index, static, "tickers/*.gohtml"),
 		page:   "tickers",
 	}

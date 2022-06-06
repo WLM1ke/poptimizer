@@ -80,6 +80,8 @@ func loadCfg(logger *lgr.Logger) (cfg config) {
 }
 
 func run(cfg config, logger *lgr.Logger) {
+	ctx := createCtx(logger, cfg.App.GoroutineInterval)
+
 	httpClient := clients.NewHTTPClient(cfg.HTTPClient.Connections)
 	defer httpClient.CloseIdleConnections()
 
@@ -88,9 +90,17 @@ func run(cfg config, logger *lgr.Logger) {
 		logger.Panicf("can't create telegram client -> %s", err)
 	}
 
-	mongoClient, err := clients.NewMongoClient(cfg.MongoDB.URI)
+	iss := gomoex.NewISSClient(httpClient)
+
+	mongo, eventBus := app.PrepareEventBus(
+		ctx,
+		logger,
+		cfg.MongoDB.URI,
+		telegramClient,
+		iss,
+	)
 	defer func() {
-		err := mongoClient.Disconnect(context.Background())
+		err := mongo.Disconnect(context.Background())
 		if err != nil {
 			logger.Panicf("can't stop MongoDB Client -> %s", err)
 		}
@@ -99,34 +109,20 @@ func run(cfg config, logger *lgr.Logger) {
 		http.DefaultClient.CloseIdleConnections()
 	}()
 
-	if err != nil {
-		logger.Panicf("can't create MongDB client -> %s", err)
-	}
-
-	iss := gomoex.NewISSClient(httpClient)
-
-	eventBus := app.PrepareEventBus(
-		logger.WithPrefix("EventBus"),
-		telegramClient,
-		mongoClient,
+	tradingDatesService := data.NewTradingDateService(
+		logger.WithPrefix("TradingDateService"),
+		eventBus,
+		domain.NewRepo[time.Time](mongo),
 		iss,
 	)
 
 	httpServer := servers.NewHTTPServer(
 		logger.WithPrefix("Server"),
 		cfg.Server.Addr,
-		front.NewFrontend(logger.WithPrefix("Server"), mongoClient),
+		front.NewFrontend(logger.WithPrefix("Server"), mongo, eventBus),
 		cfg.Server.RespondTimeout,
 	)
 
-	tradingDatesService := data.NewTradingDateService(
-		logger.WithPrefix("TradingDateService"),
-		eventBus,
-		domain.NewRepo[time.Time](mongoClient),
-		iss,
-	)
-
-	ctx := createCtx(logger, cfg.App.GoroutineInterval)
 	services := []service{
 		eventBus.Run,
 		httpServer.Run,

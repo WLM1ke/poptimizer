@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"net/http"
+	"time"
 )
+
+const _backupTimeout = time.Second * 30
 
 // TickersState содержит информацию о результатах редактирования выбранных тикеров.
 //
@@ -29,15 +32,17 @@ func (s TickersState) NotSelected() []string {
 // TickersController осуществляет редактирование выбранных тикеров.
 type TickersController struct {
 	repo domain.ReadWriteRepo[Tickers]
+	pub  domain.Publisher
 }
 
 // NewTickersController создает контроллер для редактирования выбранных тикеров.
 func NewTickersController(
 	repo domain.ReadWriteRepo[Tickers],
+	pub domain.Publisher,
 ) *TickersController {
 	gob.Register(TickersState{})
 
-	return &TickersController{repo: repo}
+	return &TickersController{repo: repo, pub: pub}
 }
 
 // Update реализует основные команды по редактированию.
@@ -89,6 +94,11 @@ func (c TickersController) save(ctx domain.CtrlCtx, state *TickersState) (code i
 	if err := c.repo.Save(ctx, state.Agg); err != nil {
 		return http.StatusInternalServerError, err
 	}
+
+	c.pub.Publish(domain.Event{
+		QualifiedID: ID(),
+		Timestamp:   state.Agg.Timestamp,
+	})
 
 	state.Agg, err = c.repo.Get(ctx, ID())
 	if err != nil {

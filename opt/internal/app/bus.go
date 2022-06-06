@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/mongo"
 	"sync"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/port/selected"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
@@ -33,29 +33,34 @@ type EventBus struct {
 
 // PrepareEventBus создает шину сообщений и настраивает все обработчики.
 func PrepareEventBus(
+	ctx context.Context,
 	logger *lgr.Logger,
+	uri string,
 	telegram *clients.Telegram,
-	client *mongo.Client,
 	iss *gomoex.ISSClient,
-) *EventBus {
+) (*mongo.Client, *EventBus) {
+	client := prepareDB(ctx, logger, uri)
+
+	logger = logger.WithPrefix("EventBus")
 	bus := EventBus{
 		logger: logger,
 		inbox:  make(chan domain.Event),
 	}
 
 	bus.Subscribe(NewErrorsHandler(logger, telegram))
+	bus.Subscribe(NewBackupHandler(logger, &bus, uri))
 
 	bus.Subscribe(data.NewUSDHandler(&bus, domain.NewRepo[data.Rows[data.USD]](client), iss))
 	bus.Subscribe(data.NewSecuritiesHandler(&bus, domain.NewRepo[data.Rows[data.Security]](client), iss))
 
 	bus.Subscribe(selected.NewHandler(&bus, domain.NewRepo[selected.Tickers](client)))
 
-	return &bus
+	return client, &bus
 }
 
 // Subscribe регистрирует обработчик для событий заданного топика.
 func (e *EventBus) Subscribe(handler domain.EventHandler) {
-	e.logger.Infof("registered handler for %s", handler)
+	e.logger.Infof("registered %s", handler)
 
 	e.handlers = append(e.handlers, handler)
 }

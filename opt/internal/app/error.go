@@ -25,7 +25,7 @@ func (e ErrorsHandler) Match(event domain.Event) bool {
 }
 
 func (e ErrorsHandler) String() string {
-	return "Filter(error)"
+	return `Filter("error")`
 }
 
 // NewErrorsHandler создает новый обработчик событий с ошибками.
