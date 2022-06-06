@@ -1,5 +1,5 @@
 """Гены и хромосома ответственные за параметры данных."""
-from poptimizer.config import HISTORY_DAYS_MIN
+from poptimizer.config import HISTORY_DAYS_MIN, YEAR_IN_TRADING_DAYS
 from poptimizer.evolve.chromosomes.chromosome import Chromosome, GeneParams
 
 BATCH_SIZE = GeneParams(
@@ -12,7 +12,7 @@ BATCH_SIZE = GeneParams(
 )
 HISTORY_DAYS = GeneParams(
     name="history_days",
-    default_range=(HISTORY_DAYS_MIN, 2 * HISTORY_DAYS_MIN),
+    default_range=(HISTORY_DAYS_MIN, YEAR_IN_TRADING_DAYS),
     lower_bound=HISTORY_DAYS_MIN,
     upper_bound=None,
     path=("data", "history_days"),
