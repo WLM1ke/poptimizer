@@ -9,6 +9,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/port"
 )
 
+// Group группа и идентификатор выбранных тикеров.
 const Group = "selected"
 
 // Handler обработчик событий, отвечающий за обновление информации о выбранных для анализа тикерах.

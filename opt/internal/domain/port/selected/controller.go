@@ -3,12 +3,10 @@ package selected
 import (
 	"encoding/gob"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"net/http"
-	"time"
-)
 
-const _backupTimeout = time.Second * 30
+	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+)
 
 // TickersState содержит информацию о результатах редактирования выбранных тикеров.
 //
@@ -51,7 +49,7 @@ func NewTickersController(
 // - tickers - вывод текущей информации
 // - search - поиск доступных для добавления
 // - save - сохранить текущие изменения
-// - add/remove - добавить/удалить определенный тикер
+// - add/remove - добавить/удалить определенный тикер.
 func (c TickersController) Update(ctx domain.CtrlCtx, cmd string, state *TickersState) (code int, err error) {
 	switch cmd {
 	case "tickers":
@@ -65,7 +63,7 @@ func (c TickersController) Update(ctx domain.CtrlCtx, cmd string, state *Tickers
 	case "remove":
 		return c.remove(ctx, state)
 	default:
-		return http.StatusInternalServerError, fmt.Errorf("incorect command %s", cmd)
+		return http.StatusInternalServerError, fmt.Errorf("incorrect command %s", cmd)
 	}
 }
 

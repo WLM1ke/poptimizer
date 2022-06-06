@@ -3,14 +3,15 @@ package front
 import (
 	"context"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
-	"github.com/alexedwards/scs/v2"
-	"github.com/go-chi/chi"
 	"html/template"
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
+	"github.com/alexedwards/scs/v2"
+	"github.com/go-chi/chi"
 )
 
 const _stateKey = `state`
@@ -38,7 +39,7 @@ func (c Context) Get(key string) string {
 // - последний сегмент пути запроса является командой к обработчику
 // - все параметры команд должны содержаться в теле запроса, а не в URL
 // - если команда совпадает с именем страницы обработчика, то для конечного рендеринга используется шаблон "index", а
-// для остальных команд "update"
+// для остальных команд "update".
 type handler[S domain.State] struct {
 	logger *lgr.Logger
 
@@ -51,7 +52,7 @@ type handler[S domain.State] struct {
 
 func (h handler[S]) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
-		http.Error(writer, fmt.Sprintf("can't parse form"), http.StatusBadRequest)
+		http.Error(writer, "can't parse form", http.StatusBadRequest)
 
 		return
 	}

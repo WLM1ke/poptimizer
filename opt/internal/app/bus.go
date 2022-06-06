@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"go.mongodb.org/mongo-driver/mongo"
 	"sync"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/port/selected"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (

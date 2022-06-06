@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/port"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/port/selected"
@@ -37,11 +38,7 @@ func (h BackupHandler) Match(event domain.Event) bool {
 		ID:    selected.Group,
 	}
 
-	if event.QualifiedID == qid {
-		return true
-	}
-
-	return false
+	return event.QualifiedID == qid
 }
 
 // Handle осуществляет бекап данных.
@@ -76,7 +73,6 @@ func prepareDB(ctx context.Context, logger *lgr.Logger, uri string) *mongo.Clien
 	if count != 0 {
 		return client
 	}
-
 
 	if err := clients.MongoDBRestore(ctx, _backupDir, uri, port.Subdomain, selected.Group); err != nil {
 		logger.Panicf("can't create collection %s.%s -> %s", port.Subdomain, selected.Group, err)
