@@ -10,7 +10,7 @@
     --link-hoover: #1e87f0;
     --gap_sm: 0.5em;
     --gap_bg: 1em;
-    --button-width: 125px
+    --button-width: 150px
 }
 
 .page {
@@ -113,6 +113,7 @@
     stroke: var(--link);
     text-decoration: none;
     display: block;
+    cursor: pointer;
 }
 
 .menu__link_selected {
@@ -181,7 +182,8 @@
     border-color: var(--link);
 }
 
-.form_input:hover {
+.form_input:hover,
+.form_input:focus {
     border-color: var(--link-hoover);
     box-shadow: 0 0 0 1px var(--link-hoover);
 }
