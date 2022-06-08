@@ -97,7 +97,7 @@ func run(cfg config, logger *lgr.Logger) {
 		logger,
 		cfg.MongoDB.URI,
 		telegramClient,
-		iss,
+		httpClient,
 	)
 	defer func() {
 		err := mongo.Disconnect(context.Background())

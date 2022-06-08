@@ -6,14 +6,13 @@ import (
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/port"
 	"golang.org/x/exp/slices"
 )
 
 // ID выбранных для анализа тикеров.
 func ID() domain.QualifiedID {
 	return domain.QualifiedID{
-		Sub:   port.Subdomain,
+		Sub:   data.Subdomain,
 		Group: Group,
 		ID:    Group,
 	}

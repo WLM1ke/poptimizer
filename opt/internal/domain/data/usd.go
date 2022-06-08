@@ -53,7 +53,7 @@ func NewUSDHandler(
 	}
 }
 
-// Handle реагирует на событие об обновлении курса и обновляет его.
+// Handle реагирует на событие об обновлении торговых дат и обновляет курс.
 func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
 	qid := domain.QualifiedID{
 		Sub:   Subdomain,

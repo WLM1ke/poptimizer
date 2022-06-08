@@ -3,13 +3,15 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/div"
+	"net/http"
 	"sync"
 	"time"
 
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/port/selected"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/selected"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -37,25 +39,26 @@ func PrepareEventBus(
 	logger *lgr.Logger,
 	uri string,
 	telegram *clients.Telegram,
-	iss *gomoex.ISSClient,
+	client *http.Client,
 ) (*mongo.Client, *EventBus) {
-	client := prepareDB(ctx, logger, uri)
+	mongoDB := prepareDB(ctx, logger, uri)
 
 	logger = logger.WithPrefix("EventBus")
 	bus := EventBus{
 		logger: logger,
 		inbox:  make(chan domain.Event),
 	}
+	iss := gomoex.NewISSClient(client)
 
 	bus.Subscribe(NewErrorsHandler(logger, telegram))
 	bus.Subscribe(NewBackupHandler(logger, &bus, uri))
 
-	bus.Subscribe(data.NewUSDHandler(&bus, domain.NewRepo[data.Rows[data.USD]](client), iss))
-	bus.Subscribe(data.NewSecuritiesHandler(&bus, domain.NewRepo[data.Rows[data.Security]](client), iss))
+	bus.Subscribe(data.NewUSDHandler(&bus, domain.NewRepo[data.Rows[data.USD]](mongoDB), iss))
+	bus.Subscribe(data.NewSecuritiesHandler(&bus, domain.NewRepo[data.Rows[data.Security]](mongoDB), iss))
+	bus.Subscribe(selected.NewHandler(&bus, domain.NewRepo[selected.Tickers](mongoDB)))
+	bus.Subscribe(div.NewStatusHandler(&bus, domain.NewRepo[data.Rows[div.Status]](mongoDB), client))
 
-	bus.Subscribe(selected.NewHandler(&bus, domain.NewRepo[selected.Tickers](client)))
-
-	return client, &bus
+	return mongoDB, &bus
 }
 
 // Subscribe регистрирует обработчик для событий заданного топика.

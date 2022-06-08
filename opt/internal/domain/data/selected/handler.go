@@ -6,7 +6,6 @@ import (
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/port"
 )
 
 // Group группа и идентификатор выбранных тикеров.
@@ -35,7 +34,7 @@ func NewHandler(pub domain.Publisher, repo domain.ReadWriteRepo[Tickers]) *Handl
 // Handle реагирует на событие об торгуемых бумагах, и обновляет список выбранных.
 func (h Handler) Handle(ctx context.Context, event domain.Event) {
 	event.QualifiedID = domain.QualifiedID{
-		Sub:   port.Subdomain,
+		Sub:   data.Subdomain,
 		Group: Group,
 		ID:    Group,
 	}
@@ -63,4 +62,8 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 		event.Data = err
 		h.pub.Publish(event)
 	}
+
+	event.Data = agg.Entity
+
+	h.pub.Publish(event)
 }

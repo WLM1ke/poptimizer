@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/port/selected"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/selected"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi"
