@@ -52,7 +52,7 @@ flowchart
     Selected-->Handler:Backup
     Selected-->Handler:Status
     
-    Handler:Status-.->Handler:CheckRaw
+    Handler:Status-->Handler:CheckRaw
     Handler:Status-.->Handler:CheckReestry
     Handler:Status-.->Handler:CheckNASDAQ
     

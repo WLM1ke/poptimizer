@@ -56,7 +56,9 @@ func PrepareEventBus(
 	bus.Subscribe(data.NewUSDHandler(&bus, domain.NewRepo[data.Rows[data.USD]](mongoDB), iss))
 	bus.Subscribe(data.NewSecuritiesHandler(&bus, domain.NewRepo[data.Rows[data.Security]](mongoDB), iss))
 	bus.Subscribe(selected.NewHandler(&bus, domain.NewRepo[selected.Tickers](mongoDB)))
+
 	bus.Subscribe(div.NewStatusHandler(&bus, domain.NewRepo[data.Rows[div.Status]](mongoDB), client))
+	bus.Subscribe(div.NewCheckRawHandler(&bus, domain.NewRepo[data.Rows[div.Raw]](mongoDB)))
 
 	return mongoDB, &bus
 }

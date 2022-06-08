@@ -96,6 +96,7 @@ func (c TickersController) save(ctx domain.CtrlCtx, state *TickersState) (code i
 	c.pub.Publish(domain.Event{
 		QualifiedID: ID(),
 		Timestamp:   state.Agg.Timestamp,
+		Data:        state.Agg.Entity,
 	})
 
 	state.Agg, err = c.repo.Get(ctx, ID())

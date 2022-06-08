@@ -62,8 +62,6 @@ func NewStatusHandler(
 
 // Handle реагирует на событие об торгуемых бумагах и обновляет информацию об ожидаемых датах выплаты дивидендов.
 func (h StatusHandler) Handle(ctx context.Context, event domain.Event) {
-	oldQID := event.QualifiedID
-
 	qid := domain.QualifiedID{
 		Sub:   data.Subdomain,
 		Group: StatusGroup,
@@ -74,7 +72,7 @@ func (h StatusHandler) Handle(ctx context.Context, event domain.Event) {
 
 	selectedTickers, ok := event.Data.(selected.Tickers)
 	if !ok {
-		event.Data = fmt.Errorf("can' parse data of event %s", oldQID)
+		event.Data = fmt.Errorf("can' parse data of event %s", qid)
 		h.pub.Publish(event)
 
 		return
