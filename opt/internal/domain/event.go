@@ -62,6 +62,11 @@ func (f Filter) String() string {
 
 // Match проверяет соответствие события фильтру.
 func (f Filter) Match(event Event) bool {
+	_, ok := event.Data.(error)
+	if ok {
+		return false
+	}
+
 	switch {
 	case f.ID != "" && event.ID != f.ID:
 		return false

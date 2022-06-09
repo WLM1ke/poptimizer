@@ -64,7 +64,7 @@ func (h CheckRawHandler) Handle(ctx context.Context, event domain.Event) {
 
 	status, ok := event.Data.(Status)
 	if !ok {
-		event.Data = fmt.Errorf("cant't parse event data")
+		event.Data = fmt.Errorf("can't parse event %s data", qid)
 		h.pub.Publish(event)
 
 		return
