@@ -70,6 +70,8 @@ func (f Filter) Match(event Event) bool {
 	switch {
 	case f.ID != "" && event.ID != f.ID:
 		return false
+	case f.ID == "" && 	event.ID == event.Group:
+		return false
 	case f.Group != "" && event.Group != f.Group:
 		return false
 	case f.Sub != "" && event.Sub != f.Sub:
