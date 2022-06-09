@@ -54,6 +54,14 @@ func NewCheckRawHandler(
 
 // Handle реагирует на событие об обновлении статуса дивидендов и проверяет пользовательские дивиденды.
 func (h CheckRawHandler) Handle(ctx context.Context, event domain.Event) {
+	status, ok := event.Data.(Status)
+	if !ok {
+		event.Data = fmt.Errorf("can't parse %s data", event)
+		h.pub.Publish(event)
+
+		return
+	}
+
 	qid := domain.QualifiedID{
 		Sub:   data.Subdomain,
 		Group: RawGroup,
@@ -61,14 +69,6 @@ func (h CheckRawHandler) Handle(ctx context.Context, event domain.Event) {
 	}
 
 	event.QualifiedID = qid
-
-	status, ok := event.Data.(Status)
-	if !ok {
-		event.Data = fmt.Errorf("can't parse event %s data", qid)
-		h.pub.Publish(event)
-
-		return
-	}
 
 	table, err := h.repo.Get(ctx, qid)
 	if err != nil {

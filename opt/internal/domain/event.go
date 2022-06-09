@@ -17,6 +17,15 @@ type QualifiedID struct {
 	ID    string
 }
 
+func (q QualifiedID) String() string {
+	return fmt.Sprintf(
+		"QID(%q, %q, %q)",
+		q.Sub,
+		q.Group,
+		q.ID,
+	)
+}
+
 // Event представляет событие, с изменением объекта.
 type Event struct {
 	QualifiedID
@@ -26,7 +35,7 @@ type Event struct {
 
 func (e Event) String() string {
 	return fmt.Sprintf(
-		"Event(%s, %s, %s, %s)",
+		"Event(%q, %q, %q, %s)",
 		e.Sub,
 		e.Group,
 		e.ID,
@@ -70,7 +79,7 @@ func (f Filter) Match(event Event) bool {
 	switch {
 	case f.ID != "" && event.ID != f.ID:
 		return false
-	case f.ID == "" && 	event.ID == event.Group:
+	case f.ID == "" && event.ID == event.Group:
 		return false
 	case f.Group != "" && event.Group != f.Group:
 		return false

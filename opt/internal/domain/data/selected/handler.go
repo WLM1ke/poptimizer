@@ -33,6 +33,14 @@ func NewHandler(pub domain.Publisher, repo domain.ReadWriteRepo[Tickers]) *Handl
 
 // Handle реагирует на событие об торгуемых бумагах, и обновляет список выбранных.
 func (h Handler) Handle(ctx context.Context, event domain.Event) {
+	sec, ok := event.Data.(data.Rows[data.Security])
+	if !ok {
+		event.Data = fmt.Errorf("can't parse %s data", event)
+		h.pub.Publish(event)
+
+		return
+	}
+
 	event.QualifiedID = domain.QualifiedID{
 		Sub:   data.Subdomain,
 		Group: Group,
@@ -42,14 +50,6 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 	agg, err := h.repo.Get(ctx, ID())
 	if err != nil {
 		event.Data = err
-		h.pub.Publish(event)
-
-		return
-	}
-
-	sec, ok := event.Data.(data.Rows[data.Security])
-	if !ok {
-		event.Data = fmt.Errorf("can't parse event data %s", event)
 		h.pub.Publish(event)
 
 		return

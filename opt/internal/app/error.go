@@ -43,7 +43,7 @@ func (e ErrorsHandler) Handle(ctx context.Context, event domain.Event) {
 		err = fmt.Errorf("incorrect error %s routing", event)
 	}
 
-	e.logger.Warnf("can't handle event -> %s", err)
+	e.logger.Warnf("%s", err)
 
 	ctx, cancel := context.WithTimeout(ctx, _errorTimeout)
 	defer cancel()
