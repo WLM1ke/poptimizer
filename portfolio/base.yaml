@@ -53,7 +53,6 @@ positions:
   ENRU: 0
   ETLN: 0
   F-RM: 0
-  FB-RM: 0
   FDX-RM: 0
   FEES: 0
   FESH: 0
@@ -68,12 +67,10 @@ positions:
   GCHE: 0
   GE-RM: 0
   GEMA: 0
-  GILD-RM: 0
   GLTR: 0
   GM-RM: 0
   GMKN: 0
   GOOG-RM: 0
-  GPS-RM: 0
   GTRK: 0
   HHRU: 0
   HIMCP: 0
@@ -148,7 +145,6 @@ positions:
   NVTK: 0
   OGKB: 0
   OKEY: 0
-  ORCL-RM: 0
   OZON: 0
   PFE-RM: 0
   PG-RM: 0
@@ -159,7 +155,6 @@ positions:
   PMSBP: 0
   POGR: 0
   POLY: 0
-  PTR-RM: 0
   PYPL-RM: 0
   QCOM-RM: 0
   QIWI: 0
@@ -193,6 +188,7 @@ positions:
   SMLT: 0
   SNGS: 0
   SNGSP: 0
+  STSBP: 0
   SUGB: 0
   SVAV: 0
   T-RM: 0
