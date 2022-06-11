@@ -12,11 +12,11 @@ import (
 
 type testRepo struct {
 	qid    domain.QualifiedID
-	entity data.Rows[Raw]
+	entity TableRaw
 }
 
-func (r testRepo) Get(_ context.Context, qid domain.QualifiedID) (domain.Aggregate[data.Rows[Raw]], error) {
-	agg := domain.Aggregate[data.Rows[Raw]]{}
+func (r testRepo) Get(_ context.Context, qid domain.QualifiedID) (domain.Aggregate[TableRaw], error) {
+	agg := domain.Aggregate[TableRaw]{}
 
 	if qid != r.qid {
 		return agg, fmt.Errorf("repo error")
@@ -44,7 +44,7 @@ func TestCheckRawHandler_Handle(t *testing.T) {
 			Group: RawGroup,
 			ID:    "ABRD",
 		},
-		entity: data.Rows[Raw]{
+		entity: TableRaw{
 			{
 				Date:     time.Date(2021, time.July, 12, 0, 0, 0, 0, time.UTC),
 				Value:    2.86,

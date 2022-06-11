@@ -33,7 +33,7 @@ func NewHandler(pub domain.Publisher, repo domain.ReadWriteRepo[Tickers]) *Handl
 
 // Handle реагирует на событие об торгуемых бумагах, и обновляет список выбранных.
 func (h Handler) Handle(ctx context.Context, event domain.Event) {
-	sec, ok := event.Data.(data.Rows[data.Security])
+	sec, ok := event.Data.(data.TableSecurities)
 	if !ok {
 		event.Data = fmt.Errorf("can't parse %s data", event)
 		h.pub.Publish(event)

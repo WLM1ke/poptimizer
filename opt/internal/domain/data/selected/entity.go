@@ -21,7 +21,7 @@ func ID() domain.QualifiedID {
 // Tickers перечень тикеров, в том числе выбранных и не выбранных для анализа.
 type Tickers map[string]bool
 
-func (s Tickers) update(sec data.Rows[data.Security]) Tickers {
+func (s Tickers) update(sec data.TableSecurities) Tickers {
 	tickers := make(Tickers, len(sec))
 
 	for _, row := range sec {

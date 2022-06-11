@@ -22,18 +22,21 @@ type Security struct {
 	Instrument string
 }
 
+// TableSecurities таблица с данными о торгуемых бумагах.
+type TableSecurities = Table[Security]
+
 // SecuritiesHandler обработчик событий, отвечающий за загрузку информации о торгуемых бумагах.
 type SecuritiesHandler struct {
 	domain.Filter
 	pub  domain.Publisher
-	repo domain.ReadWriteRepo[Rows[Security]]
+	repo domain.ReadWriteRepo[TableSecurities]
 	iss  *gomoex.ISSClient
 }
 
 // NewSecuritiesHandler создает обработчик событий, отвечающий за загрузку информации о торгуемых бумагах.
 func NewSecuritiesHandler(
 	pub domain.Publisher,
-	repo domain.ReadWriteRepo[Rows[Security]],
+	repo domain.ReadWriteRepo[TableSecurities],
 	iss *gomoex.ISSClient,
 ) *SecuritiesHandler {
 	return &SecuritiesHandler{
@@ -120,8 +123,8 @@ func (h SecuritiesHandler) download(
 	return rows, nil
 }
 
-func (h SecuritiesHandler) convert(raw []gomoex.Security) Rows[Security] {
-	rows := make(Rows[Security], 0, len(raw))
+func (h SecuritiesHandler) convert(raw []gomoex.Security) TableSecurities {
+	rows := make(TableSecurities, 0, len(raw))
 
 	for _, row := range raw {
 		rows = append(rows, Security{
@@ -137,7 +140,7 @@ func (h SecuritiesHandler) convert(raw []gomoex.Security) Rows[Security] {
 	return rows
 }
 
-func (h SecuritiesHandler) publish(table domain.Aggregate[Rows[Security]]) {
+func (h SecuritiesHandler) publish(table domain.Aggregate[TableSecurities]) {
 	for _, sec := range table.Entity {
 		h.pub.Publish(domain.Event{
 			QualifiedID: domain.QualifiedID{

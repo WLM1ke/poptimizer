@@ -53,12 +53,12 @@ func PrepareEventBus(
 	bus.Subscribe(NewErrorsHandler(logger, telegram))
 	bus.Subscribe(NewBackupHandler(logger, &bus, uri))
 
-	bus.Subscribe(data.NewUSDHandler(&bus, domain.NewRepo[data.Rows[data.USD]](mongoDB), iss))
-	bus.Subscribe(data.NewSecuritiesHandler(&bus, domain.NewRepo[data.Rows[data.Security]](mongoDB), iss))
+	bus.Subscribe(data.NewUSDHandler(&bus, domain.NewRepo[data.TableUSD](mongoDB), iss))
+	bus.Subscribe(data.NewSecuritiesHandler(&bus, domain.NewRepo[data.TableSecurities](mongoDB), iss))
 	bus.Subscribe(selected.NewHandler(&bus, domain.NewRepo[selected.Tickers](mongoDB)))
 
-	bus.Subscribe(div.NewStatusHandler(&bus, domain.NewRepo[data.Rows[div.Status]](mongoDB), client))
-	bus.Subscribe(div.NewCheckRawHandler(&bus, domain.NewRepo[data.Rows[div.Raw]](mongoDB)))
+	bus.Subscribe(div.NewStatusHandler(&bus, domain.NewRepo[div.TableStatus](mongoDB), client))
+	bus.Subscribe(div.NewCheckRawHandler(&bus, domain.NewRepo[div.TableRaw](mongoDB)))
 
 	return mongoDB, &bus
 }

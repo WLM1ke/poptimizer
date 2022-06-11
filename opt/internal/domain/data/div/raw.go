@@ -7,7 +7,6 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"sort"
-	"time"
 )
 
 const (
@@ -21,25 +20,18 @@ const (
 	_format = `2006-01-02`
 )
 
-// Raw представляет дивиденды не конвертированные в валюту расчетов.
-type Raw struct {
-	Date     time.Time
-	Value    float64
-	Currency string
-}
-
 // CheckRawHandler обработчик событий, отвечающий за проверку актуальности введенных пользователем дивидендов.
 type CheckRawHandler struct {
 	domain.Filter
 	pub  domain.Publisher
-	repo domain.ReadRepo[data.Rows[Raw]]
+	repo domain.ReadRepo[TableRaw]
 	iss  *gomoex.ISSClient
 }
 
 // NewCheckRawHandler новый обработчик событий, отвечающий за проверку актуальности введенных пользователем дивидендов.
 func NewCheckRawHandler(
 	pub domain.Publisher,
-	repo domain.ReadRepo[data.Rows[Raw]],
+	repo domain.ReadRepo[TableRaw],
 
 ) *CheckRawHandler {
 	return &CheckRawHandler{

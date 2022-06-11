@@ -34,18 +34,21 @@ type Status struct {
 	Date   time.Time
 }
 
+
+type TableStatus = data.Table[Status]
+
 // StatusHandler обработчик событий, отвечающий за загрузку информации об ожидаемых датах выплаты дивидендов.
 type StatusHandler struct {
 	domain.Filter
 	pub    domain.Publisher
-	repo   domain.ReadWriteRepo[data.Rows[Status]]
+	repo   domain.ReadWriteRepo[TableStatus]
 	client *http.Client
 }
 
 // NewStatusHandler создает обработчик событий, отвечающий за загрузку информации об ожидаемых датах выплаты дивидендов.
 func NewStatusHandler(
 	pub domain.Publisher,
-	repo domain.ReadWriteRepo[data.Rows[Status]],
+	repo domain.ReadWriteRepo[TableStatus],
 	client *http.Client,
 ) *StatusHandler {
 	return &StatusHandler{
@@ -86,15 +89,13 @@ func (h StatusHandler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	raw, err := h.download(ctx, selectedTickers)
+	rows, err := h.download(ctx, selectedTickers)
 	if err != nil {
 		event.Data = err
 		h.pub.Publish(event)
 
 		return
 	}
-
-	rows := data.Rows[Status](raw)
 
 	if rows.IsEmpty() {
 		return
@@ -116,7 +117,7 @@ func (h StatusHandler) Handle(ctx context.Context, event domain.Event) {
 func (h StatusHandler) download(
 	ctx context.Context,
 	selectedTickers selected.Tickers,
-) ([]Status, error) {
+) (TableStatus, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -170,7 +171,7 @@ func (h StatusHandler) download(
 func (h StatusHandler) parceCSV(
 	reader *csv.Reader,
 	selectedTickers selected.Tickers,
-) (rows []Status, err error) {
+) (rows TableStatus, err error) {
 	header := true
 
 	if err != nil {
@@ -224,7 +225,7 @@ func (h StatusHandler) parceCSV(
 	}
 }
 
-func (h StatusHandler) publish(table domain.Aggregate[data.Rows[Status]]) {
+func (h StatusHandler) publish(table domain.Aggregate[TableStatus]) {
 	for _, div := range table.Entity {
 		h.pub.Publish(domain.Event{
 			QualifiedID: domain.QualifiedID{

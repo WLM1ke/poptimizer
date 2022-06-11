@@ -27,18 +27,20 @@ type USD struct {
 	Turnover float64
 }
 
+type TableUSD = Table[USD]
+
 // USDHandler обработчик событий, отвечающий за загрузку информации о курсе доллара.
 type USDHandler struct {
 	domain.Filter
 	pub  domain.Publisher
-	repo domain.ReadAppendRepo[Rows[USD]]
+	repo domain.ReadAppendRepo[TableUSD]
 	iss  *gomoex.ISSClient
 }
 
 // NewUSDHandler создает обработчик событий, отвечающий за загрузку информации о курсе доллара.
 func NewUSDHandler(
 	pub domain.Publisher,
-	repo domain.ReadAppendRepo[Rows[USD]],
+	repo domain.ReadAppendRepo[TableUSD],
 	iss *gomoex.ISSClient,
 ) *USDHandler {
 	return &USDHandler{
@@ -112,7 +114,7 @@ func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
 func (h USDHandler) download(
 	ctx context.Context,
 	event domain.Event,
-	table domain.Aggregate[Rows[USD]],
+	table domain.Aggregate[TableUSD],
 ) ([]gomoex.Candle, error) {
 	start := ""
 	if !table.Entity.IsEmpty() {
@@ -137,8 +139,8 @@ func (h USDHandler) download(
 	return rowsRaw, nil
 }
 
-func (h USDHandler) convert(raw []gomoex.Candle) Rows[USD] {
-	rows := make(Rows[USD], 0, len(raw))
+func (h USDHandler) convert(raw []gomoex.Candle) TableUSD {
+	rows := make(TableUSD, 0, len(raw))
 
 	for _, row := range raw {
 		rows = append(rows, USD{
@@ -154,7 +156,7 @@ func (h USDHandler) convert(raw []gomoex.Candle) Rows[USD] {
 	return rows
 }
 
-func (h USDHandler) validate(table domain.Aggregate[Rows[USD]], rows Rows[USD]) error {
+func (h USDHandler) validate(table domain.Aggregate[TableUSD], rows TableUSD) error {
 	prev := rows[0].Date
 	for _, row := range rows[1:] {
 		if prev.Before(row.Date) {

@@ -22,7 +22,7 @@ func prepare() Tickers {
 func TestTickers_update(t *testing.T) {
 	t.Parallel()
 
-	tickers := prepare().update([]data.Security{
+	tickers := prepare().update(data.TableSecurities{
 		{Ticker: "AKRN"},
 		{Ticker: "GMKN"},
 		{Ticker: "NVTK"},
