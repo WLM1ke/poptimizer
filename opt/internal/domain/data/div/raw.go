@@ -3,10 +3,8 @@ package div
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 )
 
 // CheckRawHandler обработчик событий, отвечающий за проверку актуальности введенных пользователем дивидендов.
@@ -47,15 +45,11 @@ func (h CheckRawHandler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	qid := domain.QualifiedID{
-		Sub:   data.Subdomain,
-		Group: RawGroup,
-		ID:    event.ID,
-	}
+	qid := RawID(event.ID)
 
 	event.QualifiedID = qid
 
-	table, err := h.repo.Get(ctx, qid)
+	agg, err := h.repo.Get(ctx, qid)
 	if err != nil {
 		event.Data = err
 		h.pub.Publish(event)
@@ -63,12 +57,7 @@ func (h CheckRawHandler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	n := sort.Search(
-		len(table.Entity),
-		func(i int) bool { return !table.Entity[i].Date.Before(status.Date) },
-	)
-
-	if (n == len(table.Entity)) || !status.Date.Equal(table.Entity[n].Date) {
+	if !agg.Entity.Exists(status.Date) {
 		event.Data = fmt.Errorf(
 			"%s missed dividend at %s",
 			event.ID,

@@ -58,6 +58,7 @@ func PrepareEventBus(
 
 	bus.Subscribe(div.NewStatusHandler(&bus, domain.NewRepo[div.StatusTable](mongoDB), client))
 	bus.Subscribe(div.NewCheckRawHandler(&bus, domain.NewRepo[div.RawTable](mongoDB)))
+	bus.Subscribe(div.NewCheckCloseReestryHandler(&bus, domain.NewRepo[div.RawTable](mongoDB), client))
 
 	return mongoDB, &bus
 }

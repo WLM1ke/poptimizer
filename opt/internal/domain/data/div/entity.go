@@ -1,6 +1,7 @@
 package div
 
 import (
+	"sort"
 	"time"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
@@ -8,8 +9,9 @@ import (
 )
 
 const (
-	// RawGroup группа и id введенных пользователем дивидендов.
-	RawGroup = `raw_div`
+	_rawGroup          = `raw_div`
+	_closeReestryGroup = `close_reestry`
+
 	// USDCurrency - наименование валюты доллара.
 	USDCurrency = `USD`
 	// RURCurrency - наименование валюты рубля.
@@ -39,6 +41,24 @@ type Status struct {
 // StatusTable таблица со статусом дивидендов.
 type StatusTable = data.Table[Status]
 
+// RawID - id введенных пользователем данных о дивидендах.
+func RawID(ticker string) domain.QualifiedID {
+	return domain.QualifiedID{
+		Sub:   data.Subdomain,
+		Group: _rawGroup,
+		ID:    ticker,
+	}
+}
+
+// CloseReestryID - id данных о дивидендах с закрытияреестров.рф.
+func CloseReestryID(ticker string) domain.QualifiedID {
+	return domain.QualifiedID{
+		Sub:   data.Subdomain,
+		Group: _closeReestryGroup,
+		ID:    ticker,
+	}
+}
+
 // Raw представляет дивиденды не конвертированные в валюту расчетов.
 type Raw struct {
 	Date     time.Time
@@ -47,4 +67,14 @@ type Raw struct {
 }
 
 // RawTable таблица с данными о дивидендах до пересчета в рубли.
-type RawTable = data.Table[Raw]
+type RawTable data.Table[Raw]
+
+// Exists проверяет наличие дивидендов с указанной датой.
+func (t RawTable) Exists(date time.Time) bool {
+	n := sort.Search(
+		len(t),
+		func(i int) bool { return !t[i].Date.Before(date) },
+	)
+
+	return n < len(t) && t[n].Date.Equal(date)
+}

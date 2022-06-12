@@ -51,11 +51,9 @@ flowchart
     CheckRaw-.->Handler:Backup
     Securities-->Handler:Backup
     
-    
-   
-    Handler:Status-.->Handler:CheckReestry
+    Handler:Status-->Handler:CheckReestry
     Handler:Status-.->Handler:CheckNASDAQ
-     Handler:Status-->CheckRaw
+    Handler:Status-->CheckRaw
     
     Timer[\Timer/]-->Sevice:Dates
     

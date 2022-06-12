@@ -42,7 +42,7 @@ func TestCheckRawHandler_Handle(t *testing.T) {
 	repo := testRepo{
 		qid: domain.QualifiedID{
 			Sub:   data.Subdomain,
-			Group: RawGroup,
+			Group: _rawGroup,
 			ID:    "ABRD",
 		},
 		entity: RawTable{
@@ -93,7 +93,7 @@ func TestCheckRawHandler_Handle(t *testing.T) {
 		if row.event > 0 {
 			assert.Equal(
 				t,
-				domain.QualifiedID{Sub: data.Subdomain, Group: RawGroup, ID: "ABRD"},
+				domain.QualifiedID{Sub: data.Subdomain, Group: _rawGroup, ID: "ABRD"},
 				pub.events[0].QualifiedID,
 				"incorrect event id",
 			)
