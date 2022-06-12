@@ -44,25 +44,25 @@ Frontend для просмотра исторических отчетов
 которое обрабатывается специальным правилом записывающим сообщение в лог и Telegram.
 ```mermaid
 flowchart
-    Input[\InputDividends/]-.->CheckRaw{{Controller/Handler:CheckRaw}}
-    Input[\Input/]-->Securities{{Controller/Handler:Securities}}
-    
-    Securities-->Handler:Status
-    CheckRaw-.->Handler:Backup
-    Securities-->Handler:Backup
-    
-    Handler:Status-->Handler:CheckReestry
-    Handler:Status-.->Handler:CheckNASDAQ
-    Handler:Status-->CheckRaw
-    
     Timer[\Timer/]-->Sevice:Dates
     
-    Sevice:Dates-->Handler:USD
     Sevice:Dates-.->Handler:CPI
     Sevice:Dates-.->Handler:Indexes
-
-	Handler:USD-->Securities
+    Sevice:Dates-->Handler:USD
+    
+    Handler:USD-->Securities{{Controller/Handler:Securities}}
+    Dividends[\Fronend:Dividends/]-->Securities
+    
+    Securities-->Handler:Status
+    Securities-->Handler:Backup
     Securities-.->Handler:Quotes
 	Securities-.->Handler:Dividends
 
+    Tickers[\Fronend:Tickers/]-.->CheckRaw{{Controller/Handler:CheckRaw}}
+    
+    Handler:Status-->Handler:CheckReestry
+    Handler:Status-->Handler:CheckNASDAQ
+    Handler:Status-->CheckRaw
+    
+    CheckRaw-.->Handler:Backup
 ```

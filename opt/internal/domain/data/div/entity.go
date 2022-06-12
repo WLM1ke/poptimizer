@@ -11,6 +11,7 @@ import (
 const (
 	_rawGroup          = `raw_div`
 	_closeReestryGroup = `close_reestry`
+	_NASDAQGroup       = `nasdaq`
 
 	// USDCurrency - наименование валюты доллара.
 	USDCurrency = `USD`
@@ -55,6 +56,15 @@ func CloseReestryID(ticker string) domain.QualifiedID {
 	return domain.QualifiedID{
 		Sub:   data.Subdomain,
 		Group: _closeReestryGroup,
+		ID:    ticker,
+	}
+}
+
+// NASDAQid - id данных о дивидендах с NASDAQ.
+func NASDAQid(ticker string) domain.QualifiedID {
+	return domain.QualifiedID{
+		Sub:   data.Subdomain,
+		Group: _NASDAQGroup,
 		ID:    ticker,
 	}
 }

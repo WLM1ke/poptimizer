@@ -36,7 +36,7 @@ type CheckCloseReestryHandler struct {
 	client *http.Client
 }
 
-// NewCheckCloseReestryHandler новый обработчик событий, отвечающий за проверку дивидендов на закрытияреестров.рф.
+// NewCheckCloseReestryHandler новый обработчик событий, отвечающий за проверку дивидендов с закрытияреестров.рф.
 func NewCheckCloseReestryHandler(
 	pub domain.Publisher,
 	repo domain.ReadWriteRepo[RawTable],
@@ -60,7 +60,7 @@ func (h CheckCloseReestryHandler) String() string {
 	return "dividend status not foreign -> check close reestry"
 }
 
-// Handle реагирует на событие об обновлении статуса дивидендов и обновляет дивиденды на закрытияреестров.рф.
+// Handle реагирует на событие об обновлении статуса дивидендов и обновляет дивиденды с закрытияреестров.рф.
 func (h CheckCloseReestryHandler) Handle(ctx context.Context, event domain.Event) {
 	status, ok := event.Data.(Status)
 	if !ok {
