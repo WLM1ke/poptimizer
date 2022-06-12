@@ -15,7 +15,7 @@ const (
 	_preferredType   = `2`
 	_preferredSuffix = `P`
 
-	_foreignBoard  = `TQBR`
+	_foreignBoard  = `FQBR`
 	_foreignSuffix = `-RM`
 )
 
