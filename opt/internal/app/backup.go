@@ -3,10 +3,10 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/selected"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -32,18 +32,19 @@ func NewBackupHandler(logger *lgr.Logger, pub domain.Publisher, uri string) *Bac
 
 // Match фильтрует данные, вводимые пользователем.
 func (h BackupHandler) Match(event domain.Event) bool {
-	qid := domain.QualifiedID{
-		Sub:   data.Subdomain,
-		Group: selected.Group,
-		ID:    selected.Group,
-	}
+	return event.QualifiedID == securities.ID()
+}
 
-	return event.QualifiedID == qid
+func (h BackupHandler) String() string {
+	return `securities -> backup`
 }
 
 // Handle осуществляет бекап данных.
 func (h BackupHandler) Handle(ctx context.Context, event domain.Event) {
-	if err := clients.MongoDBBackup(ctx, _backupDir, h.uri, data.Subdomain, selected.Group); err != nil {
+	database := data.Subdomain
+	collection := securities.ID().Group
+
+	if err := clients.MongoDBBackup(ctx, _backupDir, h.uri, database, collection); err != nil {
 		event.Data = fmt.Errorf("can't backup data -> %w", err)
 
 		h.pub.Publish(event)
@@ -51,11 +52,7 @@ func (h BackupHandler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	h.logger.Infof("backup of collection %s.%s completed", data.Subdomain, selected.Group)
-}
-
-func (h BackupHandler) String() string {
-	return `Handler("backup")`
+	h.logger.Infof("backup of collection %s.%s completed", database, collection)
 }
 
 // Инициализирует клиента базы данных и создает коллекции с данными пользователя по умолчанию при их отсутствии.
@@ -65,7 +62,10 @@ func prepareDB(ctx context.Context, logger *lgr.Logger, uri string) *mongo.Clien
 		logger.Panicf("can't create MongoDB client -> %s", err)
 	}
 
-	count, err := client.Database(data.Subdomain).Collection(selected.Group).EstimatedDocumentCount(ctx)
+	database := data.Subdomain
+	collection := securities.ID().Group
+
+	count, err := client.Database(database).Collection(collection).EstimatedDocumentCount(ctx)
 	if err != nil {
 		logger.Panicf("can't check MongoDB data -> %s", err)
 	}
@@ -74,11 +74,11 @@ func prepareDB(ctx context.Context, logger *lgr.Logger, uri string) *mongo.Clien
 		return client
 	}
 
-	if err := clients.MongoDBRestore(ctx, _backupDir, uri, data.Subdomain, selected.Group); err != nil {
-		logger.Panicf("can't create collection %s.%s -> %s", data.Subdomain, selected.Group, err)
+	if err := clients.MongoDBRestore(ctx, _backupDir, uri, database, collection); err != nil {
+		logger.Panicf("can't create collection %s.%s -> %s", database, collection, err)
 	}
 
-	logger.Infof("collection %s.%s created", data.Subdomain, selected.Group)
+	logger.Infof("collection %s.%s created", database, collection)
 
 	return client
 }

@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/div"
 	"net/http"
 	"sync"
 	"time"
@@ -11,7 +10,8 @@ import (
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/selected"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/div"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -54,18 +54,17 @@ func PrepareEventBus(
 	bus.Subscribe(NewBackupHandler(logger, &bus, uri))
 
 	bus.Subscribe(data.NewUSDHandler(&bus, domain.NewRepo[data.TableUSD](mongoDB), iss))
-	bus.Subscribe(data.NewSecuritiesHandler(&bus, domain.NewRepo[data.TableSecurities](mongoDB), iss))
-	bus.Subscribe(selected.NewHandler(&bus, domain.NewRepo[selected.Tickers](mongoDB)))
+	bus.Subscribe(securities.NewHandler(&bus, domain.NewRepo[securities.Table](mongoDB), iss))
 
-	bus.Subscribe(div.NewStatusHandler(&bus, domain.NewRepo[div.TableStatus](mongoDB), client))
-	bus.Subscribe(div.NewCheckRawHandler(&bus, domain.NewRepo[div.TableRaw](mongoDB)))
+	bus.Subscribe(div.NewStatusHandler(&bus, domain.NewRepo[div.StatusTable](mongoDB), client))
+	bus.Subscribe(div.NewCheckRawHandler(&bus, domain.NewRepo[div.RawTable](mongoDB)))
 
 	return mongoDB, &bus
 }
 
 // Subscribe регистрирует обработчик для событий заданного топика.
 func (e *EventBus) Subscribe(handler domain.EventHandler) {
-	e.logger.Infof("registered %s", handler)
+	e.logger.Infof("registered Handler(%s)", handler)
 
 	e.handlers = append(e.handlers, handler)
 }
@@ -107,13 +106,14 @@ func (e *EventBus) stop() {
 }
 
 func (e *EventBus) handle(event domain.Event) {
-	e.logger.Infof("handling %s", event)
+	e.logger.Infof("-> %s", event)
 
 	var waitGroup sync.WaitGroup
 	defer waitGroup.Wait()
 
 	for _, h := range e.handlers {
 		if h.Match(event) {
+			e.logger.Infof("%s -> Handler(%s)", event, h)
 			handler := h
 
 			waitGroup.Add(1)

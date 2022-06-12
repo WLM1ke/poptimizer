@@ -3,45 +3,38 @@ package div
 import (
 	"context"
 	"fmt"
-	"github.com/WLM1ke/gomoex"
+	"sort"
+
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
-	"sort"
-)
-
-const (
-	// RawGroup группа и id введенных пользователем дивидендов.
-	RawGroup = `raw_div`
-	// USDCurrency - наименование валюты доллара.
-	USDCurrency = `USD`
-	// RURCurrency - наименование валюты рубля.
-	RURCurrency = `RUR`
-
-	_format = `2006-01-02`
 )
 
 // CheckRawHandler обработчик событий, отвечающий за проверку актуальности введенных пользователем дивидендов.
 type CheckRawHandler struct {
-	domain.Filter
 	pub  domain.Publisher
-	repo domain.ReadRepo[TableRaw]
-	iss  *gomoex.ISSClient
+	repo domain.ReadRepo[RawTable]
 }
 
 // NewCheckRawHandler новый обработчик событий, отвечающий за проверку актуальности введенных пользователем дивидендов.
 func NewCheckRawHandler(
 	pub domain.Publisher,
-	repo domain.ReadRepo[TableRaw],
-
+	repo domain.ReadRepo[RawTable],
 ) *CheckRawHandler {
 	return &CheckRawHandler{
-		Filter: domain.Filter{
-			Sub:   data.Subdomain,
-			Group: StatusGroup,
-		},
 		repo: repo,
 		pub:  pub,
 	}
+}
+
+// Match выбирает события изменения статуса дивидендов по отдельным тикерам.
+func (h CheckRawHandler) Match(event domain.Event) bool {
+	_, ok := event.Data.(Status)
+
+	return ok && event.QualifiedID == StatusID(event.ID)
+}
+
+func (h CheckRawHandler) String() string {
+	return "dividend status -> check raw dividends"
 }
 
 // Handle реагирует на событие об обновлении статуса дивидендов и проверяет пользовательские дивиденды.
@@ -69,6 +62,7 @@ func (h CheckRawHandler) Handle(ctx context.Context, event domain.Event) {
 
 		return
 	}
+
 	n := sort.Search(
 		len(table.Entity),
 		func(i int) bool { return !table.Entity[i].Date.Before(status.Date) },
@@ -78,7 +72,7 @@ func (h CheckRawHandler) Handle(ctx context.Context, event domain.Event) {
 		event.Data = fmt.Errorf(
 			"%s missed dividend at %s",
 			event.ID,
-			status.Date.Format(_format),
+			status.Date.Format(_eventDateFormat),
 		)
 		h.pub.Publish(event)
 	}

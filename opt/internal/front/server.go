@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/selected"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi"
@@ -42,10 +42,10 @@ func NewFrontend(logger *lgr.Logger, client *mongo.Client, pub domain.Publisher)
 
 	smg := makeSessionManager(logger)
 
-	tickers := handler[selected.TickersState]{
+	tickers := handler[securities.State]{
 		logger: logger,
 		smg:    smg,
-		ctrl:   selected.NewTickersController(domain.NewRepo[selected.Tickers](client), pub),
+		ctrl:   securities.NewController(domain.NewRepo[securities.Table](client), pub),
 		tmpl:   extendTemplate(index, static, "tickers/*.gohtml"),
 		page:   "tickers",
 	}

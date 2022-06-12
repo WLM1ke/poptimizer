@@ -55,41 +55,6 @@ type EventHandler interface {
 	fmt.Stringer
 }
 
-// Filter для выбора сообщений.
-//
-// Если соответсвующее поле не заполнено, то подходит событие с любым значением соответствующего поля.
-type Filter struct {
-	Sub   string
-	Group string
-	ID    string
-	Err   bool
-}
-
-func (f Filter) String() string {
-	return fmt.Sprintf("Filter(%q, %q, %q)", f.Sub, f.Group, f.ID)
-}
-
-// Match проверяет соответствие события фильтру.
-func (f Filter) Match(event Event) bool {
-	_, ok := event.Data.(error)
-	if ok {
-		return false
-	}
-
-	switch {
-	case f.ID != "" && event.ID != f.ID:
-		return false
-	case f.ID == "" && event.ID == event.Group:
-		return false
-	case f.Group != "" && event.Group != f.Group:
-		return false
-	case f.Sub != "" && event.Sub != f.Sub:
-		return false
-	}
-
-	return true
-}
-
 // Subscriber - интерфейс подписки на сообщения соответствующего топика.
 type Subscriber interface {
 	Subscribe(EventHandler)

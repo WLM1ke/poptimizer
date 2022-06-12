@@ -10,12 +10,21 @@ import (
 )
 
 const (
-	// USDGroup группа и id данных курсе доллара.
-	USDGroup = "usd"
+	// _USDGroup группа и id данных курсе доллара.
+	_USDGroup = "usd"
 
 	_format = `2006-01-02`
 	_ticker = `USD000UTSTOM`
 )
+
+// USDid - id котировок курса доллара.
+func USDid() domain.QualifiedID {
+	return domain.QualifiedID{
+		Sub:   Subdomain,
+		Group: _USDGroup,
+		ID:    _USDGroup,
+	}
+}
 
 // USD свечка с данными о курсе доллара.
 type USD struct {
@@ -27,11 +36,11 @@ type USD struct {
 	Turnover float64
 }
 
+// TableUSD - таблица с котировками курса доллар.
 type TableUSD = Table[USD]
 
 // USDHandler обработчик событий, отвечающий за загрузку информации о курсе доллара.
 type USDHandler struct {
-	domain.Filter
 	pub  domain.Publisher
 	repo domain.ReadAppendRepo[TableUSD]
 	iss  *gomoex.ISSClient
@@ -44,24 +53,24 @@ func NewUSDHandler(
 	iss *gomoex.ISSClient,
 ) *USDHandler {
 	return &USDHandler{
-		Filter: domain.Filter{
-			Sub:   Subdomain,
-			Group: TradingDateGroup,
-			ID:    TradingDateGroup,
-		},
 		iss:  iss,
 		repo: repo,
 		pub:  pub,
 	}
 }
 
+// Match выбирает событие начала торгового дня.
+func (h USDHandler) Match(event domain.Event) bool {
+	return event.QualifiedID == TradingDateID() && event.Data == nil
+}
+
+func (h USDHandler) String() string {
+	return "trading date -> usd"
+}
+
 // Handle реагирует на событие об обновлении торговых дат и обновляет курс.
 func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
-	qid := domain.QualifiedID{
-		Sub:   Subdomain,
-		Group: USDGroup,
-		ID:    USDGroup,
-	}
+	qid := USDid()
 
 	event.QualifiedID = qid
 

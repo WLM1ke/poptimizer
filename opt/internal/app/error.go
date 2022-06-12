@@ -25,7 +25,7 @@ func (e ErrorsHandler) Match(event domain.Event) bool {
 }
 
 func (e ErrorsHandler) String() string {
-	return `Filter("error")`
+	return `error -> log and telegram`
 }
 
 // NewErrorsHandler создает новый обработчик событий с ошибками.

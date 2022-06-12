@@ -10,10 +10,9 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 )
 
-// TradingDateGroup группа и id данных о последней торговой дате.
 const (
-	TradingDateGroup = "trading_date"
-	_timeout         = time.Second * 30
+	_tradingDateGroup = "trading_date"
+	_timeout          = time.Second * 30
 
 	_tickerDuration = time.Minute
 	// Информация о торгах публикуется на MOEX ISS в 0:45 по московскому времени на следующий день.
@@ -21,6 +20,15 @@ const (
 	_issHour   = 0
 	_issMinute = 45
 )
+
+// TradingDateID - id информации о последнем торговом дне.
+func TradingDateID() domain.QualifiedID {
+	return domain.QualifiedID{
+		Sub:   Subdomain,
+		Group: _tradingDateGroup,
+		ID:    _tradingDateGroup,
+	}
+}
 
 var loc = func() *time.Location { //nolint:gochecknoglobals // Загрузка зоны происходит медленно
 	loc, err := time.LoadLocation(_issTZ)
@@ -78,12 +86,8 @@ func (s *TradingDateService) publishIfNewDay(ctx context.Context) {
 	}
 
 	event := domain.Event{
-		QualifiedID: domain.QualifiedID{
-			Sub:   Subdomain,
-			Group: TradingDateGroup,
-			ID:    TradingDateGroup,
-		},
-		Timestamp: newTradingDate,
+		QualifiedID: TradingDateID(),
+		Timestamp:   newTradingDate,
 	}
 
 	newTradingDate, err := s.getTradingDate(ctx)
@@ -117,16 +121,10 @@ func lastTradingDate() time.Time {
 }
 
 func (s *TradingDateService) getTradingDate(ctx context.Context) (date time.Time, err error) {
-	qid := domain.QualifiedID{
-		Sub:   Subdomain,
-		Group: TradingDateGroup,
-		ID:    TradingDateGroup,
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, _timeout)
 	defer cancel()
 
-	table, err := s.repo.Get(ctx, qid)
+	table, err := s.repo.Get(ctx, TradingDateID())
 	if err != nil {
 		return date, err
 	}

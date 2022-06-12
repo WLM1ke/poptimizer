@@ -1,4 +1,4 @@
-package selected
+package securities
 
 import (
 	"encoding/gob"
@@ -8,39 +8,39 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 )
 
-// TickersState содержит информацию о результатах редактирования выбранных тикеров.
+// State содержит информацию о результатах редактирования выбранных тикеров.
 //
 // Выбранных и не выбранных тикеров, для заданного префикса, а так же статуса изменения данных.
-type TickersState struct {
-	Agg    domain.Aggregate[Tickers]
+type State struct {
+	Agg    domain.Aggregate[Table]
 	Prefix string
 	Status string
 }
 
 // Selected содержит перечень выбранных тикеров.
-func (s TickersState) Selected() []string {
+func (s State) Selected() []string {
 	return s.Agg.Entity.Selected()
 }
 
 // NotSelected содержит перечень тикеров, доступных для добавления.
-func (s TickersState) NotSelected() []string {
-	return s.Agg.Entity.SearchNotSelected(s.Prefix)
+func (s State) NotSelected() []string {
+	return s.Agg.Entity.NotSelected(s.Prefix)
 }
 
-// TickersController осуществляет редактирование выбранных тикеров.
-type TickersController struct {
-	repo domain.ReadWriteRepo[Tickers]
+// Controller осуществляет редактирование выбранных тикеров.
+type Controller struct {
+	repo domain.ReadWriteRepo[Table]
 	pub  domain.Publisher
 }
 
-// NewTickersController создает контроллер для редактирования выбранных тикеров.
-func NewTickersController(
-	repo domain.ReadWriteRepo[Tickers],
+// NewController создает контроллер для редактирования выбранных тикеров.
+func NewController(
+	repo domain.ReadWriteRepo[Table],
 	pub domain.Publisher,
-) *TickersController {
-	gob.Register(TickersState{})
+) *Controller {
+	gob.Register(State{})
 
-	return &TickersController{repo: repo, pub: pub}
+	return &Controller{repo: repo, pub: pub}
 }
 
 // Update реализует основные команды по редактированию.
@@ -50,7 +50,7 @@ func NewTickersController(
 // - search - поиск доступных для добавления
 // - save - сохранить текущие изменения
 // - add/remove - добавить/удалить определенный тикер.
-func (c TickersController) Update(ctx domain.CtrlCtx, cmd string, state *TickersState) (code int, err error) {
+func (c Controller) Update(ctx domain.CtrlCtx, cmd string, state *State) (code int, err error) {
 	switch cmd {
 	case "tickers":
 		return c.tickers(ctx, state)
@@ -67,9 +67,9 @@ func (c TickersController) Update(ctx domain.CtrlCtx, cmd string, state *Tickers
 	}
 }
 
-func (c TickersController) tickers(ctx domain.CtrlCtx, state *TickersState) (code int, err error) {
+func (c Controller) tickers(ctx domain.CtrlCtx, state *State) (code int, err error) {
 	if state.Status != "" {
-		return 0, nil
+		return http.StatusOK, nil
 	}
 
 	state.Agg, err = c.repo.Get(ctx, ID())
@@ -79,16 +79,16 @@ func (c TickersController) tickers(ctx domain.CtrlCtx, state *TickersState) (cod
 
 	state.Status = "Not edited"
 
-	return 0, nil
+	return http.StatusOK, nil
 }
 
-func (c TickersController) search(ctx domain.CtrlCtx, state *TickersState) (code int, err error) {
+func (c Controller) search(ctx domain.CtrlCtx, state *State) (code int, err error) {
 	state.Prefix = ctx.Get("prefix")
 
-	return 0, nil
+	return http.StatusOK, nil
 }
 
-func (c TickersController) save(ctx domain.CtrlCtx, state *TickersState) (code int, err error) {
+func (c Controller) save(ctx domain.CtrlCtx, state *State) (code int, err error) {
 	if err := c.repo.Save(ctx, state.Agg); err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -106,27 +106,27 @@ func (c TickersController) save(ctx domain.CtrlCtx, state *TickersState) (code i
 
 	state.Status = "Saved successfully"
 
-	return 0, nil
+	return http.StatusOK, nil
 }
 
-func (c TickersController) add(ctx domain.CtrlCtx, state *TickersState) (code int, err error) {
+func (c Controller) add(ctx domain.CtrlCtx, state *State) (code int, err error) {
 	ticker := ctx.Get("ticker")
-	if err := state.Agg.Entity.Add(ticker); err != nil {
-		return http.StatusBadRequest, err
+	if !state.Agg.Entity.Select(ticker) {
+		return http.StatusBadRequest, fmt.Errorf("wrong ticker")
 	}
 
 	state.Status = "Edited"
 
-	return 0, nil
+	return http.StatusOK, nil
 }
 
-func (c TickersController) remove(ctx domain.CtrlCtx, state *TickersState) (code int, err error) {
+func (c Controller) remove(ctx domain.CtrlCtx, state *State) (code int, err error) {
 	ticker := ctx.Get("ticker")
-	if err := state.Agg.Entity.Remove(ticker); err != nil {
-		return http.StatusBadRequest, err
+	if !state.Agg.Entity.Unselect(ticker) {
+		return http.StatusBadRequest, fmt.Errorf("wrong ticker")
 	}
 
 	state.Status = "Edited"
 
-	return 0, nil
+	return http.StatusOK, nil
 }

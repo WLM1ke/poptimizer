@@ -3,20 +3,21 @@ package div
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 type testRepo struct {
 	qid    domain.QualifiedID
-	entity TableRaw
+	entity RawTable
 }
 
-func (r testRepo) Get(_ context.Context, qid domain.QualifiedID) (domain.Aggregate[TableRaw], error) {
-	agg := domain.Aggregate[TableRaw]{}
+func (r testRepo) Get(_ context.Context, qid domain.QualifiedID) (domain.Aggregate[RawTable], error) {
+	agg := domain.Aggregate[RawTable]{}
 
 	if qid != r.qid {
 		return agg, fmt.Errorf("repo error")
@@ -44,7 +45,7 @@ func TestCheckRawHandler_Handle(t *testing.T) {
 			Group: RawGroup,
 			ID:    "ABRD",
 		},
-		entity: TableRaw{
+		entity: RawTable{
 			{
 				Date:     time.Date(2021, time.July, 12, 0, 0, 0, 0, time.UTC),
 				Value:    2.86,
@@ -75,7 +76,7 @@ func TestCheckRawHandler_Handle(t *testing.T) {
 		event := domain.Event{
 			QualifiedID: domain.QualifiedID{
 				Sub:   data.Subdomain,
-				Group: StatusGroup,
+				Group: _statusGroup,
 				ID:    "ABRD",
 			},
 			Timestamp: time.Date(2022, time.July, 4, 0, 0, 0, 0, time.UTC),

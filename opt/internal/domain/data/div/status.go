@@ -5,67 +5,63 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/selected"
-	"golang.org/x/text/encoding/charmap"
 	"io"
 	"net/http"
 	"regexp"
 	"sort"
 	"time"
+
+	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
+	"golang.org/x/text/encoding/charmap"
 )
 
 const (
-	// StatusGroup группа и id данных об ожидаемых датах выплаты дивидендов.
-	StatusGroup = `status`
+	// _statusGroup группа и id данных об ожидаемых датах выплаты дивидендов.
+	_statusGroup = `status`
 
-	_url          = `https://www.moex.com/ru/listing/listing-register-closing-csv.aspx`
-	_dateFormat   = `02.01.2006 15:04:05`
-	_lookBackDays = 0
+	_statusURL          = `https://www.moex.com/ru/listing/listing-register-closing-csv.aspx`
+	_statusDateFormat   = `02.01.2006 15:04:05`
+	_statusLookBackDays = 0
 )
 
 // Акция со странным тикером nompp не торгуется, но попадает в отчеты.
 var reTicker = regexp.MustCompile(`, ([A-Z]+-[A-Z]+|[A-Z]+|nompp) \[`)
 
-// Status - информация об ожидаемых датах выплаты дивидендов.
-type Status struct {
-	Ticker string
-	Date   time.Time
-}
-
-
-type TableStatus = data.Table[Status]
-
 // StatusHandler обработчик событий, отвечающий за загрузку информации об ожидаемых датах выплаты дивидендов.
 type StatusHandler struct {
-	domain.Filter
 	pub    domain.Publisher
-	repo   domain.ReadWriteRepo[TableStatus]
+	repo   domain.ReadWriteRepo[StatusTable]
 	client *http.Client
 }
 
 // NewStatusHandler создает обработчик событий, отвечающий за загрузку информации об ожидаемых датах выплаты дивидендов.
 func NewStatusHandler(
 	pub domain.Publisher,
-	repo domain.ReadWriteRepo[TableStatus],
+	repo domain.ReadWriteRepo[StatusTable],
 	client *http.Client,
 ) *StatusHandler {
 	return &StatusHandler{
-		Filter: domain.Filter{
-			Sub:   data.Subdomain,
-			Group: selected.Group,
-			ID:    selected.Group,
-		},
 		client: client,
 		repo:   repo,
 		pub:    pub,
 	}
 }
 
-// Handle реагирует на событие об торгуемых бумагах и обновляет информацию об ожидаемых датах выплаты дивидендов.
+// Match выбирает событие с обновлением перечня торгуемых бумаг.
+func (h StatusHandler) Match(event domain.Event) bool {
+	_, ok := event.Data.(securities.Table)
+
+	return ok && securities.ID() == event.QualifiedID
+}
+
+func (h StatusHandler) String() string {
+	return "securities -> dividend status"
+}
+
+// Handle реагирует на событие об выбранных бумагах и обновляет информацию об ожидаемых датах выплаты дивидендов.
 func (h StatusHandler) Handle(ctx context.Context, event domain.Event) {
-	selectedTickers, ok := event.Data.(selected.Tickers)
+	sec, ok := event.Data.(securities.Table)
 	if !ok {
 		event.Data = fmt.Errorf("can't parse %s data", event)
 		h.pub.Publish(event)
@@ -73,11 +69,7 @@ func (h StatusHandler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	qid := domain.QualifiedID{
-		Sub:   data.Subdomain,
-		Group: StatusGroup,
-		ID:    StatusGroup,
-	}
+	qid := StatusID(_statusGroup)
 
 	event.QualifiedID = qid
 
@@ -89,7 +81,7 @@ func (h StatusHandler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	rows, err := h.download(ctx, selectedTickers)
+	rows, err := h.download(ctx, sec)
 	if err != nil {
 		event.Data = err
 		h.pub.Publish(event)
@@ -116,9 +108,9 @@ func (h StatusHandler) Handle(ctx context.Context, event domain.Event) {
 
 func (h StatusHandler) download(
 	ctx context.Context,
-	selectedTickers selected.Tickers,
-) (TableStatus, error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _url, http.NoBody)
+	table securities.Table,
+) (StatusTable, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _statusURL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"can't create request -> %w",
@@ -146,7 +138,7 @@ func (h StatusHandler) download(
 	decoder := charmap.Windows1251.NewDecoder()
 	reader := csv.NewReader(decoder.Reader(resp.Body))
 
-	rows, err := h.parceCSV(reader, selectedTickers)
+	rows, err := h.parceCSV(reader, table)
 	if err != nil {
 		return nil, err
 	}
@@ -170,16 +162,11 @@ func (h StatusHandler) download(
 
 func (h StatusHandler) parceCSV(
 	reader *csv.Reader,
-	selectedTickers selected.Tickers,
-) (rows TableStatus, err error) {
-	header := true
-
-	if err != nil {
-		return nil, err
-	}
-
-	for {
+	table securities.Table,
+) (rows StatusTable, err error) {
+	for header := true; ; {
 		record, err := reader.Read()
+
 		switch {
 		case errors.Is(err, io.EOF):
 			return rows, nil
@@ -195,7 +182,7 @@ func (h StatusHandler) parceCSV(
 			continue
 		}
 
-		divDate, err := time.Parse(_dateFormat, record[1])
+		divDate, err := time.Parse(_statusDateFormat, record[1])
 		if err != nil {
 			return nil, fmt.Errorf(
 				"can't parse date %s ->  %w",
@@ -204,7 +191,7 @@ func (h StatusHandler) parceCSV(
 			)
 		}
 
-		if divDate.Before(time.Now().AddDate(0, 0, -_lookBackDays)) {
+		if divDate.Before(time.Now().AddDate(0, 0, -_statusLookBackDays)) {
 			continue
 		}
 
@@ -216,25 +203,24 @@ func (h StatusHandler) parceCSV(
 			)
 		}
 
-		if selectedTickers[ticker[1]] {
+		if sec, ok := table.Get(ticker[1]); sec.Selected && ok {
 			rows = append(rows, Status{
-				Ticker: ticker[1],
-				Date:   divDate,
+				Ticker:     ticker[1],
+				BaseTicker: sec.BaseTicker(),
+				Preferred:  sec.IsPreferred(),
+				Foreign:    sec.IsForeign(),
+				Date:       divDate,
 			})
 		}
 	}
 }
 
-func (h StatusHandler) publish(table domain.Aggregate[TableStatus]) {
+func (h StatusHandler) publish(table domain.Aggregate[StatusTable]) {
 	for _, div := range table.Entity {
 		h.pub.Publish(domain.Event{
-			QualifiedID: domain.QualifiedID{
-				Sub:   data.Subdomain,
-				Group: StatusGroup,
-				ID:    div.Ticker,
-			},
-			Timestamp: table.Timestamp,
-			Data:      div,
+			QualifiedID: StatusID(div.Ticker),
+			Timestamp:   table.Timestamp,
+			Data:        div,
 		})
 	}
 }

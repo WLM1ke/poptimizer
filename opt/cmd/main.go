@@ -24,7 +24,7 @@ import (
 
 type config struct {
 	App struct {
-		GoroutineInterval time.Duration `envDefault:"1m"`
+		GoroutineInterval time.Duration `envDefault:"1h"`
 	}
 	Server struct {
 		Addr           string        `envDefault:"localhost:10000"`

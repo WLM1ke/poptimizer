@@ -1,0 +1,105 @@
+package div
+
+import (
+	"context"
+	"fmt"
+	"github.com/WLM1ke/gomoex"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
+	"regexp"
+	"sort"
+)
+
+const (
+	_reestryUrl      = `https://закрытияреестров.рф/%s/`
+	_preferredType   = `2`
+	_preferredSuffix = `P`
+
+	_reestryRual  = `_RUAL`
+	_reestryRualr = `_RUALR`
+
+	_reestryDateFormat = `_2.01.2006`
+)
+
+var (
+	_reestryDatePattern = regexp.MustCompile(`\d{1,2}\.\d{2}\.\d{4}`)
+	_reestryDivPattern  = regexp.MustCompile(`(\d.*)[\x{00A0}\s](руб|USD|\$)`)
+)
+
+// CheckCloseReestryHandler обработчик событий, отвечающий за проверку дивидендов на закрытияреестров.рф.
+type CheckCloseReestryHandler struct {
+	pub  domain.Publisher
+	repo domain.ReadRepo[TableRaw]
+	iss  *gomoex.ISSClient
+}
+
+// NewCheckCloseReestryHandler новый обработчик событий, отвечающий за проверку дивидендов на закрытияреестров.рф.
+func NewCheckCloseReestryHandler(
+	pub domain.Publisher,
+	repo domain.ReadRepo[TableRaw],
+
+) *CheckCloseReestryHandler {
+	return &CheckCloseReestryHandler{
+		repo: repo,
+		pub:  pub,
+	}
+}
+
+func (h CheckCloseReestryHandler) Match(event domain.Event) bool {
+	switch status, ok := event.Data.(Status); {
+	case !ok:
+		return false
+	case status.Ticker:
+		
+	case event.Sub != data.Subdomain:
+		return false
+	case event.Group != StatusGroup:
+		return false
+	default:
+		return true
+	}
+}
+
+func (h CheckCloseReestryHandler) String() string {
+	return fmt.Sprintf(`Handler(dividend status -> check close reestry)`)
+}
+
+// Handle реагирует на событие об обновлении статуса дивидендов и проверяет дивиденды на закрытияреестров.рф.
+func (h CheckCloseReestryHandler) Handle(ctx context.Context, event domain.Event) {
+	status, ok := event.Data.(Status)
+	if !ok {
+		event.Data = fmt.Errorf("can't parse %s data", event)
+		h.pub.Publish(event)
+
+		return
+	}
+
+	qid := domain.QualifiedID{
+		Sub:   data.Subdomain,
+		Group: RawGroup,
+		ID:    event.ID,
+	}
+
+	event.QualifiedID = qid
+
+	table, err := h.repo.Get(ctx, qid)
+	if err != nil {
+		event.Data = err
+		h.pub.Publish(event)
+
+		return
+	}
+	n := sort.Search(
+		len(table.Entity),
+		func(i int) bool { return !table.Entity[i].Date.Before(status.Date) },
+	)
+
+	if (n == len(table.Entity)) || !status.Date.Equal(table.Entity[n].Date) {
+		event.Data = fmt.Errorf(
+			"%s missed dividend at %s",
+			event.ID,
+			status.Date.Format(_eventDateFormat),
+		)
+		h.pub.Publish(event)
+	}
+}
