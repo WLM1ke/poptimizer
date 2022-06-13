@@ -14,7 +14,7 @@ import (
 	"github.com/go-chi/chi"
 )
 
-const _stateKey = `state`
+const _stateKeyTmpl = `state-%s`
 
 // Context реализует контекст для обработчиков редактирования доменных сущностей.
 type Context struct {
@@ -75,7 +75,7 @@ func (h handler[S]) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 		return
 	}
 
-	h.smg.Put(request.Context(), _stateKey, state)
+	h.smg.Put(request.Context(), h.pageStateKey(), state)
 
 	tmpl := "update"
 	if cmd == h.page {
@@ -85,9 +85,13 @@ func (h handler[S]) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 	h.execTemplate(writer, tmpl, state)
 }
 
+func (h handler[S])pageStateKey() string {
+	return fmt.Sprintf(_stateKeyTmpl, h.page)
+}
+
 func (h handler[S]) prepareState(request *http.Request) (S, error) {
-	if h.smg.Exists(request.Context(), _stateKey) {
-		state, ok := h.smg.Get(request.Context(), _stateKey).(S)
+	if h.smg.Exists(request.Context(), h.pageStateKey()) {
+		state, ok := h.smg.Get(request.Context(), h.pageStateKey()).(S)
 		if !ok {
 			return state, fmt.Errorf("can't load page state")
 		}
