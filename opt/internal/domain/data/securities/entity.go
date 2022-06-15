@@ -89,67 +89,9 @@ func (t Table) update(raw []gomoex.Security) Table {
 // Get получает описание бумаги для тикера и статус наличия такой бумаги.
 func (t Table) Get(ticker string) (Security, bool) {
 	n := sort.Search(len(t), func(i int) bool { return t[i].Ticker >= ticker })
-	if n < len(t) && t[n].Ticker == ticker && t[n].Selected {
+	if n < len(t) && t[n].Ticker == ticker {
 		return t[n], true
 	}
 
 	return Security{}, false
-}
-
-// Selected выдает список выбранных тикеров.
-func (t Table) Selected() []string {
-	tickers := make([]string, 0, len(t))
-
-	for _, sec := range t {
-		if sec.Selected {
-			tickers = append(tickers, sec.Ticker)
-		}
-	}
-
-	return tickers
-}
-
-// NotSelected выдает список доступных не выбранных тикеров.
-func (t Table) NotSelected(prefix string) []string {
-	if prefix == "" {
-		return nil
-	}
-
-	prefix = strings.ToUpper(prefix)
-
-	tickers := make([]string, 0, len(t))
-
-	for _, sec := range t {
-		if !sec.Selected && strings.HasPrefix(sec.Ticker, prefix) {
-			tickers = append(tickers, sec.Ticker)
-		}
-	}
-
-	return tickers
-}
-
-// Select добавляет тикер в список выбранных.
-func (t Table) Select(ticker string) bool {
-	n := sort.Search(len(t), func(i int) bool { return t[i].Ticker >= ticker })
-
-	if n < len(t) && t[n].Ticker == ticker && !t[n].Selected {
-		t[n].Selected = true
-
-		return true
-	}
-
-	return false
-}
-
-// Unselect удаляет тикер из списка выбранных.
-func (t Table) Unselect(ticker string) bool {
-	n := sort.Search(len(t), func(i int) bool { return t[i].Ticker >= ticker })
-
-	if n < len(t) && t[n].Ticker == ticker && t[n].Selected {
-		t[n].Selected = false
-
-		return true
-	}
-
-	return false
 }
