@@ -1,116 +1,50 @@
 package front
 
 import (
-	"context"
-	"fmt"
-	"html/template"
+	"encoding/json"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"net/http"
-	"net/url"
-	"path"
-
-	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
-	"github.com/alexedwards/scs/v2"
-	"github.com/go-chi/chi"
 )
 
-const _stateKeyTmpl = `state-%s`
-
-// Context реализует контекст для обработчиков редактирования доменных сущностей.
-type Context struct {
-	context.Context
-	PostForm url.Values
+func (f Frontend) registerTickersHandlers() {
+	f.mux.Get("/tickers", f.tickersGet)
+	f.mux.Put("/tickers", f.tickersPut)
 }
 
-// Get получает дополнительные параметры команд для обработчика.
-func (c Context) Get(key string) string {
-	value := chi.URLParamFromCtx(c.Context, key)
-	if value != "" {
-		return value
-	}
-
-	return c.PostForm.Get(key)
-}
-
-// Handler представляет универсальный обработчик для группы элементов страницы.
-//
-// Перенаправляет http-запросы к обработчикам доменных объектов осуществляет рендеринг на основе полученного состояния,
-// при этом действует на основе следующих основных соглашений:
-// - последний сегмент пути запроса является командой к обработчику
-// - все параметры команд должны содержаться в теле запроса, а не в URL
-// - если команда совпадает с именем страницы обработчика, то для конечного рендеринга используется шаблон "index", а
-// для остальных команд "update".
-type handler[S domain.State] struct {
-	logger *lgr.Logger
-
-	smg  *scs.SessionManager
-	ctrl domain.Controller[S]
-
-	tmpl *template.Template
-	page string
-}
-
-func (h handler[S]) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	if err := request.ParseForm(); err != nil {
-		http.Error(writer, "can't parse form", http.StatusBadRequest)
+func (f Frontend) tickersGet(writer http.ResponseWriter, request *http.Request) {
+	dto, err := f.tickers.Get(request.Context())
+	if err != nil {
+		err.Write(writer)
 
 		return
 	}
 
-	ctx := Context{
-		Context:  request.Context(),
-		PostForm: request.PostForm,
-	}
+	writer.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	cmd := path.Base(request.URL.Path)
-
-	state, err := h.prepareState(request)
-	if err != nil {
+	if err := json.NewEncoder(writer).Encode(dto); err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
-	}
+		f.logger.Warnf("can't encode dto tickers -> %s", err)
 
-	if code, err := h.ctrl.Update(ctx, cmd, &state); err != nil {
-		http.Error(writer, err.Error(), code)
+		return
+	}
+}
+
+func (f Frontend) tickersPut(writer http.ResponseWriter, request *http.Request) {
+	defer request.Body.Close()
+
+	var dto securities.DTO
+
+	if err := json.NewDecoder(request.Body).Decode(&dto); err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		f.logger.Warnf("can't decode dto tickers -> %s", err)
 
 		return
 	}
 
-	h.smg.Put(request.Context(), h.pageStateKey(), state)
-
-	tmpl := "update"
-	if cmd == h.page {
-		tmpl = "index"
-	}
-
-	h.execTemplate(writer, tmpl, state)
-}
-
-func (h handler[S])pageStateKey() string {
-	return fmt.Sprintf(_stateKeyTmpl, h.page)
-}
-
-func (h handler[S]) prepareState(request *http.Request) (S, error) {
-	if h.smg.Exists(request.Context(), h.pageStateKey()) {
-		state, ok := h.smg.Get(request.Context(), h.pageStateKey()).(S)
-		if !ok {
-			return state, fmt.Errorf("can't load page state")
-		}
-
-		return state, nil
-	}
-
-	var state S
-
-	return state, nil
-}
-
-func (h handler[S]) execTemplate(w http.ResponseWriter, tmpl string, state S) {
-	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-
-	err := h.tmpl.ExecuteTemplate(w, tmpl, state)
+	err := f.tickers.Save(request.Context(), dto)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		err.Write(writer)
 
-		h.logger.Warnf("can't render template %s -> %s", tmpl, err)
+		return
 	}
 }

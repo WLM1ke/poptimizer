@@ -5,83 +5,66 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
-	"time"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
-	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const _sessionExp = time.Minute * 5
-
 //go:embed static
 var static embed.FS
 
-// NewFrontend создает обработчики отображающие frontend.
+type Frontend struct {
+	mux    *chi.Mux
+	files  fs.FS
+	logger *lgr.Logger
+
+	tickers *securities.Service
+}
+
+// NewFrontend создает обработчики, отображающие frontend.
+//
+// Основная страничка расположена в корне. Отдельные разделы динамические отображаются с помощью Alpine.js.
 func NewFrontend(logger *lgr.Logger, client *mongo.Client, pub domain.Publisher) http.Handler {
 	static, err := fs.Sub(static, "static")
 	if err != nil {
 		logger.Panicf("can't load frontend data -> %s", err)
 	}
 
-	index := template.Must(template.ParseFS(static, "*.gohtml"))
+	front := Frontend{
+		mux:   chi.NewRouter(),
+		files: static,
 
-	router := chi.NewRouter()
-
-	router.Handle("/", http.RedirectHandler("/tickers", http.StatusMovedPermanently))
-
-	router.Handle(
-		"/{file}.css",
-		http.StripPrefix("/", http.FileServer(http.FS(static))),
-	)
-
-	router.Get("/{page}", indexHandlerFn(logger, index))
-
-	smg := makeSessionManager(logger)
-
-	tickers := handler[securities.State]{
 		logger: logger,
-		smg:    smg,
-		ctrl:   securities.NewController(domain.NewRepo[securities.Table](client), pub),
-		tmpl:   extendTemplate(index, static, "tickers/*.gohtml"),
-		page:   "tickers",
-	}
-	router.Post("/tickers", tickers.ServeHTTP)
-	router.Post("/tickers/{cmd}", tickers.ServeHTTP)
 
-	return smg.LoadAndSave(router)
+		tickers: securities.NewService(domain.NewRepo[securities.Table](client), pub),
+	}
+
+	front.registerMainPage()
+	front.registerTickersHandlers()
+
+	return &front
 }
 
-func indexHandlerFn(logger *lgr.Logger, index *template.Template) http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		writer.Header().Set("Content-Type", "text/html; charset=UTF-8")
+func (f Frontend) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	f.mux.ServeHTTP(writer, request)
+}
 
-		err := index.ExecuteTemplate(writer, "index", chi.URLParam(request, "page"))
+func (f Frontend) registerMainPage() {
+	f.mux.Handle("/{file}", http.StripPrefix("/", http.FileServer(http.FS(f.files))))
+
+	index := template.Must(template.ParseFS(f.files, "index.html"))
+
+	f.mux.Get("/", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "text/html;charset=UTF-8")
+
+		err := index.Execute(writer, nil)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 
-			logger.Warnf("can't render template index -> %s", err)
+			f.logger.Warnf("can't render template -> %s", err)
 		}
-	}
-}
-
-func makeSessionManager(logger *lgr.Logger) *scs.SessionManager {
-	smg := scs.New()
-	smg.IdleTimeout = _sessionExp
-	smg.ErrorFunc = func(writer http.ResponseWriter, request *http.Request, err error) {
-		logger.WithPrefix("Server").Warnf("session error %s", err)
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-	}
-	smg.Cookie.Persist = false
-
-	return smg
-}
-
-func extendTemplate(index *template.Template, files fs.FS, pattern string) *template.Template {
-	index = template.Must(index.Clone())
-
-	return template.Must(index.ParseFS(files, pattern))
+	})
 }

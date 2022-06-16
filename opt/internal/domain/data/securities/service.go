@@ -10,24 +10,24 @@ type DTO []struct {
 	Selected bool   `json:"selected"`
 }
 
-// ViewPort предоставляет информацию о выбранных бумагах для внешних пользователей.
-type ViewPort struct {
+// Service предоставляет информацию о выбранных бумагах для внешних пользователей.
+type Service struct {
 	repo domain.ReadWriteRepo[Table]
 	pub  domain.Publisher
 }
 
-// NewViewPort создает порт для предоставления информации о выбранных бумагах.
-func NewViewPort(
+// NewService создает порт для предоставления информации о выбранных бумагах.
+func NewService(
 	repo domain.ReadWriteRepo[Table],
 	pub domain.Publisher,
-) *ViewPort {
-	return &ViewPort{repo: repo, pub: pub}
+) *Service {
+	return &Service{repo: repo, pub: pub}
 }
 
-func (c ViewPort) Get(ctx context.Context) (DTO, domain.ViewPortError) {
+func (c Service) Get(ctx context.Context) (DTO, domain.ServiceError) {
 	agg, err := c.repo.Get(ctx, ID())
 	if err != nil {
-		return nil, domain.NewInternalErr(err)
+		return nil, domain.NewServiceInternalErr(err)
 	}
 
 	dto := make(DTO, len(agg.Entity))
@@ -40,26 +40,26 @@ func (c ViewPort) Get(ctx context.Context) (DTO, domain.ViewPortError) {
 	return dto, nil
 }
 
-func (c ViewPort) Save(ctx context.Context, dto DTO) domain.ViewPortError {
+func (c Service) Save(ctx context.Context, dto DTO) domain.ServiceError {
 	agg, err := c.repo.Get(ctx, ID())
 	if err != nil {
-		return domain.NewInternalErr(err)
+		return domain.NewServiceInternalErr(err)
 	}
 
 	if len(agg.Entity) != len(dto) {
-		return domain.NewBadDTOErr("wrong tickers count %d vs %d", len(dto), len(agg.Entity))
+		return domain.NewBadServiceRequestErr("wrong tickers count %d vs %d", len(dto), len(agg.Entity))
 	}
 
 	for n, row := range dto {
 		if row.Ticker != agg.Entity[n].Ticker {
-			return domain.NewBadDTOErr("wrong ticker %s vs %s", row.Ticker, agg.Entity[n].Ticker)
+			return domain.NewBadServiceRequestErr("wrong ticker %s vs %s", row.Ticker, agg.Entity[n].Ticker)
 		}
 
 		agg.Entity[n].Selected = row.Selected
 	}
 
 	if err := c.repo.Save(ctx, agg); err != nil {
-		return domain.NewInternalErr(err)
+		return domain.NewServiceInternalErr(err)
 	}
 
 	c.pub.Publish(domain.Event{

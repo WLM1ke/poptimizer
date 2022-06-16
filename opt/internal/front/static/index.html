@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>POptimizer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="spa.css">
+    <script defer src="apps.js"></script>
+    <script defer src="https://unpkg.com/@alpinejs/persist"></script>
+    <script defer src="https://unpkg.com/alpinejs"></script>
+</head>
+<body class="page" x-cloak x-data="pagesApp">
+    <header class="page__menu">
+        <strong>⌘ POptimizer</strong>
+        <div>|</div>
+        <nav>
+            <ul class="menu">
+                <template x-for="section in sections" :key="section">
+                    <li>
+                        <a
+                            class="menu__link"
+                            :class="{'menu__link_selected': isSelected(section)}"
+                            x-text="section"
+                            @click="select($el.innerHTML)"
+                        >
+                        </a>
+                    </li>
+                </template>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="page__section" x-data="tickersApp" x-show="isSelected('Tickers')">
+        <aside class="page__sidebar">
+            <div>
+                <h1 class="header">Add tickers</h1>
+                <label>
+                    <input class="form form_input"
+                           type="search"
+                           placeholder="Type to find..."
+                           x-model="prefix"
+                    >
+                </label>
+            </div>
+            <ul class="menu menu_vertical">
+                <template x-for="(ticker, index) in sec" :key="index">
+                    <li x-show="notSelected(ticker)" x-transition.duration.500ms>
+                        <a class="menu__link" title="Add" @click="add(index)">
+                            <span x-text="ticker.ticker"></span>
+                            <svg class="menu__icon">
+                                <line x1=0% y1=65% x2=60% y2=65% />
+                                <line x1=30% y1=95% x2=30% y2=35% />
+                            </svg>
+                        </a>
+                    </li>
+                </template>
+            </ul>
+            <button class="form form_button" @click="init" x-show="showButton" x-transition.duration.500ms>
+                Reset
+            </button>
+            <button class="form form_button" @click="save" x-show="showButton" x-transition.duration.500ms>
+                Save
+            </button>
+        </aside>
+
+        <main class="page__main">
+            <h1 class="header" x-show="count">
+                Portfolio
+                <small class="badge" x-text="count"></small>
+            </h1>
+            <ul class="menu menu_vertical menu_wrapped">
+                <template x-for="(ticker, index) in sec" :key="index">
+                    <li x-show="ticker.selected" x-transition.duration.500ms>
+                        <a class="menu__link" title="Remove" @click="remove(index)">
+                            <span x-text="ticker.ticker"></span>
+                            <svg class="menu__icon">
+                                <line x1=0% y1=35% x2=60% y2=95% />
+                                <line x1=0% y1=95% x2=60% y2=35% />
+                            </svg>
+                        </a>
+                    </li>
+                </template>
+            </ul>
+        </main>
+
+        <footer class="page__status" x-text="status"></footer>
+    </section>
+
+    <section class="page__section" data x-show="isSelected('Dividends')">
+        <aside class="page__sidebar">
+        </aside>
+        <main class="page__main"><h1>In development...</h1>
+        </main>
+        <footer class="page__status" x-text="status"></footer>
+    </section>
+
+    <section class="page__section" data x-show="isSelected('Accounts')">
+        <aside class="page__sidebar">
+        </aside>
+        <main class="page__main"><h1>In development...</h1>
+        </main>
+        <footer class="page__status" x-text="status"></footer>
+    </section>
+
+    <section class="page__section" data x-show="isSelected('Portfolio')">
+        <aside class="page__sidebar">
+        </aside>
+        <main class="page__main"><h1>In development...</h1>
+        </main>
+        <footer class="page__status" x-text="status"></footer>
+    </section>
+
+    <section class="page__section" data x-show="isSelected('Metrics')">
+        <aside class="page__sidebar">
+        </aside>
+        <main class="page__main"><h1>In development...</h1>
+        </main>
+        <footer class="page__status" x-text="status"></footer>
+    </section>
+
+    <section class="page__section" data x-show="isSelected('Optimizer')">
+        <aside class="page__sidebar">
+        </aside>
+        <main class="page__main"><h1>In development...</h1>
+        </main>
+        <footer class="page__status" x-text="status"></footer>
+    </section>
+
+    <section class="page__section" data x-show="isSelected('Reports')">
+        <aside class="page__sidebar">
+        </aside>
+        <main class="page__main"><h1>In development...</h1>
+        </main>
+        <footer class="page__status" x-text="status"></footer>
+    </section>
+
+</body>
+</html>

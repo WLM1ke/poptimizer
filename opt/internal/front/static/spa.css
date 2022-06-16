@@ -1,5 +1,9 @@
 /* Main SPA formatting */
 
+[x-cloak] {
+    display: none !important;
+}
+
 :root {
     --bg: #ffffff;
     --bg-emphasis: #e5e7eb;
@@ -22,12 +26,11 @@
 
     display: grid;
     grid-template-areas:
-    "menu menu"
-    "sidebar main"
-    "status status";
+    "menu"
+    "section";
 
-    grid-template-columns: auto 1fr;
-    grid-template-rows: 3rem 1fr 1.5rem;
+    grid-template-columns: 1fr;
+    grid-template-rows: 3rem 1fr;
 
 }
 
@@ -42,6 +45,20 @@
     display: flex;
     align-items: center;
     gap: var(--gap_bg);
+}
+
+.page__section {
+    grid-area: section;
+
+    display: grid;
+    grid-template-areas:
+    "sidebar main"
+    "status status";
+
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 1fr 1.5rem;
+
+    overflow: hidden;
 }
 
 .page__sidebar {
