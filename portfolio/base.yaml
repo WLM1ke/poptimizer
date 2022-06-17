@@ -48,7 +48,6 @@ positions:
   DSKY: 0
   DVEC: 0
   EA-RM: 0
-  EBAY-RM: 0
   ENPG: 0
   ENRU: 0
   ETLN: 0
@@ -70,7 +69,6 @@ positions:
   GLTR: 0
   GM-RM: 0
   GMKN: 0
-  GOOG-RM: 0
   GTRK: 0
   HHRU: 0
   HIMCP: 0
@@ -89,7 +87,6 @@ positions:
   KHC-RM: 0
   KLSB: 0
   KMAZ: 0
-  KO-RM: 0
   KOGK: 0
   KRKNP: 0
   KROT: 0
@@ -189,7 +186,6 @@ positions:
   SNGS: 0
   SNGSP: 0
   STSBP: 0
-  SUGB: 0
   SVAV: 0
   T-RM: 0
   TATN: 0
@@ -214,6 +210,7 @@ positions:
   UPRO: 0
   USBN: 0
   V-RM: 0
+  VJGZ: 0
   VJGZP: 0
   VKCO: 0
   VLHZ: 0
