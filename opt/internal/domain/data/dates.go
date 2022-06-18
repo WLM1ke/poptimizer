@@ -30,23 +30,17 @@ func TradingDateID() domain.QualifiedID {
 	}
 }
 
-var loc = func() *time.Location { //nolint:gochecknoglobals // Загрузка зоны происходит медленно
-	loc, err := time.LoadLocation(_issTZ)
-	if err != nil {
-		panic("can't load time MOEX zone")
-	}
-
-	return loc
-}()
-
 // TradingDateService - служба отслеживающая окончания торгового дня и рассылающая сообщение об этом.
 type TradingDateService struct {
 	logger *lgr.Logger
 	repo   domain.ReadWriteRepo[time.Time]
-	iss    *gomoex.ISSClient
-	pub    domain.Publisher
 
-	tradingDate time.Time
+	iss *gomoex.ISSClient
+	loc *time.Location
+
+	pub domain.Publisher
+
+	checkedDate time.Time
 }
 
 // NewTradingDateService - создает службу, публикующую сообщение о возможной публикации статистики.
@@ -56,7 +50,18 @@ func NewTradingDateService(
 	repo domain.ReadWriteRepo[time.Time],
 	iss *gomoex.ISSClient,
 ) *TradingDateService {
-	return &TradingDateService{logger: logger, repo: repo, iss: iss, pub: publisher}
+	loc, err := time.LoadLocation(_issTZ)
+	if err != nil {
+		logger.Panicf("can't load time MOEX zone")
+	}
+
+	return &TradingDateService{
+		logger: logger,
+		repo:   repo,
+		iss:    iss,
+		loc:    loc,
+		pub:    publisher,
+	}
 }
 
 // Run запускает рассылку о возможной публикации статистики после окончания торгового дня.
@@ -79,76 +84,98 @@ func (s *TradingDateService) Run(ctx context.Context) error {
 }
 
 func (s *TradingDateService) publishIfNewDay(ctx context.Context) {
-	newTradingDate := lastTradingDate()
+	ctx, cancel := context.WithTimeout(ctx, _timeout)
+	defer cancel()
 
-	if !s.tradingDate.Before(newTradingDate) {
-		return
+	if s.checkedDate.IsZero() {
+		if err := s.init(ctx); err != nil {
+			s.pubErr(err)
+
+			return
+		}
 	}
 
+	if newDay, ok := s.getNewDay(time.Now()); ok {
+
+		if err := s.update(ctx); err != nil {
+			s.pubErr(err)
+
+			return
+		}
+
+		s.checkedDate = newDay
+	}
+}
+
+func (s *TradingDateService) init(ctx context.Context) error {
+	agg, err := s.repo.Get(ctx, TradingDateID())
+	if err != nil {
+		return err
+	}
+
+	s.checkedDate = agg.Entity
+
+	return nil
+}
+
+func (s *TradingDateService) pubErr(err error) {
 	event := domain.Event{
 		QualifiedID: TradingDateID(),
-		Timestamp:   newTradingDate,
+		Timestamp:   s.checkedDate,
+		Data:        err,
 	}
-
-	newTradingDate, err := s.getTradingDate(ctx)
-	if err != nil {
-		event.Data = err
-		s.pub.Publish(event)
-
-		return
-	}
-
-	if !s.tradingDate.Before(newTradingDate) {
-		return
-	}
-
-	s.tradingDate = newTradingDate
-	event.Timestamp = newTradingDate
 
 	s.pub.Publish(event)
 }
 
-func lastTradingDate() time.Time {
-	now := time.Now().In(loc)
-	end := time.Date(now.Year(), now.Month(), now.Day(), _issHour, _issMinute, 0, 0, loc)
+func (s *TradingDateService) getNewDay(now time.Time) (time.Time, bool) {
+	now = now.In(s.loc)
+	end := time.Date(now.Year(), now.Month(), now.Day(), _issHour, _issMinute, 0, 0, s.loc)
 
 	delta := 2
 	if end.Before(now) {
 		delta = 1
 	}
 
-	return time.Date(now.Year(), now.Month(), now.Day()-delta, 0, 0, 0, 0, time.UTC)
+	newDay := time.Date(now.Year(), now.Month(), now.Day()-delta, 0, 0, 0, 0, time.UTC)
+
+	return newDay, s.checkedDate.Before(newDay)
 }
 
-func (s *TradingDateService) getTradingDate(ctx context.Context) (date time.Time, err error) {
-	ctx, cancel := context.WithTimeout(ctx, _timeout)
-	defer cancel()
-
-	table, err := s.repo.Get(ctx, TradingDateID())
-	if err != nil {
-		return date, err
-	}
-
+func (s *TradingDateService) update(ctx context.Context) error {
 	rows, err := s.iss.MarketDates(ctx, gomoex.EngineStock, gomoex.MarketShares)
 	if err != nil {
-		return date, fmt.Errorf("cat' download trading dates -> %w", err)
+		return fmt.Errorf("cat' download trading dates -> %w", err)
 	}
 
 	if len(rows) != 1 {
-		return date, fmt.Errorf("wrong rows count %d", len(rows))
+		return fmt.Errorf("wrong rows count %d", len(rows))
 	}
 
-	newDate := rows[0].Till
-	if !newDate.After(table.Timestamp) {
-		return date, nil
+	lastTradingDate := rows[0].Till
+
+	if !s.checkedDate.Before(lastTradingDate) {
+		return nil
 	}
 
-	table.Timestamp = newDate
-	table.Entity = newDate
-
-	if err := s.repo.Save(ctx, table); err != nil {
-		return date, err
+	agg, err := s.repo.Get(ctx, TradingDateID())
+	if err != nil {
+		return err
 	}
 
-	return newDate, nil
+	agg.Timestamp = lastTradingDate
+	agg.Entity = lastTradingDate
+
+	if err := s.repo.Save(ctx, agg); err != nil {
+		return err
+	}
+
+	event := domain.Event{
+		QualifiedID: TradingDateID(),
+		Timestamp:   lastTradingDate,
+	}
+
+	s.pub.Publish(event)
+
+	return nil
 }
