@@ -16,7 +16,8 @@ VALUE_REL_TOL = 2.0e-4
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
 LIQUIDITY_DAYS = config.YEAR_IN_TRADING_DAYS
-SELECT_DAYS = (LIQUIDITY_DAYS + MONTH_IN_TRADING_DAYS) * 2
+LIQUIDITY_DAYS_SHORT = config.MONTH_IN_TRADING_DAYS
+SELECT_DAYS = (LIQUIDITY_DAYS + config.FORECAST_DAYS) * 2
 
 LOGGER = logging.getLogger()
 
@@ -182,7 +183,13 @@ class Portfolio:
     @property
     def turnover_factor(self) -> pd.Series:
         """Медианный дневной оборот, как доля от портфеля."""
-        last_turnover = self._median_turnover(tuple(self.index[:-2]), LIQUIDITY_DAYS)
+        last_turnover = pd.concat(
+            [
+                self._median_turnover(tuple(self.index[:-2]), LIQUIDITY_DAYS),
+                self._median_turnover(tuple(self.index[:-2]), LIQUIDITY_DAYS_SHORT),
+            ],
+            axis=1,
+        ).min(axis=1)
         last_turnover = last_turnover / self.value[PORTFOLIO]
         last_turnover[CASH] = last_turnover.sum()
         last_turnover[PORTFOLIO] = last_turnover[CASH]
@@ -201,7 +208,14 @@ class Portfolio:
     def add_tickers(self) -> None:
         """Претенденты для добавления."""
         all_tickers = listing.securities()
-        last_turnover = self._median_turnover(tuple(all_tickers), SELECT_DAYS)
+        last_turnover = pd.concat(
+            [
+                self._median_turnover(tuple(all_tickers), LIQUIDITY_DAYS),
+                self._median_turnover(tuple(all_tickers), LIQUIDITY_DAYS_SHORT),
+                self._median_turnover(tuple(all_tickers), SELECT_DAYS),
+            ],
+            axis=1,
+        ).min(axis=1)
         minimal_turnover = self.value[PORTFOLIO] / (len(self.index) - 2)
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]
 
