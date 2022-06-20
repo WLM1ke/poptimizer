@@ -52,7 +52,7 @@
 flowchart
     Timer[\Timer:0h45m MSK/]-->Sevice:Dates
     
-    Sevice:Dates-.->Handler:CPI
+    Sevice:Dates-->Handler:CPI
     Sevice:Dates-.->Handler:Indexes
     Sevice:Dates-->Handler:USD
     

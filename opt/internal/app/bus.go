@@ -54,6 +54,7 @@ func PrepareEventBus(
 	bus.Subscribe(NewBackupHandler(logger, &bus, uri))
 
 	bus.Subscribe(data.NewUSDHandler(&bus, domain.NewRepo[data.TableUSD](mongoDB), iss))
+	bus.Subscribe(data.NewCPIHandler(&bus, domain.NewRepo[data.TableCPI](mongoDB), client))
 	bus.Subscribe(securities.NewHandler(&bus, domain.NewRepo[securities.Table](mongoDB), iss))
 
 	bus.Subscribe(div.NewStatusHandler(&bus, domain.NewRepo[div.StatusTable](mongoDB), client))

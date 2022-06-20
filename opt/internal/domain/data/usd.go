@@ -74,7 +74,7 @@ func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
 
 	event.QualifiedID = qid
 
-	table, err := h.repo.Get(ctx, qid)
+	agg, err := h.repo.Get(ctx, qid)
 	if err != nil {
 		event.Data = err
 		h.pub.Publish(event)
@@ -82,7 +82,7 @@ func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	raw, err := h.download(ctx, event, table)
+	raw, err := h.download(ctx, event, agg)
 	if err != nil {
 		event.Data = err
 		h.pub.Publish(event)
@@ -92,14 +92,14 @@ func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
 
 	rows := h.convert(raw)
 
-	if err := h.validate(table, rows); err != nil {
+	if err := h.validate(agg, rows); err != nil {
 		event.Data = err
 		h.pub.Publish(event)
 
 		return
 	}
 
-	if !table.Entity.IsEmpty() {
+	if !agg.Entity.IsEmpty() {
 		rows = rows[1:]
 	}
 
@@ -107,10 +107,10 @@ func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	table.Timestamp = event.Timestamp
-	table.Entity = rows
+	agg.Timestamp = event.Timestamp
+	agg.Entity = rows
 
-	if err := h.repo.Append(ctx, table); err != nil {
+	if err := h.repo.Append(ctx, agg); err != nil {
 		event.Data = err
 		h.pub.Publish(event)
 
@@ -123,11 +123,11 @@ func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
 func (h USDHandler) download(
 	ctx context.Context,
 	event domain.Event,
-	table domain.Aggregate[TableUSD],
+	agg domain.Aggregate[TableUSD],
 ) ([]gomoex.Candle, error) {
 	start := ""
-	if !table.Entity.IsEmpty() {
-		start = table.Entity.LastRow().Date.Format(_format)
+	if !agg.Entity.IsEmpty() {
+		start = agg.Entity.LastRow().Date.Format(_format)
 	}
 
 	end := event.Timestamp.Format(_format)
@@ -165,7 +165,7 @@ func (h USDHandler) convert(raw []gomoex.Candle) TableUSD {
 	return rows
 }
 
-func (h USDHandler) validate(table domain.Aggregate[TableUSD], rows TableUSD) error {
+func (h USDHandler) validate(agg domain.Aggregate[TableUSD], rows TableUSD) error {
 	prev := rows[0].Date
 	for _, row := range rows[1:] {
 		if prev.Before(row.Date) {
@@ -177,14 +177,14 @@ func (h USDHandler) validate(table domain.Aggregate[TableUSD], rows TableUSD) er
 		return fmt.Errorf("not increasing dates %+v", prev)
 	}
 
-	if table.Entity.IsEmpty() {
+	if agg.Entity.IsEmpty() {
 		return nil
 	}
 
-	if table.Entity.LastRow() != rows[0] {
+	if agg.Entity.LastRow() != rows[0] {
 		return fmt.Errorf(
 			"old rows %+v not match new %+v",
-			table.Entity.LastRow(),
+			agg.Entity.LastRow(),
 			rows[0])
 	}
 
