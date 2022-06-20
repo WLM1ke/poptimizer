@@ -70,5 +70,5 @@ flowchart
     Handler:Status-->Handler:CheckNASDAQ
     Handler:Status-->CheckRaw
     
-    CheckRaw-.->Handler:Backup
+    CheckRaw-->Handler:Backup
 ```
