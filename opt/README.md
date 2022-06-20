@@ -1,41 +1,47 @@
-# Новая версия программы на Go
+# Новая версия программы
 
-Находится в разработке - пока используйте версию на Python
+Находится в разработке - пока используйте версию на Python.
 
-## Endpoints
+Большая часть будут реализована на Go, обучение сетей на Python и Frontend на Alpine.js
 
-### /
+## Frontend
 
-Перенаправляет на /tickers
+Реализован Alpine.js в виде SPA со следующими основными разделами
 
 
-### /tickers
+### Tickers
 
-Frontend для изменения перечня бумаг в портфеле, для которых необходимо отслеживать появление новых дивидендов
+Изменение перечня бумаг в портфеле, для которых необходимо отслеживать появление новых дивидендов среди всех бумаг, 
+обращающихся на MOEX
 
-### /accounts
+### Dividends
 
-Frontend для редактирования данных об отдельных брокерских счетах
+Обновление данных по дивидендам - производится сверка данных с информацией на сайтах:
 
-### /portfolio
+- [www.nasdaq.com](https://www.nasdaq.com/)
+- [закрытияреестров.рф](https://закрытияреестров.рф/)
 
-Frontend для просмотра суммарной стоимости портфеля по всем счетам
+Имеется возможность принятия отсутствующих, удаление лишних или ручного добавления новых значений.
 
-### /metrics
+### Accounts
 
-Frontend для просмотра информации об ожидаемой доходности и риске портфеля
+Редактирование перечня брокерских счетов и находящихся на них бумаг
 
-### /optimizer
+### Portfolio
 
-Frontend для просмотра предложений по оптимизации портфеля
+Отображение суммарной стоимости и состава портфеля
 
-### /dividends
+### Metrics
 
-Frontend для дополнения данных по дивидендам
+Просмотр информации об ожидаемой доходности и риске портфеля
 
-### /reports
+### Optimizer
 
-Frontend для просмотра исторических отчетов
+Просмотр предложений по оптимизации портфеля
+
+### Reports
+
+Просмотра исторических отчетов
 
 ## Event streams
 
@@ -44,7 +50,7 @@ Frontend для просмотра исторических отчетов
 которое обрабатывается специальным правилом записывающим сообщение в лог и Telegram.
 ```mermaid
 flowchart
-    Timer[\Timer/]-->Sevice:Dates
+    Timer[\Timer:0h45m MSK/]-->Sevice:Dates
     
     Sevice:Dates-.->Handler:CPI
     Sevice:Dates-.->Handler:Indexes
@@ -58,7 +64,7 @@ flowchart
     Securities-.->Handler:Quotes
 	Securities-.->Handler:Dividends
 
-    Tickers[\Fronend:Tickers/]-.->CheckRaw{{Controller/Handler:CheckRaw}}
+    Tickers[\Fronend:Tickers/]-->CheckRaw{{Controller/Handler:CheckRaw}}
     
     Handler:Status-->Handler:CheckReestry
     Handler:Status-->Handler:CheckNASDAQ

@@ -19,9 +19,9 @@
                     <li>
                         <a
                             class="menu__link"
-                            :class="{'menu__link_selected': isSelected(section)}"
+                            :class="{'menu__link_selected': isSelectedSection(section)}"
                             x-text="section"
-                            @click="select($el.innerHTML)"
+                            @click="selectSection(section)"
                         >
                         </a>
                     </li>
@@ -30,7 +30,7 @@
         </nav>
     </header>
 
-    <section class="page__section" x-data="tickersApp" x-show="isSelected('Tickers')">
+    <section class="page__section" x-data="tickersApp" x-show="isSelectedSection('Tickers')">
         <aside class="page__sidebar">
             <div>
                 <h1 class="header">Add tickers</h1>
@@ -86,7 +86,96 @@
         <footer class="page__status" x-text="status"></footer>
     </section>
 
-    <section class="page__section" data x-show="isSelected('Dividends')">
+    <section class="page__section" x-data="dividendsApp" x-show="isSelectedSection('Dividends')">
+        <aside class="page__sidebar">
+            <div>
+                <h1 class="header">Select ticker</h1>
+                <label>
+                    <input class="form form_input"
+                           type="search"
+                           placeholder="Type to find..."
+                           x-model="prefix"
+                    >
+                </label>
+            </div>
+            <ul class="menu menu_vertical">
+                <template x-for="(ticker, index) in sec" :key="index">
+                    <li x-show="withPrefix(ticker)" x-transition.duration.500ms>
+                        <a class="menu__link" title="Add" @click="selectTicker(ticker)">
+                            <span x-text="ticker"></span>
+                            <svg class="menu__icon">
+                                <line x1=0% y1=65% x2=60% y2=65% />
+                                <line x1=30% y1=95% x2=30% y2=35% />
+                            </svg>
+                        </a>
+                    </li>
+                </template>
+            </ul>
+            <button class="form form_button" @click="init" x-show="showButton" x-transition.duration.500ms>
+                Reset
+            </button>
+            <button class="form form_button" @click="save" x-show="showButton" x-transition.duration.500ms>
+                Save
+            </button>
+        </aside>
+
+        <main class="page__main">
+            <h1 class="header" x-show="showDividends">
+                <span x-text="selectedTicker"></span>
+                <small class="badge" x-text="count"></small>
+            </h1>
+            <table class="table" x-show="showDividends">
+                    <thead>
+                    <tr>
+                        <th class="table__cell table__cell_header">Date</th>
+                        <th class="table__cell table__cell_header">Value</th>
+                        <th class="table__cell table__cell_header">Currency</th>
+                        <th class="table__cell table__cell_header">Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <template x-for="(row, index) in dividends" :key="index">
+                        <tr>
+                            <td class="table__cell" x-text="formatDate(row.date)"></td>
+                            <td class="table__cell table__cell_right" x-text="row.value"></td>
+                            <td class="table__cell table__cell_center" x-text="row.currency"></td>
+                            <td class="table__cell table__cell_center table__cell_with-form">
+                                <button
+                                        class="table__cell-form table__cell-form_btn"
+                                        @click="manageStatus(index)"
+                                        x-text="statusToBtn(row.status)"
+                                        x-show="statusToBtn(row.status)"
+                                >
+                                </button>
+                                <span x-show="!statusToBtn(row.status)">OK</span>
+                            </td>
+                        </tr>
+                    </template>
+                    <tr>
+                        <td class="table__cell table__cell_with-form">
+                            <input class="table__cell-form" type="date" x-model="newDate">
+                        </td>
+                        <td class="table__cell table__cell_with-form">
+                            <input class="table__cell-form" type="text" pattern="\d+|\d+\.\d+" x-model="newValue">
+                        </td>
+                        <td class="table__cell table__cell_with-form">
+                            <select class="table__cell-form" x-model="newCurrency">
+                                <option value="RUR">RUR</option>
+                                <option value="USD">USD</option>
+                            </select>
+                        </td>
+                        <td class="table__cell table__cell_with-form">
+                            <button class="table__cell-form table__cell-form_btn" @click="add">Add</button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+        </main>
+
+        <footer class="page__status" x-text="status"></footer>
+    </section>
+
+    <section class="page__section" x-data x-show="isSelectedSection('Accounts')">
         <aside class="page__sidebar">
         </aside>
         <main class="page__main"><h1>In development...</h1>
@@ -94,7 +183,7 @@
         <footer class="page__status" x-text="status"></footer>
     </section>
 
-    <section class="page__section" data x-show="isSelected('Accounts')">
+    <section class="page__section" x-data x-show="isSelectedSection('Portfolio')">
         <aside class="page__sidebar">
         </aside>
         <main class="page__main"><h1>In development...</h1>
@@ -102,7 +191,7 @@
         <footer class="page__status" x-text="status"></footer>
     </section>
 
-    <section class="page__section" data x-show="isSelected('Portfolio')">
+    <section class="page__section" x-data x-show="isSelectedSection('Metrics')">
         <aside class="page__sidebar">
         </aside>
         <main class="page__main"><h1>In development...</h1>
@@ -110,7 +199,7 @@
         <footer class="page__status" x-text="status"></footer>
     </section>
 
-    <section class="page__section" data x-show="isSelected('Metrics')">
+    <section class="page__section" x-data x-show="isSelectedSection('Optimizer')">
         <aside class="page__sidebar">
         </aside>
         <main class="page__main"><h1>In development...</h1>
@@ -118,15 +207,7 @@
         <footer class="page__status" x-text="status"></footer>
     </section>
 
-    <section class="page__section" data x-show="isSelected('Optimizer')">
-        <aside class="page__sidebar">
-        </aside>
-        <main class="page__main"><h1>In development...</h1>
-        </main>
-        <footer class="page__status" x-text="status"></footer>
-    </section>
-
-    <section class="page__section" data x-show="isSelected('Reports')">
+    <section class="page__section" x-data x-show="isSelectedSection('Reports')">
         <aside class="page__sidebar">
         </aside>
         <main class="page__main"><h1>In development...</h1>

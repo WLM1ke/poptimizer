@@ -57,7 +57,7 @@ func (h CheckRawHandler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	if !agg.Entity.Exists(status.Date) {
+	if !agg.Entity.ExistsDate(status.Date) {
 		event.Data = fmt.Errorf(
 			"%s missed dividend at %s",
 			event.ID,

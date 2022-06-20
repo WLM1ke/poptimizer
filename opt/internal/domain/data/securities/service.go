@@ -2,9 +2,11 @@ package securities
 
 import (
 	"context"
+
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 )
 
+// DTO представляет информацию, о том какие из существующих тикеров выбраны.
 type DTO []struct {
 	Ticker   string `json:"ticker"`
 	Selected bool   `json:"selected"`
@@ -24,6 +26,7 @@ func NewService(
 	return &Service{repo: repo, pub: pub}
 }
 
+// Get предоставляет информацию о выбранных тикерах.
 func (c Service) Get(ctx context.Context) (DTO, domain.ServiceError) {
 	agg, err := c.repo.Get(ctx, ID())
 	if err != nil {
@@ -40,6 +43,7 @@ func (c Service) Get(ctx context.Context) (DTO, domain.ServiceError) {
 	return dto, nil
 }
 
+// Save сохраняет информацию о выбранных тикерах.
 func (c Service) Save(ctx context.Context, dto DTO) domain.ServiceError {
 	agg, err := c.repo.Get(ctx, ID())
 	if err != nil {

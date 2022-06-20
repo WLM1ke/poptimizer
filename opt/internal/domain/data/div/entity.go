@@ -71,20 +71,54 @@ func NASDAQid(ticker string) domain.QualifiedID {
 
 // Raw представляет дивиденды не конвертированные в валюту расчетов.
 type Raw struct {
-	Date     time.Time
-	Value    float64
-	Currency string
+	Date     time.Time `json:"date"`
+	Value    float64   `json:"value"`
+	Currency string    `json:"currency"`
+}
+
+// ValidDate проверяет, что дата находится после начала сбора статистики по дивидендам.
+func (r Raw) ValidDate() bool {
+	return time.Date(2015, time.January, 1, 0, 0, 0, 0, time.UTC).Before(r.Date)
 }
 
 // RawTable таблица с данными о дивидендах до пересчета в рубли.
 type RawTable data.Table[Raw]
 
-// Exists проверяет наличие дивидендов с указанной датой.
-func (t RawTable) Exists(date time.Time) bool {
+// Sort сортирует строки.
+func (t RawTable) Sort() {
+	sort.Slice(t, func(i, j int) bool {
+		return t[i].Date.Before(t[j].Date) ||
+			t[i].Date.Equal(t[j].Date) && t[i].Value < t[j].Value ||
+			t[i].Date.Equal(t[j].Date) && t[i].Value == t[j].Value && t[i].Currency < t[j].Currency
+	})
+}
+
+// ExistsDate проверяет наличие дивидендов с указанной датой.
+func (t RawTable) ExistsDate(date time.Time) bool {
 	n := sort.Search(
 		len(t),
 		func(i int) bool { return !t[i].Date.Before(date) },
 	)
 
 	return n < len(t) && t[n].Date.Equal(date)
+}
+
+// Exists проверяет, что данная запись о дивидендах существует.
+func (t RawTable) Exists(raw Raw) bool {
+	foundPos := sort.Search(
+		len(t),
+		func(pos int) bool {
+			value := t[pos]
+
+			return value.Date.After(raw.Date) ||
+				(value.Date.Equal(raw.Date) && value.Value > raw.Value) ||
+				(value.Date.Equal(raw.Date) && value.Value == raw.Value && value.Currency >= raw.Currency)
+		},
+	)
+
+	if foundPos >= len(t) {
+		return false
+	}
+
+	return t[foundPos].Date.Equal(raw.Date) && t[foundPos].Value == raw.Value && t[foundPos].Currency == raw.Currency
 }

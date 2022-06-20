@@ -1,9 +1,10 @@
 package data
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 	time "time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTradingDateService_getNewDay(t *testing.T) {
@@ -51,18 +52,15 @@ func TestTradingDateService_getNewDay(t *testing.T) {
 		now := baseNow.Add(test.nowDelta).UTC()
 
 		day, ok := service.getNewDay(now)
+		assert.Equal(t, test.ok, ok, "wrong new day ok %v vs %v", test.ok, ok)
 
 		assert.Equal(
 			t,
 			test.expected,
 			day,
-			"wrong new day %s vs %s", test.expected, day)
-
-		assert.Equal(
-			t,
-			test.ok,
-			ok,
-			"wrong new day ok %v vs %v", test.ok, ok)
+			"wrong new day %s vs %s",
+			test.expected,
+			day,
+		)
 	}
-
 }

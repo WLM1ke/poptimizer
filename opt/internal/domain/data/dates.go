@@ -96,7 +96,6 @@ func (s *TradingDateService) publishIfNewDay(ctx context.Context) {
 	}
 
 	if newDay, ok := s.getNewDay(time.Now()); ok {
-
 		if err := s.update(ctx); err != nil {
 			s.pubErr(err)
 

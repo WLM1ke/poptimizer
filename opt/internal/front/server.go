@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/div"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/go-chi/chi"
@@ -16,12 +17,14 @@ import (
 //go:embed static
 var static embed.FS
 
+// Frontend представляет web-интерфейс приложения.
 type Frontend struct {
 	mux    *chi.Mux
 	files  fs.FS
 	logger *lgr.Logger
 
-	tickers *securities.Service
+	tickers   *securities.Service
+	dividends *div.Service
 }
 
 // NewFrontend создает обработчики, отображающие frontend.
@@ -39,11 +42,20 @@ func NewFrontend(logger *lgr.Logger, client *mongo.Client, pub domain.Publisher)
 
 		logger: logger,
 
-		tickers: securities.NewService(domain.NewRepo[securities.Table](client), pub),
+		tickers: securities.NewService(
+			domain.NewRepo[securities.Table](client),
+			pub,
+		),
+		dividends: div.NewService(
+			domain.NewRepo[securities.Table](client),
+			domain.NewRepo[div.RawTable](client),
+			pub,
+		),
 	}
 
 	front.registerMainPage()
 	front.registerTickersHandlers()
+	front.registerDividendsHandlers()
 
 	return &front
 }

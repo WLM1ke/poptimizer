@@ -2,8 +2,9 @@ package front
 
 import (
 	"encoding/json"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"net/http"
+
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 )
 
 func (f Frontend) registerTickersHandlers() {

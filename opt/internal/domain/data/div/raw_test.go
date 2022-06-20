@@ -124,7 +124,7 @@ func TestCheckRawHandler_Handle_DataErr(t *testing.T) {
 	handler.Handle(context.Background(), domain.Event{})
 
 	assert.Equal(t, 1, len(pub.events), "no error on incorrect event data")
-	assert.ErrorContains(t, pub.events[0].Data.(error), "can't parse event", "incorrect error")
+	assert.ErrorContains(t, pub.events[0].Data.(error), "can't parse Event", "incorrect error")
 }
 
 func TestCheckRawHandler_Handle_RepoErr(t *testing.T) {

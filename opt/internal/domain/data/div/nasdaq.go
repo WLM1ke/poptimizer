@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -67,7 +66,7 @@ func (h CheckNASDAQHandler) String() string {
 }
 
 // Handle реагирует на событие об обновлении статуса дивидендов и обновляет дивиденды с NASDAQ.
-func (h CheckNASDAQHandler) Handle(ctx context.Context, event domain.Event) {
+func (h CheckNASDAQHandler) Handle(ctx context.Context, event domain.Event) { //nolint:dupl
 	status, ok := event.Data.(Status)
 	if !ok {
 		event.Data = fmt.Errorf("can't parse %s data", event)
@@ -88,7 +87,7 @@ func (h CheckNASDAQHandler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	if agg.Entity.Exists(status.Date) {
+	if agg.Entity.ExistsDate(status.Date) {
 		return
 	}
 
@@ -100,7 +99,7 @@ func (h CheckNASDAQHandler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	sort.Slice(table, func(i, j int) bool { return table[i].Date.Before(table[j].Date) })
+	table.Sort()
 
 	if slices.Equal(table, agg.Entity) {
 		return

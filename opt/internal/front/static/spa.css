@@ -6,9 +6,10 @@
 
 :root {
     --bg: #ffffff;
-    --bg-emphasis: #e5e7eb;
+    --bg-header: #1f2937;
+    --bg-aside: #e5e7eb;
+    --bg-edit-cell: #f2f3f5;
     --font: #111827;
-    --bg-dark: #1f2937;
     --font-on-dark: #ffffff;
     --link: #4b5563;
     --link-hoover: #1e87f0;
@@ -39,7 +40,7 @@
 
     padding-left: var(--gap_bg);
 
-    background: var(--bg-dark);
+    background: var(--bg-header);
     color: var(--font-on-dark);
 
     display: flex;
@@ -67,7 +68,7 @@
     width: var(--button-width);
     padding: var(--gap_bg);
 
-    background: var(--bg-emphasis);
+    background: var(--bg-aside);
     color: var(--font);
 
     display: flex;
@@ -93,7 +94,7 @@
 
     padding-left: var(--gap_bg);
 
-    background: var(--bg-dark);
+    background: var(--bg-header);
     color: var(--font-on-dark);
 
     display: flex;
@@ -190,7 +191,7 @@
 }
 
 .form_button:hover {
-    box-shadow: 0 0 0 1px var(--link-hoover);
+    filter: saturate(2);
 }
 
 .form_input {
@@ -203,4 +204,74 @@
 .form_input:focus {
     border-color: var(--link-hoover);
     box-shadow: 0 0 0 1px var(--link-hoover);
+}
+
+/* Table */
+
+.table {
+    vertical-align: middle;
+    border-collapse: collapse;
+    display: block;
+    flex-grow: 1;
+    overflow: scroll;
+}
+
+.table__cell {
+    box-sizing: border-box;
+    width: var(--button-width);
+    height: 2rem;
+    border-style: solid;
+    border-width: 1px;
+    border-color: var(--bg-aside);
+    padding: 0 var(--gap_sm);
+}
+
+.table__cell_header {
+    background-color: var(--bg-aside);
+    font-weight: bold;
+    text-align: center;
+}
+
+.table__cell_center {
+    text-align: center;
+}
+
+.table__cell_right {
+    text-align: right;
+}
+
+.table__cell_with-form {
+    padding: 0;
+}
+
+.table__cell-form {
+    background-color: var(--bg-edit-cell);
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+    border-width: 0;
+    border-radius: 0;
+    margin: 0;
+    padding: 0 var(--gap_sm);
+    font-size: 1em;
+    appearance: none;
+    outline: none;
+    cursor: pointer;
+}
+
+.table__cell-form:hover,
+.table__cell-form:focus {
+    box-shadow: 0 0 0 1px var(--link-hoover);
+    z-index: 100;
+}
+
+.table__cell-form_btn {
+    color: var(--font-on-dark);
+    background-color: var(--link-hoover);
+}
+
+.table__cell-form_btn:hover {
+    box-shadow: 0 0 0 1px var(--bg-aside);
+    filter: saturate(2);
+    z-index: 100;
 }
