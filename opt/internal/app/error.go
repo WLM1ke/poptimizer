@@ -43,12 +43,12 @@ func (e ErrorsHandler) Handle(ctx context.Context, event domain.Event) {
 		err = fmt.Errorf("incorrect error %s routing", event)
 	}
 
-	e.logger.Warnf("%s", err)
+	e.logger.Warnf("%s -> %s", event, err)
 
 	ctx, cancel := context.WithTimeout(ctx, _errorTimeout)
 	defer cancel()
 
-	if err = e.telegram.Send(ctx, err.Error()); err != nil {
+	if err = e.telegram.Send(ctx, fmt.Sprintf("%s -> %s", event, err)); err != nil {
 		e.logger.Warnf("can't send notification -> %s", err)
 	}
 }
