@@ -166,13 +166,13 @@ func parseRequest(respond *http.Response, preferred bool) (RawTable, error) {
 			continue
 		}
 
-		if strings.Contains(htmlRow.Text(), "НЕ ВЫПЛАЧИВАТЬ") {
-			continue
-		}
-
 		row, err := parseRow(htmlRow, preferred)
 		if err != nil {
 			return nil, err
+		}
+
+		if row.Date.IsZero() {
+			continue
 		}
 
 		rows = append(rows, row)
@@ -199,17 +199,15 @@ func validateHeader(selection *goquery.Selection, preferred bool) error {
 	return nil
 }
 
+// Важно парсить сначала значение, так как это позволяет проверить, что дивиденды действительно выплачены.
 func parseRow(htmlRow *goquery.Document, preferred bool) (row Raw, err error) {
-	date := htmlRow.Find("td:nth-child(1)").Text()
-
-	row.Date, err = time.Parse(_reestryDateFormat, _reestryDatePattern.FindString(date))
-	if err != nil {
-		return Raw{}, fmt.Errorf("can't parse date %s -> %w", date, err)
-	}
-
 	valueStr := htmlRow.Find("td:nth-child(2)").Text()
 	if preferred {
 		valueStr = htmlRow.Find("td:nth-child(3)").Text()
+	}
+
+	if strings.Contains(valueStr, "НЕ ВЫПЛАЧИВАТЬ") {
+		return Raw{}, nil
 	}
 
 	values := _reestryDivPattern.FindStringSubmatch(valueStr)
@@ -232,6 +230,13 @@ func parseRow(htmlRow *goquery.Document, preferred bool) (row Raw, err error) {
 		row.Currency = USDCurrency
 	default:
 		return Raw{}, fmt.Errorf("can't parse currency - %s", values[2])
+	}
+
+	date := htmlRow.Find("td:nth-child(1)").Text()
+
+	row.Date, err = time.Parse(_reestryDateFormat, _reestryDatePattern.FindString(date))
+	if err != nil {
+		return Raw{}, fmt.Errorf("can't parse date %s -> %w", date, err)
 	}
 
 	return row, nil
