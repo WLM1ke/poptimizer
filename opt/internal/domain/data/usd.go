@@ -13,8 +13,8 @@ const (
 	// _USDGroup группа и id данных курсе доллара.
 	_USDGroup = "usd"
 
-	_format = `2006-01-02`
-	_ticker = `USD000UTSTOM`
+	_ISSDateFormat = `2006-01-02`
+	_usdTicker     = `USD000UTSTOM`
 )
 
 // USDid - id котировок курса доллара.
@@ -127,16 +127,16 @@ func (h USDHandler) download(
 ) ([]gomoex.Candle, error) {
 	start := ""
 	if !agg.Entity.IsEmpty() {
-		start = agg.Entity.LastRow().Date.Format(_format)
+		start = agg.Entity.LastRow().Date.Format(_ISSDateFormat)
 	}
 
-	end := event.Timestamp.Format(_format)
+	end := event.Timestamp.Format(_ISSDateFormat)
 
 	rowsRaw, err := h.iss.MarketCandles(
 		ctx,
 		gomoex.EngineCurrency,
 		gomoex.MarketSelt,
-		_ticker,
+		_usdTicker,
 		start,
 		end,
 		gomoex.IntervalDay,
