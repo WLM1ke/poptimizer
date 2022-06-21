@@ -43,17 +43,36 @@
 
 Просмотра исторических отчетов
 
-## Event streams
 
-Основные потоки событий между обработчиками событий изображены на схеме.
-Дополнительно каждое правило в случае возникновения ошибки направляет событие с ее описанием,
-которое обрабатывается специальным правилом записывающим сообщение в лог и Telegram.
+## Основные модули
+```mermaid
+flowchart
+
+Data -.-> Features
+Features -.-> Evolution
+Evolution -.-> DL
+DL -.-> Evolution
+Evolution -.-> Portfolio
+Data -.-> Portfolio
+Data -.-> Reports
+Portfolio -.-> Reports
+```
+
+## Модуль Data
+
+Отвечает за сбор данных, которые в последствии используются для построения признаков, расчета стоимости портфеля и 
+подготовки отчетов.
+
+Основные потоки событий между обработчиками событий изображены на схеме. Дополнительно каждое правило в случае 
+возникновения ошибки направляет событие с ее описанием, которое обрабатывается специальным правилом записывающим 
+сообщение в лог и Telegram.
+
 ```mermaid
 flowchart
     Timer[\Timer:0h45m MSK/]-->Sevice:Dates
     
     Sevice:Dates-->Handler:CPI
-    Sevice:Dates-.->Handler:Indexes
+    Sevice:Dates-->Handler:Indexes
     Sevice:Dates-->Handler:USD
     
     Handler:USD-->Securities{{Controller/Handler:Securities}}
