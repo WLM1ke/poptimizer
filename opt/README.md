@@ -81,7 +81,7 @@ flowchart
     Securities-->Handler:Status
     Securities-->Handler:Backup
     Securities-->Handler:Quotes
-	Securities-.->Handler:Dividends
+	Securities-->Handler:Dividends
 
     Tickers[\Fronend:Tickers/]-->CheckRaw{{Controller/Handler:CheckRaw}}
     

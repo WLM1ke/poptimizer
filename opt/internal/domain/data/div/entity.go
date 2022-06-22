@@ -1,124 +1,29 @@
 package div
 
 import (
-	"sort"
 	"time"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 )
 
-const (
-	_rawGroup          = `raw_div`
-	_closeReestryGroup = `close_reestry`
-	_NASDAQGroup       = `nasdaq`
+// _DivGroup - группа дивидендов, пересчитанных в рубли.
+const _DivGroup = "dividends"
 
-	// USDCurrency - наименование валюты доллара.
-	USDCurrency = `USD`
-	// RURCurrency - наименование валюты рубля.
-	RURCurrency = `RUR`
-
-	_eventDateFormat = `2006-01-02`
-)
-
-// StatusID информации о статусе дивидендов.
-func StatusID(ticker string) domain.QualifiedID {
+// ID - id дивидендов, пересчитанных в рубли.
+func ID(ticker string) domain.QualifiedID {
 	return domain.QualifiedID{
 		Sub:   data.Subdomain,
-		Group: _statusGroup,
+		Group: _DivGroup,
 		ID:    ticker,
 	}
 }
 
-// Status - информация об ожидаемых датах выплаты дивидендов.
-type Status struct {
-	Ticker     string
-	BaseTicker string
-	Preferred  bool
-	Foreign    bool
-	Date       time.Time
+// Dividend данные о выплате дивидендов, пересчитанных в рубли.
+type Dividend struct {
+	Date  time.Time
+	Value float64
 }
 
-// StatusTable таблица со статусом дивидендов.
-type StatusTable = data.Table[Status]
-
-// RawID - id введенных пользователем данных о дивидендах.
-func RawID(ticker string) domain.QualifiedID {
-	return domain.QualifiedID{
-		Sub:   data.Subdomain,
-		Group: _rawGroup,
-		ID:    ticker,
-	}
-}
-
-// CloseReestryID - id данных о дивидендах с закрытияреестров.рф.
-func CloseReestryID(ticker string) domain.QualifiedID {
-	return domain.QualifiedID{
-		Sub:   data.Subdomain,
-		Group: _closeReestryGroup,
-		ID:    ticker,
-	}
-}
-
-// NASDAQid - id данных о дивидендах с NASDAQ.
-func NASDAQid(ticker string) domain.QualifiedID {
-	return domain.QualifiedID{
-		Sub:   data.Subdomain,
-		Group: _NASDAQGroup,
-		ID:    ticker,
-	}
-}
-
-// Raw представляет дивиденды не конвертированные в валюту расчетов.
-type Raw struct {
-	Date     time.Time `json:"date"`
-	Value    float64   `json:"value"`
-	Currency string    `json:"currency"`
-}
-
-// ValidDate проверяет, что дата находится после начала сбора статистики по дивидендам.
-func (r Raw) ValidDate() bool {
-	return time.Date(2015, time.January, 1, 0, 0, 0, 0, time.UTC).Before(r.Date)
-}
-
-// RawTable таблица с данными о дивидендах до пересчета в рубли.
-type RawTable data.Table[Raw]
-
-// Sort сортирует строки.
-func (t RawTable) Sort() {
-	sort.Slice(t, func(i, j int) bool {
-		return t[i].Date.Before(t[j].Date) ||
-			t[i].Date.Equal(t[j].Date) && t[i].Value < t[j].Value ||
-			t[i].Date.Equal(t[j].Date) && t[i].Value == t[j].Value && t[i].Currency < t[j].Currency
-	})
-}
-
-// ExistsDate проверяет наличие дивидендов с указанной датой.
-func (t RawTable) ExistsDate(date time.Time) bool {
-	n := sort.Search(
-		len(t),
-		func(i int) bool { return !t[i].Date.Before(date) },
-	)
-
-	return n < len(t) && t[n].Date.Equal(date)
-}
-
-// Exists проверяет, что данная запись о дивидендах существует.
-func (t RawTable) Exists(raw Raw) bool {
-	foundPos := sort.Search(
-		len(t),
-		func(pos int) bool {
-			value := t[pos]
-
-			return value.Date.After(raw.Date) ||
-				(value.Date.Equal(raw.Date) && value.Value > raw.Value) ||
-				(value.Date.Equal(raw.Date) && value.Value == raw.Value && value.Currency >= raw.Currency)
-		},
-	)
-
-	if foundPos >= len(t) {
-		return false
-	}
-
-	return t[foundPos].Date.Equal(raw.Date) && t[foundPos].Value == raw.Value && t[foundPos].Currency == raw.Currency
-}
+// Table - таблица со всеми выплаченными дивидендами, пересчитанными в рубли.
+type Table = data.Table[Dividend]

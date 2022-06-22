@@ -32,7 +32,9 @@ func NewHandler(
 
 // Match выбирает событие обновления курса доллара.
 func (h Handler) Match(event domain.Event) bool {
-	return event.QualifiedID == usd.ID() && event.Data == nil
+	_, ok := event.Data.(usd.Table)
+
+	return ok && event.QualifiedID == usd.ID()
 }
 
 func (h Handler) String() string {
@@ -41,6 +43,14 @@ func (h Handler) String() string {
 
 // Handle реагирует на событие об обновлении курса и обновляет данные о торгуемых бумагах.
 func (h Handler) Handle(ctx context.Context, event domain.Event) {
+	rates, ok := event.Data.(usd.Table)
+	if !ok {
+		event.Data = fmt.Errorf("can't parse %s data", event)
+		h.pub.Publish(event)
+
+		return
+	}
+
 	qid := GroupID()
 
 	event.QualifiedID = qid
@@ -71,7 +81,7 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	h.publish(table)
+	h.publish(table, rates)
 }
 
 func (h Handler) download(
@@ -103,7 +113,7 @@ func (h Handler) download(
 	return rows, nil
 }
 
-func (h Handler) publish(agg domain.Aggregate[Table]) {
+func (h Handler) publish(agg domain.Aggregate[Table], rates usd.Table) {
 	h.pub.Publish(domain.Event{
 		QualifiedID: GroupID(),
 		Timestamp:   agg.Timestamp,
@@ -115,6 +125,12 @@ func (h Handler) publish(agg domain.Aggregate[Table]) {
 			QualifiedID: ID(sec.Ticker),
 			Timestamp:   agg.Timestamp,
 			Data:        sec,
+		})
+
+		h.pub.Publish(domain.Event{
+			QualifiedID: ID(sec.Ticker),
+			Timestamp:   agg.Timestamp,
+			Data:        rates,
 		})
 	}
 }

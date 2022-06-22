@@ -92,6 +92,8 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
+	event.Data = agg.Entity
+
 	h.pub.Publish(event)
 }
 

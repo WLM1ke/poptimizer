@@ -10,6 +10,7 @@ import (
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/cpi"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/div"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/index"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/quote"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
@@ -60,7 +61,9 @@ func PrepareEventBus(
 	bus.Subscribe(index.NewHandler(&bus, domain.NewRepo[index.Table](mongoDB), iss))
 	bus.Subscribe(cpi.NewHandler(&bus, domain.NewRepo[cpi.Table](mongoDB), client))
 	bus.Subscribe(securities.NewHandler(&bus, domain.NewRepo[securities.Table](mongoDB), iss))
+
 	bus.Subscribe(quote.NewHandler(&bus, domain.NewRepo[quote.Table](mongoDB), iss))
+	bus.Subscribe(div.NewHandler(&bus, domain.NewRepo[div.Table](mongoDB), domain.NewRepo[raw.Table](mongoDB)))
 
 	bus.Subscribe(raw.NewStatusHandler(&bus, domain.NewRepo[raw.StatusTable](mongoDB), client))
 	bus.Subscribe(raw.NewCheckRawHandler(&bus, domain.NewRepo[raw.Table](mongoDB)))
