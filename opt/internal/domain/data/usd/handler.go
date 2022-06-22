@@ -1,58 +1,33 @@
-package data
+package usd
 
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/dates"
 )
 
 const (
-	// _USDGroup группа и id данных курсе доллара.
-	_USDGroup = "usd"
-
 	_ISSDateFormat = `2006-01-02`
 	_usdTicker     = `USD000UTSTOM`
 )
 
-// USDid - id котировок курса доллара.
-func USDid() domain.QualifiedID {
-	return domain.QualifiedID{
-		Sub:   Subdomain,
-		Group: _USDGroup,
-		ID:    _USDGroup,
-	}
-}
-
-// USD свечка с данными о курсе доллара.
-type USD struct {
-	Date     time.Time
-	Open     float64
-	Close    float64
-	High     float64
-	Low      float64
-	Turnover float64
-}
-
-// TableUSD - таблица с котировками курса доллар.
-type TableUSD = Table[USD]
-
-// USDHandler обработчик событий, отвечающий за загрузку информации о курсе доллара.
-type USDHandler struct {
+// Handler обработчик событий, отвечающий за загрузку информации о курсе доллара.
+type Handler struct {
 	pub  domain.Publisher
-	repo domain.ReadAppendRepo[TableUSD]
+	repo domain.ReadAppendRepo[Table]
 	iss  *gomoex.ISSClient
 }
 
-// NewUSDHandler создает обработчик событий, отвечающий за загрузку информации о курсе доллара.
-func NewUSDHandler(
+// NewHandler создает обработчик событий, отвечающий за загрузку информации о курсе доллара.
+func NewHandler(
 	pub domain.Publisher,
-	repo domain.ReadAppendRepo[TableUSD],
+	repo domain.ReadAppendRepo[Table],
 	iss *gomoex.ISSClient,
-) *USDHandler {
-	return &USDHandler{
+) *Handler {
+	return &Handler{
 		iss:  iss,
 		repo: repo,
 		pub:  pub,
@@ -60,17 +35,17 @@ func NewUSDHandler(
 }
 
 // Match выбирает событие начала торгового дня.
-func (h USDHandler) Match(event domain.Event) bool {
-	return event.QualifiedID == TradingDateID() && event.Data == nil
+func (h Handler) Match(event domain.Event) bool {
+	return event.QualifiedID == dates.ID() && event.Data == nil
 }
 
-func (h USDHandler) String() string {
+func (h Handler) String() string {
 	return "trading date -> usd"
 }
 
 // Handle реагирует на событие об обновлении торговых дат и обновляет курс.
-func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
-	qid := USDid()
+func (h Handler) Handle(ctx context.Context, event domain.Event) {
+	qid := ID()
 
 	event.QualifiedID = qid
 
@@ -120,10 +95,10 @@ func (h USDHandler) Handle(ctx context.Context, event domain.Event) {
 	h.pub.Publish(event)
 }
 
-func (h USDHandler) download(
+func (h Handler) download(
 	ctx context.Context,
 	event domain.Event,
-	agg domain.Aggregate[TableUSD],
+	agg domain.Aggregate[Table],
 ) ([]gomoex.Candle, error) {
 	start := ""
 	if !agg.Entity.IsEmpty() {
@@ -148,8 +123,8 @@ func (h USDHandler) download(
 	return rowsRaw, nil
 }
 
-func (h USDHandler) convert(raw []gomoex.Candle) TableUSD {
-	rows := make(TableUSD, 0, len(raw))
+func (h Handler) convert(raw []gomoex.Candle) Table {
+	rows := make(Table, 0, len(raw))
 
 	for _, row := range raw {
 		rows = append(rows, USD{
@@ -165,7 +140,7 @@ func (h USDHandler) convert(raw []gomoex.Candle) TableUSD {
 	return rows
 }
 
-func (h USDHandler) validate(agg domain.Aggregate[TableUSD], rows TableUSD) error {
+func (h Handler) validate(agg domain.Aggregate[Table], rows Table) error {
 	prev := rows[0].Date
 	for _, row := range rows[1:] {
 		if prev.Before(row.Date) {

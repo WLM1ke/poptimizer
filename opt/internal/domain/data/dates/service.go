@@ -1,4 +1,4 @@
-package data
+package dates
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 )
 
@@ -21,17 +22,17 @@ const (
 	_issMinute = 45
 )
 
-// TradingDateID - id информации о последнем торговом дне.
-func TradingDateID() domain.QualifiedID {
+// ID - id информации о последнем торговом дне.
+func ID() domain.QualifiedID {
 	return domain.QualifiedID{
-		Sub:   Subdomain,
+		Sub:   data.Subdomain,
 		Group: _tradingDateGroup,
 		ID:    _tradingDateGroup,
 	}
 }
 
-// TradingDateService - служба отслеживающая окончания торгового дня и рассылающая сообщение об этом.
-type TradingDateService struct {
+// Service - служба отслеживающая окончания торгового дня и рассылающая сообщение об этом.
+type Service struct {
 	logger *lgr.Logger
 	repo   domain.ReadWriteRepo[time.Time]
 
@@ -43,19 +44,19 @@ type TradingDateService struct {
 	checkedDate time.Time
 }
 
-// NewTradingDateService - создает службу, публикующую сообщение о возможной публикации статистики.
-func NewTradingDateService(
+// NewService - создает службу, публикующую сообщение о возможной публикации статистики.
+func NewService(
 	logger *lgr.Logger,
 	publisher domain.Publisher,
 	repo domain.ReadWriteRepo[time.Time],
 	iss *gomoex.ISSClient,
-) *TradingDateService {
+) *Service {
 	loc, err := time.LoadLocation(_issTZ)
 	if err != nil {
 		logger.Panicf("can't load time MOEX zone")
 	}
 
-	return &TradingDateService{
+	return &Service{
 		logger: logger,
 		repo:   repo,
 		iss:    iss,
@@ -65,7 +66,7 @@ func NewTradingDateService(
 }
 
 // Run запускает рассылку о возможной публикации статистики после окончания торгового дня.
-func (s *TradingDateService) Run(ctx context.Context) error {
+func (s *Service) Run(ctx context.Context) error {
 	s.logger.Infof("started")
 	defer s.logger.Infof("stopped")
 
@@ -83,7 +84,7 @@ func (s *TradingDateService) Run(ctx context.Context) error {
 	}
 }
 
-func (s *TradingDateService) publishIfNewDay(ctx context.Context) {
+func (s *Service) publishIfNewDay(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, _timeout)
 	defer cancel()
 
@@ -106,8 +107,8 @@ func (s *TradingDateService) publishIfNewDay(ctx context.Context) {
 	}
 }
 
-func (s *TradingDateService) init(ctx context.Context) error {
-	agg, err := s.repo.Get(ctx, TradingDateID())
+func (s *Service) init(ctx context.Context) error {
+	agg, err := s.repo.Get(ctx, ID())
 	if err != nil {
 		return err
 	}
@@ -117,9 +118,9 @@ func (s *TradingDateService) init(ctx context.Context) error {
 	return nil
 }
 
-func (s *TradingDateService) pubErr(err error) {
+func (s *Service) pubErr(err error) {
 	event := domain.Event{
-		QualifiedID: TradingDateID(),
+		QualifiedID: ID(),
 		Timestamp:   s.checkedDate,
 		Data:        err,
 	}
@@ -127,7 +128,7 @@ func (s *TradingDateService) pubErr(err error) {
 	s.pub.Publish(event)
 }
 
-func (s *TradingDateService) getNewDay(now time.Time) (time.Time, bool) {
+func (s *Service) getNewDay(now time.Time) (time.Time, bool) {
 	now = now.In(s.loc)
 	end := time.Date(now.Year(), now.Month(), now.Day(), _issHour, _issMinute, 0, 0, s.loc)
 
@@ -141,7 +142,7 @@ func (s *TradingDateService) getNewDay(now time.Time) (time.Time, bool) {
 	return newDay, s.checkedDate.Before(newDay)
 }
 
-func (s *TradingDateService) update(ctx context.Context) error {
+func (s *Service) update(ctx context.Context) error {
 	rows, err := s.iss.MarketDates(ctx, gomoex.EngineStock, gomoex.MarketShares)
 	if err != nil {
 		return fmt.Errorf("cat' download trading dates -> %w", err)
@@ -157,7 +158,7 @@ func (s *TradingDateService) update(ctx context.Context) error {
 		return nil
 	}
 
-	agg, err := s.repo.Get(ctx, TradingDateID())
+	agg, err := s.repo.Get(ctx, ID())
 	if err != nil {
 		return err
 	}
@@ -170,7 +171,7 @@ func (s *TradingDateService) update(ctx context.Context) error {
 	}
 
 	event := domain.Event{
-		QualifiedID: TradingDateID(),
+		QualifiedID: ID(),
 		Timestamp:   lastTradingDate,
 	}
 

@@ -28,7 +28,7 @@ func NewService(
 
 // Get предоставляет информацию о выбранных тикерах.
 func (c Service) Get(ctx context.Context) (DTO, domain.ServiceError) {
-	agg, err := c.repo.Get(ctx, ID())
+	agg, err := c.repo.Get(ctx, GroupID())
 	if err != nil {
 		return nil, domain.NewServiceInternalErr(err)
 	}
@@ -45,7 +45,7 @@ func (c Service) Get(ctx context.Context) (DTO, domain.ServiceError) {
 
 // Save сохраняет информацию о выбранных тикерах.
 func (c Service) Save(ctx context.Context, dto DTO) domain.ServiceError {
-	agg, err := c.repo.Get(ctx, ID())
+	agg, err := c.repo.Get(ctx, GroupID())
 	if err != nil {
 		return domain.NewServiceInternalErr(err)
 	}
@@ -67,7 +67,7 @@ func (c Service) Save(ctx context.Context, dto DTO) domain.ServiceError {
 	}
 
 	c.pub.Publish(domain.Event{
-		QualifiedID: ID(),
+		QualifiedID: GroupID(),
 		Timestamp:   agg.Timestamp,
 		Data:        agg.Entity,
 	})

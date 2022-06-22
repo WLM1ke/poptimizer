@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/div"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/go-chi/chi"
@@ -24,7 +24,7 @@ type Frontend struct {
 	logger *lgr.Logger
 
 	tickers   *securities.Service
-	dividends *div.Service
+	dividends *raw.Service
 }
 
 // NewFrontend создает обработчики, отображающие frontend.
@@ -46,9 +46,9 @@ func NewFrontend(logger *lgr.Logger, client *mongo.Client, pub domain.Publisher)
 			domain.NewRepo[securities.Table](client),
 			pub,
 		),
-		dividends: div.NewService(
+		dividends: raw.NewService(
 			domain.NewRepo[securities.Table](client),
-			domain.NewRepo[div.RawTable](client),
+			domain.NewRepo[raw.Table](client),
 			pub,
 		),
 	}

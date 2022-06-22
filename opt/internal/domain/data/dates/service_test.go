@@ -1,8 +1,8 @@
-package data
+package dates
 
 import (
 	"testing"
-	time "time"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -43,7 +43,7 @@ func TestTradingDateService_getNewDay(t *testing.T) {
 		},
 	}
 
-	service := NewTradingDateService(nil, nil, nil, nil)
+	service := NewService(nil, nil, nil, nil)
 	baseNow := time.Date(2022, time.June, 18, 0, 45, 0, 0, service.loc)
 
 	for _, test := range tests {

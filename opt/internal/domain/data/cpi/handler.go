@@ -1,4 +1,4 @@
-package data
+package cpi
 
 import (
 	"context"
@@ -10,13 +10,12 @@ import (
 	"time"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/dates"
 	"github.com/xuri/excelize/v2"
 	"golang.org/x/text/encoding/charmap"
 )
 
 const (
-	_CPIGroup = `cpi`
-
 	_pricesURL = `https://rosstat.gov.ru/price`
 	_cpiHost   = `https://rosstat.gov.ru`
 
@@ -34,48 +33,30 @@ var (
 	_urlRE     = regexp.MustCompile(`https://rosstat\.gov\.ru/.+ipc.+xlsx`)
 )
 
-// CPIid - id данных о месячной инфляции.
-func CPIid() domain.QualifiedID {
-	return domain.QualifiedID{
-		Sub:   Subdomain,
-		Group: _CPIGroup,
-		ID:    _CPIGroup,
-	}
-}
-
-// CPI месячное изменение цен.
-type CPI struct {
-	Date  time.Time
-	Value float64
-}
-
-// TableCPI таблица с данными по инфляции.
-type TableCPI = Table[CPI]
-
-// CPIHandler загружает данные по инфляции.
-type CPIHandler struct {
+// Handler загружает данные по инфляции.
+type Handler struct {
 	pub    domain.Publisher
-	repo   domain.ReadWriteRepo[TableCPI]
+	repo   domain.ReadWriteRepo[Table]
 	client *http.Client
 }
 
-// NewCPIHandler создает новый обработчик для загрузки данных по инфляции.
-func NewCPIHandler(pub domain.Publisher, repo domain.ReadWriteRepo[TableCPI], client *http.Client) *CPIHandler {
-	return &CPIHandler{pub: pub, repo: repo, client: client}
+// NewHandler создает новый обработчик для загрузки данных по инфляции.
+func NewHandler(pub domain.Publisher, repo domain.ReadWriteRepo[Table], client *http.Client) *Handler {
+	return &Handler{pub: pub, repo: repo, client: client}
 }
 
 // Match выбирает события новой торговой даты.
-func (h CPIHandler) Match(event domain.Event) bool {
-	return event.QualifiedID == TradingDateID() && event.Data == nil
+func (h Handler) Match(event domain.Event) bool {
+	return event.QualifiedID == dates.ID() && event.Data == nil
 }
 
-func (h CPIHandler) String() string {
+func (h Handler) String() string {
 	return "trading date -> cpi"
 }
 
 // Handle загружает данные по инфляции.
-func (h CPIHandler) Handle(ctx context.Context, event domain.Event) {
-	qid := CPIid()
+func (h Handler) Handle(ctx context.Context, event domain.Event) {
+	qid := ID()
 
 	event.QualifiedID = qid
 
@@ -116,7 +97,7 @@ func (h CPIHandler) Handle(ctx context.Context, event domain.Event) {
 	}
 }
 
-func (h CPIHandler) download(ctx context.Context) (TableCPI, error) {
+func (h Handler) download(ctx context.Context) (Table, error) {
 	xlsx, err := h.getXLSX(ctx)
 	if err != nil {
 		return nil, err
@@ -143,7 +124,7 @@ func (h CPIHandler) download(ctx context.Context) (TableCPI, error) {
 	return parsedData(years, rows[_firstDataRow:_firstDataRow+12])
 }
 
-func (h CPIHandler) getXLSX(ctx context.Context) (*excelize.File, error) {
+func (h Handler) getXLSX(ctx context.Context) (*excelize.File, error) {
 	url, err := h.getURL(ctx)
 	if err != nil {
 		return nil, err
@@ -185,7 +166,7 @@ func (h CPIHandler) getXLSX(ctx context.Context) (*excelize.File, error) {
 	return reader, nil
 }
 
-func (h CPIHandler) getURL(ctx context.Context) (string, error) {
+func (h Handler) getURL(ctx context.Context) (string, error) {
 	url, err := h.makeCPIPageURL(ctx)
 	if err != nil {
 		return "", err
@@ -230,7 +211,7 @@ func (h CPIHandler) getURL(ctx context.Context) (string, error) {
 	return string(_urlRE.Find(page)), nil
 }
 
-func (h CPIHandler) makeCPIPageURL(ctx context.Context) (string, error) {
+func (h Handler) makeCPIPageURL(ctx context.Context) (string, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _pricesURL, http.NoBody)
 	if err != nil {
 		return "", fmt.Errorf(
@@ -314,9 +295,9 @@ func getYears(header []string) ([]int, error) {
 	return years, nil
 }
 
-func parsedData(years []int, data [][]string) (TableCPI, error) {
+func parsedData(years []int, data [][]string) (Table, error) {
 	monthsInYear := 12
-	cpi := make(TableCPI, 0, monthsInYear*len(years))
+	cpi := make(Table, 0, monthsInYear*len(years))
 
 	for col, year := range years {
 		for month := 0; month < monthsInYear; month++ {
@@ -349,7 +330,7 @@ func lastDayOfMonth(year, month int) time.Time {
 	return date.AddDate(0, 0, -1)
 }
 
-func (h CPIHandler) validate(table domain.Aggregate[TableCPI], rows TableCPI) (bool, error) {
+func (h Handler) validate(table domain.Aggregate[Table], rows Table) (bool, error) {
 	if len(table.Entity) > len(rows) {
 		return false, fmt.Errorf("too few cpi rows %d < %d", len(rows), len(table.Entity))
 	}

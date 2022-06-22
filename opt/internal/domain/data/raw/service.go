@@ -1,4 +1,4 @@
-package div
+package raw
 
 import (
 	"context"
@@ -18,14 +18,14 @@ const (
 // Service сервис для работы с введенными вручную дивидендами.
 type Service struct {
 	sec domain.ReadRepo[securities.Table]
-	raw domain.ReadWriteRepo[RawTable]
+	raw domain.ReadWriteRepo[Table]
 	pub domain.Publisher
 }
 
 // NewService создает новый сервис для работы с введенными вручную дивидендами.
 func NewService(
 	sec domain.ReadRepo[securities.Table],
-	raw domain.ReadWriteRepo[RawTable],
+	raw domain.ReadWriteRepo[Table],
 	pub domain.Publisher,
 ) *Service {
 	return &Service{sec: sec, raw: raw, pub: pub}
@@ -36,7 +36,7 @@ type TickersDTO []string
 
 // GetTickers выдает информацию о доступных тикерах.
 func (s Service) GetTickers(ctx context.Context) (TickersDTO, domain.ServiceError) {
-	agg, err := s.sec.Get(ctx, securities.ID())
+	agg, err := s.sec.Get(ctx, securities.GroupID())
 	if err != nil {
 		return nil, domain.NewServiceInternalErr(err)
 	}
@@ -65,7 +65,7 @@ type divRow struct {
 // Кроме самих о дивидендах содержится информация об их статусе - пропусках или наличии дополнительных по сравнению с
 // источниками в интернете.
 func (s Service) GetDividends(ctx context.Context, ticker string) (DividendsDTO, domain.ServiceError) {
-	allSec, err := s.sec.Get(ctx, securities.ID())
+	allSec, err := s.sec.Get(ctx, securities.GroupID())
 	if err != nil {
 		return nil, domain.NewServiceInternalErr(err)
 	}
@@ -75,7 +75,7 @@ func (s Service) GetDividends(ctx context.Context, ticker string) (DividendsDTO,
 		return nil, domain.NewBadServiceRequestErr("wrong ticker %s", ticker)
 	}
 
-	raw, err := s.raw.Get(ctx, RawID(ticker))
+	raw, err := s.raw.Get(ctx, ID(ticker))
 	if err != nil {
 		return nil, domain.NewServiceInternalErr(err)
 	}
@@ -83,7 +83,7 @@ func (s Service) GetDividends(ctx context.Context, ticker string) (DividendsDTO,
 	qid := CloseReestryID(ticker)
 
 	if sec.IsForeign() {
-		qid = NASDAQid(ticker)
+		qid = NasdaqID(ticker)
 	}
 
 	source, err := s.raw.Get(ctx, qid)
@@ -96,7 +96,7 @@ func (s Service) GetDividends(ctx context.Context, ticker string) (DividendsDTO,
 	return dto, nil
 }
 
-func mergeWithSource(raw, source RawTable) DividendsDTO {
+func mergeWithSource(raw, source Table) DividendsDTO {
 	dto := make(DividendsDTO, 0, len(raw))
 
 	for _, div := range raw {
@@ -167,7 +167,7 @@ func (s Service) Save(ctx context.Context, dto SaveDividendsDTO) domain.ServiceE
 
 	ticker := dto.Ticker
 
-	allSec, err := s.sec.Get(ctx, securities.ID())
+	allSec, err := s.sec.Get(ctx, securities.GroupID())
 	if err != nil {
 		return domain.NewServiceInternalErr(err)
 	}
@@ -177,7 +177,7 @@ func (s Service) Save(ctx context.Context, dto SaveDividendsDTO) domain.ServiceE
 		return domain.NewBadServiceRequestErr("ticker %s doesn't exist", ticker)
 	}
 
-	agg, err := s.raw.Get(ctx, RawID(ticker))
+	agg, err := s.raw.Get(ctx, ID(ticker))
 	if err != nil {
 		return domain.NewServiceInternalErr(err)
 	}
@@ -191,7 +191,7 @@ func (s Service) Save(ctx context.Context, dto SaveDividendsDTO) domain.ServiceE
 	}
 
 	s.pub.Publish(domain.Event{
-		QualifiedID: RawID(ticker),
+		QualifiedID: ID(ticker),
 		Timestamp:   agg.Timestamp,
 	})
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/usd"
 )
 
 // Handler обработчик событий, отвечающий за загрузку информации о торгуемых бумагах.
@@ -32,7 +32,7 @@ func NewHandler(
 
 // Match выбирает событие обновления курса доллара.
 func (h Handler) Match(event domain.Event) bool {
-	return event.QualifiedID == data.USDid() && event.Data == nil
+	return event.QualifiedID == usd.ID() && event.Data == nil
 }
 
 func (h Handler) String() string {
@@ -41,7 +41,7 @@ func (h Handler) String() string {
 
 // Handle реагирует на событие об обновлении курса и обновляет данные о торгуемых бумагах.
 func (h Handler) Handle(ctx context.Context, event domain.Event) {
-	qid := ID()
+	qid := GroupID()
 
 	event.QualifiedID = qid
 
@@ -71,9 +71,7 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	event.Data = table.Entity
-
-	h.pub.Publish(event)
+	h.publish(table)
 }
 
 func (h Handler) download(
@@ -103,4 +101,20 @@ func (h Handler) download(
 	sort.Slice(rows, func(i, j int) bool { return rows[i].Ticker < rows[j].Ticker })
 
 	return rows, nil
+}
+
+func (h Handler) publish(agg domain.Aggregate[Table]) {
+	h.pub.Publish(domain.Event{
+		QualifiedID: GroupID(),
+		Timestamp:   agg.Timestamp,
+		Data:        agg.Entity,
+	})
+
+	for _, sec := range agg.Entity {
+		h.pub.Publish(domain.Event{
+			QualifiedID: ID(sec.Ticker),
+			Timestamp:   agg.Timestamp,
+			Data:        sec,
+		})
+	}
 }

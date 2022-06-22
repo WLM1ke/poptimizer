@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/div"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
@@ -32,7 +32,7 @@ func NewBackupHandler(logger *lgr.Logger, pub domain.Publisher, uri string) *Bac
 
 // Match фильтрует данные, вводимые пользователем.
 func (h BackupHandler) Match(event domain.Event) bool {
-	if !(event.QualifiedID == securities.ID() || event.QualifiedID == div.RawID(event.QualifiedID.ID)) {
+	if !(event.QualifiedID == securities.GroupID() || event.QualifiedID == raw.ID(event.QualifiedID.ID)) {
 		return false
 	}
 
@@ -68,7 +68,7 @@ func prepareDB(ctx context.Context, logger *lgr.Logger, uri string) *mongo.Clien
 		logger.Panicf("can't create MongoDB client -> %s", err)
 	}
 
-	for _, qid := range []domain.QualifiedID{securities.ID(), div.RawID("")} {
+	for _, qid := range []domain.QualifiedID{securities.GroupID(), raw.ID("")} {
 		database := qid.Sub
 		collection := qid.Group
 

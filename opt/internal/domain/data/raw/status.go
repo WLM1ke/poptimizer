@@ -1,4 +1,4 @@
-package div
+package raw
 
 import (
 	"context"
@@ -52,7 +52,7 @@ func NewStatusHandler(
 func (h StatusHandler) Match(event domain.Event) bool {
 	_, ok := event.Data.(securities.Table)
 
-	return ok && securities.ID() == event.QualifiedID
+	return ok && securities.GroupID() == event.QualifiedID
 }
 
 func (h StatusHandler) String() string {

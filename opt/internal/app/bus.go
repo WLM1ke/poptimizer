@@ -9,9 +9,12 @@ import (
 
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/div"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/cpi"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/index"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/quote"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/usd"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -53,15 +56,16 @@ func PrepareEventBus(
 	bus.Subscribe(NewErrorsHandler(logger, telegram))
 	bus.Subscribe(NewBackupHandler(logger, &bus, uri))
 
-	bus.Subscribe(data.NewUSDHandler(&bus, domain.NewRepo[data.TableUSD](mongoDB), iss))
-	bus.Subscribe(data.NewIndexesHandler(&bus, domain.NewRepo[data.TableIndex](mongoDB), iss))
-	bus.Subscribe(data.NewCPIHandler(&bus, domain.NewRepo[data.TableCPI](mongoDB), client))
+	bus.Subscribe(usd.NewHandler(&bus, domain.NewRepo[usd.Table](mongoDB), iss))
+	bus.Subscribe(index.NewHandler(&bus, domain.NewRepo[index.Table](mongoDB), iss))
+	bus.Subscribe(cpi.NewHandler(&bus, domain.NewRepo[cpi.Table](mongoDB), client))
 	bus.Subscribe(securities.NewHandler(&bus, domain.NewRepo[securities.Table](mongoDB), iss))
+	bus.Subscribe(quote.NewHandler(&bus, domain.NewRepo[quote.Table](mongoDB), iss))
 
-	bus.Subscribe(div.NewStatusHandler(&bus, domain.NewRepo[div.StatusTable](mongoDB), client))
-	bus.Subscribe(div.NewCheckRawHandler(&bus, domain.NewRepo[div.RawTable](mongoDB)))
-	bus.Subscribe(div.NewCheckCloseReestryHandler(&bus, domain.NewRepo[div.RawTable](mongoDB), client))
-	bus.Subscribe(div.NewCheckNASDAQHandler(&bus, domain.NewRepo[div.RawTable](mongoDB), client))
+	bus.Subscribe(raw.NewStatusHandler(&bus, domain.NewRepo[raw.StatusTable](mongoDB), client))
+	bus.Subscribe(raw.NewCheckRawHandler(&bus, domain.NewRepo[raw.Table](mongoDB)))
+	bus.Subscribe(raw.NewCheckCloseReestryHandler(&bus, domain.NewRepo[raw.Table](mongoDB), client))
+	bus.Subscribe(raw.NewCheckNASDAQHandler(&bus, domain.NewRepo[raw.Table](mongoDB), client))
 
 	return mongoDB, &bus
 }

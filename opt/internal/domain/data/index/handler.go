@@ -1,66 +1,44 @@
-package data
+package index
 
 import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/dates"
 )
 
-const _IndexesGroup = "indexes"
+const _ISSDateFormat = `2006-01-02`
 
-// IndexID - id свечек индексов.
-func IndexID(index string) domain.QualifiedID {
-	return domain.QualifiedID{
-		Sub:   Subdomain,
-		Group: _IndexesGroup,
-		ID:    index,
-	}
-}
-
-// Index свечка с данными об индексе.
-type Index struct {
-	Date     time.Time
-	Open     float64
-	Close    float64
-	High     float64
-	Low      float64
-	Turnover float64
-}
-
-// TableIndex - таблица с котировками биржевого индекса.
-type TableIndex = Table[Index]
-
-// IndexesHandler обработчик событий, отвечающий за загрузку информации об биржевых индексах.
-type IndexesHandler struct {
+// Handler обработчик событий, отвечающий за загрузку информации об биржевых индексах.
+type Handler struct {
 	pub  domain.Publisher
-	repo domain.ReadAppendRepo[TableIndex]
+	repo domain.ReadAppendRepo[Table]
 	iss  *gomoex.ISSClient
 }
 
-// NewIndexesHandler - создает обработчик событий для загрузи биржевых индексов.
-func NewIndexesHandler(
+// NewHandler - создает обработчик событий для загрузи биржевых индексов.
+func NewHandler(
 	pub domain.Publisher,
-	repo domain.ReadAppendRepo[TableIndex],
+	repo domain.ReadAppendRepo[Table],
 	iss *gomoex.ISSClient,
-) *IndexesHandler {
-	return &IndexesHandler{pub: pub, repo: repo, iss: iss}
+) *Handler {
+	return &Handler{pub: pub, repo: repo, iss: iss}
 }
 
 // Match выбирает событие начала торгового дня.
-func (h IndexesHandler) Match(event domain.Event) bool {
-	return event.QualifiedID == TradingDateID() && event.Data == nil
+func (h Handler) Match(event domain.Event) bool {
+	return event.QualifiedID == dates.ID() && event.Data == nil
 }
 
-func (h IndexesHandler) String() string {
+func (h Handler) String() string {
 	return "trading date -> indexes"
 }
 
 // Handle реагирует на событие об обновлении торговых дат и обновляет данные об индексах.
-func (h IndexesHandler) Handle(ctx context.Context, event domain.Event) {
+func (h Handler) Handle(ctx context.Context, event domain.Event) {
 	var waitGroup sync.WaitGroup
 
 	for _, index := range [4]string{`MCFTRR`, `MEOGTRR`, `IMOEX`, `RVI`} {
@@ -71,14 +49,14 @@ func (h IndexesHandler) Handle(ctx context.Context, event domain.Event) {
 		go func() {
 			defer waitGroup.Done()
 
-			h.handleOne(ctx, IndexID(index), event)
+			h.handleOne(ctx, ID(index), event)
 		}()
 	}
 
 	waitGroup.Wait()
 }
 
-func (h IndexesHandler) handleOne(ctx context.Context, qid domain.QualifiedID, event domain.Event) {
+func (h Handler) handleOne(ctx context.Context, qid domain.QualifiedID, event domain.Event) {
 	event.QualifiedID = qid
 
 	agg, err := h.repo.Get(ctx, qid)
@@ -125,10 +103,10 @@ func (h IndexesHandler) handleOne(ctx context.Context, qid domain.QualifiedID, e
 	}
 }
 
-func (h IndexesHandler) download(
+func (h Handler) download(
 	ctx context.Context,
 	event domain.Event,
-	agg domain.Aggregate[TableIndex],
+	agg domain.Aggregate[Table],
 ) ([]gomoex.Quote, error) {
 	start := ""
 	if !agg.Entity.IsEmpty() {
@@ -152,8 +130,8 @@ func (h IndexesHandler) download(
 	return rowsRaw, nil
 }
 
-func (h IndexesHandler) convert(raw []gomoex.Quote) TableIndex {
-	rows := make(TableIndex, 0, len(raw))
+func (h Handler) convert(raw []gomoex.Quote) Table {
+	rows := make(Table, 0, len(raw))
 
 	for _, row := range raw {
 		rows = append(rows, Index{
@@ -169,7 +147,7 @@ func (h IndexesHandler) convert(raw []gomoex.Quote) TableIndex {
 	return rows
 }
 
-func (h IndexesHandler) validate(agg domain.Aggregate[TableIndex], rows TableIndex) error {
+func (h Handler) validate(agg domain.Aggregate[Table], rows Table) error {
 	prev := rows[0].Date
 	for _, row := range rows[1:] {
 		if prev.Before(row.Date) {

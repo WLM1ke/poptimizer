@@ -12,7 +12,7 @@ import (
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/app"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/dates"
 	"github.com/WLM1ke/poptimizer/opt/internal/front"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
@@ -107,7 +107,7 @@ func run(cfg config, logger *lgr.Logger) {
 		http.DefaultClient.CloseIdleConnections()
 	}()
 
-	tradingDatesService := data.NewTradingDateService(
+	tradingDatesService := dates.NewService(
 		logger.WithPrefix("TradingDateService"),
 		eventBus,
 		domain.NewRepo[time.Time](mongo),

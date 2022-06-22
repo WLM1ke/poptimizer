@@ -1,4 +1,4 @@
-package div
+package raw
 
 import (
 	"context"
@@ -31,14 +31,14 @@ var (
 // CheckCloseReestryHandler обработчик событий, отвечающий за проверку дивидендов на закрытияреестров.рф.
 type CheckCloseReestryHandler struct {
 	pub    domain.Publisher
-	repo   domain.ReadWriteRepo[RawTable]
+	repo   domain.ReadWriteRepo[Table]
 	client *http.Client
 }
 
 // NewCheckCloseReestryHandler новый обработчик событий, отвечающий за проверку дивидендов с закрытияреестров.рф.
 func NewCheckCloseReestryHandler(
 	pub domain.Publisher,
-	repo domain.ReadWriteRepo[RawTable],
+	repo domain.ReadWriteRepo[Table],
 	client *http.Client,
 ) *CheckCloseReestryHandler {
 	return &CheckCloseReestryHandler{
@@ -110,7 +110,7 @@ func (h CheckCloseReestryHandler) Handle(ctx context.Context, event domain.Event
 	}
 }
 
-func (h CheckCloseReestryHandler) download(ctx context.Context, status Status) (RawTable, error) {
+func (h CheckCloseReestryHandler) download(ctx context.Context, status Status) (Table, error) {
 	request, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
@@ -145,7 +145,7 @@ func makeURL(status Status) string {
 	return fmt.Sprintf(_reestryURL, ticker)
 }
 
-func parseRequest(respond *http.Response, preferred bool) (RawTable, error) {
+func parseRequest(respond *http.Response, preferred bool) (Table, error) {
 	html, err := goquery.NewDocumentFromReader(respond.Body)
 	if err != nil {
 		return nil, fmt.Errorf("can't parse CloseReestry html -> %w", err)
@@ -158,7 +158,7 @@ func parseRequest(respond *http.Response, preferred bool) (RawTable, error) {
 	}
 
 	nodes := table.Slice(1, goquery.ToEnd).Nodes
-	rows := make(RawTable, 0, len(nodes))
+	rows := make(Table, 0, len(nodes))
 
 	for _, node := range nodes {
 		htmlRow := goquery.NewDocumentFromNode(node)

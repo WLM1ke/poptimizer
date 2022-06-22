@@ -19,12 +19,21 @@ const (
 	_foreignSuffix = `-RM`
 )
 
-// ID информации о торгуемых бумагах.
-func ID() domain.QualifiedID {
+// GroupID информации о торгуемых бумагах в целом.
+func GroupID() domain.QualifiedID {
 	return domain.QualifiedID{
 		Sub:   data.Subdomain,
 		Group: _group,
 		ID:    _group,
+	}
+}
+
+// ID информации об отдельных торгуемых бумагах.
+func ID(ticker string) domain.QualifiedID {
+	return domain.QualifiedID{
+		Sub:   data.Subdomain,
+		Group: _group,
+		ID:    ticker,
 	}
 }
 

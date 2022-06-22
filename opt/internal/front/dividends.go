@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/div"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
 	"github.com/go-chi/chi"
 )
 
@@ -53,7 +53,7 @@ func (f Frontend) dividendsGetDividends(writer http.ResponseWriter, request *htt
 func (f Frontend) dividendsPutDividends(writer http.ResponseWriter, request *http.Request) {
 	defer request.Body.Close()
 
-	var dto div.SaveDividendsDTO
+	var dto raw.SaveDividendsDTO
 
 	if err := json.NewDecoder(request.Body).Decode(&dto); err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)

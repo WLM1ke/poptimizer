@@ -1,4 +1,4 @@
-package div
+package raw
 
 import (
 	"context"
@@ -37,14 +37,14 @@ type nasdaqAPI struct {
 // CheckNASDAQHandler обработчик событий, отвечающий за проверку дивидендов на NASDAQ.
 type CheckNASDAQHandler struct {
 	pub    domain.Publisher
-	repo   domain.ReadWriteRepo[RawTable]
+	repo   domain.ReadWriteRepo[Table]
 	client *http.Client
 }
 
 // NewCheckNASDAQHandler новый обработчик событий, отвечающий за проверку дивидендов на NASDAQ.
 func NewCheckNASDAQHandler(
 	pub domain.Publisher,
-	repo domain.ReadWriteRepo[RawTable],
+	repo domain.ReadWriteRepo[Table],
 	client *http.Client,
 ) *CheckNASDAQHandler {
 	return &CheckNASDAQHandler{
@@ -75,7 +75,7 @@ func (h CheckNASDAQHandler) Handle(ctx context.Context, event domain.Event) { //
 		return
 	}
 
-	qid := NASDAQid(event.ID)
+	qid := NasdaqID(event.ID)
 
 	event.QualifiedID = qid
 
@@ -116,7 +116,7 @@ func (h CheckNASDAQHandler) Handle(ctx context.Context, event domain.Event) { //
 	}
 }
 
-func (h CheckNASDAQHandler) download(ctx context.Context, status Status) (RawTable, error) {
+func (h CheckNASDAQHandler) download(ctx context.Context, status Status) (Table, error) {
 	request, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
@@ -143,7 +143,7 @@ func (h CheckNASDAQHandler) download(ctx context.Context, status Status) (RawTab
 	return parseNASDAQRequest(respond)
 }
 
-func parseNASDAQRequest(respond *http.Response) (RawTable, error) {
+func parseNASDAQRequest(respond *http.Response) (Table, error) {
 	var nasdaq nasdaqAPI
 
 	decoder := json.NewDecoder(respond.Body)
@@ -151,7 +151,7 @@ func parseNASDAQRequest(respond *http.Response) (RawTable, error) {
 		return nil, fmt.Errorf("can't decode NASDAQ json -> %w", err)
 	}
 
-	rows := make(RawTable, 0, len(nasdaq.Data.Dividends.Rows))
+	rows := make(Table, 0, len(nasdaq.Data.Dividends.Rows))
 
 	for _, row := range nasdaq.Data.Dividends.Rows {
 		if row.Date == _NASDAQNoDate {

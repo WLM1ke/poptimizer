@@ -1,4 +1,4 @@
-package div
+package raw
 
 import (
 	"context"
@@ -10,13 +10,13 @@ import (
 // CheckRawHandler обработчик событий, отвечающий за проверку актуальности введенных пользователем дивидендов.
 type CheckRawHandler struct {
 	pub  domain.Publisher
-	repo domain.ReadRepo[RawTable]
+	repo domain.ReadRepo[Table]
 }
 
 // NewCheckRawHandler новый обработчик событий, отвечающий за проверку актуальности введенных пользователем дивидендов.
 func NewCheckRawHandler(
 	pub domain.Publisher,
-	repo domain.ReadRepo[RawTable],
+	repo domain.ReadRepo[Table],
 ) *CheckRawHandler {
 	return &CheckRawHandler{
 		repo: repo,
@@ -45,7 +45,7 @@ func (h CheckRawHandler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	qid := RawID(event.ID)
+	qid := ID(event.ID)
 
 	event.QualifiedID = qid
 
