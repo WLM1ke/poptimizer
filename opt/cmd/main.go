@@ -53,9 +53,7 @@ func main() {
 }
 
 func atExit(logger *lgr.Logger) {
-	leak := `github.com/alexedwards/scs/v2/memstore.(*MemStore).startCleanup`
-
-	if err := goleak.Find(goleak.IgnoreTopFunction(leak)); err != nil {
+	if err := goleak.Find(); err != nil {
 		logger.Warnf("stopped with exit code 1 -> found leaked goroutines %s", err)
 		os.Exit(1)
 	}
