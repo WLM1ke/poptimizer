@@ -5,7 +5,6 @@ positions:
   AAPL-RM: 0
   ABBV-RM: 0
   ABRD: 0
-  ABT-RM: 0
   ADBE-RM: 0
   AFKS: 0
   AFLT: 0
@@ -25,7 +24,6 @@ positions:
   BABA-RM: 0
   BANE: 0
   BANEP: 0
-  BCSB: 0
   BELU: 0
   BIDU-RM: 0
   BIIB-RM: 0
@@ -90,6 +88,7 @@ positions:
   KOGK: 0
   KRKNP: 0
   KROT: 0
+  KRSB: 0
   KUZB: 0
   KZOS: 0
   KZOSP: 0
@@ -116,7 +115,6 @@ positions:
   MRKV: 0
   MRKY: 0
   MRKZ: 0
-  MRNA-RM: 0
   MRSB: 0
   MSFT-RM: 0
   MSNG: 0
@@ -131,7 +129,6 @@ positions:
   NEM-RM: 0
   NFAZ: 0
   NFLX-RM: 0
-  NKE-RM: 0
   NKHP: 0
   NKNC: 0
   NKNCP: 0
@@ -202,7 +199,6 @@ positions:
   TRUR: 0
   TSLA-RM: 0
   TTLK: 0
-  TTWO-RM: 0
   TWTR-RM: 0
   UBER-RM: 0
   UNAC: 0
