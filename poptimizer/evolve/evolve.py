@@ -27,6 +27,7 @@ class Evolution:  # noqa: WPS214
         self._tickers = None
         self._end = None
         self._logger = logging.getLogger()
+        self._scale = max(1, population.count())
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -42,7 +43,7 @@ class Evolution:  # noqa: WPS214
             date = self._end.date()
             self._logger.info(f"***{date}: Шаг эволюции — {step}***")
             population.print_stat()
-            self._logger.info("")
+            self._logger.info(f"Scale - {self._scale}\n")
 
             if org is None:
                 org = population.get_next_one(self._end) or population.get_next_one(None)
@@ -75,11 +76,14 @@ class Evolution:  # noqa: WPS214
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")
 
+            self._scale = max(1, population.count())
+
     def _maybe_clear(self, org: population.Organism) -> population.Organism:
-        if (org.date == self._end) and (0 < org.scores < _n_test()):
+
+        if (org.date == self._end) and (0 < org.scores < max(self._scale, _n_test())):
             org.clear()
 
-        if (org.date != self._end) and (0 < org.scores < _n_test() - 1):
+        if (org.date != self._end) and (0 < org.scores < max(self._scale, _n_test()) - 1):
             org.clear()
 
         return org
@@ -108,14 +112,17 @@ class Evolution:  # noqa: WPS214
 
             return None
 
-        prey = hunter.make_child(1 / population.count() ** 0.5)
+        prey = hunter.make_child(1 / max(1, self._scale))
 
         self._logger.info(f"Потомок:")
         if (margin := self._eval_organism(prey)) is None:
             return None
         if margin[0] < 0:
+            self._scale += 1
 
             return None
+
+        self._scale = max(1, self._scale - 1)
 
         if margin[0] - margin[1] < 0:
             return None
@@ -143,7 +150,7 @@ class Evolution:  # noqa: WPS214
         dates = [self._end]
         if not organism.llh:
             dates = listing.all_history_date(self._tickers, end=self._end)
-            dates = dates[-_n_test() :].tolist()
+            dates = dates[-_n_test(organism.scores) :].tolist()
 
         for date in dates:
             try:
@@ -201,8 +208,8 @@ class Evolution:  # noqa: WPS214
         return margin, time_delta
 
 
-def _n_test() -> int:
-    return max(seq.minimum_bounding_n(config.P_VALUE / population.count()), population.count())
+def _n_test(scores: int = -1) -> int:
+    return max(population.count(), scores + 1)
 
 
 def _time_delta(org):
