@@ -9,7 +9,6 @@ import pandas as pd
 import yaml
 
 from poptimizer import config
-from poptimizer.config import MONTH_IN_TRADING_DAYS
 from poptimizer.data.views import indexes, listing, quotes
 
 VALUE_REL_TOL = 2.0e-4
@@ -220,7 +219,7 @@ class Portfolio:
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]
 
         index = last_turnover.index.difference(self.index)
-        if len(index) == 0:
+        if not len(index):
             LOGGER.info(f"\nНЕТ ЛИКВИДНЫХ БУМАГ ДЛЯ ДОБАВЛЕНИЯ")
 
             return
@@ -231,6 +230,22 @@ class Portfolio:
         rez = last_turnover.sort_values(ascending=False).dropna()
 
         LOGGER.info(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{rez}")  # noqa: WPS421
+
+    def remove_tickers(self):
+        """Претенденты на удаление."""
+        low_turnover = self.turnover_factor[:-2] < 1 / (len(self.index) - 2)
+        tickers = tuple(self.index[:-2][low_turnover])
+
+        counts = quotes.all_prices(tickers).count()
+        counts.index = tickers
+        counts = counts.sort_values()
+
+        if len(counts):
+            LOGGER.info(f"\nДЛЯ УДАЛЕНИЯ\n\n{counts}")
+
+            return
+
+        LOGGER.info(f"\nНЕТ НЕЛИКВИДНЫХ БУМАГ ДЛЯ УДАЛЕНИЯ")
 
 
 def load_from_yaml(date: Union[str, pd.Timestamp], ports: set = None) -> Portfolio:
