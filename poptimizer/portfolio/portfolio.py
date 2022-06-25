@@ -220,36 +220,17 @@ class Portfolio:
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]
 
         index = last_turnover.index.difference(self.index)
+        if len(index) == 0:
+            LOGGER.info(f"\nНЕТ ЛИКВИДНЫХ БУМАГ ДЛЯ ДОБАВЛЕНИЯ")
+
+            return
 
         last_turnover = last_turnover.reindex(index)
         last_turnover = last_turnover.astype("int")
 
-        returns = self._norm_ret(tuple(all_tickers))
-
-        index = returns.columns.difference(self.index)
-
-        returns_new = returns.reindex(columns=index)
-        returns_old = returns.reindex(columns=self.index[:-2])
-
-        corr_max = (returns_new.T @ returns_old / LIQUIDITY_DAYS).max(axis=1)
-
-        rez = pd.concat([corr_max, last_turnover], axis=1)
-        rez.columns = ["Correlation", "Turnover"]
-        rez = rez.sort_values("Correlation").dropna()
-
-        active = quotes.turnovers(tuple(rez.index), self.date).iloc[-1] > 0
-        rez = rez.loc[active]
+        rez = last_turnover.sort_values(ascending=False).dropna()
 
         LOGGER.info(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{rez}")  # noqa: WPS421
-
-    def _norm_ret(self, tickers):
-        div, p1 = quotes.div_and_prices(tickers, self.date)
-        p0 = p1.shift(1)
-        returns_new = (p1 + div) / p0
-        returns_new = returns_new.iloc[-LIQUIDITY_DAYS:]
-        returns_new = returns_new - returns_new.mean(axis=0)
-
-        return (returns_new / returns_new.std(axis=0, ddof=0)).dropna(axis=1)
 
 
 def load_from_yaml(date: Union[str, pd.Timestamp], ports: set = None) -> Portfolio:
