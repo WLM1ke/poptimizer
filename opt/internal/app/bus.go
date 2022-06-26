@@ -16,6 +16,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/usd"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/portfolio/account"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -69,6 +70,8 @@ func PrepareEventBus(
 	bus.Subscribe(raw.NewCheckRawHandler(&bus, domain.NewRepo[raw.Table](mongoDB)))
 	bus.Subscribe(raw.NewCheckCloseReestryHandler(&bus, domain.NewRepo[raw.Table](mongoDB), client))
 	bus.Subscribe(raw.NewCheckNASDAQHandler(&bus, domain.NewRepo[raw.Table](mongoDB), client))
+
+	bus.Subscribe(account.NewHandler(&bus, domain.NewRepo[account.Account](mongoDB)))
 
 	return mongoDB, &bus
 }

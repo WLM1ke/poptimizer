@@ -91,3 +91,23 @@ flowchart
     
     CheckRaw-->Handler:Backup
 ```
+
+## Модуль Portfolio
+
+Отвечает за редактирование состава брокерских счетов и анализ портфеля.
+
+Основные потоки событий между обработчиками событий изображены на схеме. Дополнительно каждое правило в случае
+возникновения ошибки направляет событие с ее описанием, которое обрабатывается специальным правилом записывающим
+сообщение в лог и Telegram.
+
+```mermaid
+flowchart
+
+Securities[\Data:Securities/] --> Accounts
+
+USD[\Data:USD/] -.-> MarketData
+Quotes[\Data:Quotes/] -.-> MarketData
+
+Accounts -.-> Portfolio
+MarketData -.-> Portfolio
+```
