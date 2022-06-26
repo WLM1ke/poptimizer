@@ -49,6 +49,34 @@ func (r *Repo[E]) Get(ctx context.Context, qid QID) (agg Aggregate[E], err error
 	return agg, err
 }
 
+func (r *Repo[E]) GetGroup(ctx context.Context, sub, group string) ([]Aggregate[E], error) {
+	var allDAO []aggDao[E]
+
+	collection := r.client.Database(sub).Collection(group)
+
+	cursor, err := collection.Find(ctx, bson.D{})
+	if err != nil {
+		return nil, fmt.Errorf("can't load %s.%s -> %w", sub, group, err)
+	}
+
+	if err := cursor.All(ctx, &allDAO); err != nil {
+		return nil, fmt.Errorf("can't decode %s.%s -> %w", sub, group, err)
+	}
+
+	aggs := make([]Aggregate[E], 0, len(allDAO))
+	for _, dao := range allDAO {
+		qid := QID{
+			Sub:   sub,
+			Group: group,
+			ID:    dao.ID,
+		}
+
+		aggs = append(aggs, newAggregate(qid, dao.Ver, dao.Timestamp, dao.Data))
+	}
+
+	return aggs, nil
+}
+
 // Save перезаписывает таблицу.
 func (r *Repo[E]) Save(ctx context.Context, agg Aggregate[E]) error {
 	if agg.ver == 0 {

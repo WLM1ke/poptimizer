@@ -152,6 +152,67 @@ func TestRepo_Append(t *testing.T) { //nolint:paralleltest
 	assert.Equal(t, []int{42, 43}, agg.Entity, "incorrect data in saved agg")
 }
 
+func TestRepo_GetGroup(t *testing.T) { //nolint:paralleltest
+	client, err := clients.NewMongoClient("mongodb://localhost:27017")
+	defer func() {
+		assert.Nil(
+			t,
+			client.Database("test").Drop(context.Background()),
+			"can't drop db client -> %s",
+			err,
+		)
+	}()
+
+	assert.Nil(t, err, "can't connect to test MongoDB -> %s", err)
+
+	repo := NewRepo[int](client)
+
+	aggs, err := repo.GetGroup(context.Background(), "test", "some")
+	assert.Nil(t, err, "can't get new agg -> %s", err)
+
+	assert.Empty(t, aggs, "should be no aggregates")
+
+	qid1 := QID{
+		Sub:   "test",
+		Group: "some",
+		ID:    "number",
+	}
+
+	agg1 := newEmptyAggregate[int](qid1)
+	agg1.Timestamp = time.Now().UTC().Truncate(time.Millisecond)
+	agg1.Entity = 42
+
+	err = repo.Save(context.Background(), agg1)
+	assert.Nil(t, err, "can't save test data")
+
+	qid2 := QID{
+		Sub:   "test",
+		Group: "some",
+		ID:    "number2",
+	}
+
+	agg2 := newEmptyAggregate[int](qid2)
+	agg2.Timestamp = time.Now().UTC().Truncate(time.Millisecond)
+	agg2.Entity = 44
+
+	err = repo.Save(context.Background(), agg2)
+	assert.Nil(t, err, "can't save test data")
+
+	agg2, err = repo.Get(context.Background(), qid2)
+	assert.Nil(t, err, "can't prepare test data")
+
+	err = repo.Save(context.Background(), agg2)
+	assert.Nil(t, err, "can't save test data")
+
+	aggs, err = repo.GetGroup(context.Background(), "test", "some")
+	assert.Nil(t, err, "can't load from repo")
+
+	agg1.ver = 1
+	agg2.ver = 2
+
+	assert.ElementsMatch(t, []Aggregate[int]{agg1, agg2}, aggs, "wrong aggregates")
+}
+
 func TestRepo_Errors(t *testing.T) {
 	t.Parallel()
 
@@ -165,6 +226,9 @@ func TestRepo_Errors(t *testing.T) {
 	}
 
 	_, err := repo.Get(context.Background(), qid)
+	assert.ErrorContains(t, err, "can't load", "no error on loading from bad db")
+
+	_, err = repo.GetGroup(context.Background(), qid.Sub, qid.Group)
 	assert.ErrorContains(t, err, "can't load", "no error on loading from bad db")
 
 	agg := Aggregate[int]{ver: 0}
