@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"context"
 	"fmt"
 	"time"
 )
@@ -46,22 +45,4 @@ func (e Event) String() string {
 // Publisher - интерфейс для рассылки сообщений.
 type Publisher interface {
 	Publish(event Event)
-}
-
-// EventHandler обработчик события.
-type EventHandler interface {
-	Match(event Event) bool
-	Handle(ctx context.Context, event Event)
-	fmt.Stringer
-}
-
-// Subscriber - интерфейс подписки на сообщения соответствующего топика.
-type Subscriber interface {
-	Subscribe(EventHandler)
-}
-
-// Bus - интерфейс шины сообщений.
-type Bus interface {
-	Subscriber
-	Publisher
 }

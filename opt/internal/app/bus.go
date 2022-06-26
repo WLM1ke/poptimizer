@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/portfolio/broker"
 	"net/http"
 	"sync"
 	"time"
@@ -16,7 +17,6 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/usd"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/portfolio/account"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/portfolio/market"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
@@ -28,11 +28,30 @@ const (
 	_errorTimeout = time.Second * 30
 )
 
+// EventHandler обработчик события.
+type EventHandler interface {
+	Match(event domain.Event) bool
+	fmt.Stringer
+	Handle(ctx context.Context, event domain.Event)
+}
+
+// BufferedEventHandler обработчик события, которые не обрабатывает события непосредственно при вызове.
+//
+// Например, он может запускать длительную обработку в отдельных горутинах или буферизировать события и обрабатывать их
+// по несколько штук за раз. В момент завершения работы необходимо вызвать метод Close для гарантированного завершения
+// работы и не посылать сообщения методу Handle после этого.
+type BufferedEventHandler interface {
+	Match(event domain.Event) bool
+	fmt.Stringer
+	Handle(ctx context.Context, event domain.Event)
+	Close()
+}
+
 // EventBus - шина событий. Позволяет публиковать их и подписываться на заданный топик.
 type EventBus struct {
 	logger *lgr.Logger
 
-	handlers []domain.EventHandler
+	handlers []EventHandler
 	inbox    chan domain.Event
 
 	lock    sync.RWMutex
@@ -72,14 +91,14 @@ func PrepareEventBus(
 	bus.Subscribe(raw.NewCheckCloseReestryHandler(&bus, domain.NewRepo[raw.Table](mongoDB), client))
 	bus.Subscribe(raw.NewCheckNASDAQHandler(&bus, domain.NewRepo[raw.Table](mongoDB), client))
 
-	bus.Subscribe(account.NewHandler(&bus, domain.NewRepo[account.Account](mongoDB)))
+	bus.Subscribe(broker.NewHandler(&bus, domain.NewRepo[broker.Account](mongoDB)))
 	bus.Subscribe(market.NewHandler(&bus, domain.NewRepo[market.Data](mongoDB)))
 
 	return mongoDB, &bus
 }
 
 // Subscribe регистрирует обработчик для событий заданного топика.
-func (e *EventBus) Subscribe(handler domain.EventHandler) {
+func (e *EventBus) Subscribe(handler EventHandler) {
 	e.logger.Infof("registered Handler(%s)", handler)
 
 	e.handlers = append(e.handlers, handler)
@@ -119,6 +138,13 @@ func (e *EventBus) stop() {
 
 	e.stopped = true
 	close(e.inbox)
+
+	for _, h := range e.handlers {
+		closer, ok := h.(BufferedEventHandler)
+		if ok {
+			closer.Close()
+		}
+	}
 }
 
 func (e *EventBus) handle(event domain.Event) {
