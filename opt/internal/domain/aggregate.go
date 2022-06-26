@@ -15,6 +15,10 @@ type Aggregate[E Entity] struct {
 	Entity    E
 }
 
+func (a Aggregate[E]) QID() QID {
+	return a.id
+}
+
 // newEmptyAggregate создает пустой агрегат.
 func newEmptyAggregate[E Entity](id QID) Aggregate[E] {
 	return Aggregate[E]{
