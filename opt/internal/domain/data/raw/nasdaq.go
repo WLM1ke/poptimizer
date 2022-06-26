@@ -58,7 +58,7 @@ func NewCheckNASDAQHandler(
 func (h CheckNASDAQHandler) Match(event domain.Event) bool {
 	status, ok := event.Data.(Status)
 
-	return ok && status.Foreign && event.QualifiedID == StatusID(event.ID)
+	return ok && status.Foreign && event.QID == StatusID(event.ID)
 }
 
 func (h CheckNASDAQHandler) String() string {
@@ -77,7 +77,7 @@ func (h CheckNASDAQHandler) Handle(ctx context.Context, event domain.Event) { //
 
 	qid := NasdaqID(event.ID)
 
-	event.QualifiedID = qid
+	event.QID = qid
 
 	agg, err := h.repo.Get(ctx, qid)
 	if err != nil {

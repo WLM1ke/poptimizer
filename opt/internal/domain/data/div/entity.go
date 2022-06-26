@@ -11,8 +11,8 @@ import (
 const _DivGroup = "dividends"
 
 // ID - id дивидендов, пересчитанных в рубли.
-func ID(ticker string) domain.QualifiedID {
-	return domain.QualifiedID{
+func ID(ticker string) domain.QID {
+	return domain.QID{
 		Sub:   data.Subdomain,
 		Group: _DivGroup,
 		ID:    ticker,

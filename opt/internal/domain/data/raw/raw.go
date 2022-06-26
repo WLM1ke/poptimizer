@@ -28,7 +28,7 @@ func NewCheckRawHandler(
 func (h CheckRawHandler) Match(event domain.Event) bool {
 	_, ok := event.Data.(Status)
 
-	return ok && event.QualifiedID == StatusID(event.ID)
+	return ok && event.QID == StatusID(event.ID)
 }
 
 func (h CheckRawHandler) String() string {
@@ -47,7 +47,7 @@ func (h CheckRawHandler) Handle(ctx context.Context, event domain.Event) {
 
 	qid := ID(event.ID)
 
-	event.QualifiedID = qid
+	event.QID = qid
 
 	agg, err := h.repo.Get(ctx, qid)
 	if err != nil {
@@ -59,8 +59,7 @@ func (h CheckRawHandler) Handle(ctx context.Context, event domain.Event) {
 
 	if !agg.Entity.ExistsDate(status.Date) {
 		event.Data = fmt.Errorf(
-			"%s missed dividend at %s",
-			event.ID,
+			"missed dividend at %s",
 			status.Date.Format(_eventDateFormat),
 		)
 		h.pub.Publish(event)

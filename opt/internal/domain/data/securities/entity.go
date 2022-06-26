@@ -20,8 +20,8 @@ const (
 )
 
 // GroupID информации о торгуемых бумагах в целом.
-func GroupID() domain.QualifiedID {
-	return domain.QualifiedID{
+func GroupID() domain.QID {
+	return domain.QID{
 		Sub:   data.Subdomain,
 		Group: _group,
 		ID:    _group,
@@ -29,8 +29,8 @@ func GroupID() domain.QualifiedID {
 }
 
 // ID информации об отдельных торгуемых бумагах.
-func ID(ticker string) domain.QualifiedID {
-	return domain.QualifiedID{
+func ID(ticker string) domain.QID {
+	return domain.QID{
 		Sub:   data.Subdomain,
 		Group: _group,
 		ID:    ticker,

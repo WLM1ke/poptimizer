@@ -52,7 +52,7 @@ func NewStatusHandler(
 func (h StatusHandler) Match(event domain.Event) bool {
 	_, ok := event.Data.(securities.Table)
 
-	return ok && securities.GroupID() == event.QualifiedID
+	return ok && securities.GroupID() == event.QID
 }
 
 func (h StatusHandler) String() string {
@@ -71,7 +71,7 @@ func (h StatusHandler) Handle(ctx context.Context, event domain.Event) {
 
 	qid := StatusID(_statusGroup)
 
-	event.QualifiedID = qid
+	event.QID = qid
 
 	table, err := h.repo.Get(ctx, qid)
 	if err != nil {
@@ -218,9 +218,9 @@ func (h StatusHandler) parceCSV(
 func (h StatusHandler) publish(table domain.Aggregate[StatusTable]) {
 	for _, div := range table.Entity {
 		h.pub.Publish(domain.Event{
-			QualifiedID: StatusID(div.Ticker),
-			Timestamp:   table.Timestamp,
-			Data:        div,
+			QID:       StatusID(div.Ticker),
+			Timestamp: table.Timestamp,
+			Data:      div,
 		})
 	}
 }

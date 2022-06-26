@@ -28,7 +28,7 @@ func NewHandler(pub domain.Publisher, repo domain.ReadWriteRepo[Table], rawDiv d
 func (h Handler) Match(event domain.Event) bool {
 	_, ok := event.Data.(usd.Table)
 
-	return ok && event.QualifiedID == securities.ID(event.ID)
+	return ok && event.QID == securities.ID(event.ID)
 }
 
 func (h Handler) String() string {
@@ -47,7 +47,7 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 
 	qid := ID(event.ID)
 
-	event.QualifiedID = qid
+	event.QID = qid
 
 	rawDiv, err := h.raw.Get(ctx, raw.ID(event.ID))
 	if err != nil {

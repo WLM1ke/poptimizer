@@ -24,7 +24,7 @@ func TestRepo_Save(t *testing.T) { //nolint:paralleltest
 	assert.Nil(t, err, "can't connect to test MongoDB -> %s", err)
 
 	repo := NewRepo[int](client)
-	qid := QualifiedID{
+	qid := QID{
 		Sub:   "test",
 		Group: "some",
 		ID:    "number",
@@ -95,7 +95,7 @@ func TestRepo_Append(t *testing.T) { //nolint:paralleltest
 	assert.Nil(t, err, "can't connect to test MongoDB -> %s", err)
 
 	repo := NewRepo[[]int](client)
-	qid := QualifiedID{
+	qid := QID{
 		Sub:   "test",
 		Group: "some",
 		ID:    "number",
@@ -158,7 +158,7 @@ func TestRepo_Errors(t *testing.T) {
 	var client mongo.Client
 
 	repo := NewRepo[int](&client)
-	qid := QualifiedID{
+	qid := QID{
 		Sub:   "test",
 		Group: "some",
 		ID:    "number",

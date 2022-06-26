@@ -8,16 +8,16 @@ import (
 
 const _timeFormat = "2006-01-02"
 
-// QualifiedID уникальный идентификатор сущности доменной области.
+// QID уникальный идентификатор сущности доменной области.
 //
 // Каждый доменный объект принадлежит к поддомену, группе однородных объектов и имеет уникальный ID в рамках группы.
-type QualifiedID struct {
+type QID struct {
 	Sub   string
 	Group string
 	ID    string
 }
 
-func (q QualifiedID) String() string {
+func (q QID) String() string {
 	return fmt.Sprintf(
 		"QID(%q, %q, %q)",
 		q.Sub,
@@ -28,7 +28,7 @@ func (q QualifiedID) String() string {
 
 // Event представляет событие, с изменением объекта.
 type Event struct {
-	QualifiedID
+	QID
 	Timestamp time.Time
 	Data      any
 }

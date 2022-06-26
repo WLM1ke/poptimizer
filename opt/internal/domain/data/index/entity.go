@@ -10,8 +10,8 @@ import (
 const _IndexesGroup = "indexes"
 
 // ID - id свечек индексов.
-func ID(index string) domain.QualifiedID {
-	return domain.QualifiedID{
+func ID(index string) domain.QID {
+	return domain.QID{
 		Sub:   data.Subdomain,
 		Group: _IndexesGroup,
 		ID:    index,

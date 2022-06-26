@@ -47,7 +47,7 @@ func NewHandler(pub domain.Publisher, repo domain.ReadWriteRepo[Table], client *
 
 // Match выбирает события новой торговой даты.
 func (h Handler) Match(event domain.Event) bool {
-	return event.QualifiedID == dates.ID() && event.Data == nil
+	return event.QID == dates.ID() && event.Data == nil
 }
 
 func (h Handler) String() string {
@@ -58,7 +58,7 @@ func (h Handler) String() string {
 func (h Handler) Handle(ctx context.Context, event domain.Event) {
 	qid := ID()
 
-	event.QualifiedID = qid
+	event.QID = qid
 
 	agg, err := h.repo.Get(ctx, qid)
 	if err != nil {

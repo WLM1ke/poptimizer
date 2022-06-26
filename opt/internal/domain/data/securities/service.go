@@ -67,9 +67,9 @@ func (c Service) Save(ctx context.Context, dto DTO) domain.ServiceError {
 	}
 
 	c.pub.Publish(domain.Event{
-		QualifiedID: GroupID(),
-		Timestamp:   agg.Timestamp,
-		Data:        agg.Entity,
+		QID:       GroupID(),
+		Timestamp: agg.Timestamp,
+		Data:      agg.Entity,
 	})
 
 	return nil

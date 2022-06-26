@@ -23,8 +23,8 @@ const (
 )
 
 // ID - id информации о последнем торговом дне.
-func ID() domain.QualifiedID {
-	return domain.QualifiedID{
+func ID() domain.QID {
+	return domain.QID{
 		Sub:   data.Subdomain,
 		Group: _tradingDateGroup,
 		ID:    _tradingDateGroup,
@@ -120,9 +120,9 @@ func (s *Service) init(ctx context.Context) error {
 
 func (s *Service) pubErr(err error) {
 	event := domain.Event{
-		QualifiedID: ID(),
-		Timestamp:   s.checkedDate,
-		Data:        err,
+		QID:       ID(),
+		Timestamp: s.checkedDate,
+		Data:      err,
 	}
 
 	s.pub.Publish(event)
@@ -171,8 +171,8 @@ func (s *Service) update(ctx context.Context) error {
 	}
 
 	event := domain.Event{
-		QualifiedID: ID(),
-		Timestamp:   lastTradingDate,
+		QID:       ID(),
+		Timestamp: lastTradingDate,
 	}
 
 	s.pub.Publish(event)

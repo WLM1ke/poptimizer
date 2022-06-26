@@ -11,8 +11,8 @@ import (
 const _USDGroup = "usd"
 
 // ID - id котировок курса доллара.
-func ID() domain.QualifiedID {
-	return domain.QualifiedID{
+func ID() domain.QID {
+	return domain.QID{
 		Sub:   data.Subdomain,
 		Group: _USDGroup,
 		ID:    _USDGroup,

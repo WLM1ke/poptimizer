@@ -191,8 +191,8 @@ func (s Service) Save(ctx context.Context, dto SaveDividendsDTO) domain.ServiceE
 	}
 
 	s.pub.Publish(domain.Event{
-		QualifiedID: ID(ticker),
-		Timestamp:   agg.Timestamp,
+		QID:       ID(ticker),
+		Timestamp: agg.Timestamp,
 	})
 
 	return nil

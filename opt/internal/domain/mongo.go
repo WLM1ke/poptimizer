@@ -30,7 +30,7 @@ func NewRepo[E Entity](db *mongo.Client) *Repo[E] {
 }
 
 // Get загружает объект.
-func (r *Repo[E]) Get(ctx context.Context, qid QualifiedID) (agg Aggregate[E], err error) {
+func (r *Repo[E]) Get(ctx context.Context, qid QID) (agg Aggregate[E], err error) {
 	var dao aggDao[E]
 
 	collection := r.client.Database(qid.Sub).Collection(qid.Group)

@@ -32,7 +32,7 @@ func NewBackupHandler(logger *lgr.Logger, pub domain.Publisher, uri string) *Bac
 
 // Match фильтрует данные, вводимые пользователем.
 func (h BackupHandler) Match(event domain.Event) bool {
-	if !(event.QualifiedID == securities.GroupID() || event.QualifiedID == raw.ID(event.QualifiedID.ID)) {
+	if !(event.QID == securities.GroupID() || event.QID == raw.ID(event.QID.ID)) {
 		return false
 	}
 
@@ -68,7 +68,7 @@ func prepareDB(ctx context.Context, logger *lgr.Logger, uri string) *mongo.Clien
 		logger.Panicf("can't create MongoDB client -> %s", err)
 	}
 
-	for _, qid := range []domain.QualifiedID{securities.GroupID(), raw.ID("")} {
+	for _, qid := range []domain.QID{securities.GroupID(), raw.ID("")} {
 		database := qid.Sub
 		collection := qid.Group
 

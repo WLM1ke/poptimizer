@@ -52,7 +52,7 @@ func NewCheckCloseReestryHandler(
 func (h CheckCloseReestryHandler) Match(event domain.Event) bool {
 	status, ok := event.Data.(Status)
 
-	return ok && !status.Foreign && event.QualifiedID == StatusID(event.ID)
+	return ok && !status.Foreign && event.QID == StatusID(event.ID)
 }
 
 func (h CheckCloseReestryHandler) String() string {
@@ -71,7 +71,7 @@ func (h CheckCloseReestryHandler) Handle(ctx context.Context, event domain.Event
 
 	qid := CloseReestryID(event.ID)
 
-	event.QualifiedID = qid
+	event.QID = qid
 
 	agg, err := h.repo.Get(ctx, qid)
 	if err != nil {

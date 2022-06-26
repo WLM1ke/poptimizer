@@ -12,11 +12,11 @@ import (
 )
 
 type testRepo struct {
-	qid    domain.QualifiedID
+	qid    domain.QID
 	entity Table
 }
 
-func (r testRepo) Get(_ context.Context, qid domain.QualifiedID) (domain.Aggregate[Table], error) {
+func (r testRepo) Get(_ context.Context, qid domain.QID) (domain.Aggregate[Table], error) {
 	agg := domain.Aggregate[Table]{}
 
 	if qid != r.qid {
@@ -40,7 +40,7 @@ func TestCheckRawHandler_Handle(t *testing.T) {
 	t.Parallel()
 
 	repo := testRepo{
-		qid: domain.QualifiedID{
+		qid: domain.QID{
 			Sub:   data.Subdomain,
 			Group: _rawGroup,
 			ID:    "ABRD",
@@ -74,7 +74,7 @@ func TestCheckRawHandler_Handle(t *testing.T) {
 
 	for _, row := range testTable {
 		event := domain.Event{
-			QualifiedID: domain.QualifiedID{
+			QID: domain.QID{
 				Sub:   data.Subdomain,
 				Group: _statusGroup,
 				ID:    "ABRD",
@@ -93,8 +93,8 @@ func TestCheckRawHandler_Handle(t *testing.T) {
 		if row.event > 0 {
 			assert.Equal(
 				t,
-				domain.QualifiedID{Sub: data.Subdomain, Group: _rawGroup, ID: "ABRD"},
-				pub.events[0].QualifiedID,
+				domain.QID{Sub: data.Subdomain, Group: _rawGroup, ID: "ABRD"},
+				pub.events[0].QID,
 				"incorrect event id",
 			)
 			assert.Equal(

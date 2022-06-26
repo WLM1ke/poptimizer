@@ -10,8 +10,8 @@ import (
 const _CPIGroup = `cpi`
 
 // ID - id данных о месячной инфляции.
-func ID() domain.QualifiedID {
-	return domain.QualifiedID{
+func ID() domain.QID {
+	return domain.QID{
 		Sub:   data.Subdomain,
 		Group: _CPIGroup,
 		ID:    _CPIGroup,

@@ -34,7 +34,7 @@ func NewHandler(
 func (h Handler) Match(event domain.Event) bool {
 	_, ok := event.Data.(usd.Table)
 
-	return ok && event.QualifiedID == usd.ID()
+	return ok && event.QID == usd.ID()
 }
 
 func (h Handler) String() string {
@@ -53,7 +53,7 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 
 	qid := GroupID()
 
-	event.QualifiedID = qid
+	event.QID = qid
 
 	table, err := h.repo.Get(ctx, qid)
 	if err != nil {
@@ -115,22 +115,22 @@ func (h Handler) download(
 
 func (h Handler) publish(agg domain.Aggregate[Table], rates usd.Table) {
 	h.pub.Publish(domain.Event{
-		QualifiedID: GroupID(),
-		Timestamp:   agg.Timestamp,
-		Data:        agg.Entity,
+		QID:       GroupID(),
+		Timestamp: agg.Timestamp,
+		Data:      agg.Entity,
 	})
 
 	for _, sec := range agg.Entity {
 		h.pub.Publish(domain.Event{
-			QualifiedID: ID(sec.Ticker),
-			Timestamp:   agg.Timestamp,
-			Data:        sec,
+			QID:       ID(sec.Ticker),
+			Timestamp: agg.Timestamp,
+			Data:      sec,
 		})
 
 		h.pub.Publish(domain.Event{
-			QualifiedID: ID(sec.Ticker),
-			Timestamp:   agg.Timestamp,
-			Data:        rates,
+			QID:       ID(sec.Ticker),
+			Timestamp: agg.Timestamp,
+			Data:      rates,
 		})
 	}
 }

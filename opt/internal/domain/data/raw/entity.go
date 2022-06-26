@@ -22,8 +22,8 @@ const (
 )
 
 // StatusID информации о статусе дивидендов.
-func StatusID(ticker string) domain.QualifiedID {
-	return domain.QualifiedID{
+func StatusID(ticker string) domain.QID {
+	return domain.QID{
 		Sub:   data.Subdomain,
 		Group: _statusGroup,
 		ID:    ticker,
@@ -43,8 +43,8 @@ type Status struct {
 type StatusTable = data.Table[Status]
 
 // ID - id введенных пользователем данных о дивидендах.
-func ID(ticker string) domain.QualifiedID {
-	return domain.QualifiedID{
+func ID(ticker string) domain.QID {
+	return domain.QID{
 		Sub:   data.Subdomain,
 		Group: _rawGroup,
 		ID:    ticker,
@@ -52,8 +52,8 @@ func ID(ticker string) domain.QualifiedID {
 }
 
 // CloseReestryID - id данных о дивидендах с закрытияреестров.рф.
-func CloseReestryID(ticker string) domain.QualifiedID {
-	return domain.QualifiedID{
+func CloseReestryID(ticker string) domain.QID {
+	return domain.QID{
 		Sub:   data.Subdomain,
 		Group: _closeReestryGroup,
 		ID:    ticker,
@@ -61,8 +61,8 @@ func CloseReestryID(ticker string) domain.QualifiedID {
 }
 
 // NasdaqID - id данных о дивидендах с NASDAQ.
-func NasdaqID(ticker string) domain.QualifiedID {
-	return domain.QualifiedID{
+func NasdaqID(ticker string) domain.QID {
+	return domain.QID{
 		Sub:   data.Subdomain,
 		Group: _NASDAQGroup,
 		ID:    ticker,

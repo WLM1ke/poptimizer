@@ -10,8 +10,8 @@ import (
 const _QuotesGroup = "quotes"
 
 // ID - id котировок курса доллара.
-func ID(ticker string) domain.QualifiedID {
-	return domain.QualifiedID{
+func ID(ticker string) domain.QID {
+	return domain.QID{
 		Sub:   data.Subdomain,
 		Group: _QuotesGroup,
 		ID:    ticker,
