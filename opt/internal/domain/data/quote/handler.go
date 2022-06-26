@@ -82,6 +82,8 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
+	payload := append(agg.Entity, rows...) //nolint:gocritic
+
 	agg.Timestamp = event.Timestamp
 	agg.Entity = rows
 
@@ -91,6 +93,10 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 
 		return
 	}
+
+	event.Data = payload
+
+	h.pub.Publish(event)
 }
 
 func (h Handler) download(

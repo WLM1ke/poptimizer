@@ -17,6 +17,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/usd"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/portfolio/account"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/portfolio/market"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -72,6 +73,7 @@ func PrepareEventBus(
 	bus.Subscribe(raw.NewCheckNASDAQHandler(&bus, domain.NewRepo[raw.Table](mongoDB), client))
 
 	bus.Subscribe(account.NewHandler(&bus, domain.NewRepo[account.Account](mongoDB)))
+	bus.Subscribe(market.NewHandler(&bus, domain.NewRepo[market.Data](mongoDB)))
 
 	return mongoDB, &bus
 }
