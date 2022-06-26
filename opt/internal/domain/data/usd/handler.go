@@ -14,18 +14,29 @@ const (
 	_usdTicker     = `USD000UTSTOM`
 )
 
+// MarketCandler интерфейс для получения свечек.
+type MarketCandler interface {
+	MarketCandles(
+		ctx context.Context,
+		engine string,
+		market string,
+		security string,
+		from, till string,
+		interval int) ([]gomoex.Candle, error)
+}
+
 // Handler обработчик событий, отвечающий за загрузку информации о курсе доллара.
 type Handler struct {
 	pub  domain.Publisher
 	repo domain.ReadAppendRepo[Table]
-	iss  *gomoex.ISSClient
+	iss  MarketCandler
 }
 
 // NewHandler создает обработчик событий, отвечающий за загрузку информации о курсе доллара.
 func NewHandler(
 	pub domain.Publisher,
 	repo domain.ReadAppendRepo[Table],
-	iss *gomoex.ISSClient,
+	iss MarketCandler,
 ) *Handler {
 	return &Handler{
 		iss:  iss,
@@ -65,9 +76,9 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	rows := h.convert(raw)
+	rows := convert(raw)
 
-	if err := h.validate(agg, rows); err != nil {
+	if err := validate(agg, rows); err != nil {
 		event.Data = err
 		h.pub.Publish(event)
 
@@ -82,6 +93,7 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
+	payload := append(agg.Entity, rows...) //nolint:gocritic
 	agg.Timestamp = event.Timestamp
 	agg.Entity = rows
 
@@ -92,7 +104,7 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	event.Data = agg.Entity
+	event.Data = payload
 
 	h.pub.Publish(event)
 }
@@ -125,7 +137,7 @@ func (h Handler) download(
 	return rowsRaw, nil
 }
 
-func (h Handler) convert(raw []gomoex.Candle) Table {
+func convert(raw []gomoex.Candle) Table {
 	rows := make(Table, 0, len(raw))
 
 	for _, row := range raw {
@@ -142,7 +154,7 @@ func (h Handler) convert(raw []gomoex.Candle) Table {
 	return rows
 }
 
-func (h Handler) validate(agg domain.Aggregate[Table], rows Table) error {
+func validate(agg domain.Aggregate[Table], rows Table) error {
 	prev := rows[0].Date
 	for _, row := range rows[1:] {
 		if prev.Before(row.Date) {

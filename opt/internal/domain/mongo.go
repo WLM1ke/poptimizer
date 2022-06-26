@@ -64,6 +64,7 @@ func (r *Repo[E]) GetGroup(ctx context.Context, sub, group string) ([]Aggregate[
 	}
 
 	aggs := make([]Aggregate[E], 0, len(allDAO))
+
 	for _, dao := range allDAO {
 		qid := QID{
 			Sub:   sub,

@@ -7,7 +7,7 @@ require (
 	github.com/WLM1ke/gomoex v1.4.0
 	github.com/caarlos0/env/v6 v6.9.3
 	github.com/go-chi/chi v1.5.4
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.7.5
 	github.com/xuri/excelize/v2 v2.6.0
 	go.mongodb.org/mongo-driver v1.9.1
 	go.uber.org/goleak v1.1.12
@@ -27,6 +27,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/richardlehane/mscfb v1.0.4 // indirect
 	github.com/richardlehane/msoleps v1.0.1 // indirect
+	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/tidwall/gjson v1.14.1 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
