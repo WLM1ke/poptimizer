@@ -2,7 +2,7 @@ PKG_MNG=brew
 TOOLS=go golangci-lint
 
 SRC=./cmd
-BIN=./bin/data
+BIN=./bin/poptimizer
 
 new:
 	$(PKG_MNG) install $(TOOLS)
