@@ -1,4 +1,4 @@
-package account
+package port
 
 import (
 	"context"
@@ -9,14 +9,14 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/portfolio"
 )
 
-// Handler обработчик событий, отвечающий за обновление перечня выбранных бумаг на счетах.
+// Handler обработчик событий, отвечающий за обновление перечня выбранных бумаг и размеров лота в портфеле.
 type Handler struct {
 	pub  domain.Publisher
-	repo domain.ReadGroupWriteRepo[Account]
+	repo domain.ReadGroupWriteRepo[Portfolio]
 }
 
-// NewHandler создает обработчик для актуализации брокерских счетов с учетом нового списка торгуемых бумаг.
-func NewHandler(pub domain.Publisher, repo domain.ReadGroupWriteRepo[Account]) *Handler {
+// NewHandler создает обработчик для актуализации портфелей с учетом нового списка торгуемых бумаг.
+func NewHandler(pub domain.Publisher, repo domain.ReadGroupWriteRepo[Portfolio]) *Handler {
 	return &Handler{pub: pub, repo: repo}
 }
 
@@ -41,7 +41,7 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	event.QID = GroupID()
+	event.QID = ID(_Group)
 
 	aggs, err := h.repo.GetGroup(ctx, portfolio.Subdomain, _Group)
 	if err != nil {
@@ -51,31 +51,25 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	if len(aggs) == 0 {
-		event.QID = ID(_NewAccount)
+	aggs, err = h.init(ctx, event, aggs)
+	if err != nil {
+		event.Data = err
+		h.pub.Publish(event)
 
-		agg, err := h.repo.Get(ctx, event.QID)
-		if err != nil {
-			event.Data = err
-			h.pub.Publish(event)
-
-			return
-		}
-
-		aggs = append(aggs, agg)
+		return
 	}
 
 	for _, agg := range aggs {
 		event.QID = agg.QID()
 
-		agg.Timestamp = event.Timestamp
-
-		errs := agg.Entity.Update(secTable)
+		errs := agg.Entity.UpdateSec(secTable, event.Timestamp.After(agg.Timestamp))
 		if len(errs) != 0 {
 			h.pubErr(event, errs)
 
 			return
 		}
+
+		agg.Timestamp = event.Timestamp
 
 		if err := h.repo.Save(ctx, agg); err != nil {
 			event.Data = err
@@ -84,8 +78,28 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 			return
 		}
 	}
+}
 
-	h.pubAllAccounts(aggs)
+func (h Handler) init(
+	ctx context.Context,
+	event domain.Event,
+	aggs []domain.Aggregate[Portfolio],
+) ([]domain.Aggregate[Portfolio], error) {
+	if len(aggs) > 0 {
+		return aggs, nil
+	}
+
+	event.QID = ID(_NewAccount)
+
+	agg, err := h.repo.Get(ctx, event.QID)
+	if err != nil {
+		event.Data = err
+		h.pub.Publish(event)
+
+		return nil, err
+	}
+
+	return append(aggs, agg), nil
 }
 
 func (h Handler) pubErr(event domain.Event, errs []error) {
@@ -93,18 +107,4 @@ func (h Handler) pubErr(event domain.Event, errs []error) {
 		event.Data = err
 		h.pub.Publish(event)
 	}
-}
-
-func (h Handler) pubAllAccounts(aggs []domain.Aggregate[Account]) {
-	allAccounts := aggs[0].Entity
-
-	for _, agg := range aggs[1:] {
-		allAccounts = allAccounts.Sum(agg.Entity)
-	}
-
-	h.pub.Publish(domain.Event{
-		QID:       GroupID(),
-		Timestamp: aggs[0].Timestamp,
-		Data:      allAccounts,
-	})
 }

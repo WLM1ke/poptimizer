@@ -103,11 +103,8 @@ flowchart
 ```mermaid
 flowchart
 
-Securities[\Data:Securities/] --> Accounts
-
-USD[\Data:USD/] -.-> MarketData
-Quotes[\Data:Quotes/] -.-> MarketData
-
-Accounts -.-> Portfolio
-MarketData -.-> Portfolio
+    Quotes[\Data:Quotes/] --> MarketData
+    MarketData -.-> Portfolio
+    
+    Securities[\Data:Securities/] --> Portfolio
 ```
