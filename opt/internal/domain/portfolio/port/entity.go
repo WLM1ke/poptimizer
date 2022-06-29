@@ -13,6 +13,7 @@ import (
 const (
 	_Group      = `portfolio`
 	_NewAccount = `__new__`
+	_Cash       = `CASH`
 )
 
 // ID соответствующего портфеля.
@@ -47,7 +48,7 @@ func (p Position) Weight(total float64) float64 {
 // Portfolio - портфель, состоящий из позиций и денежных средств.
 type Portfolio struct {
 	Positions []Position
-	Cash      float64
+	Cash      int
 }
 
 // Value стоимость портфеля.
@@ -58,7 +59,7 @@ func (p Portfolio) Value() float64 {
 		sum += pos.Value()
 	}
 
-	return sum + p.Cash
+	return sum + float64(p.Cash)
 }
 
 // Sum создает новый портфель с суммарным объемом позиций и денег в двух портфелях.
@@ -217,4 +218,32 @@ func (p *Portfolio) UpdateMarketData(ticker string, price, turnover float64, new
 		p.Positions[pos].Price = price
 		p.Positions[pos].Turnover = turnover
 	}
+}
+
+// SetAmount меняет значение количества акций для заданного тикера.
+//
+// Для изменения количества денег необходимо указать тикер CASH.
+func (p *Portfolio) SetAmount(ticker string, amount int) error {
+	if amount < 0 {
+		return fmt.Errorf("%d amount must be positive", amount)
+	}
+
+	if ticker == _Cash {
+		p.Cash = amount
+
+		return nil
+	}
+
+	pos := sort.Search(len(p.Positions), func(i int) bool { return p.Positions[i].Ticker >= ticker })
+	if !(pos < len(p.Positions) && p.Positions[pos].Ticker == ticker) {
+		return fmt.Errorf("%s not found in portfolio", ticker)
+	}
+
+	if amount%p.Positions[pos].Lot != 0 {
+		return fmt.Errorf("%d amount have fractional lots %d for %s", amount, p.Positions[pos].Lot, ticker)
+	}
+
+	p.Positions[pos].Shares = amount
+
+	return nil
 }
