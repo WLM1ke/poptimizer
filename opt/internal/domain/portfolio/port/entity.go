@@ -2,6 +2,7 @@ package port
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
@@ -109,7 +110,10 @@ func (p Portfolio) Sum(other Portfolio) Portfolio {
 //
 // Обновляются размеры лотов и проверяется, что на нем находятся только выбранные бумаги и количество лотов целое.
 func (p *Portfolio) UpdateSec(sec securities.Table, newDay bool) []error {
-	positions := p.copyAndResetPositions(newDay)
+	p.resetPositions(newDay)
+
+	positions := slices.Clone(p.Positions)
+	p.Positions = p.Positions[:0]
 
 	nPos := 0
 	nSec := 0
@@ -156,20 +160,15 @@ func (p *Portfolio) UpdateSec(sec securities.Table, newDay bool) []error {
 	return p.validatePositions()
 }
 
-func (p *Portfolio) copyAndResetPositions(newDay bool) []Position {
-	positions := slices.Clone(p.Positions)
-	p.Positions = p.Positions[:0]
-
+func (p *Portfolio) resetPositions(newDay bool) {
 	if !newDay {
-		return positions
+		return
 	}
 
-	for _, pos := range positions {
-		pos.Turnover = 0
-		pos.Selected = false
+	for n := range p.Positions {
+		p.Positions[n].Turnover = 0
+		p.Positions[n].Selected = false
 	}
-
-	return positions
 }
 
 func (p *Portfolio) leftSec(sec securities.Table) {
@@ -205,4 +204,17 @@ func (p Portfolio) validatePositions() (errs []error) {
 	}
 
 	return errs
+}
+
+// UpdateMarketData обновляет цену и оборот соответствующей позиции, при ее наличии.
+//
+// Для нового дня сбрасывает оборот и выбранные позиции.
+func (p *Portfolio) UpdateMarketData(ticker string, price, turnover float64, newDay bool) {
+	p.resetPositions(newDay)
+
+	pos := sort.Search(len(p.Positions), func(i int) bool { return p.Positions[i].Ticker >= ticker })
+	if pos < len(p.Positions) && p.Positions[pos].Ticker == ticker {
+		p.Positions[pos].Price = price
+		p.Positions[pos].Turnover = turnover
+	}
 }
