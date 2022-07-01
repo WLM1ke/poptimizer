@@ -190,7 +190,11 @@ func (p *Portfolio) leftSec(sec securities.Table) {
 }
 
 func (p *Portfolio) leftPositions(positions []Position) {
-	p.Positions = append(p.Positions, positions...)
+	for _, pos := range positions {
+		if pos.Shares > 0 {
+			p.Positions = append(p.Positions, pos)
+		}
+	}
 }
 
 func (p Portfolio) validatePositions() (errs []error) {
