@@ -31,13 +31,11 @@ positions:
   BMY-RM: 0
   BRZL: 0
   BSPB: 0
-  CAT-RM: 0
   CBOM: 0
   CHMF: 0
   CHMK: 0
   CNTL: 0
   CNTLP: 0
-  CRM-RM: 0
   CSCO-RM: 0
   CVX-RM: 0
   DIOD: 0
@@ -173,7 +171,6 @@ positions:
   SBMX: 0
   SBRB: 0
   SBRI: 0
-  SBUX-RM: 0
   SELG: 0
   SFIN: 0
   SGZH: 0
@@ -192,7 +189,6 @@ positions:
   TGKB: 0
   TGKD: 0
   TGKN: 0
-  TGT-RM: 0
   TMOS: 0
   TRMK: 0
   TRNFP: 0
@@ -205,6 +201,7 @@ positions:
   UNKL: 0
   UPRO: 0
   USBN: 0
+  UTAR: 0
   V-RM: 0
   VJGZ: 0
   VJGZP: 0
