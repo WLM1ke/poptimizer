@@ -81,12 +81,12 @@ func (h StatusHandler) Handle(ctx context.Context, event domain.Event) {
 		return
 	}
 
-	rows, err := h.download(ctx, sec)
-	if err != nil {
-		event.Data = err
-		h.pub.Publish(event)
-
-		return
+	rows, errs := h.download(ctx, sec)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			event.Data = err
+			h.pub.Publish(event)
+		}
 	}
 
 	if rows.IsEmpty() {
@@ -109,39 +109,36 @@ func (h StatusHandler) Handle(ctx context.Context, event domain.Event) {
 func (h StatusHandler) download(
 	ctx context.Context,
 	table securities.Table,
-) (StatusTable, error) {
+) (StatusTable, []error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _statusURL, http.NoBody)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return nil, []error{fmt.Errorf(
 			"can't create request -> %w",
 			err,
-		)
+		)}
 	}
 
 	resp, err := h.client.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return nil, []error{fmt.Errorf(
 			"can't make request -> %w",
 			err,
-		)
+		)}
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(
+		return nil, []error{fmt.Errorf(
 			"bad respond repo %s",
 			resp.Status,
-		)
+		)}
 	}
 
 	decoder := charmap.Windows1251.NewDecoder()
 	reader := csv.NewReader(decoder.Reader(resp.Body))
 
-	rows, err := h.parceCSV(reader, table)
-	if err != nil {
-		return nil, err
-	}
+	rows, errs := h.parceCSV(reader, table)
 
 	sort.Slice(
 		rows,
@@ -157,25 +154,27 @@ func (h StatusHandler) download(
 		},
 	)
 
-	return rows, nil
+	return rows, errs
 }
 
 func (h StatusHandler) parceCSV(
 	reader *csv.Reader,
 	table securities.Table,
-) (rows StatusTable, err error) {
+) (rows StatusTable, errs []error) {
 	for header := true; ; {
 		record, err := reader.Read()
 
 		switch {
 		case errors.Is(err, io.EOF):
-			return rows, nil
+			return rows, errs
 		case err != nil:
-			return nil, fmt.Errorf(
+			errs = append(errs, fmt.Errorf(
 				"can't parse row %s -> %w",
 				record,
 				err,
-			)
+			))
+
+			continue
 		case header:
 			header = false
 
@@ -184,11 +183,13 @@ func (h StatusHandler) parceCSV(
 
 		divDate, err := time.Parse(_statusDateFormat, record[1])
 		if err != nil {
-			return nil, fmt.Errorf(
+			errs = append(errs, fmt.Errorf(
 				"can't parse date %s ->  %w",
 				record[1],
 				err,
-			)
+			))
+
+			continue
 		}
 
 		if divDate.Before(time.Now().AddDate(0, 0, -_statusLookBackDays)) {
@@ -197,10 +198,12 @@ func (h StatusHandler) parceCSV(
 
 		ticker := reTicker.FindStringSubmatch(record[0])
 		if ticker == nil {
-			return nil, fmt.Errorf(
+			errs = append(errs, fmt.Errorf(
 				"can't parse ticker %s",
 				record[0],
-			)
+			))
+
+			continue
 		}
 
 		if sec, ok := table.Get(ticker[1]); sec.Selected && ok {
