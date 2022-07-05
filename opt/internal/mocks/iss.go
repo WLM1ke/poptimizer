@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"context"
+
 	"github.com/WLM1ke/gomoex"
 	"github.com/stretchr/testify/mock"
 )

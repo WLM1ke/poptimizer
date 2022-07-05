@@ -14,7 +14,7 @@ import (
 
 const (
 	_timeout    = 30 * time.Second
-	_bufferSize = 128
+	_bufferSize = 256
 )
 
 // Handler обработчик событий, отвечающий за обновление портфелей.
@@ -22,7 +22,7 @@ type Handler struct {
 	pub  domain.Publisher
 	repo domain.ReadGroupWriteRepo[Portfolio]
 
-	lock     *sync.RWMutex
+	lock     sync.RWMutex
 	stopping bool
 
 	work   chan domain.Event
@@ -34,7 +34,7 @@ func NewHandler(pub domain.Publisher, repo domain.ReadGroupWriteRepo[Portfolio])
 	handler := Handler{
 		pub:    pub,
 		repo:   repo,
-		lock:   &sync.RWMutex{},
+		lock:   sync.RWMutex{},
 		work:   make(chan domain.Event, _bufferSize),
 		closed: make(chan struct{}),
 	}
@@ -45,7 +45,7 @@ func NewHandler(pub domain.Publisher, repo domain.ReadGroupWriteRepo[Portfolio])
 }
 
 // Match выбирает событие обновления перечня бумаг и рыночных данных.
-func (h Handler) Match(event domain.Event) bool {
+func (h *Handler) Match(event domain.Event) bool {
 	if _, ok := event.Data.(securities.Table); ok && event.QID == securities.GroupID() {
 		return true
 	}
@@ -55,12 +55,12 @@ func (h Handler) Match(event domain.Event) bool {
 	return ok && event.QID == market.ID(event.ID)
 }
 
-func (h Handler) String() string {
+func (h *Handler) String() string {
 	return "securities or market data -> portfolio"
 }
 
 // Handle реагирует на событие об обновлении перечня бумаг или рыночных данных и обновляет данные портфелей.
-func (h Handler) Handle(ctx context.Context, event domain.Event) {
+func (h *Handler) Handle(ctx context.Context, event domain.Event) {
 	h.lock.RLock()
 	defer h.lock.RUnlock()
 
@@ -68,7 +68,7 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 		h.pub.Publish(domain.Event{
 			QID:       ID(_Group),
 			Timestamp: event.Timestamp,
-			Data:      fmt.Errorf("trying to handler %v with stopped handler", event),
+			Data:      fmt.Errorf("trying to handle %v with stopped handler", event),
 		})
 
 		return
@@ -86,7 +86,7 @@ func (h Handler) Handle(ctx context.Context, event domain.Event) {
 }
 
 // Close завершает работу буферизированного обработчика.
-func (h Handler) Close() {
+func (h *Handler) Close() {
 	h.lock.Lock()
 	defer func() {
 		h.lock.Unlock()
@@ -97,7 +97,7 @@ func (h Handler) Close() {
 	close(h.work)
 }
 
-func (h Handler) handleBuffer() {
+func (h *Handler) handleBuffer() {
 	defer close(h.closed)
 
 	var aggs []domain.Aggregate[Portfolio]
@@ -130,7 +130,7 @@ func (h Handler) handleBuffer() {
 	}
 }
 
-func (h Handler) save(aggs []domain.Aggregate[Portfolio]) {
+func (h *Handler) save(aggs []domain.Aggregate[Portfolio]) {
 	ctx, cancel := context.WithTimeout(context.Background(), _timeout)
 	defer cancel()
 
@@ -144,7 +144,6 @@ func (h Handler) save(aggs []domain.Aggregate[Portfolio]) {
 		}
 	}
 
-	// TODO  - убрать
 	h.pub.Publish(domain.Event{
 		QID:       ID(_Group),
 		Timestamp: time.Now(),
@@ -152,7 +151,7 @@ func (h Handler) save(aggs []domain.Aggregate[Portfolio]) {
 	})
 }
 
-func (h Handler) handleEvent(
+func (h *Handler) handleEvent(
 	event domain.Event,
 	aggs []domain.Aggregate[Portfolio],
 ) []domain.Aggregate[Portfolio] {
@@ -171,22 +170,28 @@ func (h Handler) handleEvent(
 
 	switch data := event.Data.(type) {
 	case securities.Table:
-		for n := range aggs {
-			event.QID = aggs[n].QID()
+		for nAgg := range aggs {
+			newDay := event.Timestamp.After(aggs[nAgg].Timestamp)
+			if newDay {
+				aggs[nAgg].Timestamp = event.Timestamp
+			}
 
-			errs := aggs[n].Entity.UpdateSec(data, event.Timestamp.After(aggs[n].Timestamp))
+			event.QID = aggs[nAgg].QID()
+
+			errs := aggs[nAgg].Entity.UpdateSec(data, newDay)
 			if len(errs) != 0 {
 				h.pubErr(event, errs)
 			}
-
-			aggs[n].Timestamp = event.Timestamp
 		}
 	case market.Data:
-		for n := range aggs {
-			ticker := aggs[n].QID().ID
-			aggs[n].Entity.UpdateMarketData(ticker, data.Price, data.Turnover, event.Timestamp.After(aggs[n].Timestamp))
+		for nAgg := range aggs {
+			newDay := event.Timestamp.After(aggs[nAgg].Timestamp)
+			if newDay {
+				aggs[nAgg].Timestamp = event.Timestamp
+			}
 
-			aggs[n].Timestamp = event.Timestamp
+			ticker := event.ID
+			aggs[nAgg].Entity.UpdateMarketData(ticker, data.Price, data.Turnover, newDay)
 		}
 	default:
 		event.Data = fmt.Errorf("can't parse %s data", event)
@@ -196,7 +201,7 @@ func (h Handler) handleEvent(
 	return aggs
 }
 
-func (h Handler) loadAggs(
+func (h *Handler) loadAggs(
 	ctx context.Context,
 	aggs []domain.Aggregate[Portfolio],
 	timestamp time.Time,
@@ -224,7 +229,7 @@ func (h Handler) loadAggs(
 	return append(aggs, agg), nil
 }
 
-func (h Handler) pubErr(event domain.Event, errs []error) {
+func (h *Handler) pubErr(event domain.Event, errs []error) {
 	for _, err := range errs {
 		event.Data = err
 		h.pub.Publish(event)
