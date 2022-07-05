@@ -10,7 +10,7 @@ import (
 
 // Service сервис для редактирования счетов.
 type Service struct {
-	repo domain.ReadGroupWriteRepo[Portfolio]
+	repo domain.ReadGroupWriteDeleteRepo[Portfolio]
 }
 
 // AccountsDTO содержит перечень доступных сетов.
@@ -54,6 +54,16 @@ func (s Service) CreateAccount(ctx context.Context, name string) domain.ServiceE
 	agg.Entity = tmplAgg.Entity
 
 	if err := s.repo.Save(ctx, agg); err != nil {
+		return domain.NewServiceInternalErr(err)
+	}
+
+	return nil
+}
+
+// DeleteAccount удаляет счет.
+func (s Service) DeleteAccount(ctx context.Context, name string) domain.ServiceError {
+	err := s.repo.Delete(ctx, ID(name))
+	if err != nil {
 		return domain.NewServiceInternalErr(err)
 	}
 

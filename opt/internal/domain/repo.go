@@ -23,6 +23,11 @@ type WriteRepo[E Entity] interface {
 	Save(ctx context.Context, agg Aggregate[E]) error
 }
 
+// DeleteRepo осуществляет сохранение объекта.
+type DeleteRepo interface {
+	Delete(ctx context.Context, qid QID) error
+}
+
 // ReadWriteRepo осуществляет загрузку и сохранение объекта.
 type ReadWriteRepo[E Entity] interface {
 	ReadRepo[E]
@@ -34,6 +39,14 @@ type ReadGroupWriteRepo[E Entity] interface {
 	ReadRepo[E]
 	ReadGroupRepo[E]
 	WriteRepo[E]
+}
+
+// ReadGroupWriteDeleteRepo осуществляет загрузку всех объектов группы, сохранение и удаление отдельных объектов.
+type ReadGroupWriteDeleteRepo[E Entity] interface {
+	ReadRepo[E]
+	ReadGroupRepo[E]
+	WriteRepo[E]
+	DeleteRepo
 }
 
 // ReadAppendRepo осуществляет загрузку и дополнение данных объекта.

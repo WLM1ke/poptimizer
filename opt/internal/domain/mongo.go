@@ -155,3 +155,18 @@ func (r *Repo[E]) insert(ctx context.Context, agg Aggregate[E]) error {
 		return nil
 	}
 }
+
+func (r Repo[E]) Delete(ctx context.Context, qid QID) error {
+	collection := r.client.Database(qid.Sub).Collection(qid.Group)
+
+	filter := bson.M{
+		"_id": qid.ID,
+	}
+
+	_, err := collection.DeleteOne(ctx, filter)
+	if err != nil {
+		return fmt.Errorf("can't delete %#v -> %w", qid, err)
+	}
+
+	return nil
+}
