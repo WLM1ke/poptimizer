@@ -45,6 +45,10 @@ func (s Service) GetAccountNames(ctx context.Context) (AccountsDTO, domain.Servi
 
 // CreateAccount создает новый счет с выбранными бумагами.
 func (s Service) CreateAccount(ctx context.Context, name string) domain.ServiceError {
+	if name == _NewAccount {
+		return domain.NewBadServiceRequestErr("reserved name %s", name)
+	}
+
 	tmplAgg, err := s.repo.Get(ctx, ID(_NewAccount))
 	if err != nil {
 		return domain.NewServiceInternalErr(err)
@@ -53,6 +57,10 @@ func (s Service) CreateAccount(ctx context.Context, name string) domain.ServiceE
 	agg, err := s.repo.Get(ctx, ID(name))
 	if err != nil {
 		return domain.NewServiceInternalErr(err)
+	}
+
+	if !agg.Timestamp.IsZero() {
+		return domain.NewBadServiceRequestErr("can't create existing account %s", name)
 	}
 
 	agg.Timestamp = tmplAgg.Timestamp
