@@ -3,7 +3,7 @@ from typing import Tuple
 
 import torch
 
-from poptimizer.config import DEVICE
+from poptimizer.config import DEVICE, FORECAST_DIV
 from poptimizer.dl.features import data_params
 from poptimizer.dl.features.feature import Feature, FeatureType
 
@@ -32,7 +32,7 @@ class Label(Feature):
 
         div = last_forecast_div - last_history_div
         price_growth = last_forecast_price - last_history_price
-        label = (price_growth + div) / last_history_price
+        label = (price_growth * (1 - FORECAST_DIV) + div) / last_history_price
         return label.reshape(-1)
 
     @property
