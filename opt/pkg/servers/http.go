@@ -63,7 +63,15 @@ func logging(logger *lgr.Logger) func(http.Handler) http.Handler {
 			start := time.Now()
 
 			defer func() {
-				logger.Infof(
+				status := writerWithStats.Status()
+
+				logFunc := logger.Infof
+
+				if status >= http.StatusBadRequest {
+					logFunc = logger.Warnf
+				}
+
+				logFunc(
 					"%s %s %d %db %s",
 					request.Method,
 					request.RequestURI,
