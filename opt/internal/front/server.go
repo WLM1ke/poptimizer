@@ -9,6 +9,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/portfolio/port"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/go-chi/chi"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,6 +26,7 @@ type Frontend struct {
 
 	tickers   *securities.Service
 	dividends *raw.Service
+	accounts  *port.Service
 }
 
 // NewFrontend создает обработчики, отображающие frontend.
@@ -51,11 +53,13 @@ func NewFrontend(logger *lgr.Logger, client *mongo.Client, pub domain.Publisher)
 			domain.NewRepo[raw.Table](client),
 			pub,
 		),
+		accounts: port.NewService(domain.NewRepo[port.Portfolio](client)),
 	}
 
 	front.registerMainPage()
 	front.registerTickersHandlers()
 	front.registerDividendsHandlers()
+	front.registerAccountsHandlers()
 
 	return &front
 }
