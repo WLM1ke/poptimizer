@@ -118,13 +118,13 @@ window.dividendsApp = function () {
         },
 
         selectTicker(ticker) {
-            this.selectedTicker = ticker;
-
             fetch(`/dividends/${ticker}`)
                 .then(async resp => {
                     return resp.ok ? resp.json() : Promise.reject(await resp.text());
                 })
                 .then(json => {
+                    this.selectedTicker = ticker;
+
                     this.dividends = json.map( row => {
                         const {date, ...rest} = row;
                         rest.date = new Date(date);
@@ -240,3 +240,191 @@ window.dividendsApp = function () {
     };
 };
 
+window.accountsApp = function () {
+    "use strict";
+
+    return {
+        accounts: [],
+        accountNew: "",
+
+        selectedAccount: this.$persist("").as("accounts_selected"),
+
+        cash: 0,
+        positions: [],
+
+        positionsSort:  this.$persist("tickers").as("accounts_sort"),
+        hideZero:  this.$persist(false).as("accounts_hide_zero"),
+
+        status: "Initialising",
+
+        init() {
+            if (this.selectedAccount !== "") {
+                this.selectAccount(this.selectedAccount);
+            } else {
+                this.status = "Account not selected";
+            }
+
+            fetch("/accounts")
+                .then(async resp => {
+                    return resp.ok ? resp.json() : Promise.reject(await resp.text());
+                })
+                .then(json => {
+                    this.accounts = json || [];
+                })
+                .catch(err => {
+                    this.accounts = [];
+                    this.status = err;
+                });
+        },
+
+        createAccount() {
+            fetch(`/accounts/${this.accountNew}`, {
+                method: "POST",
+            }).then( async resp => {
+                if (!resp.ok) {
+                    return Promise.reject(await resp.text());
+                }
+
+                this.accounts.push(this.accountNew);
+                this.accounts.sort();
+
+                this.selectAccount(this.accountNew);
+
+                this.accountNew = "";
+
+                this.status = "Created successfully";
+            }).catch(err => {
+                this.status = err;
+            });
+        },
+
+        selectAccount(name) {
+            fetch(`/accounts/${name}`)
+                .then(async resp => {
+                    return resp.ok ? resp.json() : Promise.reject(await resp.text());
+                })
+                .then(json => {
+                    this.selectedAccount = name;
+
+                    this.cash = json.cash;
+                    this.positions = json.positions;
+
+                    this.status = "Not edited";
+                })
+                .catch(err => {
+                    this.status = err;
+                });
+        },
+
+        showPos(pos) {
+          return !this.hideZero || pos.shares > 0;
+        },
+
+        sortedPositions() {
+          if (this.positionsSort === "tickers") {
+              this.positions.sort((a, b) => a.ticker.localeCompare(b.ticker));
+          } else {
+              this.positions.sort((a, b) => this.positionValue(b) - this.positionValue(a));
+          }
+
+          return this.positions;
+        },
+
+        positionValue(pos) {
+            return pos.shares * pos.price;
+        },
+
+        formatInt(number) {
+            return new Intl.NumberFormat('ru-RU',
+                {maximumFractionDigits: 0})
+                .format(number);
+        },
+
+        formatFrac(number) {
+            return new Intl.NumberFormat('ru-RU')
+                .format(number);
+        },
+
+        positionValueFormatted(pos) {
+            return this.formatInt(this.positionValue(pos));
+        },
+
+        get showAccount() {
+            return this.accounts.includes(this.selectedAccount);
+        },
+
+        get count() {
+            return this.positions.filter(pos => pos.shares > 0).length;
+        },
+
+        get value() {
+            return this.positions.reduce((previous, pos) => previous + this.positionValue(pos), this.cash);
+        },
+
+        get valueFormat() {
+            return this.formatInt(this.value);
+        },
+
+        deleteAccount() {
+            if (this.value !== 0) {
+                this.status = `Can't delete account with non-zero value ${this.valueFormat}₽`;
+
+                return;
+            }
+
+            fetch(`/accounts/${this.selectedAccount}`, {
+                method: "DELETE",
+            }).then(async resp => {
+                if (!resp.ok) {
+                    return Promise.reject(await resp.text());
+                }
+
+                this.accounts = this.accounts.filter(acc => acc !== this.selectedAccount);
+                this.selectedAccount = "";
+
+                this.cash = 0;
+                this.positions = [];
+
+                this.status = "Deleted successfully";
+            }).catch(err => {
+                this.status = err;
+            });
+        },
+
+        save() {
+            this.status = "Saving";
+
+            let update = this.positions
+                    .map(pos => {
+                        return {ticker: pos.ticker, shares: pos.shares};
+                    });
+
+            update.push({ticker: "CASH", shares: this.cash});
+
+            fetch(`/accounts/${this.selectedAccount}`, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(update)
+            }).then( async resp => {
+                this.status = resp.ok ? "Saved successfully" : await resp.text();
+            }).catch(err => {
+                this.status = err;
+            });
+        },
+
+        edited() {
+            this.status = "Edited";
+        },
+
+        get showButton() {
+            return ![
+                "Initialising",
+                "Account not selected",
+                "Not edited",
+                "Created successfully",
+                "Saved successfully",
+                "Deleted successfully",
+            ].includes(this.status);
+        },
+    };
+};

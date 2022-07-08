@@ -78,6 +78,20 @@
     gap: var(--gap_sm);
 }
 
+.page__sidebar-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap_sm);
+}
+
+.page__sidebar-block_grow {
+    flex-grow: 1;
+}
+
+.page__sidebar-block-header {
+    font-size: 1.36rem;
+}
+
 .page__main {
     grid-area: main;
 
@@ -118,6 +132,12 @@
     flex-direction: column;
     gap: var(--gap_sm);
     flex-grow: 1;
+    overflow: scroll;
+}
+
+.menu_vertical-not-grow {
+    flex-direction: column;
+    gap: var(--gap_sm);
     overflow: scroll;
 }
 
@@ -192,6 +212,10 @@
 
 .form_button:hover {
     filter: saturate(2);
+}
+
+.form_button-left-margin {
+    margin-left: var(--gap_bg);
 }
 
 .form_input {

@@ -175,10 +175,111 @@
         <footer class="page__status" x-text="status"></footer>
     </section>
 
-    <section class="page__section" x-data x-show="isSelectedSection('Accounts')">
+    <section class="page__section" x-data="accountsApp" x-show="isSelectedSection('Accounts')">
         <aside class="page__sidebar">
+            <div>
+                <h1 class="header">Accounts</h1>
+                <ul class="menu menu_vertical-not-grow">
+                    <template x-for="(name, index) in accounts" :key="index">
+                        <li>
+                            <a class="menu__link" title="Select" x-text="name" @click="selectAccount(name)"></a>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+            <hr>
+            <form class="page__sidebar-block">
+                <label class="page__sidebar-block-header">Create Account
+                    <input class="form form_input"
+                           type="text"
+                           placeholder="Account name"
+                           x-model="accountNew"
+                    >
+                </label>
+                <button class="form form_button" @click.prevent="createAccount">
+                    Create
+                </button>
+            </form>
+            <hr>
+            <form class="page__sidebar-block page__sidebar-block_grow">
+                <label class="page__sidebar-block-header">View options</label>
+                <label>
+                    <input type="radio" name="positionsSort" value="tickers" x-model="positionsSort">
+                    sort tickers
+                </label>
+                <label>
+                    <input type="radio"  name="positionsSort" value="value" x-model="positionsSort">
+                    sort values
+                </label>
+                <label>
+                    <input type="checkbox" x-model="hideZero">
+                    hide zero values
+                </label>
+            </form>
+            <button class="form form_button" @click="init" x-show="showButton" x-transition.duration.500ms>
+                Reset
+            </button>
+            <button class="form form_button" @click="save" x-show="showButton" x-transition.duration.500ms>
+                Save
+            </button>
         </aside>
-        <main class="page__main"><h1>In development...</h1>
+        <main class="page__main">
+            <div>
+                <h1 class="header" x-show="showAccount">
+                    <span x-text="selectedAccount"></span>
+                    <small class="badge" x-text="count"></small>
+                    <span>:</span>
+                    <span x-text="valueFormat" x-show="showAccount"></span>
+                    <span>₽</span>
+                    <button
+                            class="form form_button form_button-left-margin"
+                            @click="deleteAccount"
+                            x-show="showAccount"
+                    >
+                        Delete
+                    </button>
+                </h1>
+            </div>
+            <table class="table" x-show="showAccount">
+                <thead>
+                <tr>
+                    <th class="table__cell table__cell_header">Ticker</th>
+                    <th class="table__cell table__cell_header">Shares</th>
+                    <th class="table__cell table__cell_header">Lot</th>
+                    <th class="table__cell table__cell_header">Price</th>
+                    <th class="table__cell table__cell_header">Value</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td class="table__cell">CASH</td>
+                    <td class="table__cell table__cell_with-form">
+                        <input class="table__cell-form" type="number" min="0" x-model.number="cash" @change="edited">
+                    </td>
+                    <td class="table__cell table__cell_right">1</td>
+                    <td class="table__cell table__cell_right">1</td>
+                    <td class="table__cell table__cell_right" x-text="cash"></td>
+                </tr>
+                <template x-for="(pos, index) in sortedPositions" :key="index">
+                    <tr x-show="showPos(pos)">
+                        <td class="table__cell" x-text="pos.ticker"></td>
+                        <td class="table__cell table__cell_with-form">
+                            <input
+                                    class="table__cell-form"
+                                    type="number"
+                                    min="0"
+                                    :step="pos.lot"
+                                    x-model.number="pos.shares"
+                                    @change="edited"
+                            >
+                        </td>
+                        <td class="table__cell table__cell_right" x-text="formatInt(pos.lot)"></td>
+                        <td class="table__cell table__cell_right" x-text="formatFrac(pos.price)"></td>
+                        <td class="table__cell table__cell_right" x-text="positionValueFormatted(pos)"></td>
+                    </tr>
+                </template>
+                </tbody>
+            </table>
         </main>
         <footer class="page__status" x-text="status"></footer>
     </section>
