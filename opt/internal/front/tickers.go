@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
+	"github.com/WLM1ke/poptimizer/opt/pkg/servers"
 )
 
 func (f Frontend) registerTickersHandlers() {
@@ -20,14 +21,7 @@ func (f Frontend) tickersGet(writer http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json; charset=UTF-8")
-
-	if err := json.NewEncoder(writer).Encode(dto); err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		f.logger.Warnf("can't encode dto tickers -> %s", err)
-
-		return
-	}
+	servers.WriteJSON(f.logger, writer, dto)
 }
 
 func (f Frontend) tickersPut(writer http.ResponseWriter, request *http.Request) {

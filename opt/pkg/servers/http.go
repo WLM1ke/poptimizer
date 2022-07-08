@@ -2,6 +2,7 @@ package servers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -85,5 +86,17 @@ func logging(logger *lgr.Logger) func(http.Handler) http.Handler {
 		}
 
 		return http.HandlerFunc(handlerFunc)
+	}
+}
+
+// WriteJSON посылает DTO в виде JSON и логирует ошибку.
+func WriteJSON(logger *lgr.Logger, writer http.ResponseWriter, dto any) {
+	writer.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	if err := json.NewEncoder(writer).Encode(dto); err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		logger.Warnf("can't encode dto -> %s", err)
+
+		return
 	}
 }

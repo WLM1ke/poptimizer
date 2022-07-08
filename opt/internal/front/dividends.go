@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
+	"github.com/WLM1ke/poptimizer/opt/pkg/servers"
 	"github.com/go-chi/chi"
 )
 
@@ -22,14 +23,7 @@ func (f Frontend) dividendsGetTickers(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json; charset=UTF-8")
-
-	if err := json.NewEncoder(writer).Encode(dto); err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		f.logger.Warnf("can't encode tickers dto -> %s", err)
-
-		return
-	}
+	servers.WriteJSON(f.logger, writer, dto)
 }
 
 func (f Frontend) dividendsGetDividends(writer http.ResponseWriter, request *http.Request) {
@@ -40,14 +34,7 @@ func (f Frontend) dividendsGetDividends(writer http.ResponseWriter, request *htt
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json; charset=UTF-8")
-
-	if err := json.NewEncoder(writer).Encode(dto); err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		f.logger.Warnf("can't encode dividends dto -> %s", err)
-
-		return
-	}
+	servers.WriteJSON(f.logger, writer, dto)
 }
 
 func (f Frontend) dividendsPutDividends(writer http.ResponseWriter, request *http.Request) {
