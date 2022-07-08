@@ -13,6 +13,11 @@ type Service struct {
 	repo domain.ReadGroupWriteDeleteRepo[Portfolio]
 }
 
+// NewService создает сервис редактирования брокерских счетов.
+func NewService(repo domain.ReadGroupWriteDeleteRepo[Portfolio]) *Service {
+	return &Service{repo: repo}
+}
+
 // AccountsDTO содержит перечень доступных сетов.
 type AccountsDTO []string
 
@@ -111,16 +116,28 @@ func (s Service) GetAccount(ctx context.Context, name string) (AccountDTO, domai
 	return dto, nil
 }
 
-// SetAmount меняет значение количества акций для заданного счета и тикера.
+// UpdateDTO содержит информацию об обновленных позициях.
+type UpdateDTO []struct {
+	Ticker string `json:"ticker"`
+	Shares int    `json:"shares"`
+}
+
+// UpdateAccount меняет значение количества акций для заданного счета и тикера.
 //
 // Для изменения количества денег необходимо указать тикер CASH.
-func (s Service) SetAmount(ctx context.Context, account, ticker string, amount int) domain.ServiceError {
-	agg, err := s.repo.Get(ctx, ID(account))
+func (s Service) UpdateAccount(ctx context.Context, name string, dto UpdateDTO) domain.ServiceError {
+	agg, err := s.repo.Get(ctx, ID(name))
 	if err != nil {
 		return domain.NewServiceInternalErr(err)
 	}
 
-	if err := agg.Entity.SetAmount(ticker, amount); err != nil {
+	for _, pos := range dto {
+		if err := agg.Entity.SetAmount(pos.Ticker, pos.Shares); err != nil {
+			return domain.NewBadServiceRequestErr("%s", err)
+		}
+	}
+
+	if err := s.repo.Save(ctx, agg); err != nil {
 		return domain.NewServiceInternalErr(err)
 	}
 
