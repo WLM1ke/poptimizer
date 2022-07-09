@@ -23,6 +23,11 @@ type WriteRepo[E Entity] interface {
 	Save(ctx context.Context, agg Aggregate[E]) error
 }
 
+// JSONViewer загружает ExtendedJSON представление сущности.
+type JSONViewer interface {
+	GetJSON(ctx context.Context, qid QID) ([]byte, error)
+}
+
 // DeleteRepo осуществляет сохранение объекта.
 type DeleteRepo interface {
 	Delete(ctx context.Context, qid QID) error

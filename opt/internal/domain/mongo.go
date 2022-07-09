@@ -8,6 +8,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type aggDao[E Entity] struct {
@@ -169,4 +170,39 @@ func (r Repo[E]) Delete(ctx context.Context, qid QID) error {
 	}
 
 	return nil
+}
+
+// MongoJSON обеспечивает хранение и загрузку таблиц.
+type MongoJSON struct {
+	client *mongo.Client
+}
+
+// NewMongoJSON - создает новый репозиторий на основе MongoDB.
+func NewMongoJSON(client *mongo.Client) *MongoJSON {
+	return &MongoJSON{
+		client: client,
+	}
+}
+
+// GetJSON загружает ExtendedJSON представление данных.
+func (r *MongoJSON) GetJSON(ctx context.Context, qid QID) ([]byte, error) {
+	collection := r.client.Database(qid.Sub).Collection(qid.Group)
+
+	projections := options.FindOne().SetProjection(bson.M{"_id": 0, "data": 1})
+
+	rawData, err := collection.FindOne(ctx, bson.M{"_id": qid.ID}, projections).DecodeBytes()
+
+	switch {
+	case errors.Is(err, mongo.ErrNoDocuments):
+		return nil, fmt.Errorf("data not found: %#v", qid)
+	case err != nil:
+		return nil, fmt.Errorf("can't load data %#v -> %w", qid, err)
+	}
+
+	json, err := bson.MarshalExtJSON(rawData, true, true)
+	if err != nil {
+		return nil, fmt.Errorf("can't prepare json %#v -> %w", qid, err)
+	}
+
+	return json, nil
 }

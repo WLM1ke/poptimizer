@@ -24,6 +24,8 @@ type Frontend struct {
 	files  fs.FS
 	logger *lgr.Logger
 
+	json domain.JSONViewer
+
 	tickers   *securities.Service
 	dividends *raw.Service
 	accounts  *port.Service
@@ -44,6 +46,8 @@ func NewFrontend(logger *lgr.Logger, client *mongo.Client, pub domain.Publisher)
 
 		logger: logger,
 
+		json: domain.NewMongoJSON(client),
+
 		tickers: securities.NewService(
 			domain.NewRepo[securities.Table](client),
 			pub,
@@ -55,6 +59,8 @@ func NewFrontend(logger *lgr.Logger, client *mongo.Client, pub domain.Publisher)
 		),
 		accounts: port.NewService(domain.NewRepo[port.Portfolio](client)),
 	}
+
+	front.registerJSON()
 
 	front.registerMainPage()
 	front.registerTickersHandlers()
