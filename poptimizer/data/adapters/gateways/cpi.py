@@ -15,7 +15,7 @@ HEADERS = {
 }
 
 PRICES_PAGE = "https://rosstat.gov.ru/price"
-CPI_PAGE = re.compile("/storage/mediabank/ind_potreb_cen_.+html")
+CPI_PAGE = re.compile("/storage/mediabank/ind_potreb_cen_.+html?")
 HOST = "https://rosstat.gov.ru"
 LINK = re.compile("https://rosstat.gov.ru/.+ipc.+xlsx")
 END_OF_JAN = 31
