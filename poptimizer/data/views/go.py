@@ -15,13 +15,13 @@ VIEWER = bootstrap.VIEWER
 
 
 async def _rest_reader(group: str, name: str, session: aiohttp.ClientSession = connections.HTTP_SESSION):
-    async with session.get(f"http://localhost:3000/api/{group}/{name}") as respond:
+    async with session.get(f"http://localhost:10000/api/{group}/{name}") as respond:
         respond.raise_for_status()
         json = await respond.text()
 
         json = json_util.loads(json)
 
-        return pd.DataFrame(json["rows"])
+        return pd.DataFrame(json["data"])
 
 
 def rest_reader(group: str, name: str) -> pd.DataFrame:
@@ -32,14 +32,22 @@ def rest_reader(group: str, name: str) -> pd.DataFrame:
 
 def securities():
     local = VIEWER.get_df(ports.SECURITIES, ports.SECURITIES)["LOT_SIZE"]
-    new = rest_reader(ports.SECURITIES, ports.SECURITIES).set_index("ticker")["lotsize"]
+    new = rest_reader(ports.SECURITIES, ports.SECURITIES).set_index("ticker")["lot"]
 
     testing.assert_series_equal(local, new, check_names=False)
 
 
+def cpi():
+    local = VIEWER.get_df(ports.CPI, ports.CPI)
+    new = rest_reader("cpi", "cpi").set_index("date")
+    new.columns = local.columns
+
+    testing.assert_frame_equal(local, new, check_names=False)
+
+
 def usd():
     local = VIEWER.get_df(ports.USD, ports.USD)
-    new = rest_reader(ports.USD, ports.USD).set_index("begin").drop(columns=["end", "volume"])
+    new = rest_reader(ports.USD, ports.USD).set_index("date")
     new.columns = local.columns
 
     testing.assert_frame_equal(local, new, check_names=False)
@@ -58,7 +66,7 @@ def indexes():
 
 def quotes(ticker: str):
     local = VIEWER.get_df(ports.QUOTES, ticker).loc["2015-01-01":]
-    new = rest_reader(ports.QUOTES, ticker).set_index("begin").drop(columns=["end", "volume"]).loc["2015-01-01":]
+    new = rest_reader(ports.QUOTES, ticker).set_index("date").loc["2015-01-01":]
     new.columns = local.columns
 
     if len(local) != len(new):
@@ -94,6 +102,7 @@ def dividends(ticker: str):
 
 if __name__ == "__main__":
     securities()
+    cpi()
     usd()
     indexes()
 
