@@ -14,13 +14,14 @@ import (
 
 const (
 	_timeout    = 30 * time.Second
-	_bufferSize = 256
+	_bufferSize = 16
 )
 
 // Handler обработчик событий, отвечающий за обновление портфелей.
 type Handler struct {
 	pub  domain.Publisher
-	repo domain.ReadGroupWriteRepo[Portfolio]
+	port domain.ReadGroupWriteRepo[Portfolio]
+	data domain.ReadRepo[market.Data]
 
 	lock     sync.RWMutex
 	stopping bool
@@ -30,10 +31,15 @@ type Handler struct {
 }
 
 // NewHandler создает обработчик для актуализации данных портфелей.
-func NewHandler(pub domain.Publisher, repo domain.ReadGroupWriteRepo[Portfolio]) *Handler {
+func NewHandler(
+	pub domain.Publisher,
+	portRepo domain.ReadGroupWriteRepo[Portfolio],
+	dataRepo domain.ReadRepo[market.Data],
+) *Handler {
 	handler := Handler{
 		pub:    pub,
-		repo:   repo,
+		port:   portRepo,
+		data:   dataRepo,
 		lock:   sync.RWMutex{},
 		work:   make(chan domain.Event, _bufferSize),
 		closed: make(chan struct{}),
@@ -66,7 +72,7 @@ func (h *Handler) Handle(ctx context.Context, event domain.Event) {
 
 	if h.stopping {
 		h.pub.Publish(domain.Event{
-			QID:       ID(_Group),
+			QID:       AccountID(_AccountsGroup),
 			Timestamp: event.Timestamp,
 			Data:      fmt.Errorf("trying to handle %v with stopped handler", event),
 		})
@@ -78,7 +84,7 @@ func (h *Handler) Handle(ctx context.Context, event domain.Event) {
 	case h.work <- event:
 	case <-ctx.Done():
 		h.pub.Publish(domain.Event{
-			QID:       ID(_Group),
+			QID:       AccountID(_AccountsGroup),
 			Timestamp: event.Timestamp,
 			Data:      fmt.Errorf("timeout while handling %v", event),
 		})
@@ -134,18 +140,49 @@ func (h *Handler) save(aggs []domain.Aggregate[Portfolio]) {
 	ctx, cancel := context.WithTimeout(context.Background(), _timeout)
 	defer cancel()
 
-	for _, agg := range aggs {
-		if err := h.repo.Save(ctx, agg); err != nil {
+	portQID := PortfolioID(aggs[0].Timestamp)
+
+	port, err := h.port.Get(ctx, portQID)
+	if err != nil {
+		h.pub.Publish(domain.Event{
+			QID:       portQID,
+			Timestamp: aggs[0].Timestamp,
+			Data:      err,
+		})
+
+		return
+	}
+
+	port.Timestamp = aggs[0].Timestamp
+	port.Entity = aggs[0].Entity
+
+	for count, agg := range aggs {
+		if err := h.port.Save(ctx, agg); err != nil {
 			h.pub.Publish(domain.Event{
 				QID:       agg.QID(),
 				Timestamp: agg.Timestamp,
 				Data:      err,
 			})
 		}
+
+		if count == 0 {
+			continue
+		}
+
+		port.Entity = port.Entity.Sum(agg.Entity)
+	}
+
+	err = h.port.Save(ctx, port)
+	if err != nil {
+		h.pub.Publish(domain.Event{
+			QID:       port.QID(),
+			Timestamp: port.Timestamp,
+			Data:      err,
+		})
 	}
 
 	h.pub.Publish(domain.Event{
-		QID:       ID(_Group),
+		QID:       AccountID(_AccountsGroup),
 		Timestamp: time.Now(),
 		Data:      fmt.Errorf("сохранение"),
 	})
@@ -160,7 +197,7 @@ func (h *Handler) handleEvent(
 
 	aggs, err := h.loadAggs(ctx, aggs, event.Timestamp)
 	if err != nil {
-		event.QID = ID(_Group)
+		event.QID = AccountID(_AccountsGroup)
 		event.Data = err
 
 		h.pub.Publish(event)
@@ -181,6 +218,10 @@ func (h *Handler) handleEvent(
 			errs := aggs[nAgg].Entity.UpdateSec(data, newDay)
 			if len(errs) != 0 {
 				h.pubErr(event, errs)
+			}
+
+			if !newDay {
+				h.updateMissedMarketData(ctx, aggs[nAgg])
 			}
 		}
 	case market.Data:
@@ -210,7 +251,7 @@ func (h *Handler) loadAggs(
 		return aggs, nil
 	}
 
-	aggs, err := h.repo.GetGroup(ctx, portfolio.Subdomain, _Group)
+	aggs, err := h.port.GetGroup(ctx, portfolio.Subdomain, _AccountsGroup)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +260,7 @@ func (h *Handler) loadAggs(
 		return aggs, nil
 	}
 
-	agg, err := h.repo.Get(ctx, ID(_NewAccount))
+	agg, err := h.port.Get(ctx, AccountID(_NewAccount))
 	if err != nil {
 		return nil, err
 	}
@@ -233,5 +274,32 @@ func (h *Handler) pubErr(event domain.Event, errs []error) {
 	for _, err := range errs {
 		event.Data = err
 		h.pub.Publish(event)
+	}
+}
+
+func (h *Handler) updateMissedMarketData(ctx context.Context, agg domain.Aggregate[Portfolio]) {
+	pos := agg.Entity.Positions
+
+	for posN := range pos {
+		if pos[posN].Price != 0 {
+			continue
+		}
+
+		data, err := h.data.Get(ctx, market.ID(pos[posN].Ticker))
+		if err != nil {
+			h.pub.Publish(
+				domain.Event{
+					QID:       agg.QID(),
+					Timestamp: agg.Timestamp,
+					Data:      err,
+				},
+			)
+		}
+
+		pos[posN].Price = data.Entity.Price
+
+		if !data.Timestamp.Before(agg.Timestamp) {
+			pos[posN].Turnover = data.Entity.Turnover
+		}
 	}
 }

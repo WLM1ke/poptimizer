@@ -3,6 +3,7 @@ package port
 import (
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
@@ -11,17 +12,28 @@ import (
 )
 
 const (
-	_Group      = `portfolio`
-	_NewAccount = `__new__`
-	_Cash       = `CASH`
+	_AccountsGroup  = `accounts`
+	_PortfolioGroup = `portfolio`
+	_portIDLayout   = `2006-01-02`
+	_NewAccount     = `__new__`
+	_Cash           = `CASH`
 )
 
-// ID соответствующего портфеля.
-func ID(account string) domain.QID {
+// AccountID соответствующего брокерского счета.
+func AccountID(account string) domain.QID {
 	return domain.QID{
 		Sub:   portfolio.Subdomain,
-		Group: _Group,
+		Group: _AccountsGroup,
 		ID:    account,
+	}
+}
+
+// PortfolioID портфеля на соответствующую дату.
+func PortfolioID(date time.Time) domain.QID {
+	return domain.QID{
+		Sub:   portfolio.Subdomain,
+		Group: _PortfolioGroup,
+		ID:    date.Format(_portIDLayout),
 	}
 }
 

@@ -75,7 +75,7 @@ flowchart
     Sevice:Dates-->Handler:Indexes
     Sevice:Dates-->Handler:USD
     
-    Handler:USD-->Securities{{Controller/Handler:Securities}}
+    Handler:USD-->Securities{{Service/Handler:Securities}}
     Dividends[\Fronend:Dividends/]-->Securities
     
     Securities-->Handler:Status
@@ -83,7 +83,7 @@ flowchart
     Securities-->Handler:Quotes
 	Securities-->Handler:Dividends
 
-    Tickers[\Fronend:Tickers/]-->CheckRaw{{Controller/Handler:CheckRaw}}
+    Tickers[\Fronend:Tickers/]-->CheckRaw{{Service/Handler:CheckRaw}}
     
     Handler:Status-->Handler:CheckReestry
     Handler:Status-->Handler:CheckNASDAQ
@@ -103,8 +103,14 @@ flowchart
 ```mermaid
 flowchart
 
-    Quotes[\Data:Quotes/] --> MarketData
-    MarketData -.-> Portfolio
+    Quotes[\Data:Quotes/] --> Handler:MarketData
     
-    Securities[\Data:Securities/] --> Portfolio
+    Handler:MarketData --> Accounts{{Service/Handler:Accounts}}
+    Securities[\Data:Securities/] --> Accounts
+    Acc[\Fronend:Accounts/]--> Accounts
+    
+    Accounts -.-> Metrics{{Service/Handler:Metrics}}
+    Evolution[\Evolution:Forecasts/] -.-> Metrics
+    
+    Metrics -.-> Optimizer{{Service/Handler:Optimizer}}
 ```

@@ -91,7 +91,7 @@ func PrepareEventBus(
 	bus.Subscribe(raw.NewCheckCloseReestryHandler(&bus, domain.NewRepo[raw.Table](mongoDB), client))
 	bus.Subscribe(raw.NewCheckNASDAQHandler(&bus, domain.NewRepo[raw.Table](mongoDB), client))
 
-	bus.Subscribe(port.NewHandler(&bus, domain.NewRepo[port.Portfolio](mongoDB)))
+	bus.Subscribe(port.NewHandler(&bus, domain.NewRepo[port.Portfolio](mongoDB), domain.NewRepo[market.Data](mongoDB)))
 	bus.Subscribe(market.NewHandler(&bus, domain.NewRepo[market.Data](mongoDB)))
 
 	return mongoDB, &bus

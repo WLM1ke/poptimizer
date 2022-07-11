@@ -126,12 +126,14 @@ func TestHandler_HandleSecurities(t *testing.T) {
 
 	repo := new(mocks.Repo[Portfolio])
 	repo.
-		On("GetGroup", portfolio.Subdomain, _Group).
+		On("GetGroup", portfolio.Subdomain, _AccountsGroup).
 		Return([]domain.Aggregate[Portfolio]{aggIn}, nil).
 		On("Save", aggOut).
 		Return(nil)
 
-	handler := NewHandler(pub, repo)
+	repoData := new(mocks.Repo[market.Data])
+
+	handler := NewHandler(pub, repo, repoData)
 
 	event := domain.Event{
 		QID:       securities.GroupID(),
@@ -214,12 +216,14 @@ func TestHandler_HandleSecuritiesSameDate(t *testing.T) {
 
 	repo := new(mocks.Repo[Portfolio])
 	repo.
-		On("GetGroup", portfolio.Subdomain, _Group).
+		On("GetGroup", portfolio.Subdomain, _AccountsGroup).
 		Return([]domain.Aggregate[Portfolio]{aggIn}, nil).
 		On("Save", aggOut).
 		Return(nil)
 
-	handler := NewHandler(pub, repo)
+	repoData := new(mocks.Repo[market.Data])
+
+	handler := NewHandler(pub, repo, repoData)
 
 	event := domain.Event{
 		QID:       securities.GroupID(),
@@ -294,12 +298,14 @@ func TestHandler_HandleMarketData(t *testing.T) {
 
 	repo := new(mocks.Repo[Portfolio])
 	repo.
-		On("GetGroup", portfolio.Subdomain, _Group).
+		On("GetGroup", portfolio.Subdomain, _AccountsGroup).
 		Return([]domain.Aggregate[Portfolio]{aggIn}, nil).
 		On("Save", aggOut).
 		Return(nil)
 
-	handler := NewHandler(pub, repo)
+	repoData := new(mocks.Repo[market.Data])
+
+	handler := NewHandler(pub, repo, repoData)
 
 	event := domain.Event{
 		QID:       market.ID("GAZP"),
@@ -373,12 +379,14 @@ func TestHandler_HandleMarketSameDate(t *testing.T) {
 
 	repo := new(mocks.Repo[Portfolio])
 	repo.
-		On("GetGroup", portfolio.Subdomain, _Group).
+		On("GetGroup", portfolio.Subdomain, _AccountsGroup).
 		Return([]domain.Aggregate[Portfolio]{aggIn}, nil).
 		On("Save", aggOut).
 		Return(nil)
 
-	handler := NewHandler(pub, repo)
+	repoData := new(mocks.Repo[market.Data])
+
+	handler := NewHandler(pub, repo, repoData)
 
 	event := domain.Event{
 		QID:       market.ID("GAZP"),
@@ -465,14 +473,14 @@ func TestHandler_HandleMultiple(t *testing.T) {
 
 	repo := new(mocks.Repo[Portfolio])
 	repo.
-		On("GetGroup", portfolio.Subdomain, _Group).
+		On("GetGroup", portfolio.Subdomain, _AccountsGroup).
 		Return([]domain.Aggregate[Portfolio]{aggIn}, nil).
 		On("Save", aggOut).
 		Return(nil)
 
 	handler := Handler{
 		pub:    pub,
-		repo:   repo,
+		port:   repo,
 		lock:   sync.RWMutex{},
 		work:   make(chan domain.Event, 3),
 		closed: make(chan struct{}),
@@ -528,14 +536,16 @@ func TestHandler_HandleAfterStop(t *testing.T) {
 
 	pub := new(mocks.Pub)
 	pub.On("Publish", domain.Event{
-		QID:       ID(_Group),
+		QID:       AccountID(_AccountsGroup),
 		Timestamp: event.Timestamp,
 		Data:      fmt.Errorf("trying to handle %v with stopped handler", event),
 	}).Return()
 
 	repo := new(mocks.Repo[Portfolio])
 
-	handler := NewHandler(pub, repo)
+	repoData := new(mocks.Repo[market.Data])
+
+	handler := NewHandler(pub, repo, repoData)
 	handler.Close()
 
 	handler.Handle(context.Background(), event)
@@ -553,7 +563,7 @@ func TestHandler_HandleAfterTimeout(t *testing.T) {
 
 	pub := new(mocks.Pub)
 	pub.On("Publish", domain.Event{
-		QID:       ID(_Group),
+		QID:       AccountID(_AccountsGroup),
 		Timestamp: event.Timestamp,
 		Data:      fmt.Errorf("timeout while handling %v", event),
 	}).Return()
@@ -562,7 +572,7 @@ func TestHandler_HandleAfterTimeout(t *testing.T) {
 
 	handler := Handler{
 		pub:  pub,
-		repo: repo,
+		port: repo,
 		lock: sync.RWMutex{},
 		work: make(chan domain.Event),
 	}

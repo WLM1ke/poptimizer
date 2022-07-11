@@ -23,7 +23,7 @@ type AccountsDTO []string
 
 // GetAccountNames возвращает перечень существующих счетов.
 func (s Service) GetAccountNames(ctx context.Context) (AccountsDTO, domain.ServiceError) {
-	aggs, err := s.repo.GetGroup(ctx, portfolio.Subdomain, _Group)
+	aggs, err := s.repo.GetGroup(ctx, portfolio.Subdomain, _AccountsGroup)
 	if err != nil {
 		return nil, domain.NewServiceInternalErr(err)
 	}
@@ -35,7 +35,7 @@ func (s Service) GetAccountNames(ctx context.Context) (AccountsDTO, domain.Servi
 	acc := make(AccountsDTO, 0, len(aggs)-1)
 
 	for _, agg := range aggs {
-		if agg.QID() != ID(_NewAccount) {
+		if agg.QID() != AccountID(_NewAccount) {
 			acc = append(acc, agg.QID().ID)
 		}
 	}
@@ -49,12 +49,12 @@ func (s Service) CreateAccount(ctx context.Context, name string) domain.ServiceE
 		return domain.NewBadServiceRequestErr("reserved name %s", name)
 	}
 
-	tmplAgg, err := s.repo.Get(ctx, ID(_NewAccount))
+	tmplAgg, err := s.repo.Get(ctx, AccountID(_NewAccount))
 	if err != nil {
 		return domain.NewServiceInternalErr(err)
 	}
 
-	agg, err := s.repo.Get(ctx, ID(name))
+	agg, err := s.repo.Get(ctx, AccountID(name))
 	if err != nil {
 		return domain.NewServiceInternalErr(err)
 	}
@@ -75,7 +75,7 @@ func (s Service) CreateAccount(ctx context.Context, name string) domain.ServiceE
 
 // DeleteAccount удаляет счет.
 func (s Service) DeleteAccount(ctx context.Context, name string) domain.ServiceError {
-	err := s.repo.Delete(ctx, ID(name))
+	err := s.repo.Delete(ctx, AccountID(name))
 	if err != nil {
 		return domain.NewServiceInternalErr(err)
 	}
@@ -101,7 +101,7 @@ type AccountDTO struct {
 func (s Service) GetAccount(ctx context.Context, name string) (AccountDTO, domain.ServiceError) {
 	var dto AccountDTO
 
-	agg, err := s.repo.Get(ctx, ID(name))
+	agg, err := s.repo.Get(ctx, AccountID(name))
 	if err != nil {
 		return dto, domain.NewServiceInternalErr(err)
 	}
@@ -134,18 +134,43 @@ type UpdateDTO []struct {
 //
 // Для изменения количества денег необходимо указать тикер CASH.
 func (s Service) UpdateAccount(ctx context.Context, name string, dto UpdateDTO) domain.ServiceError {
-	agg, err := s.repo.Get(ctx, ID(name))
+	aggs, err := s.repo.GetGroup(ctx, portfolio.Subdomain, _AccountsGroup)
 	if err != nil {
 		return domain.NewServiceInternalErr(err)
 	}
 
-	for _, pos := range dto {
-		if err := agg.Entity.SetAmount(pos.Ticker, pos.Shares); err != nil {
-			return domain.NewBadServiceRequestErr("%s", err)
-		}
+	portQID := PortfolioID(aggs[0].Timestamp)
+
+	port, err := s.repo.Get(ctx, portQID)
+	if err != nil {
+		return domain.NewServiceInternalErr(err)
 	}
 
-	if err := s.repo.Save(ctx, agg); err != nil {
+	port.Timestamp = aggs[0].Timestamp
+	port.Entity = aggs[0].Entity
+
+	for count, agg := range aggs {
+		if agg.QID().ID == name {
+			for _, pos := range dto {
+				if err := agg.Entity.SetAmount(pos.Ticker, pos.Shares); err != nil {
+					return domain.NewBadServiceRequestErr("%s", err)
+				}
+			}
+
+			if err := s.repo.Save(ctx, agg); err != nil {
+				return domain.NewServiceInternalErr(err)
+			}
+		}
+
+		if count == 0 {
+			continue
+		}
+
+		port.Entity = port.Entity.Sum(agg.Entity)
+	}
+
+	err = s.repo.Save(ctx, port)
+	if err != nil {
 		return domain.NewServiceInternalErr(err)
 	}
 
