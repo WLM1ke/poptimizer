@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"regexp"
 	"sync"
 	"time"
@@ -78,13 +79,13 @@ func (t *Telegram) Send(ctx context.Context, markdowns ...string) error {
 }
 
 func prepareMsg(msg string) string {
-	return escapeRe.ReplaceAllStringFunc(msg, func(ex string) string { return `\` + ex })
+	return url.QueryEscape(escapeRe.ReplaceAllStringFunc(msg, func(ex string) string { return `\` + ex }))
 }
 
 func (t *Telegram) apiCall(ctx context.Context, cmd string) error {
-	url := fmt.Sprintf(t.apiTmpl, t.token, cmd)
+	apiUrl := fmt.Sprintf(t.apiTmpl, t.token, cmd)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, "GET", apiUrl, http.NoBody)
 	if err != nil {
 		return fmt.Errorf("can't create telegram request -> %w", err)
 	}
