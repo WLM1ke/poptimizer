@@ -28,7 +28,8 @@ type Frontend struct {
 
 	tickers   *securities.Service
 	dividends *raw.Service
-	accounts  *port.Service
+	accounts  *port.AccountsService
+	portfolio *port.PortfolioService
 }
 
 // NewFrontend создает обработчики, отображающие frontend.
@@ -57,7 +58,8 @@ func NewFrontend(logger *lgr.Logger, client *mongo.Client, pub domain.Publisher)
 			domain.NewRepo[raw.Table](client),
 			pub,
 		),
-		accounts: port.NewService(domain.NewRepo[port.Portfolio](client)),
+		accounts:  port.NewAccountsService(domain.NewRepo[port.Portfolio](client)),
+		portfolio: port.NewPortfolioService(domain.NewRepo[port.Portfolio](client)),
 	}
 
 	front.registerJSON()
@@ -66,6 +68,7 @@ func NewFrontend(logger *lgr.Logger, client *mongo.Client, pub domain.Publisher)
 	front.registerTickersHandlers()
 	front.registerDividendsHandlers()
 	front.registerAccountsHandlers()
+	front.registerPortfolioHandlers()
 
 	return &front
 }
