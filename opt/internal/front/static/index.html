@@ -204,11 +204,11 @@
             <form class="page__sidebar-block page__sidebar-block_grow">
                 <label class="page__sidebar-block-header">View options</label>
                 <label>
-                    <input type="radio" name="positionsSort" value="tickers" x-model="positionsSort">
+                    <input type="radio" value="tickers" x-model="positionsSort">
                     sort tickers
                 </label>
                 <label>
-                    <input type="radio"  name="positionsSort" value="value" x-model="positionsSort">
+                    <input type="radio" value="value" x-model="positionsSort">
                     sort values
                 </label>
                 <label>
@@ -229,7 +229,7 @@
                     <span x-text="selectedAccount"></span>
                     <small class="badge" x-text="count"></small>
                     <span>:</span>
-                    <span x-text="valueFormat" x-show="showAccount"></span>
+                    <span x-text="valueFormatted" x-show="showAccount"></span>
                     <span>₽</span>
                     <button
                             class="form form_button form_button-left-margin"
@@ -258,7 +258,7 @@
                     </td>
                     <td class="table__cell table__cell_right">1</td>
                     <td class="table__cell table__cell_right">1</td>
-                    <td class="table__cell table__cell_right" x-text="cash"></td>
+                    <td class="table__cell table__cell_right" x-text="formatInt(cash)"></td>
                 </tr>
                 <template x-for="(pos, index) in sortedPositions" :key="index">
                     <tr x-show="showPos(pos)">
@@ -284,10 +284,84 @@
         <footer class="page__status" x-text="status"></footer>
     </section>
 
-    <section class="page__section" x-data x-show="isSelectedSection('Portfolio')">
+    <section class="page__section" x-data="portfolioApp" x-show="isSelectedSection('Portfolio')">
         <aside class="page__sidebar">
+            <div>
+                <h1 class="header">Dates</h1>
+                <ul class="menu menu_vertical">
+                    <template x-for="(date, index) in dates" :key="index">
+                        <li>
+                            <a class="menu__link" title="Select" x-text="date" @click="selectPortfolio(date)"></a>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+            <form class="page__sidebar-block">
+                <label class="page__sidebar-block-header">View options</label>
+                <label>
+                    <input type="radio" value="tickers" x-model="positionsSort">
+                    sort tickers
+                </label>
+                <label>
+                    <input type="radio" value="value" x-model="positionsSort">
+                    sort values
+                </label>
+                <label>
+                    <input type="radio" value="turnover" x-model="positionsSort">
+                    sort turnover
+                </label>
+                <label>
+                    <input type="checkbox" x-model="hideZero">
+                    hide zero values
+                </label>
+            </form>
         </aside>
-        <main class="page__main"><h1>In development...</h1>
+        <main class="page__main">
+            <div x-show="showPortfolio">
+                <h1 class="header" >
+                    <span x-text="selectedDate"></span>
+                    <small class="badge">
+                        <span x-text="count"></span>
+                        /
+                        <span x-text="effectiveCount"></span>
+                    </small>
+                    <span>:</span>
+                    <span x-text="valueFormatted"></span>
+                    <span>₽</span>
+                </h1>
+            </div>
+            <table class="table" x-show="showPortfolio">
+                <thead>
+                <tr>
+                    <th class="table__cell table__cell_header">Ticker</th>
+                    <th class="table__cell table__cell_header">Shares</th>
+                    <th class="table__cell table__cell_header">Price</th>
+                    <th class="table__cell table__cell_header">Value</th>
+                    <th class="table__cell table__cell_header">Weight</th>
+                    <th class="table__cell table__cell_header">Turnover</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td class="table__cell">CASH</td>
+                    <td class="table__cell table__cell_right" x-text="formatInt(cash)"></td>
+                    <td class="table__cell table__cell_right">1</td>
+                    <td class="table__cell table__cell_right" x-text="formatInt(cash)"></td>
+                    <td class="table__cell table__cell_right" x-text="weightCashFormatted"></td>
+                    <td class="table__cell table__cell_right">-</td>
+                </tr>
+                <template x-for="(pos, index) in sortedPositions" :key="index">
+                    <tr x-show="showPos(pos)">
+                        <td class="table__cell" x-text="pos.ticker"></td>
+                        <td class="table__cell table__cell_right" x-text="formatInt(pos.shares)"></td>
+                        <td class="table__cell table__cell_right" x-text="formatFrac(pos.price)"></td>
+                        <td class="table__cell table__cell_right" x-text="positionValueFormatted(pos)"></td>
+                        <td class="table__cell table__cell_right" x-text="weightFormatted(pos)"></td>
+                        <td class="table__cell table__cell_right" x-text="formatInt(pos.turnover)"></td>
+                    </tr>
+                </template>
+                </tbody>
+            </table>
         </main>
         <footer class="page__status" x-text="status"></footer>
     </section>

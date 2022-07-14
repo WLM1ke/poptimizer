@@ -14,6 +14,29 @@ window.pagesApp = function () {
     };
 };
 
+function formatInt(number) {
+    "use strict";
+
+    return new Intl.NumberFormat('ru-RU',
+        {maximumFractionDigits: 0})
+        .format(number);
+}
+
+function formatFrac(number) {
+    "use strict";
+
+    return new Intl.NumberFormat('ru-RU')
+        .format(number);
+}
+
+function formatPercent(number) {
+    "use strict";
+
+    return new Intl.NumberFormat('ru-RU',
+        {style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2})
+        .format(number);
+}
+
 window.tickersApp = function () {
     "use strict";
 
@@ -334,19 +357,8 @@ window.accountsApp = function () {
             return pos.shares * pos.price;
         },
 
-        formatInt(number) {
-            return new Intl.NumberFormat('ru-RU',
-                {maximumFractionDigits: 0})
-                .format(number);
-        },
-
-        formatFrac(number) {
-            return new Intl.NumberFormat('ru-RU')
-                .format(number);
-        },
-
         positionValueFormatted(pos) {
-            return this.formatInt(this.positionValue(pos));
+            return formatInt(this.positionValue(pos));
         },
 
         get showAccount() {
@@ -361,8 +373,8 @@ window.accountsApp = function () {
             return this.positions.reduce((previous, pos) => previous + this.positionValue(pos), this.cash);
         },
 
-        get valueFormat() {
-            return this.formatInt(this.value);
+        get valueFormatted() {
+            return formatInt(this.value);
         },
 
         deleteAccount() {
@@ -425,6 +437,120 @@ window.accountsApp = function () {
                 "Saved successfully",
                 "Deleted successfully",
             ].includes(this.status);
+        },
+    };
+};
+
+
+window.portfolioApp = function () {
+    "use strict";
+
+    return {
+        dates: [],
+
+        selectedDate: this.$persist("").as("portfolio_selected"),
+
+        cash: 0,
+        positions: [],
+        count: 0,
+        effectiveCount: 0,
+        value: 0,
+
+        positionsSort:  this.$persist("value").as("portfolio_sort"),
+        hideZero:  this.$persist(true).as("portfolio_hide_zero"),
+
+        status: "Initialising",
+
+        init() {
+            if (this.selectedDate !== "") {
+                this.selectPortfolio(this.selectedDate);
+            } else {
+                this.status = "Date not selected";
+            }
+
+            fetch("/portfolio")
+                .then(async resp => {
+                    return resp.ok ? resp.json() : Promise.reject(await resp.text());
+                })
+                .then(json => {
+                    this.dates = json || [];
+                    this.dates.sort((a, b) => b.localeCompare(a));
+                })
+                .catch(err => {
+                    this.dates = [];
+                    this.status = err;
+                });
+        },
+
+        selectPortfolio(date) {
+            fetch(`/portfolio/${date}`)
+                .then(async resp => {
+                    return resp.ok ? resp.json() : Promise.reject(await resp.text());
+                })
+                .then(json => {
+                    this.selectedDate = date;
+
+                    this.cash = json.cash;
+                    this.positions = json.positions;
+
+                    this.count = this.positions.filter(pos => pos.shares > 0).length;
+
+                    const value = this.positions
+                        .reduce((previous, pos) => previous + pos.shares * pos.price, this.cash);
+                    this.value = value;
+
+                    this.positions.forEach(function(pos) {
+                        pos.value = pos.shares * pos.price;
+                        pos.weight = pos.value / value;
+                    });
+
+                    this.effectiveCount = 0;
+                    if (this.count) {
+                        this.effectiveCount = formatInt(1 / this.positions
+                            .reduce((previous, pos) => previous + (pos.value / (this.value - this.cash)) ** 2, 0));
+                    }
+
+                    this.status = `Loaded portfolio for ${date}`;
+                })
+                .catch(err => {
+                    this.status = err;
+                });
+        },
+
+        showPos(pos) {
+            return !this.hideZero || pos.shares > 0;
+        },
+
+        sortedPositions() {
+            if (this.positionsSort === "tickers") {
+                this.positions.sort((a, b) => a.ticker.localeCompare(b.ticker));
+            } else if (this.positionsSort === "turnover"){
+                this.positions.sort((a, b) => b.turnover - a.turnover);
+            } else {
+                this.positions.sort((a, b) => b.value - a.value);
+            }
+
+            return this.positions;
+        },
+
+        positionValueFormatted(pos) {
+            return formatInt(pos.value);
+        },
+
+        get weightCashFormatted() {
+            return formatPercent(this.cash / this.value);
+        },
+
+        weightFormatted(pos) {
+            return formatPercent(pos.weight);
+        },
+
+        get showPortfolio() {
+            return this.dates.includes(this.selectedDate);
+        },
+
+        get valueFormatted() {
+            return formatInt(this.value);
         },
     };
 };
