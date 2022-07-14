@@ -28,12 +28,21 @@ func AccountID(account string) domain.QID {
 	}
 }
 
-// PortfolioID портфеля на соответствующую дату.
-func PortfolioID(date time.Time) domain.QID {
+// PortfolioDateID портфеля на соответствующую дату.
+func PortfolioDateID(date time.Time) domain.QID {
 	return domain.QID{
 		Sub:   portfolio.Subdomain,
 		Group: _PortfolioGroup,
 		ID:    date.Format(_portIDLayout),
+	}
+}
+
+// PortfolioID портфеля на соответствующую дату.
+func PortfolioID(date string) domain.QID {
+	return domain.QID{
+		Sub:   portfolio.Subdomain,
+		Group: _PortfolioGroup,
+		ID:    date,
 	}
 }
 
