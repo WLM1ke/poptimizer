@@ -50,6 +50,35 @@ func (r *Repo[E]) Get(ctx context.Context, qid QID) (agg Aggregate[E], err error
 	return agg, err
 }
 
+func (r *Repo[E]) List(ctx context.Context, sub, group string) ([]string, error) {
+	var results []bson.M
+
+	collection := r.client.Database(sub).Collection(group)
+	projection := options.Find().SetProjection(bson.M{"_id": 1})
+
+	cursor, err := collection.Find(ctx, bson.D{}, projection)
+	if err != nil {
+		return nil, fmt.Errorf("can't load %s.%s -> %w", sub, group, err)
+	}
+
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, fmt.Errorf("can't decode %s.%s -> %w", sub, group, err)
+	}
+
+	qids := make([]string, 0, len(results))
+
+	for n := range results {
+		qid, ok := results[n]["_id"].(string)
+		if !ok {
+			return nil, fmt.Errorf("can't decode %s.%s -> %w", sub, group, err)
+		}
+
+		qids = append(qids, qid)
+	}
+
+	return qids, nil
+}
+
 func (r *Repo[E]) GetGroup(ctx context.Context, sub, group string) ([]Aggregate[E], error) {
 	var allDAO []aggDao[E]
 
