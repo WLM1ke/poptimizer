@@ -178,3 +178,51 @@ func (s AccountsService) UpdateAccount(ctx context.Context, name string, dto Upd
 
 	return nil
 }
+
+// PortfolioService сервис для редактирования счетов.
+type PortfolioService struct {
+	repo domain.GetListRepo[Portfolio]
+}
+
+// NewPortfolioService создает сервис для просмотра информации о портфеле.
+func NewPortfolioService(repo domain.GetListRepo[Portfolio]) *PortfolioService {
+	return &PortfolioService{repo: repo}
+}
+
+// GetPortfolioDates выдает перечень дат, для которых есть информация о портфеле.
+func (s PortfolioService) GetPortfolioDates(ctx context.Context) (AccountsDTO, domain.ServiceError) {
+	qids, err := s.repo.List(ctx, portfolio.Subdomain, _PortfolioGroup)
+	if err != nil {
+		return nil, domain.NewServiceInternalErr(err)
+	}
+
+	return qids, nil
+}
+
+// GetPortfolio выдает информацию о портфеле для заданной даты.
+func (s PortfolioService) GetPortfolio(ctx context.Context, date string) (AccountDTO, domain.ServiceError) {
+	var dto AccountDTO
+
+	agg, err := s.repo.Get(ctx, PortfolioID(date))
+	if err != nil {
+		return dto, domain.NewServiceInternalErr(err)
+	}
+
+	if len(agg.Entity.Positions) == 0 {
+		return dto, domain.NewBadServiceRequestErr("wrong portfolio date %s", date)
+	}
+
+	dto.Cash = agg.Entity.Cash
+
+	for _, pos := range agg.Entity.Positions {
+		dto.Positions = append(dto.Positions, PositionDTO{
+			Ticker:   pos.Ticker,
+			Shares:   pos.Shares,
+			Lot:      pos.Lot,
+			Price:    pos.Price,
+			Turnover: pos.Turnover,
+		})
+	}
+
+	return dto, nil
+}
