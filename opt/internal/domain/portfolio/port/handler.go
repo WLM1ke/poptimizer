@@ -12,10 +12,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/portfolio/market"
 )
 
-const (
-	_timeout    = 30 * time.Second
-	_bufferSize = 16
-)
+const _timeout = time.Minute
 
 // Handler обработчик событий, отвечающий за обновление портфелей.
 type Handler struct {
@@ -41,7 +38,7 @@ func NewHandler(
 		port:   portRepo,
 		data:   dataRepo,
 		lock:   sync.RWMutex{},
-		work:   make(chan domain.Event, _bufferSize),
+		work:   make(chan domain.Event),
 		closed: make(chan struct{}),
 	}
 
@@ -140,7 +137,7 @@ func (h *Handler) save(aggs []domain.Aggregate[Portfolio]) {
 	ctx, cancel := context.WithTimeout(context.Background(), _timeout)
 	defer cancel()
 
-	portQID := PortfolioID(aggs[0].Timestamp)
+	portQID := PortfolioDateID(aggs[0].Timestamp)
 
 	port, err := h.port.Get(ctx, portQID)
 	if err != nil {
@@ -180,12 +177,6 @@ func (h *Handler) save(aggs []domain.Aggregate[Portfolio]) {
 			Data:      err,
 		})
 	}
-
-	h.pub.Publish(domain.Event{
-		QID:       AccountID(_AccountsGroup),
-		Timestamp: time.Now(),
-		Data:      fmt.Errorf("сохранение"),
-	})
 }
 
 func (h *Handler) handleEvent(
@@ -207,39 +198,52 @@ func (h *Handler) handleEvent(
 
 	switch data := event.Data.(type) {
 	case securities.Table:
-		for nAgg := range aggs {
-			newDay := event.Timestamp.After(aggs[nAgg].Timestamp)
-			if newDay {
-				aggs[nAgg].Timestamp = event.Timestamp
-			}
-
-			event.QID = aggs[nAgg].QID()
-
-			errs := aggs[nAgg].Entity.UpdateSec(data, newDay)
-			if len(errs) != 0 {
-				h.pubErr(event, errs)
-			}
-
-			if !newDay {
-				h.updateMissedMarketData(ctx, aggs[nAgg])
-			}
-		}
+		h.updateSec(ctx, event, aggs, data)
 	case market.Data:
-		for nAgg := range aggs {
-			newDay := event.Timestamp.After(aggs[nAgg].Timestamp)
-			if newDay {
-				aggs[nAgg].Timestamp = event.Timestamp
-			}
-
-			ticker := event.ID
-			aggs[nAgg].Entity.UpdateMarketData(ticker, data.Price, data.Turnover, newDay)
-		}
+		h.updateMarketData(event, aggs, data)
 	default:
 		event.Data = fmt.Errorf("can't parse %s data", event)
 		h.pub.Publish(event)
 	}
 
 	return aggs
+}
+
+func (h *Handler) updateSec(
+	ctx context.Context,
+	event domain.Event,
+	aggs []domain.Aggregate[Portfolio],
+	data securities.Table,
+) {
+	for nAgg := range aggs {
+		newDay := event.Timestamp.After(aggs[nAgg].Timestamp)
+		if newDay {
+			aggs[nAgg].Timestamp = event.Timestamp
+		}
+
+		event.QID = aggs[nAgg].QID()
+
+		errs := aggs[nAgg].Entity.UpdateSec(data, newDay)
+		if len(errs) != 0 {
+			h.pubErr(event, errs)
+		}
+
+		if !newDay {
+			h.updateMissedMarketData(ctx, aggs[nAgg])
+		}
+	}
+}
+
+func (h *Handler) updateMarketData(event domain.Event, aggs []domain.Aggregate[Portfolio], data market.Data) {
+	for nAgg := range aggs {
+		newDay := event.Timestamp.After(aggs[nAgg].Timestamp)
+		if newDay {
+			aggs[nAgg].Timestamp = event.Timestamp
+		}
+
+		ticker := event.ID
+		aggs[nAgg].Entity.UpdateMarketData(ticker, data.Price, data.Turnover, newDay)
+	}
 }
 
 func (h *Handler) loadAggs(
