@@ -21,7 +21,7 @@ const (
 	_pingTimeout = time.Second * 5
 )
 
-var escapeRe = regexp.MustCompile(`[!()\-_.>{}=]`)
+var escapeRe = regexp.MustCompile(`[!()\-_.>{}=+]`)
 
 // Telegram - клиент для конкурентной рассылки сообщений в определенный чат.
 type Telegram struct {

@@ -224,8 +224,8 @@ func TestCallBadRequestExec(t *testing.T) {
 func TestPrepareMsg(t *testing.T) {
 	t.Parallel()
 
-	in := `a!()-_.>{}b`
-	out := url.QueryEscape(`a\!\(\)\-\_\.\>\{\}b`)
+	in := `a+!()-_.>{}b`
+	out := url.QueryEscape(`a\+\!\(\)\-\_\.\>\{\}b`)
 
 	assert.Equal(t, out, prepareMsg(in), "Неправильная обработка специальных символов в сообщении")
 }
