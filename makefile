@@ -16,7 +16,7 @@ venv:
 	rm -rf $(VENV_NAME)
 	python3 -m venv $(VENV_NAME)
 	make update
-	pyppeteer-install
+	$(VENV_ACTIVATE);pyppeteer-install
 update:
 	$(PKG_MNG) upgrade $(TOOLS)
 	poetry env use $(PYTHON)
