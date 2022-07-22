@@ -1,5 +1,6 @@
 PKG_MNG=brew
-TOOLS=python@3.10 poetry mongodb-community mongodb-database-tools
+PYTHON_VER=python@3.10
+TOOLS=${PYTHON_VER} poetry mongodb-community mongodb-database-tools
 SRC=poptimizer
 VENV_NAME=.venv
 VENV_ACTIVATE=. ${VENV_NAME}/bin/activate
@@ -8,6 +9,7 @@ PYTHON=${VENV_NAME}/bin/python3
 new:
 	$(PKG_MNG) tap mongodb/brew
 	$(PKG_MNG) install $(TOOLS)
+	$(PKG_MNG) link $(PYTHON_VER)
 	make venv
 venv:
 	rm -rf $(VENV_NAME)
