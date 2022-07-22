@@ -53,7 +53,7 @@ Features -.-> Evolution
 Evolution -.-> DL
 DL -.-> Evolution
 Evolution -.-> Portfolio
-Data -.-> Portfolio
+Data --> Portfolio
 Data -.-> Reports
 Portfolio -.-> Reports
 ```
