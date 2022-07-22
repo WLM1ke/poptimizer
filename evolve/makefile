@@ -1,11 +1,15 @@
 PKG_MNG=brew
-TOOLS=python poetry
+PYTHON_VER=python@3.10
+TOOLS=${PYTHON_VER} poetry
 SRC=evolve
 VENV_NAME=.venv
+VENV_ACTIVATE=. ${VENV_NAME}/bin/activate
 PYTHON=${VENV_NAME}/bin/python3
 
 new:
 	$(PKG_MNG) install $(TOOLS)
+	$(PKG_MNG) unlink python
+	$(PKG_MNG) link $(PYTHON_VER)
 	make venv
 venv:
 	rm -rf $(VENV_NAME)
@@ -13,10 +17,11 @@ venv:
 	make update
 update:
 	$(PKG_MNG) upgrade $(TOOLS)
+	poetry env use $(PYTHON)
 	poetry update
 lint:
-	mypy $(SRC) && flake8 $(SRC)
+	$(VENV_ACTIVATE);mypy $(SRC) && flake8 $(SRC)
 test: lint
-	pytest $(SRC) -v --cov=poptimizer --cov-report=term-missing --cov-report=xml --setup-show
+	$(VENV_ACTIVATE);pytest $(SRC) -v --cov=$(SRC) --cov-report=term-missing --cov-report=xml --setup-show
 run:
-	(export $$(cat .env | grep -o '^[^#]\+' | xargs) && $(PYTHON) -m $(SRC))
+	$(VENV_ACTIVATE);(export $$(cat .env | grep -o '^[^#]\+' | xargs) && $(PYTHON) -m $(SRC))
