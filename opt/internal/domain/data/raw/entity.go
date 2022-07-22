@@ -78,7 +78,7 @@ type Raw struct {
 
 // ValidDate проверяет, что дата находится после начала сбора статистики по дивидендам.
 func (r Raw) ValidDate() bool {
-	return time.Date(2015, time.January, 1, 0, 0, 0, 0, time.UTC).Before(r.Date)
+	return domain.DataStartDate().Before(r.Date)
 }
 
 // Table таблица с данными о дивидендах до пересчета в рубли.
