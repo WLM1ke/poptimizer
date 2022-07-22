@@ -41,6 +41,54 @@ mypy = "^0.971"
 black = "^22.6.0"
 wemake-python-styleguide = "^0.16.1"
 
+[tool.mypy]
+ignore_missing_imports = true
+
+# pandas begins
+disallow_any_unimported = false
+disallow_any_expr = false
+disallow_any_decorated = false
+# pandas ends
+disallow_any_explicit = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+
+no_implicit_optional = true
+strict_optional = true
+
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_return_any = true
+warn_unreachable = true
+
+show_none_errors = true
+ignore_errors = false
+
+allow_untyped_globals = false
+allow_redefinition = false
+implicit_reexport = false
+strict_equality = true
+
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = "*.tests.*"
+ignore_errors = true
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:"]
+omit = ["*/tests/*"]
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
