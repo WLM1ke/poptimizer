@@ -5,39 +5,23 @@ on: [push, pull_request]
 jobs:
   tests:
     name: Tests
-    runs-on: macOS-latest
+    runs-on: macos-12
 
     steps:
     - name: Checkout poptimizer
-      uses: actions/checkout@v1
+      uses: actions/checkout@v3
 
     - name: Del dividends dump
       run:
         rm -r dump
 
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.9
-
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Install Chromium
       run:
-        pyppeteer-install
-
-    - name: Install MongoDB
-      run: |
-        brew tap mongodb/brew
-        brew install mongodb-community
-        brew install mongodb-database-tools
+        make new
 
     - name: Test with pytest
-      run: |
-        pytest poptimizer -v --cov=poptimizer --cov-report=term-missing --cov-report=xml --setup-show
+      run:
+        make test
 
     - name: Upload coverage to Codecov
       run: |
