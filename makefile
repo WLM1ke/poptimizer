@@ -9,6 +9,7 @@ PYTHON=${VENV_NAME}/bin/python3
 new:
 	$(PKG_MNG) tap mongodb/brew
 	$(PKG_MNG) install $(TOOLS)
+	$(PKG_MNG) unlink python
 	$(PKG_MNG) link $(PYTHON_VER)
 	make venv
 venv:
