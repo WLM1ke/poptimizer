@@ -28,7 +28,7 @@ def make_feature():
 
 class TestLabel:
     def test_getitem(self, feature):
-        assert torch.tensor([(17.86 - 29.8 + 11.83 * 0.87) / 29.8]).allclose(feature[0])
+        assert torch.tensor([((17.86 - 29.8) * (1 - label.FORECAST_DIV) + 11.83 * 0.87) / 29.8]).allclose(feature[0])
 
     def test_type_and_size(self, feature):
         assert feature.type_and_size == (FeatureType.LABEL, 4)
