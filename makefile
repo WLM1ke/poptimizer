@@ -1,5 +1,5 @@
 PKG_MNG=brew
-PYTHON_VER=python@3.10
+PYTHON_VER=python@3.9
 TOOLS=${PYTHON_VER} poetry mongodb-community mongodb-database-tools
 SRC=poptimizer
 VENV_NAME=.venv
