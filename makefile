@@ -31,5 +31,5 @@ lint:
 	$(VENV_ACTIVATE);mypy $(SRC) && flake8 $(SRC)
 test:
 	$(VENV_ACTIVATE);pytest $(SRC) -v --cov=$(SRC) --cov-report=term-missing --cov-report=xml --setup-show
-run:
-	$(VENV_ACTIVATE);$(PYTHON) -m $(SRC)
+run_evolve:
+	$(VENV_ACTIVATE);$(PYTHON) -m $(SRC) evolve
