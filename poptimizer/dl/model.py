@@ -28,7 +28,7 @@ LLH_DRAW_DOWN = 1
 MAX_DOC_SIZE: Final = 2 * (2**10) ** 2
 
 # Максимальный размер батча GB
-MAX_BATCH_SIZE: Final = 170
+MAX_BATCH_SIZE: Final = 150
 
 DAY_IN_SECONDS: Final = 24 * 60**2
 
