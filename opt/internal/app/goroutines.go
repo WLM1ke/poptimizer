@@ -2,9 +2,10 @@ package app
 
 import (
 	"context"
-	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"runtime"
 	"time"
+
+	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 )
 
 const _goroutineInterval = time.Hour

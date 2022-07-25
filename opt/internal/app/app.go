@@ -11,7 +11,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/index"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/trading"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/update"
-	"github.com/WLM1ke/poptimizer/opt/internal/repositoty"
+	repository "github.com/WLM1ke/poptimizer/opt/internal/repositoty"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/caarlos0/env/v6"
@@ -91,11 +91,13 @@ func (a App) Run(ctx context.Context) {
 		a.logger.Panicf("can't create data update service -> %s", err)
 	}
 
-	var wg sync.WaitGroup
+	var waitGroup sync.WaitGroup
+	defer waitGroup.Wait()
 
-	wg.Add(1)
+	waitGroup.Add(1)
+
 	go func() {
-		defer wg.Done()
+		defer waitGroup.Done()
 
 		goroutineCounter(ctx, a.logger)
 	}()
@@ -103,8 +105,6 @@ func (a App) Run(ctx context.Context) {
 	if err := dataSrv.Run(ctx); err != nil {
 		a.logger.Panicf("error while stopping data update service -> %s", err)
 	}
-
-	wg.Wait()
 }
 
 func (a App) loadConfig() (cfg config) {

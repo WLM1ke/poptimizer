@@ -101,7 +101,8 @@ func (s *Service) tryToUpdate(ctx context.Context) {
 	defer cancel()
 
 	lastTradingDay, err := s.tradingSrv.Update(ctx, s.checkedDay)
-	switch  {
+
+	switch {
 	case errors.Is(err, trading.ErrUpdateNotRequired):
 		s.checkedDay = lastDayEnded
 		s.logger.Infof("updates not required")
@@ -132,7 +133,7 @@ func (s *Service) lastDayEnded() time.Time {
 	return time.Date(now.Year(), now.Month(), now.Day()-delta, 0, 0, 0, 0, time.UTC)
 }
 
-func (s *Service) update(ctx context.Context, lastTradingDay time.Time)  {
+func (s *Service) update(ctx context.Context, lastTradingDay time.Time) {
 	group, ctxGroup := errgroup.WithContext(ctx)
 
 	group.Go(func() error {

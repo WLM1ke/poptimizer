@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"go.uber.org/goleak"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/app"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
+	"go.uber.org/goleak"
 )
 
 func main() {
