@@ -54,6 +54,10 @@ func (s ReestryService) Update(ctx context.Context, date time.Time, table Status
 	defer s.logger.Infof("update is finished")
 
 	for _, status := range table {
+		if status.Foreign {
+			continue
+		}
+
 		if err := s.updateOne(ctx, date, status); err != nil {
 			s.logger.Warnf("%s", err)
 		}
