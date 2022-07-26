@@ -9,6 +9,7 @@ import (
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/cpi"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/index"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/quote"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/trading"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
@@ -39,7 +40,8 @@ type Service struct {
 	cpiSrv   *cpi.Service
 	indexSrv *index.Service
 
-	secSrv *securities.Service
+	secSrv   *securities.Service
+	quoteSrv *quote.Service
 }
 
 // NewService - создает службу, обновляющую биржевые данные.
@@ -49,6 +51,7 @@ func NewService(
 	cpiSrv *cpi.Service,
 	indexSrv *index.Service,
 	secSrv *securities.Service,
+	quoteSrv *quote.Service,
 ) (*Service, error) {
 	loc, err := time.LoadLocation(_issTZ)
 	if err != nil {
@@ -71,6 +74,7 @@ func NewService(
 		cpiSrv:     cpiSrv,
 		indexSrv:   indexSrv,
 		secSrv:     secSrv,
+		quoteSrv:   quoteSrv,
 	}, nil
 }
 
@@ -178,10 +182,7 @@ func (s *Service) updateNonSec(ctx context.Context, lastTradingDay time.Time) {
 }
 
 func (s *Service) updateQuote(ctx context.Context, lastTradingDay time.Time) {
-	securities := s.secSrv.Update(ctx, lastTradingDay)
-	if securities == nil {
-		return
-	}
+	sec := s.secSrv.Update(ctx, lastTradingDay)
 
-	s.logger.Infof("securities count %d", len(securities))
+	s.quoteSrv.Update(ctx, lastTradingDay, sec)
 }
