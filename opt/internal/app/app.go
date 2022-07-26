@@ -12,7 +12,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/trading"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/update"
-	repository "github.com/WLM1ke/poptimizer/opt/internal/repositoty"
+	"github.com/WLM1ke/poptimizer/opt/internal/repository"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/caarlos0/env/v6"
