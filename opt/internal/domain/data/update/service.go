@@ -45,7 +45,8 @@ type Service struct {
 	secSrv   *securities.Service
 	quoteSrv *quote.Service
 
-	statusSrv *raw.StatusService
+	statusSrv  *raw.StatusService
+	reestrySrv *raw.ReestryService
 }
 
 // NewService - создает службу, обновляющую биржевые данные.
@@ -57,6 +58,7 @@ func NewService(
 	secSrv *securities.Service,
 	quoteSrv *quote.Service,
 	statusSrv *raw.StatusService,
+	closeSrv *raw.ReestryService,
 ) (*Service, error) {
 	loc, err := time.LoadLocation(_issTZ)
 	if err != nil {
@@ -81,6 +83,7 @@ func NewService(
 		secSrv:     secSrv,
 		quoteSrv:   quoteSrv,
 		statusSrv:  statusSrv,
+		reestrySrv: closeSrv,
 	}, nil
 }
 
@@ -209,5 +212,7 @@ func (s *Service) updateSec(ctx context.Context, lastTradingDay time.Time) {
 }
 
 func (s *Service) updateRawDiv(ctx context.Context, lastTradingDay time.Time, sec securities.Table) {
-	s.statusSrv.Update(ctx, lastTradingDay, sec)
+	status := s.statusSrv.Update(ctx, lastTradingDay, sec)
+
+	s.reestrySrv.Update(ctx, lastTradingDay, status)
 }

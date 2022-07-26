@@ -3,6 +3,7 @@ module github.com/WLM1ke/poptimizer/opt
 go 1.18
 
 require (
+	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/WLM1ke/gomoex v1.4.0
 	github.com/caarlos0/env/v6 v6.9.3
 	github.com/go-chi/chi v1.5.4
@@ -10,11 +11,12 @@ require (
 	github.com/xuri/excelize/v2 v2.6.0
 	go.mongodb.org/mongo-driver v1.10.0
 	go.uber.org/goleak v1.1.12
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
+	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
 	golang.org/x/text v0.3.7
 )
 
 require (
+	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
@@ -35,5 +37,6 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
 	golang.org/x/net v0.0.0-20220407224826-aac1ed45d8e3 // indirect
+	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -49,8 +49,8 @@ func ID(ticker string) domain.QID {
 	}
 }
 
-// CloseReestryID данных о дивидендах с закрытияреестров.рф.
-func CloseReestryID(ticker string) domain.QID {
+// ReestryID данных о дивидендах с закрытияреестров.рф.
+func ReestryID(ticker string) domain.QID {
 	return domain.QID{
 		Sub:   data.Subdomain,
 		Group: _closeReestryGroup,
