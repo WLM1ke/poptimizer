@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/cpi"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/index"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/trading"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -34,8 +35,11 @@ type Service struct {
 	checkedDay time.Time
 
 	tradingSrv *trading.Service
-	cpiSrv     *cpi.Service
-	indexSrv   *index.Service
+
+	cpiSrv   *cpi.Service
+	indexSrv *index.Service
+
+	secSrv *securities.Service
 }
 
 // NewService - создает службу, обновляющую биржевые данные.
@@ -44,6 +48,7 @@ func NewService(
 	tradingSrv *trading.Service,
 	cpiSrv *cpi.Service,
 	indexSrv *index.Service,
+	secSrv *securities.Service,
 ) (*Service, error) {
 	loc, err := time.LoadLocation(_issTZ)
 	if err != nil {
@@ -65,6 +70,7 @@ func NewService(
 		tradingSrv: tradingSrv,
 		cpiSrv:     cpiSrv,
 		indexSrv:   indexSrv,
+		secSrv:     secSrv,
 	}, nil
 }
 
@@ -134,20 +140,48 @@ func (s *Service) lastDayEnded() time.Time {
 }
 
 func (s *Service) update(ctx context.Context, lastTradingDay time.Time) {
-	group, ctxGroup := errgroup.WithContext(ctx)
+	var waitGroup sync.WaitGroup
+	defer waitGroup.Wait()
 
-	group.Go(func() error {
-		s.cpiSrv.Update(ctxGroup, lastTradingDay)
+	waitGroup.Add(1)
 
-		return nil
-	})
-	group.Go(func() error {
-		s.indexSrv.Update(ctxGroup, lastTradingDay)
+	go func() {
+		defer waitGroup.Done()
+		s.updateNonSec(ctx, lastTradingDay)
+	}()
 
-		return nil
-	})
+	waitGroup.Add(1)
 
-	if err := group.Wait(); err != nil {
-		s.logger.Warnf("group update error -> %s", err)
+	go func() {
+		defer waitGroup.Done()
+		s.updateQuote(ctx, lastTradingDay)
+	}()
+}
+
+func (s *Service) updateNonSec(ctx context.Context, lastTradingDay time.Time) {
+	var waitGroup sync.WaitGroup
+	defer waitGroup.Wait()
+
+	waitGroup.Add(1)
+
+	go func() {
+		defer waitGroup.Done()
+		s.cpiSrv.Update(ctx, lastTradingDay)
+	}()
+
+	waitGroup.Add(1)
+
+	go func() {
+		defer waitGroup.Done()
+		s.indexSrv.Update(ctx, lastTradingDay)
+	}()
+}
+
+func (s *Service) updateQuote(ctx context.Context, lastTradingDay time.Time) {
+	securities := s.secSrv.Update(ctx, lastTradingDay)
+	if securities == nil {
+		return
 	}
+
+	s.logger.Infof("securities count %d", len(securities))
 }

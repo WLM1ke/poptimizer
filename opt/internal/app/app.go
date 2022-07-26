@@ -9,6 +9,7 @@ import (
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/cpi"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/index"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/trading"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/update"
 	repository "github.com/WLM1ke/poptimizer/opt/internal/repositoty"
@@ -86,6 +87,7 @@ func (a App) Run(ctx context.Context) {
 		trading.NewService(repository.NewMongo[trading.Date](mongoClient), iss),
 		cpi.NewService(a.logger.WithPrefix("CPI"), repository.NewMongo[cpi.Table](mongoClient), httpClient),
 		index.NewService(a.logger.WithPrefix("Indexes"), repository.NewMongo[index.Table](mongoClient), iss),
+		securities.NewService(a.logger.WithPrefix("Securities"), repository.NewMongo[securities.Table](mongoClient), iss),
 	)
 	if err != nil {
 		a.logger.Panicf("can't create data update service -> %s", err)
