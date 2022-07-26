@@ -86,6 +86,7 @@ func (a App) Run(ctx context.Context) {
 
 	dataSrv, err := update.NewService(
 		a.logger.WithPrefix("UpdateSrv"),
+		repository.NewBackupRestoreService(cfg.MongoDB.URI, mongoClient),
 		trading.NewService(repository.NewMongo[trading.Date](mongoClient), iss),
 		cpi.NewService(a.logger.WithPrefix("CPI"), repository.NewMongo[cpi.Table](mongoClient), httpClient),
 		index.NewService(a.logger.WithPrefix("Indexes"), repository.NewMongo[index.Table](mongoClient), iss),

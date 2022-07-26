@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
-	"time"
-
+	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/cpi"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/index"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/quote"
@@ -14,6 +13,8 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/trading"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
+	"sync"
+	"time"
 )
 
 const (
@@ -40,6 +41,8 @@ type Service struct {
 	loc        *time.Location
 	checkedDay time.Time
 
+	backupSrv domain.BackupRestore
+
 	tradingSrv *trading.Service
 
 	cpiSrv   *cpi.Service
@@ -57,6 +60,7 @@ type Service struct {
 // NewService - создает службу, обновляющую биржевые данные.
 func NewService(
 	logger lgr.Logger,
+	backupSrv domain.BackupRestore,
 	tradingSrv *trading.Service,
 	cpiSrv *cpi.Service,
 	indexSrv *index.Service,
@@ -75,6 +79,18 @@ func NewService(
 	ctx, cancel := context.WithTimeout(context.Background(), _updateTimeout)
 	defer cancel()
 
+	if count, err := backupSrv.Restore(ctx, data.Subdomain, securities.ID().Group); err != nil {
+		return nil, err
+	} else if count == 0 {
+		logger.Infof("selected securities restored")
+	}
+
+	if count, err := backupSrv.Restore(ctx, data.Subdomain, raw.ID("").Group); err != nil {
+		return nil, err
+	} else if count == 0 {
+		logger.Infof("raw dividends restored")
+	}
+
 	day, err := tradingSrv.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("can't load last trading date -> %w", err)
@@ -84,6 +100,7 @@ func NewService(
 		logger:      logger,
 		loc:         loc,
 		checkedDay:  day,
+		backupSrv:   backupSrv,
 		tradingSrv:  tradingSrv,
 		cpiSrv:      cpiSrv,
 		indexSrv:    indexSrv,
@@ -204,6 +221,21 @@ func (s *Service) updateSec(ctx context.Context, lastTradingDay time.Time) {
 
 	var waitGroup sync.WaitGroup
 	defer waitGroup.Wait()
+
+	waitGroup.Add(1)
+
+	go func() {
+		defer waitGroup.Done()
+
+		err := s.backupSrv.Backup(ctx, data.Subdomain, securities.ID().Group)
+		if err != nil {
+			s.logger.Warnf("%s", err)
+
+			return
+		}
+
+		s.logger.Infof("backup of selected securities completed")
+	}()
 
 	waitGroup.Add(1)
 
