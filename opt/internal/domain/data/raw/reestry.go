@@ -130,7 +130,7 @@ func makeURL(status Status) string {
 func parseRequest(respond *http.Response, preferred bool) (Table, error) {
 	html, err := goquery.NewDocumentFromReader(respond.Body)
 	if err != nil {
-		return nil, fmt.Errorf("can't parse CloseReestry html -> %w", err)
+		return nil, fmt.Errorf("can't parse html -> %w", err)
 	}
 
 	table := html.Find("tbody").Find("tr")

@@ -47,6 +47,7 @@ type Service struct {
 
 	statusSrv  *raw.StatusService
 	reestrySrv *raw.ReestryService
+	nasdaqSrv  *raw.NASDAQService
 }
 
 // NewService - создает службу, обновляющую биржевые данные.
@@ -58,7 +59,8 @@ func NewService(
 	secSrv *securities.Service,
 	quoteSrv *quote.Service,
 	statusSrv *raw.StatusService,
-	closeSrv *raw.ReestryService,
+	reestrySrv *raw.ReestryService,
+	nasdaqSrv *raw.NASDAQService,
 ) (*Service, error) {
 	loc, err := time.LoadLocation(_issTZ)
 	if err != nil {
@@ -83,7 +85,8 @@ func NewService(
 		secSrv:     secSrv,
 		quoteSrv:   quoteSrv,
 		statusSrv:  statusSrv,
-		reestrySrv: closeSrv,
+		reestrySrv: reestrySrv,
+		nasdaqSrv:  nasdaqSrv,
 	}, nil
 }
 
@@ -204,6 +207,8 @@ func (s *Service) updateSec(ctx context.Context, lastTradingDay time.Time) {
 		s.quoteSrv.Update(ctx, lastTradingDay, sec)
 	}()
 
+	waitGroup.Add(1)
+
 	go func() {
 		defer waitGroup.Done()
 
@@ -214,5 +219,22 @@ func (s *Service) updateSec(ctx context.Context, lastTradingDay time.Time) {
 func (s *Service) updateRawDiv(ctx context.Context, lastTradingDay time.Time, sec securities.Table) {
 	status := s.statusSrv.Update(ctx, lastTradingDay, sec)
 
-	s.reestrySrv.Update(ctx, lastTradingDay, status)
+	var waitGroup sync.WaitGroup
+	defer waitGroup.Wait()
+
+	waitGroup.Add(1)
+
+	go func() {
+		defer waitGroup.Done()
+
+		s.reestrySrv.Update(ctx, lastTradingDay, status)
+	}()
+
+	waitGroup.Add(1)
+
+	go func() {
+		defer waitGroup.Done()
+
+		s.nasdaqSrv.Update(ctx, lastTradingDay, status)
+	}()
 }
