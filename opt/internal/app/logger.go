@@ -9,7 +9,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 )
 
-const _sendTimeout = time.Second
+const _sendTimeout = time.Minute
 
 type logger struct {
 	logger lgr.Logger
