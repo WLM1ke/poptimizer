@@ -56,6 +56,6 @@ func (s CheckRawService) checkOne(ctx context.Context, status Status) {
 	}
 
 	if !agg.Entity().ExistsDate(status.Date) {
-		s.logger.Warnf("missed dividend at %s", status.Date.Format(_eventDateFormat))
+		s.logger.Warnf("missed %s dividend at %s", status.Ticker, status.Date.Format(_eventDateFormat))
 	}
 }
