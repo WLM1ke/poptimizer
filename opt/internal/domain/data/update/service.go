@@ -31,6 +31,9 @@ const (
 // Постоянно отслеживается окончание дня и в случае окончания проверяется, что он был торговым, то есть появилась новые
 // данные об итогах торгов. После этого начинает обновлять остальные данные, где возможно параллельно. Если на каком-то
 // шаге возникают ошибки, то они логируются, но процесс обновления продолжается, если это возможно.
+//
+// Дополнительно осуществляется проверка актуальности дивидендов, развертывание пользовательских данных по умолчанию при
+// первом запуске и бекап их обновлений.
 type Service struct {
 	logger lgr.Logger
 
@@ -45,9 +48,10 @@ type Service struct {
 	secSrv   *securities.Service
 	quoteSrv *quote.Service
 
-	statusSrv  *raw.StatusService
-	reestrySrv *raw.ReestryService
-	nasdaqSrv  *raw.NASDAQService
+	statusSrv   *raw.StatusService
+	reestrySrv  *raw.ReestryService
+	nasdaqSrv   *raw.NASDAQService
+	checkRawSrv *raw.CheckRawService
 }
 
 // NewService - создает службу, обновляющую биржевые данные.
@@ -61,6 +65,7 @@ func NewService(
 	statusSrv *raw.StatusService,
 	reestrySrv *raw.ReestryService,
 	nasdaqSrv *raw.NASDAQService,
+	checkRawSrv *raw.CheckRawService,
 ) (*Service, error) {
 	loc, err := time.LoadLocation(_issTZ)
 	if err != nil {
@@ -76,17 +81,18 @@ func NewService(
 	}
 
 	return &Service{
-		logger:     logger,
-		loc:        loc,
-		checkedDay: day,
-		tradingSrv: tradingSrv,
-		cpiSrv:     cpiSrv,
-		indexSrv:   indexSrv,
-		secSrv:     secSrv,
-		quoteSrv:   quoteSrv,
-		statusSrv:  statusSrv,
-		reestrySrv: reestrySrv,
-		nasdaqSrv:  nasdaqSrv,
+		logger:      logger,
+		loc:         loc,
+		checkedDay:  day,
+		tradingSrv:  tradingSrv,
+		cpiSrv:      cpiSrv,
+		indexSrv:    indexSrv,
+		secSrv:      secSrv,
+		quoteSrv:    quoteSrv,
+		statusSrv:   statusSrv,
+		reestrySrv:  reestrySrv,
+		nasdaqSrv:   nasdaqSrv,
+		checkRawSrv: checkRawSrv,
 	}, nil
 }
 
@@ -236,5 +242,13 @@ func (s *Service) updateRawDiv(ctx context.Context, lastTradingDay time.Time, se
 		defer waitGroup.Done()
 
 		s.nasdaqSrv.Update(ctx, lastTradingDay, status)
+	}()
+
+	waitGroup.Add(1)
+
+	go func() {
+		defer waitGroup.Done()
+
+		s.checkRawSrv.Check(ctx, status)
 	}()
 }

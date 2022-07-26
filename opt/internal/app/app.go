@@ -94,6 +94,7 @@ func (a App) Run(ctx context.Context) {
 		raw.NewStatusService(a.logger.WithPrefix("Status"), repository.NewMongo[raw.StatusTable](mongoClient), httpClient),
 		raw.NewReestryService(a.logger.WithPrefix("CloseReestry"), repository.NewMongo[raw.Table](mongoClient), httpClient),
 		raw.NewNASDAQService(a.logger.WithPrefix("NASDAQ"), repository.NewMongo[raw.Table](mongoClient), httpClient),
+		raw.NewCheckRawService(a.logger.WithPrefix("CheckRaw"), repository.NewMongo[raw.Table](mongoClient)),
 	)
 	if err != nil {
 		a.logger.Panicf("can't create data update service -> %s", err)

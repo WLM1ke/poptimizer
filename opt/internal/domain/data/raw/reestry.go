@@ -54,13 +54,13 @@ func (s ReestryService) Update(ctx context.Context, date time.Time, table Status
 	defer s.logger.Infof("update is finished")
 
 	for _, status := range table {
-		if err := s.checkOne(ctx, date, status); err != nil {
+		if err := s.updateOne(ctx, date, status); err != nil {
 			s.logger.Warnf("%s", err)
 		}
 	}
 }
 
-func (s ReestryService) checkOne(ctx context.Context, date time.Time, status Status) error {
+func (s ReestryService) updateOne(ctx context.Context, date time.Time, status Status) error {
 	agg, err := s.repo.Get(ctx, ReestryID(status.Ticker))
 	if err != nil {
 		return err

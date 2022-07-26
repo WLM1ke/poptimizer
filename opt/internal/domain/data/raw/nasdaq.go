@@ -60,13 +60,13 @@ func (s NASDAQService) Update(ctx context.Context, date time.Time, table StatusT
 	defer s.logger.Infof("update is finished")
 
 	for _, status := range table {
-		if err := s.checkOne(ctx, date, status); err != nil {
+		if err := s.updateOne(ctx, date, status); err != nil {
 			s.logger.Warnf("%s", err)
 		}
 	}
 }
 
-func (s NASDAQService) checkOne(ctx context.Context, date time.Time, status Status) error {
+func (s NASDAQService) updateOne(ctx context.Context, date time.Time, status Status) error {
 	agg, err := s.repo.Get(ctx, ReestryID(status.Ticker))
 	if err != nil {
 		return err
