@@ -67,7 +67,7 @@ func (s NASDAQService) Update(ctx context.Context, date time.Time, table StatusT
 }
 
 func (s NASDAQService) updateOne(ctx context.Context, date time.Time, status Status) error {
-	agg, err := s.repo.Get(ctx, ReestryID(status.Ticker))
+	agg, err := s.repo.Get(ctx, NasdaqID(status.Ticker))
 	if err != nil {
 		return err
 	}
