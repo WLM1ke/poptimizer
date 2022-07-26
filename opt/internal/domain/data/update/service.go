@@ -10,6 +10,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/cpi"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/index"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/quote"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/trading"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
@@ -43,6 +44,8 @@ type Service struct {
 
 	secSrv   *securities.Service
 	quoteSrv *quote.Service
+
+	statusSrv *raw.StatusService
 }
 
 // NewService - создает службу, обновляющую биржевые данные.
@@ -53,6 +56,7 @@ func NewService(
 	indexSrv *index.Service,
 	secSrv *securities.Service,
 	quoteSrv *quote.Service,
+	statusSrv *raw.StatusService,
 ) (*Service, error) {
 	loc, err := time.LoadLocation(_issTZ)
 	if err != nil {
@@ -76,6 +80,7 @@ func NewService(
 		indexSrv:   indexSrv,
 		secSrv:     secSrv,
 		quoteSrv:   quoteSrv,
+		statusSrv:  statusSrv,
 	}, nil
 }
 
@@ -159,7 +164,7 @@ func (s *Service) update(ctx context.Context, lastTradingDay time.Time) {
 
 	go func() {
 		defer waitGroup.Done()
-		s.updateQuote(ctx, lastTradingDay)
+		s.updateSec(ctx, lastTradingDay)
 	}()
 }
 
@@ -182,8 +187,27 @@ func (s *Service) updateNonSec(ctx context.Context, lastTradingDay time.Time) {
 	}()
 }
 
-func (s *Service) updateQuote(ctx context.Context, lastTradingDay time.Time) {
+func (s *Service) updateSec(ctx context.Context, lastTradingDay time.Time) {
 	sec := s.secSrv.Update(ctx, lastTradingDay)
 
-	s.quoteSrv.Update(ctx, lastTradingDay, sec)
+	var waitGroup sync.WaitGroup
+	defer waitGroup.Wait()
+
+	waitGroup.Add(1)
+
+	go func() {
+		defer waitGroup.Done()
+
+		s.quoteSrv.Update(ctx, lastTradingDay, sec)
+	}()
+
+	go func() {
+		defer waitGroup.Done()
+
+		s.updateRawDiv(ctx, lastTradingDay, sec)
+	}()
+}
+
+func (s *Service) updateRawDiv(ctx context.Context, lastTradingDay time.Time, sec securities.Table) {
+	s.statusSrv.Update(ctx, lastTradingDay, sec)
 }
