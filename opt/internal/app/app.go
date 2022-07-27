@@ -8,6 +8,7 @@ import (
 
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/cpi"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/div"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/index"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/quote"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
@@ -85,6 +86,8 @@ func (a App) Run(ctx context.Context) {
 
 	iss := gomoex.NewISSClient(httpClient)
 
+	rawRepo := repository.NewMongo[raw.Table](mongoClient)
+
 	dataSrv, err := update.NewService(
 		a.logger.WithPrefix("UpdateSrv"),
 		repository.NewBackupRestoreService(cfg.MongoDB.URI, mongoClient),
@@ -93,11 +96,12 @@ func (a App) Run(ctx context.Context) {
 		index.NewService(a.logger.WithPrefix("Indexes"), repository.NewMongo[index.Table](mongoClient), iss),
 		securities.NewService(a.logger.WithPrefix("Securities"), repository.NewMongo[securities.Table](mongoClient), iss),
 		usd.NewService(a.logger.WithPrefix("USD"), repository.NewMongo[usd.Table](mongoClient), iss),
+		div.NewService(a.logger.WithPrefix("Dividends"), repository.NewMongo[div.Table](mongoClient), rawRepo),
 		quote.NewService(a.logger.WithPrefix("Quotes"), repository.NewMongo[quote.Table](mongoClient), iss),
 		raw.NewStatusService(a.logger.WithPrefix("Status"), repository.NewMongo[raw.StatusTable](mongoClient), httpClient),
-		raw.NewReestryService(a.logger.WithPrefix("CloseReestry"), repository.NewMongo[raw.Table](mongoClient), httpClient),
-		raw.NewNASDAQService(a.logger.WithPrefix("NASDAQ"), repository.NewMongo[raw.Table](mongoClient), httpClient),
-		raw.NewCheckRawService(a.logger.WithPrefix("CheckRaw"), repository.NewMongo[raw.Table](mongoClient)),
+		raw.NewReestryService(a.logger.WithPrefix("CloseReestry"), rawRepo, httpClient),
+		raw.NewNASDAQService(a.logger.WithPrefix("NASDAQ"), rawRepo, httpClient),
+		raw.NewCheckRawService(a.logger.WithPrefix("CheckRaw"), rawRepo),
 	)
 	if err != nil {
 		a.logger.Panicf("can't create data update service -> %s", err)

@@ -10,6 +10,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/cpi"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/div"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/index"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/quote"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
@@ -52,6 +53,7 @@ type Service struct {
 
 	secSrv   *securities.Service
 	usdSrv   *usd.Service
+	divSrv   *div.Service
 	quoteSrv *quote.Service
 
 	statusSrv   *raw.StatusService
@@ -69,6 +71,7 @@ func NewService(
 	indexSrv *index.Service,
 	secSrv *securities.Service,
 	usdSrv *usd.Service,
+	divSrv *div.Service,
 	quoteSrv *quote.Service,
 	statusSrv *raw.StatusService,
 	reestrySrv *raw.ReestryService,
@@ -110,6 +113,7 @@ func NewService(
 		indexSrv:    indexSrv,
 		secSrv:      secSrv,
 		usdSrv:      usdSrv,
+		divSrv:      divSrv,
 		quoteSrv:    quoteSrv,
 		statusSrv:   statusSrv,
 		reestrySrv:  reestrySrv,
@@ -191,6 +195,7 @@ func (s *Service) update(ctx context.Context, lastTradingDay time.Time) {
 
 	go func() {
 		defer waitGroup.Done()
+
 		s.updateNonSec(ctx, lastTradingDay)
 	}()
 
@@ -198,6 +203,7 @@ func (s *Service) update(ctx context.Context, lastTradingDay time.Time) {
 
 	go func() {
 		defer waitGroup.Done()
+
 		s.updateSec(ctx, lastTradingDay)
 	}()
 }
@@ -210,6 +216,7 @@ func (s *Service) updateNonSec(ctx context.Context, lastTradingDay time.Time) {
 
 	go func() {
 		defer waitGroup.Done()
+
 		s.cpiSrv.Update(ctx, lastTradingDay)
 	}()
 
@@ -217,12 +224,13 @@ func (s *Service) updateNonSec(ctx context.Context, lastTradingDay time.Time) {
 
 	go func() {
 		defer waitGroup.Done()
+
 		s.indexSrv.Update(ctx, lastTradingDay)
 	}()
 }
 
 func (s *Service) updateSec(ctx context.Context, lastTradingDay time.Time) {
-	sec := s.secSrv.Update(ctx, lastTradingDay)
+	secChan := make(chan securities.Table, 1)
 
 	var waitGroup sync.WaitGroup
 	defer waitGroup.Wait()
@@ -232,8 +240,12 @@ func (s *Service) updateSec(ctx context.Context, lastTradingDay time.Time) {
 	go func() {
 		defer waitGroup.Done()
 
-		s.usdSrv.Update(ctx, lastTradingDay)
+		s.updateDiv(ctx, lastTradingDay, secChan)
 	}()
+
+	sec := s.secSrv.Update(ctx, lastTradingDay)
+	secChan <- sec
+	close(secChan)
 
 	waitGroup.Add(1)
 
@@ -265,6 +277,20 @@ func (s *Service) updateSec(ctx context.Context, lastTradingDay time.Time) {
 
 		s.updateRawDiv(ctx, lastTradingDay, sec)
 	}()
+}
+
+func (s *Service) updateDiv(
+	ctx context.Context,
+	lastTradingDay time.Time,
+	secChan <-chan securities.Table,
+) {
+	rates := s.usdSrv.Update(ctx, lastTradingDay)
+
+	if rates == nil {
+		return
+	}
+
+	s.divSrv.Update(ctx, lastTradingDay, <-secChan, rates)
 }
 
 func (s *Service) updateRawDiv(ctx context.Context, lastTradingDay time.Time, sec securities.Table) {
