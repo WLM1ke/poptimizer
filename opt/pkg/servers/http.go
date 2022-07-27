@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -15,18 +14,20 @@ import (
 
 // Server представляет обертку над http сервером.
 type Server struct {
-	srv http.Server
+	logger lgr.Logger
+	srv    http.Server
 }
 
 // NewHTTPServer - создает http сервер.
-func NewHTTPServer(log lgr.Logger, addr string, handler http.Handler, respondTimeouts time.Duration) *Server {
+func NewHTTPServer(logger lgr.Logger, addr string, handler http.Handler, respondTimeouts time.Duration) *Server {
 	router := chi.NewRouter()
 	router.Use(middleware.Timeout(respondTimeouts))
-	router.Use(logging(log))
+	router.Use(logging(logger))
 	router.Use(middleware.RedirectSlashes)
 	router.Mount("/", handler)
 
 	return &Server{
+		logger: logger,
 		srv: http.Server{
 			Addr:              addr,
 			Handler:           router,
@@ -38,24 +39,18 @@ func NewHTTPServer(log lgr.Logger, addr string, handler http.Handler, respondTim
 }
 
 // Run запускает http сервер.
-func (s *Server) Run(ctx context.Context) error {
-	closed := make(chan error)
-
+func (s *Server) Run(ctx context.Context) {
 	go func() {
 		<-ctx.Done()
 
 		if err := s.srv.Shutdown(context.Background()); err != nil {
-			closed <- fmt.Errorf("can't close server connections: %w", err)
+			s.logger.Warnf("can't close server connections: %s", err)
 		}
-
-		close(closed)
 	}()
 
 	if err := s.srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-		return fmt.Errorf("unexpected server shutdown: %w", err)
+		s.logger.Warnf("unexpected server shutdown: %s", err)
 	}
-
-	return <-closed
 }
 
 func logging(logger lgr.Logger) func(http.Handler) http.Handler {

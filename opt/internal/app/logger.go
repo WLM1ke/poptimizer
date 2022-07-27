@@ -11,23 +11,23 @@ import (
 
 const _sendTimeout = time.Minute
 
-type logger struct {
+type appLgr struct {
 	logger lgr.Logger
 	telega *clients.Telegram
 }
 
-func (l logger) WithPrefix(prefix string) lgr.Logger {
-	return logger{
+func (l appLgr) WithPrefix(prefix string) lgr.Logger {
+	return appLgr{
 		logger: l.logger.WithPrefix(prefix),
 		telega: l.telega,
 	}
 }
 
-func (l logger) Infof(format string, args ...any) {
+func (l appLgr) Infof(format string, args ...any) {
 	l.logger.Infof(format, args...)
 }
 
-func (l logger) Warnf(format string, args ...any) {
+func (l appLgr) Warnf(format string, args ...any) {
 	ctx, cancel := context.WithTimeout(context.Background(), _sendTimeout)
 	defer cancel()
 
@@ -39,7 +39,7 @@ func (l logger) Warnf(format string, args ...any) {
 	l.logger.Warnf(format, args...)
 }
 
-func (l logger) Panicf(format string, args ...any) {
+func (l appLgr) Panicf(format string, args ...any) {
 	ctx, cancel := context.WithTimeout(context.Background(), _sendTimeout)
 	defer cancel()
 

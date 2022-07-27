@@ -123,7 +123,7 @@ func NewService(
 }
 
 // Run запускает регулярное обновление статистики после окончания торгового дня.
-func (s *Service) Run(ctx context.Context) error {
+func (s *Service) Run(ctx context.Context) {
 	s.logger.Infof("started with last update for %s", s.checkedDay.Format(_timeFormat))
 
 	ticker := time.NewTicker(_tickerDuration)
@@ -136,7 +136,7 @@ func (s *Service) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			s.logger.Infof("stopped with last update for %s", s.checkedDay.Format(_timeFormat))
 
-			return nil
+			return
 		case <-ticker.C:
 		}
 	}
