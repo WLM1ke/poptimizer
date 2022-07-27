@@ -61,17 +61,24 @@ type App struct {
 
 // Run запускает приложение.
 func (a *App) Run() {
-	defer a.atExit()
+	var err error
 
-	if err := a.initResources(); err != nil {
-		a.logger.Panicf("%s", err)
+	defer func() {
+		a.atExit(err)
+	}()
+
+	if err = a.initResources(); err != nil {
+		return
 	}
 
-	a.prepareServices()
-	ctx := a.appCtx()
+	if err = a.prepareServices(); err != nil {
+		return
+	}
 
 	var waitGroup sync.WaitGroup
 	defer waitGroup.Wait()
+
+	ctx := a.appCtx()
 
 	for _, s := range a.services {
 		srv := s
@@ -86,13 +93,18 @@ func (a *App) Run() {
 	}
 }
 
-func (a *App) atExit() {
+func (a *App) atExit(err error) {
 	for _, closeFunc := range a.resourcesClosers {
 		closeFunc()
 	}
 
 	if r := recover(); r != nil {
 		a.logger.Warnf("stopped with exit code 1 -> %s", r)
+		os.Exit(1)
+	}
+
+	if err != nil {
+		a.logger.Warnf("stopped with exit code 1 -> %s", err)
 		os.Exit(1)
 	}
 
@@ -135,7 +147,7 @@ func (a *App) initResources() error {
 	a.resourcesClosers = append(a.resourcesClosers, func() {
 		err := a.mongo.Disconnect(context.Background())
 		if err != nil {
-			a.logger.Panicf("can't stop MongoDB Client -> %s", err)
+			a.logger.Warnf("can't stop MongoDB Client -> %s", err)
 		}
 
 		// Драйвер MongoDB использует дефолтный клиент под капотом
@@ -145,18 +157,20 @@ func (a *App) initResources() error {
 	return nil
 }
 
-func (a *App) prepareServices() {
+func (a *App) prepareServices() error {
 	dataSrv, err := a.prepareUpdateSrv()
 	if err != nil {
-		a.logger.Panicf("can't create data update service -> %s", err)
+		return fmt.Errorf("can't create data update service -> %w", err)
 	}
 
 	server, err := a.prepareServer()
 	if err != nil {
-		a.logger.Panicf("can't create server -> %s", err)
+		return fmt.Errorf("can't create server -> %w", err)
 	}
 
 	a.services = append(a.services, server.Run, dataSrv.Run, a.goroutineCounter)
+
+	return nil
 }
 
 func (a *App) prepareUpdateSrv() (*update.Service, error) {

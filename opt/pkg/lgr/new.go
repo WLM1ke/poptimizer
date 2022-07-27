@@ -13,7 +13,6 @@ type Logger interface {
 	WithPrefix(prefix string) Logger
 	Infof(format string, args ...any)
 	Warnf(format string, args ...any)
-	Panicf(format string, args ...any)
 }
 
 // WithOptions создает логер в соответствии с настройками.

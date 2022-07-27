@@ -10,9 +10,8 @@ import (
 const (
 	_bufferSize = 128
 
-	_infoColored  = "\033[34mINFO \033[0m"
-	_warnColored  = "\033[33mWARN \033[0m"
-	_panicColored = "\033[31mPANIC \033[0m"
+	_infoColored = "\033[34mINFO \033[0m"
+	_warnColored = "\033[31mWARN \033[0m"
 
 	_end = "\n"
 )
@@ -105,10 +104,4 @@ func (l *logger) Infof(format string, args ...any) {
 // Warnf записывает в лог сообщение, требующее реакции разработчика.
 func (l *logger) Warnf(format string, args ...any) {
 	l.logf(_warnColored, format, args...)
-}
-
-// Panicf записывает в лог сообщение и паникует.
-func (l *logger) Panicf(format string, args ...any) {
-	l.logf(_panicColored, format, args...)
-	panic(fmt.Sprintf(format, args...))
 }

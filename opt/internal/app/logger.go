@@ -38,15 +38,3 @@ func (l appLgr) Warnf(format string, args ...any) {
 
 	l.logger.Warnf(format, args...)
 }
-
-func (l appLgr) Panicf(format string, args ...any) {
-	ctx, cancel := context.WithTimeout(context.Background(), _sendTimeout)
-	defer cancel()
-
-	err := l.telega.Send(ctx, fmt.Sprintf(format, args...))
-	if err != nil {
-		l.logger.Warnf("can't send notification -> %s", err)
-	}
-
-	l.logger.Panicf(format, args...)
-}
