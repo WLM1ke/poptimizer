@@ -8,7 +8,6 @@
 
 Реализован Alpine.js в виде SPA со следующими основными разделами
 
-
 ### Tickers
 
 Изменение перечня бумаг в портфеле, для которых необходимо отслеживать появление новых дивидендов среди всех бумаг, 
@@ -43,53 +42,86 @@
 
 Просмотра исторических отчетов
 
-
 ## Основные модули
 ```mermaid
 flowchart
 
+subgraph Alpine.js
+    Fronend
+end
+
+subgraph Golang
+    Data -.-> Portfolio
+    Data -.-> Reports
+    Portfolio -.-> Reports
+end
+
+subgraph Python
+    Features -.-> Evolution
+    Features -.-> DL
+    Evolution <-.-> DL
+end
+
+Fronend <-.-> Data
+Fronend <-.-> Portfolio
+Fronend <-.-> Reports
 Data -.-> Features
-Features -.-> Evolution
-Evolution -.-> DL
-DL -.-> Evolution
 Evolution -.-> Portfolio
-Data --> Portfolio
-Data -.-> Reports
-Portfolio -.-> Reports
 ```
 
 ## Модуль Data
 
-Отвечает за сбор данных, которые в последствии используются для построения признаков, расчета стоимости портфеля и 
-подготовки отчетов.
+Отвечает за обновление данных, большая часть выполняется автоматически.
 
-Основные потоки событий между обработчиками событий изображены на схеме. Дополнительно каждое правило в случае 
-возникновения ошибки направляет событие с ее описанием, которое обрабатывается специальным правилом записывающим 
-сообщение в лог и Telegram.
+### Модуль Data - автоматическое обновление
+Отвечает за регулярное обновление данных, которые в последствии используются модулями. Обновление осуществляется 
+ежедневно после 0h45m MSK, когда на MOEX ISS обычно публикуются данные по итогам торгов. Если в процессе обновления 
+возникают ошибки, то ни логируются и отправляются в Telegram, а сам процесс по возможности продолжается.  
+
+Координацией обновления занимается сервис Update, а основные этапы показаны на диаграмме.
+
+```mermaid
+flowchart TD
+    subgraph Golang
+        Update[\Update:0h45m MSK/]-->TradingDates
+        
+        TradingDates-->CPI
+        TradingDates-->Indexes
+        TradingDates-->USD
+        TradingDates-->Securities
+        
+        USD-->Dividends
+        Securities-->Dividends
+        
+        Securities-->Backup
+        Securities-->Status
+        Securities-->Quotes
+        
+        Status-->CloseReestry
+        Status-->NASDAQ
+        Status-->CheckRaw
+    end
+```
+
+### Модуль Data - ручное обновление данных
+
+Вручную вводятся данные о дивидендах и выбранных тикерах для портфеля тикерах, чтобы для них отслеживалась актуальность
+данных по дивидендам.
 
 ```mermaid
 flowchart
-    Timer[\Timer:0h45m MSK/]-->Sevice:Dates
+    subgraph Alpine.js
+        Dividends[\Fronend:Dividends/]
+        Tickers[\Fronend:Tickers/]
+    end
     
-    Sevice:Dates-->Handler:CPI
-    Sevice:Dates-->Handler:Indexes
-    Sevice:Dates-->Handler:USD
-    
-    Handler:USD-->Securities{{Service/Handler:Securities}}
-    Dividends[\Fronend:Dividends/]-->Securities
-    
-    Securities-->Handler:Status
-    Securities-->Handler:Backup
-    Securities-->Handler:Quotes
-	Securities-->Handler:Dividends
+    subgraph Goland
+        Securities-->Backup
+        CheckRaw-->Backup
+    end
 
-    Tickers[\Fronend:Tickers/]-->CheckRaw{{Service/Handler:CheckRaw}}
-    
-    Handler:Status-->Handler:CheckReestry
-    Handler:Status-->Handler:CheckNASDAQ
-    Handler:Status-->CheckRaw
-    
-    CheckRaw-->Handler:Backup
+    Tickers<-->Securities
+    Dividends<-->CheckRaw
 ```
 
 ## Модуль Portfolio
