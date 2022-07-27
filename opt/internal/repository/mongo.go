@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -167,36 +168,36 @@ func (r Mongo[E]) Delete(ctx context.Context, qid domain.QID) error {
 	return nil
 }
 
-// MongoJSON обеспечивает хранение и загрузку таблиц.
-type MongoJSON struct {
+// MongoJSONViewer показывает сохраненные данные в формате ExtendedJSON.
+type MongoJSONViewer struct {
 	client *mongo.Client
 }
 
-// NewMongoJSON - создает новый репозиторий на основе MongoDB.
-func NewMongoJSON(client *mongo.Client) *MongoJSON {
-	return &MongoJSON{
+// NewMongoJSONViewer создает вьюер данных в формате ExtendedJSON.
+func NewMongoJSONViewer(client *mongo.Client) *MongoJSONViewer {
+	return &MongoJSONViewer{
 		client: client,
 	}
 }
 
 // GetJSON загружает ExtendedJSON представление данных.
-func (r *MongoJSON) GetJSON(ctx context.Context, qid domain.QID) ([]byte, error) {
-	collection := getCollection(r.client, qid)
+func (v *MongoJSONViewer) GetJSON(ctx context.Context, group, ticker string) ([]byte, error) {
+	collection := v.client.Database(data.Subdomain).Collection(group)
 
 	projections := options.FindOne().SetProjection(bson.M{"_id": 0, "data": 1})
 
-	rawData, err := collection.FindOne(ctx, bson.M{"_id": qid.ID}, projections).DecodeBytes()
+	rawData, err := collection.FindOne(ctx, bson.M{"_id": ticker}, projections).DecodeBytes()
 
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
-		return nil, fmt.Errorf("data not found: %#v", qid)
+		return nil, fmt.Errorf("data not found: %s.%s", group, ticker)
 	case err != nil:
-		return nil, fmt.Errorf("can't load data %#v -> %w", qid, err)
+		return nil, fmt.Errorf("can't load data %s.%s -> %w", group, ticker, err)
 	}
 
 	json, err := bson.MarshalExtJSON(rawData, true, true)
 	if err != nil {
-		return nil, fmt.Errorf("can't prepare json %#v -> %w", qid, err)
+		return nil, fmt.Errorf("can't prepare json %s.%s -> %w", group, ticker, err)
 	}
 
 	return json, nil

@@ -19,9 +19,9 @@ type Server struct {
 }
 
 // NewHTTPServer - создает http сервер.
-func NewHTTPServer(log lgr.Logger, addr string, handler http.Handler, requestTimeouts time.Duration) *Server {
+func NewHTTPServer(log lgr.Logger, addr string, handler http.Handler, respondTimeouts time.Duration) *Server {
 	router := chi.NewRouter()
-	router.Use(middleware.Timeout(requestTimeouts))
+	router.Use(middleware.Timeout(respondTimeouts))
 	router.Use(logging(log))
 	router.Use(middleware.RedirectSlashes)
 	router.Mount("/", handler)
@@ -30,9 +30,9 @@ func NewHTTPServer(log lgr.Logger, addr string, handler http.Handler, requestTim
 		srv: http.Server{
 			Addr:              addr,
 			Handler:           router,
-			ReadTimeout:       requestTimeouts,
-			ReadHeaderTimeout: requestTimeouts,
-			WriteTimeout:      requestTimeouts,
+			ReadTimeout:       respondTimeouts,
+			ReadHeaderTimeout: respondTimeouts,
+			WriteTimeout:      respondTimeouts,
 		},
 	}
 }
@@ -90,13 +90,12 @@ func logging(logger lgr.Logger) func(http.Handler) http.Handler {
 	}
 }
 
-// WriteJSON посылает DTO в виде JSON и логирует ошибку.
-func WriteJSON(logger lgr.Logger, writer http.ResponseWriter, dto any) {
+// WriteJSON посылает DTO в виде JSON.
+func WriteJSON(writer http.ResponseWriter, dto any) {
 	writer.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	if err := json.NewEncoder(writer).Encode(dto); err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		logger.Warnf("can't encode dto -> %s", err)
 
 		return
 	}
