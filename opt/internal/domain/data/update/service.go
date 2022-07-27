@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/cpi"
@@ -12,9 +15,8 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/trading"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/usd"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
-	"sync"
-	"time"
 )
 
 const (
@@ -49,6 +51,7 @@ type Service struct {
 	indexSrv *index.Service
 
 	secSrv   *securities.Service
+	usdSrv   *usd.Service
 	quoteSrv *quote.Service
 
 	statusSrv   *raw.StatusService
@@ -65,6 +68,7 @@ func NewService(
 	cpiSrv *cpi.Service,
 	indexSrv *index.Service,
 	secSrv *securities.Service,
+	usdSrv *usd.Service,
 	quoteSrv *quote.Service,
 	statusSrv *raw.StatusService,
 	reestrySrv *raw.ReestryService,
@@ -105,6 +109,7 @@ func NewService(
 		cpiSrv:      cpiSrv,
 		indexSrv:    indexSrv,
 		secSrv:      secSrv,
+		usdSrv:      usdSrv,
 		quoteSrv:    quoteSrv,
 		statusSrv:   statusSrv,
 		reestrySrv:  reestrySrv,
@@ -221,6 +226,14 @@ func (s *Service) updateSec(ctx context.Context, lastTradingDay time.Time) {
 
 	var waitGroup sync.WaitGroup
 	defer waitGroup.Wait()
+
+	waitGroup.Add(1)
+
+	go func() {
+		defer waitGroup.Done()
+
+		s.usdSrv.Update(ctx, lastTradingDay)
+	}()
 
 	waitGroup.Add(1)
 

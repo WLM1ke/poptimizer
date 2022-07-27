@@ -14,6 +14,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/trading"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/update"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/usd"
 	"github.com/WLM1ke/poptimizer/opt/internal/repository"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
@@ -91,6 +92,7 @@ func (a App) Run(ctx context.Context) {
 		cpi.NewService(a.logger.WithPrefix("CPI"), repository.NewMongo[cpi.Table](mongoClient), httpClient),
 		index.NewService(a.logger.WithPrefix("Indexes"), repository.NewMongo[index.Table](mongoClient), iss),
 		securities.NewService(a.logger.WithPrefix("Securities"), repository.NewMongo[securities.Table](mongoClient), iss),
+		usd.NewService(a.logger.WithPrefix("USD"), repository.NewMongo[usd.Table](mongoClient), iss),
 		quote.NewService(a.logger.WithPrefix("Quotes"), repository.NewMongo[quote.Table](mongoClient), iss),
 		raw.NewStatusService(a.logger.WithPrefix("Status"), repository.NewMongo[raw.StatusTable](mongoClient), httpClient),
 		raw.NewReestryService(a.logger.WithPrefix("CloseReestry"), repository.NewMongo[raw.Table](mongoClient), httpClient),
