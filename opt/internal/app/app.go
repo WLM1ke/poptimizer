@@ -20,8 +20,9 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/trading"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/update"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/usd"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/portfolio/port"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/update"
 	"github.com/WLM1ke/poptimizer/opt/internal/repository"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
@@ -160,7 +161,7 @@ func (a *App) initResources() error {
 func (a *App) prepareServices() error {
 	dataSrv, err := a.prepareUpdateSrv()
 	if err != nil {
-		return fmt.Errorf("can't create data update service -> %w", err)
+		return err
 	}
 
 	server, err := a.prepareServer()
@@ -177,6 +178,8 @@ func (a *App) prepareUpdateSrv() (*update.Service, error) {
 	iss := gomoex.NewISSClient(a.http)
 
 	rawRepo := repository.NewMongo[raw.Table](a.mongo)
+	secRepo := repository.NewMongo[securities.Table](a.mongo)
+	quoteRepo := repository.NewMongo[quote.Table](a.mongo)
 
 	service, err := update.NewService(
 		a.logger.WithPrefix("UpdateSrv"),
@@ -184,14 +187,24 @@ func (a *App) prepareUpdateSrv() (*update.Service, error) {
 		trading.NewService(repository.NewMongo[trading.Date](a.mongo), iss),
 		cpi.NewService(a.logger.WithPrefix("CPI"), repository.NewMongo[cpi.Table](a.mongo), a.http),
 		index.NewService(a.logger.WithPrefix("Indexes"), repository.NewMongo[index.Table](a.mongo), iss),
-		securities.NewService(a.logger.WithPrefix("Securities"), repository.NewMongo[securities.Table](a.mongo), iss),
+		securities.NewService(a.logger.WithPrefix("Securities"), secRepo, iss),
 		usd.NewService(a.logger.WithPrefix("USD"), repository.NewMongo[usd.Table](a.mongo), iss),
 		div.NewService(a.logger.WithPrefix("Dividends"), repository.NewMongo[div.Table](a.mongo), rawRepo),
-		quote.NewService(a.logger.WithPrefix("Quotes"), repository.NewMongo[quote.Table](a.mongo), iss),
-		raw.NewStatusService(a.logger.WithPrefix("Status"), repository.NewMongo[raw.StatusTable](a.mongo), a.http),
+		quote.NewService(a.logger.WithPrefix("Quotes"), quoteRepo, iss),
+		raw.NewStatusService(
+			a.logger.WithPrefix("Status"),
+			repository.NewMongo[raw.StatusTable](a.mongo),
+			a.http,
+		),
 		raw.NewReestryService(a.logger.WithPrefix("CloseReestry"), rawRepo, a.http),
 		raw.NewNASDAQService(a.logger.WithPrefix("NASDAQ"), rawRepo, a.http),
 		raw.NewCheckRawService(a.logger.WithPrefix("CheckRaw"), rawRepo),
+		port.NewService(
+			a.logger.WithPrefix("Portfolio"),
+			repository.NewMongo[port.Portfolio](a.mongo),
+			secRepo,
+			quoteRepo,
+		),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't create update service -> %w", err)

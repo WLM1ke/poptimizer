@@ -17,6 +17,7 @@ import (
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/trading"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/usd"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/portfolio/port"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 )
 
@@ -30,7 +31,7 @@ const (
 	_timeFormat = "2006-01-02"
 )
 
-// Service - служба занимающаяся оркестрацией обновления биржевых данных.
+// Service - служба занимающаяся оркестрацией обновления данных.
 //
 // Постоянно отслеживается окончание дня и в случае окончания проверяется, что он был торговым, то есть появилась новые
 // данные об итогах торгов. После этого начинает обновлять остальные данные, где возможно параллельно. Если на каком-то
@@ -60,6 +61,8 @@ type Service struct {
 	reestrySrv  *raw.ReestryService
 	nasdaqSrv   *raw.NASDAQService
 	checkRawSrv *raw.CheckRawService
+
+	portSrv *port.Service
 }
 
 // NewService - создает службу, обновляющую биржевые данные.
@@ -77,6 +80,7 @@ func NewService(
 	reestrySrv *raw.ReestryService,
 	nasdaqSrv *raw.NASDAQService,
 	checkRawSrv *raw.CheckRawService,
+	portSrv *port.Service,
 ) (*Service, error) {
 	loc, err := time.LoadLocation(_issTZ)
 	if err != nil {
@@ -119,6 +123,7 @@ func NewService(
 		reestrySrv:  reestrySrv,
 		nasdaqSrv:   nasdaqSrv,
 		checkRawSrv: checkRawSrv,
+		portSrv:     portSrv,
 	}, nil
 }
 
@@ -188,6 +193,11 @@ func (s *Service) lastDayEnded() time.Time {
 }
 
 func (s *Service) update(ctx context.Context, lastTradingDay time.Time) {
+	s.updateData(ctx, lastTradingDay)
+	s.portSrv.Update(ctx)
+}
+
+func (s *Service) updateData(ctx context.Context, lastTradingDay time.Time) {
 	var waitGroup sync.WaitGroup
 	defer waitGroup.Wait()
 

@@ -141,4 +141,7 @@ issues:
     - linters:
       - wrapcheck
       text: "error returned from interface method should be wrapped:"
+    - linters:
+        - wrapcheck
+      text: "error returned from external package is unwrapped: sig: func github.com/WLM1ke/poptimizer/opt/pkg"
   fix: true

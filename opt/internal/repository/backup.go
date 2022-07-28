@@ -36,7 +36,7 @@ func (s BackupRestoreService) Restore(ctx context.Context, subdomain, group stri
 	}
 
 	if err := clients.MongoDBRestore(ctx, _backupDir, s.uri, subdomain, group); err != nil {
-		return 0, fmt.Errorf("can't create collection %s.%s -> %w", subdomain, group, err)
+		return 0, err
 	}
 
 	return 0, nil
