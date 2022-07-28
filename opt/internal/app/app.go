@@ -208,7 +208,15 @@ func (a *App) prepareServer() (*servers.Server, error) {
 		return nil, fmt.Errorf("can't load SPA files -> %w", err)
 	}
 
-	handler := api.NewHandler(viewer, spa)
+	handler := api.NewHandler(
+		viewer,
+		spa,
+		securities.NewEditService(
+			a.logger.WithPrefix("SecEdit"),
+			repository.NewMongo[securities.Table](a.mongo),
+			repository.NewBackupRestoreService(a.MongoDB.URI, a.mongo),
+		),
+	)
 
 	return servers.NewHTTPServer(a.logger, a.Server.Addr, handler, a.Server.RespondTimeout), nil
 }

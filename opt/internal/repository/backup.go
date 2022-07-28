@@ -45,7 +45,7 @@ func (s BackupRestoreService) Restore(ctx context.Context, subdomain, group stri
 // Backup осуществляет бекап определенной группы данных.
 func (s BackupRestoreService) Backup(ctx context.Context, subdomain, group string) error {
 	if err := clients.MongoDBBackup(ctx, _backupDir, s.uri, subdomain, group); err != nil {
-		return fmt.Errorf("can't backup %s.%s -> %w", subdomain, group, err)
+		return err
 	}
 
 	return nil

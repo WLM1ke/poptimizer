@@ -33,9 +33,14 @@ type ReadWriteRepo[E Entity] interface {
 	WriteRepo[E]
 }
 
-// BackupRestore осуществляет резервное копирование заданной группы агрегатов.
-type BackupRestore interface {
+// Backup осуществляет резервное копирование заданной группы агрегатов.
+type Backup interface {
 	Backup(ctx context.Context, subdomain, group string) error
-	// Restore возвращает количество агрегатов и восстанавливает данные, если нет.
+}
+
+// BackupRestore осуществляет резервное копирование и восстановление заданной группы агрегатов.
+type BackupRestore interface {
+	Backup
+	// Restore восстанавливает данные, если их нет, или возвращает количество агрегатов при их наличии данных.
 	Restore(ctx context.Context, subdomain, group string) (int, error)
 }
