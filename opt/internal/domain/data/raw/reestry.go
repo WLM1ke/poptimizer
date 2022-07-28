@@ -78,7 +78,7 @@ func (s ReestryService) updateOne(ctx context.Context, date time.Time, status St
 
 	rowsNew, err := s.download(ctx, status)
 	if err != nil {
-		return fmt.Errorf("%s for %w", status.Ticker, err)
+		return fmt.Errorf("%s %w", status.Ticker, err)
 	}
 
 	rowsNew.Sort()
