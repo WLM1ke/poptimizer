@@ -216,6 +216,12 @@ func (a *App) prepareServer() (*servers.Server, error) {
 			repository.NewMongo[securities.Table](a.mongo),
 			repository.NewBackupRestoreService(a.MongoDB.URI, a.mongo),
 		),
+		raw.NewEditRawService(
+			a.logger.WithPrefix("RawEdit"),
+			repository.NewMongo[securities.Table](a.mongo),
+			repository.NewMongo[raw.Table](a.mongo),
+			repository.NewBackupRestoreService(a.MongoDB.URI, a.mongo),
+		),
 	)
 
 	return servers.NewHTTPServer(a.logger, a.Server.Addr, handler, a.Server.RespondTimeout), nil

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net/http"
 
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/go-chi/chi"
 )
@@ -21,7 +22,8 @@ type handler struct {
 	viewer JSONViewer
 	spa    fs.FS
 
-	tickers *securities.EditService
+	tickers   *securities.EditService
+	dividends *raw.EditRawService
 }
 
 // NewHandler создает обработчики, отображающие frontend и API для получения ExtendedJSON представления данных.
@@ -32,18 +34,21 @@ func NewHandler(
 	viewer JSONViewer,
 	spa fs.FS,
 	tickers *securities.EditService,
+	dividends *raw.EditRawService,
 ) http.Handler {
 	api := handler{
-		mux:     chi.NewRouter(),
-		viewer:  viewer,
-		spa:     spa,
-		tickers: tickers,
+		mux:       chi.NewRouter(),
+		viewer:    viewer,
+		spa:       spa,
+		tickers:   tickers,
+		dividends: dividends,
 	}
 
 	api.registerJSONHandler()
 
 	api.registerFrontend()
 	api.registerTickersHandlers()
+	api.registerDividendsHandlers()
 
 	return &api
 }
