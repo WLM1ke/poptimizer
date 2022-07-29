@@ -27,7 +27,7 @@ class Evolution:  # noqa: WPS214
         self._tickers = None
         self._end = None
         self._logger = logging.getLogger()
-        self._scale = max(1, population.count())
+        self._scale = int(population.count() ** 0.5)
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -76,7 +76,7 @@ class Evolution:  # noqa: WPS214
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")
 
-            self._scale = max(1, population.count())
+            self._scale = int(population.count() ** 0.5)
 
     def _maybe_clear(self, org: population.Organism) -> population.Organism:
 
@@ -122,7 +122,7 @@ class Evolution:  # noqa: WPS214
 
             return None
 
-        self._scale = max(1, self._scale - 1)
+        self._scale = max(int(population.count() ** 0.5), self._scale - 1)
 
         if margin[0] - margin[1] < 0:
             return None
