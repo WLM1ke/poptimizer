@@ -235,6 +235,9 @@ func (a *App) prepareServer() (*servers.Server, error) {
 			repository.NewMongo[raw.Table](a.mongo),
 			repository.NewBackupRestoreService(a.MongoDB.URI, a.mongo),
 		),
+		port.NewAccEditService(
+			repository.NewMongo[port.Portfolio](a.mongo),
+		),
 	)
 
 	return servers.NewHTTPServer(a.logger, a.Server.Addr, handler, a.Server.RespondTimeout), nil

@@ -9,6 +9,7 @@ import (
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/raw"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/portfolio/port"
 	"github.com/go-chi/chi"
 )
 
@@ -24,6 +25,7 @@ type handler struct {
 
 	tickers   *securities.EditService
 	dividends *raw.EditRawService
+	accounts  *port.AccEditService
 }
 
 // NewHandler создает обработчики, отображающие frontend и API для получения ExtendedJSON представления данных.
@@ -35,6 +37,7 @@ func NewHandler(
 	spa fs.FS,
 	tickers *securities.EditService,
 	dividends *raw.EditRawService,
+	accounts *port.AccEditService,
 ) http.Handler {
 	api := handler{
 		mux:       chi.NewRouter(),
@@ -42,6 +45,7 @@ func NewHandler(
 		spa:       spa,
 		tickers:   tickers,
 		dividends: dividends,
+		accounts:  accounts,
 	}
 
 	api.registerJSONHandler()
@@ -49,6 +53,7 @@ func NewHandler(
 	api.registerFrontend()
 	api.registerTickersHandlers()
 	api.registerDividendsHandlers()
+	api.registerAccountsHandlers()
 
 	return &api
 }

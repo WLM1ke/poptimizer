@@ -48,11 +48,11 @@ func PortfolioID(date string) domain.QID {
 
 // Position представляет информацию об отдельной позиции.
 type Position struct {
-	Ticker   string
-	Shares   int
-	Lot      int
-	Price    float64
-	Turnover float64
+	Ticker   string  `json:"ticker"`
+	Shares   int     `json:"shares"`
+	Lot      int     `json:"lot"`
+	Price    float64 `json:"price"`
+	Turnover float64 `json:"turnover"`
 }
 
 // Value стоимость позиции.
@@ -67,8 +67,8 @@ func (p Position) Weight(total float64) float64 {
 
 // Portfolio - портфель, состоящий из позиций и денежных средств.
 type Portfolio struct {
-	Positions []Position
-	Cash      int
+	Positions []Position `json:"positions"`
+	Cash      int        `json:"cash"`
 }
 
 // Value стоимость портфеля.
