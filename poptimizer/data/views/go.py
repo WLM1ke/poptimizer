@@ -1,8 +1,9 @@
 """Предварительная версия интеграции с Go."""
+import warnings
+
 import aiohttp
 import asyncio
 import pandas as pd
-import numpy as np
 from bson import json_util
 from pandas import testing
 
@@ -101,11 +102,13 @@ def dividends(ticker: str):
 
 
 if __name__ == "__main__":
-    securities()
-    cpi()
-    usd()
-    indexes()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        securities()
+        cpi()
+        usd()
+        indexes()
 
-    for ticker in portfolio.load_tickers():
-        quotes(ticker)
-        dividends(ticker)
+        for ticker in portfolio.load_tickers():
+            quotes(ticker)
+            dividends(ticker)
