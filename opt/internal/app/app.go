@@ -221,22 +221,29 @@ func (a *App) prepareServer() (*servers.Server, error) {
 		return nil, fmt.Errorf("can't load SPA files -> %w", err)
 	}
 
+	secRepo := repository.NewMongo[securities.Table](a.mongo)
+	backupSrv := repository.NewBackupRestoreService(a.MongoDB.URI, a.mongo)
+	portRepo := repository.NewMongo[port.Portfolio](a.mongo)
+
 	handler := api.NewHandler(
 		viewer,
 		spa,
 		securities.NewEditService(
 			a.logger.WithPrefix("SecEdit"),
-			repository.NewMongo[securities.Table](a.mongo),
-			repository.NewBackupRestoreService(a.MongoDB.URI, a.mongo),
+			secRepo,
+			backupSrv,
 		),
 		raw.NewEditRawService(
 			a.logger.WithPrefix("RawEdit"),
-			repository.NewMongo[securities.Table](a.mongo),
+			secRepo,
 			repository.NewMongo[raw.Table](a.mongo),
-			repository.NewBackupRestoreService(a.MongoDB.URI, a.mongo),
+			backupSrv,
 		),
 		port.NewAccEditService(
-			repository.NewMongo[port.Portfolio](a.mongo),
+			portRepo,
+		),
+		port.NewViewPortfolioService(
+			portRepo,
 		),
 	)
 

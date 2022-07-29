@@ -26,6 +26,7 @@ type handler struct {
 	tickers   *securities.EditService
 	dividends *raw.EditRawService
 	accounts  *port.AccEditService
+	portfolio *port.ViewPortfolioService
 }
 
 // NewHandler создает обработчики, отображающие frontend и API для получения ExtendedJSON представления данных.
@@ -38,6 +39,7 @@ func NewHandler(
 	tickers *securities.EditService,
 	dividends *raw.EditRawService,
 	accounts *port.AccEditService,
+	portfolio *port.ViewPortfolioService,
 ) http.Handler {
 	api := handler{
 		mux:       chi.NewRouter(),
@@ -46,6 +48,7 @@ func NewHandler(
 		tickers:   tickers,
 		dividends: dividends,
 		accounts:  accounts,
+		portfolio: portfolio,
 	}
 
 	api.registerJSONHandler()
@@ -54,6 +57,7 @@ func NewHandler(
 	api.registerTickersHandlers()
 	api.registerDividendsHandlers()
 	api.registerAccountsHandlers()
+	api.registerPortfolioHandlers()
 
 	return &api
 }
