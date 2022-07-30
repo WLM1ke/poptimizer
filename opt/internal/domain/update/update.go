@@ -148,7 +148,7 @@ func (s *Service) Run(ctx context.Context) {
 }
 
 func (s *Service) tryToUpdate(ctx context.Context) {
-	lastDayEnded := s.lastDayEnded()
+	lastDayEnded := s.lastDayEnded(time.Now())
 	if !s.checkedDay.Before(lastDayEnded) {
 		return
 	}
@@ -180,8 +180,8 @@ func (s *Service) tryToUpdate(ctx context.Context) {
 	s.checkedDay = lastDayEnded
 }
 
-func (s *Service) lastDayEnded() time.Time {
-	now := time.Now().In(s.loc)
+func (s *Service) lastDayEnded(now time.Time) time.Time {
+	now = now.In(s.loc)
 	end := time.Date(now.Year(), now.Month(), now.Day(), _issHour, _issMinute, 0, 0, s.loc)
 
 	delta := 2
