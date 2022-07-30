@@ -11,9 +11,10 @@ jobs:
     - name: Checkout poptimizer
       uses: actions/checkout@v3
 
-    - name: Del dividends dump
+    - name: Del dividends dump and unlink default MongoDB
       run:
         rm -r dump
+        brew unlink mongodb-community@5.0
 
     - name: Install dependencies
       run:
