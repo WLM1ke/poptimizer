@@ -29,7 +29,7 @@ func (a aggregate[E]) QID() domain.QID {
 }
 
 func (a aggregate[E]) Ver() int {
-	return 42
+	return 1
 }
 
 func (a aggregate[E]) Timestamp() time.Time {

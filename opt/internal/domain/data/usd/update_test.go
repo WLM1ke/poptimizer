@@ -2,13 +2,13 @@ package usd
 
 import (
 	"context"
-	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 
 	"github.com/WLM1ke/gomoex"
 	"github.com/WLM1ke/poptimizer/opt/internal/mocks"
+	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -58,6 +58,7 @@ func TestHandler_Update(t *testing.T) {
 		), nil).
 		On("Save", mocks.NewAgg[Table](ID(), tradingDay, convert(candles))).
 		Return(nil)
+
 	iss := new(mocks.ISS)
 	iss.On(
 		"MarketCandles",
@@ -68,6 +69,7 @@ func TestHandler_Update(t *testing.T) {
 		"2022-06-26",
 		gomoex.IntervalDay,
 	).Return(candles[1:], nil)
+
 	service := NewService(lgr.Discard(), repo, iss)
 
 	assert.Equal(t, convert(candles), service.Update(context.Background(), tradingDay))
@@ -115,6 +117,7 @@ func TestHandler_Update_FirstLoad(t *testing.T) {
 		"2022-06-26",
 		gomoex.IntervalDay,
 	).Return(candles, nil)
+
 	service := NewService(lgr.Discard(), repo, iss)
 
 	assert.Equal(t, convert(candles), service.Update(context.Background(), tradingDay))
@@ -165,6 +168,7 @@ func TestHandler_UpdateEmpty(t *testing.T) {
 			time.Date(2022, time.June, 25, 0, 0, 0, 0, time.UTC),
 			convert(candles),
 		), nil)
+
 	iss := new(mocks.ISS)
 	iss.On(
 		"MarketCandles",
@@ -175,6 +179,7 @@ func TestHandler_UpdateEmpty(t *testing.T) {
 		"2022-06-26",
 		gomoex.IntervalDay,
 	).Return(candles[2:], nil)
+
 	service := NewService(lgr.Discard(), repo, iss)
 
 	assert.Equal(t, convert(candles), service.Update(context.Background(), tradingDay))
@@ -237,6 +242,7 @@ func TestHandler_HandleNotIncreasing(t *testing.T) {
 		"2022-06-26",
 		gomoex.IntervalDay,
 	).Return(candles[1:], nil)
+
 	service := NewService(lgr.Discard(), repo, iss)
 
 	assert.Nil(t, service.Update(context.Background(), tradingDay))

@@ -189,20 +189,20 @@ func (v *MongoJSONViewer) GetJSON(ctx context.Context, group, ticker string) ([]
 	startDate := domain.DataStartDate()
 	dataAfterStartDate := bson.D{
 		{
-			"$filter",
-			bson.D{
-				{"input", "$data"},
-				{"as", "data"},
+			Key: "$filter",
+			Value: bson.D{
+				{Key: "input", Value: "$data"},
+				{Key: "as", Value: "data"},
 				{
-					"cond",
-					bson.D{
+					Key: "cond",
+					Value: bson.D{
 						{
-							"$gte",
-							bson.A{
+							Key: "$gte",
+							Value: bson.A{
 								bson.D{
 									{
-										"$ifNull",
-										bson.A{"$$data.date", startDate},
+										Key:   "$ifNull",
+										Value: bson.A{"$$data.date", startDate},
 									},
 								},
 								startDate,
@@ -215,8 +215,8 @@ func (v *MongoJSONViewer) GetJSON(ctx context.Context, group, ticker string) ([]
 	}
 
 	pipeline := mongo.Pipeline{
-		{{"$match", bson.D{{"_id", ticker}}}},
-		{{"$project", bson.D{{"_id", false}, {"data", dataAfterStartDate}}}},
+		{{Key: "$match", Value: bson.D{{Key: "_id", Value: ticker}}}},
+		{{Key: "$project", Value: bson.D{{Key: "_id", Value: false}, {Key: "data", Value: dataAfterStartDate}}}},
 	}
 
 	cur, err := collection.Aggregate(ctx, pipeline)

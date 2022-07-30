@@ -1,9 +1,9 @@
 package port
 
 import (
-	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"testing"
 
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/data/securities"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -102,7 +102,7 @@ func TestPortfolio_UpdateSec(t *testing.T) {
 func TestPortfolio_UpdateMarketData(t *testing.T) {
 	t.Parallel()
 
-	in := Portfolio{
+	port := Portfolio{
 		Positions: []Position{
 			{Ticker: "AKRN", Shares: 10, Lot: 10, Price: 0, Turnover: 0},
 			{Ticker: "GAZP", Shares: 2, Lot: 100, Price: 0, Turnover: 0},
@@ -118,9 +118,9 @@ func TestPortfolio_UpdateMarketData(t *testing.T) {
 		Cash: 111,
 	}
 
-	in.updateMarketData(markerData)
+	port.updateMarketData(markerData)
 
-	assert.Equal(t, in, out)
+	assert.Equal(t, port, out)
 }
 
 func TestService_SetAmount(t *testing.T) {
