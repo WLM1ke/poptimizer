@@ -29,12 +29,12 @@ func WithOptions(options ...Option) Logger {
 	return &log
 }
 
-// New - логер с отображением времени до секунд и записью в stdout.
+// New логер с отображением времени до секунд и записью в stdout.
 func New(prefix string) Logger {
 	return WithOptions(Writer(os.Stdout), TimeWithSeconds(), Prefix(prefix))
 }
 
-// Discard не пишет логи, но вызывает панику на уровне Panicf - предназначен для тестирования.
+// Discard не пишет логи - предназначен для тестирования.
 func Discard() Logger {
 	return WithOptions(Writer(io.Discard), TimeWithSeconds())
 }
