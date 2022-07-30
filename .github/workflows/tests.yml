@@ -12,7 +12,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Del dividends dump and unlink default MongoDB
-      run:
+      run: |
         rm -r dump
         brew unlink mongodb-community@5.0
 
