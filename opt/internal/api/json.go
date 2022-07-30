@@ -21,6 +21,12 @@ func (h handler) jsonGet(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	if json == nil {
+		writer.WriteHeader(http.StatusNoContent)
+
+		return
+	}
+
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_, _ = writer.Write(json)
 }

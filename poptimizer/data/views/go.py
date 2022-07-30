@@ -18,6 +18,10 @@ VIEWER = bootstrap.VIEWER
 async def _rest_reader(group: str, name: str, session: aiohttp.ClientSession = connections.HTTP_SESSION):
     async with session.get(f"http://localhost:10000/api/{group}/{name}") as respond:
         respond.raise_for_status()
+
+        if respond.status == 204:
+            return None
+
         json = await respond.text()
 
         json = json_util.loads(json)
@@ -39,7 +43,7 @@ def securities():
 
 
 def cpi():
-    local = VIEWER.get_df(ports.CPI, ports.CPI)
+    local = VIEWER.get_df(ports.CPI, ports.CPI).loc["2015-01-01":]
     new = rest_reader("cpi", "cpi").set_index("date")
     new.columns = local.columns
 
@@ -47,7 +51,7 @@ def cpi():
 
 
 def usd():
-    local = VIEWER.get_df(ports.USD, ports.USD)
+    local = VIEWER.get_df(ports.USD, ports.USD).loc["2015-01-01":]
     new = rest_reader(ports.USD, ports.USD).set_index("date")
     new.columns = local.columns
 
@@ -58,7 +62,7 @@ def indexes():
     ind = ["MCFTRR", "MEOGTRR", "IMOEX", "RVI"]
 
     for i in ind:
-        local = VIEWER.get_df(ports.INDEX, i)
+        local = VIEWER.get_df(ports.INDEX, i).loc["2015-01-01":]
         new = rest_reader(ports.INDEX, i).set_index("date")[["close"]]
         new.columns = local.columns
 
@@ -67,7 +71,7 @@ def indexes():
 
 def quotes(ticker: str):
     local = VIEWER.get_df(ports.QUOTES, ticker).loc["2015-01-01":]
-    new = rest_reader(ports.QUOTES, ticker).set_index("date").loc["2015-01-01":]
+    new = rest_reader(ports.QUOTES, ticker).set_index("date")
     new.columns = local.columns
 
     if len(local) != len(new):
@@ -85,7 +89,7 @@ def dividends(ticker: str):
     local = VIEWER.get_df(ports.DIVIDENDS, ticker).loc["2015-01-01":]
 
     try:
-        new = rest_reader(ports.DIVIDENDS, ticker).set_index("date").loc["2015-01-01":]
+        new = rest_reader(ports.DIVIDENDS, ticker).set_index("date")
         new.columns = local.columns
     except:
         if local.empty:

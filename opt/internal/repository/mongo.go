@@ -181,21 +181,56 @@ func NewMongoJSONViewer(client *mongo.Client) *MongoJSONViewer {
 }
 
 // GetJSON загружает ExtendedJSON представление данных.
+//
+// Данные могут отсутствовать, тогда возвращается nil.
 func (v *MongoJSONViewer) GetJSON(ctx context.Context, group, ticker string) ([]byte, error) {
 	collection := v.client.Database(data.Subdomain).Collection(group)
 
-	projections := options.FindOne().SetProjection(bson.M{"_id": 0, "data": 1})
-
-	rawData, err := collection.FindOne(ctx, bson.M{"_id": ticker}, projections).DecodeBytes()
-
-	switch {
-	case errors.Is(err, mongo.ErrNoDocuments):
-		return nil, fmt.Errorf("data not found: %s.%s", group, ticker)
-	case err != nil:
-		return nil, fmt.Errorf("can't load data %s.%s -> %w", group, ticker, err)
+	startDate := domain.DataStartDate()
+	dataAfterStartDate := bson.D{
+		{
+			"$filter",
+			bson.D{
+				{"input", "$data"},
+				{"as", "data"},
+				{
+					"cond",
+					bson.D{
+						{
+							"$gte",
+							bson.A{
+								bson.D{
+									{
+										"$ifNull",
+										bson.A{"$$data.date", startDate},
+									},
+								},
+								startDate,
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
-	json, err := bson.MarshalExtJSON(rawData, true, true)
+	pipeline := mongo.Pipeline{
+		{{"$match", bson.D{{"_id", ticker}}}},
+		{{"$project", bson.D{{"_id", false}, {"data", dataAfterStartDate}}}},
+	}
+
+	cur, err := collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("can't load  %s.%s -> %w", group, ticker, err)
+	}
+
+	defer cur.Close(ctx)
+
+	if !cur.Next(ctx) {
+		return nil, nil
+	}
+
+	json, err := bson.MarshalExtJSON(cur.Current, true, true)
 	if err != nil {
 		return nil, fmt.Errorf("can't prepare json %s.%s -> %w", group, ticker, err)
 	}

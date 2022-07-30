@@ -2,10 +2,12 @@ package repository
 
 import (
 	"context"
-	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"testing"
 	"time"
 
+	"github.com/WLM1ke/poptimizer/opt/internal/domain"
+
+	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/pkg/clients"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/mongo"
