@@ -2,7 +2,6 @@ package raw
 
 import (
 	"context"
-	"sync"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
@@ -27,35 +26,32 @@ func NewCheckRawService(
 	}
 }
 
-// Check проверяет актуальность введенных пользователем дивидендов.
-func (s CheckRawService) Check(ctx context.Context, table StatusTable) {
+// Check проверяет актуальность введенных пользователем дивидендов и возвращает перечень пропущенных.
+func (s CheckRawService) Check(ctx context.Context, table StatusTable) (missed StatusTable) {
 	defer s.logger.Infof("check is finished")
 
-	var waitGroup sync.WaitGroup
-	defer waitGroup.Wait()
-
 	for _, status := range table {
-		waitGroup.Add(1)
-
-		status := status
-
-		go func() {
-			defer waitGroup.Done()
-
-			s.checkOne(ctx, status)
-		}()
+		if s.isMissed(ctx, status) {
+			missed = append(missed, status)
+		}
 	}
+
+	return missed
 }
 
-func (s CheckRawService) checkOne(ctx context.Context, status Status) {
+func (s CheckRawService) isMissed(ctx context.Context, status Status) bool {
 	agg, err := s.repo.Get(ctx, ID(status.Ticker))
 	if err != nil {
 		s.logger.Warnf("%s", err)
 
-		return
+		return false
 	}
 
 	if !agg.Entity().ExistsDate(status.Date) {
 		s.logger.Warnf("missed %s dividend at %s", status.Ticker, status.Date.Format(_eventDateFormat))
+
+		return true
 	}
+
+	return false
 }

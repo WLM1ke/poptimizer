@@ -305,6 +305,7 @@ func (s *Service) updateDiv(
 
 func (s *Service) updateRawDiv(ctx context.Context, lastTradingDay time.Time, sec securities.Table) {
 	status := s.statusSrv.Update(ctx, lastTradingDay, sec)
+	status = s.checkRawSrv.Check(ctx, status)
 
 	var waitGroup sync.WaitGroup
 	defer waitGroup.Wait()
@@ -323,13 +324,5 @@ func (s *Service) updateRawDiv(ctx context.Context, lastTradingDay time.Time, se
 		defer waitGroup.Done()
 
 		s.nasdaqSrv.Update(ctx, lastTradingDay, status)
-	}()
-
-	waitGroup.Add(1)
-
-	go func() {
-		defer waitGroup.Done()
-
-		s.checkRawSrv.Check(ctx, status)
 	}()
 }
