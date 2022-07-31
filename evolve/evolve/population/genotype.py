@@ -13,13 +13,13 @@ class Genotype(collections.UserDict[str, dict[str, float]]):
     Значение генов представлены float для осуществления дифференциальной эволюции.
     """
 
-    genotype: ClassVar[gene.GenoPool] = types.MappingProxyType({"data": data.chromosome()})
+    geno_pool: ClassVar[gene.GenoPool] = types.MappingProxyType({"data": data.chromosome()})
 
     def make_child(self, parent1: "Genotype", parent2: "Genotype", scale: float) -> "Genotype":
         """Создает генотип ребенка."""
         child: Genotype = Genotype()
 
-        for key_chromosome, chromosome in self.genotype.items():
+        for key_chromosome, chromosome in self.geno_pool.items():
             child[key_chromosome] = {}
             for key_gen, gen in chromosome.items():
                 child[key_chromosome][key_gen] = gen.make_child(
