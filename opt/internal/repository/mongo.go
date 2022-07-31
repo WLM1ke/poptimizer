@@ -7,6 +7,7 @@ import (
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/internal/domain/data"
+	"github.com/WLM1ke/poptimizer/opt/internal/domain/portfolio/port"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -180,10 +181,48 @@ func NewMongoJSONViewer(client *mongo.Client) *MongoJSONViewer {
 	}
 }
 
-// GetJSON загружает ExtendedJSON представление данных.
+// GetPortfolio загружает ExtendedJSON с датой последнего портфеля и набором входящих в него тикеров.
+func (v *MongoJSONViewer) GetPortfolio(ctx context.Context) ([]byte, error) {
+	coll := v.client.Database(port.PortfolioID("").Sub).Collection(port.PortfolioID("").Group)
+
+	pipeline := mongo.Pipeline{
+		bson.D{{Key: "$sort", Value: bson.D{{Key: "timestamp", Value: -1}}}},
+		bson.D{{Key: "$limit", Value: 1}},
+		bson.D{
+			{
+				Key: "$project",
+				Value: bson.D{
+					{Key: "_id", Value: false},
+					{Key: "timestamp", Value: true},
+					{Key: "tickers", Value: "$data.positions.ticker"},
+				},
+			},
+		},
+	}
+
+	cur, err := coll.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("can't load portfolio -> %w", err)
+	}
+
+	defer cur.Close(ctx)
+
+	if !cur.Next(ctx) {
+		return nil, fmt.Errorf("can't load portfolio -> %w", err)
+	}
+
+	json, err := bson.MarshalExtJSON(cur.Current, true, true)
+	if err != nil {
+		return nil, fmt.Errorf("can't prepare portfolio json -> %w", err)
+	}
+
+	return json, nil
+}
+
+// GetData загружает ExtendedJSON представление данных.
 //
 // Данные могут отсутствовать, тогда возвращается nil.
-func (v *MongoJSONViewer) GetJSON(ctx context.Context, group, ticker string) ([]byte, error) {
+func (v *MongoJSONViewer) GetData(ctx context.Context, group, ticker string) ([]byte, error) {
 	collection := v.client.Database(data.Subdomain).Collection(group)
 
 	startDate := domain.DataStartDate()

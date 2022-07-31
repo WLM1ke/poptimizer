@@ -15,7 +15,10 @@ import (
 
 // JSONViewer загружает ExtendedJSON представление данных.
 type JSONViewer interface {
-	GetJSON(ctx context.Context, group, id string) ([]byte, error)
+	// GetPortfolio загружает ExtendedJSON с датой последнего портфеля и набором входящих в него тикеров.
+	GetPortfolio(ctx context.Context) ([]byte, error)
+	// GetData загружает ExtendedJSON представление данных.
+	GetData(ctx context.Context, group, id string) ([]byte, error)
 }
 
 type handler struct {
