@@ -1,7 +1,6 @@
 RUR: 0
 USD: 0
 positions:
-  AAL-RM: 0
   AAPL-RM: 0
   ABBV-RM: 0
   ABRD: 0
@@ -19,7 +18,6 @@ positions:
   APTK: 0
   AQUA: 0
   ATVI-RM: 0
-  AVGO-RM: 0
   BA-RM: 0
   BABA-RM: 0
   BANE: 0
@@ -42,12 +40,10 @@ positions:
   DIVD: 0
   DSKY: 0
   DVEC: 0
-  EA-RM: 0
   ENPG: 0
   ENRU: 0
   ETLN: 0
   F-RM: 0
-  FDX-RM: 0
   FEES: 0
   FESH: 0
   FIVE: 0
@@ -59,15 +55,12 @@ positions:
   FXKZ: 0
   GAZP: 0
   GCHE: 0
-  GE-RM: 0
   GEMA: 0
   GLTR: 0
-  GM-RM: 0
   GMKN: 0
   GTRK: 0
   HHRU: 0
   HIMCP: 0
-  HPQ-RM: 0
   HYDR: 0
   IGST: 0
   INGR: 0
@@ -187,6 +180,7 @@ positions:
   TRNFP: 0
   TRUR: 0
   TSLA-RM: 0
+  TSPX: 0
   TTLK: 0
   TWTR-RM: 0
   UNAC: 0
