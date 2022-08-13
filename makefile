@@ -27,6 +27,8 @@ db_recover:
 db_stop:
 	@echo "Stop MongoDB"
 	pkill -x mongod
+black:
+	$(VENV_ACTIVATE);blackd
 lint:
 	$(VENV_ACTIVATE);mypy $(SRC) && flake8 $(SRC)
 test:
