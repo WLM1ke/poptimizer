@@ -14,14 +14,11 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
 }
 
-PRICES_PAGE = "https://rosstat.gov.ru/price"
-CPI_PAGE = re.compile("/storage/mediabank/ind_potreb_cen_.+html?")
-HOST = "https://rosstat.gov.ru"
-LINK = re.compile("https://rosstat.gov.ru/.+ipc.+xlsx")
+_URL = "https://rosstat.gov.ru/storage/mediabank/ipc_4(2).xlsx"
 END_OF_JAN = 31
 PARSING_PARAMETERS = types.MappingProxyType(
     {
-        "sheet_name": "ИПЦ",
+        "sheet_name": "01",
         "header": 3,
         "skiprows": [4],
         "skipfooter": 3,
@@ -40,35 +37,12 @@ class CPIGatewayError(config.POptimizerError):
 
 async def _load_and_parse_xlsx(session: aiohttp.ClientSession) -> pd.DataFrame:
     """Загрузка Excel-файла с данными по инфляции."""
-    page = await _loap_cpi_page(session)
-
-    if not (search_result := LINK.search(page)):
-        raise CPIGatewayError("Не могу найти ссылку на таблицу с инфляцией")
-
-    url = search_result.group(0)
-
-    xls_file = await _load_xlsx(session, url)
+    xls_file = await _load_xlsx(session, _URL)
 
     return pd.read_excel(
         xls_file,
         **PARSING_PARAMETERS,
     )
-
-
-async def _loap_cpi_page(session: aiohttp.ClientSession) -> str:
-    path = await _find_cpi_page(session)
-
-    async with session.get(HOST + path, headers=HEADERS) as resp:
-        return await resp.text("cp1251")
-
-
-async def _find_cpi_page(session: aiohttp.ClientSession) -> str:
-    async with session.get(PRICES_PAGE, headers=HEADERS) as resp:
-        html = await resp.text()
-    if not (search_result := CPI_PAGE.search(html)):
-        raise CPIGatewayError("Не могу найти ссылку на страницу с инфляцией")
-
-    return search_result.group(0)
 
 
 async def _load_xlsx(session: aiohttp.ClientSession, url: str) -> bytes:

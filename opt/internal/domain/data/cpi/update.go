@@ -3,23 +3,19 @@ package cpi
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/WLM1ke/poptimizer/opt/internal/domain"
 	"github.com/WLM1ke/poptimizer/opt/pkg/lgr"
 	"github.com/xuri/excelize/v2"
-	"golang.org/x/text/encoding/charmap"
 )
 
 const (
-	_pricesURL = `https://rosstat.gov.ru/price`
-	_cpiHost   = `https://rosstat.gov.ru`
+	_URL = `https://rosstat.gov.ru/storage/mediabank/ipc_4(2).xlsx`
 
-	_sheet = `ИПЦ`
+	_sheet = `01`
 
 	_headerRow = 3
 	_firstYear = 1991
@@ -27,12 +23,6 @@ const (
 	_firstDataRow = 5
 	_firstDataCol = 1
 )
-
-var (
-	_cpiPathRE = regexp.MustCompile(`/storage/mediabank/ind_potreb_cen_.+html?`)
-	_urlRE     = regexp.MustCompile(`https://rosstat\.gov\.ru/.+ipc.+xlsx`)
-)
-
 // Service загружает данные по инфляции.
 type Service struct {
 	logger lgr.Logger
@@ -109,12 +99,7 @@ func (s Service) download(ctx context.Context) (Table, error) {
 }
 
 func (s Service) getXLSX(ctx context.Context) (*excelize.File, error) {
-	url, err := s.getURL(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _URL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"can't create request -> %w",
@@ -148,81 +133,6 @@ func (s Service) getXLSX(ctx context.Context) (*excelize.File, error) {
 	}
 
 	return reader, nil
-}
-
-func (s Service) getURL(ctx context.Context) (string, error) {
-	url, err := s.makeCPIPageURL(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
-	if err != nil {
-		return "", fmt.Errorf(
-			"can't create request -> %w",
-			err,
-		)
-	}
-
-	resp, err := s.client.Do(request)
-	if err != nil {
-		return "", fmt.Errorf(
-			"can't make request -> %w",
-			err,
-		)
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf(
-			"bad respond status %s",
-			resp.Status,
-		)
-	}
-
-	decoder := charmap.Windows1252.NewDecoder()
-	reader := decoder.Reader(resp.Body)
-
-	page, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return "", fmt.Errorf(
-			"can't decode cp1252 -> %w",
-			err,
-		)
-	}
-
-	return string(_urlRE.Find(page)), nil
-}
-
-func (s Service) makeCPIPageURL(ctx context.Context) (string, error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, _pricesURL, http.NoBody)
-	if err != nil {
-		return "", fmt.Errorf(
-			"can't create request -> %w",
-			err,
-		)
-	}
-
-	resp, err := s.client.Do(request)
-	if err != nil {
-		return "", fmt.Errorf(
-			"can't make request -> %w",
-			err,
-		)
-	}
-
-	defer resp.Body.Close()
-
-	page, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf(
-			"can't read prices page -> %w",
-			err,
-		)
-	}
-
-	return fmt.Sprintf("%s%s", _cpiHost, _cpiPathRE.Find(page)), nil
 }
 
 func validateMonths(rows [][]string) error {
