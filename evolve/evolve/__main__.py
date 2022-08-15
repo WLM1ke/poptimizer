@@ -27,9 +27,10 @@ async def main() -> None:
     logging.basicConfig(level=logging.INFO)
 
     loop = asyncio.get_event_loop()
-    evolution = evolve.Evolution()
+    population = evolve.Population()
+    evolution = evolve.Evolution(population)
 
-    task = loop.create_task(evolution())
+    task = loop.create_task(evolution.run())
     _TaskCanceler(task)
 
     await task
