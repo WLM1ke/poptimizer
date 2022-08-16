@@ -57,7 +57,7 @@ YEAR_IN_TRADING_DAYS = 12 * MONTH_IN_TRADING_DAYS
 # Загрузка конфигурации
 FORECAST_DAYS = cast(int, _cfg.get("FORECAST_DAYS", 21))
 FORECAST_DIV = cast(float, _cfg.get("FORECAST_DIV", 0))
-HISTORY_DAYS_MIN = cast(int, _cfg.get("HISTORY_DAYS_MIN", 126))
+HISTORY_DAYS_MIN = cast(int, _cfg.get("HISTORY_DAYS_MIN", 3))
 P_VALUE = cast(float, _cfg.get("P_VALUE", 0.05))
 COSTS = cast(float, _cfg.get("COSTS", 0.025)) / 100
 TRADING_INTERVAL = cast(int, _cfg.get("TRADING_INTERVAL", 1))
