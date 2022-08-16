@@ -1,10 +1,7 @@
 RUR: 0
 USD: 0
 positions:
-  AAPL-RM: 0
-  ABBV-RM: 0
   ABRD: 0
-  ADBE-RM: 0
   AFKS: 0
   AFLT: 0
   AGRO: 0
@@ -12,21 +9,13 @@ positions:
   AKME: 0
   AKRN: 0
   ALRS: 0
-  AMD-RM: 0
   AMEZ: 0
-  AMZN-RM: 0
   APTK: 0
   AQUA: 0
-  ATVI-RM: 0
-  BA-RM: 0
-  BABA-RM: 0
   BANE: 0
   BANEP: 0
   BELU: 0
-  BIDU-RM: 0
-  BIIB-RM: 0
   BLNG: 0
-  BMY-RM: 0
   BRZL: 0
   BSPB: 0
   CBOM: 0
@@ -34,25 +23,18 @@ positions:
   CHMK: 0
   CNTL: 0
   CNTLP: 0
-  CSCO-RM: 0
   DIOD: 0
-  DIS-RM: 0
   DIVD: 0
   DSKY: 0
   DVEC: 0
   ENPG: 0
   ENRU: 0
   ETLN: 0
-  F-RM: 0
   FEES: 0
   FESH: 0
   FIVE: 0
   FIXP: 0
   FLOT: 0
-  FXCN: 0
-  FXGD: 0
-  FXIT: 0
-  FXKZ: 0
   GAZP: 0
   GCHE: 0
   GEMA: 0
@@ -64,7 +46,6 @@ positions:
   HYDR: 0
   IGST: 0
   INGR: 0
-  INTC-RM: 0
   IRAO: 0
   IRKT: 0
   ISKJ: 0
@@ -87,9 +68,7 @@ positions:
   LSNGP: 0
   LSRG: 0
   LVHK: 0
-  MA-RM: 0
   MAGN: 0
-  MCD-RM: 0
   MDMG: 0
   MGNT: 0
   MGNZ: 0
@@ -103,38 +82,30 @@ positions:
   MRKY: 0
   MRKZ: 0
   MRSB: 0
-  MSFT-RM: 0
   MSNG: 0
   MSRS: 0
   MSTT: 0
   MTLR: 0
   MTLRP: 0
   MTSS: 0
-  MU-RM: 0
   MVID: 0
-  NEM-RM: 0
   NFAZ: 0
-  NFLX-RM: 0
   NKHP: 0
   NKNC: 0
   NKNCP: 0
   NLMK: 0
   NMTP: 0
   NSVZ: 0
-  NVDA-RM: 0
   NVTK: 0
   OGKB: 0
   OKEY: 0
   OZON: 0
-  PFE-RM: 0
   PHOR: 0
   PIKK: 0
   PLZL: 0
   PMSB: 0
   PMSBP: 0
   POLY: 0
-  PYPL-RM: 0
-  QCOM-RM: 0
   QIWI: 0
   RASP: 0
   RBCM: 0
@@ -168,7 +139,6 @@ positions:
   SNGSP: 0
   STSBP: 0
   SVAV: 0
-  T-RM: 0
   TATN: 0
   TATNP: 0
   TCSG: 0
@@ -179,16 +149,13 @@ positions:
   TRMK: 0
   TRNFP: 0
   TRUR: 0
-  TSLA-RM: 0
   TSPX: 0
   TTLK: 0
-  TWTR-RM: 0
   UNAC: 0
   UNKL: 0
   UPRO: 0
   USBN: 0
   UTAR: 0
-  V-RM: 0
   VJGZ: 0
   VJGZP: 0
   VKCO: 0
@@ -196,8 +163,6 @@ positions:
   VRSB: 0
   VSMO: 0
   VTBR: 0
-  WMT-RM: 0
-  XOM-RM: 0
   YAKG: 0
   YNDX: 0
   ZILL: 0
