@@ -233,15 +233,26 @@ class Portfolio:
 
     def remove_tickers(self):
         """Претенденты на удаление."""
-        low_turnover = self.turnover_factor[:-2] < 1 / (len(self.index) - 2)
-        tickers = tuple(self.index[:-2][low_turnover])
+        tickers = self.index[:-2]
+        last_turnover = (
+            pd.concat(
+                [
+                    self._median_turnover(tuple(tickers), LIQUIDITY_DAYS),
+                    self._median_turnover(tuple(tickers), LIQUIDITY_DAYS_SHORT),
+                    self._median_turnover(tuple(tickers), SELECT_DAYS),
+                ],
+                axis=1,
+            )
+            .min(axis=1)
+            .astype(int)
+        )
+        minimal_turnover = self.value[PORTFOLIO] / (len(self.index) - 2)
 
-        counts = quotes.all_prices(tickers).count()
-        counts.index = tickers
-        counts = counts.sort_values()
+        low_turnover = last_turnover[last_turnover.lt(minimal_turnover)]
+        low_turnover = low_turnover.sort_values()
 
-        if len(counts):
-            LOGGER.info(f"\nДЛЯ УДАЛЕНИЯ\n\n{counts}")
+        if len(low_turnover):
+            LOGGER.info(f"\nДЛЯ УДАЛЕНИЯ\n\n{low_turnover}")
 
             return
 
