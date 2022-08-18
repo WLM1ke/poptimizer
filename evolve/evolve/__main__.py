@@ -3,37 +3,68 @@ import asyncio
 import logging
 import signal
 import types
+from typing import Final
 
-from evolve.population import evolve
+from motor.motor_asyncio import AsyncIOMotorClient
 
-_logger = logging.getLogger("App")
+from evolve.population import evolve, gene, population
+
+_URI: Final = "mongodb://localhost:27017"
+_DB: Final = "new_evolve"
+_COLLECTION = "models"
 
 
-class _TaskCanceler:
-    def __init__(self, task: asyncio.Task[None]) -> None:
-        self._task = task
+class App:
+    """Асинхронное приложение-контекстные менеджер, которое может быть остановлено SIGINT и SIGTERM."""
 
-        signal.signal(signal.SIGINT, self)
-        signal.signal(signal.SIGTERM, self)
+    def __init__(self) -> None:
+        """Инициализирует приложение."""
+        logging.basicConfig(level=logging.INFO)
+        self._logger = logging.getLogger("App")
+        self._event = asyncio.Event()
 
-    def __call__(self, signal_code: int, frame: None | types.FrameType) -> None:
-        _logger.info("shutdown signal received")
+    async def __aenter__(self) -> "App":
+        """Организует перехват системных сигналов для корректного завершения работы."""
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            signal.signal(sig, self._signal_handler)
 
-        self._task.cancel()
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
+    ) -> None:
+        """Логирует выход из контекстного менеджера."""
+        self._logger.info("shutdown finished")
+
+    async def run(self) -> None:
+        """Запускает приложение."""
+        client = AsyncIOMotorClient(
+            _URI,
+            tz_aware=False,
+        )
+
+        pop = population.Population(
+            client[_DB][_COLLECTION],
+            gene.GenePool(),
+            population.DataProvider(),
+        )
+        evolution = evolve.Evolution(pop)
+
+        await evolution.run(self._event)
+
+    def _signal_handler(self, signal_code: int, frame: None | types.FrameType) -> None:
+        self._logger.info("shutdown signal received")
+
+        self._event.set()
 
 
 async def main() -> None:
-    """Запускает эволюцию с отменой по SIGINT и SIGTERM."""
-    logging.basicConfig(level=logging.INFO)
-
-    loop = asyncio.get_event_loop()
-    population = evolve.Population()
-    evolution = evolve.Evolution(population)
-
-    task = loop.create_task(evolution.run())
-    _TaskCanceler(task)
-
-    await task
+    """Запускает эволюцию с остановкой по SIGINT и SIGTERM."""
+    async with App() as app:
+        await app.run()
 
 
 if __name__ == "__main__":

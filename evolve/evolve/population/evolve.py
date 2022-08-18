@@ -1,39 +1,9 @@
 """Основной процесс эволюции."""
+import asyncio
 import itertools
 import logging
-from typing import AsyncIterable, AsyncIterator, NamedTuple
 
-
-class Organism:
-    """Организм."""
-
-
-class EvalResult(NamedTuple):
-    """Результат оценки организма."""
-
-    desc: str
-    dead: bool
-    slow: bool
-
-
-class Population(AsyncIterable[Organism]):
-    """Представляет популяцию организмов."""
-
-    def __aiter__(self) -> AsyncIterator[Organism]:
-        """Последовательно выдает организмы для эволюционного отбора."""
-        raise NotImplementedError
-
-    async def stats(self) -> str:
-        """Представляет информацию о популяции."""
-        raise NotImplementedError
-
-    async def breed_org(self, org: Organism) -> Organism:
-        """Создает и возвращает потомка организма."""
-        raise NotImplementedError
-
-    async def eval(self, org: Organism) -> EvalResult:
-        """Оценивает организм - во время оценки организм может погибнуть."""
-        raise NotImplementedError
+from evolve.population.population import Organism, Population
 
 
 class Evolution:
@@ -47,16 +17,17 @@ class Evolution:
         self._logger = logging.getLogger(self.__class__.__name__)
         self._population = population
 
-    async def run(self) -> None:
+    async def run(self, event: asyncio.Event) -> None:
         """Запускает бесконечный процесс эволюцию."""
         async for org in self._population:
             await self._step(org)
-            self._logger.info("stopping...")
 
-            return
+            if event.is_set():
+                return
 
     async def _step(self, org: Organism) -> None:
-        self._logger.info(await self._population.stats())
+        for stat in await self._population.stats():
+            self._logger.info(stat)
 
         self._logger.info("Parent:")
         if not await self._is_breeding(org):
@@ -64,7 +35,7 @@ class Evolution:
 
         for count in itertools.count(1):
             self._logger.info(f"Child {count}:")
-            child = await self._population.breed_org(org)
+            child = await self._population.breed(org)
 
             if not await self._is_breeding(child):
                 return

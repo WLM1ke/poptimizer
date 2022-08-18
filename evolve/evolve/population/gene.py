@@ -1,5 +1,5 @@
 """Ген и генофонд."""
-import types
+import collections
 from dataclasses import dataclass
 from typing import Callable
 
@@ -34,7 +34,7 @@ class Gene:
         """Случайное значение гена по умолчанию."""
         return random.uniform(self.lower_bound, self.upper_default)
 
-    def make_child(self, parent: float, parent1: float, parent2: float, scale: float) -> float:
+    def breed(self, parent: float, scale: float, parent1: float, parent2: float) -> float:
         """Значение гена ребенка."""
         raw = parent + (parent2 - parent1) * scale * stats.cauchy.rvs()
 
@@ -50,6 +50,35 @@ class Gene:
                 return raw_value
 
 
-Chromosome = types.MappingProxyType[str, Gene]
+Genotype = dict[str, dict[str, float]]
 
-GenoPool = types.MappingProxyType[str, Chromosome]
+
+class GenePool(collections.UserDict[str, dict[str, Gene]]):
+    """Представляет все доступные гены моделей."""
+
+    def new(self) -> Genotype:
+        """Создает новый генотип."""
+        genotype: Genotype = {}
+
+        for key_chromosome, chromosome in self.items():
+            genotype[key_chromosome] = {}
+            for key_gen, gen in chromosome.items():
+                genotype[key_chromosome][key_gen] = gen.default()
+
+        return genotype
+
+    def breed(self, parent: Genotype, scale: float, parent1: Genotype, parent2: Genotype) -> Genotype:
+        """Создает генотип ребенка на основе генотипов родителей."""
+        child: Genotype = Genotype()
+
+        for key_chromosome, chromosome in self.items():
+            child[key_chromosome] = {}
+            for key_gen, gen in chromosome.items():
+                child[key_chromosome][key_gen] = gen.breed(
+                    parent.get(key_chromosome, {}).get(key_gen, gen.default()),
+                    parent2.get(key_chromosome, {}).get(key_gen, gen.default()),
+                    scale,
+                    parent1.get(key_chromosome, {}).get(key_gen, gen.default()),
+                )
+
+        return child
