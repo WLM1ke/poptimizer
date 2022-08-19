@@ -38,7 +38,7 @@ type App struct {
 	GoroutineInterval time.Duration `envDefault:"1h"`
 	Server            struct {
 		Addr           string        `envDefault:"localhost:10000"`
-		RespondTimeout time.Duration `envDefault:"1s"`
+		RespondTimeout time.Duration `envDefault:"2s"`
 	}
 	HTTPClient struct {
 		Connections int `envDefault:"20"`
