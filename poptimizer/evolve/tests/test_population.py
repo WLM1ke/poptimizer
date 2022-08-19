@@ -57,7 +57,7 @@ def test_evaluate_fitness(organism):
 
     assert fitness == [5]
     assert FakeModel.COUNTER == 1
-    assert organism.scores == 1
+    assert organism.tests == 1
     assert organism._doc.date == pd.Timestamp("2020-04-12")
     assert organism._doc.tickers == ["GAZP", "AKRN"]
     assert organism._doc.model == bytes(6)
@@ -73,7 +73,7 @@ def test_reload_organism(organism):
     assert organism._doc.tickers == ["GAZP", "AKRN"]
     assert organism._doc.model == bytes(6)
     assert organism._doc.timer > 0
-    assert organism.scores == 1
+    assert organism.tests == 1
 
 
 @pytest.mark.usefixtures("fake_model")
@@ -82,7 +82,7 @@ def test_evaluate_new_timestamp(organism):
 
     assert fitness == [5, 5]
     assert FakeModel.COUNTER == 2
-    assert organism.scores == 2
+    assert organism.tests == 2
 
 
 @pytest.mark.usefixtures("fake_model")
@@ -97,7 +97,7 @@ def test_evaluate_new_tickers(organism):
 
     assert fitness == [5, 5, 5]
     assert FakeModel.COUNTER == 3
-    assert organism.scores == 3
+    assert organism.tests == 3
 
 
 # noinspection PyProtectedMember

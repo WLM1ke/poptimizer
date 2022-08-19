@@ -95,15 +95,6 @@ class Organism:  # noqa: WPS214
         """List of information ratios."""
         return self._doc.ir
 
-    def clear(self) -> None:
-        """Сбрасывает результаты обучения и оценки, но сохраняет информацию о количестве оценок."""
-        doc = self._doc
-        doc.model = None
-        doc.llh = []
-        doc.ir = []
-        doc.date = None
-        doc.tickers = None
-
     def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp) -> list[float]:
         """Вычисляет качество организма.
 
@@ -127,13 +118,16 @@ class Organism:  # noqa: WPS214
         if pickled_model is None:
             doc.timer = time.monotonic_ns() - timer
 
-        doc.llh = [llh] + doc.llh
+        if self.date is None or end > self.date:
+            doc.llh = [llh] + doc.llh
+            doc.ir = [ir] + doc.ir
+            doc.date = end
+        else:
+            doc.llh = doc.llh + [llh]
+            doc.ir = doc.ir + [ir]
+
         doc.wins = len(doc.llh)
-        doc.ir = [ir] + doc.ir
-
         doc.model = bytes(model)
-
-        doc.date = end
         doc.tickers = tickers
 
         doc.save()
@@ -324,6 +318,10 @@ def _print_key_stats(key: str, view: str = None) -> None:
 
 def _print_wins_stats() -> None:
     """Статистика по максимуму побед."""
+    LOGGER.info(f"Организмов - {count()} / Максимум оценок - {max_scores()}")
+
+
+def max_scores() -> int:
     collection = store.get_collection()
     db_find = collection.find
     request = {
@@ -332,10 +330,11 @@ def _print_wins_stats() -> None:
         "sort": [("wins", pymongo.DESCENDING)],
         "limit": 1,
     }
+
     wins = list(db_find(**request))
-    max_wins = None
+    max_wins = 0
     if wins:
         max_wins = wins[0]
         max_wins = max_wins["wins"]
 
-    LOGGER.info(f"Организмов - {count()} / Максимум оценок - {max_wins}")
+    return max_wins

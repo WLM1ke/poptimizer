@@ -1,5 +1,6 @@
 """Эволюция параметров модели."""
 import datetime
+import itertools
 import logging
 import operator
 from typing import Optional
@@ -27,7 +28,18 @@ class Evolution:  # noqa: WPS214
         self._tickers = None
         self._end = None
         self._logger = logging.getLogger()
-        self._scale = int(population.count() ** 0.5)
+
+    @property
+    def _scale(self) -> float:
+        return population.count() ** 0.5
+
+    @property
+    def _tests(self) -> float:
+        count = population.count()
+        bound = seq.minimum_bounding_n(config.P_VALUE / count)
+        max_score = population.max_scores() or bound
+
+        return max(1, bound + (count - max_score))
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -37,13 +49,15 @@ class Evolution:  # noqa: WPS214
         step = 0
         org = None
 
+        self._setup()
+
         while _check_time_range():
             step = self._step_setup(step)
 
             date = self._end.date()
             self._logger.info(f"***{date}: Шаг эволюции — {step}***")
             population.print_stat()
-            self._logger.info(f"Scale - {self._scale}\n")
+            self._logger.info(f"Тестов - {self._tests}\n")
 
             if org is None:
                 org = population.get_next_one(self._end) or population.get_next_one(None)
@@ -54,8 +68,6 @@ class Evolution:  # noqa: WPS214
         self,
         step: int,
     ) -> int:
-        self._setup()
-
         d_min, d_max = population.min_max_date()
         if self._tickers is None:
             self._tickers = load_tickers()
@@ -76,25 +88,12 @@ class Evolution:  # noqa: WPS214
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")
 
-            self._scale = int(population.count() ** 0.5)
-
-    def _maybe_clear(self, org: population.Organism) -> population.Organism:
-
-        if (org.date == self._end) and (0 < org.scores < max(self._scale, _n_test())):
-            org.clear()
-
-        if (org.date != self._end) and (0 < org.scores < max(self._scale, _n_test()) - 1):
-            org.clear()
-
-        return org
-
     def _step(self, hunter: population.Organism) -> Optional[population.Organism]:
         """Один шаг эволюции."""
         skip = True
 
         if not hunter.scores or hunter.date == self._end:
             skip = False
-            self._maybe_clear(hunter)
 
         label = ""
         if not hunter.scores:
@@ -112,22 +111,19 @@ class Evolution:  # noqa: WPS214
 
             return None
 
-        prey = hunter.make_child(1 / max(1, self._scale))
+        for c_child in itertools.count(1):
+            prey = hunter.make_child(1 / self._scale)
 
-        self._logger.info(f"Потомок:")
-        if (margin := self._eval_organism(prey)) is None:
-            return None
-        if margin[0] < 0:
-            self._scale += 1
+            self._logger.info(f"Потомок {c_child}:")
+            if (margin := self._eval_organism(prey)) is None:
+                return None
+            if margin[0] < 0:
+                return None
 
-            return None
+            if margin[0] - margin[1] < 0:
+                return None
 
-        self._scale = max(int(population.count() ** 0.5), self._scale - 1)
-
-        if margin[0] - margin[1] < 0:
-            return None
-
-        return None
+            hunter = prey
 
     def _eval_organism(self, organism: population.Organism) -> Optional[tuple[float, float]]:
         """Оценка организмов.
@@ -144,13 +140,16 @@ class Evolution:  # noqa: WPS214
 
             return None
 
-        if organism.date == self._end:
+        if organism.date == self._end and organism.scores >= self._tests:
             return self._get_margin(organism)
 
-        dates = [self._end]
-        if not organism.llh:
-            dates = listing.all_history_date(self._tickers, end=self._end)
-            dates = dates[-_n_test(organism.scores) :].tolist()
+        all_dates = listing.all_history_date(self._tickers, end=self._end)
+        dates = all_dates[-self._tests :].tolist()
+
+        if organism.date == self._end:
+            dates = [all_dates[-(organism.scores + 1)]]
+        elif organism.llh:
+            dates = [self._end]
 
         for date in dates:
             try:
@@ -206,10 +205,6 @@ class Evolution:  # noqa: WPS214
             self._logger.info("Исключен из популяции...\n")
 
         return margin, time_delta
-
-
-def _n_test(scores: int = -1) -> int:
-    return max(population.count(), scores + 1)
 
 
 def _time_delta(org):
