@@ -7,7 +7,7 @@ from typing import Final
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from evolve.population import evolve, gene, population
+from evolve.population import evolve, population
 
 _URI: Final = "mongodb://localhost:27017"
 _DB: Final = "new_evolve"
@@ -48,10 +48,9 @@ class App:
 
         pop = population.Population(
             client[_DB][_COLLECTION],
-            gene.GenePool(),
-            population.DataProvider(),
         )
-        evolution = evolve.Evolution(pop)
+        evaluator = evolve.Evaluator()
+        evolution = evolve.Evolution(pop, evaluator)
 
         await evolution.run(self._event)
 
