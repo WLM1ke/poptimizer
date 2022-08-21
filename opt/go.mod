@@ -1,6 +1,6 @@
 module github.com/WLM1ke/poptimizer/opt
 
-go 1.18
+go 1.19
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
@@ -9,7 +9,7 @@ require (
 	github.com/go-chi/chi v1.5.4
 	github.com/stretchr/testify v1.8.0
 	github.com/xuri/excelize/v2 v2.6.0
-	go.mongodb.org/mongo-driver v1.10.0
+	go.mongodb.org/mongo-driver v1.10.1
 	go.uber.org/goleak v1.1.12
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
 	golang.org/x/text v0.3.7
@@ -27,7 +27,7 @@ require (
 	github.com/richardlehane/mscfb v1.0.4 // indirect
 	github.com/richardlehane/msoleps v1.0.3 // indirect
 	github.com/stretchr/objx v0.4.0 // indirect
-	github.com/tidwall/gjson v1.14.1 // indirect
+	github.com/tidwall/gjson v1.14.3 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
@@ -36,8 +36,8 @@ require (
 	github.com/xuri/efp v0.0.0-20220603152613-6918739fd470 // indirect
 	github.com/xuri/nfp v0.0.0-20220409054826-5e722a1d9e22 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
-	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
-	golang.org/x/net v0.0.0-20220728211354-c7608f3a8462 // indirect
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
+	golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8 // indirect
+	golang.org/x/net v0.0.0-20220812174116-3211cb980234 // indirect
+	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
