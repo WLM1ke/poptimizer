@@ -85,7 +85,7 @@ func prepareMsg(msg string) string {
 func (t *Telegram) apiCall(ctx context.Context, cmd string) error {
 	apiURL := fmt.Sprintf(t.apiTmpl, t.token, cmd)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, http.NoBody)
 	if err != nil {
 		return fmt.Errorf("can't create telegram request -> %w", err)
 	}

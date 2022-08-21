@@ -23,6 +23,7 @@ const (
 	_firstDataRow = 5
 	_firstDataCol = 1
 )
+
 // Service загружает данные по инфляции.
 type Service struct {
 	logger lgr.Logger
