@@ -7,7 +7,8 @@ from typing import NamedTuple
 
 import pandas as pd
 
-from evolve.population.population import Organism, Population
+from evolve.population.population import Population
+from evolve.population.organism import Organism
 
 
 class EvalResult(NamedTuple):

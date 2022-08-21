@@ -1,43 +1,16 @@
 """Содержит класс популяции организмов."""
-from dataclasses import dataclass, field
-from typing import Any, ClassVar, Final
+from __future__ import annotations
 
-import bson
+from dataclasses import dataclass
+from typing import Any, Final
+
 import pandas as pd
 from motor.motor_asyncio import AsyncIOMotorCollection
 
-from evolve.population.gene import GenePool, Genotype
+from evolve.population.gene import Genotype
+from evolve.population.organism import Organism
 
 _MONGO_ID: Final = "_id"
-
-
-@dataclass(kw_only=True, slots=True)
-class Organism:
-    """Организм."""
-
-    gene_pool: ClassVar[GenePool] = GenePool()
-
-    gen: Genotype
-    id: bson.ObjectId = field(default_factory=bson.ObjectId)
-    timestamp: pd.Timestamp | None = None
-
-    @classmethod
-    def new(cls) -> "Organism":
-        """Создает организм по умолчанию для на основе генофонда."""
-        return Organism(gen=cls.gene_pool.new())
-
-    def breed(self, scale: float, parent1: "Organism", parent2: "Organism") -> "Organism":
-        """Создает потомка организма."""
-        child_gen = self.gene_pool.breed(
-            self.gen,
-            scale,
-            parent1.gen,
-            parent2.gen,
-        )
-
-        return Organism(gen=child_gen)
-
-
 _Doc = dict[str, Any]  # type: ignore
 
 
