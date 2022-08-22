@@ -1,5 +1,6 @@
 """Основная точка входа для запуска приложения."""
 from __future__ import annotations
+
 import asyncio
 import logging
 import signal
@@ -9,6 +10,7 @@ from typing import Final
 from poptimizer.data import updater
 
 _URI: Final = "mongodb://localhost:27017"
+
 
 class App:
     """Асинхронное приложение-контекстные менеджер, которое может быть остановлено SIGINT и SIGTERM."""
@@ -21,8 +23,10 @@ class App:
 
     async def __aenter__(self) -> App:
         """Организует перехват системных сигналов для корректного завершения работы."""
+        loop = asyncio.get_event_loop()
+
         for sig in (signal.SIGINT, signal.SIGTERM):
-            signal.signal(sig, self._signal_handler)
+            loop.add_signal_handler(sig, self._signal_handler)
 
         return self
 
@@ -39,7 +43,7 @@ class App:
         """Запускает приложение."""
         await updater.Updater().run(self._stop_event)
 
-    def _signal_handler(self, signal_code: int, frame: None | types.FrameType) -> None:
+    def _signal_handler(self) -> None:
         self._logger.info("shutdown signal received")
 
         self._stop_event.set()
