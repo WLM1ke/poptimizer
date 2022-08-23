@@ -11,10 +11,10 @@ class Repo:
         """Сохраняет ссылку на базу."""
         self._db = db
 
-    async def get(self, group: str, name: str | None = None) -> domain.Table:
+    async def get(self, group: domain.Group, name: str | None = None) -> domain.Table:
         """Загружает таблицу."""
-        collection = self._db[group]
-        id_ = name or group
+        collection = self._db[group.value]
+        id_ = name or group.value
 
         doc = await collection.find_one(
             {"_id": id_},
@@ -32,8 +32,8 @@ class Repo:
 
     async def save(self, table: domain.Table) -> None:
         """Сохраняет таблицу."""
-        collection = self._db[table.group]
-        id_ = table.name or collection
+        collection = self._db[table.group.value]
+        id_ = table.name or table.group.value
 
         doc = {
             "timestamp": table.timestamp,
