@@ -1,5 +1,6 @@
 """Информация о торговых днях."""
 import logging
+from datetime import datetime
 
 import aiohttp
 import aiomoex
@@ -22,13 +23,13 @@ class DatesSrv:
         self._repo = repo
         self._session = session
 
-    async def get(self) -> pd.Timestamp:
+    async def get(self) -> datetime:
         """Выдает последнюю дату с рыночными данным."""
         table = await self._repo.get(Group.TRADING_DATE)
 
-        return table.df.iat[0, 0]
+        return table.timestamp or datetime.fromtimestamp(0)
 
-    async def update(self, last_update: pd.Timestamp) -> pd.Timestamp | None:
+    async def update(self, checked_day: datetime) -> datetime | None:
         """Обновляет информацию о торговых датах, если они изменились.
 
         Возвращает последнюю дату с рыночными данным или None при ошибке выполнения.
@@ -36,21 +37,21 @@ class DatesSrv:
         if (timestamp := await self._download()) is None:
             return None
 
-        if timestamp <= last_update:
+        if timestamp <= checked_day:
             return timestamp
 
         table = Table(
             group=Group.TRADING_DATE,
             name=None,
             timestamp=timestamp,
-            df=pd.DataFrame([timestamp]),
+            df=pd.DataFrame(),
         )
 
         await self._repo.save(table)
 
         return timestamp
 
-    async def _download(self) -> pd.Timestamp | None:
+    async def _download(self) -> datetime | None:
         json = await aiomoex.get_board_dates(
             self._session,
             board="TQBR",
@@ -63,9 +64,9 @@ class DatesSrv:
 
             return None
 
-        if date := json[0].get("till"):
+        if (date := json[0].get("till")) is None:
             self._logger.warning(f"no till key {json[0]}")
 
             return None
 
-        return pd.Timestamp(date)
+        return datetime.fromisoformat(date)

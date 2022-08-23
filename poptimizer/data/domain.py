@@ -30,5 +30,5 @@ class Table:
 
     group: Group
     name: str | None
-    timestamp: pd.Timestamp | None
+    timestamp: datetime | None
     df: pd.DataFrame | None

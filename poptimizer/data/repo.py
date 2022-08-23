@@ -7,6 +7,7 @@ from poptimizer.data import domain
 
 class Repo:
     """Репозиторий для хранения таблиц."""
+
     def __init__(self, db: AsyncIOMotorDatabase) -> None:
         """Сохраняет ссылку на базу."""
         self._db = db
@@ -22,13 +23,15 @@ class Repo:
         )
         doc = doc or {}
 
-        if timestamp := doc.get("timestamp"):
-            timestamp = pd.Timestamp(timestamp)
-
         if df := doc.get("df"):
-            df = pd.from_dict(df, orient="records")
+            df = pd.DataFrame.from_dict(df, orient="records")
 
-        return domain.Table(group, name, timestamp, df)
+        return domain.Table(
+            group=group,
+            name=name,
+            timestamp=doc.get("timestamp"),
+            df=df,
+        )
 
     async def save(self, table: domain.Table) -> None:
         """Сохраняет таблицу."""
@@ -37,10 +40,12 @@ class Repo:
 
         doc = {
             "timestamp": table.timestamp,
-            "df": table.df.to_dict(orient="records"),
         }
 
-        await collection.update_one(
+        if table.df is not None:
+            doc["df"] = table.df.to_dict(orient="records")
+
+        await collection.replace_one(
             filter={"_id": id_},
             replacement=doc,
             upsert=True,
