@@ -9,6 +9,6 @@ class Table:
     """Таблица с рыночными данными."""
 
     group: str
-    id: str | None
+    name: str | None
     timestamp: pd.Timestamp | None
     df: pd.DataFrame | None
