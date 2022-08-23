@@ -20,7 +20,7 @@ update:
 	poetry env use $(PYTHON)
 	poetry update
 lint:
-	$(VENV_ACTIVATE);black $(SRC) && mypy $(SRC) && flake8 $(SRC)
+	$(VENV_ACTIVATE);black $(SRC) && isort . && mypy $(SRC) && flake8 $(SRC)
 test: lint
 	$(VENV_ACTIVATE);pytest $(SRC) -v --cov=$(SRC) --cov-report=term-missing --cov-report=xml --setup-show
 run:
