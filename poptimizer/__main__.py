@@ -5,25 +5,23 @@ import asyncio
 import logging
 import signal
 import types
-from typing import Awaitable, Callable, Final
+from typing import Awaitable, Callable
 
 import aiohttp
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from poptimizer.config import Config
 from poptimizer.data import updater
 from poptimizer.data.repo import Repo
 from poptimizer.data.trading_day import DatesSrv
-
-_URI: Final = "mongodb://localhost:27017"
-_DB: Final = "data_new"
-_POOL_SIZE: Final = 20
 
 
 class App:
     """Асинхронное приложение-контекстные менеджер, которое может быть остановлено SIGINT и SIGTERM."""
 
-    def __init__(self) -> None:
+    def __init__(self, cfg: Config | None = None) -> None:
         """Инициализирует приложение."""
+        self._cfg = cfg or Config()
         logging.basicConfig(level=logging.INFO)
         self._logger = logging.getLogger("App")
         self._stop_event = asyncio.Event()
@@ -59,13 +57,13 @@ class App:
 
     async def run(self) -> None:
         """Запускает приложение."""
-        mongo = AsyncIOMotorClient(_URI, tz_aware=False)
+        mongo = AsyncIOMotorClient(self._cfg.mongo.uri, tz_aware=False)
         self._resources.append(mongo.close)
 
-        repo = Repo(mongo[_DB])
+        repo = Repo(mongo[self._cfg.mongo.db])
 
         session = aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(limit=_POOL_SIZE),
+            connector=aiohttp.TCPConnector(limit=self._cfg.http_client.pool_size),
         )
         self._resources.append(session.close())
 
