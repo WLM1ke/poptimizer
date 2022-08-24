@@ -1,8 +1,11 @@
 """Настройки логирования."""
+import asyncio
 import logging
 import sys
 import types
 from typing import Final, Literal
+
+import aiohttp
 
 
 class ColorFormatter(logging.Formatter):
@@ -34,17 +37,65 @@ class ColorFormatter(logging.Formatter):
         return super().format(record)
 
 
-def config(level: int = logging.INFO) -> None:
-    """Настраивает логирование."""
-    stream_formatter = ColorFormatter(
-        fmt="{asctime} {levelname} {name}: {message}",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+class AsyncTelegramHandler(logging.Handler):
+    """Отправляет сообщения уровня WARNING и выше в Телеграм.
 
+    Использует асинхронную отправку, поэтому должен использоваться после запуска eventloop.
+    """
+
+    def __init__(self, session: aiohttp.ClientSession, token: str, chat_id: str) -> None:
+        """В Телеграм отправляются сообщения уровня WARNING и выше.
+
+        При этом исключаются сообщения самого обработчика, чтобы не вызвать рекурсивную отправку в случае ошибки в
+        работе.
+        """
+        super().__init__(level=logging.WARNING)
+
+        formatter = logging.Formatter(
+            fmt="<strong>{name}</strong>\n{message}",
+            style="{",
+        )
+        self.setFormatter(formatter)
+        self.addFilter(lambda record: record.name != "Telegram")
+
+        self._logger = logging.getLogger("Telegram")
+        self._session = session
+        self._url = f"https://api.telegram.org/bot{token}/SendMessage"
+        self._chat_id = chat_id
+        self._tasks: set[asyncio.Task[None]] = set()
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Выполняет асинхронную отправку сообщения в Телеграм.
+
+        Создаваемые асинхронные задачи имеют только weak references. Поэтому на них необходимо создавать полноценные
+        ссылки и после выполнения их удалять, для обеспечения корректной работы garbage-collector.
+
+        https://docs.python.org/3/library/asyncio-task.html#creating-tasks
+        """
+        task = asyncio.create_task(self._send(record))
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+
+    async def _send(self, record: logging.LogRecord) -> None:
+        """https://core.telegram.org/bots/api#sendmessage."""
+        json = {
+            "chat_id": self._chat_id,
+            "parse_mode": "HTML",
+            "text": self.format(record),
+        }
+
+        async with self._session.post(self._url, json=json) as resp:
+            if not resp.ok:
+                err_desc = await resp.json()
+                self._logger.warning(f"can't send {err_desc}")
+
+
+def config(session: aiohttp.ClientSession, token: str, chat_id: str, level: int = logging.INFO) -> None:
+    """Настраивает логирование в stdout, а для уровней WARNING и выше в Телеграм."""
     stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setFormatter(stream_formatter)
+    stream_handler.setFormatter(ColorFormatter())
 
     logging.basicConfig(
         level=level,
-        handlers=[stream_handler],
+        handlers=[stream_handler, AsyncTelegramHandler(session, token, chat_id)],
     )

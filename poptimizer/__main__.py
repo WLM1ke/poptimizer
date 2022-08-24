@@ -23,7 +23,6 @@ class App:
     def __init__(self, cfg: Config | None = None) -> None:
         """Инициализирует приложение."""
         self._cfg = cfg or Config()
-        lgr.config()
         self._logger = logging.getLogger("App")
         self._stop_event = asyncio.Event()
         self._resources: list[Callable[[], None] | Awaitable[None]] = []
@@ -58,15 +57,21 @@ class App:
 
     async def run(self) -> None:
         """Запускает приложение."""
-        mongo = AsyncIOMotorClient(self._cfg.mongo.uri, tz_aware=False)
-        self._resources.append(mongo.close)
-
-        repo = Repo(mongo[self._cfg.mongo.db])
-
         session = aiohttp.ClientSession(
             connector=aiohttp.TCPConnector(limit=self._cfg.http_client.pool_size),
         )
         self._resources.append(session.close())
+
+        lgr.config(
+            session=session,
+            token=self._cfg.telegram.token,
+            chat_id=self._cfg.telegram.chat_id,
+        )
+
+        mongo = AsyncIOMotorClient(self._cfg.mongo.uri, tz_aware=False)
+        self._resources.append(mongo.close)
+
+        repo = Repo(mongo[self._cfg.mongo.db])
 
         dates_srv = DatesSrv(repo, session)
 
