@@ -10,6 +10,7 @@ from typing import Awaitable, Callable
 import aiohttp
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from poptimizer import lgr
 from poptimizer.config import Config
 from poptimizer.data import updater
 from poptimizer.data.repo import Repo
@@ -22,7 +23,7 @@ class App:
     def __init__(self, cfg: Config | None = None) -> None:
         """Инициализирует приложение."""
         self._cfg = cfg or Config()
-        logging.basicConfig(level=logging.INFO)
+        lgr.config()
         self._logger = logging.getLogger("App")
         self._stop_event = asyncio.Event()
         self._resources: list[Callable[[], None] | Awaitable[None]] = []
