@@ -13,6 +13,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from poptimizer import lgr
 from poptimizer.config import Config
 from poptimizer.data import updater
+from poptimizer.data.cpi import CPISrv
 from poptimizer.data.repo import Repo
 from poptimizer.data.trading_day import DatesSrv
 
@@ -42,12 +43,16 @@ class App:
         exc_tb: types.TracebackType | None,
     ) -> None:
         """Логирует выход из контекстного менеджера."""
+        if exc_val:
+            self._logger.warning(f"abnormal termination {exc_val}")
+
         count = len(self._resources)
         self._logger.info(f"closing {count} resources")
 
         for res in reversed(self._resources):
             if isinstance(res, Awaitable):
                 await res
+
                 continue
 
             res()
@@ -73,8 +78,9 @@ class App:
         repo = Repo(mongo[self._cfg.mongo.db])
 
         dates_srv = DatesSrv(repo, session)
+        cpi_srv = CPISrv(repo, session)
 
-        await updater.Updater(dates_srv).run(self._stop_event)
+        await updater.Updater(dates_srv, cpi_srv).run(self._stop_event)
 
     def _signal_handler(self) -> None:
         self._logger.info("shutdown signal received")
