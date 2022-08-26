@@ -7,6 +7,8 @@ from typing import Final, Literal
 
 import aiohttp
 
+TELEGRAM_TASK: Final = "Telegram"
+
 
 class ColorFormatter(logging.Formatter):
     """Цветное логирование."""
@@ -67,7 +69,7 @@ class AsyncTelegramHandler(logging.Handler):
 
         https://docs.python.org/3/library/asyncio-task.html#creating-tasks
         """
-        task = asyncio.create_task(self._send(record))
+        task = asyncio.create_task(self._send(record), name=TELEGRAM_TASK)
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
 

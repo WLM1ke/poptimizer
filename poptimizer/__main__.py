@@ -44,7 +44,7 @@ class App:
     ) -> None:
         """Логирует выход из контекстного менеджера."""
         if exc_val:
-            self._logger.warning(f"abnormal termination {exc_val}")
+            await self._log_err_termination(exc_val)
 
         count = len(self._resources)
         self._logger.info(f"closing {count} resources")
@@ -86,6 +86,12 @@ class App:
         self._logger.info("shutdown signal received")
 
         self._stop_event.set()
+
+    async def _log_err_termination(self, exc_val: BaseException) -> None:
+        self._logger.fatal(f"abnormal termination {exc_val}")
+        for task in asyncio.all_tasks():
+            if task.get_name() == lgr.TELEGRAM_TASK:
+                await task
 
 
 async def main() -> None:
