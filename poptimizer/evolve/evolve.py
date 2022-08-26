@@ -60,7 +60,7 @@ class Evolution:  # noqa: WPS214
             self._logger.info(f"Тестов - {self._tests}\n")
 
             if org is None:
-                org = population.get_next_one(self._end) or population.get_next_one(None)
+                org = population.get_next_one()
 
             org = self._step(org)
 
@@ -139,9 +139,6 @@ class Evolution:  # noqa: WPS214
             self._logger.error(f"Удаляю - {err}\n")
 
             return None
-
-        if organism.date == self._end and organism.scores >= self._tests:
-            return self._get_margin(organism)
 
         all_dates = listing.all_history_date(self._tickers, end=self._end)
         dates = all_dates[-self._tests :].tolist()
@@ -266,7 +263,7 @@ def _aligned_diff(candidate: dict, metric: str) -> list[float]:
 
     comp = np.nanmedian(np.array(comp), axis=0)
 
-    return list(map(operator.sub, candidate[metric], comp))[::-1]
+    return list(map(operator.sub, candidate[metric], comp))
 
 
 def _test_diff(diff: list[float]) -> tuple[float, float, float]:
