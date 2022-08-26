@@ -232,17 +232,15 @@ def _aggregate_oldest(limit: int, first_steps: Optional[list[dict]] = None):
     return store.get_collection().aggregate(pipeline)
 
 
-def get_next_one(date: Optional[pd.Timestamp]) -> Optional[Organism]:
-    """Выдает случайные организмы с датой не равной данной и None при отсутствии."""
+def get_next_one() -> Optional[Organism]:
+    """Выдает организмы по возрастанию даты, а потом по возрастанию количества оценок."""
     pipeline = [
-        {"$match": {"date": {"$ne": date}}},
-        {"$sample": {"size": 1}},
+        {"$project": {"date": True, "wins": True}},
+        {"$sort": {"date": pymongo.ASCENDING, "wins": pymongo.ASCENDING}},
+        {"$limit": 1},
     ]
 
-    doc = next(
-        _aggregate_oldest(1, pipeline),
-        None,
-    )
+    doc = next(store.get_collection().aggregate(pipeline))
 
     return doc and Organism(_id=doc["_id"])
 
