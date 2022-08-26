@@ -10,7 +10,6 @@ class Repo:
     """Репозиторий для хранения таблиц."""
 
     def __init__(self, db: AsyncIOMotorDatabase) -> None:
-        """Сохраняет ссылку на базу."""
         self._db = db
 
     async def get(self, group: domain.Group, name: str | None = None) -> domain.Table:

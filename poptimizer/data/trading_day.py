@@ -16,7 +16,6 @@ class DatesSrv:
     """
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
-        """Сохраняет необходимые данные и кэширует старое значение."""
         self._repo = repo
         self._session = session
 

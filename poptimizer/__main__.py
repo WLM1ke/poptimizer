@@ -21,7 +21,6 @@ class App:
     """Асинхронное приложение-контекстные менеджер, которое может быть остановлено SIGINT и SIGTERM."""
 
     def __init__(self, cfg: Config | None = None) -> None:
-        """Инициализирует приложение."""
         self._cfg = cfg or Config()
         self._logger = logging.getLogger("App")
         self._stop_event = asyncio.Event()

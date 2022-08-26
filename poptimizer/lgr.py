@@ -27,7 +27,6 @@ class ColorFormatter(logging.Formatter):
         datefmt: str = "%Y-%m-%d %H:%M:%S",
         style: Literal["%", "{", "$"] = "{",
     ) -> None:
-        """Инициализирует базовый логер."""
         super().__init__(fmt=fmt, datefmt=datefmt, style=style)
 
     def format(self, record: logging.LogRecord) -> str:
@@ -40,15 +39,11 @@ class ColorFormatter(logging.Formatter):
 class AsyncTelegramHandler(logging.Handler):
     """Отправляет сообщения уровня WARNING и выше в Телеграм.
 
+    При этом исключаются сообщения самого обработчика, чтобы не вызвать рекурсивную отправку в случае ошибки в работе.
     Использует асинхронную отправку, поэтому должен использоваться после запуска eventloop.
     """
 
     def __init__(self, session: aiohttp.ClientSession, token: str, chat_id: str) -> None:
-        """В Телеграм отправляются сообщения уровня WARNING и выше.
-
-        При этом исключаются сообщения самого обработчика, чтобы не вызвать рекурсивную отправку в случае ошибки в
-        работе.
-        """
         super().__init__(level=logging.WARNING)
 
         formatter = logging.Formatter(
