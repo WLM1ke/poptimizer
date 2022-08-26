@@ -3,18 +3,37 @@ import os
 from dataclasses import dataclass
 
 
-class POptimizerError(Exception):
+class POError(Exception):
     """Базовая ошибка приложения."""
 
+    def __str__(self) -> str:
+        """Выводи исходную причину ошибки при ее наличии для удобства логирования.
 
-def evn_reader(*, env_name: str, default: str | None = None) -> str:
+        https://peps.python.org/pep-3134/
+        """
+        current = super().__str__()
+        cause_err = self.__cause__ or self.__context__
+
+        if not cause_err:
+            return f"-> {current}"
+
+        cause = repr(cause_err)
+        if not isinstance(cause_err, POError):
+            cause = f"-> {cause}"
+
+        return f"-> {current} {cause}"
+
+    def __repr__(self) -> str:
+        """Выводи исходную причину ошибки при ее наличии для удобства логирования.
+
+        https://peps.python.org/pep-3134/
+        """
+        return str(self)
+
+
+def evn_reader(*, env_name: str, default: str = "") -> str:
     """Читает переменную окружения, удаляя во время чтения."""
-    raw_value = os.environ.pop(env_name, None) or default
-
-    if not raw_value:
-        raise POptimizerError(f"No default value for absent env variable {env_name}")
-
-    return raw_value
+    return os.environ.pop(env_name, default)
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)
