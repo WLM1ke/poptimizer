@@ -1,12 +1,10 @@
 """Информация о торговых днях."""
-import logging
 from datetime import datetime
 
 import aiohttp
 import aiomoex
-import pandas as pd
 
-from poptimizer.data.domain import Group, Table
+from poptimizer.data import domain
 from poptimizer.data.repo import Repo
 
 
@@ -19,39 +17,28 @@ class DatesSrv:
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
         """Сохраняет необходимые данные и кэширует старое значение."""
-        self._logger = logging.getLogger(self.__class__.__name__)
         self._repo = repo
         self._session = session
 
-    async def get(self) -> datetime:
+    async def get_last_date(self) -> datetime:
         """Выдает последнюю дату с рыночными данным."""
-        table = await self._repo.get(Group.TRADING_DATE)
+        table = await self._repo.get(domain.Group.TRADING_DATE)
 
         return table.timestamp or datetime.fromtimestamp(0)
 
-    async def update(self, checked_day: datetime) -> datetime | None:
+    async def update(self, checked_day: datetime) -> datetime:
         """Обновляет информацию о торговых датах, если они изменились.
 
-        Возвращает последнюю дату с рыночными данным или None при ошибке выполнения.
+        Возвращает последнюю дату с рыночными данным.
         """
-        if (timestamp := await self._download()) is None:
-            return None
+        timestamp = await self._download()
 
-        if timestamp <= checked_day:
-            return timestamp
-
-        table = Table(
-            group=Group.TRADING_DATE,
-            name=None,
-            timestamp=timestamp,
-            df=pd.DataFrame(),
-        )
-
-        await self._repo.save(table)
+        if timestamp > checked_day:
+            await self._save(timestamp)
 
         return timestamp
 
-    async def _download(self) -> datetime | None:
+    async def _download(self) -> datetime:
         json = await aiomoex.get_board_dates(
             self._session,
             board="TQBR",
@@ -60,13 +47,17 @@ class DatesSrv:
         )
 
         if (count := len(json)) != 1:
-            self._logger.warning(f"wrong rows count {count}")
-
-            return None
+            raise domain.DataError(f"wrong rows count {count}")
 
         if (date := json[0].get("till")) is None:
-            self._logger.warning(f"no till key {json[0]}")
-
-            return None
+            raise domain.DataError(f"no till key {json[0]}")
 
         return datetime.fromisoformat(date)
+
+    async def _save(self, timestamp: datetime) -> None:
+        table = domain.Table(
+            group=domain.Group.TRADING_DATE,
+            timestamp=timestamp,
+        )
+
+        return await self._repo.save(table)
