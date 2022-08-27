@@ -11,24 +11,18 @@ class POError(Exception):
 
         https://peps.python.org/pep-3134/
         """
-        current = super().__str__()
-        cause_err = self.__cause__ or self.__context__
+        errs = ["", " ".join(str(arg) for arg in self.args)]
+        cause_err: BaseException | None = self
 
-        if not cause_err:
-            return f"-> {current}"
+        while cause_err := cause_err and (cause_err.__cause__ or cause_err.__context__):
+            if isinstance(cause_err, POError):
+                errs.append(" ".join(str(arg) for arg in cause_err.args))
 
-        cause = repr(cause_err)
-        if not isinstance(cause_err, POError):
-            cause = f"-> {cause}"
+                continue
 
-        return f"-> {current} {cause}"
+            errs.append(repr(cause_err))
 
-    def __repr__(self) -> str:
-        """Выводи исходную причину ошибки при ее наличии для удобства логирования.
-
-        https://peps.python.org/pep-3134/
-        """
-        return str(self)
+        return " -> ".join(errs)[1:]
 
 
 def evn_reader(*, env_name: str, default: str = "") -> str:
