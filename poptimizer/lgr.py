@@ -3,11 +3,11 @@ import asyncio
 import logging
 import sys
 import types
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import Final, Literal
 
 import aiohttp
-
-TELEGRAM_TASK: Final = "Telegram"
 
 
 class ColorFormatter(logging.Formatter):
@@ -69,9 +69,15 @@ class AsyncTelegramHandler(logging.Handler):
 
         https://docs.python.org/3/library/asyncio-task.html#creating-tasks
         """
-        task = asyncio.create_task(self._send(record), name=TELEGRAM_TASK)
+        task = asyncio.create_task(self._send(record))
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
+
+    async def force_send(self) -> None:
+        """Завершает посылку сообщений в телеграм."""
+        for task in self._tasks:
+            if not task.done():
+                await task
 
     async def _send(self, record: logging.LogRecord) -> None:
         """https://core.telegram.org/bots/api#sendmessage."""
@@ -87,12 +93,25 @@ class AsyncTelegramHandler(logging.Handler):
                 self._logger.warning(f"can't send {err_desc}")
 
 
-def config(session: aiohttp.ClientSession, token: str, chat_id: str, level: int = logging.INFO) -> None:
+@asynccontextmanager
+async def config(
+    session: aiohttp.ClientSession,
+    token: str,
+    chat_id: str,
+    level: int = logging.INFO,
+) -> AsyncGenerator[None, None]:
     """Настраивает логирование в stdout, а для уровней WARNING и выше в Телеграм."""
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(ColorFormatter())
 
+    telegram_handler = AsyncTelegramHandler(session, token, chat_id)
+
     logging.basicConfig(
         level=level,
-        handlers=[stream_handler, AsyncTelegramHandler(session, token, chat_id)],
+        handlers=[stream_handler, telegram_handler],
     )
+
+    try:
+        yield
+    finally:
+        await telegram_handler.force_send()

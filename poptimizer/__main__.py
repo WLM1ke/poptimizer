@@ -4,100 +4,78 @@ from __future__ import annotations
 import asyncio
 import logging
 import signal
-import types
-from typing import Awaitable, Callable
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 import aiohttp
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
-from poptimizer import lgr
-from poptimizer.config import Config
-from poptimizer.data import updater
-from poptimizer.data.cpi import CPISrv
-from poptimizer.data.repo import Repo
-from poptimizer.data.trading_day import DatesSrv
+from poptimizer import config, lgr
+from poptimizer.data.app import data_app
 
 
 class App:
     """Асинхронное приложение-контекстные менеджер, которое может быть остановлено SIGINT и SIGTERM."""
 
-    def __init__(self, cfg: Config | None = None) -> None:
-        self._cfg = cfg or Config()
+    def __init__(self, cfg: config.Config | None = None) -> None:
+        self._cfg = cfg or config.Config()
         self._logger = logging.getLogger("App")
         self._stop_event = asyncio.Event()
-        self._resources: list[Callable[[], None] | Awaitable[None]] = []
 
-    async def __aenter__(self) -> App:
-        """Организует перехват системных сигналов для корректного завершения работы."""
+    async def run(self) -> None:
+        """Запускает приложение."""
+        async with (  # noqa: WPS316
+            self._signal_suppressor(),
+            aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=self._cfg.http_client.pool_size)) as session,
+            lgr.config(
+                session=session,
+                token=self._cfg.telegram.token,
+                chat_id=self._cfg.telegram.chat_id,
+            ),
+            self._motor_collection() as mongo,
+        ):
+            try:
+                await data_app(mongo, session).run(self._stop_event)
+            except config.POError as err:
+                self._logger.critical(f"abnormal termination {err}")
+
+                raise
+            except BaseException as err:  # noqa: WPS424
+                err_text = repr(err)
+
+                self._logger.critical(f"abnormal termination -> {err_text}")
+
+                raise
+
+    @asynccontextmanager
+    async def _signal_suppressor(self) -> AsyncGenerator[None, None]:
         loop = asyncio.get_event_loop()
 
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, self._signal_handler)
 
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: types.TracebackType | None,
-    ) -> None:
-        """Логирует выход из контекстного менеджера."""
-        if exc_val:
-            await self._log_err_termination(exc_val)
-
-        count = len(self._resources)
-        self._logger.info(f"closing {count} resources")
-
-        for res in reversed(self._resources):
-            if isinstance(res, Awaitable):
-                await res
-
-                continue
-
-            res()
-
-        self._logger.info("shutdown finished")
-
-    async def run(self) -> None:
-        """Запускает приложение."""
-        session = aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(limit=self._cfg.http_client.pool_size),
-        )
-        self._resources.append(session.close())
-
-        lgr.config(
-            session=session,
-            token=self._cfg.telegram.token,
-            chat_id=self._cfg.telegram.chat_id,
-        )
-
-        mongo = AsyncIOMotorClient(self._cfg.mongo.uri, tz_aware=False)
-        self._resources.append(mongo.close)
-
-        repo = Repo(mongo[self._cfg.mongo.db])
-
-        dates_srv = DatesSrv(repo, session)
-        cpi_srv = CPISrv(repo, session)
-
-        await updater.Updater(dates_srv, cpi_srv).run(self._stop_event)
+        try:
+            yield
+        finally:
+            self._logger.info("shutdown completed")
 
     def _signal_handler(self) -> None:
         self._logger.info("shutdown signal received")
 
         self._stop_event.set()
 
-    async def _log_err_termination(self, exc_val: BaseException) -> None:
-        self._logger.fatal(f"abnormal termination {exc_val}")
-        for task in asyncio.all_tasks():
-            if task.get_name() == lgr.TELEGRAM_TASK:
-                await task
+    @asynccontextmanager
+    async def _motor_collection(self) -> AsyncIOMotorCollection:
+        motor = AsyncIOMotorClient(self._cfg.mongo.uri, tz_aware=False)
+        try:
+            yield motor[self._cfg.mongo.db]
+        finally:
+            motor.close()
 
 
 async def main() -> None:
     """Запускает эволюцию с остановкой по SIGINT и SIGTERM."""
-    async with App() as app:
-        await app.run()
+    await App().run()
 
 
 if __name__ == "__main__":
