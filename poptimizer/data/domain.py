@@ -16,6 +16,11 @@ class Columns(str, Enum):  # noqa: WPS600
 
     DATE = "DATE"
     VALUE = "VALUE"  # noqa: WPS110
+    OPEN = "OPEN"
+    CLOSE = "CLOSE"
+    HIGH = "HIGH"
+    LOW = "LOW"
+    TURNOVER = "TURNOVER"
 
     def __str__(self) -> str:
         """Отображается в виде названия, а не стандартного описания."""
@@ -28,6 +33,7 @@ class Group(Enum):
 
     TRADING_DATE = "trading_date"
     CPI = "cpi"
+    INDEXES = "indexes"
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)

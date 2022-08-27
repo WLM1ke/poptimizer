@@ -7,6 +7,7 @@ from typing import Final
 
 from poptimizer.data import domain
 from poptimizer.data.cpi import CPISrv
+from poptimizer.data.indexes import IndexesSrv
 from poptimizer.data.trading_day import DatesSrv
 
 # Часовой пояс MOEX
@@ -44,11 +45,13 @@ def _last_day() -> datetime:
 class Updater:
     """Сервис обновления данных."""
 
-    def __init__(self, dates_srv: DatesSrv, cpi_srv: CPISrv) -> None:
+    def __init__(self, dates_srv: DatesSrv, cpi_srv: CPISrv, indexes_srv: IndexesSrv) -> None:
         self._logger = logging.getLogger(self.__class__.__name__)
 
         self._dates_srv = dates_srv
+
         self._cpi_srv = cpi_srv
+        self._indexes_srv = indexes_srv
 
         self._checked_day = datetime.fromtimestamp(0)
 
@@ -102,4 +105,7 @@ class Updater:
         self._logger.info("updates are completed")
 
     async def _update(self, update_day: datetime) -> None:
-        await self._cpi_srv.update(update_day)
+        await asyncio.gather(
+            self._cpi_srv.update(update_day),
+            self._indexes_srv.update(update_day),
+        )
