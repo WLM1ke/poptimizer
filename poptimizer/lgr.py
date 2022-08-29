@@ -5,8 +5,9 @@ import logging
 import sys
 import types
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
-from typing import Final, Literal
+from concurrent import futures
+from contextlib import asynccontextmanager, contextmanager
+from typing import Final, Generator, Literal
 
 import aiohttp
 
@@ -60,25 +61,23 @@ class AsyncTelegramHandler(logging.Handler):
         self._session = session
         self._url = f"https://api.telegram.org/bot{token}/SendMessage"
         self._chat_id = chat_id
-        self._tasks: set[asyncio.Task[None]] = set()
+
+        self._loop = asyncio.get_running_loop()
+        self._futures: set[futures.Future[None]] = set()
 
     def emit(self, record: logging.LogRecord) -> None:
-        """Выполняет асинхронную отправку сообщения в Телеграм.
-
-        Создаваемые асинхронные задачи имеют только weak references. Поэтому на них необходимо создавать полноценные
-        ссылки и после выполнения их удалять, для обеспечения корректной работы garbage-collector.
-
-        https://docs.python.org/3/library/asyncio-task.html#creating-tasks
-        """
-        task = asyncio.create_task(self._send(record))
-        self._tasks.add(task)
-        task.add_done_callback(self._tasks.discard)
+        """Выполняет асинхронную отправку сообщения в Телеграм - потокобезопасен."""
+        future = asyncio.run_coroutine_threadsafe(self._send(record), self._loop)
+        self._futures.add(future)
+        future.add_done_callback(self._callback)
 
     async def force_send(self) -> None:
-        """Завершает посылку сообщений в телеграм."""
-        for task in self._tasks:
-            if not task.done():
-                await task
+        """Завершает посылку сообщений в телеграм - важно для посылки сообщения о падении приложения."""
+        with self._lock():
+            aws = [asyncio.to_thread(fut.result) for fut in frozenset(self._futures)]
+
+        if aws:
+            await asyncio.wait(aws)
 
     async def _send(self, record: logging.LogRecord) -> None:
         """https://core.telegram.org/bots/api#sendmessage."""
@@ -94,6 +93,18 @@ class AsyncTelegramHandler(logging.Handler):
             if not resp.ok:
                 err_desc = await resp.json()
                 self._logger.warning(f"can't send {err_desc}")
+
+    @contextmanager
+    def _lock(self) -> Generator[None, None, None]:
+        self.acquire()
+        try:
+            yield
+        finally:
+            self.release()
+
+    def _callback(self, future: futures.Future[None]) -> None:
+        with self._lock():
+            self._futures.discard(future)
 
 
 @asynccontextmanager
