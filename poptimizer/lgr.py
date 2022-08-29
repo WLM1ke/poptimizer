@@ -1,5 +1,6 @@
 """Настройки логирования."""
 import asyncio
+import html
 import logging
 import sys
 import types
@@ -81,6 +82,8 @@ class AsyncTelegramHandler(logging.Handler):
 
     async def _send(self, record: logging.LogRecord) -> None:
         """https://core.telegram.org/bots/api#sendmessage."""
+        record.msg = html.escape(record.msg)
+
         json = {
             "chat_id": self._chat_id,
             "parse_mode": "HTML",
