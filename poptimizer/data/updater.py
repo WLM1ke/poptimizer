@@ -5,7 +5,7 @@ import zoneinfo
 from datetime import datetime, timedelta
 from typing import Final
 
-from poptimizer.data import domain
+from poptimizer.data import exceptions
 from poptimizer.data.cpi import CPISrv
 from poptimizer.data.indexes import IndexesSrv
 from poptimizer.data.trading_day import DatesSrv
@@ -38,14 +38,19 @@ def _last_day() -> datetime:
     return datetime(
         year=now.year,
         month=now.month,
-        day=now.day - delta,
-    )
+        day=now.day,
+    ) - timedelta(days=delta)
 
 
 class Updater:
     """Сервис обновления данных."""
 
-    def __init__(self, dates_srv: DatesSrv, cpi_srv: CPISrv, indexes_srv: IndexesSrv) -> None:
+    def __init__(
+        self,
+        dates_srv: DatesSrv,
+        cpi_srv: CPISrv,
+        indexes_srv: IndexesSrv,
+    ) -> None:
         self._logger = logging.getLogger(self.__class__.__name__)
 
         self._dates_srv = dates_srv
@@ -62,7 +67,7 @@ class Updater:
         while not stop_event.is_set():
             try:
                 await self._try_to_update()
-            except domain.DataError as err:
+            except exceptions.DataError as err:
                 self._logger.warning(f"can't complete update {err}")
 
             aws = (stop_event.wait(),)
@@ -77,8 +82,8 @@ class Updater:
     async def _init_run(self) -> None:
         try:
             self._checked_day = await self._dates_srv.get_last_date()
-        except domain.DataError as err:
-            raise domain.DataError("can't init update process") from err
+        except exceptions.DataError as err:
+            raise exceptions.DataError("can't init update process") from err
         self._logger.info(f"started with last update for {self._checked_day:{_DATE_FORMAT}}")
 
     async def _try_to_update(self) -> None:
@@ -87,7 +92,7 @@ class Updater:
         if self._checked_day >= last_day:
             return
 
-        self._logger.info(f"{last_day:{_DATE_FORMAT}} ended - checking new trading day")
+        self._logger.info(f"{last_day} ended - checking new trading day")
 
         new_update_day = await self._dates_srv.update(self._checked_day)
 

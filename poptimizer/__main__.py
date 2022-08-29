@@ -4,14 +4,18 @@ from __future__ import annotations
 import asyncio
 import logging
 import signal
+import types
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Final
 
 import aiohttp
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
-from poptimizer import config, lgr
+from poptimizer import config, exceptions, lgr
 from poptimizer.data.app import data_app
+
+_HEADERS: Final = types.MappingProxyType({"User-Agent": "POptimizer"})
 
 
 class App:
@@ -26,7 +30,10 @@ class App:
         """Запускает приложение."""
         async with (  # noqa: WPS316
             self._signal_suppressor(),
-            aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=self._cfg.http_client.pool_size)) as session,
+            aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(limit=self._cfg.http_client.pool_size),
+                headers=_HEADERS,
+        ) as session,
             lgr.config(
                 session=session,
                 token=self._cfg.telegram.token,
@@ -36,14 +43,14 @@ class App:
         ):
             try:
                 await data_app(mongo, session).run(self._stop_event)
-            except config.POError as err:
+            except exceptions.POError as err:
                 self._logger.critical(f"abnormal termination {err}")
 
                 raise
             except BaseException as err:  # noqa: WPS424
                 err_text = repr(err)
 
-                self._logger.critical(f"abnormal termination -> {err_text}")
+                self._logger.critical(f"abnormal termination with uncaught error -> {err_text}")
 
                 raise
 
