@@ -10,28 +10,28 @@ from poptimizer.data import domain, exceptions
 from poptimizer.data.repo import Repo
 
 
-class _DatesRow(domain.Row):
+class _TradingDates(domain.Row):
     """Строка с данными о торговых днях - должна быть одна."""
 
     date: datetime = Field(alias="till")
 
 
 class _Payload(BaseModel):
-    df: list[_DatesRow]
+    df: list[_TradingDates]
 
     def last_date(self) -> datetime:
         """Возвращает последнюю дату торгов."""
         return self.df[0].date
 
     @validator("df")
-    def _must_be_one_row(cls, df: list[_DatesRow]) -> list[_DatesRow]:
+    def _must_be_one_row(cls, df: list[_TradingDates]) -> list[_TradingDates]:
         if (count := len(df)) != 1:
             raise ValueError(f"wrong rows count {count}")
 
         return df
 
 
-class DatesTable(BaseModel):
+class Table(BaseModel):
     """Таблица с информацией о последней торговой дате."""
 
     group: ClassVar[domain.Group] = domain.Group.TRADING_DATE
@@ -39,7 +39,7 @@ class DatesTable(BaseModel):
     timestamp: datetime = datetime.fromtimestamp(0)
 
 
-class DatesSrv:
+class Service:
     """Сервис обновления таблицы с данными о торговых днях."""
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
@@ -48,7 +48,7 @@ class DatesSrv:
 
     async def get_last_date(self) -> datetime:
         """Выдает последнюю дату с рыночными данным."""
-        table = await self._repo.get(DatesTable)
+        table = await self._repo.get(Table)
 
         return table.timestamp
 
@@ -78,6 +78,6 @@ class DatesSrv:
         return _Payload.parse_obj({"df": json}).last_date()
 
     async def _save(self, timestamp: datetime) -> None:
-        table = DatesTable(timestamp=timestamp)
+        table = Table(timestamp=timestamp)
 
         return await self._repo.save(table)

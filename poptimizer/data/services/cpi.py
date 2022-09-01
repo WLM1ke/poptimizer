@@ -65,7 +65,7 @@ class Table(domain.Table):
         return df
 
 
-class CPISrv:
+class Service:
     """Сервис загрузки потребительской инфляции."""
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:

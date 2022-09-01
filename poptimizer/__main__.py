@@ -13,7 +13,7 @@ import aiohttp
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
 from poptimizer import config, exceptions, lgr
-from poptimizer.data.app import data_app
+from poptimizer.data.main import data_app
 
 _HEADERS: Final = types.MappingProxyType({"User-Agent": "POptimizer"})
 
@@ -33,7 +33,7 @@ class App:
             aiohttp.ClientSession(
                 connector=aiohttp.TCPConnector(limit=self._cfg.http_client.pool_size),
                 headers=_HEADERS,
-        ) as session,
+            ) as session,
             lgr.config(
                 session=session,
                 token=self._cfg.telegram.token,

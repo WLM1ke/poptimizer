@@ -15,7 +15,7 @@ from poptimizer.data.repo import Repo
 _INDEXES: Final = ("MCFTRR", "MEOGTRR", "IMOEX", "RVI")
 
 
-class Quote(domain.Row):
+class Index(domain.Row):
     """Котировки индекса."""
 
     date: datetime = Field(alias="TRADEDATE")
@@ -26,7 +26,7 @@ class Table(domain.Table):
     """Таблица с котировками индекса."""
 
     group: ClassVar[domain.Group] = domain.Group.INDEXES
-    df: list[Quote] = Field(default_factory=list)
+    df: list[Index] = Field(default_factory=list)
 
     def last_row_date(self) -> datetime | None:
         """Дата последней строки при наличии."""
@@ -36,7 +36,7 @@ class Table(domain.Table):
         return self.df[-1].date
 
     @validator("df")
-    def _must_be_sorted_by_date(cls, df: list[Quote]) -> list[Quote] | None:
+    def _must_be_sorted_by_date(cls, df: list[Index]) -> list[Index] | None:
         dates_pairs = itertools.pairwise(row.date for row in df)
 
         if not all(date < next_ for date, next_ in dates_pairs):
@@ -45,7 +45,7 @@ class Table(domain.Table):
         return df
 
 
-class IndexesSrv:
+class Service:
     """Сервис загрузки биржевых индексов."""
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
@@ -83,7 +83,7 @@ class IndexesSrv:
         index: str,
         start_date: datetime | None,
         update_day: datetime,
-    ) -> domain.Payload[Quote]:
+    ) -> domain.Payload[Index]:
         json = await aiomoex.get_market_history(
             session=self._session,
             start=start_date and str(start_date.date()),
@@ -96,10 +96,10 @@ class IndexesSrv:
             market="index",
         )
 
-        return domain.Payload[Quote].parse_obj({"df": json})
+        return domain.Payload[Index].parse_obj({"df": json})
 
 
-def _update_table(table: Table, payload: domain.Payload[Quote], update_day: datetime) -> Table:
+def _update_table(table: Table, payload: domain.Payload[Index], update_day: datetime) -> Table:
     if not table.df:
         return Table(
             _id=table.id_,

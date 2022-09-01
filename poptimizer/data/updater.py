@@ -6,9 +6,7 @@ from datetime import datetime, timedelta
 from typing import Final
 
 from poptimizer.data import exceptions
-from poptimizer.data.cpi import CPISrv
-from poptimizer.data.indexes import IndexesSrv
-from poptimizer.data.trading_day import DatesSrv
+from poptimizer.data.services import cpi, indexes, trading_day
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -47,9 +45,9 @@ class Updater:
 
     def __init__(
         self,
-        dates_srv: DatesSrv,
-        cpi_srv: CPISrv,
-        indexes_srv: IndexesSrv,
+        dates_srv: trading_day.Service,
+        cpi_srv: cpi.Service,
+        indexes_srv: indexes.Service,
     ) -> None:
         self._logger = logging.getLogger(self.__class__.__name__)
 
