@@ -1,6 +1,5 @@
 """Загрузка биржевых индексов."""
 import asyncio
-import itertools
 import logging
 from datetime import datetime
 from typing import ClassVar, Final
@@ -35,14 +34,7 @@ class Table(domain.Table):
 
         return self.df[-1].date
 
-    @validator("df")
-    def _must_be_sorted_by_date(cls, df: list[Index]) -> list[Index] | None:
-        dates_pairs = itertools.pairwise(row.date for row in df)
-
-        if not all(date < next_ for date, next_ in dates_pairs):
-            raise ValueError("dates are not sorted")
-
-        return df
+    _must_be_sorted_by_date = validator("df", allow_reuse=True)(domain.validate_sorted_by_date)
 
 
 class Service:

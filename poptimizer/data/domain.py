@@ -2,7 +2,7 @@
 import itertools
 from datetime import datetime
 from enum import Enum, unique
-from typing import ClassVar, Generic, TypeVar, Protocol
+from typing import ClassVar, Generic, Protocol, TypeVar
 
 from pydantic import BaseModel, Field, validator
 from pydantic.generics import GenericModel
@@ -57,3 +57,17 @@ class Table(BaseModel):
         """Загрузка объектов по псевдонимам и названиям полей."""
 
         allow_population_by_field_name = True
+
+
+class _RowWithDate(Protocol):
+    date: datetime
+
+
+def validate_sorted_by_date(df: list[_RowWithDate]) -> list[_RowWithDate]:
+    """Валидирует сортировку списка по полю даты по возрастанию."""
+    dates_pairs = itertools.pairwise(row.date for row in df)
+
+    if not all(date < next_ for date, next_ in dates_pairs):
+        raise ValueError("dates are not sorted")
+
+    return df

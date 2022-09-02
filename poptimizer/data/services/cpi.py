@@ -1,6 +1,5 @@
 """Загрузка данных о потребительской инфляции."""
 import io
-import itertools
 import logging
 import types
 from datetime import datetime, timedelta
@@ -55,14 +54,7 @@ class Table(domain.Table):
     group: ClassVar[domain.Group] = domain.Group.CPI
     df: list[CPI] = Field(default_factory=list[CPI])
 
-    @validator("df")
-    def _must_be_sorted_by_date(cls, df: list[CPI]) -> list[CPI] | None:
-        dates_pairs = itertools.pairwise(row.date for row in df)
-
-        if not all(date < next_ for date, next_ in dates_pairs):
-            raise ValueError("dates are not sorted")
-
-        return df
+    _must_be_sorted_by_date = validator("df", allow_reuse=True)(domain.validate_sorted_by_date)
 
 
 class Service:
