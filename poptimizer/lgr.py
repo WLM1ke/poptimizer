@@ -11,6 +11,8 @@ from typing import Final, Generator, Literal
 
 import aiohttp
 
+_MAX_TELEGRAM_MSG_SIZE: Final = 4096
+
 
 class ColorFormatter(logging.Formatter):
     """Цветное логирование."""
@@ -86,7 +88,7 @@ class AsyncTelegramHandler(logging.Handler):
         json = {
             "chat_id": self._chat_id,
             "parse_mode": "HTML",
-            "text": self.format(record),
+            "text": self.format(record)[:_MAX_TELEGRAM_MSG_SIZE],
         }
 
         async with self._session.post(self._url, json=json) as resp:
