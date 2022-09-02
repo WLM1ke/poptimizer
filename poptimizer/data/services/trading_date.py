@@ -10,21 +10,21 @@ from poptimizer.data import domain, exceptions
 from poptimizer.data.repo import Repo
 
 
-class _TradingDates(domain.Row):
+class _TradingDate(domain.Row):
     """Строка с данными о торговых днях - должна быть одна."""
 
     date: datetime = Field(alias="till")
 
 
 class _Payload(BaseModel):
-    df: list[_TradingDates]
+    df: list[_TradingDate]
 
     def last_date(self) -> datetime:
         """Возвращает последнюю дату торгов."""
         return self.df[0].date
 
     @validator("df")
-    def _must_be_one_row(cls, df: list[_TradingDates]) -> list[_TradingDates]:
+    def _must_be_one_row(cls, df: list[_TradingDate]) -> list[_TradingDate]:
         if (count := len(df)) != 1:
             raise ValueError(f"wrong rows count {count}")
 

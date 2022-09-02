@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Final
 
 from poptimizer.data import exceptions
-from poptimizer.data.services import cpi, indexes, trading_day
+from poptimizer.data.services import cpi, indexes, trading_date
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -45,13 +45,13 @@ class Updater:
 
     def __init__(
         self,
-        dates_srv: trading_day.Service,
+        date_srv: trading_date.Service,
         cpi_srv: cpi.Service,
         indexes_srv: indexes.Service,
     ) -> None:
         self._logger = logging.getLogger(self.__class__.__name__)
 
-        self._dates_srv = dates_srv
+        self._date_srv = date_srv
 
         self._cpi_srv = cpi_srv
         self._indexes_srv = indexes_srv
@@ -79,7 +79,7 @@ class Updater:
 
     async def _init_run(self) -> None:
         try:
-            self._checked_day = await self._dates_srv.get_last_date()
+            self._checked_day = await self._date_srv.get_last_date()
         except exceptions.DataError as err:
             raise exceptions.DataError("can't init update process") from err
         self._logger.info(f"started with last update for {self._checked_day:{_DATE_FORMAT}}")
@@ -92,7 +92,7 @@ class Updater:
 
         self._logger.info(f"{last_day} ended - checking new trading day")
 
-        new_update_day = await self._dates_srv.update(self._checked_day)
+        new_update_day = await self._date_srv.update(self._checked_day)
 
         if new_update_day <= self._checked_day:
             self._checked_day = last_day
