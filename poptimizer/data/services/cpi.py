@@ -53,7 +53,7 @@ class Table(domain.Table):
     """Таблица с инфляцией."""
 
     group: ClassVar[domain.Group] = domain.Group.CPI
-    df: list[CPI] = Field(default_factory=list)
+    df: list[CPI] = Field(default_factory=list[CPI])
 
     @validator("df")
     def _must_be_sorted_by_date(cls, df: list[CPI]) -> list[CPI] | None:

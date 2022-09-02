@@ -26,7 +26,7 @@ class Table(domain.Table):
     """Таблица с котировками индекса."""
 
     group: ClassVar[domain.Group] = domain.Group.INDEXES
-    df: list[Index] = Field(default_factory=list)
+    df: list[Index] = Field(default_factory=list[Index])
 
     def last_row_date(self) -> datetime | None:
         """Дата последней строки при наличии."""
@@ -113,4 +113,3 @@ def _update_table(table: Table, payload: domain.Payload[Index], update_day: date
         timestamp=update_day,
         df=table.df + payload.df[1:],
     )
-

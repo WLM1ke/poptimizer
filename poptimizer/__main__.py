@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from typing import Final
 
 import aiohttp
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from poptimizer import config, exceptions, lgr
 from poptimizer.data.main import data_app
@@ -72,7 +72,7 @@ class App:
         self._stop_event.set()
 
     @asynccontextmanager
-    async def _motor_collection(self) -> AsyncIOMotorCollection:
+    async def _motor_collection(self) -> AsyncIOMotorDatabase:
         motor = AsyncIOMotorClient(self._cfg.mongo.uri, tz_aware=False)
         try:
             yield motor[self._cfg.mongo.db]
