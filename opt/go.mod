@@ -5,13 +5,13 @@ go 1.19
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/WLM1ke/gomoex v1.4.0
-	github.com/caarlos0/env/v6 v6.9.3
+	github.com/caarlos0/env/v6 v6.10.0
 	github.com/go-chi/chi v1.5.4
 	github.com/stretchr/testify v1.8.0
-	github.com/xuri/excelize/v2 v2.6.0
+	github.com/xuri/excelize/v2 v2.6.1
 	go.mongodb.org/mongo-driver v1.10.1
 	go.uber.org/goleak v1.1.12
-	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
+	golang.org/x/exp v0.0.0-20220827204233-334a2380cb91
 	golang.org/x/text v0.3.7
 )
 
@@ -36,8 +36,8 @@ require (
 	github.com/xuri/efp v0.0.0-20220603152613-6918739fd470 // indirect
 	github.com/xuri/nfp v0.0.0-20220409054826-5e722a1d9e22 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
-	golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8 // indirect
-	golang.org/x/net v0.0.0-20220812174116-3211cb980234 // indirect
+	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
+	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
