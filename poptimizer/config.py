@@ -1,38 +1,32 @@
 """Настройки приложения."""
-import os
-from dataclasses import dataclass
+from typing import Final
+
+from pydantic import BaseModel, BaseSettings, Field, MongoDsn
+
+_MAX_ISS_REQUESTS: Final = 20
 
 
-def evn_reader(*, env_name: str, default: str = "") -> str:
-    """Читает переменную окружения, удаляя во время чтения."""
-    return os.environ.pop(env_name, default)
-
-
-@dataclass(slots=True, frozen=True, kw_only=True)
-class Mongo:
+class Mongo(BaseSettings):
     """Настройки MongoDB."""
 
-    uri: str = evn_reader(env_name="URI", default="mongodb://localhost:27017")
-    db: str = evn_reader(env_name="DB", default="data")
+    uri: MongoDsn = MongoDsn("localhost", scheme="mongodb")
+    db: str = "data"
 
 
-@dataclass(slots=True, frozen=True, kw_only=True)
-class HTTPClient:
+class HTTPClient(BaseModel):
     """Настройки HTTP-клиента."""
 
-    pool_size: int = 20
+    pool_size: int = Field(default=_MAX_ISS_REQUESTS, gt=0)
 
 
-@dataclass(slots=True, frozen=True, kw_only=True)
-class Telegram:
+class Telegram(BaseSettings):
     """Настройки Телеграмма для отправки сообщений об ошибках."""
 
-    token: str = evn_reader(env_name="TOKEN")
-    chat_id: str = evn_reader(env_name="CHAT_ID")
+    token: str
+    chat_id: str
 
 
-@dataclass(slots=True, frozen=True, kw_only=True)
-class Config:
+class Config(BaseModel):
     """Настройки приложения."""
 
     mongo: Mongo = Mongo()
