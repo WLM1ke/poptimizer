@@ -6,6 +6,7 @@ import operator
 from typing import Optional
 
 import numpy as np
+from scipy import stats
 
 from poptimizer import config
 from poptimizer.data.views import listing
@@ -106,8 +107,8 @@ class Evolution:  # noqa: WPS214
             return None
         if skip:
             return None
-        if margin[0] - margin[1] < 0:
-            self._logger.info("Медленный не размножается...\n")
+        if (rnd := np.random.random()) < (slowness := margin[1]):
+            self._logger.info(f"Медленный не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
 
             return None
 
@@ -120,7 +121,9 @@ class Evolution:  # noqa: WPS214
             if margin[0] < 0:
                 return None
 
-            if margin[0] - margin[1] < 0:
+            if (rnd := np.random.random()) < (slowness := margin[1]):
+                self._logger.info(f"Медленный не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
+
                 return None
 
             hunter = prey
@@ -193,22 +196,22 @@ class Evolution:  # noqa: WPS214
         if margin == np.inf:
             margin = 0
 
-        time_delta = _time_delta(org)
+        time_score = _time_delta(org)
 
-        self._logger.info(f"Margin - {margin:.2%}, Time excess - {time_delta:.2%}\n")  # noqa: WPS221
+        self._logger.info(f"Margin - {margin:.2%}, Slowness - {time_score:.2%}\n")  # noqa: WPS221
 
         if margin < 0:
             org.die()
             self._logger.info("Исключен из популяции...\n")
 
-        return margin, time_delta
+        return margin, time_score
 
 
 def _time_delta(org):
     """Штраф за время, если организм медленнее медианного в популяции."""
-    median = np.median([doc["timer"] for doc in population.get_metrics()])
+    times = [doc["timer"] for doc in population.get_metrics()]
 
-    return max((org.timer / median - 1), 0)
+    return stats.percentileofscore(times, org.timer, kind="mean") / 100
 
 
 def _check_time_range() -> bool:
