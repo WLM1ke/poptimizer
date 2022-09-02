@@ -69,7 +69,7 @@ class Service:
     """Сервис загрузки потребительской инфляции."""
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
-        self._logger = logging.getLogger(self.__class__.__name__)
+        self._logger = logging.getLogger("CPISrv")
         self._repo = repo
         self._session = session
 
@@ -85,11 +85,18 @@ class Service:
         self._logger.info("update is completed")
 
     async def _update(self, update_day: datetime) -> None:
-        xlsx = await self._download()
-        df = _prepare_df(xlsx)
+        table = await self._repo.get(Table)
+        table.timestamp = update_day
 
-        await self._validate_df(df)
-        await self._save(df, update_day)
+        xlsx_file = await self._download()
+        df = _prepare_df(xlsx_file)
+
+        if table.df != df[: len(table.df)]:
+            raise exceptions.UpdateError("new cpi mismatch old")
+
+        table.df = df
+
+        await self._repo.save(table)
 
     async def _download(self) -> io.BytesIO:
         async with self._session.get(_URL) as resp:
@@ -97,20 +104,6 @@ class Service:
                 raise exceptions.UpdateError(f"bad CPI respond status {resp.reason}")
 
             return io.BytesIO(await resp.read())
-
-    async def _validate_df(self, df: list[CPI]) -> None:
-        table = await self._repo.get(Table)
-
-        if table.df != df[: len(table.df)]:
-            raise exceptions.UpdateError("new cpi mismatch old")
-
-    async def _save(self, df: list[CPI], update_day: datetime) -> None:
-        await self._repo.save(
-            Table(
-                df=df,
-                timestamp=update_day,
-            ),
-        )
 
 
 def _prepare_df(xlsx: io.BytesIO) -> list[CPI]:

@@ -1,11 +1,13 @@
 """Реализация репозитория для таблиц."""
-from typing import Any, ClassVar, Protocol, TypeVar
+from typing import Any, ClassVar, Final, Protocol, TypeVar
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import ValidationError
 from pymongo.errors import PyMongoError
 
 from poptimizer.data import domain, exceptions
+
+_MONGO_ID: Final = "_id"
 
 Table_co = TypeVar("Table_co", covariant=True)
 
@@ -18,7 +20,7 @@ class Table(Protocol[Table_co]):
     """
 
     group: ClassVar[domain.Group]
-    id_: str | None
+    id_: str
 
     @classmethod
     def parse_obj(cls, doc: dict[str, Any]) -> Table_co:
@@ -29,7 +31,10 @@ class Table(Protocol[Table_co]):
 
 
 class Repo:
-    """Репозиторий для хранения таблиц."""
+    """Репозиторий для хранения таблиц.
+
+    При сохранении валидирует данные.
+    """
 
     def __init__(self, db: AsyncIOMotorDatabase) -> None:
         self._db = db
@@ -40,25 +45,34 @@ class Repo:
         id_ = id_ or table_type.group
 
         try:
-            doc = await collection.find_one({"_id": id_})
+            doc = await collection.find_one({_MONGO_ID: id_})
         except PyMongoError as err:
             raise exceptions.LoadError(table_type.group, id_) from err
 
-        try:
-            return table_type.parse_obj(doc or {"_id": id_})
-        except ValidationError as err_val:
-            raise exceptions.LoadError(table_type.group, id_) from err_val
+        return table_type.parse_obj(doc or {_MONGO_ID: id_})
 
     async def save(self, table: Table[Table_co]) -> None:
-        """Сохраняет таблицу."""
+        """Валидирует и сохраняет таблицу."""
+        doc = _validate(table)
+
         collection = self._db[table.group]
-        id_ = table.id_ or table.group
 
         try:
             await collection.replace_one(
-                filter={"_id": id_},
-                replacement=table.dict(),
+                filter={_MONGO_ID: table.id_},
+                replacement=doc,
                 upsert=True,
             )
         except PyMongoError as err:
             raise exceptions.SaveError(table.group, table.id_) from err
+
+
+def _validate(table: Table[Table_co]) -> dict[str, Any]:
+    doc = table.dict()
+
+    try:
+        table.parse_obj(doc | {_MONGO_ID: table.id_})
+    except ValidationError as err_val:
+        raise exceptions.SaveError(table.group, table.id_) from err_val
+
+    return doc

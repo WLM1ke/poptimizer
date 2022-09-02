@@ -35,7 +35,7 @@ class Table(BaseModel):
     """Таблица с информацией о последней торговой дате."""
 
     group: ClassVar[domain.Group] = domain.Group.TRADING_DATE
-    id_: str | None = Field(default=None, alias="_id", exclude=True)
+    id_: str = Field(default=domain.Group.TRADING_DATE, alias="_id", exclude=True)
     timestamp: datetime = datetime.fromtimestamp(0)
 
 
@@ -80,4 +80,4 @@ class Service:
     async def _save(self, timestamp: datetime) -> None:
         table = Table(timestamp=timestamp)
 
-        return await self._repo.save(table)
+        await self._repo.save(table)

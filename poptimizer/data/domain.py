@@ -1,7 +1,8 @@
 """Описание доменных объектов."""
+import itertools
 from datetime import datetime
 from enum import Enum, unique
-from typing import ClassVar, Generic, TypeVar
+from typing import ClassVar, Generic, TypeVar, Protocol
 
 from pydantic import BaseModel, Field, validator
 from pydantic.generics import GenericModel
@@ -49,5 +50,10 @@ class Table(BaseModel):
     """Таблица с данными."""
 
     group: ClassVar[Group]
-    id_: str | None = Field(default=None, alias="_id", exclude=True)
+    id_: str = Field(alias="_id", exclude=True)
     timestamp: datetime = datetime.fromtimestamp(0)
+
+    class Config:
+        """Загрузка объектов по псевдонимам и названиям полей."""
+
+        allow_population_by_field_name = True

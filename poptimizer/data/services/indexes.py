@@ -49,7 +49,7 @@ class Service:
     """Сервис загрузки биржевых индексов."""
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
-        self._logger = logging.getLogger(self.__class__.__name__)
+        self._logger = logging.getLogger("IndexesSrv")
         self._repo = repo
         self._session = session
 
@@ -66,11 +66,12 @@ class Service:
 
     async def _update_one(self, update_day: datetime, index: str) -> None:
         table = await self._repo.get(Table, index)
+        table.timestamp = update_day
 
         start_date = table.last_row_date()
         payload = await self._download(index, start_date, update_day)
 
-        table = _update_table(table, payload, update_day)
+        table.df = _preapare_df(table, payload)
 
         await self._repo.save(table)
 
@@ -95,21 +96,13 @@ class Service:
         return domain.Payload[Index].parse_obj({"df": json})
 
 
-def _update_table(table: Table, payload: domain.Payload[Index], update_day: datetime) -> Table:
+def _preapare_df(table: Table, payload: domain.Payload[Index]) -> list[Index]:
     if not table.df:
-        return Table(
-            _id=table.id_,
-            timestamp=update_day,
-            df=payload.df,
-        )
+        return payload.df
 
     last = table.df[-1]
 
     if last != (first := payload.df[0]):
         raise exceptions.UpdateError(f"{table.id_} data missmatch {last} vs {first}")
 
-    return Table(
-        _id=table.id_,
-        timestamp=update_day,
-        df=table.df + payload.df[1:],
-    )
+    return table.df + payload.df[1:]
