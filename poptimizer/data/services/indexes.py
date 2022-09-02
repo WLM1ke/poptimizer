@@ -57,7 +57,7 @@ class Service:
         """Обновляет котировки биржевых индексов."""
         try:
             await asyncio.gather(*[self._update_one(update_day, index) for index in _INDEXES])
-        except exceptions.DataError as err:
+        except (aiomoex.client.ISSMoexError, ValidationError, exceptions.DataError) as err:
             self._logger.warning(f"can't complete Indexes update {err}")
 
             return
@@ -68,11 +68,7 @@ class Service:
         table = await self._repo.get(Table, index)
 
         start_date = table.last_row_date()
-
-        try:
-            payload = await self._download(index, start_date, update_day)
-        except (aiomoex.client.ISSMoexError, ValidationError) as err_download:
-            raise exceptions.DownloadError(index) from err_download
+        payload = await self._download(index, start_date, update_day)
 
         table = _update_table(table, payload, update_day)
 
@@ -112,11 +108,9 @@ def _update_table(table: Table, payload: domain.Payload[Index], update_day: date
     if last != (first := payload.df[0]):
         raise exceptions.UpdateError(f"{table.id_} data missmatch {last} vs {first}")
 
-    try:
-        return Table(
-            _id=table.id_,
-            timestamp=update_day,
-            df=table.df + payload.df[1:],
-        )
-    except ValidationError as err:
-        raise exceptions.UpdateError(table.id_) from err
+    return Table(
+        _id=table.id_,
+        timestamp=update_day,
+        df=table.df + payload.df[1:],
+    )
+

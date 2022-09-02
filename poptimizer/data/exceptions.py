@@ -6,17 +6,13 @@ class DataError(exceptions.POError):
     """Базовая ошибка, связанная с обновлением данных."""
 
 
-class UpdateError(exceptions.POError):
-    """Ошибка при попытке обновить данные."""
-
-
-class DownloadError(DataError):
-    """Ошибка загрузки данных из внешних источников."""
-
-
 class LoadError(DataError):
     """Ошибка загрузки данных из репозитория."""
 
 
 class SaveError(DataError):
     """Ошибка сохранения данных в репозиторий."""
+
+
+class UpdateError(DataError):
+    """Ошибка сервисов обновления данных."""

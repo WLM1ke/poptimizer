@@ -60,7 +60,7 @@ class Service:
         try:
             timestamp = await self._download()
         except (aiomoex.client.ISSMoexError, ValidationError) as err:
-            raise exceptions.DownloadError("trading dates") from err
+            raise exceptions.UpdateError("trading dates") from err
 
         if timestamp > checked_day:
             await self._save(timestamp)

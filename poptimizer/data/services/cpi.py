@@ -77,7 +77,7 @@ class Service:
         """Обновляет потребительскую инфляцию и логирует неудачную попытку."""
         try:
             await self._update(update_day)
-        except exceptions.DataError as err:
+        except (aiohttp.ClientError, ValidationError, exceptions.DataError) as err:
             self._logger.warning(f"can't complete CPI update {err}")
 
             return
@@ -85,11 +85,7 @@ class Service:
         self._logger.info("update is completed")
 
     async def _update(self, update_day: datetime) -> None:
-        try:
-            xlsx = await self._download()
-        except aiohttp.ClientError as err:
-            raise exceptions.DownloadError("can't download CPI") from err
-
+        xlsx = await self._download()
         df = _prepare_df(xlsx)
 
         await self._validate_df(df)
@@ -98,7 +94,7 @@ class Service:
     async def _download(self) -> io.BytesIO:
         async with self._session.get(_URL) as resp:
             if not resp.ok:
-                raise exceptions.DataError(f"bad CPI respond status {resp.reason}")
+                raise exceptions.UpdateError(f"bad CPI respond status {resp.reason}")
 
             return io.BytesIO(await resp.read())
 
@@ -106,18 +102,15 @@ class Service:
         table = await self._repo.get(Table)
 
         if table.df != df[: len(table.df)]:
-            raise exceptions.DataError("new cpi mismatch old")
+            raise exceptions.UpdateError("new cpi mismatch old")
 
     async def _save(self, df: list[CPI], update_day: datetime) -> None:
-        try:
-            await self._repo.save(
-                Table(
-                    df=df,
-                    timestamp=update_day,
-                ),
-            )
-        except ValidationError as err:
-            raise exceptions.UpdateError("cpi") from err
+        await self._repo.save(
+            Table(
+                df=df,
+                timestamp=update_day,
+            ),
+        )
 
 
 def _prepare_df(xlsx: io.BytesIO) -> list[CPI]:
