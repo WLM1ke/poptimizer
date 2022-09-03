@@ -54,6 +54,15 @@ class Table(domain.Table):
     group: ClassVar[domain.Group] = domain.Group.CPI
     df: list[CPI] = Field(default_factory=list[CPI])
 
+    def update(self, update_day: datetime, rows: list[CPI]) -> None:
+        """Обновляет таблицу."""
+        self.timestamp = update_day
+
+        if self.df != rows[: len(self.df)]:
+            raise exceptions.UpdateError("new cpi mismatch old")
+
+        self.df = rows
+
     _must_be_sorted_by_date = validator("df", allow_reuse=True)(domain.validate_sorted_by_date)
 
 
@@ -78,15 +87,11 @@ class Service:
 
     async def _update(self, update_day: datetime) -> None:
         table = await self._repo.get(Table)
-        table.timestamp = update_day
 
         xlsx_file = await self._download()
-        df = _prepare_df(xlsx_file)
+        row = _parse_rows(xlsx_file)
 
-        if table.df != df[: len(table.df)]:
-            raise exceptions.UpdateError("new cpi mismatch old")
-
-        table.df = df
+        table.update(update_day, row)
 
         await self._repo.save(table)
 
@@ -98,7 +103,7 @@ class Service:
             return io.BytesIO(await resp.read())
 
 
-def _prepare_df(xlsx: io.BytesIO) -> list[CPI]:
+def _parse_rows(xlsx: io.BytesIO) -> list[CPI]:
     ws = excel.load_workbook(xlsx)[_SHEET_NAME]
 
     _validate_data_position(ws)

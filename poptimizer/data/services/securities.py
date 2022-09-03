@@ -119,9 +119,9 @@ class Service:
 
     async def _update(self, update_day: datetime) -> list[Security]:
         table = await self._repo.get(Table)
-        sec = await self._download()
+        rows = await self._download()
 
-        table.update(update_day, sec)
+        table.update(update_day, rows)
 
         await self._repo.save(table)
 

@@ -27,6 +27,22 @@ class Table(domain.Table):
     group: ClassVar[domain.Group] = domain.Group.INDEXES
     df: list[Index] = Field(default_factory=list[Index])
 
+    def update(self, update_day: datetime, rows: list[Index]) -> None:
+        """Обновляет таблицу."""
+        self.timestamp = update_day
+
+        if not self.df:
+            self.df = rows
+
+            return
+
+        last = self.df[-1]
+
+        if last != (first := rows[0]):
+            raise exceptions.UpdateError(f"{self.id_} data missmatch {last} vs {first}")
+
+        self.df.extend(rows[1:])
+
     def last_row_date(self) -> datetime | None:
         """Дата последней строки при наличии."""
         if not self.df:
@@ -38,7 +54,7 @@ class Table(domain.Table):
 
 
 class Service:
-    """Сервис загрузки биржевых индексов."""
+    """Сервис обновления котировок биржевых индексов."""
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
         self._logger = logging.getLogger("IndexesSrv")
@@ -50,7 +66,7 @@ class Service:
         try:
             await asyncio.gather(*[self._update_one(update_day, index) for index in _INDEXES])
         except (aiomoex.client.ISSMoexError, ValidationError, exceptions.DataError) as err:
-            self._logger.warning(f"can't complete Indexes update {err}")
+            self._logger.warning(f"can't complete indexes update {err}")
 
             return
 
@@ -58,12 +74,11 @@ class Service:
 
     async def _update_one(self, update_day: datetime, index: str) -> None:
         table = await self._repo.get(Table, index)
-        table.timestamp = update_day
 
         start_date = table.last_row_date()
-        payload = await self._download(index, start_date, update_day)
+        rows = await self._download(index, start_date, update_day)
 
-        table.df = _preapare_df(table, payload)
+        table.update(update_day, rows)
 
         await self._repo.save(table)
 
@@ -72,7 +87,7 @@ class Service:
         index: str,
         start_date: datetime | None,
         update_day: datetime,
-    ) -> domain.Payload[Index]:
+    ) -> list[Index]:
         json = await aiomoex.get_market_history(
             session=self._session,
             start=start_date and str(start_date.date()),
@@ -85,16 +100,4 @@ class Service:
             market="index",
         )
 
-        return domain.Payload[Index].parse_obj({"df": json})
-
-
-def _preapare_df(table: Table, payload: domain.Payload[Index]) -> list[Index]:
-    if not table.df:
-        return payload.df
-
-    last = table.df[-1]
-
-    if last != (first := payload.df[0]):
-        raise exceptions.UpdateError(f"{table.id_} data missmatch {last} vs {first}")
-
-    return table.df + payload.df[1:]
+        return domain.Payload[Index].parse_obj({"df": json}).df
