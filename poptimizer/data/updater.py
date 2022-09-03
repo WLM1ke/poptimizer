@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Final
 
 from poptimizer.data import exceptions
-from poptimizer.data.services import cpi, indexes, trading_date
+from poptimizer.data.services import cpi, indexes, securities, trading_date
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -48,6 +48,7 @@ class Updater:
         date_srv: trading_date.Service,
         cpi_srv: cpi.Service,
         indexes_srv: indexes.Service,
+        securities_srv: securities.Service,
     ) -> None:
         self._logger = logging.getLogger(self.__class__.__name__)
 
@@ -55,6 +56,7 @@ class Updater:
 
         self._cpi_srv = cpi_srv
         self._indexes_srv = indexes_srv
+        self._securities_srv = securities_srv
 
         self._checked_day = datetime.fromtimestamp(0)
 
@@ -111,4 +113,5 @@ class Updater:
         await asyncio.gather(
             self._cpi_srv.update(update_day),
             self._indexes_srv.update(update_day),
+            self._securities_srv.update(update_day),
         )
