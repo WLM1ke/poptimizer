@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Final
 
 from poptimizer.data import exceptions
-from poptimizer.data.services import cpi, indexes, securities, trading_date
+from poptimizer.data.update import cpi, indexes, securities, trading_date
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")

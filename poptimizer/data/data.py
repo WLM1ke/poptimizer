@@ -4,10 +4,10 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from poptimizer.data import updater
 from poptimizer.data.repo import Repo
-from poptimizer.data.services import cpi, indexes, securities, trading_date
+from poptimizer.data.update import cpi, indexes, securities, trading_date
 
 
-def data_app(mongo: AsyncIOMotorDatabase, session: aiohttp.ClientSession) -> updater.Updater:
+def app(mongo: AsyncIOMotorDatabase, session: aiohttp.ClientSession) -> updater.Updater:
     """Создает приложение для сбора данных."""
     repo = Repo(mongo)
 
