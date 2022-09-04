@@ -5,31 +5,29 @@ import asyncio
 import logging
 import signal
 import types
-from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Final
 
 import aiohttp
+import uvloop
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
-from poptimizer import config, exceptions, lgr
-from poptimizer.data.main import data_app
+from poptimizer import config, exceptions, lgr, server
+from poptimizer.data import data
 
 _HEADERS: Final = types.MappingProxyType({"User-Agent": "POptimizer"})
 
 
 class App:
-    """Асинхронное приложение-контекстные менеджер, которое может быть остановлено SIGINT и SIGTERM."""
+    """Асинхронное приложение, которое может быть остановлено SIGINT и SIGTERM."""
 
     def __init__(self, cfg: config.Config | None = None) -> None:
         self._cfg = cfg or config.Config()
         self._logger = logging.getLogger("App")
-        self._stop_event = asyncio.Event()
 
     async def run(self) -> None:
         """Запускает приложение."""
         async with (  # noqa: WPS316
-            self._signal_suppressor(),
             aiohttp.ClientSession(
                 connector=aiohttp.TCPConnector(limit=self._cfg.http_client.pool_size),
                 headers=_HEADERS,
@@ -41,35 +39,39 @@ class App:
             ),
             self._motor_collection() as mongo,
         ):
-            try:
-                await data_app(mongo, session).run(self._stop_event)
-            except exceptions.POError as err:
-                self._logger.critical(f"abnormal termination {err}")
+            stop_event = asyncio.Event()
 
-                raise
+            tasks = [
+                asyncio.create_task(coro)
+                for coro in (
+                    data.app(mongo, session).run(stop_event),
+                    server.create(self._cfg.server.host, self._cfg.server.port).serve(),
+                )
+            ]
+
+            await self._run_with_graceful_shutdown(tasks, stop_event)
+
+    async def _run_with_graceful_shutdown(
+        self,
+        tasks: list[asyncio.Task[None]],
+        stop_event: asyncio.Event,
+    ) -> None:
+        """При завершении одной из задач, инициирует graceful shutdown остальных.
+
+        Сервер останавливается по сигналу SIGINT, а остальные службы с помощью события.
+        """
+        for task in asyncio.as_completed(tasks):
+            try:
+                await task
+            except exceptions.POError as err:
+                self._logger.exception(f"abnormal termination {err}")
             except BaseException as err:  # noqa: WPS424
                 err_text = repr(err)
 
-                self._logger.critical(f"abnormal termination with uncaught error -> {err_text}")
-
-                raise
-
-    @asynccontextmanager
-    async def _signal_suppressor(self) -> AsyncGenerator[None, None]:
-        loop = asyncio.get_event_loop()
-
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            loop.add_signal_handler(sig, self._signal_handler)
-
-        try:
-            yield
-        finally:
-            self._logger.info("shutdown completed")
-
-    def _signal_handler(self) -> None:
-        self._logger.info("shutdown signal received")
-
-        self._stop_event.set()
+                self._logger.exception(f"abnormal termination with uncaught error -> {err_text}")
+            finally:
+                signal.raise_signal(signal.SIGINT)
+                stop_event.set()
 
     @asynccontextmanager
     async def _motor_collection(self) -> AsyncIOMotorDatabase:
@@ -80,10 +82,11 @@ class App:
             motor.close()
 
 
-async def main() -> None:
+def main() -> None:
     """Запускает эволюцию с остановкой по SIGINT и SIGTERM."""
-    await App().run()
+    uvloop.install()
+    asyncio.run(App().run())
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
