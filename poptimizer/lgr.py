@@ -7,6 +7,7 @@ import types
 from collections.abc import AsyncGenerator
 from concurrent import futures
 from contextlib import asynccontextmanager, contextmanager
+from copy import copy
 from typing import Final, Generator, Literal
 
 import aiohttp
@@ -35,11 +36,23 @@ class ColorFormatter(logging.Formatter):
     ) -> None:
         super().__init__(fmt=fmt, datefmt=datefmt, style=style)
 
-    def format(self, record: logging.LogRecord) -> str:
-        """Подменяет отображение уровня логирования цветным аналогом."""
+    def formatMessage(self, record: logging.LogRecord) -> str:  # noqa: N802
+        """Подменяет отображение уровня логирования цветным аналогом.
+
+        Для uvicorn подменяет название логера для единообразия отображения и сохраняет цветное форматирование.
+        https://github.com/encode/uvicorn/blob/master/uvicorn/logging.py#L60
+        """
+        record = copy(record)
         record.levelname = self.levels[record.levelno]
 
-        return super().format(record)
+        if "uvicorn" in record.name:
+            record.name = "Uvicorn"
+
+        if color_msg := record.__dict__.get("color_message"):
+            record.msg = color_msg
+            record.__dict__["message"] = record.getMessage()
+
+        return super().formatMessage(record)
 
 
 class AsyncTelegramHandler(logging.Handler):
@@ -83,6 +96,7 @@ class AsyncTelegramHandler(logging.Handler):
 
     async def _send(self, record: logging.LogRecord) -> None:
         """https://core.telegram.org/bots/api#sendmessage."""
+        record = copy(record)
         record.msg = html.escape(record.msg)
 
         json = {
