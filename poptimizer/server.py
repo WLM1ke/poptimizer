@@ -22,30 +22,53 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:  # noqa: WPS210
         """Логирует основные параметры запроса."""
-        host = getattr(request.client, "host", "")
-        port = getattr(request.client, "port", "")
-        method = request.method
-        path = request.url.path
+        req_tmpl, req_tmpl_color = _request_tmpl(request)
 
         start = time.monotonic()
         response = await call_next(request)
         timer = _format_time(time.monotonic() - start)
 
-        status_code = _status_code_colored(response.status_code)
-        content_length = _get_content_length(response)
+        res_tmpl, res_tmpl_color = _response_tmpl(response)
 
         logger = self._logger.info
         if response.status_code >= http.HTTPStatus.INTERNAL_SERVER_ERROR:
             logger = self._logger.warning
 
+        msg = f"{req_tmpl} {res_tmpl} {timer}"
+        msg_colored = f"{req_tmpl_color} {res_tmpl_color} {timer}"
+
         logger(
-            f"{host}:{port} - \033[1;30m{method} {path}\033[0m {status_code} {content_length} {timer}",  # noqa: WPS221
+            msg,
+            extra={"color_message": msg_colored},
         )
 
         return response
 
 
-def _status_code_colored(status_code: int) -> str:
+def _request_tmpl(request: Request) -> tuple[str, str]:
+    host = getattr(request.client, "host", "")
+    port = getattr(request.client, "port", "")
+    method = request.method
+    path = request.url.path
+
+    return (
+        f"{host}:{port} - {method} {path}",
+        f"{host}:{port} - \033[1;30m{method} {path}\033[0m",
+    )
+
+
+def _response_tmpl(response: Response) -> tuple[str, str]:
+    code, code_color = _status_code(response)
+    content_length = _get_content_length(response)
+
+    return (
+        f"{code} {content_length}",
+        f"{code_color} {content_length}",
+    )
+
+
+def _status_code(response: Response) -> tuple[str, str]:
+    status_code = response.status_code
     status_phrase = http.HTTPStatus(status_code).phrase
 
     status_and_phrase = f"{status_code} {status_phrase}"
@@ -58,7 +81,7 @@ def _status_code_colored(status_code: int) -> str:
         5: "\033[1;91m{0}\033[0m",
     }[status_code // 100]
 
-    return tmpl.format(status_and_phrase)
+    return status_and_phrase, tmpl.format(status_and_phrase)
 
 
 def _get_content_length(response: Response) -> str:
