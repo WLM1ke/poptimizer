@@ -12,6 +12,7 @@ from typing import Final, Generator, Literal
 
 import aiohttp
 
+_LOGGER_NAME_SIZE: Final = 10
 _MAX_TELEGRAM_MSG_SIZE: Final = 4096
 
 
@@ -30,7 +31,7 @@ class ColorFormatter(logging.Formatter):
 
     def __init__(
         self,
-        fmt: str = "{asctime} {levelname} {name}: {message}",
+        fmt: str = "{asctime} {levelname} {name} {message}",
         datefmt: str = "%Y-%m-%d %H:%M:%S",
         style: Literal["%", "{", "$"] = "{",
     ) -> None:
@@ -48,9 +49,11 @@ class ColorFormatter(logging.Formatter):
         if "uvicorn" in record.name:
             record.name = "Uvicorn"
 
-        if color_msg := record.__dict__.get("color_message"):
+        record.name = f"{record.name}:".ljust(_LOGGER_NAME_SIZE)
+
+        if color_msg := getattr(record, "color_message", None):
             record.msg = color_msg
-            record.__dict__["message"] = record.getMessage()
+            record.message = record.getMessage()
 
         return super().formatMessage(record)
 
