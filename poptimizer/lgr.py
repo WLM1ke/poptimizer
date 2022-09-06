@@ -12,6 +12,7 @@ from typing import Final, Generator, Literal
 
 import aiohttp
 
+COLOR_MSG: Final = "color_msg"
 _LOGGER_NAME_SIZE: Final = 10
 _MAX_TELEGRAM_MSG_SIZE: Final = 4096
 
@@ -38,20 +39,13 @@ class ColorFormatter(logging.Formatter):
         super().__init__(fmt=fmt, datefmt=datefmt, style=style)
 
     def formatMessage(self, record: logging.LogRecord) -> str:  # noqa: N802
-        """Подменяет отображение уровня логирования цветным аналогом.
-
-        Для uvicorn подменяет название логера для единообразия отображения и сохраняет цветное форматирование.
-        https://github.com/encode/uvicorn/blob/master/uvicorn/logging.py#L60
-        """
+        """Подменяет отображение уровня логирования цветным аналогом."""
         record = copy(record)
         record.levelname = self.levels[record.levelno]
 
-        if "uvicorn" in record.name:
-            record.name = "Uvicorn"
-
         record.name = f"{record.name}:".ljust(_LOGGER_NAME_SIZE)
 
-        if color_msg := getattr(record, "color_message", None):
+        if color_msg := getattr(record, COLOR_MSG, None):
             record.msg = color_msg
             record.message = record.getMessage()
 
