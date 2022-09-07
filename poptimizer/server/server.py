@@ -14,6 +14,7 @@ class Server:
     """
 
     def __init__(self, host: str, port: int):
+        self._logger = logging.getLogger("Server")
         self._host = host
         self._port = port
 
@@ -26,7 +27,7 @@ class Server:
             app,
             handle_signals=False,
             access_log_class=logger.AccessLogger,
-            access_log=logging.getLogger("Server"),
+            access_log=self._logger,
         )
         await runner.setup()
         site = web.TCPSite(
@@ -37,6 +38,10 @@ class Server:
 
         await site.start()
 
+        self._logger.info(f"started on http://{self._host}:{self._port}")
+
         await stop_event.wait()
 
         await runner.cleanup()
+
+        self._logger.info("stopped")
