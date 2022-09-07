@@ -16,3 +16,7 @@ class SaveError(DataError):
 
 class UpdateError(DataError):
     """Ошибка сервисов обновления данных."""
+
+
+class EditError(DataError):
+    """Ошибка сервисов редактирования данных."""
