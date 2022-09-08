@@ -18,7 +18,7 @@ class Ticker(BaseModel):
 class DTO(BaseModel):
     """Перечень существующих тикеров с флагом выбраны или нет."""
 
-    tickers: list[Ticker]
+    __root__: list[Ticker]
 
 
 class Service:
@@ -33,7 +33,7 @@ class Service:
         table = await self._repo.get(securities.Table)
 
         return DTO(
-            tickers=[
+            __root__=[
                 Ticker(
                     ticker=row.ticker,
                     selected=row.selected,
@@ -46,10 +46,10 @@ class Service:
         """Сохраняет изменения выбранных тикеров."""
         table = await self._repo.get(securities.Table)
 
-        if len(table.df) != len(dto.tickers):
+        if len(table.df) != len(dto.__root__):
             raise EditError("wrong selected tickers dto length")
 
-        for count, row in enumerate(dto.tickers):
+        for count, row in enumerate(dto.__root__):
             if table.df[count].ticker != row.ticker:
                 raise EditError("wrong selected tickers dto sort order")
 
