@@ -4,7 +4,8 @@ import logging
 
 from aiohttp import web
 
-from poptimizer.server import frontend, logger
+from poptimizer.data.edit import selected
+from poptimizer.server import logger, views
 
 
 class Server:
@@ -13,15 +14,24 @@ class Server:
     Реализует протокол сервиса, останавливающегося после завершения события.
     """
 
-    def __init__(self, host: str, port: int):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        selected_srv: selected.Service,
+    ):
         self._logger = logging.getLogger("Server")
         self._host = host
         self._port = port
 
+        self._selected_srv = selected_srv
+
     async def run(self, stop_event: asyncio.Event) -> None:
         """Запускает сервер и останавливает его после завершения события."""
         app = web.Application(middlewares=[logger.set_start_time_and_headers])
-        frontend.add(app)
+
+        views.Selected.register(app, self._selected_srv)
+        views.Frontend.register(app)
 
         runner = web.AppRunner(
             app,

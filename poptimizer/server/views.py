@@ -1,6 +1,5 @@
-"""Ручки для редактирования выбранных тикеров."""
-from __future__ import annotations
-
+"""Раздача статики Frontend и ручки Backend."""
+from pathlib import Path
 from typing import ClassVar
 
 from aiohttp import web
@@ -8,7 +7,7 @@ from aiohttp import web
 from poptimizer.data.edit import selected
 
 
-class SelectedView(web.View):
+class Selected(web.View):
     """Ручки для редактирования выбранных тикеров."""
 
     _srv: ClassVar[selected.Service]
@@ -31,3 +30,19 @@ class SelectedView(web.View):
         await self._srv.save(dto)
 
         raise web.HTTPOk
+
+
+class Frontend(web.View):
+    """Отображение главной страницы."""
+
+    _static: ClassVar = Path(__file__).parents[2] / "static"
+
+    @classmethod
+    def register(cls, app: web.Application) -> None:
+        """Регистрирует необходимые для отображения главной страницы ресурсы."""
+        app.router.add_view("/", cls)
+        app.router.add_static("/", cls._static)
+
+    async def get(self) -> web.StreamResponse:
+        """Главная страничка приложения."""
+        return web.FileResponse(self._static / "index.html")
