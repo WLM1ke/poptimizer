@@ -1,34 +1,14 @@
-"""Реализует логер в формате aiohttp и middleware для обхода неточности учета времени uvloop."""
+"""Реализует логер в формате aiohttp."""
 import http
 import time
 from typing import Final
 
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
-from aiohttp.typedefs import Handler
 
 from poptimizer import lgr
 
-_START_TIME: Final = "start_time"
-
-
-@web.middleware
-async def set_start_time_and_headers(
-    request: web.Request,
-    handler: Handler,  # noqa: WPS110
-) -> web.StreamResponse:
-    """Устанавливает время поступления запроса для логирования и заголовок сервера.
-
-    Время начала обработки нужно для логирования, так как при использовании uvloop оно вычисляется с точностью до 1мс.
-    Дополнительно устанавливается заголовок сервера.
-    """
-    request[_START_TIME] = time.monotonic()
-
-    response = await handler(request)
-
-    response.headers["Server"] = "POptimizer"
-
-    return response
+START_TIME: Final = "start_time"
 
 
 class AccessLogger(AbstractAccessLogger):
@@ -114,7 +94,7 @@ def _content_length(response: web.StreamResponse) -> str:
 
 
 def _format_time(request: web.BaseRequest) -> str:
-    resp_time = time.monotonic() - request[_START_TIME]
+    resp_time = time.monotonic() - request[START_TIME]
 
     milli = 10**-3
 

@@ -70,7 +70,7 @@ class App:
             try:
                 await task
             except exceptions.POError as err:
-                self._logger.exception(f"abnormal termination {err}")
+                self._logger.exception(f"abnormal termination -> {err}")
             except BaseException as err:  # noqa: WPS424
                 err_text = repr(err)
 

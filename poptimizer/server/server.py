@@ -5,7 +5,7 @@ import logging
 from aiohttp import web
 
 from poptimizer.data.edit import selected
-from poptimizer.server import logger, views
+from poptimizer.server import logger, middleware, views
 
 
 class Server:
@@ -28,7 +28,7 @@ class Server:
 
     async def run(self, stop_event: asyncio.Event) -> None:
         """Запускает сервер и останавливает его после завершения события."""
-        app = web.Application(middlewares=[logger.set_start_time_and_headers])
+        app = web.Application(middlewares=[middleware.set_start_time_and_headers, middleware.error])
 
         views.Selected.register(app, self._selected_srv)
         views.Frontend.register(app)
