@@ -1,23 +1,21 @@
-"""Ручки для выдачи статики SPA Frontend."""
+"""Отображение главной страницы."""
 from pathlib import Path
-from typing import Final
+from typing import ClassVar
 
 from aiohttp import web
 
-_STATIC: Final = Path(__file__).parents[2] / "static"
-_INDEX_PAGE: Final = _STATIC / "index.html"
 
+class FrontendView(web.View):
+    """Отображение главной страницы."""
 
-async def index(_: web.Request) -> web.StreamResponse:
-    """Главная страничка приложения."""
-    return web.FileResponse(_INDEX_PAGE)
+    _static: ClassVar = Path(__file__).parents[2] / "static"
 
+    @classmethod
+    def register(cls, app: web.Application) -> None:
+        """Регистрирует необходимые для отображения главной страницы ресурсы."""
+        app.router.add_view("/", cls)
+        app.router.add_static("/", cls._static)
 
-def add(app: web.Application) -> None:
-    """Добавляет ручки для выдачи статики Frontend."""
-    app.add_routes(
-        [
-            web.get("/", index),
-            web.static("/", _STATIC),
-        ],
-    )
+    async def get(self) -> web.StreamResponse:
+        """Главная страничка приложения."""
+        return web.FileResponse(self._static / "index.html")
