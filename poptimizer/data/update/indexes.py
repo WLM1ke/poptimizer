@@ -57,7 +57,7 @@ class Service:
     """Сервис обновления котировок биржевых индексов."""
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
-        self._logger = logging.getLogger("IndexesSrv")
+        self._logger = logging.getLogger("IndSrv")
         self._repo = repo
         self._session = session
 

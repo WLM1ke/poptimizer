@@ -102,7 +102,7 @@ class Service:
     """Сервис обновления перечня торгуемых бумаг."""
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
-        self._logger = logging.getLogger("SecuritiesSrv")
+        self._logger = logging.getLogger("SecSrv")
         self._repo = repo
         self._session = session
 
