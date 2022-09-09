@@ -10,7 +10,7 @@ from openpyxl.reader import excel
 from openpyxl.worksheet import worksheet
 from pydantic import Field, ValidationError, validator
 
-from poptimizer.data import domain, exceptions
+from poptimizer.data import domain, exceptions, validate
 from poptimizer.data.repo import Repo
 
 _URL: Final = "https://rosstat.gov.ru/storage/mediabank/ipc_4(2).xlsx"
@@ -63,7 +63,7 @@ class Table(domain.Table):
 
         self.df = rows
 
-    _must_be_sorted_by_date = validator("df", allow_reuse=True)(domain.validate_sorted_by_date)
+    _must_be_sorted_by_date = validator("df", allow_reuse=True)(validate.sorted_by_date)
 
 
 class Service:

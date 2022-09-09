@@ -8,7 +8,7 @@ import aiohttp
 import aiomoex
 from pydantic import Field, ValidationError, validator
 
-from poptimizer.data import domain, exceptions
+from poptimizer.data import domain, exceptions, validate
 from poptimizer.data.repo import Repo
 
 _INDEXES: Final = ("MCFTRR", "MEOGTRR", "IMOEX", "RVI")
@@ -50,7 +50,7 @@ class Table(domain.Table):
 
         return self.df[-1].date
 
-    _must_be_sorted_by_date = validator("df", allow_reuse=True)(domain.validate_sorted_by_date)
+    _must_be_sorted_by_date = validator("df", allow_reuse=True)(validate.sorted_by_date)
 
 
 class Service:
