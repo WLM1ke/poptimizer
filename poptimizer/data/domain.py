@@ -16,6 +16,7 @@ class Group(str, Enum):  # noqa: WPS600
     CPI = "cpi"
     INDEXES = "indexes"
     SECURITIES = "securities"
+    STATUS = "status"
 
     def __str__(self) -> str:
         """Отображение в виде значения."""

@@ -59,7 +59,7 @@ class Security(domain.Row):
         return self.type == _FOREIGN_BOARD
 
     @property
-    def base_ticker(self) -> str:
+    def ticker_base(self) -> str:
         """Базовый тикер без суффикса привилегированной или иностранной акции."""
         if self.is_preferred:
             return self.ticker.removesuffix(_PREFERRED_SUFFIX)

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Final
 
 from poptimizer.data import backup, domain, exceptions
-from poptimizer.data.update import cpi, indexes, securities, trading_date
+from poptimizer.data.update import cpi, indexes, securities, status, trading_date
 
 _BACKUP_COLLECTIONS: Final = (domain.Group.SECURITIES.value,)
 
@@ -52,6 +52,7 @@ class Updater:
         cpi_srv: cpi.Service,
         indexes_srv: indexes.Service,
         securities_srv: securities.Service,
+        status_srv: status.Service,
     ) -> None:
         self._logger = logging.getLogger(self.__class__.__name__)
 
@@ -61,7 +62,9 @@ class Updater:
 
         self._cpi_srv = cpi_srv
         self._indexes_srv = indexes_srv
+
         self._securities_srv = securities_srv
+        self._status_srv = status_srv
 
         self._checked_day = datetime.fromtimestamp(0)
 
@@ -120,7 +123,11 @@ class Updater:
         await asyncio.gather(
             self._cpi_srv.update(update_day),
             self._indexes_srv.update(update_day),
-            self._securities_srv.update(update_day),
+            self._update_sec(update_day),
         )
 
         await self._backup_srv.backup(_BACKUP_COLLECTIONS)
+
+    async def _update_sec(self, update_day: datetime) -> None:
+        sec = await self._securities_srv.update(update_day)
+        await self._status_srv.update(update_day, sec)
