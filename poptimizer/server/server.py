@@ -48,7 +48,9 @@ class Server:
 
         await site.start()
 
-        self._logger.info(f"started on http://{self._host}:{self._port}")
+        self._logger.info(
+            f"started on http://{self._host}:{self._port} - press CTRL+C to quit",
+        )
 
         await stop_event.wait()
 
