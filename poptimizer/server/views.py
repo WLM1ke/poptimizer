@@ -1,9 +1,9 @@
 """Раздача статики Frontend и ручки Backend."""
-from pathlib import Path
 from typing import ClassVar
 
 from aiohttp import web
 
+from poptimizer import config
 from poptimizer.data.edit import selected
 
 
@@ -35,7 +35,7 @@ class Selected(web.View):
 class Frontend(web.View):
     """Отображение главной страницы."""
 
-    _static: ClassVar = Path(__file__).parents[2] / "static"
+    _static: ClassVar = config.ROOT_PATH / "static"
 
     @classmethod
     def register(cls, app: web.Application) -> None:

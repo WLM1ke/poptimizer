@@ -5,8 +5,10 @@ import zoneinfo
 from datetime import datetime, timedelta
 from typing import Final
 
-from poptimizer.data import exceptions
+from poptimizer.data import backup, domain, exceptions
 from poptimizer.data.update import cpi, indexes, securities, trading_date
+
+_BACKUP_COLLECTIONS: Final = (domain.Group.SECURITIES.value,)
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -43,14 +45,17 @@ def _last_day() -> datetime:
 class Updater:
     """Сервис обновления данных."""
 
-    def __init__(
+    def __init__(  # noqa: WPS211
         self,
+        backup_srv: backup.Service,
         date_srv: trading_date.Service,
         cpi_srv: cpi.Service,
         indexes_srv: indexes.Service,
         securities_srv: securities.Service,
     ) -> None:
         self._logger = logging.getLogger(self.__class__.__name__)
+
+        self._backup_srv = backup_srv
 
         self._date_srv = date_srv
 
@@ -80,6 +85,8 @@ class Updater:
         self._logger.info(f"stopped with last update for {self._checked_day:{_DATE_FORMAT}}")
 
     async def _init_run(self) -> None:
+        await self._backup_srv.restore(_BACKUP_COLLECTIONS)
+
         try:
             self._checked_day = await self._date_srv.get_last_date()
         except exceptions.DataError as err:
@@ -92,7 +99,7 @@ class Updater:
         if self._checked_day >= last_day:
             return
 
-        self._logger.info(f"{last_day} ended - checking new trading day")
+        self._logger.info(f"{last_day:{_DATE_FORMAT}} ended - checking new trading day")
 
         new_update_day = await self._date_srv.update(self._checked_day)
 
@@ -115,3 +122,5 @@ class Updater:
             self._indexes_srv.update(update_day),
             self._securities_srv.update(update_day),
         )
+
+        await self._backup_srv.backup(_BACKUP_COLLECTIONS)

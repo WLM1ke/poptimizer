@@ -1,10 +1,12 @@
 """Настройки приложения."""
+from pathlib import Path
 from typing import Final
 
 from pydantic import BaseModel, BaseSettings, Field, MongoDsn
 
 _MAX_ISS_REQUESTS: Final = 20
 _DEFAULT_PORT: Final = 5000
+ROOT_PATH: Final = Path(__file__).parents[1]
 
 
 class Mongo(BaseSettings):

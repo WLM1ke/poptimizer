@@ -2,7 +2,7 @@
 import aiohttp
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from poptimizer.data import updater
+from poptimizer.data import backup, updater
 from poptimizer.data.edit import selected
 from poptimizer.data.repo import Repo
 from poptimizer.data.update import cpi, indexes, securities, trading_date
@@ -13,6 +13,7 @@ def create_app(mongo_db: AsyncIOMotorDatabase, session: aiohttp.ClientSession) -
     repo = Repo(mongo_db)
 
     return updater.Updater(
+        backup.Service(mongo_db),
         trading_date.Service(repo, session),
         cpi.Service(repo, session),
         indexes.Service(repo, session),
