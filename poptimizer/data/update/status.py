@@ -62,18 +62,20 @@ class Service:
         self._repo = repository
         self._session = session
 
-    async def update(self, update_day: datetime, sec: list[securities.Security]) -> None:
+    async def update(self, update_day: datetime, sec: list[securities.Security]) -> list[Status]:
         """Обновляет статус дивидендов и логирует неудачную попытку."""
         try:
-            await self._update(update_day, sec)
+            status = await self._update(update_day, sec)
         except (aiohttp.ClientError, ValidationError, exceptions.DataError) as err:
             self._logger.warning(f"can't complete update {err}")
 
-            return
+            return []
 
         self._logger.info("update is completed")
 
-    async def _update(self, update_day: datetime, sec: list[securities.Security]) -> None:
+        return status
+
+    async def _update(self, update_day: datetime, sec: list[securities.Security]) -> list[Status]:
         table = await self._repo.get(Table)
 
         csv_file = await self._download()
@@ -82,6 +84,8 @@ class Service:
         table.update(update_day, row)
 
         await self._repo.save(table)
+
+        return table.df
 
     async def _download(self) -> io.StringIO:
         async with self._session.get(_URL) as resp:

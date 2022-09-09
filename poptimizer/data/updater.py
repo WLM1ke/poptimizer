@@ -6,9 +6,9 @@ from datetime import datetime, timedelta
 from typing import Final
 
 from poptimizer.data import backup, domain, exceptions
-from poptimizer.data.update import cpi, indexes, securities, status, trading_date
+from poptimizer.data.update import check_raw, cpi, indexes, securities, status, trading_date
 
-_BACKUP_COLLECTIONS: Final = (domain.Group.SECURITIES.value,)
+_BACKUP_COLLECTIONS: Final = (domain.Group.SECURITIES.value, domain.Group.RAW_DIV.value)
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -53,6 +53,7 @@ class Updater:
         indexes_srv: indexes.Service,
         securities_srv: securities.Service,
         status_srv: status.Service,
+        check_raw_srv: check_raw.Service,
     ) -> None:
         self._logger = logging.getLogger(self.__class__.__name__)
 
@@ -65,6 +66,7 @@ class Updater:
 
         self._securities_srv = securities_srv
         self._status_srv = status_srv
+        self._check_raw_srv = check_raw_srv
 
         self._checked_day = datetime.fromtimestamp(0)
 
@@ -130,4 +132,8 @@ class Updater:
 
     async def _update_sec(self, update_day: datetime) -> None:
         sec = await self._securities_srv.update(update_day)
-        await self._status_srv.update(update_day, sec)
+        await self._update_raw_div(update_day, sec)
+
+    async def _update_raw_div(self, update_day: datetime, sec: list[securities.Security]) -> None:
+        status_rows = await self._status_srv.update(update_day, sec)
+        await self._check_raw_srv.check(status_rows)
