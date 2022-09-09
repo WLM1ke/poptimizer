@@ -47,7 +47,7 @@ class Repo:
         try:
             doc = await collection.find_one({_MONGO_ID: id_})
         except PyMongoError as err:
-            raise exceptions.LoadError(table_type.group, id_) from err
+            raise exceptions.LoadError(table_type.group.value, id_) from err
 
         return table_type.parse_obj(doc or {_MONGO_ID: id_})
 
@@ -64,7 +64,7 @@ class Repo:
                 upsert=True,
             )
         except PyMongoError as err:
-            raise exceptions.SaveError(table.group, table.id_) from err
+            raise exceptions.SaveError(table.group.value, table.id_) from err
 
 
 def _validate(table: Table[Table_co]) -> dict[str, Any]:
@@ -73,6 +73,6 @@ def _validate(table: Table[Table_co]) -> dict[str, Any]:
     try:
         table.parse_obj(doc | {_MONGO_ID: table.id_})
     except ValidationError as err_val:
-        raise exceptions.SaveError(table.group, table.id_) from err_val
+        raise exceptions.SaveError(table.group.value, table.id_) from err_val
 
     return doc
