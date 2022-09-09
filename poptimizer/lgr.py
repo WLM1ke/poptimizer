@@ -13,7 +13,7 @@ from typing import Final, Generator, Literal
 import aiohttp
 
 COLOR_MSG: Final = "color_msg"
-_LOGGER_NAME_SIZE: Final = 10
+_LOGGER_NAME_SIZE: Final = 11
 _MAX_TELEGRAM_MSG_SIZE: Final = 4096
 
 

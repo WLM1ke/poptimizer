@@ -70,7 +70,7 @@ class Service:
     """Сервис загрузки потребительской инфляции."""
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
-        self._logger = logging.getLogger("CPISrv")
+        self._logger = logging.getLogger("CPI")
         self._repo = repo
         self._session = session
 
@@ -79,7 +79,7 @@ class Service:
         try:
             await self._update(update_day)
         except (aiohttp.ClientError, ValidationError, exceptions.DataError) as err:
-            self._logger.warning(f"can't complete CPI update {err}")
+            self._logger.warning(f"can't complete update {err}")
 
             return
 

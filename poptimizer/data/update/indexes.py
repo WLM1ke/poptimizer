@@ -57,7 +57,7 @@ class Service:
     """Сервис обновления котировок биржевых индексов."""
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
-        self._logger = logging.getLogger("IndSrv")
+        self._logger = logging.getLogger("Index")
         self._repo = repo
         self._session = session
 
@@ -66,7 +66,7 @@ class Service:
         try:
             await asyncio.gather(*[self._update_one(update_day, index) for index in _INDEXES])
         except (aiomoex.client.ISSMoexError, ValidationError, exceptions.DataError) as err:
-            self._logger.warning(f"can't complete indexes update {err}")
+            self._logger.warning(f"can't complete update {err}")
 
             return
 
