@@ -15,6 +15,7 @@ openpyxl = "^3.0.10"
 pydantic = "^1.9.2"
 uvloop = "^0.16.0"
 aiofiles = "^22.1.0"
+lxml = "^4.9.1"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
