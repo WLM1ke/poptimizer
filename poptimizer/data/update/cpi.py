@@ -1,4 +1,4 @@
-"""Загрузка данных о потребительской инфляции."""
+"""Сервис обновления данных о потребительской инфляции."""
 import io
 import logging
 import types
@@ -67,7 +67,7 @@ class Table(domain.Table):
 
 
 class Service:
-    """Сервис загрузки потребительской инфляции."""
+    """Сервис обновления потребительской инфляции."""
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
         self._logger = logging.getLogger("CPI")
