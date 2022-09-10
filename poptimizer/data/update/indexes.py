@@ -63,14 +63,20 @@ class Service:
 
     async def update(self, update_day: datetime) -> None:
         """Обновляет котировки биржевых индексов."""
-        try:
-            await asyncio.gather(*[self._update_one(update_day, index) for index in _INDEXES])
-        except (aiomoex.client.ISSMoexError, ValidationError, exceptions.DataError) as err:
-            self._logger.warning(f"can't complete update {err}")
+        errs = await asyncio.gather(
+            *[self._update_one(update_day, index) for index in _INDEXES],
+            return_exceptions=True,
+        )
 
-            return
+        no_err = True
 
-        self._logger.info("update is completed")
+        for err in errs:
+            if isinstance(err, (aiomoex.client.ISSMoexError, ValidationError, exceptions.DataError)):
+                self._logger.warning(f"can't complete update {err}")
+                no_err = False
+
+        if no_err:
+            self._logger.info("update is completed")
 
     async def _update_one(self, update_day: datetime, index: str) -> None:
         table = await self._repo.get(Table, index)
