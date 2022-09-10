@@ -6,7 +6,8 @@ from datetime import datetime, timedelta
 from typing import Final
 
 from poptimizer.data import backup, domain, exceptions
-from poptimizer.data.update import check_raw, cpi, indexes, securities, status, trading_date
+from poptimizer.data.update import cpi, indexes, securities, trading_date
+from poptimizer.data.update.raw import check_raw, reestry, status
 
 _BACKUP_COLLECTIONS: Final = (domain.Group.SECURITIES.value, domain.Group.RAW_DIV.value)
 
@@ -53,6 +54,7 @@ class Updater:
         indexes_srv: indexes.Service,
         securities_srv: securities.Service,
         status_srv: status.Service,
+        reestry_srv: reestry.Service,
         check_raw_srv: check_raw.Service,
     ) -> None:
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -65,7 +67,9 @@ class Updater:
         self._indexes_srv = indexes_srv
 
         self._securities_srv = securities_srv
+
         self._status_srv = status_srv
+        self._reestry_srv = reestry_srv
         self._check_raw_srv = check_raw_srv
 
         self._checked_day = datetime.fromtimestamp(0)
@@ -136,4 +140,8 @@ class Updater:
 
     async def _update_raw_div(self, update_day: datetime, sec: list[securities.Security]) -> None:
         status_rows = await self._status_srv.update(update_day, sec)
-        await self._check_raw_srv.check(status_rows)
+
+        await asyncio.gather(
+            self._reestry_srv.update(update_day, status_rows),
+            self._check_raw_srv.check(status_rows),
+        )
