@@ -1,4 +1,5 @@
 """Сервис проверки наличия сырых данных по ожидаемым дивидендам."""
+import asyncio
 import bisect
 import logging
 from datetime import datetime
@@ -51,8 +52,10 @@ class Service:
 
     async def check(self, status_rows: list[status.Status]) -> None:
         """Проверяет, что все даты ожидаемых дивидендов имеются во вручную введенных дивидендах."""
+        coro = [self._check_one(row) for row in status_rows]
+
         try:
-            await self._check(status_rows)
+            await asyncio.gather(*coro)
         except exceptions.DataError as err:
             self._logger.warning(f"can't complete check {err}")
 
@@ -60,10 +63,9 @@ class Service:
 
         self._logger.info("check is completed")
 
-    async def _check(self, status_rows: list[status.Status]) -> None:
-        for row in status_rows:
-            table = await self._repo.get(Table, row.ticker)
+    async def _check_one(self, status_row: status.Status) -> None:
+        table = await self._repo.get(Table, status_row.ticker)
 
-            if not table.has_date(row.date):
-                date = row.date.date()
-                self._logger.warning(f"{row.ticker} missed dividend at {date}")
+        if not table.has_date(status_row.date):
+            date = status_row.date.date()
+            self._logger.warning(f"{status_row.ticker} missed dividend at {date}")

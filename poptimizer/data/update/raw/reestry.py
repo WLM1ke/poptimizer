@@ -1,4 +1,4 @@
-"""Сервис дивидендов с сайта https://закрытияреестров.рф."""
+"""Сервис обновления дивидендов с сайта https://закрытияреестров.рф."""
 import asyncio
 import logging
 import re
@@ -27,7 +27,7 @@ class Table(check_raw.Table):
 
 
 class Service:
-    """Сервис дивидендов с сайта https://закрытияреестров.рф."""
+    """Сервис обновления дивидендов с сайта https://закрытияреестров.рф."""
 
     def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
         self._logger = logging.getLogger("Reestry")
@@ -36,20 +36,16 @@ class Service:
 
     async def update(self, update_day: datetime, status_rows: list[status.Status]) -> None:
         """Обновляет дивидендов с сайта https://закрытияреестров.рф."""
-        errs = await asyncio.gather(
-            *[self._update_one(update_day, row) for row in status_rows if not row.foreign],
-            return_exceptions=True,
-        )
+        coro = [self._update_one(update_day, row) for row in status_rows if not row.foreign]
 
-        no_err = True
+        try:
+            await asyncio.gather(*coro)
+        except (aiohttp.ClientError, exceptions.DataError) as err:
+            self._logger.warning(f"can't complete update {err}")
 
-        for err in errs:
-            if isinstance(err, (aiohttp.ClientError, exceptions.DataError)):
-                self._logger.warning(f"can't complete update {err}")
-                no_err = False
+            return
 
-        if no_err:
-            self._logger.info("update is completed")
+        self._logger.info("update is completed")
 
     async def _update_one(self, update_day: datetime, status_row: status.Status) -> None:
         table = await self._repo.get(Table, status_row.ticker)
