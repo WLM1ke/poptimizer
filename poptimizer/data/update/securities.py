@@ -56,7 +56,7 @@ class Security(domain.Row):
     @property
     def is_foreign(self) -> bool:
         """Является ли акция иностранной."""
-        return self.type == _FOREIGN_BOARD
+        return self.board == _FOREIGN_BOARD
 
     @property
     def ticker_base(self) -> str:
