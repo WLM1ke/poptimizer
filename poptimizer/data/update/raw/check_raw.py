@@ -1,22 +1,35 @@
 """Сервис проверки наличия сырых данных по ожидаемым дивидендам."""
 import asyncio
 import bisect
+import itertools
 import logging
 from datetime import datetime
-from typing import ClassVar
+from typing import ClassVar, Final
 
 from pydantic import Field, validator
 
-from poptimizer.data import domain, exceptions, repo, validate
+from poptimizer.data import domain, exceptions, repo
 from poptimizer.data.update.raw import status
+
+# Дата, с которой собираются дивиденды.
+_START_YEAR: Final = 2015
+START_DATE: Final = datetime(_START_YEAR, 1, 1)
 
 
 class Raw(domain.Row):
     """Информация о дивидендах с указанием валюты."""
 
     date: datetime
-    dividend: float
+    dividend: float = Field(gt=0)
     currency: domain.Currency
+
+    def to_tuple(self) -> tuple[datetime, float, domain.Currency]:
+        """Преобразует в кортеж для удобства сравнения."""
+        return self.date, self.dividend, self.currency
+
+    def is_valid_date(self) -> bool:
+        """Дата после начала сбора статистики."""
+        return self.date >= START_DATE
 
 
 class Table(domain.Table):
@@ -29,7 +42,7 @@ class Table(domain.Table):
         """Обновляет таблицу."""
         self.timestamp = update_day
 
-        rows.sort(key=lambda row: (row.date, row.dividend, row.currency))
+        rows.sort(key=lambda row: row.to_tuple())
 
         self.df = rows
 
@@ -40,7 +53,26 @@ class Table(domain.Table):
 
         return pos != len(df) and df[pos].date == date
 
-    _must_be_sorted_by_date = validator("df", allow_reuse=True)(validate.sorted_by_date_non_unique)
+    def has_row(self, raw_row: Raw) -> bool:
+        """Проверяет, есть ли соответсвующая строка в таблице."""
+        df = self.df
+        pos = bisect.bisect_left(
+            df,
+            raw_row.to_tuple(),
+            key=lambda row: row.to_tuple(),
+        )
+
+        return pos != len(df) and raw_row == df[pos]
+
+    @validator("df")
+    def _sorted_by_date_div_currency(cls, df: list[Raw]) -> list[Raw]:
+        """Валидирует сортировку списка по полю даты, дивидендам и валюте по возрастанию."""
+        dates_pairs = itertools.pairwise(row.to_tuple() for row in df)
+
+        if not all(row < next_ for row, next_ in dates_pairs):
+            raise ValueError("raw dividends are not sorted")
+
+        return df
 
 
 class Service:
