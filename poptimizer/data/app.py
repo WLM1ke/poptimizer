@@ -6,7 +6,7 @@ from poptimizer.data import backup, updater
 from poptimizer.data.edit import selected
 from poptimizer.data.repo import Repo
 from poptimizer.data.update import cpi, indexes, securities, trading_date
-from poptimizer.data.update.raw import check_raw, reestry, status
+from poptimizer.data.update.raw import check_raw, nasdaq, reestry, status
 
 
 def create_app(mongo_db: AsyncIOMotorDatabase, session: aiohttp.ClientSession) -> updater.Updater:
@@ -21,6 +21,7 @@ def create_app(mongo_db: AsyncIOMotorDatabase, session: aiohttp.ClientSession) -
         securities.Service(repo, session),
         status.Service(repo, session),
         reestry.Service(repo, session),
+        nasdaq.Service(repo, session),
         check_raw.Service(repo),
     )
 

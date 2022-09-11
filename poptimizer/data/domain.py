@@ -18,6 +18,7 @@ class Group(str, Enum):  # noqa: WPS600
     STATUS = "status"
     RAW_DIV = "raw_div"
     REESTRY = "reestry"
+    NASDAQ = "nasdaq"
 
     def __str__(self) -> str:
         """Отображение в виде значения."""

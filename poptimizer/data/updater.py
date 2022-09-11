@@ -7,7 +7,7 @@ from typing import Final
 
 from poptimizer.data import backup, domain, exceptions
 from poptimizer.data.update import cpi, indexes, securities, trading_date
-from poptimizer.data.update.raw import check_raw, reestry, status
+from poptimizer.data.update.raw import check_raw, nasdaq, reestry, status
 
 _BACKUP_COLLECTIONS: Final = (domain.Group.SECURITIES.value, domain.Group.RAW_DIV.value)
 
@@ -55,6 +55,7 @@ class Updater:
         securities_srv: securities.Service,
         status_srv: status.Service,
         reestry_srv: reestry.Service,
+        nasdaq_srv: nasdaq.Service,
         check_raw_srv: check_raw.Service,
     ) -> None:
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -70,6 +71,7 @@ class Updater:
 
         self._status_srv = status_srv
         self._reestry_srv = reestry_srv
+        self._nasdaq_srv = nasdaq_srv
         self._check_raw_srv = check_raw_srv
 
         self._checked_day = datetime.fromtimestamp(0)
@@ -143,5 +145,6 @@ class Updater:
 
         await asyncio.gather(
             self._reestry_srv.update(update_day, status_rows),
+            self._nasdaq_srv.update(update_day, status_rows),
             self._check_raw_srv.check(status_rows),
         )

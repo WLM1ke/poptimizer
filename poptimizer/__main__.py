@@ -14,7 +14,12 @@ from poptimizer import config, exceptions, lgr
 from poptimizer.data import app
 from poptimizer.server import server
 
-_HEADERS: Final = types.MappingProxyType({"User-Agent": "POptimizer"})
+_HEADERS: Final = types.MappingProxyType(
+    {
+        "User-Agent": "POptimizer",
+        "Connection": "keep-alive",
+    },
+)
 
 
 class Module(Protocol):
