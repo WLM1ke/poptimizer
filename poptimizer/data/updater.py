@@ -93,7 +93,7 @@ class Updater:
                 return_when=asyncio.FIRST_COMPLETED,
             )
 
-        self._logger.info(f"stopped with last update for {self._checked_day:{_DATE_FORMAT}}")
+        self._logger.info(f"shutdown completed with last update for {self._checked_day:{_DATE_FORMAT}}")
 
     async def _init_run(self) -> None:
         await self._backup_srv.restore(_BACKUP_COLLECTIONS)
@@ -110,7 +110,7 @@ class Updater:
         if self._checked_day >= last_day:
             return
 
-        self._logger.info(f"{last_day:{_DATE_FORMAT}} ended - checking new trading day")
+        self._logger.info(f"checking new trading data for {last_day:{_DATE_FORMAT}}")
 
         new_update_day = await self._date_srv.update(self._checked_day)
 

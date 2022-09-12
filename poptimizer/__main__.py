@@ -75,6 +75,7 @@ class App:
 
         Сервер останавливается по сигналу SIGINT, а остальные службы с помощью события.
         """
+        self._logger.info("starting...")
         tasks = [asyncio.create_task(module.run(self._stop_event)) for module in modules]
 
         for task in asyncio.as_completed(tasks):
@@ -102,7 +103,7 @@ class App:
             self._logger.info("shutdown completed")
 
     def _signal_handler(self) -> None:
-        self._logger.info("shutdown signal received")
+        self._logger.info("shutdown signal received...")
 
         self._stop_event.set()
 
