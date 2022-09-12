@@ -8,7 +8,6 @@ from aiohttp.typedefs import Handler
 from pydantic import ValidationError
 
 from poptimizer.data import exceptions
-from poptimizer.exceptions import POError
 from poptimizer.server import logger
 
 _LOGGER: Final = logging.getLogger("Server")
@@ -38,18 +37,9 @@ async def error(
     request: web.Request,
     handler: Handler,  # noqa: WPS110
 ) -> web.StreamResponse:
-    """Преобразует ошибки web.HTTPBadRequest для пользовательских ошибок и web.HTTPInternalServerError для остальных."""
+    """Преобразует ошибки в web.HTTPBadRequest для пользовательских ошибок."""
     try:
         return await handler(request)
-    except web.HTTPException:  # noqa: WPS329
-        raise
     except (ValidationError, exceptions.EditError) as err:
-        raise web.HTTPBadRequest(text=str(err))
-    except BaseException as err:  # noqa: WPS424
-        err_text = repr(err)
-        if isinstance(err, POError):
-            err_text = str(err)
-
-        _LOGGER.exception(f"internal error while handling request -> {err_text}")
-
-        raise web.HTTPInternalServerError
+        reason = str(err)
+        raise web.HTTPBadRequest(text=reason.splitlines()[0], reason=reason)

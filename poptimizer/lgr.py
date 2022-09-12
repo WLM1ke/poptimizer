@@ -43,6 +43,9 @@ class ColorFormatter(logging.Formatter):
         record = copy(record)
         record.levelname = self.levels[record.levelno]
 
+        if "aiohttp" in record.name:
+            record.name = "Server"
+
         record.name = f"{record.name}:".ljust(_LOGGER_NAME_SIZE)
 
         if color_msg := getattr(record, COLOR_MSG, None):

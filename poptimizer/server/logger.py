@@ -22,22 +22,33 @@ class AccessLogger(AbstractAccessLogger):
 
         Сохраняет цветное отображения для консоли и обычное для отправки в Телеграм.
         """
-        req_tmpl, req_tmpl_color = _format_request(request)
-        time_tmpl = _format_time(request)
-        res_tmpl, res_tmpl_color = _format_response(response)
+        msg, msg_color = _prepare_msgs(request, response)
 
         if response.status < http.HTTPStatus.INTERNAL_SERVER_ERROR:
             self.logger.info(
-                f"{req_tmpl} {res_tmpl} {time_tmpl}",
-                extra={lgr.COLOR_MSG: f"{req_tmpl_color} {res_tmpl_color} {time_tmpl}"},
+                msg,
+                extra={lgr.COLOR_MSG: msg_color},
             )
 
             return
 
         self.logger.warning(
-            f"{req_tmpl} {res_tmpl} {time_tmpl}",
-            extra={lgr.COLOR_MSG: f"{req_tmpl_color} {res_tmpl_color} {time_tmpl}"},
+            f"{msg} -> {response.reason}",
+            extra={
+                lgr.COLOR_MSG: f"{msg_color} -> {response.reason}",
+            },
         )
+
+
+def _prepare_msgs(request: web.BaseRequest, response: web.StreamResponse) -> tuple[str, str]:
+    req_tmpl, req_tmpl_color = _format_request(request)
+    time_tmpl = _format_time(request)
+    res_tmpl, res_tmpl_color = _format_response(response)
+
+    return (
+        f"{req_tmpl} {res_tmpl} {time_tmpl}",
+        f"{req_tmpl_color} {res_tmpl_color} {time_tmpl}",
+    )
 
 
 def _format_request(request: web.BaseRequest) -> tuple[str, str]:
