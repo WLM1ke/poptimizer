@@ -137,7 +137,7 @@
                     <template x-for="(row, index) in dividends" :key="index">
                         <tr>
                             <td class="table__cell" x-text="formatDate(row.date)"></td>
-                            <td class="table__cell table__cell_right" x-text="row.value"></td>
+                            <td class="table__cell table__cell_right" x-text="row.dividend"></td>
                             <td class="table__cell table__cell_center" x-text="row.currency"></td>
                             <td class="table__cell table__cell_center table__cell_with-form">
                                 <button

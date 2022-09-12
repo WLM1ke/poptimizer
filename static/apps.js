@@ -150,7 +150,7 @@ window.dividendsApp = function () {
 
                     this.dividends = json.map( row => {
                         const {date, ...rest} = row;
-                        rest.date = new Date(date);
+                        rest.date = new Date(date + ".000Z");
 
                         return rest;
                     });
@@ -163,7 +163,7 @@ window.dividendsApp = function () {
                         const last = this.dividends[this.dividends.length - 1];
 
                         this.newDate = this.formatDate(last.date);
-                        this.newValue = last.value;
+                        this.newValue = last.dividend;
                         this.newCurrency = last.currency;
                     }
 
@@ -226,7 +226,7 @@ window.dividendsApp = function () {
         add() {
             this.dividends.push({
                 date: new Date(this.newDate),
-                value: parseFloat(this.newValue),
+                dividend: parseFloat(this.newValue),
                 currency: this.newCurrency,
                 status: "extra",
             });
@@ -239,16 +239,13 @@ window.dividendsApp = function () {
         async save() {
             this.status = "Saving";
 
-            const div = {
-                "ticker": this.selectedTicker,
-                "dividends": this.dividends
+            const div = this.dividends
                     .filter(div => (div.status !== "missed"))
                     .map(div => {
                         const {status, ...rest} = div;
 
                         return rest;
-                    }),
-            };
+                    })
 
             fetch(`/dividends/${this.selectedTicker}`, {
                 method: "PUT",

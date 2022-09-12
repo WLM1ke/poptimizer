@@ -43,10 +43,10 @@ class Row(BaseModel):
     @validator("date", pre=True, check_fields=False)
     def _string_date_to_datetime(cls, date: str | datetime) -> datetime:
         if isinstance(date, str):
-            date = datetime.fromisoformat(date)
+            date = datetime.fromisoformat(date.removesuffix("Z"))
 
         if date != datetime(*date.timetuple()[:3]):
-            raise ValueError(f"not a date {date}")
+            raise ValueError(f"wrong {date}")
 
         return date
 

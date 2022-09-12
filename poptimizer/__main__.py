@@ -53,10 +53,16 @@ class App:
             self._motor_db() as mongo_db,
         ):
             selected_srv = app.create_selected_srv(mongo_db)
+            dividends_srv = app.create_dividends_srv(mongo_db)
 
             modules: list[Module] = [
                 app.create_app(mongo_db, session),
-                server.Server(self._cfg.server.host, self._cfg.server.port, selected_srv),
+                server.Server(
+                    self._cfg.server.host,
+                    self._cfg.server.port,
+                    selected_srv,
+                    dividends_srv,
+                ),
             ]
 
             await self._run_with_graceful_shutdown(modules)

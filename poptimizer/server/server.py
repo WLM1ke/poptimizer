@@ -4,7 +4,7 @@ import logging
 
 from aiohttp import web
 
-from poptimizer.data.edit import selected
+from poptimizer.data.edit import dividends, selected
 from poptimizer.server import logger, middleware, views
 
 
@@ -19,19 +19,18 @@ class Server:
         host: str,
         port: int,
         selected_srv: selected.Service,
+        dividends_srv: dividends.Service,
     ):
         self._logger = logging.getLogger("Server")
         self._host = host
         self._port = port
 
         self._selected_srv = selected_srv
+        self._dividends_srv = dividends_srv
 
     async def run(self, stop_event: asyncio.Event) -> None:
         """Запускает сервер и останавливает его после завершения события."""
-        app = web.Application(middlewares=[middleware.set_start_time_and_headers, middleware.error])
-
-        views.Selected.register(app, self._selected_srv)
-        views.Frontend.register(app)
+        app = await self._prepare_app()
 
         runner = web.AppRunner(
             app,
@@ -56,4 +55,13 @@ class Server:
 
         await runner.cleanup()
 
-        self._logger.info("stopped")
+        self._logger.info("shutdown completed")
+
+    async def _prepare_app(self) -> web.Application:
+        app = web.Application(middlewares=[middleware.set_start_time_and_headers, middleware.error])
+
+        views.Selected.register(app, self._selected_srv)
+        views.Dividends.register(app, self._dividends_srv)
+        views.Frontend.register(app)
+
+        return app
