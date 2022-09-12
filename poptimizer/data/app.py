@@ -5,7 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from poptimizer.data import backup, updater
 from poptimizer.data.edit import dividends, selected
 from poptimizer.data.repo import Repo
-from poptimizer.data.update import cpi, indexes, securities, trading_date
+from poptimizer.data.update import cpi, indexes, securities, trading_date, usd
 from poptimizer.data.update.raw import check_raw, nasdaq, reestry, status
 
 
@@ -19,6 +19,7 @@ def create_app(mongo_db: AsyncIOMotorDatabase, session: aiohttp.ClientSession) -
         cpi.Service(repo, session),
         indexes.Service(repo, session),
         securities.Service(repo, session),
+        usd.Service(repo, session),
         status.Service(repo, session),
         reestry.Service(repo, session),
         nasdaq.Service(repo, session),

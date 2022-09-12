@@ -15,6 +15,7 @@ class Group(str, Enum):  # noqa: WPS600
     CPI = "cpi"
     INDEXES = "indexes"
     SECURITIES = "securities"
+    USD = "usd"
     STATUS = "status"
     RAW_DIV = "raw_div"
     REESTRY = "reestry"
