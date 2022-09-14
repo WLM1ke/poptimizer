@@ -16,6 +16,7 @@ class Group(str, Enum):  # noqa: WPS600
     INDEXES = "indexes"
     SECURITIES = "securities"
     USD = "usd"
+    QUOTES = "quotes"
     STATUS = "status"
     RAW_DIV = "raw_div"
     REESTRY = "reestry"

@@ -67,7 +67,7 @@ class Service:
         try:
             rows = await self._update(update_day)
         except (aiomoex.client.ISSMoexError, ValidationError, exceptions.DataError) as err:
-            raise exceptions.UpdateError("can't update usd update") from err
+            raise exceptions.UpdateError("can't complete usd update") from err
 
         self._logger.info("update is completed")
 

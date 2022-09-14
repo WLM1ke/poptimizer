@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Final
 
 from poptimizer.data import backup, domain, exceptions
-from poptimizer.data.update import cpi, indexes, securities, trading_date, usd
+from poptimizer.data.update import cpi, indexes, quotes, securities, trading_date, usd
 from poptimizer.data.update.raw import check_raw, nasdaq, reestry, status
 
 _BACKUP_COLLECTIONS: Final = (domain.Group.SECURITIES.value, domain.Group.RAW_DIV.value)
@@ -53,6 +53,7 @@ class Updater:
         cpi_srv: cpi.Service,
         indexes_srv: indexes.Service,
         securities_srv: securities.Service,
+        quotes_srv: quotes.Service,
         usd_srv: usd.Service,
         status_srv: status.Service,
         reestry_srv: reestry.Service,
@@ -69,6 +70,7 @@ class Updater:
         self._indexes_srv = indexes_srv
 
         self._securities_srv = securities_srv
+        self._quotes_srv = quotes_srv
         self._usd_srv = usd_srv
 
         self._status_srv = status_srv
@@ -142,6 +144,7 @@ class Updater:
         sec = await self._securities_srv.update(update_day)
         await asyncio.gather(
             self._usd_srv.update(update_day),
+            self._quotes_srv.update(update_day, sec),
             self._update_raw_div(update_day, sec),
         )
 

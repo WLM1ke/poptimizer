@@ -7,13 +7,13 @@ import aiofiles
 import bson
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from poptimizer import config
+from poptimizer import consts
 
 
 class Service:
     """Сервис для осуществления бэкапов и восстановлений."""
 
-    _dump: ClassVar = config.ROOT_PATH / "dump"
+    _dump: ClassVar = consts.ROOT_PATH / "dump"
 
     def __init__(self, mongo_db: AsyncIOMotorDatabase) -> None:
         self._logger = logging.getLogger("Backup")

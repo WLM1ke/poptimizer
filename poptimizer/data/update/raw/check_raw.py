@@ -4,16 +4,13 @@ import bisect
 import itertools
 import logging
 from datetime import datetime
-from typing import ClassVar, Final
+from typing import ClassVar
 
 from pydantic import Field, validator
 
+from poptimizer import consts
 from poptimizer.data import domain, exceptions, repo
 from poptimizer.data.update.raw import status
-
-# Дата, с которой собираются дивиденды.
-_START_YEAR: Final = 2015
-START_DATE: Final = datetime(_START_YEAR, 1, 1)
 
 
 class Raw(domain.Row):
@@ -29,7 +26,7 @@ class Raw(domain.Row):
 
     def is_valid_date(self) -> bool:
         """Дата после начала сбора статистики."""
-        return self.date >= START_DATE
+        return self.date >= consts.START_DATE
 
 
 class Table(domain.Table):

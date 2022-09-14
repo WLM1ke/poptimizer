@@ -3,7 +3,7 @@ from typing import ClassVar
 
 from aiohttp import web
 
-from poptimizer import config
+from poptimizer import consts
 from poptimizer.data.edit import dividends, selected
 
 
@@ -71,7 +71,7 @@ class Dividends(web.View):
 class Frontend(web.View):
     """Отображение главной страницы."""
 
-    _static: ClassVar = config.ROOT_PATH / "static"
+    _static: ClassVar = consts.ROOT_PATH / "static"
 
     @classmethod
     def register(cls, app: web.Application) -> None:
