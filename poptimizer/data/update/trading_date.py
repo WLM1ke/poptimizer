@@ -11,7 +11,6 @@ from poptimizer.data.repo import Repo
 
 
 class _TradingDate(domain.Row):
-    """Строка с данными о торговых днях - должна быть одна."""
 
     date: datetime = Field(alias="till")
 
@@ -25,6 +24,7 @@ class _Payload(BaseModel):
 
     @validator("df")
     def _must_be_one_row(cls, df: list[_TradingDate]) -> list[_TradingDate]:
+        """Строка с данными о торговых днях - должна быть одна."""
         if (count := len(df)) != 1:
             raise ValueError(f"wrong rows count {count}")
 
@@ -46,26 +46,24 @@ class Service:
         self._repo = repo
         self._session = session
 
-    async def get_last_date(self) -> datetime:
-        """Выдает последнюю дату с рыночными данным."""
+    async def get_date_from_local_store(self) -> datetime:
+        """Выдает последнюю торговую дату, сохраненную локально."""
         table = await self._repo.get(Table)
 
         return table.timestamp
 
-    async def update(self, checked_day: datetime) -> datetime:
-        """Обновляет информацию о торговых датах, если они изменились.
-
-        Возвращает последнюю дату с рыночными данным.
-        """
+    async def get_date_from_iss(self) -> datetime:
+        """Получает информацию о последней торговой дате c MOEX ISS."""
         try:
-            timestamp = await self._download()
+            return await self._download()
         except (aiomoex.client.ISSMoexError, ValidationError) as err:
             raise exceptions.UpdateError("trading dates") from err
 
-        if timestamp > checked_day:
-            await self._save(timestamp)
+    async def save(self, timestamp: datetime) -> None:
+        """Сохраняет информацию о торговой дате."""
+        table = Table(timestamp=timestamp)
 
-        return timestamp
+        await self._repo.save(table)
 
     async def _download(self) -> datetime:
         json = await aiomoex.get_board_dates(
@@ -76,8 +74,3 @@ class Service:
         )
 
         return _Payload.parse_obj({"df": json}).last_date()
-
-    async def _save(self, timestamp: datetime) -> None:
-        table = Table(timestamp=timestamp)
-
-        await self._repo.save(table)

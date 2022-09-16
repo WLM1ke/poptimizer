@@ -22,27 +22,6 @@ _CHECK_INTERVAL: Final = timedelta(minutes=1)
 _DATE_FORMAT: Final = "%Y-%m-%d"
 
 
-def _last_day() -> datetime:
-    now = datetime.now(_MOEX_TZ)
-    end_of_trading = now.replace(
-        hour=_END_HOUR,
-        minute=_END_MINUTE,
-        second=0,
-        microsecond=0,
-        tzinfo=_MOEX_TZ,
-    )
-
-    delta = 2
-    if end_of_trading < now:
-        delta = 1
-
-    return datetime(
-        year=now.year,
-        month=now.month,
-        day=now.day,
-    ) - timedelta(days=delta)
-
-
 class Updater:
     """Сервис обновления данных."""
 
@@ -105,7 +84,7 @@ class Updater:
         await self._backup_srv.restore(_BACKUP_COLLECTIONS)
 
         try:
-            self._checked_day = await self._date_srv.get_last_date()
+            self._checked_day = await self._date_srv.get_date_from_local_store()
         except exceptions.DataError as err:
             raise exceptions.DataError("can't init update process") from err
         self._logger.info(f"started with last update for {self._checked_day:{_DATE_FORMAT}}")
@@ -118,7 +97,7 @@ class Updater:
 
         self._logger.info(f"checking new trading data for {last_day:{_DATE_FORMAT}}")
 
-        new_update_day = await self._date_srv.update(self._checked_day)
+        new_update_day = await self._date_srv.get_date_from_iss()
 
         if new_update_day <= self._checked_day:
             self._checked_day = last_day
@@ -126,9 +105,11 @@ class Updater:
 
             return
 
-        self._logger.info("beginning updates")
+        self._logger.info("updates are beginning")
 
         await self._update(new_update_day)
+
+        await self._date_srv.save(new_update_day)
 
         self._checked_day = last_day
         self._logger.info("updates are completed")
@@ -162,3 +143,25 @@ class Updater:
             self._nasdaq_srv.update(update_day, status_rows),
             self._check_raw_srv.check(status_rows),
         )
+
+
+def _last_day() -> datetime:
+    now = datetime.now(_MOEX_TZ)
+    end_of_trading = now.replace(
+        hour=_END_HOUR,
+        minute=_END_MINUTE,
+        second=0,
+        microsecond=0,
+        tzinfo=_MOEX_TZ,
+    )
+
+    delta = 2
+    if end_of_trading < now:
+        delta = 1
+
+    return datetime(
+        year=now.year,
+        month=now.month,
+        day=now.day,
+    ) - timedelta(days=delta)
+
