@@ -15,13 +15,13 @@ openpyxl = "^3.0.10"
 pydantic = "^1.9.2"
 uvloop = "^0.17.0"
 aiofiles = "^22.1.0"
+types-aiofiles = "^22.1.0"
 lxml = "^4.9.1"
 
 [tool.poetry.dev-dependencies]
-flake8 = "^4.0.1"
 mypy = "^0.971"
-pytest = "^7.1.2"
 wemake-python-styleguide = "^0.16.1"
+pytest = "^7.1.2"
 pytest-cov = "^3.0.0"
 black = {extras = ["d"], version = "^22.6.0"}
 
