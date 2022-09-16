@@ -13,7 +13,7 @@ motor = "^3.0.0"
 aiomoex = "^2.0.0"
 openpyxl = "^3.0.10"
 pydantic = "^1.9.2"
-uvloop = "^0.16.0"
+uvloop = "^0.17.0"
 aiofiles = "^22.1.0"
 lxml = "^4.9.1"
 

@@ -19,6 +19,8 @@ update:
 	$(PKG_MNG) upgrade $(TOOLS)
 	poetry env use $(PYTHON)
 	poetry update
+	poetry install --sync
+	poetry show -o
 lint:
 	$(VENV_ACTIVATE);black $(SRC) && isort . && mypy $(SRC) && flake8 $(SRC)
 test: lint
