@@ -10,9 +10,9 @@ import psutil
 from motor import motor_asyncio
 
 from poptimizer.shared import adapters, connections
-
+import os
 # Путь к dump с данными по дивидендам
-MONGO_DUMP: Final = pathlib.Path(__file__).parents[3] / "dump"
+MONGO_DUMP: Final = pathlib.Path(os.getenv("DUMP_PATH",pathlib.Path(__file__).parents[3] / "dump"))
 
 # Ссылки на данные по дивидендам в интернете
 DIV_DATA_URL: Final = (
@@ -70,7 +70,7 @@ async def _restore_dump(
     """Осуществляет восстановление данных по дивидендам."""
     if SOURCE_DB not in await client.list_database_names():
         logging.info("Начато восстановление данных с дивидендами")
-        mongo_restore = ["mongorestore", MONGO_DUMP]
+        mongo_restore = ["mongorestore", "--uri="+connections.MONGO_URI, MONGO_DUMP]
         process = psutil.Popen(mongo_restore)
         status = process.wait()
         logging.info(f"Восстановление данных с дивидендами завершен со статусом {status}")
@@ -83,7 +83,7 @@ async def _dump_dividends_db(client: motor_asyncio.AsyncIOMotorClient) -> None:
     div_count = await collection.find_one({"_id": ID})
     if div_count is None or n_docs != div_count[KEY]:
         logging.info(f"Backup данных с дивидендами {n_docs} документов")
-        process = psutil.Popen(["mongodump", "--out", MONGO_DUMP, "--db", SOURCE_DB])
+        process = psutil.Popen(["mongodump", "--uri="+connections.MONGO_URI, "--out", MONGO_DUMP, "--db", SOURCE_DB])
         status = process.wait()
         await collection.replace_one({"_id": ID}, {KEY: n_docs}, upsert=True)
         logging.info(f"Backup данных с дивидендами завершен со статусом {status}")

@@ -3,10 +3,10 @@ import pickle  # noqa: S403
 from typing import Any, Final
 
 import pymongo
-
+from poptimizer.shared import connections
 # Старые настройки по MongoDB
-_MONGO_URI: Final = "mongodb://localhost:27017"
-MONGO_CLIENT: Final = pymongo.MongoClient(_MONGO_URI, tz_aware=False)
+# _MONGO_URI: Final = "mongodb://localhost:27017"
+MONGO_CLIENT: Final = pymongo.MongoClient(connections.MONGO_URI, tz_aware=False)
 DB: Final = "data"
 MISC: Final = "misc"
 _ID: Final = "_id"

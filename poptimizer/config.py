@@ -5,7 +5,7 @@ from typing import Union, cast
 import pandas as pd
 import torch
 import yaml
-
+import os
 from poptimizer.shared.log import get_handlers
 
 
@@ -24,13 +24,13 @@ pd.set_option("display.width", None)
 _root = pathlib.Path(__file__).parents[1]
 
 # Путь к директории с отчетами
-REPORTS_PATH = _root / "reports"
+REPORTS_PATH = pathlib.Path(os.getenv("REPORTS_PATH",_root / "reports"))
 
 # Путь к директории с портфелями
-PORT_PATH = _root / "portfolio"
+PORT_PATH = pathlib.Path(os.getenv("PORTFOLIO_PATH",_root / "portfolio"))
 
 # Путь к директории с логами
-LOG_PATH = _root / "logs"
+LOG_PATH = pathlib.Path(os.getenv("LOG_PATH",_root / "logs"))
 
 # Конфигурация логгера
 logging.basicConfig(level=logging.INFO, handlers=get_handlers(LOG_PATH))
@@ -38,7 +38,8 @@ logging.basicConfig(level=logging.INFO, handlers=get_handlers(LOG_PATH))
 
 def _load_config() -> dict[str, Union[int, float, str]]:
     cfg = {}
-    path = _root / "config" / "config.yaml"
+    path = pathlib.Path(os.getenv("CONFIG_PATH",_root / "config")) / "config.yaml"
+    print(path)
     if path.exists():
         with path.open() as file:
             cfg = yaml.safe_load(file)
