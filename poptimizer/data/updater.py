@@ -19,6 +19,8 @@ _END_HOUR: Final = 0
 _END_MINUTE: Final = 45
 
 _CHECK_INTERVAL: Final = timedelta(minutes=1)
+_BACK_OFF_FACTOR: Final = 2
+
 _DATE_FORMAT: Final = "%Y-%m-%d"
 
 
@@ -41,6 +43,7 @@ class Updater:
         check_raw_srv: check_raw.Service,
     ) -> None:
         self._logger = logging.getLogger(self.__class__.__name__)
+        self._factor = 1
 
         self._backup_srv = backup_srv
 
@@ -70,11 +73,14 @@ class Updater:
                 await self._try_to_update()
             except exceptions.DataError as err:
                 self._logger.warning(f"can't complete update {err}")
+                self._factor *= _BACK_OFF_FACTOR
+            else:
+                self._factor = 1
 
             aws = (stop_event.wait(),)
             await asyncio.wait(
                 aws,
-                timeout=_CHECK_INTERVAL.total_seconds(),
+                timeout=_CHECK_INTERVAL.total_seconds() * self._factor,
                 return_when=asyncio.FIRST_COMPLETED,
             )
 
@@ -164,4 +170,3 @@ def _last_day() -> datetime:
         month=now.month,
         day=now.day,
     ) - timedelta(days=delta)
-
