@@ -26,4 +26,4 @@ lint:
 test: lint
 	$(VENV_ACTIVATE);pytest $(SRC) -v --cov=$(SRC) --cov-report=term-missing --cov-report=xml --setup-show
 run:
-	$(VENV_ACTIVATE);(export $$(cat .env | grep -o '^[^#]\+' | xargs) && $(PYTHON) -m $(SRC))
+	$(VENV_ACTIVATE);(export $$(cat .env | grep -o '^[^#]\+' | xargs) && $(SRC))

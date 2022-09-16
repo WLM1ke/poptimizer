@@ -25,6 +25,9 @@ wemake-python-styleguide = "^0.16.1"
 pytest-cov = "^3.0.0"
 black = {extras = ["d"], version = "^22.6.0"}
 
+[tool.poetry.scripts]
+poptimizer="poptimizer.__main__:main"
+
 [tool.mypy]
 plugins = [
     "pydantic.mypy"
@@ -51,5 +54,5 @@ omit = ["*/tests/*"]
 line-length = 120
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
