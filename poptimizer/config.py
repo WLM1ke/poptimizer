@@ -3,7 +3,7 @@ from typing import Final
 
 from pydantic import BaseModel, BaseSettings, Field, MongoDsn
 
-_MAX_ISS_REQUESTS: Final = 20
+_MAX_ISS_REQUESTS: Final = 10
 _DEFAULT_PORT: Final = 5000
 
 
