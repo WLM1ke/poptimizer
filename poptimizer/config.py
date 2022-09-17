@@ -17,7 +17,7 @@ class Mongo(BaseSettings):
 class HTTPClient(BaseSettings):
     """Настройки HTTP-клиента."""
 
-    pool_size: int = Field(default=_MAX_ISS_REQUESTS, gt=0)
+    con_per_host: int = Field(default=_MAX_ISS_REQUESTS, gt=0)
 
 
 class Telegram(BaseSettings):

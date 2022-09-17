@@ -42,7 +42,7 @@ class App:
         async with (  # noqa: WPS316
             self._signal_suppressor(),
             aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(limit=self._cfg.http_client.pool_size),
+                connector=aiohttp.TCPConnector(limit_per_host=self._cfg.http_client.con_per_host),
                 headers=_HEADERS,
             ) as session,
             lgr.config(
