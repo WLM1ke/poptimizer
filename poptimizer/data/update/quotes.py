@@ -7,6 +7,7 @@ from typing import ClassVar
 import aiohttp
 import aiomoex
 from pydantic import Field, validator
+from shared import retry
 
 from poptimizer import consts
 from poptimizer.data import domain, exceptions, validate
@@ -84,6 +85,15 @@ class Service:
 
         await self._repo.save(table)
 
+    @retry.AsyncExponential(  # type: ignore
+        retry.Policy(
+            attempts=3,
+            start_timeout_sec=60,
+            factor=2,
+            exceptions=exceptions.UpdateError,
+        ),
+        logger=logging.getLogger("Quotes"),
+    )
     async def _download(
         self,
         sec: securities.Security,
@@ -98,14 +108,17 @@ class Service:
             case _:
                 raise exceptions.UpdateError(f"unknown board {sec.board} for ticker {sec.ticker}")
 
-        json = await aiomoex.get_market_candles(
-            session=self._session,
-            start=start_date and str(start_date.date()),
-            end=str(update_day.date()),
-            interval=24,
-            security=sec.ticker,
-            market=market,
-            engine="stock",
-        )
+        try:
+            json = await aiomoex.get_market_candles(
+                session=self._session,
+                start=start_date and str(start_date.date()),
+                end=str(update_day.date()),
+                interval=24,
+                security=sec.ticker,
+                market=market,
+                engine="stock",
+            )
+        except aiohttp.client_exceptions.ClientConnectorError as err:
+            raise exceptions.UpdateError(f"can't download {sec.board}.{sec.ticker}") from err
 
         return domain.Payload[Quote].parse_obj({"df": json}).df
