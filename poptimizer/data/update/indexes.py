@@ -6,7 +6,7 @@ from typing import ClassVar, Final
 
 import aiohttp
 import aiomoex
-from pydantic import Field, ValidationError, validator
+from pydantic import Field, validator
 
 from poptimizer.data import domain, exceptions, validate
 from poptimizer.data.repo import Repo
@@ -64,13 +64,7 @@ class Service:
     async def update(self, update_day: datetime) -> None:
         """Обновляет котировки биржевых индексов."""
         coro = [self._update_one(update_day, index) for index in _INDEXES]
-
-        try:
-            await asyncio.gather(*coro)
-        except (aiomoex.client.ISSMoexError, ValidationError, exceptions.DataError) as err:
-            self._logger.warning(f"can't complete update {err}")
-
-            return
+        await asyncio.gather(*coro)
 
         self._logger.info("update is completed")
 

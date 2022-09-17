@@ -37,13 +37,7 @@ class Service:
     async def update(self, update_day: datetime, status_rows: list[status.Status]) -> None:
         """Обновляет дивидендов с сайта https://закрытияреестров.рф."""
         coro = [self._update_one(update_day, row) for row in status_rows if not row.foreign]
-
-        try:
-            await asyncio.gather(*coro)
-        except (aiohttp.ClientError, exceptions.DataError) as err:
-            self._logger.warning(f"can't complete update {err}")
-
-            return
+        await asyncio.gather(*coro)
 
         self._logger.info("update is completed")
 

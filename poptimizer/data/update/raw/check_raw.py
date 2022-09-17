@@ -9,7 +9,7 @@ from typing import ClassVar
 from pydantic import Field, validator
 
 from poptimizer import consts
-from poptimizer.data import domain, exceptions, repo
+from poptimizer.data import domain, repo
 from poptimizer.data.update.raw import status
 
 
@@ -82,13 +82,7 @@ class Service:
     async def check(self, status_rows: list[status.Status]) -> None:
         """Проверяет, что все даты ожидаемых дивидендов имеются во вручную введенных дивидендах."""
         coro = [self._check_one(row) for row in status_rows]
-
-        try:
-            await asyncio.gather(*coro)
-        except exceptions.DataError as err:
-            self._logger.warning(f"can't complete check {err}")
-
-            return
+        await asyncio.gather(*coro)
 
         self._logger.info("check is completed")
 

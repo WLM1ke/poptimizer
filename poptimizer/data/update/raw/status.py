@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from typing import ClassVar, Final
 
 import aiohttp
-from pydantic import Field, ValidationError, validator
+from pydantic import Field, validator
 
 from poptimizer.data import domain, exceptions, repo
 from poptimizer.data.update import securities
@@ -64,12 +64,7 @@ class Service:
 
     async def update(self, update_day: datetime, sec: list[securities.Security]) -> list[Status]:
         """Обновляет статус дивидендов и логирует неудачную попытку."""
-        try:
-            status = await self._update(update_day, sec)
-        except (aiohttp.ClientError, ValidationError, exceptions.DataError) as err:
-            self._logger.warning(f"can't complete update {err}")
-
-            return []
+        status = await self._update(update_day, sec)
 
         self._logger.info("update is completed")
 

@@ -6,7 +6,7 @@ from typing import ClassVar
 
 import aiohttp
 import aiomoex
-from pydantic import Field, ValidationError, validator
+from pydantic import Field, validator
 
 from poptimizer import consts
 from poptimizer.data import domain, exceptions, validate
@@ -70,11 +70,7 @@ class Service:
     async def update(self, update_day: datetime, sec_list: list[securities.Security]) -> None:
         """Обновляет котировки ценных бумаг."""
         coro = [self._update_one(update_day, sec) for sec in sec_list]
-
-        try:
-            await asyncio.gather(*coro)
-        except (aiomoex.client.ISSMoexError, ValidationError, exceptions.DataError) as err:
-            raise exceptions.UpdateError("can't complete quotes update") from err
+        await asyncio.gather(*coro)
 
         self._logger.info("update is completed")
 

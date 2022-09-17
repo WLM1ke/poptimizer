@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from datetime import datetime
 from typing import ClassVar
 
-from pydantic import Field, ValidationError, validator
+from pydantic import Field, validator
 
 from poptimizer.data import domain, exceptions, repo, validate
 from poptimizer.data.update import securities, usd
@@ -48,11 +48,7 @@ class Service:
     async def update(self, update_day: datetime, sec_list: list[securities.Security], usd_list: list[usd.USD]) -> None:
         """Обновляет дивиденды в рублях."""
         coro = [self._update_one(update_day, sec, usd_list) for sec in sec_list]
-
-        try:
-            await asyncio.gather(*coro)
-        except (ValidationError, exceptions.DataError) as err:
-            raise exceptions.UpdateError("can't complete dividends update") from err
+        await asyncio.gather(*coro)
 
         self._logger.info("update is completed")
 

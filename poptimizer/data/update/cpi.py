@@ -8,7 +8,7 @@ from typing import ClassVar, Final
 import aiohttp
 from openpyxl.reader import excel
 from openpyxl.worksheet import worksheet
-from pydantic import Field, ValidationError, validator
+from pydantic import Field, validator
 
 from poptimizer.data import domain, exceptions, validate
 from poptimizer.data.repo import Repo
@@ -76,12 +76,7 @@ class Service:
 
     async def update(self, update_day: datetime) -> None:
         """Обновляет потребительскую инфляцию и логирует неудачную попытку."""
-        try:
-            await self._update(update_day)
-        except (aiohttp.ClientError, ValidationError, exceptions.DataError) as err:
-            self._logger.warning(f"can't complete update {err}")
-
-            return
+        await self._update(update_day)
 
         self._logger.info("update is completed")
 

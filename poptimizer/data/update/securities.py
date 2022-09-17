@@ -7,9 +7,9 @@ from typing import ClassVar, Final
 
 import aiohttp
 import aiomoex
-from pydantic import Field, ValidationError, validator
+from pydantic import Field, validator
 
-from poptimizer.data import domain, exceptions
+from poptimizer.data import domain
 from poptimizer.data.repo import Repo
 
 _PREFERRED_TYPE: Final = "2"
@@ -108,10 +108,7 @@ class Service:
 
     async def update(self, update_day: datetime) -> list[Security]:
         """Обновляет перечень торгуемых бумаг, и переносит список выбранных ранее."""
-        try:
-            sec = await self._update(update_day)
-        except (aiomoex.client.ISSMoexError, ValidationError, exceptions.DataError) as err:
-            raise exceptions.UpdateError("securities") from err
+        sec = await self._update(update_day)
 
         self._logger.info("update is completed")
 

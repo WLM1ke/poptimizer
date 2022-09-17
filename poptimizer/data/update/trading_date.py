@@ -4,9 +4,9 @@ from typing import ClassVar
 
 import aiohttp
 import aiomoex
-from pydantic import BaseModel, Field, ValidationError, validator
+from pydantic import BaseModel, Field, validator
 
-from poptimizer.data import domain, exceptions
+from poptimizer.data import domain
 from poptimizer.data.repo import Repo
 
 
@@ -54,10 +54,7 @@ class Service:
 
     async def get_date_from_iss(self) -> datetime:
         """Получает информацию о последней торговой дате c MOEX ISS."""
-        try:
-            return await self._download()
-        except (aiomoex.client.ISSMoexError, ValidationError) as err:
-            raise exceptions.UpdateError("trading dates") from err
+        return await self._download()
 
     async def save(self, timestamp: datetime) -> None:
         """Сохраняет информацию о торговой дате."""

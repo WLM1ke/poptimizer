@@ -5,7 +5,7 @@ from typing import ClassVar
 
 import aiohttp
 import aiomoex
-from pydantic import Field, ValidationError, validator
+from pydantic import Field, validator
 
 from poptimizer.data import domain, exceptions, validate
 from poptimizer.data.repo import Repo
@@ -64,10 +64,7 @@ class Service:
 
     async def update(self, update_day: datetime) -> list[USD]:
         """Обновляет котировки курса доллара."""
-        try:
-            rows = await self._update(update_day)
-        except (aiomoex.client.ISSMoexError, ValidationError, exceptions.DataError) as err:
-            raise exceptions.UpdateError("can't complete usd update") from err
+        rows = await self._update(update_day)
 
         self._logger.info("update is completed")
 

@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, ClassVar, Final
 
 import aiohttp
-from pydantic import BaseModel, Field, ValidationError, validator
+from pydantic import BaseModel, Field, validator
 
 from poptimizer.data import domain, exceptions
 from poptimizer.data.repo import Repo
@@ -68,13 +68,7 @@ class Service:
     async def update(self, update_day: datetime, status_rows: list[status.Status]) -> None:
         """Обновляет дивидендов с сайта https://www.nasdaq.com."""
         coro = [self._update_one(update_day, row) for row in status_rows if row.foreign]
-
-        try:
-            await asyncio.gather(*coro)
-        except (aiohttp.ClientError, ValidationError, exceptions.DataError) as err:
-            self._logger.warning(f"can't complete update {err}")
-
-            return
+        await asyncio.gather(*coro)
 
         self._logger.info("update is completed")
 

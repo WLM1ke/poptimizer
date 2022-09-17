@@ -88,11 +88,8 @@ class Updater:
 
     async def _init_run(self) -> None:
         await self._backup_srv.restore(_BACKUP_COLLECTIONS)
+        self._checked_day = await self._date_srv.get_date_from_local_store()
 
-        try:
-            self._checked_day = await self._date_srv.get_date_from_local_store()
-        except exceptions.DataError as err:
-            raise exceptions.DataError("can't init update process") from err
         self._logger.info(f"started with last update for {self._checked_day:{_DATE_FORMAT}}")
 
     async def _try_to_update(self) -> None:
