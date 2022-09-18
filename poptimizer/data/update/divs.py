@@ -8,7 +8,8 @@ from typing import ClassVar
 
 from pydantic import Field, validator
 
-from poptimizer.data import domain, exceptions, repo, validate
+from poptimizer.core import domain, repository
+from poptimizer.data import exceptions, validate
 from poptimizer.data.update import securities, usd
 from poptimizer.data.update.raw import check_raw
 
@@ -20,7 +21,7 @@ class Dividend(domain.Row):
     dividend: float = Field(gt=0)
 
 
-class Table(domain.Table):
+class Table(domain.BaseEntity):
     """Таблица дивидендов в рублях."""
 
     group: ClassVar[domain.Group] = domain.Group.DIVIDENDS
@@ -41,9 +42,9 @@ class Service:
     Для пересчета долларовых дивидендов используется курс на момент закрытия реестра.
     """
 
-    def __init__(self, repository: repo.Repo) -> None:
+    def __init__(self, repo: repository.Repo) -> None:
         self._logger = logging.getLogger("Dividends")
-        self._repo = repository
+        self._repo = repo
 
     async def update(self, update_day: datetime, sec_list: list[securities.Security], usd_list: list[usd.USD]) -> None:
         """Обновляет дивиденды в рублях."""

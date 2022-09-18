@@ -1,20 +1,20 @@
 """Создает приложение для сбора данных и сервисы для их редактирования."""
 import aiohttp
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from motor.motor_asyncio import AsyncIOMotorClient
 
-from poptimizer.data import backup, updater
+from poptimizer.core import backup, repository
+from poptimizer.data import updater
 from poptimizer.data.edit import dividends, selected
-from poptimizer.data.repo import Repo
 from poptimizer.data.update import cpi, divs, indexes, quotes, securities, trading_date, usd
 from poptimizer.data.update.raw import check_raw, nasdaq, reestry, status
 
 
-def create_app(mongo_db: AsyncIOMotorDatabase, session: aiohttp.ClientSession) -> updater.Updater:
+def create_app(mongo_client: AsyncIOMotorClient, session: aiohttp.ClientSession) -> updater.Updater:
     """Создает приложение для сбора данных."""
-    repo = Repo(mongo_db)
+    repo = repository.Repo(mongo_client)
 
     return updater.Updater(
-        backup.Service(mongo_db),
+        backup.Service(mongo_client),
         trading_date.Service(repo, session),
         cpi.Service(repo, session),
         indexes.Service(repo, session),
@@ -29,11 +29,11 @@ def create_app(mongo_db: AsyncIOMotorDatabase, session: aiohttp.ClientSession) -
     )
 
 
-def create_selected_srv(mongo_db: AsyncIOMotorDatabase) -> selected.Service:
+def create_selected_srv(mongo_db: AsyncIOMotorClient) -> selected.Service:
     """Создает сервис редактирования выбранных тикеров."""
-    return selected.Service(Repo(db=mongo_db))
+    return selected.Service(repository.Repo(client=mongo_db))
 
 
-def create_dividends_srv(mongo_db: AsyncIOMotorDatabase) -> dividends.Service:
+def create_dividends_srv(mongo_db: AsyncIOMotorClient) -> dividends.Service:
     """Создает сервис редактирования дивидендов."""
-    return dividends.Service(Repo(db=mongo_db))
+    return dividends.Service(repository.Repo(client=mongo_db))

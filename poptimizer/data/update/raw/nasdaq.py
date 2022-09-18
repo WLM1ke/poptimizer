@@ -7,8 +7,8 @@ from typing import Any, ClassVar, Final
 import aiohttp
 from pydantic import BaseModel, Field, validator
 
-from poptimizer.data import domain, exceptions
-from poptimizer.data.repo import Repo
+from poptimizer.core import domain, repository
+from poptimizer.data import exceptions
 from poptimizer.data.update.raw import check_raw, status
 
 _URL: Final = "https://api.nasdaq.com/api/quote/{ticker}/dividends?assetclass=stocks"
@@ -60,7 +60,7 @@ class Table(check_raw.Table):
 class Service:
     """Сервис обновления дивидендов с сайта https://www.nasdaq.com."""
 
-    def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
+    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession) -> None:
         self._logger = logging.getLogger("NASDAQ")
         self._repo = repo
         self._session = session

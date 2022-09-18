@@ -11,7 +11,6 @@ class Mongo(BaseSettings):
     """Настройки MongoDB."""
 
     uri: MongoDsn = MongoDsn("localhost", scheme="mongodb")
-    db: str = "data"
 
 
 class HTTPClient(BaseSettings):

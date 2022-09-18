@@ -8,8 +8,8 @@ from enum import Enum, unique
 
 from pydantic import BaseModel
 
-from poptimizer.data import domain, exceptions
-from poptimizer.data.repo import Repo
+from poptimizer.core import domain, repository
+from poptimizer.data import exceptions
 from poptimizer.data.update import securities
 from poptimizer.data.update.raw import check_raw, nasdaq, reestry
 
@@ -87,7 +87,7 @@ class SaveDividendsDTO(BaseModel):
 class Service:
     """Сервис редактирования перечня выбранных тикеров."""
 
-    def __init__(self, repo: Repo) -> None:
+    def __init__(self, repo: repository.Repo) -> None:
         self._logger = logging.getLogger("DivEdit")
         self._repo = repo
 

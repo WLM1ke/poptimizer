@@ -9,8 +9,8 @@ from typing import ClassVar, Final
 import aiohttp
 from lxml import html  # noqa: S410
 
-from poptimizer.data import domain, exceptions
-from poptimizer.data.repo import Repo
+from poptimizer.core import domain, repository
+from poptimizer.data import exceptions
 from poptimizer.data.update.raw import check_raw, status
 
 _URL: Final = "https://закрытияреестров.рф/"
@@ -29,7 +29,7 @@ class Table(check_raw.Table):
 class Service:
     """Сервис обновления дивидендов с сайта https://закрытияреестров.рф."""
 
-    def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
+    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession) -> None:
         self._logger = logging.getLogger("Reestry")
         self._repo = repo
         self._session = session

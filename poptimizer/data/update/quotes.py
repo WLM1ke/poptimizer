@@ -7,12 +7,11 @@ from typing import ClassVar
 import aiohttp
 import aiomoex
 from pydantic import Field, validator
-from shared import retry
 
-from poptimizer import consts
-from poptimizer.data import domain, exceptions, validate
-from poptimizer.data.repo import Repo
+from poptimizer.core import consts, domain, repository
+from poptimizer.data import exceptions, validate
 from poptimizer.data.update import securities
+from poptimizer.shared import retry
 
 
 class Quote(domain.Row):
@@ -26,7 +25,7 @@ class Quote(domain.Row):
     turnover: float = Field(alias="value", ge=0)
 
 
-class Table(domain.Table):
+class Table(domain.BaseEntity):
     """Таблица с котировками ценных бумаг."""
 
     group: ClassVar[domain.Group] = domain.Group.QUOTES
@@ -63,7 +62,7 @@ class Table(domain.Table):
 class Service:
     """Сервис обновления котировок ценных бумаг."""
 
-    def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
+    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession) -> None:
         self._logger = logging.getLogger("Quotes")
         self._repo = repo
         self._session = session
@@ -85,7 +84,7 @@ class Service:
 
         await self._repo.save(table)
 
-    @retry.AsyncExponential(  # type: ignore
+    @retry.AsyncExponential(
         retry.Policy(
             attempts=3,
             start_timeout_sec=60,
@@ -121,4 +120,4 @@ class Service:
         except aiohttp.client_exceptions.ClientConnectorError as err:
             raise exceptions.UpdateError(f"can't download {sec.board}.{sec.ticker}") from err
 
-        return domain.Payload[Quote].parse_obj({"df": json}).df
+        return domain.Rows[Quote].parse_obj(json).__root__

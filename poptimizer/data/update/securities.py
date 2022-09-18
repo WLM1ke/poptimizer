@@ -9,8 +9,7 @@ import aiohttp
 import aiomoex
 from pydantic import Field, validator
 
-from poptimizer.data import domain
-from poptimizer.data.repo import Repo
+from poptimizer.core import domain, repository
 
 _PREFERRED_TYPE: Final = "2"
 _PREFERRED_SUFFIX: Final = "P"
@@ -70,7 +69,7 @@ class Security(domain.Row):
         return self.ticker
 
 
-class Table(domain.Table):
+class Table(domain.BaseEntity):
     """Таблица с торгуемыми бумагами."""
 
     group: ClassVar[domain.Group] = domain.Group.SECURITIES
@@ -101,7 +100,7 @@ class Table(domain.Table):
 class Service:
     """Сервис обновления перечня торгуемых бумаг."""
 
-    def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
+    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession) -> None:
         self._logger = logging.getLogger("Securities")
         self._repo = repo
         self._session = session
@@ -116,6 +115,7 @@ class Service:
 
     async def _update(self, update_day: datetime) -> list[Security]:
         table = await self._repo.get(Table)
+
         rows = await self._download()
 
         table.update(update_day, rows)
@@ -137,4 +137,4 @@ class Service:
         json_list = await asyncio.gather(*aws)
         json = list(itertools.chain(*json_list))
 
-        return domain.Payload[Security].parse_obj({"df": json}).df
+        return domain.Rows[Security].parse_obj(json).__root__

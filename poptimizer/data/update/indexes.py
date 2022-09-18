@@ -8,8 +8,8 @@ import aiohttp
 import aiomoex
 from pydantic import Field, validator
 
-from poptimizer.data import domain, exceptions, validate
-from poptimizer.data.repo import Repo
+from poptimizer.core import domain, repository
+from poptimizer.data import exceptions, validate
 
 _INDEXES: Final = ("MCFTRR", "MEOGTRR", "IMOEX", "RVI")
 
@@ -21,7 +21,7 @@ class Index(domain.Row):
     close: float = Field(alias="CLOSE", gt=0)
 
 
-class Table(domain.Table):
+class Table(domain.BaseEntity):
     """Таблица с котировками индекса."""
 
     group: ClassVar[domain.Group] = domain.Group.INDEXES
@@ -56,7 +56,7 @@ class Table(domain.Table):
 class Service:
     """Сервис обновления котировок биржевых индексов."""
 
-    def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
+    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession) -> None:
         self._logger = logging.getLogger("Index")
         self._repo = repo
         self._session = session
@@ -96,4 +96,4 @@ class Service:
             market="index",
         )
 
-        return domain.Payload[Index].parse_obj({"df": json}).df
+        return domain.Rows[Index].parse_obj(json).__root__

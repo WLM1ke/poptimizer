@@ -7,8 +7,8 @@ import aiohttp
 import aiomoex
 from pydantic import Field, validator
 
-from poptimizer.data import domain, exceptions, validate
-from poptimizer.data.repo import Repo
+from poptimizer.core import domain, repository
+from poptimizer.data import exceptions, validate
 
 
 class USD(domain.Row):
@@ -22,7 +22,7 @@ class USD(domain.Row):
     turnover: float = Field(alias="value", gt=0)
 
 
-class Table(domain.Table):
+class Table(domain.BaseEntity):
     """Таблица с котировками курса доллара."""
 
     group: ClassVar[domain.Group] = domain.Group.USD
@@ -57,7 +57,7 @@ class Table(domain.Table):
 class Service:
     """Сервис обновления котировок курса доллара."""
 
-    def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
+    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession) -> None:
         self._logger = logging.getLogger("USD")
         self._repo = repo
         self._session = session
@@ -97,4 +97,4 @@ class Service:
             engine="currency",
         )
 
-        return domain.Payload[USD].parse_obj({"df": json}).df
+        return domain.Rows[USD].parse_obj(json).__root__

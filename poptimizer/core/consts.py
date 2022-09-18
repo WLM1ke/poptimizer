@@ -8,4 +8,4 @@ _START_YEAR: Final = 2015
 START_DATE: Final = datetime(_START_YEAR, 1, 1)
 
 # Корень проекта для адресации к статическим файлам и бэкапам.
-ROOT_PATH: Final = Path(__file__).parents[1]
+ROOT_PATH: Final = Path(__file__).parents[2]

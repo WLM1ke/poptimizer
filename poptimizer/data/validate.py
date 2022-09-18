@@ -3,7 +3,7 @@ import itertools
 from datetime import datetime
 from typing import Protocol
 
-from poptimizer import consts
+from poptimizer.core import consts
 
 
 class _RowWithDate(Protocol):

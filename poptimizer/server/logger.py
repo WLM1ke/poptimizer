@@ -6,7 +6,7 @@ from typing import Final
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
 
-from poptimizer import lgr
+from poptimizer.shared import lgr
 
 START_TIME: Final = "start_time"
 

@@ -6,8 +6,7 @@ import aiohttp
 import aiomoex
 from pydantic import BaseModel, Field, validator
 
-from poptimizer.data import domain
-from poptimizer.data.repo import Repo
+from poptimizer.core import domain, repository
 
 
 class _TradingDate(domain.Row):
@@ -31,18 +30,18 @@ class _Payload(BaseModel):
         return df
 
 
-class Table(BaseModel):
+class Table(domain.BaseEntity):
     """Таблица с информацией о последней торговой дате."""
 
     group: ClassVar[domain.Group] = domain.Group.TRADING_DATE
-    id_: str = Field(default=domain.Group.TRADING_DATE, alias="_id", exclude=True)
+    id_: str = Field(default=domain.Group.TRADING_DATE.group, alias="_id", exclude=True)
     timestamp: datetime = datetime.fromtimestamp(0)
 
 
 class Service:
     """Сервис обновления таблицы с данными о торговых днях."""
 
-    def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
+    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession) -> None:
         self._repo = repo
         self._session = session
 

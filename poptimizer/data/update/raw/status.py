@@ -4,14 +4,14 @@ import io
 import itertools
 import logging
 import re
-from collections.abc import Iterator
 from datetime import datetime, timedelta
-from typing import ClassVar, Final
+from typing import ClassVar, Final, Iterator
 
 import aiohttp
 from pydantic import Field, validator
 
-from poptimizer.data import domain, exceptions, repo
+from poptimizer.core import domain, repository
+from poptimizer.data import exceptions
 from poptimizer.data.update import securities
 
 _URL: Final = "https://www.moex.com/ru/listing/listing-register-closing-csv.aspx"
@@ -30,7 +30,7 @@ class Status(domain.Row):
     date: datetime
 
 
-class Table(domain.Table):
+class Table(domain.BaseEntity):
     """Таблица с информацией о новых дивидендах."""
 
     group: ClassVar[domain.Group] = domain.Group.STATUS
@@ -57,9 +57,9 @@ class Table(domain.Table):
 class Service:
     """Сервис загрузки статуса дивидендов."""
 
-    def __init__(self, repository: repo.Repo, session: aiohttp.ClientSession) -> None:
+    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession) -> None:
         self._logger = logging.getLogger("Status")
-        self._repo = repository
+        self._repo = repo
         self._session = session
 
     async def update(self, update_day: datetime, sec: list[securities.Security]) -> list[Status]:

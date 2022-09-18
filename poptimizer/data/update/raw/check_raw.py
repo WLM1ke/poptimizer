@@ -8,8 +8,7 @@ from typing import ClassVar
 
 from pydantic import Field, validator
 
-from poptimizer import consts
-from poptimizer.data import domain, repo
+from poptimizer.core import consts, domain, repository
 from poptimizer.data.update.raw import status
 
 
@@ -29,7 +28,7 @@ class Raw(domain.Row):
         return self.date >= consts.START_DATE
 
 
-class Table(domain.Table):
+class Table(domain.BaseEntity):
     """Таблица дивидендов с указанием валюты введенная в ручную."""
 
     group: ClassVar[domain.Group] = domain.Group.RAW_DIV
@@ -75,9 +74,9 @@ class Table(domain.Table):
 class Service:
     """Сервис проверки наличия данных по ожидаемым дивидендам."""
 
-    def __init__(self, repository: repo.Repo) -> None:
+    def __init__(self, repo: repository.Repo) -> None:
         self._logger = logging.getLogger("CheckRaw")
-        self._repo = repository
+        self._repo = repo
 
     async def check(self, status_rows: list[status.Status]) -> None:
         """Проверяет, что все даты ожидаемых дивидендов имеются во вручную введенных дивидендах."""

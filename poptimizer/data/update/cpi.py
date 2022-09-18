@@ -10,8 +10,8 @@ from openpyxl.reader import excel
 from openpyxl.worksheet import worksheet
 from pydantic import Field, validator
 
-from poptimizer.data import domain, exceptions, validate
-from poptimizer.data.repo import Repo
+from poptimizer.core import domain, repository
+from poptimizer.data import exceptions, validate
 
 _URL: Final = "https://rosstat.gov.ru/storage/mediabank/ipc_4(2).xlsx"
 _SHEET_NAME: Final = "01"
@@ -48,7 +48,7 @@ class CPI(domain.Row):
         return date
 
 
-class Table(domain.Table):
+class Table(domain.BaseEntity):
     """Таблица с инфляцией."""
 
     group: ClassVar[domain.Group] = domain.Group.CPI
@@ -69,7 +69,7 @@ class Table(domain.Table):
 class Service:
     """Сервис обновления потребительской инфляции."""
 
-    def __init__(self, repo: Repo, session: aiohttp.ClientSession) -> None:
+    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession) -> None:
         self._logger = logging.getLogger("CPI")
         self._repo = repo
         self._session = session

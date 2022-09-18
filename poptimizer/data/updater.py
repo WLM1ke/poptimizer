@@ -5,11 +5,12 @@ import zoneinfo
 from datetime import datetime, timedelta
 from typing import Final
 
-from poptimizer.data import backup, domain, exceptions
+from poptimizer.core import backup, domain
+from poptimizer.data import exceptions
 from poptimizer.data.update import cpi, divs, indexes, quotes, securities, trading_date, usd
 from poptimizer.data.update.raw import check_raw, nasdaq, reestry, status
 
-_BACKUP_COLLECTIONS: Final = (domain.Group.SECURITIES.value, domain.Group.RAW_DIV.value)
+_BACKUP_COLLECTIONS: Final = (domain.Group.SECURITIES, domain.Group.RAW_DIV)
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")

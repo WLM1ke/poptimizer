@@ -1,31 +1,50 @@
 """Описание доменных объектов."""
 from datetime import datetime
 from enum import Enum, unique
-from typing import ClassVar, Generic, TypeVar
+from typing import ClassVar, Final, Generic, TypeVar
 
 from pydantic import BaseModel, Field, validator
 from pydantic.generics import GenericModel
 
+_DATA_DB: Final = "data_new"
+_PORTFOLIO_DB: Final = "portfolio"
+
 
 @unique
-class Group(str, Enum):  # noqa: WPS600
-    """Группы таблиц."""
+class Group(Enum):
+    """Группы объектов.
 
-    TRADING_DATE = "trading_date"
-    CPI = "cpi"
-    INDEXES = "indexes"
-    SECURITIES = "securities"
-    USD = "usd"
-    QUOTES = "quotes"
-    DIVIDENDS = "dividends"
-    STATUS = "status"
-    RAW_DIV = "raw_div"
-    REESTRY = "reestry"
-    NASDAQ = "nasdaq"
+    Объекты разбиты на отдельные модули (изолированные контексты), а в рамках модуля на группы.
+    """
+
+    TRADING_DATE = (_DATA_DB, "trading_date")
+    CPI = (_DATA_DB, "cpi")
+    INDEXES = (_DATA_DB, "indexes")
+    SECURITIES = (_DATA_DB, "securities")
+    USD = (_DATA_DB, "usd")
+    QUOTES = (_DATA_DB, "quotes")
+    DIVIDENDS = (_DATA_DB, "dividends")
+    STATUS = (_DATA_DB, "status")
+    RAW_DIV = (_DATA_DB, "raw_div")
+    REESTRY = (_DATA_DB, "reestry")
+    NASDAQ = (_DATA_DB, "nasdaq")
+
+    ACCOUNTS = (_PORTFOLIO_DB, "accounts")
+    PORTFOLIO = (_PORTFOLIO_DB, "portfolio")
 
     def __str__(self) -> str:
-        """Отображение в виде значения."""
-        return self.value
+        """Отображение в виде 'module.group'."""
+        return ".".join(self.value)
+
+    @property
+    def module(self) -> str:
+        """Модуль, к которому принадлежит объект."""
+        return self.value[0]
+
+    @property
+    def group(self) -> str:
+        """Группа в рамках модуля, к которому принадлежит объект."""
+        return self.value[1]
 
 
 @unique
@@ -62,14 +81,14 @@ class Row(BaseModel):
 _RowT = TypeVar("_RowT")
 
 
-class Payload(GenericModel, Generic[_RowT]):
+class Rows(GenericModel, Generic[_RowT]):
     """Строки с данными загруженные из внешних источников."""
 
-    df: list[_RowT]
+    __root__: list[_RowT]
 
 
-class Table(BaseModel):
-    """Таблица с данными."""
+class BaseEntity(BaseModel):
+    """Базовый доменный объект."""
 
     group: ClassVar[Group]
     id_: str = Field(alias="_id", exclude=True)

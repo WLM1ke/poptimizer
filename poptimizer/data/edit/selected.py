@@ -3,8 +3,8 @@ import logging
 
 from pydantic import BaseModel
 
+from poptimizer.core import repository
 from poptimizer.data.exceptions import EditError
-from poptimizer.data.repo import Repo
 from poptimizer.data.update import securities
 
 
@@ -24,7 +24,7 @@ class DTO(BaseModel):
 class Service:
     """Сервис редактирования перечня выбранных тикеров."""
 
-    def __init__(self, repo: Repo) -> None:
+    def __init__(self, repo: repository.Repo) -> None:
         self._logger = logging.getLogger("SecEdit")
         self._repo = repo
 

@@ -1,0 +1,114 @@
+from __future__ import annotations
+
+import itertools
+import logging
+from datetime import datetime
+from typing import Any, Final
+
+import aiohttp
+from pydantic import BaseModel, Field, root_validator, validator
+
+from poptimizer.shared import repository, domain
+
+_NEW_ACCOUNT: Final = "__new__"
+
+
+class Position(BaseModel):
+    ticker: str
+    shares: int = Field(ge=0)
+    lot: int = Field(ge=1)
+    price: float = Field(gt=0)
+    turnover: float = Field(ge=0)
+
+    @property
+    def value(self) -> float:
+        return self.shares * self.price
+
+    def weight(self, total: float) -> float:
+        return self.value / total
+
+    @root_validator
+    def _shares_multiple_of_lots(cls, values: dict[str, Any]) -> dict[str, Any]:
+        shares = values["shares"]
+        lot = values["lot"]
+        if shares % lot:
+            raise ValueError(f"shares {shares} is not multiple of lots {lot}")
+
+        return values
+
+
+class Portfolio(BaseModel):
+    positions: list[Position]
+    cash: int = Field(ge=0)
+
+    def __iadd__(self, other: Portfolio) -> Portfolio:
+        self.cash += other.cash
+
+        pos1 = self.positions
+        pos2 = other.positions
+        count1 = -len(pos1)
+        count2 = -len(pos2)
+
+        self.positions = []
+
+        while count1 and count2:
+            if pos1[count1].ticker < pos2[count2].ticker:
+                self.positions.append(pos1[count1])
+                count1 += 1
+            elif pos1[count1].ticker > pos2[count2].ticker:
+                self.positions.append(pos2[count2])
+                count2 += 1
+            else:
+                pos1[count1].shares += pos2[count2].shares
+                self.positions.append(pos1[count1])
+
+        if count1 != 0:
+            self.positions.extend(pos1[count1:])
+
+        if count2 != 0:
+            self.positions.extend(pos2[count2:])
+
+        return self
+
+    def value(self) -> float:
+        return sum((pos.value for pos in self.positions), self.cash)
+
+    @validator("positions")
+    def _positions_must_sorted_by_ticker(cls, positions: list[Position]) -> list[Position]:
+        ticker_pairs = itertools.pairwise(row.ticker for row in positions)
+
+        if not all(ticker < next_ for ticker, next_ in ticker_pairs):
+            raise ValueError("tickers are not sorted")
+
+        return positions
+    
+
+class BaseEntity(domain.BaseEntity)
+
+
+class Service:
+    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession) -> None:
+        self._logger = logging.getLogger("Accounts")
+        self._repo = repo
+        self._session = session
+
+    async def update(self, update_day: datetime) -> None:
+        """Обновляет котировки ценных бумаг."""
+        await self._update(update_day)
+
+        self._logger.info("update is completed")
+
+    async def _update(self, update_day: datetime) -> None:
+        portfolios = await self._repo.get_all(Portfolio)
+
+        start_date = table.last_row_date() or consts.START_DATE
+        rows = await self._download(sec, start_date, update_day)
+
+        table.update(update_day, rows)
+
+        await self._repo.save(table)
+        
+    async def _load_portfolios(self) -> list[Portfolio]:
+        portfolios = [port async for port in self._repo.get_all(Portfolio)]
+        
+        return portfolios or []
