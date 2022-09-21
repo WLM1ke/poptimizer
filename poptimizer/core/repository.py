@@ -28,6 +28,12 @@ class Repo:
 
         return entity_type.parse_obj(doc or {_MONGO_ID: id_})
 
+    async def get_many(self, entity_type: type[Entity], ids: list[str]) -> AsyncIterator[Entity]:
+        collection = self._client[entity_type.group.module][entity_type.group.group]
+
+        async for doc in collection.find({_MONGO_ID: {"$in": ids}}):
+            yield entity_type.parse_obj(doc)
+
     async def get_all(self, entity_type: type[Entity]) -> AsyncIterator[Entity]:
         """Загружает все доменные объекты определенного типа."""
         collection = self._client[entity_type.group.module][entity_type.group.group]
