@@ -28,8 +28,15 @@ class Repo:
 
         return entity_type.parse_obj(doc or {_MONGO_ID: id_})
 
-    async def save(self, entity: Entity[Entity_co]) -> None:
-        """Валидирует и сохраняет доменную сущность."""
+    async def get_all(self, entity_type: type[Entity]) -> AsyncIterator[Entity]:
+        """Загружает все доменные объекты определенного типа."""
+        collection = self._client[entity_type.group.module][entity_type.group.group]
+
+        async for doc in collection.find({}):
+            yield entity_type.parse_obj(doc)
+
+    async def save(self, entity: Entity) -> None:
+        """Валидирует и сохраняет доменный объект."""
         doc = _validate(entity)
 
         collection = self._client[entity.group.module][entity.group.group]
@@ -39,6 +46,12 @@ class Repo:
             replacement=doc,
             upsert=True,
         )
+
+    async def delete(self, entity: Entity) -> None:
+        """Удаляет доменный объект."""
+        collection = self._client[entity.group.module][entity.group.group]
+
+        await collection.delete_one(filter={_MONGO_ID: entity.id_})
 
 
 def _validate(table: Entity) -> dict[str, Any]:
