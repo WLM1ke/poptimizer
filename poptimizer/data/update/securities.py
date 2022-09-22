@@ -45,7 +45,6 @@ class Security(domain.Row):
     board: str = Field(alias="BOARDID")
     type: str = Field(alias="SECTYPE")
     instrument: str = Field(alias="INSTRID")
-    selected: bool = False
 
     @property
     def is_preferred(self) -> bool:
@@ -80,10 +79,6 @@ class Table(domain.BaseEntity):
         self.timestamp = update_day
 
         rows.sort(key=lambda sec: sec.ticker)
-
-        selected = {sec.ticker for sec in self.df if sec.selected}
-        for row in rows:
-            row.selected = row.ticker in selected
 
         self.df = rows
 
