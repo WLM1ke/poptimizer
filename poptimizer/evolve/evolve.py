@@ -1,8 +1,9 @@
 """Эволюция параметров модели."""
 import datetime
+import itertools
 import logging
 import operator
-from typing import Optional
+from typing import Optional, Final
 
 import numpy as np
 from scipy import stats
@@ -113,18 +114,18 @@ class Evolution:  # noqa: WPS214
 
             return None
 
-        prey = hunter.make_child(1 / self._scale)
+        for n_child in itertools.count(1):
+            self._logger.info(f"Потомок {n_child}:")
 
-        self._logger.info(f"Потомок:")
-        if (margin := self._eval_organism(prey)) is None:
-            return None
-        if margin[0] < 0:
-            return None
+            hunter = hunter.make_child(1 / self._scale)
+            if (margin := self._eval_organism(hunter)) is None:
+                return None
+            if margin[0] < 0:
+                return None
+            if (rnd := np.random.random()) < (slowness := margin[1]):
+                self._logger.info(f"Медленный не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
 
-        if (rnd := np.random.random()) < (slowness := margin[1]):
-            self._logger.info(f"Медленный не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
-
-            return None
+                return None
 
     def _eval_organism(self, organism: population.Organism) -> Optional[tuple[float, float]]:
         """Оценка организмов.
