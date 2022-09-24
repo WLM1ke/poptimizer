@@ -10,7 +10,7 @@ from typing import ClassVar, Final, Iterator
 import aiohttp
 from pydantic import Field, validator
 
-from poptimizer.core import domain, repository
+from poptimizer.core import domain, repository, viewer
 from poptimizer.data import exceptions
 from poptimizer.data.update import securities
 
@@ -57,10 +57,11 @@ class Table(domain.BaseEntity):
 class Service:
     """Сервис загрузки статуса дивидендов."""
 
-    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession) -> None:
+    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession, port_viewer: viewer.Portfolio) -> None:
         self._logger = logging.getLogger("Status")
         self._repo = repo
         self._session = session
+        self._viewer = port_viewer
 
     async def update(self, update_day: datetime, sec: list[securities.Security]) -> list[Status]:
         """Обновляет статус дивидендов и логирует неудачную попытку."""
@@ -79,7 +80,8 @@ class Service:
         table = await self._repo.get(Table)
 
         csv_file = await self._download()
-        row = self._parse(csv_file, sec)
+        selected = set(await self._viewer.tickers())
+        row = self._parse(csv_file, selected, sec)
 
         table.update(update_day, row)
 
@@ -90,13 +92,14 @@ class Service:
     async def _download(self) -> io.StringIO:
         async with self._session.get(_URL) as resp:
             if not resp.ok:
-                raise exceptions.UpdateError(f"bad dividends status respond {resp.reason}")
+                raise exceptions.DataUpdateError(f"bad dividends status respond {resp.reason}")
 
             return io.StringIO(await resp.text(), newline="")
 
     def _parse(
         self,
         csv_file: io.StringIO,
+        selected: set[str],
         sec: list[securities.Security],
     ) -> list[Status]:
         """Первая строка содержит заголовок, поэтому пропускается."""
@@ -106,6 +109,7 @@ class Service:
         return list(
             _status_gen(
                 self._parsed_rows_gen(reader),
+                selected,
                 {row.ticker: row for row in sec},
             ),
         )
@@ -130,10 +134,12 @@ class Service:
 
 def _status_gen(
     raw_rows: Iterator[tuple[str, datetime]],
+    selected: set[str],
     sec_hash: dict[str, securities.Security],
 ) -> Iterator[Status]:
     for ticker, date in raw_rows:
-        if (sec_desc := sec_hash.get(ticker)) and sec_desc.selected:
+        if ticker in selected:
+            sec_desc = sec_hash[ticker]
             yield Status(
                 ticker=ticker,
                 ticker_base=sec_desc.ticker_base,

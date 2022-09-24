@@ -40,6 +40,6 @@ async def error(
     """Преобразует ошибки в web.HTTPBadRequest для пользовательских ошибок."""
     try:
         return await handler(request)
-    except (ValidationError, exceptions.EditError) as err:
+    except (ValidationError, exceptions.DataEditError) as err:
         reason = str(err)
         raise web.HTTPBadRequest(text=reason.splitlines()[0], reason=reason)

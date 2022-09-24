@@ -128,6 +128,6 @@ class Service:
         sec = table.df[pos]
 
         if pos == len(table.df) or sec.ticker != ticker:
-            raise exceptions.EditError(f"wrong ticker {ticker}")
+            raise exceptions.DataEditError(f"wrong ticker {ticker}")
 
         return sec, table.timestamp

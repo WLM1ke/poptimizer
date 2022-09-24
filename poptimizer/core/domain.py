@@ -29,7 +29,6 @@ class Group(Enum):
     REESTRY = (_DATA_DB, "reestry")
     NASDAQ = (_DATA_DB, "nasdaq")
 
-    ACCOUNTS = (_PORTFOLIO_DB, "accounts")
     PORTFOLIO = (_PORTFOLIO_DB, "portfolio")
 
     def __str__(self) -> str:

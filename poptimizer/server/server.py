@@ -6,7 +6,9 @@ from aiohttp import web
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from poptimizer.data import data
-from poptimizer.data.edit import dividends, selected
+from poptimizer.data.edit import dividends
+from poptimizer.portfolio import portfolio
+from poptimizer.portfolio.edit import selected
 from poptimizer.server import logger, middleware, views
 
 
@@ -78,6 +80,6 @@ def create_server(
     return Server(
         host,
         port,
-        data.create_selected_srv(mongo_client),
+        portfolio.create_selected_srv(mongo_client),
         data.create_dividends_srv(mongo_client),
     )

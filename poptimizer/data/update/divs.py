@@ -96,4 +96,4 @@ def _div_in_rur(raw_row: check_raw.Raw, usd_list: list[usd.USD]) -> float:
 
             return raw_row.dividend * usd_list[pos - 1].close
         case _:
-            raise exceptions.UpdateError(f"unknown currency {raw_row.currency}")
+            raise exceptions.DataUpdateError(f"unknown currency {raw_row.currency}")

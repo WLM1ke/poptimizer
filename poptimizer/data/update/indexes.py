@@ -39,7 +39,7 @@ class Table(domain.BaseEntity):
         last = self.df[-1]
 
         if last != (first := rows[0]):
-            raise exceptions.UpdateError(f"{self.id_} data missmatch {last} vs {first}")
+            raise exceptions.DataUpdateError(f"{self.id_} data missmatch {last} vs {first}")
 
         self.df.extend(rows[1:])
 

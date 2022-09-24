@@ -3,14 +3,14 @@ import asyncio
 import logging
 import zoneinfo
 from datetime import datetime, timedelta
-from typing import Final
+from typing import Final, Protocol
 
 from poptimizer.core import backup, domain
 from poptimizer.data import exceptions
 from poptimizer.data.update import cpi, divs, indexes, quotes, securities, trading_date, usd
 from poptimizer.data.update.raw import check_raw, nasdaq, reestry, status
 
-_BACKUP_COLLECTIONS: Final = (domain.Group.SECURITIES, domain.Group.RAW_DIV)
+_BACKUP_COLLECTIONS: Final = (domain.Group.RAW_DIV,)
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -23,6 +23,13 @@ _CHECK_INTERVAL: Final = timedelta(minutes=1)
 _BACK_OFF_FACTOR: Final = 2
 
 _DATE_FORMAT: Final = "%Y-%m-%d"
+
+
+class UpdateStep(Protocol):
+    """Служба, отвечающая за обновление."""
+
+    async def update(self, update_day: datetime) -> None:
+        """Запуск обновления."""
 
 
 class Updater:
@@ -42,6 +49,7 @@ class Updater:
         reestry_srv: reestry.Service,
         nasdaq_srv: nasdaq.Service,
         check_raw_srv: check_raw.Service,
+        external_srv: UpdateStep,
     ) -> None:
         self._logger = logging.getLogger(self.__class__.__name__)
         self._factor = 1
@@ -62,6 +70,8 @@ class Updater:
         self._reestry_srv = reestry_srv
         self._nasdaq_srv = nasdaq_srv
         self._check_raw_srv = check_raw_srv
+
+        self._external_srv = external_srv
 
         self._checked_day = datetime.fromtimestamp(0)
 
@@ -126,6 +136,8 @@ class Updater:
         )
 
         await self._backup_srv.backup(_BACKUP_COLLECTIONS)
+
+        await self._external_srv.update(update_day)
 
     async def _update_sec(self, update_day: datetime) -> None:
         sec_list, usd_list = await asyncio.gather(

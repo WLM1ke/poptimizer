@@ -62,7 +62,7 @@ class Service:
 
         async with self._session.get(f"{_URL}{ticker}") as resp:
             if not resp.ok:
-                raise exceptions.UpdateError(f"{status_row.ticker} bad respond status {resp.reason}")
+                raise exceptions.DataUpdateError(f"{status_row.ticker} bad respond status {resp.reason}")
 
             return await resp.text()
 
@@ -83,7 +83,7 @@ def _validate_header(row: html.HtmlElement, data_col: int) -> None:
         share_type = "обыкновенную"
 
     if share_type not in (header := html.tostring(row[data_col], encoding="unicode")):
-        raise exceptions.UpdateError(f"wrong header {header}")
+        raise exceptions.DataUpdateError(f"wrong header {header}")
 
 
 def _parse_data(rows_iter: Iterable[html.HtmlElement], data_col: int) -> Iterable[check_raw.Raw]:
@@ -105,14 +105,14 @@ def _parse_data(rows_iter: Iterable[html.HtmlElement], data_col: int) -> Iterabl
 
 def _parse_date(date_raw: str) -> datetime:
     if not (date_re := _RE_DATE.search(date_raw)):
-        raise exceptions.UpdateError(f"can't parse date {date_raw}")
+        raise exceptions.DataUpdateError(f"can't parse date {date_raw}")
 
     return datetime.strptime(date_re.group(0), "%d.%m.%Y")
 
 
 def _parse_div(div_raw: str) -> tuple[float, domain.Currency]:
     if not (div_re := _RE_DIV.search(div_raw)):
-        raise exceptions.UpdateError(f"can't parse dividends {div_raw}")
+        raise exceptions.DataUpdateError(f"can't parse dividends {div_raw}")
 
     match div_re[2]:
         case "руб":
@@ -120,7 +120,7 @@ def _parse_div(div_raw: str) -> tuple[float, domain.Currency]:
         case "USD" | "$":
             currency = domain.Currency.USD
         case _:
-            raise exceptions.UpdateError(f"unknown currency {div_re[2]}")
+            raise exceptions.DataUpdateError(f"unknown currency {div_re[2]}")
 
     div = float(div_re[1].translate(_DIV_TRANSLATE))
 

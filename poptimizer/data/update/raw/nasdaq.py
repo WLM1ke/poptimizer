@@ -90,7 +90,7 @@ class Service:
 
         async with self._session.get(url) as resp:
             if not resp.ok:
-                raise exceptions.UpdateError(f"{status_row.ticker} bad respond status {resp.reason}")
+                raise exceptions.DataUpdateError(f"{status_row.ticker} bad respond status {resp.reason}")
 
             return await resp.json()
 

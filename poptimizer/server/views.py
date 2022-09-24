@@ -4,7 +4,8 @@ from typing import ClassVar
 from aiohttp import web
 
 from poptimizer.core import consts
-from poptimizer.data.edit import dividends, selected
+from poptimizer.data.edit import dividends
+from poptimizer.portfolio.edit import selected
 
 
 class Selected(web.View):

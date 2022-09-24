@@ -1,5 +1,5 @@
 """Реализация репозитория для доменных объектов."""
-from typing import Any, AsyncIterator, Final, TypeVar
+from typing import Any, Final, TypeVar
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -8,6 +8,7 @@ from poptimizer.core import domain
 _MONGO_ID: Final = "_id"
 
 Entity = TypeVar("Entity", bound=domain.BaseEntity)
+Doc = dict[str, Any]
 
 
 class Repo:
@@ -28,18 +29,12 @@ class Repo:
 
         return entity_type.parse_obj(doc or {_MONGO_ID: id_})
 
-    async def get_many(self, entity_type: type[Entity], ids: list[str]) -> AsyncIterator[Entity]:
-        collection = self._client[entity_type.group.module][entity_type.group.group]
-
-        async for doc in collection.find({_MONGO_ID: {"$in": ids}}):
-            yield entity_type.parse_obj(doc)
-
-    async def get_all(self, entity_type: type[Entity]) -> AsyncIterator[Entity]:
+    async def get_doc(self, group: domain.Group, id_: str | None = None) -> Doc:
         """Загружает все доменные объекты определенного типа."""
-        collection = self._client[entity_type.group.module][entity_type.group.group]
+        collection = self._client[group.module][group.group]
+        id_ = id_ or group.group
 
-        async for doc in collection.find({}):
-            yield entity_type.parse_obj(doc)
+        return (await collection.find_one({_MONGO_ID: id_})) or {_MONGO_ID: id_}
 
     async def save(self, entity: Entity) -> None:
         """Валидирует и сохраняет доменный объект."""

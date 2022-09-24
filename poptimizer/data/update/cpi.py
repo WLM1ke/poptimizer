@@ -59,7 +59,7 @@ class Table(domain.BaseEntity):
         self.timestamp = update_day
 
         if self.df != rows[: len(self.df)]:
-            raise exceptions.UpdateError("new cpi mismatch old")
+            raise exceptions.DataUpdateError("new cpi mismatch old")
 
         self.df = rows
 
@@ -93,7 +93,7 @@ class Service:
     async def _download(self) -> io.BytesIO:
         async with self._session.get(_URL) as resp:
             if not resp.ok:
-                raise exceptions.UpdateError(f"bad CPI respond status {resp.reason}")
+                raise exceptions.DataUpdateError(f"bad CPI respond status {resp.reason}")
 
             return io.BytesIO(await resp.read())
 
@@ -120,9 +120,9 @@ def _parse_rows(xlsx: io.BytesIO) -> list[CPI]:
 
 def _validate_data_position(ws: worksheet.Worksheet) -> None:
     if (first_month := ws[_FIRST_MONTH_CELL].value) != _FIRST_MONTH_VALUE:
-        raise exceptions.UpdateError(f"wrong first month {first_month}")
+        raise exceptions.DataUpdateError(f"wrong first month {first_month}")
     if (first_year := ws[_FIRST_YEAR_CELL].value) != _FIRST_YEAR_VALUE:
-        raise exceptions.UpdateError(f"first year {first_year}")
+        raise exceptions.DataUpdateError(f"first year {first_year}")
 
 
 def _get_next_month_end(date: datetime) -> datetime:

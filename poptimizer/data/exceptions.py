@@ -6,9 +6,9 @@ class DataError(exceptions.POError):
     """Базовая ошибка, связанная с обновлением данных."""
 
 
-class UpdateError(DataError):
+class DataUpdateError(DataError):
     """Ошибка сервисов обновления данных."""
 
 
-class EditError(DataError):
+class DataEditError(DataError):
     """Ошибка сервисов редактирования данных."""

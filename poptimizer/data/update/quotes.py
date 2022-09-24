@@ -44,7 +44,7 @@ class Table(domain.BaseEntity):
         last = self.df[-1]
 
         if last != (first := rows[0]):
-            raise exceptions.UpdateError(f"{self.id_} data missmatch {last} vs {first}")
+            raise exceptions.DataUpdateError(f"{self.id_} data missmatch {last} vs {first}")
 
         self.df.extend(rows[1:])
 
@@ -89,7 +89,7 @@ class Service:
             attempts=3,
             start_timeout_sec=60,
             factor=2,
-            exceptions=exceptions.UpdateError,
+            exceptions=exceptions.DataUpdateError,
         ),
         logger=logging.getLogger("Quotes"),
     )
@@ -105,7 +105,7 @@ class Service:
             case "FQBR":
                 market = "foreignshares"
             case _:
-                raise exceptions.UpdateError(f"unknown board {sec.board} for ticker {sec.ticker}")
+                raise exceptions.DataUpdateError(f"unknown board {sec.board} for ticker {sec.ticker}")
 
         try:
             json = await aiomoex.get_market_candles(
@@ -118,6 +118,6 @@ class Service:
                 engine="stock",
             )
         except (aiohttp.client_exceptions.ClientConnectorError, asyncio.TimeoutError) as err:
-            raise exceptions.UpdateError(f"can't download {sec.board}.{sec.ticker}") from err
+            raise exceptions.DataUpdateError(f"can't download {sec.board}.{sec.ticker}") from err
 
         return domain.Rows[Quote].parse_obj(json).__root__
