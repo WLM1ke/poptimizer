@@ -64,7 +64,12 @@ class Service:
 
     async def update(self, update_day: datetime, sec: list[securities.Security]) -> list[Status]:
         """Обновляет статус дивидендов и логирует неудачную попытку."""
-        status = await self._update(update_day, sec)
+        try:
+            status = await self._update(update_day, sec)
+        except exceptions.DataUpdateError as err:
+            self._logger.warning(f"can't complete update -> {err}")
+
+            return []
 
         self._logger.info("update is completed")
 
