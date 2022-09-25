@@ -128,7 +128,7 @@ async def config(
     session: aiohttp.ClientSession,
     token: str,
     chat_id: str,
-    level: int = logging.INFO,
+    level: int | str = logging.INFO,
 ) -> AsyncGenerator[None, None]:
     """Настраивает логирование в stdout, а для уровней WARNING и выше в Телеграм."""
     stream_handler = logging.StreamHandler(sys.stdout)

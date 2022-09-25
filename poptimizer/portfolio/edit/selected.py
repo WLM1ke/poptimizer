@@ -3,7 +3,8 @@ import logging
 
 from pydantic import BaseModel
 
-from poptimizer.core import repository, viewer
+from poptimizer.core import repository
+from poptimizer.data import adapter
 from poptimizer.portfolio.exceptions import PortfolioEditError
 from poptimizer.portfolio.update import portfolio
 
@@ -24,10 +25,10 @@ class DTO(BaseModel):
 class Service:
     """Сервис редактирования перечня выбранных тикеров."""
 
-    def __init__(self, repo: repository.Repo, data_viewer: viewer.MarketData) -> None:
+    def __init__(self, repo: repository.Repo, adapter_data: adapter.MarketData) -> None:
         self._logger = logging.getLogger("SecEdit")
         self._repo = repo
-        self._viewer = data_viewer
+        self._adapter = adapter_data
 
     async def get(self) -> DTO:
         """Загружает информацию о выбранных тикерах."""
@@ -56,7 +57,7 @@ class Service:
 
     async def _prepare_dto(self) -> tuple[DTO, portfolio.Portfolio]:
         port = await self._repo.get(portfolio.Portfolio)
-        sec = {ticker: False for ticker in (await self._viewer.securities()).index}
+        sec = {ticker: False for ticker in (await self._adapter.securities()).index}
         selected = {row.ticker: True for row in port.positions}
 
         rows = [

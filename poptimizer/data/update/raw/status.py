@@ -10,9 +10,10 @@ from typing import ClassVar, Final, Iterator
 import aiohttp
 from pydantic import Field, validator
 
-from poptimizer.core import domain, repository, viewer
+from poptimizer.core import domain, repository
 from poptimizer.data import exceptions
 from poptimizer.data.update import securities
+from poptimizer.portfolio import adapter
 
 _URL: Final = "https://www.moex.com/ru/listing/listing-register-closing-csv.aspx"
 _LOOK_BACK_DAYS: Final = 14
@@ -57,11 +58,11 @@ class Table(domain.BaseEntity):
 class Service:
     """Сервис загрузки статуса дивидендов."""
 
-    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession, port_viewer: viewer.Portfolio) -> None:
+    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession, adapter_port: adapter.Portfolio) -> None:
         self._logger = logging.getLogger("Status")
         self._repo = repo
         self._session = session
-        self._viewer = port_viewer
+        self._adapter = adapter_port
 
     async def update(self, update_day: datetime, sec: list[securities.Security]) -> list[Status]:
         """Обновляет статус дивидендов и логирует неудачную попытку."""
@@ -80,7 +81,7 @@ class Service:
         table = await self._repo.get(Table)
 
         csv_file = await self._download()
-        selected = set(await self._viewer.tickers())
+        selected = set(await self._adapter.tickers())
         row = self._parse(csv_file, selected, sec)
 
         table.update(update_day, row)

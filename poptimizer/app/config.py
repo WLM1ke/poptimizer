@@ -1,10 +1,20 @@
 """Настройки приложения."""
+import logging
 from typing import Final
 
 from pydantic import BaseModel, BaseSettings, Field, MongoDsn
 
 _MAX_ISS_REQUESTS: Final = 10
 _DEFAULT_PORT: Final = 5000
+
+
+class Logger(BaseSettings):
+    """Настройки логирования - сообщения выше уровня INFO дублируются в Телеграм."""
+
+    app_name: str = "POptimizer"
+    level: int | str = logging.INFO
+    telegram_token: str
+    telegram_chat_id: str
 
 
 class Mongo(BaseSettings):
@@ -19,11 +29,12 @@ class HTTPClient(BaseSettings):
     con_per_host: int = Field(default=_MAX_ISS_REQUESTS, gt=0)
 
 
-class Telegram(BaseSettings):
-    """Настройки Телеграмма для отправки сообщений об ошибках."""
+class Resources(BaseModel):
+    """Настройки приложения."""
 
-    token: str
-    chat_id: str
+    logger: Logger = Logger()
+    mongo: Mongo = Mongo()
+    http_client: HTTPClient = HTTPClient()
 
 
 class Server(BaseSettings):
@@ -31,12 +42,3 @@ class Server(BaseSettings):
 
     host: str = "localhost"
     port: int = _DEFAULT_PORT
-
-
-class Config(BaseModel):
-    """Настройки приложения."""
-
-    mongo: Mongo = Mongo()
-    http_client: HTTPClient = HTTPClient()
-    telegram: Telegram = Telegram()
-    server: Server = Server()

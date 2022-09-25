@@ -8,7 +8,8 @@ from typing import Any, ClassVar
 import pandas as pd
 from pydantic import BaseModel, Field, root_validator, validator
 
-from poptimizer.core import consts, domain, repository, viewer
+from poptimizer.core import consts, domain, repository
+from poptimizer.data import adapter
 from poptimizer.portfolio import exceptions
 
 
@@ -121,10 +122,10 @@ class Portfolio(domain.BaseEntity):
 class Service:
     """Сервис обновления стоимости и оборачиваемости портфеля."""
 
-    def __init__(self, repo: repository.Repo, data_viewer: viewer.MarketData) -> None:
+    def __init__(self, repo: repository.Repo, data_adapter: adapter.MarketData) -> None:
         self._logger = logging.getLogger("Portfolio")
         self._repo = repo
-        self._viewer = data_viewer
+        self._adapter = data_adapter
 
     async def update(self, update_day: datetime) -> None:
         """Обновляет лоты и стоимость бумаг на счете."""
@@ -153,7 +154,7 @@ class Service:
         return port
 
     async def _update_lots(self, port: Portfolio) -> Portfolio:
-        lots = (await self._viewer.securities())[viewer.Columns.LOT]
+        lots = (await self._adapter.securities())[adapter.Columns.LOT]
 
         for pos in port.positions:
             pos.lot = int(lots[pos.ticker])
@@ -162,7 +163,7 @@ class Service:
 
     async def _update_market_data(self, port: Portfolio) -> Portfolio:
         tickers = tuple(pos.ticker for pos in port.positions)
-        quotes = (await self._viewer.price(tickers)).loc[port.timestamp]
+        quotes = (await self._adapter.price(tickers)).loc[port.timestamp]
         turnovers = await self._prepare_turnover(port.timestamp, tickers)
 
         for pos in port.positions:
@@ -173,11 +174,8 @@ class Service:
         return port
 
     async def _prepare_turnover(self, timestamp: datetime, tickers: tuple[str, ...]) -> pd.Series:
-        turnover = (
-            (await self._viewer.turnover(tickers))
-            .loc[:timestamp]  # type: ignore
-            .iloc[consts.LIQUIDITY_DAYS_UPPER:]
-            .sort_index(ascending=False)
-        )
+        turnover = await self._adapter.turnover(tickers)
+        turnover_last = turnover.loc[:timestamp].iloc[consts.LIQUIDITY_DAYS_UPPER :]  # type: ignore
+        backward_expanding_median = turnover_last.sort_index(ascending=False).expanding().median()
 
-        return turnover.expanding().median().iloc[consts.LIQUIDITY_DAYS_LOWER :].min()
+        return backward_expanding_median.iloc[consts.LIQUIDITY_DAYS_LOWER :].min()
