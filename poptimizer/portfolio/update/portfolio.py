@@ -176,8 +176,8 @@ class Service:
         turnover = (
             (await self._viewer.turnover(tickers))
             .loc[:timestamp]  # type: ignore
-            .iloc[consts.LIQUIDITY_DAYS :]
+            .iloc[consts.LIQUIDITY_DAYS_UPPER:]
             .sort_index(ascending=False)
         )
 
-        return turnover.expanding().median().iloc[consts.MONTH_IN_TRADING_DAYS :].min()
+        return turnover.expanding().median().iloc[consts.LIQUIDITY_DAYS_LOWER :].min()
