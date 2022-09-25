@@ -183,13 +183,7 @@ class Portfolio:
     @property
     def turnover_factor(self) -> pd.Series:
         """Медианный дневной оборот, как доля от портфеля."""
-        last_turnover = pd.concat(
-            [
-                self._median_turnover(tuple(self.index[:-2]), LIQUIDITY_DAYS),
-                self._median_turnover(tuple(self.index[:-2]), LIQUIDITY_DAYS_SHORT),
-            ],
-            axis=1,
-        ).min(axis=1)
+        last_turnover = self._median_turnover(tuple(self.index[:-2]))
         last_turnover = last_turnover / self.value[PORTFOLIO]
         last_turnover[CASH] = last_turnover.sum()
         last_turnover[PORTFOLIO] = last_turnover[CASH]
@@ -197,25 +191,16 @@ class Portfolio:
 
         return last_turnover.reindex(self.index)
 
-    def _median_turnover(self, tickers, days) -> pd.Series:
+    def _median_turnover(self, tickers) -> pd.Series:
         """Медианный оборот за несколько последних дней."""
-        last_turnover = quotes.turnovers(tickers, self.date)
-        last_turnover = last_turnover.iloc[-days:]
-        last_turnover = last_turnover.median(axis=0)
+        last_turnover = quotes.turnovers(tickers, self.date).iloc[-SELECT_DAYS:].sort_index(ascending=False)
 
-        return last_turnover
+        return last_turnover.expanding().median().iloc[LIQUIDITY_DAYS_SHORT :].min()
 
     def add_tickers(self) -> None:
         """Претенденты для добавления."""
         all_tickers = listing.securities()
-        last_turnover = pd.concat(
-            [
-                self._median_turnover(tuple(all_tickers), LIQUIDITY_DAYS),
-                self._median_turnover(tuple(all_tickers), LIQUIDITY_DAYS_SHORT),
-                self._median_turnover(tuple(all_tickers), SELECT_DAYS),
-            ],
-            axis=1,
-        ).min(axis=1)
+        last_turnover = self._median_turnover(tuple(all_tickers))
         minimal_turnover = self.value[PORTFOLIO] / (len(self.index) - 2)
         last_turnover = last_turnover[last_turnover.gt(minimal_turnover)]
 
@@ -235,18 +220,7 @@ class Portfolio:
     def remove_tickers(self):
         """Претенденты на удаление."""
         tickers = self.index[:-2]
-        last_turnover = (
-            pd.concat(
-                [
-                    self._median_turnover(tuple(tickers), LIQUIDITY_DAYS),
-                    self._median_turnover(tuple(tickers), LIQUIDITY_DAYS_SHORT),
-                    self._median_turnover(tuple(tickers), SELECT_DAYS),
-                ],
-                axis=1,
-            )
-            .min(axis=1)
-            .astype(int)
-        )
+        last_turnover = self._median_turnover(tuple(tickers))
         minimal_turnover = self.value[PORTFOLIO] / (len(self.index) - 2)
 
         low_turnover = last_turnover[last_turnover.lt(minimal_turnover)]
