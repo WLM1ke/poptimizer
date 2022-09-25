@@ -7,7 +7,8 @@ from aiohttp import web
 from aiohttp.typedefs import Handler
 from pydantic import ValidationError
 
-from poptimizer.data import exceptions
+from poptimizer.data.exceptions import DataEditError
+from poptimizer.portfolio.exceptions import PortfolioEditError
 from poptimizer.server import logger
 
 _LOGGER: Final = logging.getLogger("Server")
@@ -40,6 +41,6 @@ async def error(
     """Преобразует ошибки в web.HTTPBadRequest для пользовательских ошибок."""
     try:
         return await handler(request)
-    except (ValidationError, exceptions.DataEditError) as err:
+    except (ValidationError, DataEditError, PortfolioEditError) as err:
         reason = str(err)
         raise web.HTTPBadRequest(text=reason.splitlines()[0], reason=reason)

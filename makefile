@@ -22,7 +22,7 @@ update:
 	poetry install --sync --no-root
 	poetry show -o
 lint:
-	$(VENV_ACTIVATE);black $(SRC) && isort . && mypy $(SRC) && flake8 $(SRC)
+	$(VENV_ACTIVATE);black $(SRC) && isort . && lint-imports && mypy $(SRC) && flake8 $(SRC)
 test: lint
 	$(VENV_ACTIVATE);pytest $(SRC) -v --cov=$(SRC) --cov-report=term-missing --cov-report=xml --setup-show
 run:

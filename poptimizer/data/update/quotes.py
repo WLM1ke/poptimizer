@@ -8,10 +8,10 @@ import aiohttp
 import aiomoex
 from pydantic import Field, validator
 
-from poptimizer.app import retry
 from poptimizer.core import consts, domain, repository
 from poptimizer.data import exceptions, validate
 from poptimizer.data.update import securities
+from poptimizer.utils import retry
 
 
 class Quote(domain.Row):
