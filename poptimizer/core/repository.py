@@ -1,4 +1,5 @@
 """Реализация репозитория для доменных объектов."""
+from datetime import datetime
 from typing import Any, Final, TypeVar
 
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -36,6 +37,22 @@ class Repo:
 
         return (await collection.find_one({_MONGO_ID: id_})) or {_MONGO_ID: id_}
 
+    async def get_by_timestamp(self, entity_type: type[Entity], timestamp: datetime) -> Entity:
+        """Загружает доменную сущность дате."""
+        collection = self._client[entity_type.group.module][entity_type.group.group]
+
+        doc = await collection.find_one({"timestamp": timestamp})
+
+        return entity_type.parse_obj(doc)
+
+    async def list_timestamps(self, entity_type: type[Entity]) -> list[datetime]:
+        """Список дат всех объектов."""
+        collection = self._client[entity_type.group.module][entity_type.group.group]
+
+        cursor = collection.find({}, projection={"_id": False, "timestamp": True})
+
+        return [doc["timestamp"] async for doc in cursor]
+
     async def save(self, entity: Entity) -> None:
         """Валидирует и сохраняет доменный объект."""
         doc = _validate(entity)
@@ -47,12 +64,6 @@ class Repo:
             replacement=doc,
             upsert=True,
         )
-
-    async def delete(self, entity: Entity) -> None:
-        """Удаляет доменный объект."""
-        collection = self._client[entity.group.module][entity.group.group]
-
-        await collection.delete_one(filter={_MONGO_ID: entity.id_})
 
 
 def _validate(table: Entity) -> dict[str, Any]:

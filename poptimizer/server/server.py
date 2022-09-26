@@ -5,7 +5,7 @@ import logging
 from aiohttp import web
 
 from poptimizer.data.edit import dividends
-from poptimizer.portfolio.edit import accounts, selected
+from poptimizer.portfolio.edit import accounts, portfolio, selected
 from poptimizer.server import logger, middleware, views
 
 
@@ -21,6 +21,7 @@ class Server:
         port: int,
         selected_srv: selected.Service,
         accounts_srv: accounts.Service,
+        portfolio_srv: portfolio.Service,
         dividends_srv: dividends.Service,
     ):
         self._logger = logging.getLogger("Server")
@@ -29,6 +30,7 @@ class Server:
 
         self._selected_srv = selected_srv
         self._accounts_srv = accounts_srv
+        self._portfolio_srv = portfolio_srv
         self._dividends_srv = dividends_srv
 
     async def run(self, stop_event: asyncio.Event) -> None:
@@ -65,6 +67,7 @@ class Server:
 
         views.Selected.register(app, self._selected_srv)
         views.Accounts.register(app, self._accounts_srv)
+        views.Portfolio.register(app, self._portfolio_srv)
         views.Dividends.register(app, self._dividends_srv)
         views.Frontend.register(app)
 

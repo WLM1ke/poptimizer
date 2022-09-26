@@ -5,7 +5,7 @@ from aiohttp import web
 
 from poptimizer.core import consts
 from poptimizer.data.edit import dividends
-from poptimizer.portfolio.edit import accounts, selected
+from poptimizer.portfolio.edit import accounts, portfolio, selected
 
 
 class Selected(web.View):
@@ -83,6 +83,35 @@ class Accounts(web.View):
         await self._srv.remove_account(self.acc_name)
 
         raise web.HTTPOk
+
+
+class Portfolio(web.View):
+    """Ручки для просмотра состава портфеля."""
+
+    _srv: ClassVar[portfolio.Service]
+
+    @classmethod
+    def register(cls, app: web.Application, srv: portfolio.Service) -> None:
+        """Регистрирует ручки для редактирования состава брокерских счетов и внедряет необходимую службу."""
+        cls._srv = srv
+
+        app.add_routes([web.get("/portfolio", cls.get_account_names)])
+        app.router.add_view("/portfolio/{date}", cls)
+
+    @classmethod
+    async def get_account_names(cls, _: web.Request) -> web.StreamResponse:
+        """Возвращает перечень существующих дат, на которые есть информация о портфеле."""
+        dto = await cls._srv.get_dates()
+
+        return web.json_response(text=dto.json())
+
+    async def get(self) -> web.StreamResponse:
+        """Выдает сводную информацию о портфеле по всем брокерским счетам."""
+        date = self.request.match_info["date"]
+
+        dto = await self._srv.get_portfolio(date)
+
+        return web.json_response(text=dto.json())
 
 
 class Dividends(web.View):
