@@ -5,7 +5,7 @@ from aiohttp import web
 
 from poptimizer.core import consts
 from poptimizer.data.edit import dividends
-from poptimizer.portfolio.edit import selected
+from poptimizer.portfolio.edit import accounts, selected
 
 
 class Selected(web.View):
@@ -29,6 +29,58 @@ class Selected(web.View):
         """Обновление данных о выбранных тикерах."""
         dto = selected.DTO.parse_raw(await self.request.text())
         await self._srv.save(dto)
+
+        raise web.HTTPOk
+
+
+class Accounts(web.View):
+    """Ручки для редактирования состава брокерских счетов."""
+
+    _srv: ClassVar[accounts.Service]
+
+    @classmethod
+    def register(cls, app: web.Application, srv: accounts.Service) -> None:
+        """Регистрирует ручки для редактирования состава брокерских счетов и внедряет необходимую службу."""
+        cls._srv = srv
+
+        app.add_routes([web.get("/accounts", cls.get_account_names)])
+        app.router.add_view("/accounts/{acc_name}", cls)
+
+    @classmethod
+    async def get_account_names(cls, _: web.Request) -> web.StreamResponse:
+        """Возвращает перечень существующих брокерских счетов."""
+        dto = await cls._srv.get_account_names()
+
+        return web.json_response(text=dto.json())
+
+    @property
+    def acc_name(self) -> str:
+        """Наименование счета из запроса."""
+        return self.request.match_info["acc_name"]
+
+    async def get(self) -> web.StreamResponse:
+        """Получение данных о выбранных тикерах."""
+        dto = await self._srv.get_account(self.acc_name)
+
+        return web.json_response(text=dto.json())
+
+    async def post(self) -> None:
+        """Создает брокерский счет, если он не существует."""
+        await self._srv.create_account(self.acc_name)
+
+        raise web.HTTPOk
+
+    async def put(self) -> None:
+        """Обновляет данные о количестве бумаг на счете."""
+        dto = accounts.AccountUpdateDTO.parse_raw(await self.request.text())
+
+        await self._srv.update_account(self.acc_name, dto)
+
+        raise web.HTTPOk
+
+    async def delete(self) -> None:
+        """Удаляет брокерский счет, если он пустой."""
+        await self._srv.remove_account(self.acc_name)
 
         raise web.HTTPOk
 

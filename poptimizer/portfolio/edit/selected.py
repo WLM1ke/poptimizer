@@ -1,6 +1,4 @@
 """Сервис редактирования выбранных тикеров."""
-import logging
-
 from pydantic import BaseModel
 
 from poptimizer.core import repository
@@ -26,7 +24,6 @@ class Service:
     """Сервис редактирования перечня выбранных тикеров."""
 
     def __init__(self, repo: repository.Repo, adapter_data: adapter.MarketData) -> None:
-        self._logger = logging.getLogger("SecEdit")
         self._repo = repo
         self._adapter = adapter_data
 

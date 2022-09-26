@@ -5,7 +5,7 @@ from poptimizer.app import config
 from poptimizer.core import repository
 from poptimizer.data.adapter import MarketData
 from poptimizer.data.edit import dividends
-from poptimizer.portfolio.edit import selected
+from poptimizer.portfolio.edit import accounts, selected
 from poptimizer.server import server
 
 
@@ -20,5 +20,6 @@ def create(
         cfg.host,
         cfg.port,
         selected.Service(repo, MarketData(repo)),
+        accounts.Service(repo),
         dividends.Service(repo),
     )

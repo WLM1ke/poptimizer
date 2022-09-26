@@ -1,7 +1,5 @@
 """Middleware для перехвата ошибок и исправления низкой точности времени uvloop для логирования."""
-import logging
 import time
-from typing import Final
 
 from aiohttp import web
 from aiohttp.typedefs import Handler
@@ -10,8 +8,6 @@ from pydantic import ValidationError
 from poptimizer.data.exceptions import DataEditError
 from poptimizer.portfolio.exceptions import PortfolioEditError
 from poptimizer.server import logger
-
-_LOGGER: Final = logging.getLogger("Server")
 
 
 @web.middleware

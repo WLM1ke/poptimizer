@@ -43,7 +43,7 @@ class Portfolio(domain.BaseEntity):
     cash: dict[str, int] = Field(default_factory=dict)
     positions: list[Position] = Field(default_factory=list)
 
-    def add_account(self, name: str) -> None:
+    def creat_account(self, name: str) -> None:
         """Добавляет счет в портфель."""
         if name in self.cash:
             raise exceptions.PortfolioEditError(f"can't add existing account {name}")

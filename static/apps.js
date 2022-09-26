@@ -3,7 +3,7 @@ window.pagesApp = function () {
 
     return {
         selectedSection: this.$persist("Tickers").as("page_selected"),
-        sections: ["Tickers", "Dividends", "Accounts", "Portfolio", "Metrics", "Optimizer", "Reports"],
+        sections: ["Tickers", "Accounts", "Portfolio", "Metrics", "Optimizer", "Dividends", "Reports"],
 
         isSelectedSection(section) {
             return section === this.selectedSection;
@@ -94,6 +94,293 @@ window.tickersApp = function () {
             }).catch(err => {
                 this.status = err;
             });
+        },
+    };
+};
+
+
+window.accountsApp = function () {
+    "use strict";
+
+    return {
+        accounts: [],
+        accountNew: "",
+
+        selectedAccount: this.$persist("").as("accounts_selected"),
+
+        cash: 0,
+        positions: [],
+
+        positionsSort:  this.$persist("tickers").as("accounts_sort"),
+        hideZero:  this.$persist(false).as("accounts_hide_zero"),
+
+        status: "Initialising",
+
+        init() {
+            if (this.selectedAccount !== "") {
+                this.selectAccount(this.selectedAccount);
+            } else {
+                this.status = "Account not selected";
+            }
+
+            fetch("/accounts")
+                .then(async resp => {
+                    return resp.ok ? resp.json() : Promise.reject(await resp.text());
+                })
+                .then(json => {
+                    this.accounts = json || [];
+                })
+                .catch(err => {
+                    this.accounts = [];
+                    this.status = err;
+                });
+        },
+
+        createAccount() {
+            fetch(`/accounts/${this.accountNew}`, {
+                method: "POST",
+            }).then( async resp => {
+                if (!resp.ok) {
+                    return Promise.reject(await resp.text());
+                }
+
+                this.accounts.push(this.accountNew);
+                this.accounts.sort();
+
+                this.selectAccount(this.accountNew);
+
+                this.accountNew = "";
+
+                this.status = "Created successfully";
+            }).catch(err => {
+                this.status = err;
+            });
+        },
+
+        selectAccount(name) {
+            fetch(`/accounts/${name}`)
+                .then(async resp => {
+                    return resp.ok ? resp.json() : Promise.reject(await resp.text());
+                })
+                .then(json => {
+                    this.selectedAccount = name;
+
+                    this.cash = json.cash;
+                    this.positions = json.positions;
+
+                    this.status = "Not edited";
+                })
+                .catch(err => {
+                    this.status = err;
+                });
+        },
+
+        showPos(pos) {
+          return !this.hideZero || pos.shares > 0;
+        },
+
+        sortedPositions() {
+          if (this.positionsSort === "tickers") {
+              this.positions.sort((a, b) => a.ticker.localeCompare(b.ticker));
+          } else {
+              this.positions.sort((a, b) => this.positionValue(b) - this.positionValue(a));
+          }
+
+          return this.positions;
+        },
+
+        positionValue(pos) {
+            return pos.shares * pos.price;
+        },
+
+        positionValueFormatted(pos) {
+            return formatInt(this.positionValue(pos));
+        },
+
+        get showAccount() {
+            return this.accounts.includes(this.selectedAccount);
+        },
+
+        get count() {
+            return this.positions.filter(pos => pos.shares > 0).length;
+        },
+
+        get value() {
+            return this.positions.reduce((previous, pos) => previous + this.positionValue(pos), this.cash);
+        },
+
+        get valueFormatted() {
+            return formatInt(this.value);
+        },
+
+        deleteAccount() {
+            fetch(`/accounts/${this.selectedAccount}`, {
+                method: "DELETE",
+            }).then(async resp => {
+                if (!resp.ok) {
+                    return Promise.reject(await resp.text());
+                }
+
+                this.accounts = this.accounts.filter(acc => acc !== this.selectedAccount);
+                this.selectedAccount = "";
+
+                this.cash = 0;
+                this.positions = [];
+
+                this.status = "Deleted successfully";
+            }).catch(err => {
+                this.status = err;
+            });
+        },
+
+        save() {
+            this.status = "Saving";
+
+            const positions = this.positions
+                    .map(pos => {
+                        return {ticker: pos.ticker, shares: pos.shares};
+                    });
+
+            const account = {"cash": this.cash, "positions": positions}
+
+            fetch(`/accounts/${this.selectedAccount}`, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(account)
+            }).then( async resp => {
+                this.status = resp.ok ? "Saved successfully" : await resp.text();
+            }).catch(err => {
+                this.status = err;
+            });
+        },
+
+        edited() {
+            this.status = "Edited";
+        },
+
+        get showButton() {
+            return ![
+                "Initialising",
+                "Account not selected",
+                "Not edited",
+                "Created successfully",
+                "Saved successfully",
+                "Deleted successfully",
+            ].includes(this.status);
+        },
+    };
+};
+
+
+window.portfolioApp = function () {
+    "use strict";
+
+    return {
+        dates: [],
+
+        selectedDate: this.$persist("").as("portfolio_selected"),
+
+        cash: 0,
+        positions: [],
+        count: 0,
+        effectiveCount: 0,
+        value: 0,
+
+        positionsSort:  this.$persist("value").as("portfolio_sort"),
+        hideZero:  this.$persist(true).as("portfolio_hide_zero"),
+
+        status: "Initialising",
+
+        init() {
+            if (this.selectedDate !== "") {
+                this.selectPortfolio(this.selectedDate);
+            } else {
+                this.status = "Date not selected";
+            }
+
+            fetch("/portfolio")
+                .then(async resp => {
+                    return resp.ok ? resp.json() : Promise.reject(await resp.text());
+                })
+                .then(json => {
+                    this.dates = json || [];
+                    this.dates.sort((a, b) => b.localeCompare(a));
+                })
+                .catch(err => {
+                    this.dates = [];
+                    this.status = err;
+                });
+        },
+
+        selectPortfolio(date) {
+            fetch(`/portfolio/${date}`)
+                .then(async resp => {
+                    return resp.ok ? resp.json() : Promise.reject(await resp.text());
+                })
+                .then(json => {
+                    this.selectedDate = date;
+
+                    this.cash = json.cash;
+                    this.positions = json.positions;
+
+                    this.count = this.positions.filter(pos => pos.shares > 0).length;
+
+                    const value = this.positions
+                        .reduce((previous, pos) => previous + pos.shares * pos.price, this.cash);
+                    this.value = value;
+
+                    this.positions.forEach(function(pos) {
+                        pos.value = pos.shares * pos.price;
+                        pos.weight = pos.value / value;
+                    });
+
+                    this.effectiveCount = 0;
+                    if (this.count) {
+                        this.effectiveCount = formatInt(1 / this.positions
+                            .reduce((previous, pos) => previous + (pos.value / (this.value - this.cash)) ** 2, 0));
+                    }
+
+                    this.status = `Loaded portfolio for ${date}`;
+                })
+                .catch(err => {
+                    this.status = err;
+                });
+        },
+
+        showPos(pos) {
+            return !this.hideZero || pos.shares > 0;
+        },
+
+        sortedPositions() {
+            if (this.positionsSort === "tickers") {
+                this.positions.sort((a, b) => a.ticker.localeCompare(b.ticker));
+            } else if (this.positionsSort === "turnover"){
+                this.positions.sort((a, b) => b.turnover - a.turnover);
+            } else {
+                this.positions.sort((a, b) => b.value - a.value);
+            }
+
+            return this.positions;
+        },
+
+        positionValueFormatted(pos) {
+            return formatInt(pos.value);
+        },
+
+        get weightCashFormatted() {
+            return formatPercent(this.cash / this.value);
+        },
+
+        weightFormatted(pos) {
+            return formatPercent(pos.weight);
+        },
+
+        get showPortfolio() {
+            return this.dates.includes(this.selectedDate);
+        },
+
+        get valueFormatted() {
+            return formatInt(this.value);
         },
     };
 };
@@ -240,12 +527,12 @@ window.dividendsApp = function () {
             this.status = "Saving";
 
             const div = this.dividends
-                    .filter(div => (div.status !== "missed"))
-                    .map(div => {
-                        const {status, ...rest} = div;
+                .filter(div => (div.status !== "missed"))
+                .map(div => {
+                    const {status, ...rest} = div;
 
-                        return rest;
-                    })
+                    return rest;
+                })
 
             fetch(`/dividends/${this.selectedTicker}`, {
                 method: "PUT",
@@ -256,298 +543,6 @@ window.dividendsApp = function () {
             }).catch(err => {
                 this.status = err;
             });
-        },
-    };
-};
-
-window.accountsApp = function () {
-    "use strict";
-
-    return {
-        accounts: [],
-        accountNew: "",
-
-        selectedAccount: this.$persist("").as("accounts_selected"),
-
-        cash: 0,
-        positions: [],
-
-        positionsSort:  this.$persist("tickers").as("accounts_sort"),
-        hideZero:  this.$persist(false).as("accounts_hide_zero"),
-
-        status: "Initialising",
-
-        init() {
-            if (this.selectedAccount !== "") {
-                this.selectAccount(this.selectedAccount);
-            } else {
-                this.status = "Account not selected";
-            }
-
-            fetch("/accounts")
-                .then(async resp => {
-                    return resp.ok ? resp.json() : Promise.reject(await resp.text());
-                })
-                .then(json => {
-                    this.accounts = json || [];
-                })
-                .catch(err => {
-                    this.accounts = [];
-                    this.status = err;
-                });
-        },
-
-        createAccount() {
-            fetch(`/accounts/${this.accountNew}`, {
-                method: "POST",
-            }).then( async resp => {
-                if (!resp.ok) {
-                    return Promise.reject(await resp.text());
-                }
-
-                this.accounts.push(this.accountNew);
-                this.accounts.sort();
-
-                this.selectAccount(this.accountNew);
-
-                this.accountNew = "";
-
-                this.status = "Created successfully";
-            }).catch(err => {
-                this.status = err;
-            });
-        },
-
-        selectAccount(name) {
-            fetch(`/accounts/${name}`)
-                .then(async resp => {
-                    return resp.ok ? resp.json() : Promise.reject(await resp.text());
-                })
-                .then(json => {
-                    this.selectedAccount = name;
-
-                    this.cash = json.cash;
-                    this.positions = json.positions;
-
-                    this.status = "Not edited";
-                })
-                .catch(err => {
-                    this.status = err;
-                });
-        },
-
-        showPos(pos) {
-          return !this.hideZero || pos.shares > 0;
-        },
-
-        sortedPositions() {
-          if (this.positionsSort === "tickers") {
-              this.positions.sort((a, b) => a.ticker.localeCompare(b.ticker));
-          } else {
-              this.positions.sort((a, b) => this.positionValue(b) - this.positionValue(a));
-          }
-
-          return this.positions;
-        },
-
-        positionValue(pos) {
-            return pos.shares * pos.price;
-        },
-
-        positionValueFormatted(pos) {
-            return formatInt(this.positionValue(pos));
-        },
-
-        get showAccount() {
-            return this.accounts.includes(this.selectedAccount);
-        },
-
-        get count() {
-            return this.positions.filter(pos => pos.shares > 0).length;
-        },
-
-        get value() {
-            return this.positions.reduce((previous, pos) => previous + this.positionValue(pos), this.cash);
-        },
-
-        get valueFormatted() {
-            return formatInt(this.value);
-        },
-
-        deleteAccount() {
-            if (this.value !== 0) {
-                this.status = `Can't delete account with non-zero value ${this.valueFormat}₽`;
-
-                return;
-            }
-
-            fetch(`/accounts/${this.selectedAccount}`, {
-                method: "DELETE",
-            }).then(async resp => {
-                if (!resp.ok) {
-                    return Promise.reject(await resp.text());
-                }
-
-                this.accounts = this.accounts.filter(acc => acc !== this.selectedAccount);
-                this.selectedAccount = "";
-
-                this.cash = 0;
-                this.positions = [];
-
-                this.status = "Deleted successfully";
-            }).catch(err => {
-                this.status = err;
-            });
-        },
-
-        save() {
-            this.status = "Saving";
-
-            let update = this.positions
-                    .map(pos => {
-                        return {ticker: pos.ticker, shares: pos.shares};
-                    });
-
-            update.push({ticker: "CASH", shares: this.cash});
-
-            fetch(`/accounts/${this.selectedAccount}`, {
-                method: "PUT",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(update)
-            }).then( async resp => {
-                this.status = resp.ok ? "Saved successfully" : await resp.text();
-            }).catch(err => {
-                this.status = err;
-            });
-        },
-
-        edited() {
-            this.status = "Edited";
-        },
-
-        get showButton() {
-            return ![
-                "Initialising",
-                "Account not selected",
-                "Not edited",
-                "Created successfully",
-                "Saved successfully",
-                "Deleted successfully",
-            ].includes(this.status);
-        },
-    };
-};
-
-
-window.portfolioApp = function () {
-    "use strict";
-
-    return {
-        dates: [],
-
-        selectedDate: this.$persist("").as("portfolio_selected"),
-
-        cash: 0,
-        positions: [],
-        count: 0,
-        effectiveCount: 0,
-        value: 0,
-
-        positionsSort:  this.$persist("value").as("portfolio_sort"),
-        hideZero:  this.$persist(true).as("portfolio_hide_zero"),
-
-        status: "Initialising",
-
-        init() {
-            if (this.selectedDate !== "") {
-                this.selectPortfolio(this.selectedDate);
-            } else {
-                this.status = "Date not selected";
-            }
-
-            fetch("/portfolio")
-                .then(async resp => {
-                    return resp.ok ? resp.json() : Promise.reject(await resp.text());
-                })
-                .then(json => {
-                    this.dates = json || [];
-                    this.dates.sort((a, b) => b.localeCompare(a));
-                })
-                .catch(err => {
-                    this.dates = [];
-                    this.status = err;
-                });
-        },
-
-        selectPortfolio(date) {
-            fetch(`/portfolio/${date}`)
-                .then(async resp => {
-                    return resp.ok ? resp.json() : Promise.reject(await resp.text());
-                })
-                .then(json => {
-                    this.selectedDate = date;
-
-                    this.cash = json.cash;
-                    this.positions = json.positions;
-
-                    this.count = this.positions.filter(pos => pos.shares > 0).length;
-
-                    const value = this.positions
-                        .reduce((previous, pos) => previous + pos.shares * pos.price, this.cash);
-                    this.value = value;
-
-                    this.positions.forEach(function(pos) {
-                        pos.value = pos.shares * pos.price;
-                        pos.weight = pos.value / value;
-                    });
-
-                    this.effectiveCount = 0;
-                    if (this.count) {
-                        this.effectiveCount = formatInt(1 / this.positions
-                            .reduce((previous, pos) => previous + (pos.value / (this.value - this.cash)) ** 2, 0));
-                    }
-
-                    this.status = `Loaded portfolio for ${date}`;
-                })
-                .catch(err => {
-                    this.status = err;
-                });
-        },
-
-        showPos(pos) {
-            return !this.hideZero || pos.shares > 0;
-        },
-
-        sortedPositions() {
-            if (this.positionsSort === "tickers") {
-                this.positions.sort((a, b) => a.ticker.localeCompare(b.ticker));
-            } else if (this.positionsSort === "turnover"){
-                this.positions.sort((a, b) => b.turnover - a.turnover);
-            } else {
-                this.positions.sort((a, b) => b.value - a.value);
-            }
-
-            return this.positions;
-        },
-
-        positionValueFormatted(pos) {
-            return formatInt(pos.value);
-        },
-
-        get weightCashFormatted() {
-            return formatPercent(this.cash / this.value);
-        },
-
-        weightFormatted(pos) {
-            return formatPercent(pos.weight);
-        },
-
-        get showPortfolio() {
-            return this.dates.includes(this.selectedDate);
-        },
-
-        get valueFormatted() {
-            return formatInt(this.value);
         },
     };
 };
