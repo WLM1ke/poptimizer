@@ -53,7 +53,7 @@ class Service:
         await self._repo.save(port)
 
     async def _prepare_dto(self) -> tuple[DTO, portfolio.Portfolio]:
-        port = await self._repo.get(portfolio.Portfolio)
+        port = await self._repo.get(portfolio.Portfolio, portfolio.CURRENT_ID)
         sec = {ticker: False for ticker in (await self._adapter.securities()).index}
         selected = {row.ticker: True for row in port.positions}
 

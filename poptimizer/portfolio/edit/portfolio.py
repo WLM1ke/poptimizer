@@ -1,6 +1,4 @@
 """Сервис просмотра состава портфеля."""
-from datetime import datetime
-
 from poptimizer.core import repository
 from poptimizer.portfolio.edit import accounts
 from poptimizer.portfolio.update import portfolio
@@ -13,14 +11,17 @@ class Service:
         self._repo = repo
 
     async def get_dates(self) -> accounts.AccountsDTO:
-        """Возвращает перечень дат, на которые есть информация о портфеле."""
-        dates = await self._repo.list_timestamps(portfolio.Portfolio)
+        """Возвращает перечень дат, на которые есть информация о портфеле + текущее значение."""
+        dates = await self._repo.list(portfolio.Portfolio)
 
-        return accounts.AccountsDTO(__root__=[date.date().isoformat() for date in dates])
+        return accounts.AccountsDTO(__root__=dates)
 
     async def get_portfolio(self, date: str) -> accounts.AccountDTO:
-        """Выдает сводную информацию о портфеле по всем брокерским счетам."""
-        port = await self._repo.get_by_timestamp(portfolio.Portfolio, datetime.strptime(date, "%Y-%m-%d"))
+        """Выдает сводную информацию о портфеле по всем брокерским счетам на заданную дату.
+
+        Для текущего портфеля оценка осуществляется по котировкам последнего торгового дня.
+        """
+        port = await self._repo.get(portfolio.Portfolio, date)
 
         cash = sum(port.cash.values())
         positions = [

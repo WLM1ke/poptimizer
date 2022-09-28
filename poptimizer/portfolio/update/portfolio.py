@@ -3,7 +3,7 @@ import bisect
 import itertools
 import logging
 from datetime import datetime
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Final
 
 import pandas as pd
 from pydantic import BaseModel, Field, root_validator, validator
@@ -11,6 +11,8 @@ from pydantic import BaseModel, Field, root_validator, validator
 from poptimizer.core import consts, domain, repository
 from poptimizer.data import adapter
 from poptimizer.portfolio import exceptions
+
+CURRENT_ID: Final = "Current"
 
 
 class Position(BaseModel):
@@ -134,24 +136,22 @@ class Service:
         self._logger.info("update is completed")
 
     async def _update(self, update_day: datetime) -> None:
-        port = await self._load_portfolio(update_day)
+        port = await self._repo.get(Portfolio, CURRENT_ID)
 
         port = await self._update_lots(port)
-        port = await self._update_market_data(port)
+        port = await self._update_market_data(port, update_day)
 
-        await self._repo.save(port)
+        await self._save_portfolio(port, update_day)
 
-    async def _load_portfolio(self, update_day: datetime) -> Portfolio:
-        port = await self._repo.get(Portfolio)
-
+    async def _save_portfolio(self, port: Portfolio, update_day: datetime) -> None:
         if port.timestamp < update_day:
+            port.timestamp = update_day
+
             port_old = port.copy()
             port_old.id_ = port.timestamp.date().isoformat()
             await self._repo.save(port_old)
 
-        port.timestamp = update_day
-
-        return port
+        await self._repo.save(port)
 
     async def _update_lots(self, port: Portfolio) -> Portfolio:
         lots = (await self._adapter.securities())[adapter.Columns.LOT]
@@ -161,10 +161,10 @@ class Service:
 
         return port
 
-    async def _update_market_data(self, port: Portfolio) -> Portfolio:
+    async def _update_market_data(self, port: Portfolio, update_day: datetime) -> Portfolio:
         tickers = tuple(pos.ticker for pos in port.positions)
-        quotes = (await self._adapter.price(tickers)).loc[port.timestamp]
-        turnovers = await self._prepare_turnover(port.timestamp, tickers)
+        quotes = (await self._adapter.price(tickers)).loc[update_day]
+        turnovers = await self._prepare_turnover(update_day, tickers)
 
         for pos in port.positions:
             ticker = pos.ticker

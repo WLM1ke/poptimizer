@@ -1,5 +1,4 @@
 """Реализация репозитория для доменных объектов."""
-from datetime import datetime
 from typing import Any, Final, TypeVar
 
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -31,27 +30,19 @@ class Repo:
         return entity_type.parse_obj(doc or {_MONGO_ID: id_})
 
     async def get_doc(self, group: domain.Group, id_: str | None = None) -> Doc:
-        """Загружает все доменные объекты определенного типа."""
+        """Загружает доменную сущность в виде словаря."""
         collection = self._client[group.module][group.group]
         id_ = id_ or group.group
 
         return (await collection.find_one({_MONGO_ID: id_})) or {_MONGO_ID: id_}
 
-    async def get_by_timestamp(self, entity_type: type[Entity], timestamp: datetime) -> Entity:
-        """Загружает доменную сущность дате."""
+    async def list(self, entity_type: type[Entity]) -> list[str]:
+        """Список id всех объектов данного типа."""
         collection = self._client[entity_type.group.module][entity_type.group.group]
 
-        doc = await collection.find_one({"timestamp": timestamp})
+        cursor = collection.find({}, projection={_MONGO_ID: True})
 
-        return entity_type.parse_obj(doc)
-
-    async def list_timestamps(self, entity_type: type[Entity]) -> list[datetime]:
-        """Список дат всех объектов."""
-        collection = self._client[entity_type.group.module][entity_type.group.group]
-
-        cursor = collection.find({}, projection={"_id": False, "timestamp": True})
-
-        return [doc["timestamp"] async for doc in cursor]
+        return [doc[_MONGO_ID] async for doc in cursor]
 
     async def save(self, entity: Entity) -> None:
         """Валидирует и сохраняет доменный объект."""
