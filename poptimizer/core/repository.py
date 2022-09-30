@@ -59,7 +59,6 @@ class Repo:
 
 def _validate(table: Entity) -> dict[str, Any]:
     doc = table.dict()
-
     table.parse_obj(doc | {_MONGO_ID: table.id_})
 
     return doc

@@ -1,6 +1,4 @@
 """Адаптер для просмотра данных о портфеле другими модулями."""
-from datetime import datetime
-
 from poptimizer.core import domain, repository
 from poptimizer.portfolio.update import portfolio
 

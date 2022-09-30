@@ -28,7 +28,6 @@ class Group(Enum):
     RAW_DIV = (_DATA_DB, "raw_div")
     REESTRY = (_DATA_DB, "reestry")
     NASDAQ = (_DATA_DB, "nasdaq")
-
     PORTFOLIO = (_PORTFOLIO_DB, "portfolio")
 
     def __str__(self) -> str:
@@ -65,10 +64,8 @@ class Row(BaseModel):
     def _string_date_to_datetime(cls, date: str | datetime) -> datetime:
         if isinstance(date, str):
             date = datetime.fromisoformat(date.removesuffix("Z"))
-
         if date != datetime(*date.timetuple()[:3]):
             raise ValueError(f"wrong {date}")
-
         return date
 
     class Config:

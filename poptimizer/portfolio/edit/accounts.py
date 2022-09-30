@@ -97,7 +97,6 @@ class Service:
     async def update_account(self, acc_name: str, update: AccountUpdateDTO) -> None:
         """Обновляет данные о количестве бумаг на счете."""
         port = await self._repo.get(portfolio.Portfolio, portfolio.CURRENT_ID)
-
         if acc_name not in port.cash:
             raise PortfolioEditError(f"account {acc_name} don't exist")
 

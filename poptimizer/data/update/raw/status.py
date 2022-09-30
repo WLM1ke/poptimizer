@@ -58,7 +58,12 @@ class Table(domain.BaseEntity):
 class Service:
     """Сервис загрузки статуса дивидендов."""
 
-    def __init__(self, repo: repository.Repo, session: aiohttp.ClientSession, adapter_port: adapter.PortfolioData) -> None:
+    def __init__(
+        self,
+        repo: repository.Repo,
+        session: aiohttp.ClientSession,
+        adapter_port: adapter.PortfolioData,
+    ) -> None:
         self._logger = logging.getLogger("Status")
         self._repo = repo
         self._session = session
