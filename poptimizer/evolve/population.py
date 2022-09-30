@@ -134,6 +134,16 @@ class Organism:  # noqa: WPS214
 
         return self.llh
 
+    def clear(self) -> None:
+        """Сбрасывает всю информацию об организме, кроме генотипа."""
+        self._doc.wins = 0
+        self._doc.model = None
+        self._doc.llh = []
+        self._doc.ir = []
+        self._doc.date = None
+        self._doc.timer = 0
+        self._doc.timer = None
+
     def die(self) -> None:
         """Организм удаляется из популяции."""
         self._doc.delete()
