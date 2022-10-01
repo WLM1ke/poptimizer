@@ -13,4 +13,4 @@ class PortfolioData:
         """Упорядоченный перечень тикеров в портфеле."""
         port = await self._repo.get_doc(domain.Group.PORTFOLIO, portfolio.CURRENT_ID)
 
-        return tuple(pos["ticker"] for pos in port["positions"])
+        return tuple(pos["ticker"] for pos in port.get("positions", []))
