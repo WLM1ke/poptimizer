@@ -27,7 +27,7 @@ def get_col_desc() -> parser.Descriptions:
     )
     div = description.ColDesc(
         num=3,
-        raw_name=("ивиденд,руб",),
+        raw_name=("ивиденд",),
         name=col.DIVIDENDS,
         parser_func=cell_parser.div_ru,
     )

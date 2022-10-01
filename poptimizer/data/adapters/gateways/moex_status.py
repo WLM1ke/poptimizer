@@ -10,7 +10,7 @@ from poptimizer.shared import adapters, col
 
 # Параметры парсинга сайта
 URL = "https://www.moex.com/ru/listing/listing-register-closing.aspx"
-TABLE_INDEX = 2
+TABLE_INDEX = 3
 
 TICKER_PATTERN: Final = "[A-Z]+-RM"
 
