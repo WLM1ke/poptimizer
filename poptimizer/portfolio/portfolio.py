@@ -213,7 +213,7 @@ class Portfolio:
         last_turnover = last_turnover.reindex(index)
         last_turnover = last_turnover.astype("int")
 
-        rez = last_turnover.sort_values(ascending=False).dropna()
+        rez = last_turnover.sort_values(ascending=False).dropna().astype(int)
 
         LOGGER.info(f"\nДЛЯ ДОБАВЛЕНИЯ\n\n{rez}")  # noqa: WPS421
 
@@ -224,7 +224,7 @@ class Portfolio:
         minimal_turnover = self.value[PORTFOLIO] / (len(self.index) - 2)
 
         low_turnover = last_turnover[last_turnover.lt(minimal_turnover)]
-        low_turnover = low_turnover.sort_values()
+        low_turnover = low_turnover.sort_values().astype(int)
 
         if len(low_turnover):
             LOGGER.info(f"\nДЛЯ УДАЛЕНИЯ\n\n{low_turnover}")
