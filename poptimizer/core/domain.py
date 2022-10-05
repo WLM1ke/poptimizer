@@ -8,6 +8,7 @@ from pydantic.generics import GenericModel
 
 _DATA_DB: Final = "data_new"
 _PORTFOLIO_DB: Final = "portfolio"
+_DL_DB: Final = "dl"
 
 
 @unique
@@ -27,8 +28,11 @@ class Group(Enum):
     STATUS = (_DATA_DB, "status")
     RAW_DIV = (_DATA_DB, "raw_div")
     REESTRY = (_DATA_DB, "reestry")
+
     NASDAQ = (_DATA_DB, "nasdaq")
     PORTFOLIO = (_PORTFOLIO_DB, "portfolio")
+
+    FEATURES = (_DL_DB, "features")
 
     def __str__(self) -> str:
         """Отображение в виде 'module.group'."""
