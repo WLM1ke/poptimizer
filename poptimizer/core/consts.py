@@ -3,8 +3,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Final
 
+import torch
+
 # Корень проекта для адресации к статическим файлам и бэкапам.
 ROOT_PATH: Final = Path(__file__).parents[2]
+
+# Автоматический выбор GPU для PyTorch
+DEVICE: Final = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Множитель для получения дивидендов за вычетом налогов
+AFTER_TAX: Final = 0.87
 
 # Дата, с которой собираются дивиденды.
 _START_YEAR: Final = 2015
