@@ -71,6 +71,7 @@ layers = [
     "poptimizer.app",
     "poptimizer.utils",
     "poptimizer.server",
+    "poptimizer.dl",
     "poptimizer.portfolio",
     "poptimizer.data",
     "poptimizer.core",
@@ -86,12 +87,14 @@ name = "Weakly coupled middle layer"
 type = "independence"
 modules = [
     "poptimizer.server",
+    "poptimizer.dl",
     "poptimizer.portfolio",
     "poptimizer.data",
 ]
 ignore_imports = [
     "poptimizer.data.*.*.* -> poptimizer.*.adapter",
     "poptimizer.portfolio.*.* -> poptimizer.*.adapter",
+    "poptimizer.dl.update.features -> poptimizer.*.adapter",
     "poptimizer.server.* -> poptimizer.*.edit.*",
     "poptimizer.server.middleware -> poptimizer.*.exceptions",
 ]
