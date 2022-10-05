@@ -49,7 +49,7 @@ class Updater:
         reestry_srv: reestry.Service,
         nasdaq_srv: nasdaq.Service,
         check_raw_srv: check_raw.Service,
-        external_srv: UpdateStep,
+        externals: list[UpdateStep],
     ) -> None:
         self._logger = logging.getLogger(self.__class__.__name__)
         self._factor = 1
@@ -71,7 +71,7 @@ class Updater:
         self._nasdaq_srv = nasdaq_srv
         self._check_raw_srv = check_raw_srv
 
-        self._external_srv = external_srv
+        self._externals = externals
 
         self._checked_day = datetime.fromtimestamp(0)
 
@@ -137,7 +137,8 @@ class Updater:
 
         await self._backup_srv.backup(_BACKUP_COLLECTIONS)
 
-        await self._external_srv.update(update_day)
+        for srv in self._externals:
+            await srv.update(update_day)
 
     async def _update_sec(self, update_day: datetime) -> None:
         sec_list, usd_list = await asyncio.gather(

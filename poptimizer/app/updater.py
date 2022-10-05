@@ -1,5 +1,6 @@
 """Создает сервис обновления данных."""
 import aiohttp
+from dl.update import features
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from poptimizer.core import backup, repository
@@ -15,6 +16,9 @@ def create(mongo_client: AsyncIOMotorClient, session: aiohttp.ClientSession) -> 
     """Создает сервис обновления данных."""
     repo = repository.Repo(mongo_client)
 
+    market_data = MarketData(repo)
+    portfolio_data = PortfolioData(repo)
+
     return updater.Updater(
         backup.Service(mongo_client),
         trading_date.Service(repo, session),
@@ -24,9 +28,9 @@ def create(mongo_client: AsyncIOMotorClient, session: aiohttp.ClientSession) -> 
         quotes.Service(repo, session),
         usd.Service(repo, session),
         divs.Service(repo),
-        status.Service(repo, session, PortfolioData(repo)),
+        status.Service(repo, session, portfolio_data),
         reestry.Service(repo, session),
         nasdaq.Service(repo, session),
         check_raw.Service(repo),
-        portfolio.Service(repo, MarketData(repo)),
+        [portfolio.Service(repo, market_data), features.Service(repo, market_data, portfolio_data)],
     )
