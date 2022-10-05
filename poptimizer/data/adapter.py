@@ -1,5 +1,6 @@
 """Адаптер для просмотра данных другими модулями."""
 import asyncio
+from collections.abc import AsyncIterator
 from datetime import datetime
 from enum import Enum, unique
 
@@ -84,6 +85,13 @@ class MarketData:
         df.columns = tickers
 
         return df.fillna(method="ffill").loc[:last_date]  # type: ignore
+
+    async def dividends(self, ticker: str) -> AsyncIterator[tuple[datetime, float]]:
+        """Дивиденды для заданного тикера."""
+        doc = await self._repo.get_doc(domain.Group.DIVIDENDS, ticker)
+
+        for row in doc["df"]:
+            yield row["date"], row["dividend"]
 
     async def _quotes(self, tickers: tuple[str, ...]) -> list[pd.DataFrame]:
         aws = [self._repo.get_doc(domain.Group.QUOTES, ticker) for ticker in tickers]
