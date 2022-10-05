@@ -1,5 +1,6 @@
 """Адаптер для просмотра данных другими модулями."""
 import asyncio
+from datetime import datetime
 from enum import Enum, unique
 
 import pandas as pd
@@ -55,7 +56,7 @@ class MarketData:
 
         return df.set_index(Columns.TICKER)
 
-    async def turnover(self, tickers: tuple[str, ...]) -> pd.DataFrame:
+    async def turnover(self, last_date: datetime, tickers: tuple[str, ...]) -> pd.DataFrame:
         """Информация об оборотах для заданных тикеров с заполненными пропусками."""
         dfs = await self._quotes(tickers)
         df = pd.concat(
@@ -65,9 +66,14 @@ class MarketData:
         )
         df.columns = tickers
 
-        return df.fillna(0)
+        return df.fillna(0).loc[:last_date]  # type: ignore
 
-    async def price(self, tickers: tuple[str, ...], price_type: Columns = Columns.CLOSE) -> pd.DataFrame:
+    async def price(
+        self,
+        last_date: datetime,
+        tickers: tuple[str, ...],
+        price_type: Columns = Columns.CLOSE,
+    ) -> pd.DataFrame:
         """Информация о ценах для заданных тикеров с заполненными пропусками."""
         dfs = await self._quotes(tickers)
         df = pd.concat(
@@ -77,7 +83,7 @@ class MarketData:
         )
         df.columns = tickers
 
-        return df.fillna(method="ffill")
+        return df.fillna(method="ffill").loc[:last_date]  # type: ignore
 
     async def _quotes(self, tickers: tuple[str, ...]) -> list[pd.DataFrame]:
         aws = [self._repo.get_doc(domain.Group.QUOTES, ticker) for ticker in tickers]

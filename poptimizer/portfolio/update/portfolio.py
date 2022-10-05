@@ -163,7 +163,7 @@ class Service:
 
     async def _update_market_data(self, port: Portfolio, update_day: datetime) -> Portfolio:
         tickers = tuple(pos.ticker for pos in port.positions)
-        quotes = (await self._adapter.price(tickers)).loc[update_day]
+        quotes = (await self._adapter.price(update_day, tickers)).iloc[-1]
         turnovers = await self._prepare_turnover(update_day, tickers)
 
         for pos in port.positions:
@@ -173,9 +173,9 @@ class Service:
 
         return port
 
-    async def _prepare_turnover(self, timestamp: datetime, tickers: tuple[str, ...]) -> pd.Series:
-        turnover = await self._adapter.turnover(tickers)
-        turnover_last = turnover.loc[:timestamp].iloc[consts.LIQUIDITY_DAYS_UPPER :]  # type: ignore
+    async def _prepare_turnover(self, update_day: datetime, tickers: tuple[str, ...]) -> pd.Series:
+        turnover = await self._adapter.turnover(update_day, tickers)
+        turnover_last = turnover.iloc[consts.LIQUIDITY_DAYS_UPPER :]
         backward_expanding_median = turnover_last.sort_index(ascending=False).expanding().median()
 
         return backward_expanding_median.iloc[consts.LIQUIDITY_DAYS_LOWER :].min()
