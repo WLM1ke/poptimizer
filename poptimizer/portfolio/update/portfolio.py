@@ -138,6 +138,9 @@ class Service:
     async def _update(self, update_day: datetime) -> None:
         port = await self._repo.get(Portfolio, CURRENT_ID)
 
+        if not port.positions:
+            return
+
         port = await self._update_lots(port)
         port = await self._update_market_data(port, update_day)
 
