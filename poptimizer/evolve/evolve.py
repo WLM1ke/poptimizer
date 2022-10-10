@@ -14,8 +14,6 @@ from poptimizer.dl import ModelError
 from poptimizer.evolve import population, seq
 from poptimizer.portfolio.portfolio import load_tickers
 
-_START_POPULATION: Final = 100
-
 
 class Evolution:  # noqa: WPS214
     """Эволюция параметров модели.
@@ -86,7 +84,7 @@ class Evolution:  # noqa: WPS214
 
     def _setup(self) -> None:
         if population.count() == 0:
-            for i in range(1, _START_POPULATION + 1):
+            for i in range(1, config.START_POPULATION + 1):
                 self._logger.info(f"Создается базовый организм {i}:")
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")

@@ -1,7 +1,7 @@
 """Основные настраиваемые параметры."""
 import logging
 import pathlib
-from typing import Union, cast
+from typing import Union, cast, Final
 import pandas as pd
 import torch
 import yaml
@@ -64,3 +64,4 @@ TRADING_INTERVAL = cast(int, _cfg.get("TRADING_INTERVAL", 1))
 START_EVOLVE_HOUR = cast(int, _cfg.get("START_EVOLVE_HOUR", 1))
 STOP_EVOLVE_HOUR = cast(int, _cfg.get("STOP_EVOLVE_HOUR", 1))
 OPTIMIZER = cast(str, _cfg.get("OPTIMIZER", "resample"))
+START_POPULATION: Final = 200
