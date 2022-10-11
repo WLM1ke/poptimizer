@@ -1,4 +1,5 @@
 """Обновление таблицы с ожидаемыми дивидендами."""
+import asyncio
 import csv
 import io
 import itertools
@@ -85,7 +86,11 @@ class Service:
     async def _update(self, update_day: datetime, sec: list[securities.Security]) -> list[Status]:
         table = await self._repo.get(Table)
 
-        csv_file = await self._download()
+        try:
+            csv_file = await self._download()
+        except asyncio.TimeoutError as err:
+            raise exceptions.DataUpdateError("can't download dividends status") from err
+
         selected = set(await self._adapter.tickers())
         row = self._parse(csv_file, selected, sec)
 
