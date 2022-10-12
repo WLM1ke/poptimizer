@@ -1,6 +1,6 @@
 """Создает сервис обновления данных."""
 import aiohttp
-from dl.update import features
+from poptimizer.dl.update import features
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from poptimizer.core import backup, repository
