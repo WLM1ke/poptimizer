@@ -15,15 +15,9 @@ class Module(Protocol):
         """Запускает независимый модуль и останавливает его после завершения события."""
 
 
-class App:
-    """Асинхронное приложение, которое может быть остановлено SIGINT и SIGTERM."""
-
-    async def run(self) -> None:
-        """Запускает приложение."""
-        async with resources.acquire(config.Resources()) as res:
-            await self._run(res)
-
-    async def _run(self, res: resources.Resources) -> None:
+async def run_app() -> None:
+    """Запускает асинхронное приложение, которое может быть остановлено SIGINT и SIGTERM."""
+    async with resources.acquire(config.Resources()) as res:
         res.logger.info("starting...")
 
         modules: list[Module] = [
@@ -54,7 +48,7 @@ class App:
 def main() -> None:
     """Запускает эволюцию с остановкой по SIGINT и SIGTERM."""
     uvloop.install()
-    asyncio.run(App().run())
+    asyncio.run(run_app())
 
 
 if __name__ == "__main__":
