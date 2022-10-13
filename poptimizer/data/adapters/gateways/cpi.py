@@ -1,5 +1,4 @@
 """Загрузка данных по потребительской инфляции."""
-import re
 import types
 
 import aiohttp
@@ -13,8 +12,8 @@ from poptimizer.shared import adapters, col
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
 }
-
-_URL = "https://rosstat.gov.ru/storage/mediabank/ipc_4(2).xlsx"
+# https://rosstat.gov.ru/storage/mediabank/ipc_4(2).xlsx
+_URL = "https://rosstat.gov.ru/storage/mediabank/ipc_mes_9.xlsx"
 END_OF_JAN = 31
 PARSING_PARAMETERS = types.MappingProxyType(
     {
