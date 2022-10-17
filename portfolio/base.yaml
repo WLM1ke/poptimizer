@@ -6,7 +6,6 @@ positions:
   AFLT: 0
   AGRO: 0
   AKMB: 0
-  AKME: 0
   AKRN: 0
   ALRS: 0
   AMEZ: 0
@@ -24,7 +23,6 @@ positions:
   CNTL: 0
   CNTLP: 0
   DIOD: 0
-  DIVD: 0
   DSKY: 0
   DVEC: 0
   ENPG: 0
@@ -69,7 +67,6 @@ positions:
   MAGN: 0
   MDMG: 0
   MGNT: 0
-  MGNZ: 0
   MGTSP: 0
   MOEX: 0
   MRKC: 0
@@ -95,8 +92,6 @@ positions:
   NSVZ: 0
   NVTK: 0
   OGKB: 0
-  OKEY: 0
-  OZON: 0
   PHOR: 0
   PIKK: 0
   PLZL: 0
