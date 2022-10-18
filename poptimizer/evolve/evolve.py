@@ -143,9 +143,9 @@ class Evolution:  # noqa: WPS214
         all_dates = listing.all_history_date(self._tickers, end=self._end)
         dates = all_dates[-self._tests :].tolist()
 
-        if organism.date == self._end and (self._tests < population.max_scores() or organism.scores == self._tests - 1):
+        if organism.date == self._end and organism.scores >= self._tests - 1:
             dates = [all_dates[-(organism.scores + 1)]]
-        elif organism.date == self._end and self._tests >= population.max_scores() and organism.scores < self._tests - 1:
+        elif organism.date == self._end:
             organism.clear()
         elif organism.scores:
             dates = [self._end]
