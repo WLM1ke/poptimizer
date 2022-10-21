@@ -1,6 +1,5 @@
 """Создает сервис обновления данных."""
 import aiohttp
-from poptimizer.dl.update import features
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from poptimizer.core import backup, repository
@@ -8,6 +7,7 @@ from poptimizer.data import updater
 from poptimizer.data.adapter import MarketData
 from poptimizer.data.update import cpi, divs, indexes, quotes, securities, trading_date, usd
 from poptimizer.data.update.raw import check_raw, nasdaq, reestry, status
+from poptimizer.dl.update import features
 from poptimizer.portfolio.adapter import PortfolioData
 from poptimizer.portfolio.update import portfolio
 
