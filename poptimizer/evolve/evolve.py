@@ -3,7 +3,7 @@ import datetime
 import itertools
 import logging
 import operator
-from typing import Optional, Final
+from typing import Optional
 
 import numpy as np
 from scipy import stats
@@ -40,7 +40,7 @@ class Evolution:  # noqa: WPS214
         bound = seq.minimum_bounding_n(config.P_VALUE / count)
         max_score = population.max_scores() or bound
 
-        return max(1, bound + (count - max_score))
+        return max_score * count // config.TARGET_POPULATION
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -84,7 +84,7 @@ class Evolution:  # noqa: WPS214
 
     def _setup(self) -> None:
         if population.count() == 0:
-            for i in range(1, config.START_POPULATION + 1):
+            for i in range(1, config.TARGET_POPULATION + 1):
                 self._logger.info(f"Создается базовый организм {i}:")
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")
