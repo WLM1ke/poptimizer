@@ -59,7 +59,10 @@ def log_normal_llh_mix(
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Minus Normal Log Likelihood and forecast means."""
     dist = model.dist(batch)
-    llh = dist.log_prob(batch["Label"] + torch.tensor(1.0))
+    try:
+        llh = dist.log_prob(batch["Label"] + torch.tensor(1.0))
+    except ValueError:
+        raise GradientsError(f"Wrong bound in Categorical distribution")
 
     return -llh.sum(), dist.mean - torch.tensor(1.0), dist.variance
 
