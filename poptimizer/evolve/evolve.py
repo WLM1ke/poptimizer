@@ -38,9 +38,9 @@ class Evolution:  # noqa: WPS214
     def _tests(self) -> float:
         count = population.count()
         bound = seq.minimum_bounding_n(config.P_VALUE / count)
-        max_score = population.max_scores() or bound
+        max_score = max(population.max_scores(), bound)
 
-        return max_score * count // config.TARGET_POPULATION
+        return bound + (max_score - bound) * (count * 2 - config.TARGET_POPULATION) // config.TARGET_POPULATION
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -84,7 +84,7 @@ class Evolution:  # noqa: WPS214
 
     def _setup(self) -> None:
         if population.count() == 0:
-            for i in range(1, config.TARGET_POPULATION + 1):
+            for i in range(1, (config.TARGET_POPULATION // 2) + 1):
                 self._logger.info(f"Создается базовый организм {i}:")
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")
