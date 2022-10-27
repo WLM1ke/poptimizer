@@ -7,6 +7,7 @@ import aiomoex
 from pydantic import BaseModel, Field, validator
 
 from poptimizer.core import domain, repository
+from poptimizer.data import exceptions
 
 
 class _TradingDate(domain.Row):
@@ -53,7 +54,10 @@ class Service:
 
     async def get_date_from_iss(self) -> datetime:
         """Получает информацию о последней торговой дате c MOEX ISS."""
-        return await self._download()
+        try:
+            return await self._download()
+        except aiohttp.client_exceptions.ClientOSError as err:
+            raise exceptions.DataUpdateError("can't download trading dates") from err
 
     async def save(self, timestamp: datetime) -> None:
         """Сохраняет информацию о торговой дате."""
