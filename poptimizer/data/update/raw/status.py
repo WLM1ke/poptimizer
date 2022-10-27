@@ -1,5 +1,4 @@
 """Обновление таблицы с ожидаемыми дивидендами."""
-import asyncio
 import csv
 import io
 import itertools
@@ -88,8 +87,8 @@ class Service:
 
         try:
             csv_file = await self._download()
-        except (asyncio.TimeoutError, aiohttp.client_exceptions.ClientConnectorError) as err:
-            raise exceptions.DataUpdateError("can't download dividends status") from err
+        except aiohttp.client_exceptions.ClientConnectorError as err:
+            raise exceptions.DataUpdateError("can't download status data") from err
 
         selected = set(await self._adapter.tickers())
         row = self._parse(csv_file, selected, sec)
