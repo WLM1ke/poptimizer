@@ -37,7 +37,13 @@ class Service:
     async def update(self, update_day: datetime, status_rows: list[status.Status]) -> None:
         """Обновляет дивидендов с сайта https://закрытияреестров.рф."""
         coro = [self._update_one(update_day, row) for row in status_rows if not row.foreign]
-        await asyncio.gather(*coro)
+
+        try:
+            await asyncio.gather(*coro)
+        except exceptions.DataUpdateError as err:
+            self._logger.warning(f"can't complete update -> {err}")
+
+            return
 
         self._logger.info("update is completed")
 
@@ -83,7 +89,7 @@ def _validate_header(row: html.HtmlElement, data_col: int) -> None:
         share_type = "обыкновенную"
 
     if share_type not in (header := html.tostring(row[data_col], encoding="unicode")):
-        raise exceptions.DataUpdateError(f"wrong header {header}")
+        raise exceptions.DataUpdateError(f"wrong dividends table header {header}")
 
 
 def _parse_data(rows_iter: Iterable[html.HtmlElement], data_col: int) -> Iterable[check_raw.Raw]:
