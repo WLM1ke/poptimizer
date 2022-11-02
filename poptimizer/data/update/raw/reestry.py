@@ -84,11 +84,13 @@ def _parse(html_page: str, preferred: bool) -> list[check_raw.Raw]:
 
 
 def _validate_header(row: html.HtmlElement, data_col: int) -> None:
-    share_type = "привилегированную"
+    share_type: tuple[str, ...] = ("привилегированную",)
     if data_col == 1:
-        share_type = "обыкновенную"
+        share_type = ("обыкновенную", "ГДР")
 
-    if share_type not in (header := html.tostring(row[data_col], encoding="unicode")):
+    header = html.tostring(row[data_col], encoding="unicode")
+
+    if not any(word in header for word in share_type):
         raise exceptions.DataUpdateError(f"wrong dividends table header {header}")
 
 
