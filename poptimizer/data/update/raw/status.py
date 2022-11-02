@@ -87,7 +87,7 @@ class Service:
 
         try:
             csv_file = await self._download()
-        except aiohttp.client_exceptions.ClientConnectorError as err:
+        except aiohttp.ClientError as err:
             raise exceptions.DataUpdateError("can't download status data") from err
 
         selected = set(await self._adapter.tickers())

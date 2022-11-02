@@ -117,7 +117,7 @@ class Service:
                 market=market,
                 engine="stock",
             )
-        except (aiohttp.client_exceptions.ClientConnectionError, asyncio.TimeoutError) as err:
+        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
             raise exceptions.DataUpdateError(f"can't download {sec.board}.{sec.ticker}") from err
 
         return domain.Rows[Quote].parse_obj(json).__root__

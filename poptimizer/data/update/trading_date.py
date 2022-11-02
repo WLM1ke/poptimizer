@@ -56,7 +56,7 @@ class Service:
         """Получает информацию о последней торговой дате c MOEX ISS."""
         try:
             return await self._download()
-        except aiohttp.client_exceptions.ClientOSError as err:
+        except aiohttp.ClientError as err:
             raise exceptions.DataUpdateError("can't download trading dates") from err
 
     async def save(self, timestamp: datetime) -> None:
