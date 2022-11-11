@@ -43,7 +43,7 @@ class Evolution:  # noqa: WPS214
         if count > config.TARGET_POPULATION:
             return max_score + 1
 
-        return bound + (max_score - bound) * (count * 2 - config.TARGET_POPULATION) // config.TARGET_POPULATION
+        return max(1, bound + (max_score - bound) * (count * 2 - config.TARGET_POPULATION) // config.TARGET_POPULATION)
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
