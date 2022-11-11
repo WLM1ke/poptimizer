@@ -18,14 +18,14 @@ aiofiles = "^22.1.0"
 types-aiofiles = "^22.1.0"
 lxml = "^4.9.1"
 pandas = "^1.5.0"
-torch = "^1.12.1"
+torch = "^1.13.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 import-linter = {extras = ["toml"], version = "^1.3.0"}
-mypy = "^0.982"
 wemake-python-styleguide = "^0.17.0"
-pytest = "^7.1.2"
-pytest-cov = "^3.0.0"
+mypy = "^0.990"
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
 black = {extras = ["d"], version = "^22.6.0"}
 
 [tool.poetry.scripts]
@@ -71,7 +71,6 @@ layers = [
     "poptimizer.app",
     "poptimizer.utils",
     "poptimizer.server",
-    "poptimizer.dl",
     "poptimizer.portfolio",
     "poptimizer.data",
     "poptimizer.core",
@@ -87,14 +86,12 @@ name = "Weakly coupled middle layer"
 type = "independence"
 modules = [
     "poptimizer.server",
-    "poptimizer.dl",
     "poptimizer.portfolio",
     "poptimizer.data",
 ]
 ignore_imports = [
     "poptimizer.data.*.*.* -> poptimizer.*.adapter",
     "poptimizer.portfolio.*.* -> poptimizer.*.adapter",
-    "poptimizer.dl.update.features -> poptimizer.*.adapter",
     "poptimizer.server.* -> poptimizer.*.edit.*",
     "poptimizer.server.middleware -> poptimizer.*.exceptions",
 ]
