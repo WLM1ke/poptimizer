@@ -1,7 +1,6 @@
 """Сервис обновления признаков."""
 import asyncio
 import logging
-import math
 from datetime import datetime
 from enum import Enum
 from typing import Any, ClassVar
@@ -33,15 +32,6 @@ class Features(domain.BaseEntity):
     ret: list[float]
     num: dict[Numerical, list[float]]
     cat: dict[Categorical, list[int]]
-
-    @property
-    def label(self) -> torch.Tensor:
-        """Метки данных - shape(timestamps,)."""
-        return torch.tensor(
-            self.returns[1:] + [math.nan],
-            dtype=torch.float,
-            device=consts.DEVICE,
-        )
 
     @property
     def returns(self) -> torch.Tensor:
