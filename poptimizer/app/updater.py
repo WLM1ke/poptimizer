@@ -7,7 +7,6 @@ from poptimizer.data import updater
 from poptimizer.data.adapter import MarketData
 from poptimizer.data.update import cpi, divs, indexes, quotes, securities, trading_date, usd
 from poptimizer.data.update.raw import check_raw, nasdaq, reestry, status
-from poptimizer.dl.update import features
 from poptimizer.portfolio.adapter import PortfolioData
 from poptimizer.portfolio.update import portfolio
 
@@ -32,5 +31,5 @@ def create(mongo_client: AsyncIOMotorClient, session: aiohttp.ClientSession) -> 
         reestry.Service(repo, session),
         nasdaq.Service(repo, session),
         check_raw.Service(repo),
-        [portfolio.Service(repo, market_data), features.Service(repo, market_data, portfolio_data)],
+        [portfolio.Service(repo, market_data)],
     )
