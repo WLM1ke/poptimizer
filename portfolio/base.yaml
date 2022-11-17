@@ -23,7 +23,6 @@ positions:
   CNTL: 0
   CNTLP: 0
   DIOD: 0
-  DSKY: 0
   DVEC: 0
   ENPG: 0
   ENRU: 0
@@ -36,7 +35,6 @@ positions:
   GAZP: 0
   GCHE: 0
   GEMA: 0
-  GLTR: 0
   GMKN: 0
   GTRK: 0
   HHRU: 0
@@ -63,7 +61,6 @@ positions:
   LSRG: 0
   LVHK: 0
   MAGN: 0
-  MDMG: 0
   MGNT: 0
   MGTSP: 0
   MOEX: 0
@@ -122,7 +119,6 @@ positions:
   SFIN: 0
   SIBN: 0
   SLEN: 0
-  SMLT: 0
   SNGS: 0
   SNGSP: 0
   SVAV: 0
