@@ -5,10 +5,19 @@ from typing import Iterator
 import numpy as np
 import pandas as pd
 import torch
+from pydantic import BaseModel
 from torch.utils import data
 
 from poptimizer.core import consts
 from poptimizer.dl import exceptions
+
+
+class DataDays(BaseModel):
+    """Описание, как использовать доступные дни для построения тренировочной и тестовой выборки."""
+
+    history: int
+    forecast: int
+    test: int
 
 
 @unique
@@ -24,6 +33,7 @@ class FeatTypes(Enum):
 
 
 Case = dict[FeatTypes, torch.Tensor]
+DataLoader = data.DataLoader[Case]
 
 
 class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
@@ -34,21 +44,19 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
 
     def __init__(
         self,
-        history_days: int,
-        test_days: int,
-        forecast_days: int,
+        days: DataDays,
         ret_total: pd.Series,
         num_feat: list[pd.Series],
     ) -> None:
-        self._history_days = history_days
-        self._test_days = test_days
-        self._forecast_days = forecast_days
+        self._history_days = days.history
+        self._test_days = days.test
+        self._forecast_days = days.forecast
 
-        self._days = len(ret_total)
+        self._all_days = len(ret_total)
 
         min_days_for_one_train_and_test = self._history_days + 2 * self._forecast_days + self._test_days - 1
-        if self._days < min_days_for_one_train_and_test:
-            raise exceptions.TooShortHistoryError(self._days)
+        if self._all_days < min_days_for_one_train_and_test:
+            raise exceptions.TooShortHistoryError(self._all_days)
 
         self._ret_total = torch.tensor(
             ret_total.values,
@@ -58,9 +66,9 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
 
         ret = (
             pd.Series(np.log1p(ret_total))
-            .rolling(forecast_days)
+            .rolling(self._forecast_days)
             .sum()
-            .shift(-(forecast_days + history_days - 1))
+            .shift(-(self._forecast_days + self._history_days - 1))
             .values
         )
         self._label = torch.tensor(
@@ -69,8 +77,8 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
             device=consts.DEVICE,
         ).reshape(-1, 1)
 
-        if any(len(df) != self._days for df in num_feat):
-            raise exceptions.WrongFeatLenError(self._days)
+        if any(len(df) != self._all_days for df in num_feat):
+            raise exceptions.WrongFeatLenError(self._all_days)
 
         self._num_feat = torch.column_stack(
             [
@@ -85,7 +93,7 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
 
     def __len__(self) -> int:
         """Количество доступных примеров."""
-        return self._days - self._history_days + 1
+        return self._all_days - self._history_days + 1
 
     def __getitem__(self, start_day: int) -> Case:
         """Выдает обучающий пример с заданным номером.
@@ -97,7 +105,7 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
             FeatTypes.RETURNS: self._ret_total[start_day : start_day + self._history_days],
         }
 
-        if start_day < self._days - (self._history_days + self._forecast_days) + 1:
+        if start_day < self._all_days - (self._history_days + self._forecast_days) + 1:
             case[FeatTypes.LABEL] = self._label[start_day]
 
         return case
@@ -105,7 +113,7 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
     def train_dataset(self) -> data.Subset[Case]:
         """Dataset для обучения."""
         end = (
-            self._days
+            self._all_days
             - (self._history_days + self._forecast_days + self._test_days - 1)
             - (self._history_days + self._forecast_days - 1)
         )
@@ -114,18 +122,18 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
 
     def test_dataset(self) -> data.Subset[Case]:
         """Dataset для тестирования."""
-        end = self._days - (self._history_days + self._forecast_days - 1)
+        end = self._all_days - (self._history_days + self._forecast_days - 1)
 
         return data.Subset(self, range(end - self._test_days, end))
 
     def forecast_dataset(self) -> data.Subset[Case]:
         """Dataset для построения прогноза."""
-        start = self._days - self._history_days
+        start = self._all_days - self._history_days
 
         return data.Subset(self, range(start, start + 1))
 
 
-def train_data_loader(
+def train(
     datasets: list[OneTickerData],
     batch_size: int,
     num_workers: int = 0,  # Загрузка в отдельном потоке - увеличение потоков не докидывает
@@ -165,7 +173,7 @@ class _DaysSampler(data.Sampler[list[int]]):
         )
 
 
-def test_data_loader(
+def test(
     datasets: list[OneTickerData],
     num_workers: int = 0,  # Загрузка в отдельном потоке - увеличение потоков не докидывает
 ) -> data.DataLoader[Case]:
@@ -178,7 +186,7 @@ def test_data_loader(
     )
 
 
-def forecast_data_loader(
+def forecast(
     datasets: list[OneTickerData],
 ) -> data.DataLoader[Case]:
     """Загрузчик данных для построения прогноза."""
