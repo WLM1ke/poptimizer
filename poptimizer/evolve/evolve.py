@@ -28,6 +28,7 @@ class Evolution:  # noqa: WPS214
         """Инициализирует необходимые параметры."""
         self._tickers = None
         self._end = None
+        self._have_more_dates = False
         self._logger = logging.getLogger()
 
     @property
@@ -43,7 +44,10 @@ class Evolution:  # noqa: WPS214
         if count > config.TARGET_POPULATION:
             return max_score + 1
 
-        return max(1, bound + (max_score - bound) * (count * 2 - config.TARGET_POPULATION) // config.TARGET_POPULATION)
+        return max(
+            bound - 1,
+            bound + (max_score - bound) * (count * 2 - config.TARGET_POPULATION) // config.TARGET_POPULATION,
+        )
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -78,27 +82,26 @@ class Evolution:  # noqa: WPS214
             self._end = d_max or listing.all_history_date(self._tickers)[-1]
 
         dates = listing.all_history_date(self._tickers, start=self._end)
+
         if (d_min != self._end) or (len(dates) == 1):
+            self._have_more_dates = self._end < dates[-1]
+
             return step + 1
 
         self._end = dates[1]
+        self._have_more_dates = self._end < dates[-1]
 
         return 1
 
     def _setup(self) -> None:
         if population.count() == 0:
-            for i in range(1, config.TARGET_POPULATION + 1):
+            for i in range(1, config.TARGET_POPULATION // 2 + 1):
                 self._logger.info(f"Создается базовый организм {i}:")
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")
 
     def _step(self, hunter: population.Organism) -> Optional[population.Organism]:
         """Один шаг эволюции."""
-        skip = True
-
-        if not hunter.scores or hunter.date == self._end:
-            skip = False
-
         label = ""
         if not hunter.scores:
             label = " - новый организм"
@@ -108,10 +111,19 @@ class Evolution:  # noqa: WPS214
             return None
         if margin[0] < 0:
             return None
-        if skip:
+
+        if self._have_more_dates:
+            self._logger.info("Появились новые данные - не размножается...\n")
+
             return None
+
+        if population.count() >= config.TARGET_POPULATION:
+            self._logger.info("Достаточная популяция - не размножается...\n")
+
+            return None
+
         if (rnd := np.random.random()) < (slowness := margin[1]):
-            self._logger.info(f"Медленный не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
+            self._logger.info(f"Медленный - не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
 
             return None
 
@@ -123,6 +135,7 @@ class Evolution:  # noqa: WPS214
                 return None
             if margin[0] < 0:
                 return None
+
             if (rnd := np.random.random()) < (slowness := margin[1]):
                 self._logger.info(f"Медленный не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
 
