@@ -27,7 +27,7 @@ class FeatTypes(Enum):
     Являются ключами для словаря с отдельными обучающими примерами.
     """
 
-    LABEL = auto()
+    LABEL1P = auto()
     RETURNS = auto()
     NUMERICAL = auto()
 
@@ -56,13 +56,13 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
 
         min_days_for_one_train_and_test = self._history_days + 2 * self._forecast_days + self._test_days - 1
         if self._all_days < min_days_for_one_train_and_test:
-            raise exceptions.TooShortHistoryError(self._all_days)
+            raise exceptions.FeaturesError("too short history")
 
         self._ret_total = torch.tensor(
             ret_total.values,
             dtype=torch.float,
             device=consts.DEVICE,
-        ).reshape(-1, 1)
+        )
 
         ret = (
             pd.Series(np.log1p(ret_total))
@@ -71,16 +71,16 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
             .shift(-(self._forecast_days + self._history_days - 1))
             .values
         )
-        self._label = torch.tensor(
-            ret,
+        self._label1p = torch.tensor(
+            np.exp(ret),
             dtype=torch.float,
             device=consts.DEVICE,
-        ).reshape(-1, 1)
+        )
 
-        if any(len(df) != self._all_days for df in num_feat):
-            raise exceptions.WrongFeatLenError(self._all_days)
+        if any(not ret_total.index.equals(df.index) for df in num_feat):
+            raise exceptions.FeaturesError("features index missmatch")
 
-        self._num_feat = torch.column_stack(
+        self._num_feat = torch.vstack(
             [
                 torch.tensor(
                     feat.values,
@@ -101,12 +101,12 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
         Метка может отсутствовать для конца семпла.
         """
         case = {
-            FeatTypes.NUMERICAL: self._num_feat[start_day : start_day + self._history_days],
+            FeatTypes.NUMERICAL: self._num_feat[:, start_day : start_day + self._history_days],
             FeatTypes.RETURNS: self._ret_total[start_day : start_day + self._history_days],
         }
 
         if start_day < self._all_days - (self._history_days + self._forecast_days) + 1:
-            case[FeatTypes.LABEL] = self._label[start_day]
+            case[FeatTypes.LABEL1P] = self._label1p[start_day]
 
         return case
 
@@ -155,7 +155,7 @@ class _DaysSampler(data.Sampler[list[int]]):
         self._tests = self._test_days * len(datasets)
 
         if any(len(dataset) != self._test_days for dataset in datasets):
-            raise exceptions.TestLengthMissmatchError(self._test_days)
+            raise exceptions.FeaturesError("test length missmatch")
 
     def __len__(self) -> int:
         return self._test_days
