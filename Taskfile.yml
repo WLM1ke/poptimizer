@@ -42,7 +42,7 @@ tasks:
     desc: Lint and test with pytest.
     deps: [lint]
     cmds:
-      - poetry run pytest {{.APP}} -v --cov={{.APP}} --cov-report=term-missing --cov-report=xml --setup-show
+      - poetry run pytest {{.APP}} --cov={{.APP}}
 
   run:
     desc: Run {{.APP}} with .env file.

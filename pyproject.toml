@@ -45,6 +45,9 @@ init_typed = true
 warn_required_dynamic_aliases = true
 warn_untyped_fields = true
 
+[tool.pytest.ini_options]
+addopts = "--cov-report=term-missing --cov-report=xml --setup-show --verbose"
+
 [tool.coverage.run]
 branch = true
 
