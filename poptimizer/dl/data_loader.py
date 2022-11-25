@@ -114,7 +114,7 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
         """Dataset для обучения."""
         end = (
             self._all_days
-            - (self._history_days + self._forecast_days + self._test_days - 1)
+            - (self._forecast_days + self._test_days - 1)
             - (self._history_days + self._forecast_days - 1)
         )
 
@@ -149,7 +149,7 @@ def train(
 
 
 class _DaysSampler(data.Sampler[list[int]]):
-    def __init__(self, datasets: list[OneTickerData]) -> None:
+    def __init__(self, datasets: list[data.Subset[Case]]) -> None:
         super().__init__(None)
         self._test_days = len(datasets[0])
         self._tests = self._test_days * len(datasets)
@@ -178,9 +178,11 @@ def test(
     num_workers: int = 0,  # Загрузка в отдельном потоке - увеличение потоков не докидывает
 ) -> data.DataLoader[Case]:
     """Загрузчик данных для тестирования модели."""
+    test_dataset = [ticker.test_dataset() for ticker in datasets]
+
     return data.DataLoader(
-        dataset=data.ConcatDataset(datasets),
-        batch_sampler=_DaysSampler(datasets),
+        dataset=data.ConcatDataset(test_dataset),
+        batch_sampler=_DaysSampler(test_dataset),
         drop_last=False,
         num_workers=num_workers,
     )
