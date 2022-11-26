@@ -1,11 +1,11 @@
-version: '3'
+version: "3"
 
 vars:
   APP: poptimizer
   PYTHON: 3.10
-  TOOLS: go-task poetry
+  TOOLS: go-task pdm
 
-dotenv: ['.env']
+dotenv: [".env"]
 
 tasks:
   default:
@@ -24,27 +24,25 @@ tasks:
     desc: Upgrade {{.TOOLS | replace " " ", "}}, python{{.PYTHON}} and dependencies.
     cmds:
       - brew upgrade {{.TOOLS}} python@{{.PYTHON}}
-      - poetry update --lock
-      - poetry install --sync --no-root
-      - poetry run pip install pip torch -U  # Problems with poetry and torch
-      - poetry show -o
+      - pdm update --update-all --no-sync
+      - pdm sync --clean
 
   lint:
     desc: Format black and isort. Lint lint-imports, mypy and wemake-python-styleguide.
     cmds:
-      - poetry run black {{.APP}}
-      - poetry run isort {{.APP}}
-      - poetry run lint-imports
-      - poetry run mypy {{.APP}}
-      - poetry run flake8 {{.APP}}
+      - pdm run black {{.APP}}
+      - pdm run isort {{.APP}}
+      - pdm run lint-imports
+      - pdm run mypy {{.APP}}
+      - pdm run flake8 {{.APP}}
 
   test:
     desc: Lint and test with pytest.
     deps: [lint]
     cmds:
-      - poetry run pytest {{.APP}} --cov={{.APP}}
+      - pdm run pytest {{.APP}} --cov={{.APP}}
 
   run:
     desc: Run {{.APP}} with .env file.
     cmds:
-      - poetry run python -m {{.APP}}
+      - .venv/bin/python -m {{.APP}}

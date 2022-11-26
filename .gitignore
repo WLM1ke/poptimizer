@@ -103,6 +103,9 @@ ENV/
 # PyTest
 **.pytest_cache/
 
+# pdm Python path
+.pdm.toml
+
 # Reports
 /reports/
 
