@@ -138,7 +138,10 @@ def train(
     batch_size: int,
     num_workers: int = 0,  # Загрузка в отдельном потоке - увеличение потоков не докидывает
 ) -> data.DataLoader[Case]:
-    """Загрузчик данных для тренировки модели."""
+    """Загрузчик данных для тренировки модели.
+
+    Обучающие примеры выдаются батчами заданного размера в случайном порядке.
+    """
     return data.DataLoader(
         dataset=data.ConcatDataset(ticker.train_dataset() for ticker in datasets),
         batch_size=batch_size,
@@ -177,7 +180,10 @@ def test(
     datasets: list[OneTickerData],
     num_workers: int = 0,  # Загрузка в отдельном потоке - увеличение потоков не докидывает
 ) -> data.DataLoader[Case]:
-    """Загрузчик данных для тестирования модели."""
+    """Загрузчик данных для тестирования модели.
+
+    Обучающие примеры выдаются батчами, равными количеству тикеров с фиксированным порядком.
+    """
     test_dataset = [ticker.test_dataset() for ticker in datasets]
 
     return data.DataLoader(
@@ -191,7 +197,10 @@ def test(
 def forecast(
     datasets: list[OneTickerData],
 ) -> data.DataLoader[Case]:
-    """Загрузчик данных для построения прогноза."""
+    """Загрузчик данных для построения прогноза.
+
+    Обучающие примеры выдаются одним батчем, равными количеству тикеров с фиксированным порядком.
+    """
     return data.DataLoader(
         dataset=data.ConcatDataset(ticker.forecast_dataset() for ticker in datasets),
         batch_size=len(datasets),
