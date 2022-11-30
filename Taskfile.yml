@@ -26,6 +26,7 @@ tasks:
       - brew upgrade {{.TOOLS}} python@{{.PYTHON}}
       - pdm update --update-all --no-sync
       - pdm sync --clean
+      - pdm update --dry-run --unconstrained
 
   lint:
     desc: Format black and isort. Lint lint-imports, mypy and wemake-python-styleguide.
