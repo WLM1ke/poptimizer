@@ -57,7 +57,7 @@ def _format_request(request: web.BaseRequest) -> tuple[str, str]:
 
     return (
         f"{method} {path}",
-        f"\033[1;30m{method}\033[0m {path}",
+        f"\033[1;35m{method}\033[0m {path}",
     )
 
 
