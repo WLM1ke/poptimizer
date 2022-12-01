@@ -14,7 +14,6 @@ from poptimizer.data.adapters.gateways import (  # noqa: WPS235
     finrange,
     gateways,
     invest_mint,
-    moex_status,
     nasdaq,
     smart_lab,
     street_insider,
@@ -69,8 +68,7 @@ class Dividends(base.AbstractTable[DivEvents]):
 class DivNew(base.AbstractTable[events.TradingDayEnded]):
     """Таблица с ожидаемыми дивидендами.
 
-     Данные забираются со https://www.smart-lab.ru по российским акциям и с https://www.moex.com/ по
-     иностранным.
+     Данные забираются со https://www.smart-lab.ru по российским акциям.
 
     Создает события с новыми дивидендами.
     """
@@ -78,7 +76,6 @@ class DivNew(base.AbstractTable[events.TradingDayEnded]):
     group: ClassVar[ports.GroupName] = ports.DIV_NEW
     _gateways: Final = (
         smart_lab.SmartLabGateway(),
-        moex_status.MOEXStatusGateway(),
     )
 
     def _update_cond(self, event: events.TradingDayEnded) -> bool:
