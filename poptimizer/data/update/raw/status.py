@@ -15,9 +15,9 @@ from poptimizer.data import exceptions
 from poptimizer.data.update import securities
 from poptimizer.portfolio import adapter
 
-_URL: Final = "https://www.moex.com/ru/listing/listing-register-closing-csv.aspx"
+_URL: Final = "https://web.moex.com/moex-web-icdb-api/api/v1/export/site-register-closings/csv?separator=1&language=1"
 _LOOK_BACK_DAYS: Final = 14
-_DATE_FMT: Final = "%d.%m.%Y %H:%M:%S"
+_DATE_FMT: Final = "%m/%d/%Y %H:%M:%S"
 _RE_TICKER = re.compile(r", ([A-Z]+-[A-Z]+|[A-Z]+) \[")
 
 
