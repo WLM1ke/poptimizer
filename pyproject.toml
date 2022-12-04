@@ -20,6 +20,7 @@ dependencies = [
     "lxml>=4.9.1",
     "pandas>=1.5.2",
     "tqdm>=4.64.1",
+    "scipy>=1.9.3",
 ]
 [project.optional-dependencies]
 
