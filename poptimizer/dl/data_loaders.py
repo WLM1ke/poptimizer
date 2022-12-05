@@ -2,8 +2,7 @@ from typing import Iterator
 
 from torch.utils import data
 
-from poptimizer.dl import exceptions, datasets
-
+from poptimizer.dl import datasets, exceptions
 
 AllTickersData = list[datasets.OneTickerData]
 DataLoader = data.DataLoader[datasets.Batch]

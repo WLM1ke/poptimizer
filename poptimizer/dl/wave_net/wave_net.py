@@ -1,10 +1,12 @@
 """Сеть на основе WaveNet."""
+import numpy as np
 import torch
+from pandas._typing import npt
 from pydantic import BaseModel
 from torch.distributions import MixtureSameFamily
 
 from poptimizer.core import consts
-from poptimizer.dl import exceptions, datasets
+from poptimizer.dl import datasets, exceptions
 from poptimizer.dl.wave_net import backbone, head, inputs
 
 
@@ -77,18 +79,21 @@ class Net(torch.nn.Module):
         labels = batch[datasets.FeatTypes.LABEL1P]
 
         try:
-            return dist.log_prob(labels).mean() + self._llh_adj
+            return self._llh_adj.add(dist.log_prob(labels).mean())
         except ValueError as err:
             raise exceptions.ModelError("error in categorical distribution") from err
 
-    def loss_and_forecast_mean_and_var(self, batch: datasets.Batch) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def loss_and_forecast_mean_and_var(
+        self,
+        batch: datasets.Batch,
+    ) -> tuple[float, npt.NDArray[np.double], npt.NDArray[np.double]]:
         """Minus Normal Log Likelihood and forecast means and vars."""
         dist = self(batch)
 
         labels = batch[datasets.FeatTypes.LABEL1P]
 
         try:
-            llh = dist.log_prob(labels).mean() + self._llh_adj
+            llh = self._llh_adj.add(dist.log_prob(labels).mean())
         except ValueError as err:
             raise exceptions.ModelError("error in categorical distribution") from err
 

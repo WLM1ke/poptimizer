@@ -1,6 +1,7 @@
 import numpy as np
-from pydantic import BaseModel
+import numpy.typing as npt
 import scipy
+from pydantic import BaseModel
 
 from poptimizer.core import consts
 from poptimizer.dl import ledoit_wolf
@@ -8,6 +9,7 @@ from poptimizer.dl import ledoit_wolf
 
 class Desc(BaseModel):
     """Описание параметров кривой полезности."""
+
     risk_tolerance: float
 
 
@@ -19,7 +21,7 @@ class Result(BaseModel):
     pos: int
     max_weight: float
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Доходность портфеля с максимальными ожидаемыми темпами роста.
 
         Рассчитывается доходность оптимального по темпам роста портфеля в годовом выражении (RET) и
@@ -49,14 +51,13 @@ class Result(BaseModel):
         )
 
 
-
 def optimize(
-        mean: np.array,
-        var: np.array,
-        labels: np.array,
-        tot_ret: np.array,
-        desc: Desc,
-        forecast_days: int
+    mean: npt.NDArray[np.double],
+    var: npt.NDArray[np.double],
+    labels: npt.NDArray[np.double],
+    tot_ret: npt.NDArray[np.double],
+    desc: Desc,
+    forecast_days: int,
 ) -> Result:
     """Оптимизирует портфель и возвращает результаты сравнения с бенчмарком."""
     mean *= consts.YEAR_IN_TRADING_DAYS / forecast_days
@@ -74,17 +75,17 @@ def optimize(
         avr=avr,
         ret_plan=ret_plan,
         std_plan=std_plan,
-        pos=int(1 / (w ** 2).sum()),
+        pos=int(1 / (w**2).sum()),
         max_weight=w.max(),
     )
 
 
 def _opt_weight(
-        mean: np.array,
-        variance: np.array,
-        tot_ret: np.array,
-        risk_tolerance: float,
-) -> tuple[np.array, np.array]:
+    mean: npt.NDArray[np.double],
+    variance: npt.NDArray[np.double],
+    tot_ret: npt.NDArray[np.double],
+    risk_tolerance: float,
+) -> tuple[npt.NDArray[np.double], npt.NDArray[np.double]]:
     """Веса портфеля с максимальными темпами роста и использовавшаяся ковариационная матрица.
 
     Задача максимизации темпов роста портфеля сводится к максимизации математического ожидания
@@ -92,7 +93,7 @@ def _opt_weight(
     неотрицательные веса отдельных активов.
     """
     sigma = ledoit_wolf.ledoit_wolf_cor(tot_ret)[0]
-    std = variance ** 0.5
+    std = variance**0.5
     sigma = std.reshape(1, -1) * sigma * std.reshape(-1, 1)
 
     w = np.ones_like(mean).flatten()
@@ -117,16 +118,20 @@ def _opt_weight(
 
 
 class _Utility:
-    def __init__(self, risk_tolerance: float, mean: np.array, sigma: np.array) -> None:
+    def __init__(
+        self,
+        risk_tolerance: float,
+        mean: npt.NDArray[np.double],
+        sigma: npt.NDArray[np.double],
+    ) -> None:
         self._risk_tolerance = risk_tolerance
         self._mean = mean
         self._sigma = sigma
 
-    def __call__(self, w: np.array) -> float:
+    def __call__(self, w: npt.NDArray[np.float64]) -> float:
         w = w.reshape(-1, 1) / w.sum()
 
-        variance = (w.T @ self._sigma @ w).item()
-        ret = (w.T @ self._mean).item() - variance / 2
+        variance = w.T @ self._sigma @ w
+        ret = (w.T @ self._mean) - variance / np.double(2)
 
-        return -(ret * self._risk_tolerance - (1 - self._risk_tolerance) * variance**0.5)
-
+        return -float((ret * self._risk_tolerance - (1 - self._risk_tolerance) * variance**0.5).item())

@@ -1,8 +1,9 @@
 """Ledoit & Wolf constant correlation unequal variance shrinkage estimator."""
 import numpy as np
+import numpy.typing as npt
 
 
-def shrinkage(returns: np.array) -> tuple[np.array, float, float]:  # noqa: WPS210
+def shrinkage(returns: npt.NDArray[np.double]) -> tuple[npt.NDArray[np.double], float, float]:  # noqa: WPS210
     """Shrinks sample covariance matrix towards constant correlation unequal variance matrix.
 
     Ledoit & Wolf ("Honey, I shrunk the sample covariance matrix", Portfolio Management, 30(2004),
@@ -29,19 +30,19 @@ def shrinkage(returns: np.array) -> tuple[np.array, float, float]:  # noqa: WPS2
 
     # sample average correlation
     variance = np.diag(sample_cov).reshape(-1, 1)
-    sqrt_var = variance ** 0.5
+    sqrt_var = variance**0.5
     unit_cor_var = sqrt_var * sqrt_var.transpose()
     average_cor = ((sample_cov / unit_cor_var).sum() - n) / n / (n - 1)  # noqa: WPS221
     prior = average_cor * unit_cor_var
     np.fill_diagonal(prior, variance)
 
     # pi-hat
-    y = returns ** 2  # noqa: WPS111
-    phi_mat = (y.transpose() @ y) / t - sample_cov ** 2
+    y = returns**2  # noqa: WPS111
+    phi_mat = (y.transpose() @ y) / t - sample_cov**2
     phi = phi_mat.sum()
 
     # rho-hat
-    theta_mat = ((returns ** 3).transpose() @ returns) / t - variance * sample_cov  # noqa: WPS221
+    theta_mat = ((returns**3).transpose() @ returns) / t - variance * sample_cov  # noqa: WPS221
     np.fill_diagonal(theta_mat, 0)
     rho = np.diag(phi_mat).sum() + average_cor * (1 / sqrt_var @ sqrt_var.transpose() * theta_mat).sum()  # noqa: WPS221
 
@@ -59,8 +60,8 @@ def shrinkage(returns: np.array) -> tuple[np.array, float, float]:  # noqa: WPS2
 
 
 def ledoit_wolf_cor(
-        tot_ret,
-) -> tuple[np.array, float, float]:
+    tot_ret: npt.NDArray[np.double],
+) -> tuple[npt.NDArray[np.double], float, float]:
     """Корреляционная матрица на основе Ledoit Wolf.
 
     В расчете учитывается, что при использовании котировок за history_days могут быть получены доходности за

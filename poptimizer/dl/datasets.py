@@ -14,7 +14,6 @@ from poptimizer.data.adapter import MarketData
 from poptimizer.dl import exceptions
 
 
-
 @unique
 class FeatTypes(Enum):
     """Типы признаков.
@@ -28,6 +27,7 @@ class FeatTypes(Enum):
 
 
 Batch = dict[FeatTypes, torch.Tensor]
+
 
 class Days(BaseModel):
     history: int
@@ -142,15 +142,15 @@ class Features(BaseModel):
 
 class Builder:
     def __init__(
-            self,
-            data_adapter: MarketData,
+        self,
+        data_adapter: MarketData,
     ) -> None:
         self._data_adapter = data_adapter
 
     async def build(
-            self,
-            feats: Features,
-            days: Days,
+        self,
+        feats: Features,
+        days: Days,
     ) -> list[OneTickerData]:
         prices = await self._data_adapter.price(feats.last_date, feats.tickers)
 
@@ -167,11 +167,11 @@ class Builder:
         return await asyncio.gather(*aws)
 
     async def _prepare_features(
-            self,
-            ticker: str,
-            feats: Features,
-            days: Days,
-            price: pd.Series,
+        self,
+        ticker: str,
+        feats: Features,
+        days: Days,
+        price: pd.Series,
     ) -> OneTickerData:
         price_prev = price.shift(1).iloc[1:]
         price = price.iloc[1:]

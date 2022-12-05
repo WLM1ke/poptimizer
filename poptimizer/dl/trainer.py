@@ -5,9 +5,9 @@ import logging
 import sys
 
 import torch
+import tqdm
 from pydantic import BaseModel
 from torch import optim
-import tqdm
 
 from poptimizer.core import consts
 from poptimizer.dl import data_loaders, datasets, utility
@@ -16,6 +16,7 @@ from poptimizer.dl.wave_net import wave_net
 
 class Batch(BaseModel):
     """Описание батча и включенных в него признаков."""
+
     size: int
     feats: datasets.Features
     days: datasets.Days
@@ -36,8 +37,10 @@ class Batch(BaseModel):
 class Optimizer(BaseModel):
     """Описание параметров обучения."""
 
+
 class Scheduler(BaseModel):
     """Описание графика изменения параметров обучения."""
+
     epochs: float
     max_lr: float = 1e-3
 
@@ -59,10 +62,10 @@ class Trainer:
         self,
         state: bytes | None,
         desc: DLModel,
-    ):
+    ) -> None:
 
         all_data = await self._builder.build(desc.batch.feats, desc.batch.days)
-        net = _prepare_net(desc, state)
+        net = _prepare_net(state, desc)
 
         if state is None:
             self._train(
@@ -71,7 +74,7 @@ class Trainer:
                 desc.scheduler,
             )
 
-        test_dl= data_loaders.test(all_data)
+        test_dl = data_loaders.test(all_data)
 
         llh_sum = []
 
@@ -93,42 +96,47 @@ class Trainer:
                 self._logger.info(f"{rez} / LLH = {loss:8.5f}")
 
     def _train(
-            self,
-            net,
-            train_dl,
-            scheduler,
-    ):
+        self,
+        net: wave_net.Net,
+        train_dl: data_loaders.DataLoader,
+        scheduler: Scheduler,
+    ) -> None:
         optimizer = optim.AdamW(net.parameters())
 
         steps_per_epoch = len(train_dl)
         total_steps = 1 + int(steps_per_epoch * scheduler.epochs)
 
-        sch = optim.lr_scheduler.OneCycleLR(
+        sch = optim.lr_scheduler.OneCycleLR(  # type: ignore[attr-defined]
             optimizer,
             max_lr=scheduler.max_lr,
             total_steps=total_steps,
         )
 
-        self._logger.info(f"Epochs - {scheduler.epochs:.2f} / Train size - {len(train_dl.dataset)}")
+        train_size = len(train_dl.dataset)  # type: ignore[arg-type]
+        self._logger.info(f"Epochs - {scheduler.epochs:.2f} / Train size - {train_size}")
         modules = sum(1 for _ in net.modules())
         model_params = sum(tensor.numel() for tensor in net.parameters())
         self._logger.info(f"Layers / parameters - {modules} / {model_params}")
 
-        llh_sum = 0
-        llh_deque = collections.deque([0], maxlen=steps_per_epoch)
-
-        train_dl = itertools.repeat(train_dl)
-        train_dl = itertools.chain.from_iterable(train_dl)
-        train_dl = itertools.islice(train_dl, total_steps)
+        llh_sum: float = 0
+        llh_deque: collections.deque[float] = collections.deque([0], maxlen=steps_per_epoch)
 
         net.train()
 
-        with tqdm.tqdm(train_dl, file=sys.stdout, total=total_steps, desc="~~> Train") as bar:
+        with tqdm.tqdm(
+            itertools.islice(
+                itertools.chain.from_iterable(itertools.repeat(train_dl)),
+                total_steps,
+            ),
+            file=sys.stdout,
+            total=total_steps,
+            desc="~~> Train",
+        ) as bar:
             for batch in bar:
                 optimizer.zero_grad()
 
                 loss = -net.llh(batch)
-                loss.backward()
+                loss.backward()  # type: ignore[no-untyped-call]
                 optimizer.step()
                 sch.step()
 
@@ -139,7 +147,7 @@ class Trainer:
                 bar.set_postfix_str(f"{llh:.5f}")
 
 
-def _prepare_net(desc, state):
+def _prepare_net(state: bytes | None, desc: DLModel) -> wave_net.Net:
     net = wave_net.Net(
         desc=desc.net,
         num_feat_count=desc.batch.num_feat_count,
@@ -150,9 +158,7 @@ def _prepare_net(desc, state):
 
     if state is not None:
         buffer = io.BytesIO(state)
-        state_dict = torch.load(buffer, map_location=consts.DEVICE)
+        state_dict = torch.load(buffer, map_location=consts.DEVICE)  # type: ignore[no-untyped-call]
         net.load_state_dict(state_dict)
 
     return net
-
-

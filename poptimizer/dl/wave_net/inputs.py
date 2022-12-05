@@ -2,7 +2,7 @@
 import torch
 from pydantic import BaseModel
 
-from poptimizer.dl import exceptions, datasets
+from poptimizer.dl import datasets, exceptions
 
 
 class Desc(BaseModel):
