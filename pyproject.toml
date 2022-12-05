@@ -47,7 +47,8 @@ dev = [
 
 [tool.mypy]
 plugins = [
-    "pydantic.mypy"
+    "pydantic.mypy",
+    "numpy.typing.mypy_plugin",
 ]
 
 strict = true
