@@ -2,9 +2,10 @@
 from typing import Final
 
 import torch
-from dl import exceptions
 from pydantic import BaseModel
 from torch.distributions import Categorical, MixtureSameFamily
+
+from poptimizer.dl import exceptions
 
 _EPS: Final = torch.tensor(torch.finfo().eps)
 

@@ -144,7 +144,7 @@ class Net(torch.nn.Module):
 
         for block in self._blocks:
             in_tensor, skip = block(in_tensor)
-            skips.add_(skip)
+            skips = skips + skip
 
         skips.add_(self._final_skip_conv(in_tensor))
 

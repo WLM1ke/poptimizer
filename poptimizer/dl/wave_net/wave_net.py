@@ -1,12 +1,20 @@
 """Сеть на основе WaveNet."""
 import torch
+from pydantic import BaseModel
 from torch.distributions import MixtureSameFamily
 
-from poptimizer.dl import data_loader, exceptions
+from poptimizer.core import consts
+from poptimizer.dl import exceptions, datasets
 from poptimizer.dl.wave_net import backbone, head, inputs
 
 
-class WaveNet(torch.nn.Module):
+class Desc(BaseModel):
+    input: inputs.Desc
+    backbone: backbone.Desc
+    head: head.Desc
+
+
+class Net(torch.nn.Module):
     """WaveNet-like сеть с возможностью параметризации параметров.
 
     https://arxiv.org/abs/1609.03499
@@ -27,42 +35,61 @@ class WaveNet(torch.nn.Module):
 
     def __init__(
         self,
-        input_desc: inputs.Desc,
-        backbone_desc: backbone.Desc,
-        head_desc: head.Desc,
+        desc: Desc,
+        num_feat_count: int,
+        history_days: int,
+        forecast_days: int,
     ) -> None:
         super().__init__()
 
-        self._input = inputs.Net(input_desc)
-        self._backbone = backbone.Net(
-            history_days=input_desc.history_days,
-            in_channels=input_desc.out_channels,
-            desc=backbone_desc,
+        self._forecast_days = torch.tensor(
+            forecast_days,
+            dtype=torch.float,
+            device=consts.DEVICE,
         )
-        self._head = head.Net(in_channels=backbone_desc.out_channels, desc=head_desc)
+        self._llh_adj = torch.log(self._forecast_days) / 2
 
-    def forward(self, batch: data_loader.Case) -> MixtureSameFamily:
+        self._input = inputs.Net(
+            num_feat_count=num_feat_count,
+            desc=desc.input,
+        )
+        self._backbone = backbone.Net(
+            history_days=history_days,
+            in_channels=desc.input.out_channels,
+            desc=desc.backbone,
+        )
+        self._head = head.Net(
+            in_channels=desc.backbone.out_channels,
+            desc=desc.head,
+        )
+
+    def forward(self, batch: datasets.Batch) -> MixtureSameFamily:
         """Возвращает смесь логнормальных распределений."""
         norm_input = self._input(batch)
         end = self._backbone(norm_input)
 
         return self._head(end)  # type: ignore[no-any-return]
 
-    def loss_and_forecast_mean_and_var(
-        self,
-        batch: data_loader.Case,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Minus Normal Log Likelihood and forecast means and vars."""
+    def llh(self, batch: datasets.Batch) -> torch.Tensor:
+        """Минус Log Likelihood с поправкой, обеспечивающей сопоставимость при разной длине прогноза."""
         dist = self(batch)
 
-        labels = batch[data_loader.FeatTypes.LABEL1P]
+        labels = batch[datasets.FeatTypes.LABEL1P]
 
         try:
-            llh = dist.log_prob(labels)
+            return dist.log_prob(labels).mean() + self._llh_adj
         except ValueError as err:
             raise exceptions.ModelError("error in categorical distribution") from err
 
-        llh = -llh.sum()
-        mean = dist.mean - torch.tensor(1.0)
+    def loss_and_forecast_mean_and_var(self, batch: datasets.Batch) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Minus Normal Log Likelihood and forecast means and vars."""
+        dist = self(batch)
 
-        return llh, mean, dist.variance
+        labels = batch[datasets.FeatTypes.LABEL1P]
+
+        try:
+            llh = dist.log_prob(labels).mean() + self._llh_adj
+        except ValueError as err:
+            raise exceptions.ModelError("error in categorical distribution") from err
+
+        return llh.item(), dist.mean.numpy(), dist.variance.numpy()
