@@ -1,6 +1,7 @@
 """Загрузчики данных."""
+import asyncio
+from datetime import datetime
 from enum import Enum, auto, unique
-from typing import Iterator
 
 import numpy as np
 import pandas as pd
@@ -9,15 +10,9 @@ from pydantic import BaseModel
 from torch.utils import data
 
 from poptimizer.core import consts
+from poptimizer.data.adapter import MarketData
 from poptimizer.dl import exceptions
 
-
-class DataDays(BaseModel):
-    """Описание, как использовать доступные дни для построения тренировочной и тестовой выборки."""
-
-    history: int
-    forecast: int
-    test: int
 
 
 @unique
@@ -32,8 +27,12 @@ class FeatTypes(Enum):
     NUMERICAL = auto()
 
 
-Case = dict[FeatTypes, torch.Tensor]
-DataLoader = data.DataLoader[Case]
+Batch = dict[FeatTypes, torch.Tensor]
+
+class Days(BaseModel):
+    history: int
+    forecast: int
+    test: int
 
 
 class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
@@ -44,7 +43,7 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
 
     def __init__(
         self,
-        days: DataDays,
+        days: Days,
         ret_total: pd.Series,
         num_feat: list[pd.Series],
     ) -> None:
@@ -95,7 +94,7 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
         """Количество доступных примеров."""
         return self._all_days - self._history_days + 1
 
-    def __getitem__(self, start_day: int) -> Case:
+    def __getitem__(self, start_day: int) -> Batch:
         """Выдает обучающий пример с заданным номером.
 
         Метка может отсутствовать для конца семпла.
@@ -106,11 +105,11 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
         }
 
         if start_day < self._all_days - (self._history_days + self._forecast_days) + 1:
-            case[FeatTypes.LABEL1P] = self._label1p[start_day]
+            case[FeatTypes.LABEL1P] = self._label1p[start_day].reshape(-1)
 
         return case
 
-    def train_dataset(self) -> data.Subset[Case]:
+    def train_dataset(self) -> data.Subset[Batch]:
         """Dataset для обучения."""
         end = (
             self._all_days
@@ -120,90 +119,98 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
 
         return data.Subset(self, range(end))
 
-    def test_dataset(self) -> data.Subset[Case]:
+    def test_dataset(self) -> data.Subset[Batch]:
         """Dataset для тестирования."""
         end = self._all_days - (self._history_days + self._forecast_days - 1)
 
         return data.Subset(self, range(end - self._test_days, end))
 
-    def forecast_dataset(self) -> data.Subset[Case]:
+    def forecast_dataset(self) -> data.Subset[Batch]:
         """Dataset для построения прогноза."""
         start = self._all_days - self._history_days
 
         return data.Subset(self, range(start, start + 1))
 
 
-def train(
-    datasets: list[OneTickerData],
-    batch_size: int,
-    num_workers: int = 0,  # Загрузка в отдельном потоке - увеличение потоков не докидывает
-) -> data.DataLoader[Case]:
-    """Загрузчик данных для тренировки модели.
-
-    Обучающие примеры выдаются батчами заданного размера в случайном порядке.
-    """
-    return data.DataLoader(
-        dataset=data.ConcatDataset(ticker.train_dataset() for ticker in datasets),
-        batch_size=batch_size,
-        shuffle=True,
-        drop_last=False,
-        num_workers=num_workers,
-    )
+class Features(BaseModel):
+    tickers: tuple[str, ...]
+    last_date: datetime
+    close: bool
+    div: bool
+    ret: bool
 
 
-class _DaysSampler(data.Sampler[list[int]]):
-    def __init__(self, datasets: list[data.Subset[Case]]) -> None:
-        super().__init__(None)
-        self._test_days = len(datasets[0])
-        self._tests = self._test_days * len(datasets)
+class Builder:
+    def __init__(
+            self,
+            data_adapter: MarketData,
+    ) -> None:
+        self._data_adapter = data_adapter
 
-        if any(len(dataset) != self._test_days for dataset in datasets):
-            raise exceptions.FeaturesError("test length missmatch")
+    async def build(
+            self,
+            feats: Features,
+            days: Days,
+    ) -> list[OneTickerData]:
+        prices = await self._data_adapter.price(feats.last_date, feats.tickers)
 
-    def __len__(self) -> int:
-        return self._test_days
-
-    def __iter__(self) -> Iterator[list[int]]:
-        yield from (
-            list(
-                range(
-                    day,
-                    self._tests,
-                    self._test_days,
-                ),
+        aws = [
+            self._prepare_features(
+                ticker,
+                feats,
+                days,
+                prices[ticker].dropna(),
             )
-            for day in range(self._test_days)
+            for ticker in feats.tickers
+        ]
+
+        return await asyncio.gather(*aws)
+
+    async def _prepare_features(
+            self,
+            ticker: str,
+            feats: Features,
+            days: Days,
+            price: pd.Series,
+    ) -> OneTickerData:
+        price_prev = price.shift(1).iloc[1:]
+        price = price.iloc[1:]
+
+        df_div = await self._prepare_div(ticker, price.index)
+
+        ret_total = (price + df_div).div(price_prev).sub(1)
+
+        features = []
+
+        if feats.ret:
+            features.append(ret_total)
+
+        if feats.close:
+            features.append(price.div(price_prev).sub(1))
+
+        if feats.div:
+            features.append(df_div.div(price_prev))
+
+        return OneTickerData(
+            days,
+            ret_total,
+            features,
         )
 
+    async def _prepare_div(self, ticker: str, index: pd.DatetimeIndex) -> pd.Series:
+        first_day = index[1]
+        last_day = index[-1] + 2 * pd.tseries.offsets.BDay()
 
-def test(
-    datasets: list[OneTickerData],
-    num_workers: int = 0,  # Загрузка в отдельном потоке - увеличение потоков не докидывает
-) -> data.DataLoader[Case]:
-    """Загрузчик данных для тестирования модели.
+        div_df = pd.Series(0, index=index)
 
-    Обучающие примеры выдаются батчами, равными количеству тикеров с фиксированным порядком.
-    """
-    test_dataset = [ticker.test_dataset() for ticker in datasets]
+        async for date, div in self._data_adapter.dividends(ticker):
+            if date < first_day or date >= last_day:
+                continue
 
-    return data.DataLoader(
-        dataset=data.ConcatDataset(test_dataset),
-        batch_sampler=_DaysSampler(test_dataset),
-        drop_last=False,
-        num_workers=num_workers,
-    )
+            div_df.iat[_ex_div_date(index, date)] += div * consts.AFTER_TAX
+
+        return div_df
 
 
-def forecast(
-    datasets: list[OneTickerData],
-) -> data.DataLoader[Case]:
-    """Загрузчик данных для построения прогноза.
-
-    Обучающие примеры выдаются одним батчем, равными количеству тикеров с фиксированным порядком.
-    """
-    return data.DataLoader(
-        dataset=data.ConcatDataset(ticker.forecast_dataset() for ticker in datasets),
-        batch_size=len(datasets),
-        shuffle=False,
-        drop_last=False,
-    )
+def _ex_div_date(index: pd.Index, date: datetime) -> int:
+    return int(index.get_indexer([date], method="ffill")[0]) - 1
