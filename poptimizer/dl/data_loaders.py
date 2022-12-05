@@ -1,3 +1,4 @@
+"""DataLoaders для обучения, тестирования и прогнозирования."""
 from typing import Iterator
 
 from torch.utils import data

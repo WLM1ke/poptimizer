@@ -1,7 +1,7 @@
 """Сеть на основе WaveNet."""
 import numpy as np
 import torch
-from pandas._typing import npt
+from numpy.typing import NDArray
 from pydantic import BaseModel
 from torch.distributions import MixtureSameFamily
 
@@ -11,6 +11,8 @@ from poptimizer.dl.wave_net import backbone, head, inputs
 
 
 class Desc(BaseModel):
+    """Описание трех основных блоков сети."""
+
     input: inputs.Desc
     backbone: backbone.Desc
     head: head.Desc
@@ -86,7 +88,7 @@ class Net(torch.nn.Module):
     def loss_and_forecast_mean_and_var(
         self,
         batch: datasets.Batch,
-    ) -> tuple[float, npt.NDArray[np.double], npt.NDArray[np.double]]:
+    ) -> tuple[float, NDArray[np.double], NDArray[np.double]]:
         """Minus Normal Log Likelihood and forecast means and vars."""
         dist = self(batch)
 

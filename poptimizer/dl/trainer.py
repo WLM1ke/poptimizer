@@ -1,13 +1,12 @@
+"""Сервис для обучения и оценки моделей."""
 import collections
 import io
 import itertools
 import logging
-import sys
 
 import torch
 import tqdm
 from pydantic import BaseModel
-from torch import optim
 
 from poptimizer.core import consts
 from poptimizer.dl import data_loaders, datasets, utility
@@ -23,14 +22,17 @@ class Batch(BaseModel):
 
     @property
     def num_feat_count(self) -> int:
+        """Количество количественных признаков."""
         return self.feats.close + self.feats.div + self.feats.ret
 
     @property
     def history_days(self) -> int:
+        """Количество дней истори в одном обучающем примере."""
         return self.days.history
 
     @property
     def forecast_days(self) -> int:
+        """На какое количество дней вперед делается прогноз."""
         return self.days.forecast
 
 
@@ -46,6 +48,8 @@ class Scheduler(BaseModel):
 
 
 class DLModel(BaseModel):
+    """Полное описание модели и используемых данных."""
+
     batch: Batch
     net: wave_net.Desc
     optimizer: Optimizer
@@ -53,17 +57,39 @@ class DLModel(BaseModel):
     utility: utility.Desc
 
 
+class RunningMean:
+    """Вычисляет среднюю в скользящем окне для передаваемых значений."""
+
+    def __init__(self, window_size: int) -> None:
+        self._sum: float = 0
+        self._que: collections.deque[float] = collections.deque([0], maxlen=window_size)
+
+    def append(self, num: float) -> None:
+        """Добавляет одно значение."""
+        self._sum += num - self._que[0]
+        self._que.append(num)
+
+    def running_avg(self) -> float:
+        """Среднее значение в скользящем окне."""
+        return self._sum / len(self._que)
+
+
 class Trainer:
+    """Сервис для обучения и оценки моделей."""
+
     def __init__(self, builder: datasets.Builder):
         self._logger = logging.getLogger("Trainer")
         self._builder = builder
 
-    async def test_model(
+    async def test_model(  # noqa: WPS210
         self,
         state: bytes | None,
         desc: DLModel,
     ) -> None:
+        """Тестирует качество модели на отложенной выборке.
 
+        При отсутствии сохраненного состояния производится обучение.
+        """
         all_data = await self._builder.build(desc.batch.feats, desc.batch.days)
         net = _prepare_net(state, desc)
 
@@ -76,17 +102,14 @@ class Trainer:
 
         test_dl = data_loaders.test(all_data)
 
-        llh_sum = []
-
         with torch.no_grad():
             net.eval()
 
             for batch in test_dl:
-                loss, mean, var = net.loss_and_forecast_mean_and_var(batch)
-                llh_sum.append(loss)
+                loss, mean, variance = net.loss_and_forecast_mean_and_var(batch)
                 rez = utility.optimize(
                     mean - 1,
-                    var,
+                    variance,
                     batch[datasets.FeatTypes.LABEL1P].numpy() - 1,
                     batch[datasets.FeatTypes.RETURNS].numpy(),
                     desc.utility,
@@ -95,32 +118,26 @@ class Trainer:
 
                 self._logger.info(f"{rez} / LLH = {loss:8.5f}")
 
-    def _train(
+    def _train(  # noqa: WPS210
         self,
         net: wave_net.Net,
         train_dl: data_loaders.DataLoader,
         scheduler: Scheduler,
     ) -> None:
-        optimizer = optim.AdamW(net.parameters())
+        optimizer = torch.optim.AdamW(net.parameters())
 
         steps_per_epoch = len(train_dl)
         total_steps = 1 + int(steps_per_epoch * scheduler.epochs)
 
-        sch = optim.lr_scheduler.OneCycleLR(  # type: ignore[attr-defined]
+        sch = torch.optim.lr_scheduler.OneCycleLR(  # type: ignore[attr-defined]
             optimizer,
             max_lr=scheduler.max_lr,
             total_steps=total_steps,
         )
 
-        train_size = len(train_dl.dataset)  # type: ignore[arg-type]
-        self._logger.info(f"Epochs - {scheduler.epochs:.2f} / Train size - {train_size}")
-        modules = sum(1 for _ in net.modules())
-        model_params = sum(tensor.numel() for tensor in net.parameters())
-        self._logger.info(f"Layers / parameters - {modules} / {model_params}")
+        self._log_net_stats(net, scheduler.epochs, train_dl)
 
-        llh_sum: float = 0
-        llh_deque: collections.deque[float] = collections.deque([0], maxlen=steps_per_epoch)
-
+        avg_llh = RunningMean(steps_per_epoch)
         net.train()
 
         with tqdm.tqdm(
@@ -128,11 +145,10 @@ class Trainer:
                 itertools.chain.from_iterable(itertools.repeat(train_dl)),
                 total_steps,
             ),
-            file=sys.stdout,
             total=total_steps,
             desc="~~> Train",
-        ) as bar:
-            for batch in bar:
+        ) as progress_bar:
+            for batch in progress_bar:
                 optimizer.zero_grad()
 
                 loss = -net.llh(batch)
@@ -140,11 +156,16 @@ class Trainer:
                 optimizer.step()
                 sch.step()
 
-                llh_sum += -loss.item() - llh_deque[0]
-                llh_deque.append(-loss.item())
+                avg_llh.append(-loss.item())
+                progress_bar.set_postfix_str(f"{avg_llh.running_avg():.5f}")
 
-                llh = llh_sum / len(llh_deque)
-                bar.set_postfix_str(f"{llh:.5f}")
+    def _log_net_stats(self, net: wave_net.Net, epochs: float, train_dl: data_loaders.DataLoader) -> None:
+        train_size = len(train_dl.dataset)  # type: ignore[arg-type]
+        self._logger.info(f"Epochs - {epochs:.2f} / Train size - {train_size}")
+
+        modules = sum(1 for _ in net.modules())
+        model_params = sum(tensor.numel() for tensor in net.parameters())
+        self._logger.info(f"Layers / parameters - {modules} / {model_params}")
 
 
 def _prepare_net(state: bytes | None, desc: DLModel) -> wave_net.Net:

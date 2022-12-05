@@ -30,6 +30,8 @@ Batch = dict[FeatTypes, torch.Tensor]
 
 
 class Days(BaseModel):
+    """Описание количества дней для тестирования, построения прогноза и истории в отдельном обучающем примере."""
+
     history: int
     forecast: int
     test: int
@@ -133,6 +135,8 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
 
 
 class Features(BaseModel):
+    """Описание перечня и параметров признаков."""
+
     tickers: tuple[str, ...]
     last_date: datetime
     close: bool
@@ -141,6 +145,8 @@ class Features(BaseModel):
 
 
 class Builder:
+    """Создает Datasets для всех тикеров."""
+
     def __init__(
         self,
         data_adapter: MarketData,
@@ -152,6 +158,7 @@ class Builder:
         feats: Features,
         days: Days,
     ) -> list[OneTickerData]:
+        """Создает Datasets для всех тикеров."""
         prices = await self._data_adapter.price(feats.last_date, feats.tickers)
 
         aws = [

@@ -1,6 +1,7 @@
+"""Оптимизация портфеля."""
 import numpy as np
-import numpy.typing as npt
 import scipy
+from numpy.typing import NDArray
 from pydantic import BaseModel
 
 from poptimizer.core import consts
@@ -13,7 +14,9 @@ class Desc(BaseModel):
     risk_tolerance: float
 
 
-class Result(BaseModel):
+class OptimizationResult(BaseModel):
+    """Результаты оптимизации портфеля."""
+
     ret: float
     avr: float
     ret_plan: float
@@ -52,40 +55,36 @@ class Result(BaseModel):
 
 
 def optimize(
-    mean: npt.NDArray[np.double],
-    var: npt.NDArray[np.double],
-    labels: npt.NDArray[np.double],
-    tot_ret: npt.NDArray[np.double],
+    mean: NDArray[np.double],
+    variance: NDArray[np.double],
+    labels: NDArray[np.double],
+    tot_ret: NDArray[np.double],
     desc: Desc,
     forecast_days: int,
-) -> Result:
+) -> OptimizationResult:
     """Оптимизирует портфель и возвращает результаты сравнения с бенчмарком."""
     mean *= consts.YEAR_IN_TRADING_DAYS / forecast_days
-    var *= consts.YEAR_IN_TRADING_DAYS / forecast_days
+    variance *= consts.YEAR_IN_TRADING_DAYS / forecast_days
     labels *= consts.YEAR_IN_TRADING_DAYS / forecast_days
 
-    w, sigma = _opt_weight(mean, var, tot_ret, desc.risk_tolerance)
-    ret = (w.T @ labels).item()
-    avr = labels.mean()
-    ret_plan = (w * mean).sum()
-    std_plan = (w.reshape(1, -1) @ sigma @ w.reshape(-1, 1)).item() ** 0.5
+    weights, sigma = _opt_weight(mean, variance, tot_ret, desc.risk_tolerance)
 
-    return Result(
-        ret=ret,
-        avr=avr,
-        ret_plan=ret_plan,
-        std_plan=std_plan,
-        pos=int(1 / (w**2).sum()),
-        max_weight=w.max(),
+    return OptimizationResult(
+        ret=(weights.T @ labels).item(),
+        avr=labels.mean(),
+        ret_plan=(weights * mean).sum(),
+        std_plan=(weights.T @ sigma @ weights).item() ** 0.5,
+        pos=int(1 / (weights**2).sum()),
+        max_weight=weights.max(),
     )
 
 
 def _opt_weight(
-    mean: npt.NDArray[np.double],
-    variance: npt.NDArray[np.double],
-    tot_ret: npt.NDArray[np.double],
+    mean: NDArray[np.double],
+    variance: NDArray[np.double],
+    tot_ret: NDArray[np.double],
     risk_tolerance: float,
-) -> tuple[npt.NDArray[np.double], npt.NDArray[np.double]]:
+) -> tuple[NDArray[np.double], NDArray[np.double]]:
     """Веса портфеля с максимальными темпами роста и использовавшаяся ковариационная матрица.
 
     Задача максимизации темпов роста портфеля сводится к максимизации математического ожидания
@@ -94,44 +93,46 @@ def _opt_weight(
     """
     sigma = ledoit_wolf.ledoit_wolf_cor(tot_ret)[0]
     std = variance**0.5
-    sigma = std.reshape(1, -1) * sigma * std.reshape(-1, 1)
+    sigma = std.T * sigma * std
 
-    w = np.ones_like(mean).flatten()
-    w /= w.sum()
-
-    util = _Utility(risk_tolerance, mean, sigma)
+    weights = np.ones_like(mean).flatten()
+    weights /= weights.sum()
 
     rez = scipy.optimize.minimize(
-        lambda x: util(x),
-        w,
-        bounds=[(0, None) for _ in w],
+        _Utility(risk_tolerance, mean, sigma),
+        weights,
+        bounds=[(0, None) for _ in weights],
         constraints=[
             {
                 "type": "eq",
-                "fun": lambda x: x.sum() - 1,
-                "jac": lambda x: np.ones_like(x),
+                "fun": lambda _weights: _weights.sum() - 1,
+                "jac": np.ones_like,
             },
         ],
     )
 
-    return (rez.x / rez.x.sum()).reshape(-1, 1), sigma
+    weights = rez.x / rez.x.sum()
+
+    return weights.reshape(-1, 1), sigma
 
 
 class _Utility:
     def __init__(
         self,
         risk_tolerance: float,
-        mean: npt.NDArray[np.double],
-        sigma: npt.NDArray[np.double],
+        mean: NDArray[np.double],
+        sigma: NDArray[np.double],
     ) -> None:
         self._risk_tolerance = risk_tolerance
         self._mean = mean
         self._sigma = sigma
 
-    def __call__(self, w: npt.NDArray[np.float64]) -> float:
-        w = w.reshape(-1, 1) / w.sum()
+    def __call__(self, weights: NDArray[np.double]) -> float:
+        weights = weights.reshape(-1, 1) / weights.sum()
 
-        variance = w.T @ self._sigma @ w
-        ret = (w.T @ self._mean) - variance / np.double(2)
+        variance = weights.T @ self._sigma @ weights
+        log_growth = (weights.T @ self._mean) - variance / np.double(2)
+        std = variance**0.5
+        lower_bound = log_growth * self._risk_tolerance - (1 - self._risk_tolerance) * std
 
-        return -float((ret * self._risk_tolerance - (1 - self._risk_tolerance) * variance**0.5).item())
+        return -float(lower_bound.item())

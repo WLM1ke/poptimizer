@@ -1,9 +1,9 @@
 """Ledoit & Wolf constant correlation unequal variance shrinkage estimator."""
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 
 
-def shrinkage(returns: npt.NDArray[np.double]) -> tuple[npt.NDArray[np.double], float, float]:  # noqa: WPS210
+def shrinkage(returns: NDArray[np.double]) -> tuple[NDArray[np.double], float, float]:  # noqa: WPS210
     """Shrinks sample covariance matrix towards constant correlation unequal variance matrix.
 
     Ledoit & Wolf ("Honey, I shrunk the sample covariance matrix", Portfolio Management, 30(2004),
@@ -60,14 +60,11 @@ def shrinkage(returns: npt.NDArray[np.double]) -> tuple[npt.NDArray[np.double], 
 
 
 def ledoit_wolf_cor(
-    tot_ret: npt.NDArray[np.double],
-) -> tuple[npt.NDArray[np.double], float, float]:
-    """Корреляционная матрица на основе Ledoit Wolf.
-
-    В расчете учитывается, что при использовании котировок за history_days могут быть получены доходности за
-    history_days - 1 день.
-    """
+    tot_ret: NDArray[np.double],
+) -> tuple[NDArray[np.double], float, float]:
+    """Корреляционная матрица на основе Ledoit Wolf."""
     tot_ret = tot_ret.T
-    tot_ret = (tot_ret - tot_ret.mean(axis=0)) / tot_ret.std(axis=0, ddof=0)
+    centered = tot_ret - tot_ret.mean(axis=0)
+    normalized = centered / tot_ret.std(axis=0, ddof=0)
 
-    return shrinkage(tot_ret)
+    return shrinkage(normalized)
