@@ -13,7 +13,7 @@ from pydantic import Field, validator
 from poptimizer.core import domain, repository
 from poptimizer.data import exceptions, validate
 
-_URL: Final = "https://rosstat.gov.ru/storage/mediabank/ipc_mes_9.xlsx"
+_URL: Final = "https://rosstat.gov.ru/storage/mediabank/Ipc_mes-11.xlsx"
 _SHEET_NAME: Final = "01"
 
 _FIRST_MONTH_CELL: Final = "A6"
