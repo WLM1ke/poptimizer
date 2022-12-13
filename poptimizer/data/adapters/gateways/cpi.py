@@ -13,7 +13,8 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
 }
 # https://rosstat.gov.ru/storage/mediabank/ipc_4(2).xlsx
-_URL = "https://rosstat.gov.ru/storage/mediabank/ipc_mes_9.xlsx"
+# https://rosstat.gov.ru/storage/mediabank/ipc_mes_9.xlsx
+_URL = "https://rosstat.gov.ru/storage/mediabank/Ipc_mes-11.xlsx"
 END_OF_JAN = 31
 PARSING_PARAMETERS = types.MappingProxyType(
     {
@@ -89,3 +90,11 @@ class CPIGateway(gateways.BaseGateway):
         _validate(df)
 
         return _clean_up(df)
+
+
+if __name__ == '__main__':
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    gw = CPIGateway()
+    print(loop.run_until_complete(gw()))
