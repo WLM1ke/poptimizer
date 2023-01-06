@@ -205,7 +205,7 @@ class Evolution:  # noqa: WPS214
             valid = upper != median
             margin = min(margin, valid and (upper / (upper - median)))
 
-        org.ub = upper_bound ** 0.5
+        org.upper_bound = upper_bound ** 0.5
 
         if margin == np.inf:
             margin = 0
