@@ -95,6 +95,17 @@ class Organism:  # noqa: WPS214
         """List of information ratios."""
         return self._doc.ir
 
+    @property
+    def upper_bound(self) -> float:
+        """Верхняя граница доверительного интервала."""
+        return self._doc.ub
+
+    @upper_bound.setter
+    def upper_bound(self, ub: float) -> None:
+        """Изменение значения верхней границы доверительного интервала."""
+        self._doc.ub = ub
+        self._doc.save()
+
     def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp) -> list[float]:
         """Вычисляет качество организма.
 
@@ -243,10 +254,13 @@ def _aggregate_oldest(limit: int, first_steps: Optional[list[dict]] = None):
 
 
 def get_next_one() -> Optional[Organism]:
-    """Выдает организмы по возрастанию даты, а потом по возрастанию количества оценок."""
+    """Выдает организмы по возрастанию даты, а потом по убыванию верхней границы доверительного интервала.
+
+    Идея позаимствована из алгоритма оптимального выбора в условиях неопределенности в задаче многорукого бандита.
+    """
     pipeline = [
-        {"$project": {"date": True, "wins": True}},
-        {"$sort": {"date": pymongo.ASCENDING, "wins": pymongo.ASCENDING}},
+        {"$project": {"date": True, "ub": True}},
+        {"$sort": {"date": pymongo.ASCENDING, "ub": pymongo.DESCENDING}},
         {"$limit": 1},
     ]
 

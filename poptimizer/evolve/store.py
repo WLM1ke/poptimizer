@@ -146,6 +146,7 @@ class Doc:
     model = DefaultField()
     llh = FactoryField(list)
     ir = FactoryField(list)
+    ub = DefaultField(0)
     date = DefaultField()
     timer = DefaultField(0)
     tickers = DefaultField()

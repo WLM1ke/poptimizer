@@ -28,7 +28,6 @@ class Evolution:  # noqa: WPS214
         """Инициализирует необходимые параметры."""
         self._tickers = None
         self._end = None
-        self._have_more_dates = False
         self._logger = logging.getLogger()
 
     @property
@@ -84,12 +83,9 @@ class Evolution:  # noqa: WPS214
         dates = listing.all_history_date(self._tickers, start=self._end)
 
         if (d_min != self._end) or (len(dates) == 1):
-            self._have_more_dates = self._end < dates[-1]
-
             return step + 1
 
         self._end = dates[1]
-        self._have_more_dates = self._end < dates[-1]
 
         return 1
 
@@ -102,6 +98,8 @@ class Evolution:  # noqa: WPS214
 
     def _step(self, hunter: population.Organism) -> Optional[population.Organism]:
         """Один шаг эволюции."""
+        have_more_dates = hunter.date and self._end > hunter.date
+
         label = ""
         if not hunter.scores:
             label = " - новый организм"
@@ -112,13 +110,8 @@ class Evolution:  # noqa: WPS214
         if margin[0] < 0:
             return None
 
-        if self._have_more_dates:
+        if have_more_dates:
             self._logger.info("Появились новые данные - не размножается...\n")
-
-            return None
-
-        if population.count() >= config.TARGET_POPULATION:
-            self._logger.info("Достаточная популяция - не размножается...\n")
 
             return None
 
@@ -188,11 +181,15 @@ class Evolution:  # noqa: WPS214
 
         names = {"llh": "LLH", "ir": "RET"}
 
+        upper_bound = 1
+
         for metric in ("llh", "ir"):
             median, upper, maximum = _select_worst_bound(
                 candidate={"date": org.date, "llh": org.llh, "ir": org.ir},
                 metric=metric,
             )
+
+            upper_bound *= max(0, upper)
 
             self._logger.info(
                 " ".join(
@@ -207,6 +204,8 @@ class Evolution:  # noqa: WPS214
 
             valid = upper != median
             margin = min(margin, valid and (upper / (upper - median)))
+
+        org.ub = upper_bound ** 0.5
 
         if margin == np.inf:
             margin = 0
@@ -281,7 +280,7 @@ def _aligned_diff(candidate: dict, metric: str) -> list[float]:
 
     comp = np.nanmedian(np.array(comp), axis=0)
 
-    return list(map(operator.sub, candidate[metric], comp))
+    return list(map(operator.sub, candidate[metric], comp))[::-1]
 
 
 def _test_diff(diff: list[float]) -> tuple[float, float, float]:
