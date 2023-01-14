@@ -40,12 +40,12 @@ class Evolution:  # noqa: WPS214
         bound = seq.minimum_bounding_n(config.P_VALUE / count)
         max_score = max(population.max_scores(), bound)
 
-        if count > config.TARGET_POPULATION:
-            return max_score + 1
-
-        return max(
-            bound - 1,
-            bound + (max_score - bound) * (count * 2 - config.TARGET_POPULATION) // config.TARGET_POPULATION,
+        return min(
+            max(
+                bound - 1,
+                bound + (max_score - bound) * (count * 2 - config.TARGET_POPULATION) // config.TARGET_POPULATION,
+            ),
+            max_score,
         )
 
     def evolve(self) -> None:
