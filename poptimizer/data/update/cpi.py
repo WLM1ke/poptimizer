@@ -1,4 +1,5 @@
 """Сервис обновления данных о потребительской инфляции."""
+import asyncio
 import io
 import logging
 import types
@@ -78,7 +79,7 @@ class Service:
         """Обновляет потребительскую инфляцию и логирует неудачную попытку."""
         try:
             await self._update(update_day)
-        except exceptions.DataUpdateError as err:
+        except (exceptions.DataUpdateError, asyncio.TimeoutError) as err:
             self._logger.warning(f"can't complete update -> {err}")
 
             return
