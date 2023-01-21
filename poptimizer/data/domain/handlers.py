@@ -60,6 +60,7 @@ class EventHandlersDispatcher(domain.AbstractHandler[AnyTable]):  # noqa: WPS214
         """Запускает обновление необходимых таблиц в конце торгового дня и создает дочерние события."""
         table_groups = [
             ports.CPI,
+            ports.DIV_NEW,
             ports.USD,
         ]
         table_ids = [base.create_id(group) for group in table_groups]
