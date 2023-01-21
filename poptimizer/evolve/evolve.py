@@ -223,7 +223,7 @@ class Evolution:  # noqa: WPS214
 
 def _time_delta(org):
     """Штраф за время, если организм медленнее медианного в популяции."""
-    times = [doc["timer"] for doc in population.get_metrics()]
+    times = [doc["timer"] for doc in population.get_metrics() if "timer" in doc]
 
     return stats.percentileofscore(times, org.timer, kind="mean") / 100
 
