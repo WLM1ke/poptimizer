@@ -96,6 +96,10 @@ class Organism:  # noqa: WPS214
         return self._doc.ir
 
     @property
+    def tickers(self) -> list[str]:
+        return self._doc.tickers
+
+    @property
     def upper_bound(self) -> float:
         """Верхняя граница доверительного интервала."""
         return self._doc.ub
@@ -106,28 +110,25 @@ class Organism:  # noqa: WPS214
         self._doc.ub = ub
         self._doc.save()
 
-    def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp) -> list[float]:
-        """Вычисляет качество организма.
+    def retrain(self, tickers: tuple[str, ...], end: pd.Timestamp):
+        """Переобучает модель."""
+        timer = time.monotonic_ns()
+        model = Model(tuple(tickers), end, self.genotype.get_phenotype(), None)
+        model.quality_metrics
+        self._doc.model = bytes(model)
+        self._doc.tickers = list(tickers)
+        self._doc.timer = time.monotonic_ns() - timer
 
-        В первый вызов для нового дня используется метрика существующей натренированной модели.
-        При последующих вызовах в течение дня выбрасывается ошибка.
-        """
-        if end == self.date:
+    def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp) -> list[float]:
+        """Вычисляет качество организма."""
+        doc = self._doc
+        tickers = list(tickers)
+
+        if end == self.date or doc.model is None or tickers != doc.tickers:
             raise ReevaluationError
 
-        tickers = list(tickers)
-        doc = self._doc
-
-        pickled_model = None
-        if doc.date is not None and doc.date < end and tickers == doc.tickers:
-            pickled_model = doc.model
-
-        timer = time.monotonic_ns()
-        model = Model(tuple(tickers), end, self.genotype.get_phenotype(), pickled_model)
+        model = Model(tuple(tickers), end, self.genotype.get_phenotype(), doc.model)
         llh, ir = model.quality_metrics
-
-        if pickled_model is None:
-            doc.timer = time.monotonic_ns() - timer
 
         if self.date is None or end > self.date:
             doc.llh = [llh] + doc.llh
@@ -138,22 +139,10 @@ class Organism:  # noqa: WPS214
             doc.ir = doc.ir + [ir]
 
         doc.wins = len(doc.llh)
-        doc.model = bytes(model)
-        doc.tickers = tickers
 
         doc.save()
 
         return self.llh
-
-    def clear(self) -> None:
-        """Сбрасывает всю информацию об организме, кроме генотипа."""
-        self._doc.wins = 0
-        self._doc.model = None
-        self._doc.llh = []
-        self._doc.ir = []
-        self._doc.date = None
-        self._doc.timer = 0
-        self._doc.timer = None
 
     def die(self) -> None:
         """Организм удаляется из популяции."""
