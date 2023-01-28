@@ -151,20 +151,27 @@ class Evolution:  # noqa: WPS214
 
         all_dates = listing.all_history_date(self._tickers, end=self._end)
 
-        if organism.date == self._end and organism.scores >= self._tests - 1:
-            dates = [all_dates[-(organism.scores + 1)]]
-            organism.retrain(self._tickers, dates[0])
-        elif organism.date == self._end:
-            dates = all_dates[-self._tests :-organism.scores].tolist()
-            organism.retrain(self._tickers, dates[0])
-            dates = reversed(dates)
-        elif organism.scores:
-            if self._tickers != tuple(organism.tickers):
-                organism.retrain(self._tickers, self._end)
-            dates = [self._end]
-        else:
-            dates = all_dates[-self._tests :].tolist()
-            organism.retrain(self._tickers, dates[0])
+        try:
+            if organism.date == self._end and organism.scores >= self._tests - 1:
+                dates = [all_dates[-(organism.scores + 1)]]
+                organism.retrain(self._tickers, dates[0])
+            elif organism.date == self._end:
+                dates = all_dates[-self._tests :-organism.scores].tolist()
+                organism.retrain(self._tickers, dates[0])
+                dates = reversed(dates)
+            elif organism.scores:
+                if self._tickers != tuple(organism.tickers):
+                    organism.retrain(self._tickers, self._end)
+                dates = [self._end]
+            else:
+                dates = all_dates[-self._tests :].tolist()
+                organism.retrain(self._tickers, dates[0])
+        except (ModelError, AttributeError) as error:
+            organism.die()
+            self._logger.error(f"Удаляю - {error}\n")
+
+            return None
+
 
         for date in dates:
             try:
