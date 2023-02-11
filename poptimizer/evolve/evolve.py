@@ -35,7 +35,7 @@ class Evolution:  # noqa: WPS214
         return population.count() ** 0.5
 
     @property
-    def _tests(self) -> float:
+    def _tests(self) -> int:
         count = population.count()
         bound = seq.minimum_bounding_n(config.P_VALUE / count)
         max_score = max(population.max_scores(), bound)
@@ -105,18 +105,11 @@ class Evolution:  # noqa: WPS214
             label = " - новый организм"
 
         self._logger.info(f"Родитель{label}:")
-        if (margin := self._eval_organism(hunter)) is None:
-            return None
-        if margin[0] < 0:
+        if self._eval_organism(hunter) is None:
             return None
 
         if have_more_dates:
             self._logger.info("Появились новые данные - не размножается...\n")
-
-            return None
-
-        if (rnd := np.random.random()) < (slowness := margin[1]):
-            self._logger.info(f"Медленный - не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
 
             return None
 
@@ -126,21 +119,13 @@ class Evolution:  # noqa: WPS214
             hunter = hunter.make_child(1 / self._scale)
             if (margin := self._eval_organism(hunter)) is None:
                 return None
-            if margin[0] < 0:
-                return None
 
             if (rnd := np.random.random()) < (slowness := margin[1]):
                 self._logger.info(f"Медленный не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
 
                 return None
 
-    def _eval_organism(self, organism: population.Organism) -> Optional[tuple[float, float]]:
-        """Оценка организмов.
-
-        - Если организм уже оценен для данной даты, то он не оценивается.
-        - Если организм старый, то оценивается один раз.
-        - Если организм новый, то он оценивается для определенного количества дат из истории.
-        """
+    def _eval_organism(self, organism: population.Organism) -> tuple[float, float] | None:
         try:
             self._logger.info(f"{organism}\n")
         except AttributeError as err:
@@ -152,11 +137,10 @@ class Evolution:  # noqa: WPS214
         all_dates = listing.all_history_date(self._tickers, end=self._end)
 
         try:
-            if organism.date == self._end and organism.scores >= self._tests - 1:
-                dates = [all_dates[-(organism.scores + 1)]]
-                organism.retrain(self._tickers, dates[0])
-            elif organism.date == self._end:
-                dates = all_dates[-self._tests :-organism.scores].tolist()
+            if organism.date == self._end :
+                prob = 1 - _time_delta(organism)
+                retry = stats.geom.rvs(prob)
+                dates = all_dates[-(max(organism.scores, self._tests - 1)  + retry): -organism.scores].tolist()
                 organism.retrain(self._tickers, dates[0])
                 dates = reversed(dates)
             elif organism.scores:
@@ -184,17 +168,14 @@ class Evolution:  # noqa: WPS214
 
         return self._get_margin(organism)
 
-    def _get_margin(self, org: population.Organism) -> tuple[float, float]:
+    def _get_margin(self, org: population.Organism) -> tuple[float, float] | None:
         """Используется тестирование разницы llh и ret против самого старого организма.
 
         Используются тесты для связанных выборок, поэтому предварительно происходит выравнивание по
         датам и отбрасывание значений не имеющих пары (возможно первое значение и хвост из старых
         значений более старого организма).
         """
-        margin = np.inf
-
         names = {"llh": "LLH", "ir": "RET"}
-
         upper_bound = 1
 
         for metric in ("llh", "ir"):
@@ -202,8 +183,6 @@ class Evolution:  # noqa: WPS214
                 candidate={"date": org.date, "llh": org.llh, "ir": org.ir},
                 metric=metric,
             )
-
-            upper_bound *= max(0, upper)
 
             self._logger.info(
                 " ".join(
@@ -216,27 +195,23 @@ class Evolution:  # noqa: WPS214
                 ),
             )
 
-            valid = upper != median
-            margin = min(margin, valid and (upper / (upper - median)))
+            if upper < 0:
+                org.die()
+                self._logger.info("Исключен из популяции...\n")
 
-        org.upper_bound = upper_bound ** 0.5
+                return None
 
-        if margin == np.inf:
-            margin = 0
+            upper_bound *= upper ** 0.5
 
+        org.upper_bound = upper_bound
         time_score = _time_delta(org)
 
-        self._logger.info(f"Margin - {margin:.2%}, Slowness - {time_score:.2%}\n")  # noqa: WPS221
+        self._logger.info(f"Upper bound - {upper_bound:.4f}, Slowness - {time_score:.2%}\n")  # noqa: WPS221
 
-        if margin < 0:
-            org.die()
-            self._logger.info("Исключен из популяции...\n")
-
-        return margin, time_score
+        return upper_bound, time_score
 
 
 def _time_delta(org):
-    """Штраф за время, если организм медленнее медианного в популяции."""
     times = [doc["timer"] for doc in population.get_metrics() if "timer" in doc]
 
     return stats.percentileofscore(times, org.timer, kind="mean") / 100
