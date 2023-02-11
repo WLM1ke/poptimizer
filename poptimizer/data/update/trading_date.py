@@ -1,4 +1,5 @@
 """Информация о торговых днях."""
+import asyncio
 from datetime import datetime
 from typing import ClassVar
 
@@ -56,7 +57,7 @@ class Service:
         """Получает информацию о последней торговой дате c MOEX ISS."""
         try:
             return await self._download()
-        except aiohttp.ClientError as err:
+        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
             raise exceptions.DataUpdateError("can't download trading dates") from err
 
     async def save(self, timestamp: datetime) -> None:
