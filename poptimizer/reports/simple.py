@@ -52,11 +52,11 @@ def income(report_name: str, investor_name: str, months: int):
     dividends = df["Dividends"].iloc[1:].sum()
     incomes = df["Value"].iloc[-1] - df["Value"].iloc[0] - df["Inflow"].iloc[1:].sum()
     months = len(df) - 1
-    periods = dict(Y=months / 12, M=months, W=(months / 12) * 365.25 / 7)
+    periods = {f"{months}M": 1, '1Y': months / 12, '1M': months, '1W': (months / 12) * 365.25 / 7}
     print(f"\n{investor_name} в среднем (с коррекцией на инфляцию) за {months} месяцев:")
     for period, divider in periods.items():
         print(
-            f"1{period}:",
+            f"{period:<3}:",
             f"Дивиденды = {rescale_and_format(dividends, divider)},",
             f"Доход = {rescale_and_format(incomes, divider)}",
         )
