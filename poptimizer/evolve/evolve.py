@@ -32,21 +32,11 @@ class Evolution:  # noqa: WPS214
 
     @property
     def _scale(self) -> float:
-        return population.count() ** 0.5
+        return population.max_scores() ** 0.5
 
     @property
     def _tests(self) -> int:
-        count = population.count()
-        bound = seq.minimum_bounding_n(config.P_VALUE / count)
-        max_score = max(population.max_scores(), bound)
-
-        return min(
-            max(
-                bound - 1,
-                bound + (max_score - bound) * (count * 2 - config.TARGET_POPULATION) // config.TARGET_POPULATION,
-            ),
-            max_score,
-        )
+        return population.count()
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -64,7 +54,6 @@ class Evolution:  # noqa: WPS214
             date = self._end.date()
             self._logger.info(f"***{date}: Шаг эволюции — {step}***")
             population.print_stat()
-            self._logger.info(f"Тестов - {self._tests}\n")
 
             if org is None:
                 org = population.get_next_one()
@@ -91,7 +80,7 @@ class Evolution:  # noqa: WPS214
 
     def _setup(self) -> None:
         if population.count() == 0:
-            for i in range(1, config.TARGET_POPULATION // 2 + 1):
+            for i in range(1, config.START_POPULATION):
                 self._logger.info(f"Создается базовый организм {i}:")
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")
@@ -178,7 +167,7 @@ class Evolution:  # noqa: WPS214
         names = {"llh": "LLH", "ir": "RET"}
         upper_bound = 1
 
-        for metric in ("llh", "ir"):
+        for metric in ("ir", "llh"):
             median, upper, maximum = _select_worst_bound(
                 candidate={"date": org.date, "llh": org.llh, "ir": org.ir},
                 metric=metric,

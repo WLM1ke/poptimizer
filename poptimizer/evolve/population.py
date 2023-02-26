@@ -329,7 +329,7 @@ def _print_key_stats(key: str, view: str = None) -> None:
 
 def _print_wins_stats() -> None:
     """Статистика по максимуму побед."""
-    LOGGER.info(f"Организмов - {count()} / Максимум оценок - {max_scores()}")
+    LOGGER.info(f"Организмов - {count()} / Максимум оценок - {max_scores()}\n")
 
 
 def max_scores() -> int:
