@@ -4,7 +4,7 @@ import io
 import itertools
 import logging
 import sys
-from typing import Final, Optional
+from typing import Final, Optional, Callable
 
 import numpy as np
 import pandas as pd
@@ -336,7 +336,7 @@ class Model:
             history_days=self._phenotype["data"]["history_days"],
             mean=means,
             std=stds,
-            max_std=self._phenotype["utility"]["max_std"],
+            risk_tolerance=self._phenotype["utility"]["risk_tolerance"],
         )
 
 
@@ -412,10 +412,8 @@ def _opt_weight(
     w = np.ones_like(mean).flatten()
 
     rez = optimize.minimize(
-        lambda x: -(x.reshape(1, -1) @ mean).item(),
+        _make_utility_func(phenotype, mean, sigma),
         w,
-        jac=lambda x: -mean.flatten(),
-        method="SLSQP",
         bounds=[(0, None) for _ in w],
         constraints=[
             {
@@ -423,13 +421,24 @@ def _opt_weight(
                 "fun": lambda x: x.sum() - 1,
                 "jac": lambda x: np.ones_like(x),
             },
-            {
-                "type": "ineq",
-                "fun": lambda x: phenotype["utility"]["max_std"] ** 2
-                - (x.reshape(1, -1) @ sigma @ x.reshape(-1, 1)).item(),
-                "jac": lambda x: (-2 * sigma @ x.reshape(-1, 1)).flatten(),
-            },
         ],
     )
 
     return rez.x / rez.x.sum(), sigma
+
+
+def _make_utility_func(
+        phenotype: PhenotypeData,
+        mean: np.array,
+        sigma: np.array,
+) -> Callable[[float, float], float]:
+    risk_tolerance = phenotype["utility"]["risk_tolerance"] % 1
+
+    def utility_func(w: np.array) -> float:
+        w = w.reshape(-1, 1) / w.sum()
+        variance = (w.T @ sigma @ w).item()
+        ret = (w.T @ mean).item() - variance / 2
+
+        return -(ret * risk_tolerance - (1 - risk_tolerance) * variance ** 0.5)
+
+    return utility_func
