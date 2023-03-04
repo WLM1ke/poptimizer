@@ -48,9 +48,9 @@ class MetricsSingle:  # noqa: WPS214
         return self._forecast.shrinkage
 
     @functools.cached_property
-    def max_std(self) -> float:
-        """Ограничение на СКО."""
-        return self._forecast.max_std
+    def risk_tolerance(self) -> float:
+        """Индифферентность к риску."""
+        return self._forecast.risk_tolerance
 
     @functools.cached_property
     def mean(self) -> pd.Series:
@@ -99,28 +99,22 @@ class MetricsSingle:  # noqa: WPS214
 
     @functools.cached_property
     def gradient(self) -> pd.Series:
-        """Рассчитывает производную СКО, если оно превышает целевой уровень, или доходности в остальных случаях.
+        """Градиент функции полезности.
 
-        Соответственно градиент может быть рассчитан по следующей формуле:
+        Функция полезности имеет вид:
 
-        gradient = - sp * (b - 1)
+        U = risk_tolerance * (mp - sp ** 2 / 2) - (1 - risk_tolerance) * sp
 
-        или
-
-        gradient = m - mp, где
-
-        m и mp - доходность актива и портфеля, соответственно,
-        sp - СКО портфеля,
-        b - бета актива.
+        mp - доходность портфеля,
+        sp - СКО портфеля.
 
         Долю актива с максимальным градиентом необходимо наращивать. При правильной реализации взвешенный по долям
         отдельных позиций градиент равен градиенту по портфелю в целом и равен 0.
         """
-        if self.std[PORTFOLIO] < self.max_std:
-            gradient = self.mean - self.mean[PORTFOLIO]
-        else:
-            gradient = -self.std[PORTFOLIO] * self.beta.sub(1)
+        grad_log_ret = (self.mean - self.mean[PORTFOLIO]) - self.beta.sub(1) * self.std[PORTFOLIO] ** 2
+        grad_err =  self.std[PORTFOLIO] * self.beta.sub(1)
 
+        gradient = self.risk_tolerance * grad_log_ret - (1 - self.risk_tolerance) * grad_err
         gradient.name = "GRAD"
 
         return gradient
@@ -149,7 +143,7 @@ class MetricsResample:  # noqa: WPS214
             self._history_block(),
             self._cor_block(),
             self._shrinkage_block(),
-            self._max_std(),
+            self._risk_tolerance(),
             self._main_block(),
             self._grad_summary(),
         ]
@@ -228,14 +222,14 @@ class MetricsResample:  # noqa: WPS214
 
         return f"Shrinkage - ({quantile})"
 
-    def _max_std(self) -> str:
+    def _risk_tolerance(self) -> str:
         """Разброс ограничения на СКО."""
         quantile = [0, 0.5, 1]
-        quantile = np.quantile([met.max_std for met in self._metrics], quantile)
+        quantile = np.quantile([met.risk_tolerance for met in self._metrics], quantile)
         quantile = list(map(lambda num: f"{num:.2%}", quantile))
         quantile = " <-> ".join(quantile)
 
-        return f"Max std - ({quantile})"
+        return f"Risk tolerance - ({quantile})"
 
     def _main_block(self) -> str:
         """Основная информация о метриках."""
