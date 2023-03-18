@@ -32,7 +32,7 @@ class Evolution:  # noqa: WPS214
 
     @property
     def _scale(self) -> float:
-        return population.max_scores() ** 0.5
+        return population.count() ** 0.5
 
     @property
     def _tests(self) -> int:
