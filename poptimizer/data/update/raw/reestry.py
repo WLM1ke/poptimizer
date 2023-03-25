@@ -54,7 +54,10 @@ class Service:
             return
 
         html_page = await self._download(status_row)
-        row = _parse(html_page, status_row.preferred)
+        try:
+            row = _parse(html_page, status_row.preferred)
+        except exceptions.DataUpdateError as err:
+            raise exceptions.DataUpdateError(f"can't parse {status_row.ticker}") from err
 
         table.update(update_day, row)
 
