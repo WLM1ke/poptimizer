@@ -113,7 +113,11 @@ class Model:
     def quality_metrics(self) -> tuple[float, float]:
         """Логарифм правдоподобия."""
         if self._llh is None:
-            self._llh = self._eval_llh()
+            try:
+                self._llh = self._eval_llh()
+            except TypeError:
+                raise DegeneratedModelError
+
         return self._llh
 
     def prepare_model(self, loader: data_loader.DescribedDataLoader) -> nn.Module:
