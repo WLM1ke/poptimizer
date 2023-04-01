@@ -3,6 +3,7 @@ import datetime
 import itertools
 import logging
 import operator
+import random
 from typing import Optional
 
 import numpy as np
@@ -80,7 +81,7 @@ class Evolution:  # noqa: WPS214
 
     def _setup(self) -> None:
         if population.count() == 0:
-            for i in range(1, config.START_POPULATION):
+            for i in range(1, config.START_POPULATION + 1):
                 self._logger.info(f"Создается базовый организм {i}:")
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")
@@ -165,10 +166,10 @@ class Evolution:  # noqa: WPS214
         значений более старого организма).
         """
         names = {"llh": "LLH", "ir": "RET"}
-        upper_bound = 1
+        upper_bound = np.inf
 
         for metric in ("ir", "llh"):
-            median, upper, maximum = _select_worst_bound(
+            median, upper, maximum, ub = _select_worst_bound(
                 candidate={"date": org.date, "llh": org.llh, "ir": org.ir},
                 metric=metric,
             )
@@ -190,12 +191,12 @@ class Evolution:  # noqa: WPS214
 
                 return None
 
-            upper_bound *= upper ** 0.5
+            upper_bound = min(upper_bound, ub)
 
         org.upper_bound = upper_bound
         time_score = _time_delta(org)
 
-        self._logger.info(f"Upper bound - {upper_bound:.4f}, Slowness - {time_score:.2%}\n")  # noqa: WPS221
+        self._logger.info(f"Thompson sampling - {upper_bound:.4f}, Slowness - {time_score:.2%}\n")  # noqa: WPS221
 
         return upper_bound, time_score
 
@@ -221,12 +222,12 @@ def _check_time_range() -> bool:
     return before_midnight or after_midnight
 
 
-def _select_worst_bound(candidate: dict, metric: str) -> tuple[float, float, float]:
+def _select_worst_bound(candidate: dict, metric: str) -> tuple[float, float, float, float]:
     """Выбирает минимальное значение верхней границы доверительного интервала.
 
     Если данный организм не уступает целевому организму, то верхняя граница будет положительной.
+    Дополнительно производится сэмплирование Томсона для отбора следующего родителя в эволюции.
     """
-
     diff = _aligned_diff(candidate, metric)
 
     bounds = map(
@@ -237,7 +238,7 @@ def _select_worst_bound(candidate: dict, metric: str) -> tuple[float, float, flo
     return min(
         bounds,
         key=lambda bound: bound[1] or np.inf,
-    )
+    ) + (float(np.median(random.choices(diff, k=len(diff)))),)
 
 
 def _aligned_diff(candidate: dict, metric: str) -> list[float]:

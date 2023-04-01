@@ -2,6 +2,7 @@
 import contextlib
 import datetime
 import logging
+import random
 import time
 from typing import Iterable, Iterator, Optional
 
@@ -243,19 +244,18 @@ def _aggregate_oldest(limit: int, first_steps: Optional[list[dict]] = None):
 
 
 def get_next_one() -> Optional[Organism]:
-    """Выдает организмы по возрастанию даты, а потом по убыванию верхней границы доверительного интервала.
+    """Выдает организмы по возрастанию даты, а потом по убыванию сэмплирования медианы.
 
-    Идея позаимствована из алгоритма оптимального выбора в условиях неопределенности в задаче многорукого бандита.
+    Идея позаимствована из алгоритма оптимального выбора в условиях неопределенности - Thompson sampling.
     """
     pipeline = [
         {"$project": {"date": True, "ub": True}},
         {"$sort": {"date": pymongo.ASCENDING, "ub": pymongo.DESCENDING}},
         {"$limit": 1},
     ]
-
     doc = next(store.get_collection().aggregate(pipeline))
 
-    return doc and Organism(_id=doc["_id"])
+    return Organism(_id=doc["_id"])
 
 
 def get_metrics() -> Iterable[dict[str, list[float]]]:
