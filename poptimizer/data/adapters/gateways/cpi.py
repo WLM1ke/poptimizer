@@ -1,4 +1,5 @@
 """Загрузка данных по потребительской инфляции."""
+import re
 import types
 
 import aiohttp
@@ -12,9 +13,9 @@ from poptimizer.shared import adapters, col
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
 }
-# https://rosstat.gov.ru/storage/mediabank/ipc_mes_9.xlsx
-# https://rosstat.gov.ru/storage/mediabank/Ipc_mes-11.xlsx
-_URL = "https://rosstat.gov.ru/storage/mediabank/ipc_mes-1.xlsx"
+_PRICES_PAGE = "https://rosstat.gov.ru/statistics/price"
+_RE_FILE = re.compile(r"/[iI]pc[\-_]mes[\-_][0-9]{1,2}.xlsx")
+_URL = "https://rosstat.gov.ru/storage/mediabank/{}"
 END_OF_JAN = 31
 PARSING_PARAMETERS = types.MappingProxyType(
     {
@@ -35,9 +36,18 @@ class CPIGatewayError(config.POptimizerError):
     """Ошибки, связанные с загрузкой данных по инфляции."""
 
 
-async def _load_and_parse_xlsx(session: aiohttp.ClientSession) -> pd.DataFrame:
+async def _load_prices_page(session: aiohttp.ClientSession, url: str = _PRICES_PAGE) -> str:
+    async with session.get(url, headers=HEADERS) as resp:
+        return await resp.text()
+
+
+def _find_file_name(html: str) -> str:
+    return _RE_FILE.search(html).group(0)
+
+
+async def _load_and_parse_xlsx(session: aiohttp.ClientSession, file_name: str) -> pd.DataFrame:
     """Загрузка Excel-файла с данными по инфляции."""
-    xls_file = await _load_xlsx(session, _URL)
+    xls_file = await _load_xlsx(session, _URL.format(file_name))
 
     return pd.read_excel(
         xls_file,
@@ -85,8 +95,10 @@ class CPIGateway(gateways.BaseGateway):
     async def __call__(self) -> pd.DataFrame:
         """Получение данных по инфляции."""
         self._logger("Загрузка инфляции")
+        html = await _load_prices_page(self._session, _PRICES_PAGE)
+        file_name = _find_file_name(html)
 
-        df = await _load_and_parse_xlsx(self._session)
+        df = await _load_and_parse_xlsx(self._session, file_name)
         _validate(df)
 
         return _clean_up(df)
