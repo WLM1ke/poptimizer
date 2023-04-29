@@ -2,6 +2,7 @@
 import contextlib
 import datetime
 import logging
+import random
 import time
 from typing import Iterable, Iterator, Optional
 
@@ -243,13 +244,15 @@ def _aggregate_oldest(limit: int, first_steps: Optional[list[dict]] = None):
 
 
 def get_next_one() -> Optional[Organism]:
-    """Выдает организмы по возрастанию даты, а потом по убыванию верхней границы доверительного интервала.
+    """Выдает организмы по возрастанию даты.
 
-    Идея позаимствована из алгоритма оптимального выбора в условиях неопределенности в задаче многорукого бандита.
+    Второй критерий - или самый мало обученный, или с максимальной верхней границе доверительного интервала.
     """
+    selector = random.choice(({"ub": pymongo.DESCENDING}, {"wins": pymongo.ASCENDING}))
+
     pipeline = [
-        {"$project": {"date": True, "ub": True}},
-        {"$sort": {"date": pymongo.ASCENDING, "ub": pymongo.DESCENDING}},
+        {"$project": {"date": True, "ub": True, "wins": True}},
+        {"$sort": {"date": pymongo.ASCENDING} | selector},
         {"$limit": 1},
     ]
 
