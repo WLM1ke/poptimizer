@@ -332,7 +332,26 @@ def _print_key_stats(key: str, view: str = None) -> None:
 
 def _print_wins_stats() -> None:
     """Статистика по максимуму побед."""
-    LOGGER.info(f"Организмов - {count()} / Максимум оценок - {max_scores()}\n")
+    LOGGER.info(f"Организмов - {count()} / Оценок - {min_scores()}-{max_scores()}\n")
+
+
+def min_scores() -> int:
+    collection = store.get_collection()
+    db_find = collection.find
+    request = {
+        "filter": {"wins": {"$exists": True}},
+        "projection": ["wins"],
+        "sort": [("wins", pymongo.ASCENDING)],
+        "limit": 1,
+    }
+
+    wins = list(db_find(**request))
+    max_wins = 0
+    if wins:
+        max_wins = wins[0]
+        max_wins = max_wins["wins"]
+
+    return max_wins
 
 
 def max_scores() -> int:

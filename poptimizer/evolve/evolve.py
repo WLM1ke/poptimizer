@@ -145,7 +145,6 @@ class Evolution:  # noqa: WPS214
 
             return None
 
-
         for date in dates:
             try:
                 organism.evaluate_fitness(self._tickers, date)
