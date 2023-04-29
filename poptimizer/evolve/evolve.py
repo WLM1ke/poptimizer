@@ -236,7 +236,7 @@ def _select_worst_bound(candidate: dict, metric: str) -> tuple[float, float, flo
 
     return min(
         bounds,
-        key=lambda bound: bound[1] or np.inf,
+        key=lambda bound: bound[1],
     )
 
 
