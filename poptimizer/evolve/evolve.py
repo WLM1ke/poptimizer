@@ -257,7 +257,7 @@ def _aligned_diff(candidate: dict, metric: str) -> list[float]:
 
     comp = np.nanmedian(np.array(comp), axis=0)
 
-    return list(map(operator.sub, candidate[metric], comp))[::-1]
+    return list(map(operator.sub, candidate[metric], comp))
 
 
 def _test_diff(diff: list[float]) -> tuple[float, float, float]:
