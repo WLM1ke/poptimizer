@@ -29,14 +29,11 @@ class Evolution:  # noqa: WPS214
         self._tickers = None
         self._end = None
         self._logger = logging.getLogger()
+        self._tests = 1
 
     @property
     def _scale(self) -> float:
         return population.count() ** 0.5
-
-    @property
-    def _tests(self) -> int:
-        return population.count()
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -44,27 +41,33 @@ class Evolution:  # noqa: WPS214
         При необходимости создается начальная популяция из случайных организмов по умолчанию.
         """
         step = 0
-        org = None
-
         self._setup()
 
         while _check_time_range():
-            step = self._step_setup(step)
+            org = population.get_next_one()
+            step = self._step_setup(step, org)
 
             date = self._end.date()
             self._logger.info(f"***{date}: Шаг эволюции — {step}***")
             population.print_stat()
+            self._logger.info(
+                f"Тестов - {self._tests} / "
+                f"Организмов - {population.count()} / "
+                f"Оценок - {population.min_scores()}-{population.max_scores()}\n"
+            )
 
-            if org is None:
-                org = population.get_next_one()
-
-            org = self._step(org)
+            self._step(org)
 
     def _step_setup(
         self,
         step: int,
+        org: population.Organism
     ) -> int:
         d_min, d_max = population.min_max_date()
+
+        if org.date is None or d_min == d_max:
+            self._change_test()
+
         if self._tickers is None:
             self._tickers = load_tickers()
             self._end = d_max or listing.all_history_date(self._tickers)[-1]
@@ -78,12 +81,23 @@ class Evolution:  # noqa: WPS214
 
         return 1
 
+    def _change_test(self):
+        count = population.count()
+
+        if count > config.TARGET_POPULATION:
+            self._tests += 1
+
+        if count < config.TARGET_POPULATION:
+            self._tests = max(1, self._tests - 1)
+
     def _setup(self) -> None:
         if population.count() == 0:
-            for i in range(1, config.START_POPULATION + 1):
+            for i in range(1, config.TARGET_POPULATION + 1):
                 self._logger.info(f"Создается базовый организм {i}:")
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")
+
+        self._tests = max(population.min_scores(), seq.minimum_bounding_n(config.P_VALUE / config.TARGET_POPULATION))
 
     def _step(self, hunter: population.Organism) -> Optional[population.Organism]:
         """Один шаг эволюции."""
@@ -94,7 +108,7 @@ class Evolution:  # noqa: WPS214
             label = " - новый организм"
 
         self._logger.info(f"Родитель{label}:")
-        if self._eval_organism(hunter) is None:
+        if (margin := self._eval_organism(hunter)) is None:
             return None
 
         if have_more_dates:
@@ -103,15 +117,15 @@ class Evolution:  # noqa: WPS214
             return None
 
         for n_child in itertools.count(1):
+            if (rnd := np.random.random()) < (slowness := margin[1]):
+                self._logger.info(f"Медленный не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
+
+                return None
+
             self._logger.info(f"Потомок {n_child}:")
 
             hunter = hunter.make_child(1 / self._scale)
             if (margin := self._eval_organism(hunter)) is None:
-                return None
-
-            if (rnd := np.random.random()) < (slowness := margin[1]):
-                self._logger.info(f"Медленный не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
-
                 return None
 
     def _eval_organism(self, organism: population.Organism) -> tuple[float, float] | None:
@@ -126,10 +140,8 @@ class Evolution:  # noqa: WPS214
         all_dates = listing.all_history_date(self._tickers, end=self._end)
 
         try:
-            if organism.date == self._end :
-                prob = 1 - _time_delta(organism)
-                retry = stats.geom.rvs(prob)
-                dates = all_dates[-(max(organism.scores, self._tests - 1)  + retry): -organism.scores].tolist()
+            if organism.date == self._end:
+                dates = all_dates[-organism.scores - self._tests: -organism.scores].tolist()
                 organism.retrain(self._tickers, dates[0])
                 dates = reversed(dates)
             elif organism.scores:
@@ -164,7 +176,7 @@ class Evolution:  # noqa: WPS214
         значений более старого организма).
         """
         names = {"llh": "LLH", "ir": "RET"}
-        upper_bound = np.inf
+        upper_bound = -np.inf
 
         for metric in ("ir", "llh"):
             median, upper, maximum = _select_worst_bound(
@@ -189,7 +201,7 @@ class Evolution:  # noqa: WPS214
 
                 return None
 
-            upper_bound = min(upper_bound, upper)
+            upper_bound = max(upper_bound, upper)
 
         org.upper_bound = upper_bound
         time_score = _time_delta(org)

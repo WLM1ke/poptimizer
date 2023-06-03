@@ -2,7 +2,6 @@
 import contextlib
 import datetime
 import logging
-import random
 import time
 from typing import Iterable, Iterator, Optional
 
@@ -248,7 +247,9 @@ def get_next_one() -> Optional[Organism]:
 
     Второй критерий - или самый мало обученный, или с максимальной верхней границе доверительного интервала.
     """
-    selector = random.choice(({"ub": pymongo.DESCENDING}, {"wins": pymongo.ASCENDING}))
+    selector = {"wins": pymongo.ASCENDING}
+    if count() < config.TARGET_POPULATION:
+        selector = {"ub": pymongo.DESCENDING}
 
     pipeline = [
         {"$project": {"date": True, "ub": True, "wins": True}},
@@ -297,7 +298,6 @@ def print_stat() -> None:
     """Распечатка сводных статистических данных по популяции."""
     _print_key_stats("llh")
     _print_key_stats("ir", "RET")
-    _print_wins_stats()
 
 
 def _print_key_stats(key: str, view: str = None) -> None:
@@ -328,11 +328,6 @@ def _print_key_stats(key: str, view: str = None) -> None:
     view = view or key.upper()
 
     LOGGER.info(f"{view} - ({quantiles})")  # noqa: WPS421
-
-
-def _print_wins_stats() -> None:
-    """Статистика по максимуму побед."""
-    LOGGER.info(f"Организмов - {count()} / Оценок - {min_scores()}-{max_scores()}\n")
 
 
 def min_scores() -> int:
