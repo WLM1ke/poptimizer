@@ -72,22 +72,28 @@ def turnovers(tickers: tuple[str, ...], last_date: pd.Timestamp) -> pd.DataFrame
 
 
 def _t2_shift(date: pd.Timestamp, index: pd.DatetimeIndex) -> pd.Timestamp:
-    """Рассчитывает эксдивидендную дату для режима T-2 на основании даты закрытия реестра.
+    """Рассчитывает эксдивидендную дату для режима T+2/T+1 на основании даты закрытия реестра.
+
+    Переход с режима T+2 на T+1 произошел с 31 июля 2023 года https://www.moex.com/n56493.
 
     Если дата не содержится в индексе цен, то необходимо найти предыдущую из индекса цен. После этого
-    взять сдвинутую на 1 назад дату.
+    взять сдвинутую на 1/0 назад дату.
 
     Если дата находится в будущем за пределом истории котировок, то нужно сдвинуть на 1 бизнес день
-    вперед и на два назад. Это не эквивалентно сдвигу на один день назад для выходных.
+    вперед и на 2/1 назад. Это не эквивалентно сдвигу на один день назад для выходных.
     """
+    shift = 2
+    if date > pd.Timestamp("2023-07-31"):
+        shift = 1
+
     if date <= index[-1]:
         position = index.get_indexer([date], "ffill", limit=1)[0]
 
-        return index[position - 1]
+        return index[position - (shift - 1)]
 
     next_b_day = date + offsets.BDay()
 
-    return next_b_day - 2 * offsets.BDay()
+    return next_b_day - shift * offsets.BDay()
 
 
 def div_and_prices(
