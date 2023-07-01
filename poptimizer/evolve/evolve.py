@@ -50,13 +50,23 @@ class Evolution:  # noqa: WPS214
             date = self._end.date()
             self._logger.info(f"***{date}: Шаг эволюции — {step}***")
             population.print_stat()
+            count = population.count()
             self._logger.info(
                 f"Тестов - {self._tests} / "
-                f"Организмов - {population.count()} / "
+                f"Организмов - {count} / "
                 f"Оценок - {population.min_scores()}-{population.max_scores()}\n"
             )
 
             self._step(org)
+
+            if not (delta := population.count() - count):
+                continue
+
+            if delta > 0 and (count + delta) > config.TARGET_POPULATION:
+                self._tests += 1
+
+            if delta < 0 and (count + delta) < config.TARGET_POPULATION:
+                self._tests -= 1
 
     def _step_setup(
         self,
@@ -64,9 +74,6 @@ class Evolution:  # noqa: WPS214
         org: population.Organism
     ) -> int:
         d_min, d_max = population.min_max_date()
-
-        if org.date is None or d_min == d_max:
-            self._change_test()
 
         if self._tickers is None:
             self._tickers = load_tickers()
@@ -80,15 +87,6 @@ class Evolution:  # noqa: WPS214
         self._end = dates[1]
 
         return 1
-
-    def _change_test(self):
-        count = population.count()
-
-        if count > config.TARGET_POPULATION:
-            self._tests += 1
-
-        if count < config.TARGET_POPULATION:
-            self._tests = max(1, self._tests - 1)
 
     def _setup(self) -> None:
         if population.count() == 0:

@@ -248,7 +248,7 @@ def get_next_one() -> Optional[Organism]:
     Второй критерий - или самый мало обученный, или с максимальной верхней границе доверительного интервала.
     """
     selector = {"wins": pymongo.ASCENDING}
-    if count() < config.TARGET_POPULATION:
+    if count() <= config.TARGET_POPULATION:
         selector = {"ub": pymongo.DESCENDING}
 
     pipeline = [
