@@ -66,7 +66,7 @@ class Evolution:  # noqa: WPS214
                 self._tests += 1
 
             if delta < 0 and (count + delta) < config.TARGET_POPULATION:
-                self._tests -= 1
+                self._tests = max(1, self._tests - 1)
 
     def _step_setup(
         self,
