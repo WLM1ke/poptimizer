@@ -2,10 +2,8 @@ version: "3"
 
 vars:
   APP: poptimizer
-  PYTHON: 3.10
-  TOOLS: go-task pdm
-
-dotenv: [".env"]
+  PYTHON: 3.11
+  TOOLS: go-task pdm mongodb-community nats-server
 
 tasks:
   default:
@@ -14,14 +12,15 @@ tasks:
       - task -l
 
   setup:
-    desc: Install {{.TOOLS | replace " " ", "}}, python{{.PYTHON}} and dependencies. Setup venv.
+    desc: Setup venv, install tools and dependencies.
     cmds:
+      - brew tap mongodb/brew
       - brew install {{.TOOLS}} python@{{.PYTHON}}
       - python{{.PYTHON}} -m venv --clear .venv
       - task: update
 
   update:
-    desc: Upgrade {{.TOOLS | replace " " ", "}}, python{{.PYTHON}} and dependencies.
+    desc: Upgrade tools and dependencies.
     cmds:
       - brew upgrade {{.TOOLS}} python@{{.PYTHON}}
       - pdm update --update-all --no-sync
@@ -29,21 +28,26 @@ tasks:
       - pdm update --dry-run --unconstrained
 
   lint:
-    desc: Format black and isort. Lint lint-imports, mypy and wemake-python-styleguide.
+    desc: Format black and lint.
     cmds:
       - pdm run black {{.APP}}
-      - pdm run isort {{.APP}}
       - pdm run lint-imports
+      - pdm run ruff {{.APP}}
       - pdm run mypy {{.APP}}
-      - pdm run flake8 {{.APP}}
 
   test:
-    desc: Lint and test with pytest.
+    desc: Lint and test.
     deps: [lint]
     cmds:
       - pdm run pytest {{.APP}} --cov={{.APP}}
 
   run:
-    desc: Run {{.APP}} with .env file.
+    desc: Run POptimizer with .env file.
     cmds:
+    # Запуск не с помощью pdm, потому что не правильно обрабатываются сигналы SIGINT
       - .venv/bin/python -m {{.APP}}
+
+  nats:
+    desc: Run NATS Server.
+    cmds:
+      - nats-server --addr localhost --jetstream --store_dir nats

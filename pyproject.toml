@@ -7,22 +7,23 @@ authors = [
 ]
 readme = "README.md"
 license = {text = "Unlicense"}
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.11,<3.12"
 dependencies = [
-    "torch>=1.12.0",
-    "motor>=3.1.1",
+    "torch>=2.0.1",
+    "motor>=3.2.0",
     "aiomoex>=2.0.0",
-    "openpyxl>=3.0.10",
-    "pydantic>=1.10.2",
+    "openpyxl>=3.1.2",
+    "pydantic>=2.1.1",
     "uvloop>=0.17.0",
-    "aiofiles>=22.1.0",
-    "types-aiofiles>=22.1.0.4",
-    "lxml>=4.9.1",
-    "pandas>=1.5.2",
-    "tqdm>=4.64.1",
-    "scipy>=1.9.3",
+    "aiofiles>=23.1.0",
+    "types-aiofiles>=23.1.0.5",
+    "lxml>=4.9.3",
+    "pandas>=2.0.3",
+    "tqdm>=4.65.0",
+    "scipy>=1.11.1",
+    "nats-py>=2.3.1",
+    "pydantic-settings>=2.0.2",
 ]
-[project.optional-dependencies]
 
 [project.urls]
 repository = "https://github.com/WLM1ke/poptimizer"
@@ -37,12 +38,12 @@ build-backend = "pdm.pep517.api"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 dev = [
-    "mypy>=0.991",
-    "pytest>=7.2.0",
-    "pytest-cov>=4.0.0",
-    "black[d]>=22.10.0",
-    "import-linter[toml]>=1.4.0",
-    "wemake-python-styleguide>=0.17.0",
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black[d]>=23.7.0",
+    "import-linter>=1.10.0",
+    "ruff>=0.0.280",
+    "mypy>=1.4.1",
 ]
 
 [tool.mypy]
@@ -54,10 +55,6 @@ plugins = [
 strict = true
 ignore_missing_imports = true
 warn_unreachable = true
-
-[[tool.mypy.overrides]]
-module = "*.tests.*"
-disallow_untyped_defs = false
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
@@ -78,6 +75,40 @@ omit = ["*/tests/*"]
 [tool.black]
 line-length = 120
 
+[tool.ruff]
+select = ["ALL"]
+fixable = ["ALL"]
+fix = true
+
+ignore = [
+    "A003",     # Class attribute is shadowing a python builtin
+    "ANN101",   # Missing-type-self
+    "ANN102",   # Missing-type-cls
+    "ANN401",   # Dynamically typed expressions (typing.Any) are disallowed
+    "D107",     # Missing docstring in __init__ - prefer doc for class
+    "D203",     # One-blank-line-before-class (D203) and no-blank-line-before-class (D211) are incompatible
+    "D213",     # Multi-line-summary-first-line (D212) and multi-line-summary-second-line (D213) are incompatible
+    "DTZ",      # The use of `datetime` without `tzinfo` argument is not allowed - one tz zone
+    "E501",     # Line too long - black
+    "EM101",    # Exception must not use a string literal, assign to variable first - don't like many exceptions
+    "EM102",    # Exception must not use an f-string literal, assign to variable first - don't like many exceptions
+    "RUF001",   # Ambiguous-unicode-character-string - russian
+    "RUF002",   # Ambiguous-unicode-character-docstring - russian
+    "RUF003",   # Ambiguous-unicode-character-comment - russian
+    "TRY003",   # Avoid specifying long messages outside the exception class - don't like many exceptions
+]
+
+unfixable = [
+    "EM101",    # Exception must not use a string literal, assign to variable first
+    "EM102",    # Exception must not use an f-string literal, assign to variable first
+]
+
+[tool.ruff.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+
+[tool.ruff.pep8-naming]
+classmethod-decorators = ["pydantic.field_validator", "pydantic.root_validator"]
+
 [tool.importlinter]
 root_package = "poptimizer"
 
@@ -86,29 +117,6 @@ name = "Layered"
 type = "layers"
 layers = [
     "poptimizer.app",
-    "poptimizer.utils",
-    "poptimizer.server",
-    "poptimizer.portfolio",
     "poptimizer.data",
     "poptimizer.core",
-]
-ignore_imports = [
-    "poptimizer.data.update.raw.status -> poptimizer.portfolio.adapter",
-    "poptimizer.server.logger -> poptimizer.utils.lgr",
-    "poptimizer.data.update.quotes -> poptimizer.utils.retry",
-]
-
-[[tool.importlinter.contracts]]
-name = "Weakly coupled middle layer"
-type = "independence"
-modules = [
-    "poptimizer.server",
-    "poptimizer.portfolio",
-    "poptimizer.data",
-]
-ignore_imports = [
-    "poptimizer.data.*.*.* -> poptimizer.*.adapter",
-    "poptimizer.portfolio.*.* -> poptimizer.*.adapter",
-    "poptimizer.server.* -> poptimizer.*.edit.*",
-    "poptimizer.server.middleware -> poptimizer.*.exceptions",
 ]

@@ -104,13 +104,16 @@ ENV/
 **.pytest_cache/
 
 # pdm Python path
-.pdm.toml
+.pdm-python
 
 # Reports
 /reports/
 
 # MongoDB
 /db/
+
+# NATS
+/nats/
 
 # Portfolio data
 /portfolio/*

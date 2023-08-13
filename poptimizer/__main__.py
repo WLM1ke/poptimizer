@@ -1,54 +1,39 @@
 """Основная точка входа для запуска приложения."""
 import asyncio
-from typing import Protocol
+import logging
+from typing import Final
 
 import uvloop
 
-from poptimizer.app import config, resources, server, updater
-from poptimizer.core import exceptions
+from poptimizer.app import clients, config, context, lgr, modules, pubsub
+
+_Logger: Final = logging.getLogger("App")
 
 
-class Module(Protocol):
-    """Независимый модуль программы."""
+async def _run() -> None:
+    """Запускает асинхронное приложение, которое может быть остановлено SIGINT.
 
-    async def run(self, stop_event: asyncio.Event) -> None:
-        """Запускает независимый модуль и останавливает его после завершения события."""
+    Настройки передаются через .env файл.
+    """
+    cfg = config.Cfg()
 
+    async with (
+        clients.http(cfg.http_client) as http,
+        lgr.init(http, cfg.logger),
+        clients.mongo(cfg.mongo_client) as mongo,
+        clients.nats(cfg.nats_client) as js,
+        context.Ctx() as ctx,
+    ):
+        await pubsub.init(js)
 
-async def run_app() -> None:
-    """Запускает асинхронное приложение, которое может быть остановлено SIGINT и SIGTERM."""
-    async with resources.acquire(config.Resources()) as res:
-        res.logger.info("starting...")
-
-        modules: list[Module] = [
-            updater.create(
-                res.mongo_client,
-                res.http_session,
-            ),
-            server.create(
-                config.Server(),
-                res.mongo_client,
-            ),
-        ]
-        tasks = [asyncio.create_task(module.run(res.stop_event)) for module in modules]
-
-        for task in asyncio.as_completed(tasks):
-            try:
-                await task
-            except exceptions.POError as err:
-                res.logger.exception(f"abnormal termination -> {err}")
-            except BaseException as err:  # noqa: WPS424
-                err_text = repr(err)
-
-                res.logger.exception(f"abnormal termination with uncaught error -> {err_text}")
-            finally:
-                res.stop_event.set()
+        updater = modules.create_data_updater(http, mongo, js)
+        ctx.create_task(updater(ctx))
 
 
 def main() -> None:
-    """Запускает эволюцию с остановкой по SIGINT и SIGTERM."""
-    uvloop.install()
-    asyncio.run(run_app())
+    """Основная точка входа для запуска приложения."""
+    with asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner:
+        runner.run(coro=_run())
 
 
 if __name__ == "__main__":
