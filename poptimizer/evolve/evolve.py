@@ -45,33 +45,39 @@ class Evolution:  # noqa: WPS214
 
         while _check_time_range():
             org = population.get_next_one()
-            step = self._step_setup(step, org)
+            step = self._step_setup(step)
 
             date = self._end.date()
             self._logger.info(f"***{date}: Шаг эволюции — {step}***")
             population.print_stat()
             count = population.count()
             self._logger.info(
-                f"Тестов - {self._tests} / "
+                f"Тестов - {self.tests} / "
                 f"Организмов - {count} / "
                 f"Оценок - {population.min_scores()}-{population.max_scores()}\n"
             )
 
             self._step(org)
 
-            if not (delta := population.count() - count):
-                continue
+            delta = population.count() - count
 
             if delta > 0 and (count + delta) > config.TARGET_POPULATION:
                 self._tests += 1
 
-            if delta < 0 and (count + delta) < config.TARGET_POPULATION:
-                self._tests = max(1, self._tests - 1)
+            if delta <= 0 and (count + delta) < config.TARGET_POPULATION:
+                self._tests -= 1
+
+    @property
+    def tests(self):
+        count = population.count()
+        min_tests = seq.minimum_bounding_n(config.P_VALUE / (count + 1))
+        self._tests = max(min_tests, self._tests)
+
+        return self._tests
 
     def _step_setup(
         self,
         step: int,
-        org: population.Organism
     ) -> int:
         d_min, d_max = population.min_max_date()
 
@@ -95,7 +101,7 @@ class Evolution:  # noqa: WPS214
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")
 
-        self._tests = max(population.min_scores(), seq.minimum_bounding_n(config.P_VALUE / config.TARGET_POPULATION))
+        self._tests = max(population.min_scores(), seq.minimum_bounding_n(config.P_VALUE / (population.count() + 1)))
 
     def _step(self, hunter: population.Organism) -> Optional[population.Organism]:
         """Один шаг эволюции."""
@@ -106,24 +112,24 @@ class Evolution:  # noqa: WPS214
             label = " - новый организм"
 
         self._logger.info(f"Родитель{label}:")
-        if (margin := self._eval_organism(hunter)) is None:
+        if self._eval_organism(hunter) is None:
             return None
 
-        if have_more_dates:
+        if have_more_dates and (population.count() > config.TARGET_POPULATION):
             self._logger.info("Появились новые данные - не размножается...\n")
 
             return None
 
         for n_child in itertools.count(1):
-            if (rnd := np.random.random()) < (slowness := margin[1]):
-                self._logger.info(f"Медленный не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
-
-                return None
-
             self._logger.info(f"Потомок {n_child}:")
 
             hunter = hunter.make_child(1 / self._scale)
             if (margin := self._eval_organism(hunter)) is None:
+                return None
+
+            if (rnd := np.random.random()) < (slowness := margin[1]):
+                self._logger.info(f"Медленный не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
+
                 return None
 
     def _eval_organism(self, organism: population.Organism) -> tuple[float, float] | None:
@@ -139,7 +145,9 @@ class Evolution:  # noqa: WPS214
 
         try:
             if organism.date == self._end:
-                dates = all_dates[-organism.scores - self._tests: -organism.scores].tolist()
+                prob = 1 - _time_delta(organism)
+                retry = stats.geom.rvs(prob)
+                dates = all_dates[-max(self.tests, (organism.scores + retry)): -organism.scores].tolist()
                 organism.retrain(self._tickers, dates[0])
                 dates = reversed(dates)
             elif organism.scores:
@@ -147,7 +155,7 @@ class Evolution:  # noqa: WPS214
                     organism.retrain(self._tickers, self._end)
                 dates = [self._end]
             else:
-                dates = all_dates[-self._tests :].tolist()
+                dates = all_dates[-self.tests:].tolist()
                 organism.retrain(self._tickers, dates[0])
         except (ModelError, AttributeError) as error:
             organism.die()
