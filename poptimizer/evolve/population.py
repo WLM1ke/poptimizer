@@ -2,6 +2,7 @@
 import contextlib
 import datetime
 import logging
+import random
 import time
 from typing import Iterable, Iterator, Optional
 
@@ -247,9 +248,7 @@ def get_next_one() -> Optional[Organism]:
 
     Второй критерий - или самый мало обученный, или с максимальной верхней границе доверительного интервала.
     """
-    selector = {"wins": pymongo.ASCENDING}
-    if count() <= config.TARGET_POPULATION:
-        selector = {"ub": pymongo.DESCENDING}
+    selector = random.choice(({"ub": pymongo.DESCENDING}, {"wins": pymongo.ASCENDING}))
 
     pipeline = [
         {"$project": {"date": True, "ub": True, "wins": True}},
