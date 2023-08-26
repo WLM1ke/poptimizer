@@ -376,6 +376,9 @@ def _opt_port(
     ret_plan = (w * mean).sum()
     std_plan = (w.reshape(1, -1) @ sigma @ w.reshape(-1, 1)).item() ** 0.5
 
+    if np.isnan(std_plan) or np.isinf(std_plan) or std_plan == 0:
+        raise DegeneratedModelError("bad std")
+
     LOGGER.info(
         " / ".join(
             [
