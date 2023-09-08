@@ -14,9 +14,8 @@ from poptimizer.data.views import indexes, listing, quotes
 VALUE_REL_TOL = 2.0e-4
 CASH = "CASH"
 PORTFOLIO = "PORTFOLIO"
-LIQUIDITY_DAYS = config.YEAR_IN_TRADING_DAYS
 LIQUIDITY_DAYS_SHORT = config.MONTH_IN_TRADING_DAYS
-SELECT_DAYS = (LIQUIDITY_DAYS + config.FORECAST_DAYS + config.MIN_TEST_DAYS) * 2
+SELECT_DAYS = (config.FORECAST_DAYS + config.MIN_TEST_DAYS) * 2
 
 LOGGER = logging.getLogger()
 
