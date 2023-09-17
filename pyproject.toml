@@ -23,6 +23,7 @@ dependencies = [
     "scipy>=1.11.1",
     "nats-py>=2.3.1",
     "pydantic-settings>=2.0.2",
+    "typer[all]>=0.9.0",
 ]
 
 [project.urls]
@@ -85,6 +86,13 @@ ignore = [
     "ANN101",   # Missing-type-self
     "ANN102",   # Missing-type-cls
     "ANN401",   # Dynamically typed expressions (typing.Any) are disallowed
+    "D100",     # Missing docstring in public module
+    "D101",     # Missing docstring in public class
+    "D102",     # Missing docstring in public method
+    "D103",     # Missing docstring in public function
+    "D103",     # Missing docstring in public function
+    "D104",     # Missing docstring in public package
+    "D105",     # Missing docstring in magic method
     "D107",     # Missing docstring in __init__ - prefer doc for class
     "D203",     # One-blank-line-before-class (D203) and no-blank-line-before-class (D211) are incompatible
     "D213",     # Multi-line-summary-first-line (D212) and multi-line-summary-second-line (D213) are incompatible

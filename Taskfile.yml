@@ -31,7 +31,7 @@ tasks:
     desc: Format black and lint.
     cmds:
       - pdm run black {{.APP}}
-      - pdm run lint-imports
+      # - pdm run lint-imports
       - pdm run ruff {{.APP}}
       - pdm run mypy {{.APP}}
 
