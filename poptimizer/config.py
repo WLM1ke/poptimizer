@@ -10,7 +10,6 @@ _MAX_ISS_REQUESTS: Final = 10
 
 
 class BaseSettings(pydantic_settings.BaseSettings):
-
     model_config = pydantic_settings.SettingsConfigDict(
         env_file=Path(".env"),
         env_file_encoding="utf-8",
@@ -20,7 +19,6 @@ class BaseSettings(pydantic_settings.BaseSettings):
 
 
 class Logger(BaseSettings):
-
     level: int | str = logging.INFO
     telegram_level: int | str = logging.WARNING
     telegram_token: str = ""
@@ -28,12 +26,10 @@ class Logger(BaseSettings):
 
 
 class MongoClient(BaseSettings):
-
     uri: MongoDsn = MultiHostUrl("mongodb://localhost:27017")
 
 
 class HTTPClient(BaseSettings):
-
     con_per_host: PositiveInt = _MAX_ISS_REQUESTS
 
 
@@ -47,12 +43,10 @@ NatsDsn = Annotated[
 
 
 class NatsClient(BaseSettings):
-
     host: NatsDsn = NatsDsn("nats://localhost:4222")
 
 
 class Cfg(BaseSettings):
-
     logger: Logger = Logger()
     http_client: HTTPClient = HTTPClient()
     mongo_client: MongoClient = MongoClient()

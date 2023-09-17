@@ -1,8 +1,8 @@
 import asyncio
 
 import uvloop
-from poptimizer import config
 
+from poptimizer import config
 from poptimizer.adapters.uow import MongoUOW
 from poptimizer.core import domain, errors
 from poptimizer.io import mongo
