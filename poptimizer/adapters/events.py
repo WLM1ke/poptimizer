@@ -20,7 +20,8 @@ if TYPE_CHECKING:
 
 TEntity = TypeVar("TEntity", bound=domain.Entity)
 TEvent_contra = TypeVar("TEvent_contra", bound=domain.Event, contravariant=True)
-TResponse = TypeVar("TResponse", bound=domain.Response)
+TRequest_contra = TypeVar("TRequest_contra", bound=domain.Request[Any], contravariant=True)
+TResponse_co = TypeVar("TResponse_co", bound=domain.Response, covariant=True)
 
 
 class EventHandler(Protocol[TEvent_contra]):
@@ -28,8 +29,8 @@ class EventHandler(Protocol[TEvent_contra]):
         """Обрабатывает событие."""
 
 
-class RequestHandler(Protocol[TResponse]):
-    async def handle(self, ctx: handlers.Ctx, request: domain.Request[TResponse]) -> TResponse:
+class RequestHandler(Protocol[TRequest_contra, TResponse_co]):
+    async def handle(self, ctx: handlers.Ctx, request: TRequest_contra) -> TResponse_co:
         """Отвечает на запрос."""
 
 
@@ -40,7 +41,7 @@ class Ctx(Protocol):
     def publish(self, event: domain.Event) -> None:
         """Публикует событие."""
 
-    async def request(self, request: domain.Request[TResponse]) -> TResponse:
+    async def request(self, request: domain.Request[TResponse_co]) -> TResponse_co:
         """Выполняет запрос."""
 
     async def __aenter__(self) -> Self:
@@ -62,14 +63,16 @@ class Bus:
         self._uow_factory = uow_factory
 
         self._event_handlers: dict[str, list[tuple[str, EventHandler[Any]]]] = defaultdict(list)
-        self._request_handlers: dict[str, tuple[str, RequestHandler[Any]]] = {}
+        self._request_handlers: dict[str, tuple[str, RequestHandler[Any, Any]]] = {}
 
     def add_event_handler(self, subdomain: str, event_handler: EventHandler[TEvent_contra]) -> None:
         event_type = get_type_hints(event_handler.handle)["event"]
         event_name = event_type.__qualname__
         self._event_handlers[event_name].append((subdomain, event_handler))
 
-    def add_request_handler(self, subdomain: str, request_handler: RequestHandler[TResponse]) -> None:
+    def add_request_handler(
+        self, subdomain: str, request_handler: RequestHandler[TRequest_contra, TResponse_co]
+    ) -> None:
         request_type = get_type_hints(request_handler.handle)["request"]
         request_name = request_type.__qualname__
         if request_name in self._request_handlers:
@@ -80,14 +83,14 @@ class Bus:
     def publish(self, event: domain.Event) -> None:
         self._tasks.create_task(self._route_event(event))
 
-    async def request(self, request: domain.Request[TResponse]) -> TResponse:
+    async def request(self, request: domain.Request[TResponse_co]) -> TResponse_co:
         request_name = request.__class__.__name__
         subdomain, handler = self._request_handlers[request_name]
 
         async with self._uow_factory(subdomain, self) as ctx:
             resp = await handler.handle(ctx, request)
 
-        return cast(TResponse, resp)
+        return cast(TResponse_co, resp)
 
     async def __aenter__(self) -> Self:
         await self._tasks.__aenter__()
