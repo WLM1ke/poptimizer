@@ -1,0 +1,96 @@
+from __future__ import annotations
+
+import asyncio
+from collections import defaultdict
+from collections.abc import Callable
+import contextlib
+from types import TracebackType
+from typing import Any, AsyncIterator, Protocol, Self, TypeVar, get_type_hints
+
+from poptimizer.core import domain, errors, handlers
+
+TEntity = TypeVar("TEntity", bound=domain.Entity)
+TEvent = TypeVar("TEvent", bound=domain.Event, contravariant=True)
+TResponse = TypeVar("TResponse", bound=domain.Response)
+
+
+class EventHandler(Protocol[TEvent]):
+    async def handle(self, ctx: handlers.Ctx, event: TEvent) -> None:
+        """Обрабатывает событие."""
+
+
+class RequestHandler(Protocol):
+    async def handle(self, ctx: handlers.Ctx, request: domain.Request[TResponse]) -> TResponse:
+        """Отвечает на запрос."""
+
+
+class Ctx(Protocol):
+    async def get(self, t_entity: type[TEntity], uid: str, *, for_update: bool = True) -> TEntity:
+        """Получает агрегат заданного типа с указанным uid."""
+
+    def publish(self, event: domain.Event) -> None:
+        """Публикует событие."""
+
+    async def request(self, request: domain.Request[TResponse]) -> TResponse:
+        """Выполняет запрос."""
+
+    async def __aenter__(self) -> Self:
+        """Открывает контекст для доступа к доменным объектам и посылке сообщений."""
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool:
+        """Сохраняет доменные объекты и посылает сообщения."""
+
+
+class Bus:
+    def __init__(self, uow_factory: Callable[[str, Bus], Ctx]) -> None:
+        self._tasks = asyncio.TaskGroup()
+
+        self._uow_factory = uow_factory
+
+        self._event_handlers: dict[str, list[tuple[str, EventHandler[Any]]]] = defaultdict(list)
+        self._request_handlers: dict[str, tuple[str, RequestHandler]] = {}
+
+    def add_event_handler(self, subdomain: str, event_handler: EventHandler[Any]) -> None:
+        event_type = get_type_hints(event_handler.handle)["event"]
+        event_name = event_type.__name__
+        self._event_handlers[event_name].append((subdomain, event_handler))
+
+    def add_request_handler(self, subdomain: str, request_handler: RequestHandler) -> None:
+        request_type = get_type_hints(request_handler)["request"]
+        request_name = request_type.__name__
+        if request_name in self._request_handlers:
+            raise errors.POError(f"can't register second handler for {request_name}")
+
+        self._request_handlers[request_name] = (subdomain, request_handler)
+
+    def publish(self, event: domain.Event) -> None:
+        self._tasks.create_task(self._route_event(event))
+
+    async def __aenter__(self) -> Self:
+        await self._tasks.__aenter__()
+
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        return await self._tasks.__aexit__(exc_type, exc_value, traceback)
+
+    async def _route_event(self, event: domain.Event) -> None:
+        event_name = event.__class__.__name__
+
+        async with asyncio.TaskGroup() as tg:
+            for subdomain, handler in self._event_handlers[event_name]:
+                tg.create_task(self._handle_event(subdomain, handler, event))
+
+    async def _handle_event(self, subdomain: str, handler: EventHandler[Any], event: domain.Event) -> None:
+        async with self._uow_factory(subdomain, self) as ctx:
+            await handler.handle(ctx, event)

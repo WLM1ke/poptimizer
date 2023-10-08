@@ -1,32 +1,23 @@
 import asyncio
-import datetime
 from collections.abc import Iterator
 from types import TracebackType
-from typing import Any, Final, Self, TypeVar
+from typing import Self, TypeVar
 
-from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import ValidationError
-from pymongo.errors import PyMongoError
+from motor.core import AgnosticClient
 
+from poptimizer.adapters import events, repo
 from poptimizer.core import domain, errors
 
-_MONGO_ID: Final = "_id"
-_REV: Final = "rev"
-_VER: Final = "ver"
-_UID: Final = "uid"
-_TIMESTAMP: Final = "timestamp"
-
-
-TEntity = TypeVar("TEntity", bound=domain.BaseEntity)
+TEntity = TypeVar("TEntity", bound=domain.Entity)
+TResponse = TypeVar("TResponse", bound=domain.Response)
 
 
 class IdentityMap:
-    def __init__(self, error_type: type[errors.POError]) -> None:
-        self._error_type = error_type
-        self._seen: dict[tuple[type, str], tuple[domain.BaseEntity, bool]] = {}
+    def __init__(self) -> None:
+        self._seen: dict[tuple[type, str], tuple[domain.Entity, bool]] = {}
         self._lock = asyncio.Lock()
 
-    def __iter__(self) -> Iterator[domain.BaseEntity]:
+    def __iter__(self) -> Iterator[domain.Entity]:
         yield from [model for model, for_update in self._seen.values() if for_update]
 
     async def __aenter__(self) -> Self:
@@ -56,82 +47,50 @@ class IdentityMap:
             return None
 
         if not isinstance(entity, t_entity):
-            raise self._error_type(f"can't load form identity map {t_entity}({uid})")
+            raise errors.POError(f"can't load form identity map {t_entity}({uid})")
 
-        self.save(entity, for_update=update_flag or for_update)
+        self._seen[entity.__class__, entity.uid] = (entity, update_flag or for_update)
 
         return entity
 
     def save(self, entity: TEntity, *, for_update: bool) -> None:
+        saved, _ = self._seen.get((entity.__class__, entity.uid), (None, False))
+        if saved is not None:
+            raise errors.POError(f"can't save to identity map {entity.__class__}({entity.uid})")
+
         self._seen[entity.__class__, entity.uid] = (entity, for_update)
 
 
-def _collection_name(t_entity: type[TEntity]) -> str:
-    return t_entity.__qualname__.lower()
-
-
-class MongoUOW:
+class UOW:
     def __init__(
         self,
-        mongo_client: AsyncIOMotorClient,
-        db: str,
-        error_type: type[errors.POError],
+        repo: repo.Mongo,
+        identity_map: IdentityMap,
+        events_bus: events.Bus,
     ) -> None:
-        self._mongo_client = mongo_client
-        self._db = db
-        self._error_type = error_type
-        self._identity_map = IdentityMap(error_type)
+        self._repo = repo
+        self._identity_map = identity_map
+        self._events_bus = events_bus
+        self._events: list[domain.Event] = []
 
     async def get(self, t_entity: type[TEntity], uid: str | None, *, for_update: bool = True) -> TEntity:
-        collection_name = _collection_name(t_entity)
-        uid = uid or collection_name
+        uid = uid or t_entity.__qualname__.lower()
 
         async with self._identity_map as identity_map:
             if loaded := identity_map.get(t_entity, uid, for_update=for_update):
                 return loaded
 
-            if (doc := await self._load(collection_name, uid)) is None:
-                doc = await self._create_new(collection_name, uid)
-
-            entity = self._create_entity(t_entity, doc)
+            entity = await self._repo.get(t_entity, uid)
 
             identity_map.save(entity, for_update=for_update)
 
         return entity
 
-    async def _load(self, collection_name: str, uid: str) -> Any:
-        collection = self._mongo_client[self._db][collection_name]
-        try:
-            return await collection.find_one({_MONGO_ID: uid})
-        except PyMongoError as err:
-            raise self._error_type("can't load {collection_name}.{uid}") from err
+    def publish(self, event: domain.Event) -> None:
+        self._events.append(event)
 
-    async def _create_new(self, collection_name: str, uid: str) -> Any:
-        doc = {
-            _MONGO_ID: uid,
-            _VER: 0,
-            _TIMESTAMP: datetime.datetime(datetime.MINYEAR, 1, 1),
-        }
-
-        collection = self._mongo_client[self._db][collection_name]
-
-        try:
-            await collection.insert_one(doc)
-        except PyMongoError as err:
-            raise self._error_type("can't create {collection_name}.{uid}") from err
-
-        return doc
-
-    def _create_entity(self, t_entity: type[TEntity], doc: Any) -> TEntity:
-        doc[_REV] = {
-            _UID: doc.pop(_MONGO_ID),
-            _VER: doc.pop(_VER),
-        }
-
-        try:
-            return t_entity.model_validate(doc)
-        except ValidationError as err:
-            raise self._error_type("can't load {collection_name}.{uid}") from err
+    async def request(self, request: domain.Request[TResponse]) -> TResponse:
+        raise NotImplementedError
 
     async def __aenter__(self) -> Self:
         return self
@@ -145,26 +104,21 @@ class MongoUOW:
         if exc_value is not None:
             return False
 
-        await self._commit()
+        await self._repo.save(self._identity_map)
+
+        for event in self._events:
+            self._events_bus.publish(event)
 
         return True
 
-    async def _commit(self) -> None:
-        async with (
-            await self._mongo_client.start_session() as session,
-            session.start_transaction(),
-        ):
-            db = session.client[self._db]
-            for entity in self._identity_map:
-                doc = entity.model_dump()
-                doc.pop(_REV)
 
-                collection_name = _collection_name(entity.__class__)
-                rez = await db[collection_name].find_one_and_update(
-                    {_MONGO_ID: entity.uid, _VER: entity.ver},
-                    {"$inc": {_VER: 1}, "$set": doc},
-                    projection={_MONGO_ID: False},
-                    session=session,
-                )
-                if rez is None:
-                    raise self._error_type(f"wrong version {collection_name}.{entity.uid}")
+class UOWFactory:
+    def __init__(self, mongo_client: AgnosticClient) -> None:
+        self._mongo_client = mongo_client
+
+    def __call__(self, subdomain: str, events_bus: events.Bus) -> UOW:
+        return UOW(
+            repo.Mongo(self._mongo_client, subdomain),
+            IdentityMap(),
+            events_bus,
+        )
