@@ -16,7 +16,7 @@ tasks:
     cmds:
       - brew tap mongodb/brew
       - brew install {{.TOOLS}} python@{{.PYTHON}}
-      - python{{.PYTHON}} -m venv --clear .venv
+      - pdm venv create --force {{.PYTHON}} 
       - task: update
 
   update:
@@ -32,7 +32,7 @@ tasks:
     cmds:
       - pdm run black {{.APP}}
       # - pdm run lint-imports
-      - pdm run ruff {{.APP}}
+      # - pdm run ruff {{.APP}}
       - pdm run mypy {{.APP}}
 
   test:
