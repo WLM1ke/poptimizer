@@ -90,7 +90,7 @@ class UOW:
         self._events.append(event)
 
     async def request(self, request: domain.Request[TResponse]) -> TResponse:
-        raise NotImplementedError
+        return await self._events_bus.request(request)
 
     async def __aenter__(self) -> Self:
         return self

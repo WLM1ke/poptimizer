@@ -17,23 +17,30 @@ class SomeEvent(domain.Event):
 
 
 class EventHandler:
-    def __init__(self) -> None:
-        self._counter = 0
-
     async def handle(self, ctx: handlers.Ctx, event: SomeEvent) -> None:
         entity = await ctx.get(SomeEntity, "aaa")
-        entity.value += 1
+        entity.value -= 1
         print(entity.value)
-        if self._counter < 10:
-            self._counter += 1
+        if entity.value > 0:
             ctx.publish(SomeEvent())
 
 
-class EventHandler2:
-    async def handle(self, ctx: handlers.Ctx, event: SomeEvent) -> None:
-        entity = await ctx.get(SomeEntity, "aaa", for_update=False)
-        entity.value *= entity.value
-        print(entity.value)
+class SomeResponse(domain.Response):
+    qqq: int
+
+
+class SomeRequest(domain.Request[SomeResponse]):
+    value: int
+
+
+class RequestHandler:
+    async def handle(self, ctx: handlers.Ctx, request: SomeRequest) -> SomeResponse:
+        entity = await ctx.get(SomeEntity, "aaa")
+        entity.value = request.value**2
+
+        ctx.publish(SomeEvent())
+
+        return SomeResponse(qqq=request.value**2)
 
 
 async def _run() -> None:
@@ -43,8 +50,11 @@ async def _run() -> None:
         events.Bus(uow.UOWFactory(mongo_client)) as bus,
     ):
         bus.add_event_handler("test", EventHandler())
-        bus.add_event_handler("test", EventHandler2())
-        bus.publish(SomeEvent())
+        bus.add_request_handler("test", RequestHandler())
+
+        a = await bus.request(SomeRequest(value=2))
+
+        print(a.qqq)
 
 
 def run() -> None:

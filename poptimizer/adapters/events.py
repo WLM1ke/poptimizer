@@ -2,24 +2,33 @@ from __future__ import annotations
 
 import asyncio
 from collections import defaultdict
-from collections.abc import Callable
-import contextlib
-from types import TracebackType
-from typing import Any, AsyncIterator, Protocol, Self, TypeVar, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Protocol,
+    Self,
+    TypeVar,
+    cast,
+    get_type_hints,
+)
 
 from poptimizer.core import domain, errors, handlers
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from types import TracebackType
+
 TEntity = TypeVar("TEntity", bound=domain.Entity)
-TEvent = TypeVar("TEvent", bound=domain.Event, contravariant=True)
+TEvent_contra = TypeVar("TEvent_contra", bound=domain.Event, contravariant=True)
 TResponse = TypeVar("TResponse", bound=domain.Response)
 
 
-class EventHandler(Protocol[TEvent]):
-    async def handle(self, ctx: handlers.Ctx, event: TEvent) -> None:
+class EventHandler(Protocol[TEvent_contra]):
+    async def handle(self, ctx: handlers.Ctx, event: TEvent_contra) -> None:
         """Обрабатывает событие."""
 
 
-class RequestHandler(Protocol):
+class RequestHandler(Protocol[TResponse]):
     async def handle(self, ctx: handlers.Ctx, request: domain.Request[TResponse]) -> TResponse:
         """Отвечает на запрос."""
 
@@ -53,16 +62,16 @@ class Bus:
         self._uow_factory = uow_factory
 
         self._event_handlers: dict[str, list[tuple[str, EventHandler[Any]]]] = defaultdict(list)
-        self._request_handlers: dict[str, tuple[str, RequestHandler]] = {}
+        self._request_handlers: dict[str, tuple[str, RequestHandler[Any]]] = {}
 
-    def add_event_handler(self, subdomain: str, event_handler: EventHandler[Any]) -> None:
+    def add_event_handler(self, subdomain: str, event_handler: EventHandler[TEvent_contra]) -> None:
         event_type = get_type_hints(event_handler.handle)["event"]
-        event_name = event_type.__name__
+        event_name = event_type.__qualname__
         self._event_handlers[event_name].append((subdomain, event_handler))
 
-    def add_request_handler(self, subdomain: str, request_handler: RequestHandler) -> None:
-        request_type = get_type_hints(request_handler)["request"]
-        request_name = request_type.__name__
+    def add_request_handler(self, subdomain: str, request_handler: RequestHandler[TResponse]) -> None:
+        request_type = get_type_hints(request_handler.handle)["request"]
+        request_name = request_type.__qualname__
         if request_name in self._request_handlers:
             raise errors.POError(f"can't register second handler for {request_name}")
 
@@ -70,6 +79,15 @@ class Bus:
 
     def publish(self, event: domain.Event) -> None:
         self._tasks.create_task(self._route_event(event))
+
+    async def request(self, request: domain.Request[TResponse]) -> TResponse:
+        request_name = request.__class__.__name__
+        subdomain, handler = self._request_handlers[request_name]
+
+        async with self._uow_factory(subdomain, self) as ctx:
+            resp = await handler.handle(ctx, request)
+
+        return cast(TResponse, resp)
 
     async def __aenter__(self) -> Self:
         await self._tasks.__aenter__()
