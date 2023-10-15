@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated, Generic, Protocol, TypeVar
 
 from pydantic import BaseModel, ConfigDict, PlainSerializer
 
@@ -50,7 +50,7 @@ class Event(Message):
 
 
 class Response(Message):
-    """Ответ.
+    """Ответ на запрос.
 
     Сообщение, которое поступает в ответ на запрос.
     Собственником события является его единственный получатель запроса.
@@ -66,3 +66,17 @@ class Request(Message, Generic[TResponse]):
     Сообщение, которое может принять 1 получатель - предполагает ответ.
     Собственником события является его единственный получатель.
     """
+
+
+TEntity = TypeVar("TEntity", bound=Entity)
+
+
+class Ctx(Protocol):
+    async def get(self, t_entity: type[TEntity], uid: str, *, for_update: bool = True) -> TEntity:
+        """Получает агрегат заданного типа с указанным uid."""
+
+    def publish(self, event: Event) -> None:
+        """Публикует событие."""
+
+    async def request(self, request: Request[TResponse]) -> TResponse:
+        """Выполняет запрос."""

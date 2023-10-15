@@ -32,8 +32,8 @@ tasks:
     cmds:
       - pdm run black {{.APP}}
       # - pdm run lint-imports
-      # - pdm run ruff {{.APP}}
       - pdm run mypy {{.APP}}
+      - pdm run ruff {{.APP}}
 
   test:
     desc: Lint and test.
