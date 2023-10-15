@@ -12,7 +12,7 @@ from typing import (
     get_type_hints,
 )
 
-from poptimizer.core import domain, errors, handlers
+from poptimizer.core import domain, errors
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -20,22 +20,22 @@ if TYPE_CHECKING:
 
 TEntity = TypeVar("TEntity", bound=domain.Entity)
 TEvent_contra = TypeVar("TEvent_contra", bound=domain.Event, contravariant=True)
-TRequest_contra = TypeVar("TRequest_contra", bound=domain.Request[Any], contravariant=True)
 TResponse_co = TypeVar("TResponse_co", bound=domain.Response, covariant=True)
+TRequest_contra = TypeVar("TRequest_contra", bound=domain.Request[Any], contravariant=True)
 
 
 class EventHandler(Protocol[TEvent_contra]):
-    async def handle(self, ctx: handlers.Ctx, event: TEvent_contra) -> None:
+    async def handle(self, ctx: domain.Ctx, event: TEvent_contra) -> None:
         """Обрабатывает событие."""
 
 
 class RequestHandler(Protocol[TRequest_contra, TResponse_co]):
-    async def handle(self, ctx: handlers.Ctx, request: TRequest_contra) -> TResponse_co:
+    async def handle(self, ctx: domain.Ctx, request: TRequest_contra) -> TResponse_co:
         """Отвечает на запрос."""
 
 
 class Ctx(Protocol):
-    async def get(self, t_entity: type[TEntity], uid: str, *, for_update: bool = True) -> TEntity:
+    async def get(self, t_entity: type[TEntity], uid: domain.UID, *, for_update: bool = True) -> TEntity:
         """Получает агрегат заданного типа с указанным uid."""
 
     def publish(self, event: domain.Event) -> None:
@@ -57,26 +57,28 @@ class Ctx(Protocol):
 
 
 class Bus:
-    def __init__(self, uow_factory: Callable[[str, Bus], Ctx]) -> None:
+    def __init__(self, uow_factory: Callable[[domain.Subdomain, Bus], Ctx]) -> None:
         self._tasks = asyncio.TaskGroup()
 
         self._uow_factory = uow_factory
 
-        self._event_handlers: dict[str, list[tuple[str, EventHandler[Any]]]] = defaultdict(list)
-        self._request_handlers: dict[str, tuple[str, RequestHandler[Any, Any]]] = {}
+        self._event_handlers: dict[str, list[tuple[domain.Subdomain, EventHandler[Any]]]] = defaultdict(list)
+        self._request_handlers: dict[str, tuple[domain.Subdomain, RequestHandler[Any, Any]]] = {}
 
-    def add_event_handler(self, subdomain: str, event_handler: EventHandler[TEvent_contra]) -> None:
+    def add_event_handler(self, subdomain: domain.Subdomain, event_handler: EventHandler[TEvent_contra]) -> None:
         event_type = get_type_hints(event_handler.handle)["event"]
         event_name = event_type.__qualname__
         self._event_handlers[event_name].append((subdomain, event_handler))
 
     def add_request_handler(
-        self, subdomain: str, request_handler: RequestHandler[TRequest_contra, TResponse_co]
+        self,
+        subdomain: domain.Subdomain,
+        request_handler: RequestHandler[TRequest_contra, TResponse_co],
     ) -> None:
         request_type = get_type_hints(request_handler.handle)["request"]
         request_name = request_type.__qualname__
         if request_name in self._request_handlers:
-            raise errors.POError(f"can't register second handler for {request_name}")
+            raise errors.AdaptersError(f"can't register second handler for {request_name}")
 
         self._request_handlers[request_name] = (subdomain, request_handler)
 
@@ -112,6 +114,6 @@ class Bus:
             for subdomain, handler in self._event_handlers[event_name]:
                 tg.create_task(self._handle_event(subdomain, handler, event))
 
-    async def _handle_event(self, subdomain: str, handler: EventHandler[Any], event: domain.Event) -> None:
+    async def _handle_event(self, subdomain: domain.Subdomain, handler: EventHandler[Any], event: domain.Event) -> None:
         async with self._uow_factory(subdomain, self) as ctx:
             await handler.handle(ctx, event)

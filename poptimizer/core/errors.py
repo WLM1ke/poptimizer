@@ -11,3 +11,7 @@ class POError(Exception):
             errs.append(repr(cause_err))
 
         return " -> ".join(errs)
+
+
+class AdaptersError(POError):
+    """Ошибки доступа к инфраструктуре."""

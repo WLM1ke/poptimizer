@@ -1,12 +1,16 @@
 from datetime import date, datetime
-from typing import Annotated, Generic, Protocol, TypeVar
+from typing import Annotated, Generic, NewType, Protocol, TypeVar
 
 from pydantic import BaseModel, ConfigDict, PlainSerializer
 
+UID = NewType("UID", str)
+Version = NewType("Version", str)
+Subdomain = NewType("Subdomain", str)
+
 
 class Revision(BaseModel):
-    uid: str
-    ver: int
+    uid: UID
+    ver: Version
 
     model_config = ConfigDict(frozen=True)
 
@@ -29,11 +33,11 @@ class Entity(BaseModel):
     timestamp: Day
 
     @property
-    def uid(self) -> str:
+    def uid(self) -> UID:
         return self.rev.uid
 
     @property
-    def ver(self) -> int:
+    def ver(self) -> Version:
         return self.rev.ver
 
 
@@ -72,7 +76,7 @@ TEntity = TypeVar("TEntity", bound=Entity)
 
 
 class Ctx(Protocol):
-    async def get(self, t_entity: type[TEntity], uid: str, *, for_update: bool = True) -> TEntity:
+    async def get(self, t_entity: type[TEntity], uid: UID, *, for_update: bool = True) -> TEntity:
         """Получает агрегат заданного типа с указанным uid."""
 
     def publish(self, event: Event) -> None:

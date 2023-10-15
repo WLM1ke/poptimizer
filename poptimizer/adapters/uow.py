@@ -5,7 +5,7 @@ from typing import Self, TypeVar
 
 from motor.core import AgnosticClient
 
-from poptimizer.adapters import events, repo
+from poptimizer.adapters import message, repo
 from poptimizer.core import domain, errors
 
 TEntity = TypeVar("TEntity", bound=domain.Entity)
@@ -14,7 +14,7 @@ TResponse = TypeVar("TResponse", bound=domain.Response)
 
 class IdentityMap:
     def __init__(self) -> None:
-        self._seen: dict[tuple[type, str], tuple[domain.Entity, bool]] = {}
+        self._seen: dict[tuple[type, domain.UID], tuple[domain.Entity, bool]] = {}
         self._lock = asyncio.Lock()
 
     def __iter__(self) -> Iterator[domain.Entity]:
@@ -38,7 +38,7 @@ class IdentityMap:
     def get(
         self,
         t_entity: type[TEntity],
-        uid: str,
+        uid: domain.UID,
         *,
         for_update: bool,
     ) -> TEntity | None:
@@ -47,7 +47,7 @@ class IdentityMap:
             return None
 
         if not isinstance(entity, t_entity):
-            raise errors.POError(f"can't load form identity map {t_entity}({uid})")
+            raise errors.AdaptersError(f"type mismatch in identity map for {t_entity}({uid})")
 
         self._seen[entity.__class__, entity.uid] = (entity, update_flag or for_update)
 
@@ -56,7 +56,7 @@ class IdentityMap:
     def save(self, entity: TEntity, *, for_update: bool) -> None:
         saved, _ = self._seen.get((entity.__class__, entity.uid), (None, False))
         if saved is not None:
-            raise errors.POError(f"can't save to identity map {entity.__class__}({entity.uid})")
+            raise errors.AdaptersError(f"can't save to identity map {entity.__class__}({entity.uid})")
 
         self._seen[entity.__class__, entity.uid] = (entity, for_update)
 
@@ -66,15 +66,15 @@ class UOW:
         self,
         repo: repo.Mongo,
         identity_map: IdentityMap,
-        events_bus: events.Bus,
+        message_bus: message.Bus,
     ) -> None:
         self._repo = repo
         self._identity_map = identity_map
-        self._events_bus = events_bus
+        self._message_bus = message_bus
         self._events: list[domain.Event] = []
 
-    async def get(self, t_entity: type[TEntity], uid: str | None, *, for_update: bool = True) -> TEntity:
-        uid = uid or t_entity.__qualname__.lower()
+    async def get(self, t_entity: type[TEntity], uid: domain.UID | None, *, for_update: bool = True) -> TEntity:
+        uid = uid or domain.UID(t_entity.__qualname__.lower())
 
         async with self._identity_map as identity_map:
             if loaded := identity_map.get(t_entity, uid, for_update=for_update):
@@ -90,7 +90,7 @@ class UOW:
         self._events.append(event)
 
     async def request(self, request: domain.Request[TResponse]) -> TResponse:
-        return await self._events_bus.request(request)
+        return await self._message_bus.request(request)
 
     async def __aenter__(self) -> Self:
         return self
@@ -107,7 +107,7 @@ class UOW:
         await self._repo.save(self._identity_map)
 
         for event in self._events:
-            self._events_bus.publish(event)
+            self._message_bus.publish(event)
 
         return True
 
@@ -116,7 +116,7 @@ class UOWFactory:
     def __init__(self, mongo_client: AgnosticClient) -> None:
         self._mongo_client = mongo_client
 
-    def __call__(self, subdomain: str, events_bus: events.Bus) -> UOW:
+    def __call__(self, subdomain: domain.Subdomain, events_bus: message.Bus) -> UOW:
         return UOW(
             repo.Mongo(self._mongo_client, subdomain),
             IdentityMap(),

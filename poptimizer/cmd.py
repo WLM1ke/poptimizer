@@ -1,10 +1,8 @@
-import asyncio
-
 import uvloop
 
 from poptimizer import config
-from poptimizer.adapters import events, uow
-from poptimizer.core import domain, handlers
+from poptimizer.adapters import message, uow
+from poptimizer.core import domain
 from poptimizer.io import mongo
 
 
@@ -17,8 +15,8 @@ class SomeEvent(domain.Event):
 
 
 class EventHandler:
-    async def handle(self, ctx: handlers.Ctx, event: SomeEvent) -> None:
-        entity = await ctx.get(SomeEntity, "aaa")
+    async def handle(self, ctx: domain.Ctx, event: SomeEvent) -> None:
+        entity = await ctx.get(SomeEntity, domain.UID("aaa"))
         entity.value -= 1
         print(entity.value)
         if entity.value > 0:
@@ -34,8 +32,8 @@ class SomeRequest(domain.Request[SomeResponse]):
 
 
 class RequestHandler:
-    async def handle(self, ctx: handlers.Ctx, request: SomeRequest) -> SomeResponse:
-        entity = await ctx.get(SomeEntity, "aaa")
+    async def handle(self, ctx: domain.Ctx, request: SomeRequest) -> SomeResponse:
+        entity = await ctx.get(SomeEntity, domain.UID("aaa"))
         entity.value = request.value**2
 
         ctx.publish(SomeEvent())
@@ -47,10 +45,10 @@ async def _run() -> None:
     cfg = config.Cfg()
     async with (
         mongo.client(cfg.mongo_client.uri) as mongo_client,
-        events.Bus(uow.UOWFactory(mongo_client)) as bus,
+        message.Bus(uow.UOWFactory(mongo_client)) as bus,
     ):
-        bus.add_event_handler("test", EventHandler())
-        bus.add_request_handler("test", RequestHandler())
+        bus.add_event_handler(domain.Subdomain("test"), EventHandler())
+        bus.add_request_handler(domain.Subdomain("test"), RequestHandler())
 
         a = await bus.request(SomeRequest(value=2))
 

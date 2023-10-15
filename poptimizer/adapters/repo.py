@@ -19,19 +19,19 @@ TEntity = TypeVar("TEntity", bound=domain.Entity)
 
 
 def _collection_name(t_entity: type[TEntity]) -> str:
-    return t_entity.__qualname__.lower()
+    return t_entity.__name__.lower()
 
 
 class Mongo:
     def __init__(
         self,
         mongo_client: AgnosticClient,
-        db: str,
+        subdomain: domain.Subdomain,
     ) -> None:
         self._mongo_client = mongo_client
-        self._db = db
+        self._db = str(subdomain)
 
-    async def get(self, t_entity: type[TEntity], uid: str) -> TEntity:
+    async def get(self, t_entity: type[TEntity], uid: domain.UID) -> TEntity:
         collection_name = _collection_name(t_entity)
 
         if (doc := await self._load(collection_name, uid)) is None:
@@ -39,14 +39,14 @@ class Mongo:
 
         return self._create_entity(t_entity, doc)
 
-    async def _load(self, collection_name: str, uid: str) -> Any:
+    async def _load(self, collection_name: str, uid: domain.UID) -> Any:
         collection = self._mongo_client[self._db][collection_name]
         try:
             return await collection.find_one({_MONGO_ID: uid})
         except PyMongoError as err:
-            raise errors.POError("can't load {collection_name}.{uid}") from err
+            raise errors.AdaptersError("can't load {collection_name}.{uid}") from err
 
-    async def _create_new(self, collection_name: str, uid: str) -> Any:
+    async def _create_new(self, collection_name: str, uid: domain.UID) -> Any:
         doc = {
             _MONGO_ID: uid,
             _VER: 0,
@@ -58,7 +58,7 @@ class Mongo:
         try:
             await collection.insert_one(doc)
         except PyMongoError as err:
-            raise errors.POError("can't create {collection_name}.{uid}") from err
+            raise errors.AdaptersError("can't create {collection_name}.{uid}") from err
 
         return doc
 
@@ -71,7 +71,7 @@ class Mongo:
         try:
             return t_entity.model_validate(doc)
         except ValidationError as err:
-            raise errors.POError("can't load {collection_name}.{uid}") from err
+            raise errors.AdaptersError("can't create entity {collection_name}.{uid}") from err
 
     async def save(self, entities: Iterable[domain.Entity]) -> None:
         try:
@@ -85,13 +85,15 @@ class Mongo:
                     doc.pop(_REV)
 
                     collection_name = _collection_name(entity.__class__)
-                    rez: Any = await db[collection_name].find_one_and_update(
-                        {_MONGO_ID: entity.uid, _VER: entity.ver},
-                        {"$inc": {_VER: 1}, "$set": doc},
-                        projection={_MONGO_ID: False},
-                        session=session,
-                    )
-                    if rez is None:
-                        raise errors.POError(f"wrong version {collection_name}.{entity.uid}")
+                    if (
+                        await db[collection_name].find_one_and_update(
+                            {_MONGO_ID: entity.uid, _VER: entity.ver},
+                            {"$inc": {_VER: 1}, "$set": doc},
+                            projection={_MONGO_ID: False},
+                            session=session,
+                        )
+                        is None
+                    ):
+                        raise errors.AdaptersError(f"wrong version {collection_name}.{entity.uid}")
         except PyMongoError as err:
-            raise errors.POError("can't save entities") from err
+            raise errors.AdaptersError("can't save entities") from err
