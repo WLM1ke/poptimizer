@@ -62,5 +62,4 @@ def run() -> None:
 
     Настройки передаются через .env файл.
     """
-    with asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner:
-        runner.run(coro=_run())
+    uvloop.run(_run())
