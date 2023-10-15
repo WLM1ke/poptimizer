@@ -56,6 +56,10 @@ class Ctx(Protocol):
         """Сохраняет доменные объекты и посылает сообщения."""
 
 
+def _message_name(message: type[TEvent_contra | TRequest_contra]) -> str:
+    return message.__qualname__
+
+
 class Bus:
     def __init__(self, uow_factory: Callable[[domain.Subdomain, Bus], Ctx]) -> None:
         self._tasks = asyncio.TaskGroup()
@@ -67,7 +71,7 @@ class Bus:
 
     def add_event_handler(self, subdomain: domain.Subdomain, event_handler: EventHandler[TEvent_contra]) -> None:
         event_type = get_type_hints(event_handler.handle)["event"]
-        event_name = event_type.__qualname__
+        event_name = _message_name(event_type)
         self._event_handlers[event_name].append((subdomain, event_handler))
 
     def add_request_handler(
@@ -76,7 +80,7 @@ class Bus:
         request_handler: RequestHandler[TRequest_contra, TResponse_co],
     ) -> None:
         request_type = get_type_hints(request_handler.handle)["request"]
-        request_name = request_type.__qualname__
+        request_name = _message_name(request_type)
         if request_name in self._request_handlers:
             raise errors.AdaptersError(f"can't register second handler for {request_name}")
 
@@ -85,8 +89,19 @@ class Bus:
     def publish(self, event: domain.Event) -> None:
         self._tasks.create_task(self._route_event(event))
 
+    async def _route_event(self, event: domain.Event) -> None:
+        event_name = _message_name(event.__class__)
+
+        async with asyncio.TaskGroup() as tg:
+            for subdomain, handler in self._event_handlers[event_name]:
+                tg.create_task(self._handle_event(subdomain, handler, event))
+
+    async def _handle_event(self, subdomain: domain.Subdomain, handler: EventHandler[Any], event: domain.Event) -> None:
+        async with self._uow_factory(subdomain, self) as ctx:
+            await handler.handle(ctx, event)
+
     async def request(self, request: domain.Request[TResponse_co]) -> TResponse_co:
-        request_name = request.__class__.__name__
+        request_name = _message_name(request.__class__)
         subdomain, handler = self._request_handlers[request_name]
 
         async with self._uow_factory(subdomain, self) as ctx:
@@ -106,14 +121,3 @@ class Bus:
         traceback: TracebackType | None,
     ) -> None:
         return await self._tasks.__aexit__(exc_type, exc_value, traceback)
-
-    async def _route_event(self, event: domain.Event) -> None:
-        event_name = event.__class__.__name__
-
-        async with asyncio.TaskGroup() as tg:
-            for subdomain, handler in self._event_handlers[event_name]:
-                tg.create_task(self._handle_event(subdomain, handler, event))
-
-    async def _handle_event(self, subdomain: domain.Subdomain, handler: EventHandler[Any], event: domain.Event) -> None:
-        async with self._uow_factory(subdomain, self) as ctx:
-            await handler.handle(ctx, event)
