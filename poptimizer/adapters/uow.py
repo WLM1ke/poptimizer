@@ -116,9 +116,9 @@ class UOWFactory:
     def __init__(self, mongo_client: AgnosticClient) -> None:
         self._mongo_client = mongo_client
 
-    def __call__(self, subdomain: domain.Subdomain, events_bus: message.Bus) -> UOW:
+    def __call__(self, subdomain: domain.Subdomain, message_bus: message.Bus) -> UOW:
         return UOW(
             repo.Mongo(self._mongo_client, subdomain),
             IdentityMap(),
-            events_bus,
+            message_bus,
         )
