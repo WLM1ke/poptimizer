@@ -162,15 +162,23 @@ class Evolution:  # noqa: WPS214
         for date in reversed(dates):
             try:
                 organism.evaluate_fitness(self._tickers, date)
+                if (upper_bound := self._get_margin(organism)) is None:
+                    organism.die()
+                    self._logger.info("Исключен из популяции...\n")
+
+                    return None
             except (ModelError, AttributeError) as error:
                 organism.die()
-                self._logger.error(f"Удаляю - {error}\n")
+                self._logger.error(f"Удаляю - {error.__class__.__name__}({error})\n")
 
                 return None
 
-        return self._get_margin(organism)
+        time_score = _time_delta(organism)
+        self._logger.info(f"Upper bound - {upper_bound:.4f}, Slowness - {time_score:.2%}\n")
 
-    def _get_margin(self, org: population.Organism) -> tuple[float, float] | None:
+        return upper_bound, time_score
+
+    def _get_margin(self, org: population.Organism) -> float | None:
         """Используется тестирование разницы llh и ret против самого старого организма.
 
         Используются тесты для связанных выборок, поэтому предварительно происходит выравнивание по
@@ -180,7 +188,7 @@ class Evolution:  # noqa: WPS214
         names = {"llh": "LLH", "ir": "RET"}
         upper_bound = -np.inf
 
-        for metric in ("ir", "llh"):
+        for metric in ("llh", "ir"):
             median, upper, maximum = _select_worst_bound(
                 candidate={"date": org.date, "llh": org.llh, "ir": org.ir},
                 metric=metric,
@@ -198,19 +206,13 @@ class Evolution:  # noqa: WPS214
             )
 
             if upper < 0:
-                org.die()
-                self._logger.info("Исключен из популяции...\n")
-
                 return None
 
             upper_bound = max(upper_bound, upper)
 
         org.upper_bound = upper_bound
-        time_score = _time_delta(org)
 
-        self._logger.info(f"Upper bound - {upper_bound:.4f}, Slowness - {time_score:.2%}\n")  # noqa: WPS221
-
-        return upper_bound, time_score
+        return upper_bound
 
 
 def _time_delta(org):
@@ -239,18 +241,9 @@ def _select_worst_bound(candidate: dict, metric: str) -> tuple[float, float, flo
 
     Если данный организм не уступает целевому организму, то верхняя граница будет положительной.
     """
-
     diff = _aligned_diff(candidate, metric)
 
-    bounds = map(
-        lambda size: _test_diff(diff[:size]),
-        range(1, len(diff) + 1),
-    )
-
-    return min(
-        bounds,
-        key=lambda bound: bound[1],
-    )
+    return _test_diff(diff)
 
 
 def _aligned_diff(candidate: dict, metric: str) -> list[float]:
