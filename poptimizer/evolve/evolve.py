@@ -64,9 +64,6 @@ class Evolution:  # noqa: WPS214
             if delta > 0 and (count + delta) > config.TARGET_POPULATION:
                 self._tests += 1
 
-            if delta <= 0 and (count + delta) < config.TARGET_POPULATION:
-                self._tests -= 1
-
     @property
     def tests(self):
         count = population.count()
@@ -123,7 +120,7 @@ class Evolution:  # noqa: WPS214
         for n_child in itertools.count(1):
             self._logger.info(f"Потомок {n_child}:")
 
-            hunter = hunter.make_child(1 / self._scale)
+            hunter = hunter.make_child(1 / hunter.scores)
             if (margin := self._eval_organism(hunter)) is None:
                 return None
 
@@ -146,10 +143,9 @@ class Evolution:  # noqa: WPS214
         try:
             if organism.date == self._end:
                 prob = 1 - _time_delta(organism)
-                retry = stats.geom.rvs(prob)
+                retry = max(population.count() - config.TARGET_POPULATION, stats.geom.rvs(prob))
                 dates = all_dates[-max(self.tests, (organism.scores + retry)): -organism.scores].tolist()
                 organism.retrain(self._tickers, dates[0])
-                dates = reversed(dates)
             elif organism.scores:
                 if self._tickers != tuple(organism.tickers):
                     organism.retrain(self._tickers, self._end)
@@ -163,7 +159,7 @@ class Evolution:  # noqa: WPS214
 
             return None
 
-        for date in dates:
+        for date in reversed(dates):
             try:
                 organism.evaluate_fitness(self._tickers, date)
             except (ModelError, AttributeError) as error:
