@@ -43,6 +43,7 @@ class RequestHandler:
 
 async def _run() -> None:
     cfg = config.Cfg()
+
     async with (
         mongo.client(cfg.mongo_client.uri) as mongo_client,
         message.Bus(uow.UOWFactory(mongo_client)) as bus,

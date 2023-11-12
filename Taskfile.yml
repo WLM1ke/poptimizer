@@ -14,8 +14,9 @@ tasks:
   setup:
     desc: Setup venv, install tools and dependencies.
     cmds:
+      - brew install python@{{.PYTHON}}
       - brew tap mongodb/brew
-      - brew install {{.TOOLS}} python@{{.PYTHON}}
+      - brew install {{.TOOLS}}
       - pdm venv create --force {{.PYTHON}} 
       - task: update
 
@@ -30,7 +31,7 @@ tasks:
   lint:
     desc: Format black and lint.
     cmds:
-      - pdm run black {{.APP}}
+      - pdm run ruff format {{.APP}}
       # - pdm run lint-imports
       - pdm run mypy {{.APP}}
       - pdm run ruff {{.APP}}

@@ -9,21 +9,12 @@ readme = "README.md"
 license = {text = "Unlicense"}
 requires-python = ">=3.11,<3.12"
 dependencies = [
-    "torch>=2.0.1",
-    "motor>=3.2.0",
-    "aiomoex>=2.0.0",
-    "openpyxl>=3.1.2",
-    "pydantic>=2.1.1",
-    "uvloop>=0.17.0",
-    "aiofiles>=23.1.0",
-    "types-aiofiles>=23.1.0.5",
-    "lxml>=4.9.3",
-    "pandas>=2.0.3",
-    "tqdm>=4.65.0",
-    "scipy>=1.11.1",
-    "nats-py>=2.3.1",
-    "pydantic-settings>=2.0.2",
+    "motor>=3.3.1",
+    "pydantic>=2.4.2",
+    "uvloop>=0.19.0",
+    "pydantic-settings>=2.0.3",
     "typer[all]>=0.9.0",
+    "aiohttp>=3.8.6",
 ]
 
 [project.urls]
@@ -39,18 +30,16 @@ build-backend = "pdm.pep517.api"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 dev = [
-    "pytest>=7.4.0",
+    "pytest>=7.4.3",
     "pytest-cov>=4.1.0",
-    "black[d]>=23.7.0",
-    "import-linter>=1.10.0",
-    "ruff>=0.0.280",
-    "mypy>=1.4.1",
+    "import-linter>=1.12.1",
+    "ruff>=0.1.5",
+    "mypy>=1.7.0",
 ]
 
 [tool.mypy]
 plugins = [
     "pydantic.mypy",
-    "numpy.typing.mypy_plugin",
 ]
 
 strict = true
@@ -73,10 +62,8 @@ branch = true
 exclude_lines = ["if __name__ == .__main__.:"]
 omit = ["*/tests/*"]
 
-[tool.black]
-line-length = 120
-
 [tool.ruff]
+line-length = 120
 select = ["ALL"]
 fixable = ["ALL"]
 fix = true
@@ -86,6 +73,7 @@ ignore = [
     "ANN101",   # Missing-type-self
     "ANN102",   # Missing-type-cls
     "ANN401",   # Dynamically typed expressions (typing.Any) are disallowed
+    "COM812",   # Missing-trailing-comma - ruff format recommendations
     "D100",     # Missing docstring in public module
     "D101",     # Missing docstring in public class
     "D102",     # Missing docstring in public method
@@ -97,9 +85,9 @@ ignore = [
     "D203",     # One-blank-line-before-class (D203) and no-blank-line-before-class (D211) are incompatible
     "D213",     # Multi-line-summary-first-line (D212) and multi-line-summary-second-line (D213) are incompatible
     "DTZ",      # The use of `datetime` without `tzinfo` argument is not allowed - one tz zone
-    "E501",     # Line too long - black
     "EM101",    # Exception must not use a string literal, assign to variable first - don't like many exceptions
     "EM102",    # Exception must not use an f-string literal, assign to variable first - don't like many exceptions
+    "ISC001",   # Single-line-implicit-string-concatenation - ruff format recommendations
     "RUF001",   # Ambiguous-unicode-character-string - russian
     "RUF002",   # Ambiguous-unicode-character-docstring - russian
     "RUF003",   # Ambiguous-unicode-character-comment - russian
