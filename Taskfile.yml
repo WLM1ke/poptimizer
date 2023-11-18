@@ -3,50 +3,47 @@ version: "3"
 vars:
   APP: poptimizer
   PYTHON: 3.11
-  TOOLS: go-task pdm mongodb-community nats-server
+  TOOLS: go-task rye mongodb-community nats-server
 
 tasks:
   default:
-    desc: List available tasks.
+    desc: List available tasks
     cmds:
       - task -l
 
   setup:
-    desc: Setup venv, install tools and dependencies.
+    desc: Setup venv, install tools and dependencies
     cmds:
-      - brew install python@{{.PYTHON}}
       - brew tap mongodb/brew
       - brew install {{.TOOLS}}
-      - pdm venv create --force {{.PYTHON}} 
+      - rye pin --relaxed {{.PYTHON}} 
       - task: update
 
   update:
-    desc: Upgrade tools and dependencies.
+    desc: Upgrade tools and dependencies
     cmds:
-      - brew upgrade {{.TOOLS}} python@{{.PYTHON}}
-      - pdm update --update-all --no-sync
-      - pdm sync --clean
-      - pdm update --dry-run --unconstrained
+      - brew upgrade {{.TOOLS}}
+      - rye pin --relaxed {{.PYTHON}}
+      - rye sync --update-all --all-features
 
   lint:
-    desc: Format black and lint.
+    desc: Format and lint
     cmds:
-      - pdm run ruff format {{.APP}}
-      # - pdm run lint-imports
-      - pdm run mypy {{.APP}}
-      - pdm run ruff {{.APP}}
+      - rye run ruff format {{.APP}}
+      # - rye run lint-imports
+      - rye run mypy {{.APP}}
+      - rye run ruff {{.APP}}
 
   test:
-    desc: Lint and test.
+    desc: Lint and test
     deps: [lint]
     cmds:
-      - pdm run pytest {{.APP}} --cov={{.APP}}
+      - rye run pytest {{.APP}} --cov={{.APP}}
 
   run:
-    desc: Run POptimizer with .env file.
+    desc: Run POptimizer with .env file
     cmds:
-    # Запуск не с помощью pdm, потому что не правильно обрабатываются сигналы SIGINT
-      - .venv/bin/python -m {{.APP}}
+      - rye run {{.APP}}
 
   nats:
     desc: Run NATS Server.
