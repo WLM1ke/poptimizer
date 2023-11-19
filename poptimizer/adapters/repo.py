@@ -1,5 +1,5 @@
 import datetime
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from typing import Any, Final, TypeVar
 
 from motor.core import AgnosticClient
@@ -16,6 +16,7 @@ _TIMESTAMP: Final = "timestamp"
 
 
 TEntity = TypeVar("TEntity", bound=domain.Entity)
+DocumentType = TypeVar("DocumentType", bound=Mapping[str, Any])
 
 
 def _collection_name(t_entity: type[TEntity]) -> str:
@@ -25,7 +26,7 @@ def _collection_name(t_entity: type[TEntity]) -> str:
 class Mongo:
     def __init__(
         self,
-        mongo_client: AgnosticClient,
+        mongo_client: AgnosticClient[DocumentType],
         subdomain: domain.Subdomain,
     ) -> None:
         self._mongo_client = mongo_client
