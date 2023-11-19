@@ -2,7 +2,7 @@ version: "3"
 
 vars:
   APP: poptimizer
-  PYTHON: 3.11
+  PYTHON: 3.12
   TOOLS: go-task rye mongodb-community nats-server
 
 tasks:
