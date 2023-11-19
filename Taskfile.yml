@@ -17,7 +17,7 @@ tasks:
       - brew tap mongodb/brew
       - brew install {{.TOOLS}}
       - rye pin --relaxed {{.PYTHON}} 
-      - task: update
+      - rye sync --update-all --all-features --no-lock --force
 
   update:
     desc: Upgrade tools and dependencies
