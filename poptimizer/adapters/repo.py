@@ -21,7 +21,7 @@ _TIMESTAMP: Final = "timestamp"
 
 
 def _collection_name[E: domain.Entity](t_entity: type[E]) -> str:
-    return t_entity.__name__.lower()
+    return t_entity.__name__
 
 
 class Mongo:

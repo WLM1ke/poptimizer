@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -35,7 +36,9 @@ class EventPublisher(Protocol):
 
 
 class Ctx(Protocol):
-    async def get[E: domain.Entity](self, t_entity: type[E], uid: domain.UID, *, for_update: bool = True) -> E:
+    async def get[E: domain.Entity](
+        self, t_entity: type[E], uid: domain.UID | None = None, *, for_update: bool = True
+    ) -> E:
         ...
 
     def publish(self, event: domain.Event) -> None:
@@ -62,6 +65,7 @@ def _message_name[E: domain.Event, Req: domain.Request[Any]](message: type[E | R
 
 class Bus:
     def __init__(self, uow_factory: Callable[[domain.Subdomain, Bus], Ctx]) -> None:
+        self._logger = logging.getLogger("MessageBus")
         self._tasks = asyncio.TaskGroup()
 
         self._uow_factory = uow_factory
@@ -99,6 +103,7 @@ class Bus:
         self._publisher_tasks.append(publisher_task)
 
     def publish(self, event: domain.Event) -> None:
+        self._logger.info("%s(%s)", event.__class__.__name__, event)
         self._tasks.create_task(self._route_event(event))
 
     async def _route_event(self, event: domain.Event) -> None:

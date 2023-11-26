@@ -1,36 +1,34 @@
 import logging
+from datetime import timedelta
 from pathlib import Path
 from typing import Annotated, Final
 
-import pydantic_settings
-from pydantic import MongoDsn, PositiveInt, UrlConstraints
+from pydantic import BaseModel, MongoDsn, PositiveInt, UrlConstraints
 from pydantic_core import MultiHostUrl, Url
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _MAX_ISS_REQUESTS: Final = 10
+_RETRIES: Final = 3
+_FIRST_RETRY: Final = timedelta(seconds=600)
+_BACKOFF_FACTOR: Final = 2
 
 
-class BaseSettings(pydantic_settings.BaseSettings):
-    model_config = pydantic_settings.SettingsConfigDict(
-        env_file=Path(".env"),
-        env_file_encoding="utf-8",
-        hide_input_in_errors=True,
-        extra="ignore",
-    )
-
-
-class Logger(BaseSettings):
+class Logger(BaseModel):
     level: int | str = logging.INFO
     telegram_level: int | str = logging.WARNING
     telegram_token: str = ""
     telegram_chat_id: str = ""
 
 
-class MongoClient(BaseSettings):
+class MongoClient(BaseModel):
     uri: MongoDsn = MultiHostUrl("mongodb://localhost:27017")
 
 
-class HTTPClient(BaseSettings):
+class HTTPClient(BaseModel):
     con_per_host: PositiveInt = _MAX_ISS_REQUESTS
+    retries: int = _RETRIES
+    first_retry: timedelta = _FIRST_RETRY
+    backoff_factor: float = _BACKOFF_FACTOR
 
 
 NatsDsn = Annotated[
@@ -42,7 +40,7 @@ NatsDsn = Annotated[
 ]
 
 
-class NatsClient(BaseSettings):
+class NatsClient(BaseModel):
     host: NatsDsn = NatsDsn("nats://localhost:4222")
 
 
@@ -51,3 +49,10 @@ class Cfg(BaseSettings):
     http_client: HTTPClient = HTTPClient()
     mongo_client: MongoClient = MongoClient()
     nats_client: NatsClient = NatsClient()
+
+    model_config = SettingsConfigDict(
+        env_file=Path(".env"),
+        env_file_encoding="utf-8",
+        hide_input_in_errors=True,
+        extra="ignore",
+    )

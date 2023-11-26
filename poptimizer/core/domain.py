@@ -70,7 +70,7 @@ class Request[T: Response](Message):
 
 
 class Ctx(Protocol):
-    async def get[E: Entity](self, t_entity: type[E], uid: UID, *, for_update: bool = True) -> E:
+    async def get[E: Entity](self, t_entity: type[E], uid: UID | None = None, *, for_update: bool = True) -> E:
         ...
 
     def publish(self, event: Event) -> None:

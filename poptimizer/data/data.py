@@ -1,5 +1,5 @@
-from typing import Final
+from pydantic import BaseModel, ConfigDict
 
-from poptimizer.core import domain
 
-_SUBDOMAIN: Final = domain.Subdomain("data")
+class Row(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)

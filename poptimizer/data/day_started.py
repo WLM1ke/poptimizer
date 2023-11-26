@@ -16,7 +16,7 @@ _END_MINUTE: Final = 45
 _CHECK_INTERVAL: Final = timedelta(minutes=1)
 
 
-class DayStartedEvent(domain.Event):
+class DayStarted(domain.Event):
     day: domain.Day
 
 
@@ -41,12 +41,12 @@ def _last_day() -> date:
     ) - timedelta(days=delta)
 
 
-class DayStartedPublisher:
+class Publisher:
     async def publish(self, bus: Callable[[domain.Event], None]) -> None:
         day = _last_day()
-        bus(DayStartedEvent(day=day))
+        bus(DayStarted(day=day))
 
         while True:
             await asyncio.sleep(_CHECK_INTERVAL.total_seconds())
-            if day < (new_day := _last_day()):
-                bus(DayStartedEvent(day=(day := new_day)))
+            if day < _last_day():
+                bus(DayStarted(day=day))

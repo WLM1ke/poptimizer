@@ -74,8 +74,14 @@ class UOW:
         self._message_bus = message_bus
         self._events: list[domain.Event] = []
 
-    async def get[E: domain.Entity](self, t_entity: type[E], uid: domain.UID | None, *, for_update: bool = True) -> E:
-        uid = uid or domain.UID(t_entity.__qualname__.lower())
+    async def get[E: domain.Entity](
+        self,
+        t_entity: type[E],
+        uid: domain.UID | None = None,
+        *,
+        for_update: bool = True,
+    ) -> E:
+        uid = uid or domain.UID(t_entity.__name__)
 
         async with self._identity_map as identity_map:
             if loaded := identity_map.get(t_entity, uid, for_update=for_update):
