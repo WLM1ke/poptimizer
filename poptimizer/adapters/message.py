@@ -34,6 +34,11 @@ class RequestHandler(Protocol[TRequest_contra, TResponse_co]):
         """Отвечает на запрос."""
 
 
+class EventPublisher:
+    async def publish(self, bus: Callable[[domain.Event], None]) -> None:
+        """Публикует сообщения."""
+
+
 class Ctx(Protocol):
     async def get(self, t_entity: type[TEntity], uid: domain.UID, *, for_update: bool = True) -> TEntity:
         """Получает агрегат заданного типа с указанным uid."""
@@ -68,8 +73,13 @@ class Bus:
 
         self._event_handlers: dict[str, list[tuple[domain.Subdomain, EventHandler[Any]]]] = defaultdict(list)
         self._request_handlers: dict[str, tuple[domain.Subdomain, RequestHandler[Any, Any]]] = {}
+        self._publisher_tasks: list[asyncio.Task[None]] = []
 
-    def add_event_handler(self, subdomain: domain.Subdomain, event_handler: EventHandler[TEvent_contra]) -> None:
+    def add_event_handler(
+        self,
+        subdomain: domain.Subdomain,
+        event_handler: EventHandler[TEvent_contra],
+    ) -> None:
         event_type = get_type_hints(event_handler.handle)["event"]
         event_name = _message_name(event_type)
         self._event_handlers[event_name].append((subdomain, event_handler))
@@ -85,6 +95,13 @@ class Bus:
             raise errors.AdaptersError(f"can't register second handler for {request_name}")
 
         self._request_handlers[request_name] = (subdomain, request_handler)
+
+    def add_publisher(
+        self,
+        publisher: EventPublisher,
+    ) -> None:
+        publisher_task = self._tasks.create_task(publisher.publish(self.publish))
+        self._publisher_tasks.append(publisher_task)
 
     def publish(self, event: domain.Event) -> None:
         self._tasks.create_task(self._route_event(event))
@@ -120,4 +137,10 @@ class Bus:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
-        return await self._tasks.__aexit__(exc_type, exc_value, traceback)
+        try:
+            return await self._tasks.__aexit__(exc_type, exc_value, traceback)
+        except asyncio.CancelledError:
+            for publisher_task in self._publisher_tasks:
+                publisher_task.cancel()
+
+            return await self._tasks.__aexit__(exc_type, exc_value, traceback)
