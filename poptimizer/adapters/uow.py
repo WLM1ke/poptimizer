@@ -1,12 +1,11 @@
 import asyncio
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator
 from types import TracebackType
-from typing import Any, Self, TypeVar
-
-from motor.core import AgnosticClient
+from typing import Self, TypeVar
 
 from poptimizer.adapters import message, repo
 from poptimizer.core import domain, errors
+from poptimizer.io import mongo
 
 TEntity = TypeVar("TEntity", bound=domain.Entity)
 TResponse = TypeVar("TResponse", bound=domain.Response)
@@ -112,11 +111,8 @@ class UOW:
         return True
 
 
-DocumentType = TypeVar("DocumentType", bound=Mapping[str, Any])
-
-
 class UOWFactory:
-    def __init__(self, mongo_client: AgnosticClient[DocumentType]) -> None:
+    def __init__(self, mongo_client: mongo.MongoClient) -> None:
         self._mongo_client = mongo_client
 
     def __call__(self, subdomain: domain.Subdomain, message_bus: message.Bus) -> UOW:

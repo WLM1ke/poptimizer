@@ -34,7 +34,7 @@ class RequestHandler(Protocol[TRequest_contra, TResponse_co]):
         """Отвечает на запрос."""
 
 
-class EventPublisher:
+class EventPublisher(Protocol):
     async def publish(self, bus: Callable[[domain.Event], None]) -> None:
         """Публикует сообщения."""
 
@@ -96,7 +96,7 @@ class Bus:
 
         self._request_handlers[request_name] = (subdomain, request_handler)
 
-    def add_publisher(
+    def add_event_publisher(
         self,
         publisher: EventPublisher,
     ) -> None:

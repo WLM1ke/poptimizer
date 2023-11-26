@@ -1,12 +1,12 @@
 import datetime
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
 from typing import Any, Final, TypeVar
 
-from motor.core import AgnosticClient
 from pydantic import ValidationError
 from pymongo.errors import PyMongoError
 
 from poptimizer.core import domain, errors
+from poptimizer.io import mongo
 
 _MONGO_ID: Final = "_id"
 _REV: Final = "rev"
@@ -14,9 +14,7 @@ _VER: Final = "ver"
 _UID: Final = "uid"
 _TIMESTAMP: Final = "timestamp"
 
-
 TEntity = TypeVar("TEntity", bound=domain.Entity)
-DocumentType = TypeVar("DocumentType", bound=Mapping[str, Any])
 
 
 def _collection_name(t_entity: type[TEntity]) -> str:
@@ -26,7 +24,7 @@ def _collection_name(t_entity: type[TEntity]) -> str:
 class Mongo:
     def __init__(
         self,
-        mongo_client: AgnosticClient[DocumentType],
+        mongo_client: mongo.MongoClient,
         subdomain: domain.Subdomain,
     ) -> None:
         self._mongo_client = mongo_client
