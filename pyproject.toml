@@ -104,7 +104,9 @@ root_package = "poptimizer"
 name = "Layered"
 type = "layers"
 layers = [
-    "poptimizer.app",
+    "poptimizer.cmd",
+    "poptimizer.adapters",
+    "poptimizer.io",
     "poptimizer.data",
     "poptimizer.core",
 ]

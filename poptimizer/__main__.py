@@ -1,12 +1,12 @@
 """Основная точка входа для запуска приложения."""
 import typer
 
-from poptimizer import cmd
+from poptimizer.cmd import data
 
 
 def main() -> None:
-    app = typer.Typer(add_completion=False)
-    app.command()(cmd.run)
+    app = typer.Typer()
+    app.command()(data.run)
     app()
 
 

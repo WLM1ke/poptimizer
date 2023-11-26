@@ -29,8 +29,8 @@ tasks:
   lint:
     desc: Format and lint
     cmds:
+      - rye run lint-imports
       - rye run ruff format {{.APP}}
-      # - rye run lint-imports
       - rye run ruff {{.APP}} --unsafe-fixes
       - rye run pyright {{.APP}}
 
@@ -46,12 +46,12 @@ tasks:
       - rye run {{.APP}}
 
   mongo:
-    desc: Run MongoDB Server.
+    desc: Run MongoDB Server
     cmds:
       - mongod --dbpath db --replSet POptimizer --bind_ip localhost &
       - mongosh --eval "rs.initiate()"
 
   nats:
-    desc: Run NATS Server.
+    desc: Run NATS Server
     cmds:
       - nats-server --addr localhost --jetstream --store_dir nats
