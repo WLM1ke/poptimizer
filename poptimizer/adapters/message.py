@@ -5,6 +5,7 @@ from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     Protocol,
     Self,
     TypeVar,
@@ -26,39 +27,39 @@ TRequest_contra = TypeVar("TRequest_contra", bound=domain.Request[Any], contrava
 
 class EventHandler(Protocol[TEvent_contra]):
     async def handle(self, ctx: domain.Ctx, event: TEvent_contra) -> None:
-        """Обрабатывает событие."""
+        ...
 
 
 class RequestHandler(Protocol[TRequest_contra, TResponse_co]):
     async def handle(self, ctx: domain.Ctx, request: TRequest_contra) -> TResponse_co:
-        """Отвечает на запрос."""
+        ...
 
 
 class EventPublisher(Protocol):
     async def publish(self, bus: Callable[[domain.Event], None]) -> None:
-        """Публикует сообщения."""
+        ...
 
 
 class Ctx(Protocol):
     async def get(self, t_entity: type[TEntity], uid: domain.UID, *, for_update: bool = True) -> TEntity:
-        """Получает агрегат заданного типа с указанным uid."""
+        ...
 
     def publish(self, event: domain.Event) -> None:
-        """Публикует событие."""
+        ...
 
     async def request(self, request: domain.Request[TResponse_co]) -> TResponse_co:
-        """Выполняет запрос."""
+        ...
 
     async def __aenter__(self) -> Self:
-        """Открывает контекст для доступа к доменным объектам и посылке сообщений."""
+        ...
 
     async def __aexit__(
         self,
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         traceback: TracebackType | None,
-    ) -> bool:
-        """Сохраняет доменные объекты и посылает сообщения."""
+    ) -> Literal[False]:
+        ...
 
 
 def _message_name(message: type[TEvent_contra | TRequest_contra]) -> str:
@@ -121,10 +122,11 @@ class Bus:
         request_name = _message_name(request.__class__)
         subdomain, handler = self._request_handlers[request_name]
 
-        async with self._uow_factory(subdomain, self) as ctx:
-            resp = await handler.handle(ctx, request)
+        if TYPE_CHECKING:
+            handler = cast(RequestHandler[domain.Request[TResponse_co], TResponse_co], handler)
 
-        return cast(TResponse_co, resp)
+        async with self._uow_factory(subdomain, self) as ctx:
+            return await handler.handle(ctx, request)
 
     async def __aenter__(self) -> Self:
         await self._tasks.__aenter__()

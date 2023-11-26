@@ -1,12 +1,17 @@
+from __future__ import annotations
+
 import datetime
-from collections.abc import Iterable
-from typing import Any, Final, TypeVar
+from typing import TYPE_CHECKING, Any, Final, TypeVar
 
 from pydantic import ValidationError
 from pymongo.errors import PyMongoError
 
 from poptimizer.core import domain, errors
-from poptimizer.io import mongo
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from poptimizer.io import mongo
 
 _MONGO_ID: Final = "_id"
 _REV: Final = "rev"
@@ -38,21 +43,21 @@ class Mongo:
 
         return self._create_entity(t_entity, doc)
 
-    async def _load(self, collection_name: str, uid: domain.UID) -> Any:
-        collection = self._mongo_client[self._db][collection_name]
+    async def _load(self, collection_name: str, uid: domain.UID) -> mongo.MongoDocument | None:
+        collection: mongo.MongoCollection = self._mongo_client[self._db][collection_name]
         try:
             return await collection.find_one({_MONGO_ID: uid})
         except PyMongoError as err:
             raise errors.AdaptersError("can't load {collection_name}.{uid}") from err
 
-    async def _create_new(self, collection_name: str, uid: domain.UID) -> Any:
+    async def _create_new(self, collection_name: str, uid: domain.UID) -> mongo.MongoDocument | None:
         doc = {
             _MONGO_ID: uid,
             _VER: 0,
             _TIMESTAMP: datetime.datetime(datetime.MINYEAR, 1, 1),
         }
 
-        collection = self._mongo_client[self._db][collection_name]
+        collection: mongo.MongoCollection = self._mongo_client[self._db][collection_name]
 
         try:
             await collection.insert_one(doc)
@@ -78,7 +83,7 @@ class Mongo:
                 await self._mongo_client.start_session() as session,
                 session.start_transaction(),
             ):
-                db = session.client[self._db]
+                db: mongo.MongoDatabase = session.client[self._db]  # type: ignore[reportUnknownMemberType]
                 for entity in entities:
                     doc = entity.model_dump()
                     doc.pop(_REV)

@@ -3,7 +3,7 @@ version: "3"
 vars:
   APP: poptimizer
   PYTHON: 3.12
-  TOOLS: go-task rye mongodb-community nats-server
+  TOOLS: go-task rye mongodb-community mongosh nats-server
 
 tasks:
   default:
@@ -31,8 +31,8 @@ tasks:
     cmds:
       - rye run ruff format {{.APP}}
       # - rye run lint-imports
-      - rye run mypy {{.APP}}
-      - rye run ruff {{.APP}}
+      - rye run pyright {{.APP}}
+      - rye run ruff {{.APP}} --unsafe-fixes
 
   test:
     desc: Lint and test
@@ -44,6 +44,12 @@ tasks:
     desc: Run POptimizer with .env file
     cmds:
       - rye run {{.APP}}
+
+  mongo:
+    desc: Run MongoDB Server.
+    cmds:
+      - mongod --dbpath db --replSet POptimizer --bind_ip localhost &
+      - mongosh --eval "rs.initiate()"
 
   nats:
     desc: Run NATS Server.

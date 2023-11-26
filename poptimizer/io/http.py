@@ -35,7 +35,7 @@ class HTTPClient(aiohttp.ClientSession):
             connector=aiohttp.TCPConnector(limit_per_host=con_per_host),
             headers=_HEADERS,
         )
-        self._retries = retries
+        self._retries = max(0, retries)
         self._first_retry = first_retry.total_seconds()
         self._backoff_factor = backoff_factor
 
@@ -61,7 +61,7 @@ class HTTPClient(aiohttp.ClientSession):
         read_until_eof: bool = True,
         proxy: typedefs.StrOrURL | None = None,
         proxy_auth: helpers.BasicAuth | None = None,
-        timeout: aiohttp.ClientTimeout | helpers._SENTINEL = helpers.sentinel,  # noqa: SLF001
+        timeout: aiohttp.ClientTimeout | helpers._SENTINEL = helpers.sentinel,  # type: ignore[reportPrivateUsage]  # noqa: SLF001
         verify_ssl: bool | None = None,
         fingerprint: bytes | None = None,
         ssl_context: ssl.SSLContext | None = None,
@@ -110,16 +110,15 @@ class HTTPClient(aiohttp.ClientSession):
                     max_line_size=max_line_size,
                     max_field_size=max_field_size,
                 )
-            except (aiohttp.ClientError, asyncio.TimeoutError) as err:
-                if attempt < self._retries:
-                    continue
-
-                raise errors.AdaptersError(f"http request failed after {attempt} retries") from err
-
-            if attempt < self._retries and resp.status >= web_exceptions.HTTPInternalServerError.status_code:
+            except (aiohttp.ClientError, asyncio.TimeoutError):
                 continue
 
-        return resp
+            if resp.status >= web_exceptions.HTTPInternalServerError.status_code:
+                continue
+
+            return resp
+
+        raise errors.AdaptersError(f"http request failed after {self._retries} retries")
 
     def _delay(self, attempt: int) -> float:
         if attempt == 0:

@@ -77,10 +77,10 @@ TEntity = TypeVar("TEntity", bound=Entity)
 
 class Ctx(Protocol):
     async def get(self, t_entity: type[TEntity], uid: UID, *, for_update: bool = True) -> TEntity:
-        """Получает агрегат заданного типа с указанным uid."""
+        ...
 
     def publish(self, event: Event) -> None:
-        """Публикует событие."""
+        ...
 
     async def request(self, request: Request[TResponse]) -> TResponse:
-        """Выполняет запрос."""
+        ...

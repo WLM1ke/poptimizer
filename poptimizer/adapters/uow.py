@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import asyncio
-from collections.abc import Iterator
-from types import TracebackType
-from typing import Self, TypeVar
+from typing import TYPE_CHECKING, Literal, Self, TypeVar
 
 from poptimizer.adapters import message, repo
 from poptimizer.core import domain, errors
-from poptimizer.io import mongo
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from types import TracebackType
+
+    from poptimizer.io import mongo
 
 TEntity = TypeVar("TEntity", bound=domain.Entity)
 TResponse = TypeVar("TResponse", bound=domain.Response)
@@ -29,7 +34,7 @@ class IdentityMap:
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         traceback: TracebackType | None,
-    ) -> bool:
+    ) -> Literal[False]:
         self._lock.release()
 
         return False
@@ -52,7 +57,7 @@ class IdentityMap:
 
         return entity
 
-    def save(self, entity: TEntity, *, for_update: bool) -> None:
+    def save(self, entity: domain.Entity, *, for_update: bool) -> None:
         saved, _ = self._seen.get((entity.__class__, entity.uid), (None, False))
         if saved is not None:
             raise errors.AdaptersError(f"can't save to identity map {entity.__class__}({entity.uid})")
@@ -83,7 +88,7 @@ class UOW:
 
             identity_map.save(entity, for_update=for_update)
 
-        return entity
+            return entity
 
     def publish(self, event: domain.Event) -> None:
         self._events.append(event)
@@ -99,7 +104,7 @@ class UOW:
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         traceback: TracebackType | None,
-    ) -> bool:
+    ) -> Literal[False]:
         if exc_value is not None:
             return False
 
@@ -108,7 +113,7 @@ class UOW:
         for event in self._events:
             self._message_bus.publish(event)
 
-        return True
+        return False
 
 
 class UOWFactory:
