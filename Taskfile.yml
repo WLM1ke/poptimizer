@@ -31,8 +31,8 @@ tasks:
     cmds:
       - rye run ruff format {{.APP}}
       # - rye run lint-imports
-      - rye run pyright {{.APP}}
       - rye run ruff {{.APP}} --unsafe-fixes
+      - rye run pyright {{.APP}}
 
   test:
     desc: Lint and test

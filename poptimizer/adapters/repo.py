@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import TYPE_CHECKING, Any, Final, TypeVar
+from typing import TYPE_CHECKING, Any, Final
 
 from pydantic import ValidationError
 from pymongo.errors import PyMongoError
@@ -19,10 +19,8 @@ _VER: Final = "ver"
 _UID: Final = "uid"
 _TIMESTAMP: Final = "timestamp"
 
-TEntity = TypeVar("TEntity", bound=domain.Entity)
 
-
-def _collection_name(t_entity: type[TEntity]) -> str:
+def _collection_name[E: domain.Entity](t_entity: type[E]) -> str:
     return t_entity.__name__.lower()
 
 
@@ -35,7 +33,7 @@ class Mongo:
         self._mongo_client = mongo_client
         self._db = str(subdomain)
 
-    async def get(self, t_entity: type[TEntity], uid: domain.UID) -> TEntity:
+    async def get[E: domain.Entity](self, t_entity: type[E], uid: domain.UID) -> E:
         collection_name = _collection_name(t_entity)
 
         if (doc := await self._load(collection_name, uid)) is None:
@@ -66,7 +64,7 @@ class Mongo:
 
         return doc
 
-    def _create_entity(self, t_entity: type[TEntity], doc: Any) -> TEntity:
+    def _create_entity[E: domain.Entity](self, t_entity: type[E], doc: Any) -> E:
         doc[_REV] = {
             _UID: doc.pop(_MONGO_ID),
             _VER: doc.pop(_VER),

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Literal, Self, TypeVar
+from typing import TYPE_CHECKING, Literal, Self
 
 from poptimizer.adapters import message, repo
 from poptimizer.core import domain, errors
@@ -11,9 +11,6 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from poptimizer.io import mongo
-
-TEntity = TypeVar("TEntity", bound=domain.Entity)
-TResponse = TypeVar("TResponse", bound=domain.Response)
 
 
 class IdentityMap:
@@ -39,13 +36,13 @@ class IdentityMap:
 
         return False
 
-    def get(
+    def get[E: domain.Entity](
         self,
-        t_entity: type[TEntity],
+        t_entity: type[E],
         uid: domain.UID,
         *,
         for_update: bool,
-    ) -> TEntity | None:
+    ) -> E | None:
         entity, update_flag = self._seen.get((t_entity, uid), (None, False))
         if entity is None:
             return None
@@ -77,7 +74,7 @@ class UOW:
         self._message_bus = message_bus
         self._events: list[domain.Event] = []
 
-    async def get(self, t_entity: type[TEntity], uid: domain.UID | None, *, for_update: bool = True) -> TEntity:
+    async def get[E: domain.Entity](self, t_entity: type[E], uid: domain.UID | None, *, for_update: bool = True) -> E:
         uid = uid or domain.UID(t_entity.__qualname__.lower())
 
         async with self._identity_map as identity_map:
@@ -93,7 +90,7 @@ class UOW:
     def publish(self, event: domain.Event) -> None:
         self._events.append(event)
 
-    async def request(self, request: domain.Request[TResponse]) -> TResponse:
+    async def request[R: domain.Response](self, request: domain.Request[R]) -> R:
         return await self._message_bus.request(request)
 
     async def __aenter__(self) -> Self:

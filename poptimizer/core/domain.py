@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Annotated, Generic, NewType, Protocol, TypeVar
+from typing import Annotated, NewType, Protocol
 
 from pydantic import BaseModel, ConfigDict, PlainSerializer
 
@@ -61,10 +61,7 @@ class Response(Message):
     """
 
 
-TResponse = TypeVar("TResponse", bound=Response)
-
-
-class Request(Message, Generic[TResponse]):
+class Request[T: Response](Message):
     """Запрос.
 
     Сообщение, которое может принять 1 получатель - предполагает ответ.
@@ -72,15 +69,12 @@ class Request(Message, Generic[TResponse]):
     """
 
 
-TEntity = TypeVar("TEntity", bound=Entity)
-
-
 class Ctx(Protocol):
-    async def get(self, t_entity: type[TEntity], uid: UID, *, for_update: bool = True) -> TEntity:
+    async def get[E: Entity](self, t_entity: type[E], uid: UID, *, for_update: bool = True) -> E:
         ...
 
     def publish(self, event: Event) -> None:
         ...
 
-    async def request(self, request: Request[TResponse]) -> TResponse:
+    async def request[R: Response](self, request: Request[R]) -> R:
         ...

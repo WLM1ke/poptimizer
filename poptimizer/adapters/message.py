@@ -19,7 +19,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import TracebackType
 
-TEntity = TypeVar("TEntity", bound=domain.Entity)
 TEvent_contra = TypeVar("TEvent_contra", bound=domain.Event, contravariant=True)
 TResponse_co = TypeVar("TResponse_co", bound=domain.Response, covariant=True)
 TRequest_contra = TypeVar("TRequest_contra", bound=domain.Request[Any], contravariant=True)
@@ -41,7 +40,7 @@ class EventPublisher(Protocol):
 
 
 class Ctx(Protocol):
-    async def get(self, t_entity: type[TEntity], uid: domain.UID, *, for_update: bool = True) -> TEntity:
+    async def get[E: domain.Entity](self, t_entity: type[E], uid: domain.UID, *, for_update: bool = True) -> E:
         ...
 
     def publish(self, event: domain.Event) -> None:
