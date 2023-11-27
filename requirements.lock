@@ -7,8 +7,8 @@
 #   all-features: true
 
 -e file:.
-aiohttp==3.9.0
-aiomoex==2.0.0
+aiohttp==3.9.1
+aiomoex==2.1.2
 aiosignal==1.3.1
 annotated-types==0.6.0
 attrs==23.1.0

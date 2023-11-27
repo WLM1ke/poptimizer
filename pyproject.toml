@@ -12,7 +12,7 @@ dependencies = [
     "pydantic-settings>=2.1.0",
     "typer[all]>=0.9.0",
     "uvloop>=0.19.0",
-    "aiomoex>=2.0.0",
+    "aiomoex>=2.1.2",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -46,7 +46,8 @@ pythonVersion = "3.12"
 typeCheckingMode = "strict"
 
 [tool.pytest.ini_options]
-addopts = "--cov-report=term-missing --cov-report=xml --setup-show --verbose"
+asyncio_mode = "auto"
+addopts = "--cov-report=term-missing --setup-show --verbose"
 
 [tool.coverage.run]
 branch = true
