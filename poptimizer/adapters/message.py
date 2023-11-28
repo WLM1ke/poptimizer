@@ -159,15 +159,25 @@ class Bus:
         event: domain.Event,
         policy: Policy,
     ) -> None:
-        while True:
-            try:
-                async with self._uow_factory(subdomain, self) as ctx:
-                    await handler.handle(ctx, event)
-            except errors.POError as err:
-                self._logger.warning(err)
-
+        while await self._handled_with_error(subdomain, handler, event):
             if not await policy.try_again():
                 break
+
+    async def _handled_with_error(
+        self,
+        subdomain: domain.Subdomain,
+        handler: EventHandler[Any],
+        event: domain.Event,
+    ) -> bool:
+        try:
+            async with self._uow_factory(subdomain, self) as ctx:
+                await handler.handle(ctx, event)
+        except errors.POError as err:
+            self._logger.warning(err)
+
+            return True
+
+        return False
 
     async def request[Res: domain.Response](self, request: domain.Request[Res]) -> Res:
         request_name = _message_name(request.__class__)
