@@ -15,12 +15,14 @@ attrs==23.1.0
 click==8.1.7
 colorama==0.4.6
 dnspython==2.4.2
+et-xmlfile==1.1.0
 frozenlist==1.4.0
 idna==3.6
 markdown-it-py==3.0.0
 mdurl==0.1.2
 motor==3.3.2
 multidict==6.0.4
+openpyxl==3.1.2
 pydantic==2.5.2
 pydantic-core==2.14.5
 pydantic-settings==2.1.0

@@ -14,4 +14,8 @@ class POError(Exception):
 
 
 class AdaptersError(POError):
-    """Ошибки доступа к инфраструктуре."""
+    ...
+
+
+class DomainError(POError):
+    ...

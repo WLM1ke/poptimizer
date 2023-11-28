@@ -3,9 +3,11 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections import defaultdict
+from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
+    Final,
     Literal,
     Protocol,
     Self,
@@ -18,6 +20,10 @@ from poptimizer.core import domain, errors
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import TracebackType
+
+
+_DEFAULT_FIRST_RETRY: Final = timedelta(seconds=30)
+_DEFAULT_BACKOFF_FACTOR: Final = 2
 
 
 class EventHandler[E: domain.Event](Protocol):
@@ -63,6 +69,36 @@ def _message_name[E: domain.Event, Req: domain.Request[Any]](message: type[E | R
     return message.__qualname__
 
 
+class Policy(Protocol):
+    async def try_again(self) -> bool:
+        ...
+
+
+type PolicyFactory = Callable[[], Policy]
+
+
+class IgnoreErrorPolicy:
+    async def try_again(self) -> bool:
+        return False
+
+
+class IndefiniteRetryPolicy:
+    def __init__(
+        self,
+        first_retry: timedelta = _DEFAULT_FIRST_RETRY,
+        backoff_factor: float = _DEFAULT_BACKOFF_FACTOR,
+    ) -> None:
+        self._first_retry = first_retry.total_seconds()
+        self._backoff_factor = backoff_factor
+        self._attempt = 0
+
+    async def try_again(self) -> bool:
+        self._attempt += 1
+        await asyncio.sleep(self._first_retry * self._backoff_factor ** (self._attempt - 1))
+
+        return True
+
+
 class Bus:
     def __init__(self, uow_factory: Callable[[domain.Subdomain, Bus], Ctx]) -> None:
         self._logger = logging.getLogger("MessageBus")
@@ -70,7 +106,9 @@ class Bus:
 
         self._uow_factory = uow_factory
 
-        self._event_handlers: dict[str, list[tuple[domain.Subdomain, EventHandler[Any]]]] = defaultdict(list)
+        self._event_handlers: dict[str, list[tuple[domain.Subdomain, EventHandler[Any], PolicyFactory]]] = defaultdict(
+            list
+        )
         self._request_handlers: dict[str, tuple[domain.Subdomain, RequestHandler[Any, Any]]] = {}
         self._publisher_tasks: list[asyncio.Task[None]] = []
 
@@ -78,10 +116,11 @@ class Bus:
         self,
         subdomain: domain.Subdomain,
         event_handler: EventHandler[E],
+        policy_factory: PolicyFactory,
     ) -> None:
         event_type = get_type_hints(event_handler.handle)["event"]
         event_name = _message_name(event_type)
-        self._event_handlers[event_name].append((subdomain, event_handler))
+        self._event_handlers[event_name].append((subdomain, event_handler, policy_factory))
 
     def add_request_handler[Req: domain.Request[Any], Res: domain.Response](
         self,
@@ -110,12 +149,25 @@ class Bus:
         event_name = _message_name(event.__class__)
 
         async with asyncio.TaskGroup() as tg:
-            for subdomain, handler in self._event_handlers[event_name]:
-                tg.create_task(self._handle_event(subdomain, handler, event))
+            for subdomain, handler, policy_factory in self._event_handlers[event_name]:
+                tg.create_task(self._handle_event(subdomain, handler, event, policy_factory()))
 
-    async def _handle_event(self, subdomain: domain.Subdomain, handler: EventHandler[Any], event: domain.Event) -> None:
-        async with self._uow_factory(subdomain, self) as ctx:
-            await handler.handle(ctx, event)
+    async def _handle_event(
+        self,
+        subdomain: domain.Subdomain,
+        handler: EventHandler[Any],
+        event: domain.Event,
+        policy: Policy,
+    ) -> None:
+        while True:
+            try:
+                async with self._uow_factory(subdomain, self) as ctx:
+                    await handler.handle(ctx, event)
+            except errors.POError as err:
+                self._logger.warning(err)
+
+            if not await policy.try_again():
+                break
 
     async def request[Res: domain.Response](self, request: domain.Request[Res]) -> Res:
         request_name = _message_name(request.__class__)

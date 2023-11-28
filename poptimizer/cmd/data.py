@@ -5,7 +5,7 @@ import uvloop
 from poptimizer import config
 from poptimizer.adapters import lgr, message, uow
 from poptimizer.core import domain
-from poptimizer.data import day_started, trading_day
+from poptimizer.data import cpi, day_started, trading_day
 from poptimizer.io import http, mongo
 
 _SUBDOMAIN: Final = domain.Subdomain("data_new")
@@ -31,7 +31,8 @@ async def _run() -> None:
         mongo.client(cfg.mongo_client.uri) as mongo_client,
         message.Bus(uow.UOWFactory(mongo_client)) as bus,
     ):
-        bus.add_event_handler(_SUBDOMAIN, trading_day.EventHandler(http_client))
+        bus.add_event_handler(_SUBDOMAIN, trading_day.EventHandler(http_client), message.IndefiniteRetryPolicy)
+        bus.add_event_handler(_SUBDOMAIN, cpi.EventHandler(http_client), message.IgnoreErrorPolicy)
         bus.add_event_publisher(day_started.Publisher())
 
 
