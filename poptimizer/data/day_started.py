@@ -48,5 +48,6 @@ class Publisher:
 
         while True:
             await asyncio.sleep(_CHECK_INTERVAL.total_seconds())
-            if day < _last_day():
+            if day < (cur_day := _last_day()):
+                day = cur_day
                 bus(DayStarted(day=day))
