@@ -9,18 +9,18 @@ from poptimizer.core import domain
 from poptimizer.data import data, day_started
 
 
-class _TradingDate(data.Row):
+class _Row(data.Row):
     day: domain.Day = Field(alias="till")
 
 
 class _Payload(BaseModel):
-    df: list[_TradingDate]
+    df: list[_Row]
 
     def last_day(self) -> date:
         return self.df[0].day
 
     @field_validator("df")
-    def _must_be_one_row(cls, df: list[_TradingDate]) -> list[_TradingDate]:
+    def _must_be_one_row(cls, df: list[_Row]) -> list[_Row]:
         if (count := len(df)) != 1:
             raise ValueError(f"wrong rows count {count}")
 
@@ -39,8 +39,11 @@ class EventHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def handle(self, ctx: domain.Ctx, event: day_started.DayStarted) -> None:  # noqa: ARG002
+    async def handle(self, ctx: domain.Ctx, event: day_started.DayStarted) -> None:
         table = await ctx.get(TradingDay)
+
+        if table.timestamp >= event.day:
+            return
 
         json = await aiomoex.get_board_dates(
             self._http_client,

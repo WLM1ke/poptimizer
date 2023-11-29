@@ -30,7 +30,7 @@ _JANUARY_LAST_DAY: Final = 31
 _MINIMUM_MONTHLY_CPI: Final = 0.99
 
 
-class CPIRow(data.Row):
+class _Row(data.Row):
     day: domain.Day
     cpi: float = Field(gt=_MINIMUM_MONTHLY_CPI)
 
@@ -43,9 +43,9 @@ class CPIRow(data.Row):
 
 
 class CPI(domain.Entity):
-    df: list[CPIRow] = Field(default_factory=list[CPIRow])
+    df: list[_Row] = Field(default_factory=list[_Row])
 
-    def update(self, update_day: date, rows: list[CPIRow]) -> None:
+    def update(self, update_day: date, rows: list[_Row]) -> None:
         self.timestamp = update_day
 
         if self.df != rows[: len(self.df)]:
@@ -92,19 +92,19 @@ class EventHandler:
             return io.BytesIO(await resp.read())
 
 
-def _parse_rows(xlsx: io.BytesIO) -> list[CPIRow]:
+def _parse_rows(xlsx: io.BytesIO) -> list[_Row]:
     ws = excel.load_workbook(xlsx)[_SHEET_NAME]
 
     _validate_data_position(ws)
 
     day = date(year=_FIRST_YEAR_VALUE, month=1, day=_JANUARY_LAST_DAY)
-    rows: list[CPIRow] = []
+    rows: list[_Row] = []
 
     for row in ws.iter_cols(min_row=_MIN_ROW, max_row=_MAX_ROW, min_col=_MIN_COL, values_only=True):
         for cell in row:
             match cell:
                 case float() | int():
-                    rows.append(CPIRow(day=day, cpi=cell / 100))
+                    rows.append(_Row(day=day, cpi=cell / 100))
                 case None:
                     return rows
                 case _:
