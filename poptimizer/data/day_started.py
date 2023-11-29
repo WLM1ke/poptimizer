@@ -41,7 +41,7 @@ def _last_day() -> date:
     ) - timedelta(days=delta)
 
 
-class Publisher:
+class DayStartedPublisher:
     async def publish(self, bus: Callable[[domain.Event], None]) -> None:
         day = _last_day()
         bus(DayStarted(day=day))

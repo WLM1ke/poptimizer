@@ -15,9 +15,11 @@ _BACKOFF_FACTOR: Final = 2
 
 class Logger(BaseModel):
     level: int | str = logging.INFO
-    telegram_level: int | str = logging.WARNING
-    telegram_token: str = ""
-    telegram_chat_id: str = ""
+
+
+class Telegram(BaseModel):
+    token: str = ""
+    chat_id: str = ""
 
 
 class MongoClient(BaseModel):
@@ -46,6 +48,7 @@ class NatsClient(BaseModel):
 
 class Cfg(BaseSettings):
     logger: Logger = Logger()
+    telegram: Telegram = Telegram()
     http_client: HTTPClient = HTTPClient()
     mongo_client: MongoClient = MongoClient()
     nats_client: NatsClient = NatsClient()
@@ -53,6 +56,5 @@ class Cfg(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=Path(".env"),
         env_file_encoding="utf-8",
-        hide_input_in_errors=True,
-        extra="ignore",
+        env_nested_delimiter="__",
     )

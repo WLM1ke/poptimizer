@@ -60,7 +60,7 @@ class CPIUpdated(domain.Event):
     day: domain.Day
 
 
-class EventHandler:
+class CPIEventHandler:
     def __init__(self, session: aiohttp.ClientSession) -> None:
         self._session = session
 

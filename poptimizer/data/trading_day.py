@@ -35,7 +35,7 @@ class TradingDayEnded(domain.Event):
     day: domain.Day
 
 
-class EventHandler:
+class TradingDayEventHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 

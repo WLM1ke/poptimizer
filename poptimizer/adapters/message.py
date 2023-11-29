@@ -15,6 +15,7 @@ from typing import (
     get_type_hints,
 )
 
+from poptimizer.adapters import telegram
 from poptimizer.core import domain, errors
 
 if TYPE_CHECKING:
@@ -142,7 +143,9 @@ class Bus:
         self._publisher_tasks.append(publisher_task)
 
     def publish(self, event: domain.Event) -> None:
-        self._logger.info("%s(%s)", event.__class__.__name__, event)
+        if not isinstance(event, telegram.ErrorHappened):
+            self._logger.info("%s(%s)", event.__class__.__name__, event)
+
         self._tasks.create_task(self._route_event(event))
 
     async def _route_event(self, event: domain.Event) -> None:
@@ -159,25 +162,33 @@ class Bus:
         event: domain.Event,
         policy: Policy,
     ) -> None:
-        while await self._handled_with_error(subdomain, handler, event):
+        attempt = 0
+        while err := await self._handled_safe(subdomain, handler, event):
+            handler_name = handler.__class__.__name__
+            attempt += 1
+            msg = f"{err}"
+
+            self._logger.error("%s attempt %d - %s", handler_name, attempt, msg)
+
+            if not isinstance(event, telegram.ErrorHappened):
+                self.publish(telegram.ErrorHappened(handler=handler_name, attempt=attempt, msg=msg))
+
             if not await policy.try_again():
                 break
 
-    async def _handled_with_error(
+    async def _handled_safe(
         self,
         subdomain: domain.Subdomain,
         handler: EventHandler[Any],
         event: domain.Event,
-    ) -> bool:
+    ) -> Exception | None:
         try:
             async with self._uow_factory(subdomain, self) as ctx:
                 await handler.handle(ctx, event)
         except errors.POError as err:
-            self._logger.warning(err)
+            return err
 
-            return True
-
-        return False
+        return None
 
     async def request[Res: domain.Response](self, request: domain.Request[Res]) -> Res:
         request_name = _message_name(request.__class__)
