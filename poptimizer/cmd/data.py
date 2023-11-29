@@ -17,13 +17,8 @@ async def _run() -> None:
     lgr.init(cfg.logger.level)
 
     async with (
-        http.HTTPClient(
-            cfg.http_client.con_per_host,
-            cfg.http_client.retries,
-            cfg.http_client.first_retry,
-            cfg.http_client.backoff_factor,
-        ) as http_client,
-        mongo.client(cfg.mongo_client.uri) as mongo_client,
+        http.HTTPClient() as http_client,
+        mongo.client(cfg.mongo_db.uri) as mongo_client,
         message.Bus(uow.UOWFactory(mongo_client)) as bus,
     ):
         bus.add_event_handler(

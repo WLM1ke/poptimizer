@@ -10,6 +10,10 @@ from aiohttp import client_reqrep, helpers, typedefs, web_exceptions
 
 from poptimizer.core import errors
 
+_MAX_ISS_CON: Final = 10
+_RETRIES: Final = 3
+_FIRST_RETRY: Final = timedelta(seconds=600)
+_BACKOFF_FACTOR: Final = 2
 _HEADERS: Final = {
     "User-Agent": "POptimizer",
     "Connection": "keep-alive",
@@ -19,10 +23,10 @@ _HEADERS: Final = {
 class HTTPClient(aiohttp.ClientSession):
     def __init__(
         self,
-        con_per_host: int,
-        retries: int,
-        first_retry: timedelta,
-        backoff_factor: float,
+        con_per_host: int = _MAX_ISS_CON,
+        retries: int = _RETRIES,
+        first_retry: timedelta = _FIRST_RETRY,
+        backoff_factor: float = _BACKOFF_FACTOR,
     ) -> None:
         super().__init__(
             connector=aiohttp.TCPConnector(limit_per_host=con_per_host),
