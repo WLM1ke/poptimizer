@@ -34,8 +34,8 @@ pydantic==2.5.2
 pydantic-core==2.14.5
 pydantic-settings==2.1.0
 pygments==2.17.2
-pymongo==4.6.0
-pyright==1.1.337
+pymongo==4.6.1
+pyright==1.1.338
 pytest==7.4.3
 pytest-cov==4.1.0
 python-dotenv==1.0.0
