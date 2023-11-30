@@ -1,4 +1,3 @@
-"""Основная точка входа для запуска приложения."""
 import typer
 
 from poptimizer.cmd import data

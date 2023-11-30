@@ -214,8 +214,7 @@ class Bus:
         request_name = _message_name(request.__class__)
         subdomain, handler = self._request_handlers[request_name]
 
-        if TYPE_CHECKING:
-            handler = cast(RequestHandler[domain.Request[Res], Res], handler)
+        handler = cast(RequestHandler[domain.Request[Res], Res], handler)
 
         async with self._uow_factory(subdomain, self) as ctx:
             return await handler.handle(ctx, request)

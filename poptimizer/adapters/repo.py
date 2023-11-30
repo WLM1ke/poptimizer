@@ -1,17 +1,12 @@
-from __future__ import annotations
-
 import datetime
-from typing import TYPE_CHECKING, Any, Final
+from collections.abc import Iterable
+from typing import Any, Final
 
 from pydantic import ValidationError
 from pymongo.errors import PyMongoError
 
 from poptimizer.core import domain, errors
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
-
-    from poptimizer.io import mongo
+from poptimizer.io import mongo
 
 _MONGO_ID: Final = "_id"
 _REV: Final = "rev"

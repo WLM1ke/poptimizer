@@ -1,9 +1,8 @@
-from typing import TYPE_CHECKING, Annotated, NewType, Protocol
+from datetime import date, datetime
+from typing import Annotated, NewType, Protocol
 
 from pydantic import BaseModel, ConfigDict, PlainSerializer
 
-if TYPE_CHECKING:
-    from datetime import date, datetime
 
 UID = NewType("UID", str)
 Version = NewType("Version", int)
@@ -17,7 +16,7 @@ class Revision(BaseModel):
     model_config = ConfigDict(frozen=True)
 
 
-type Day = Annotated[
+Day = Annotated[
     date,
     PlainSerializer(
         lambda date: datetime(

@@ -1,4 +1,3 @@
-"""Информация о торговых днях."""
 from datetime import date
 
 import aiohttp

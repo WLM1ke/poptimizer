@@ -1,16 +1,11 @@
-from __future__ import annotations
-
 import asyncio
-from typing import TYPE_CHECKING, Literal, Self
+from collections.abc import Iterator
+from types import TracebackType
+from typing import Literal, Self
 
 from poptimizer.adapters import message, repo
 from poptimizer.core import domain, errors
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-    from types import TracebackType
-
-    from poptimizer.io import mongo
+from poptimizer.io import mongo
 
 
 class IdentityMap:
