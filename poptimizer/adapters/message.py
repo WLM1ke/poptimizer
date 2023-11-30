@@ -212,7 +212,7 @@ class Bus:
         traceback: TracebackType | None,
     ) -> None:
         try:
-            return await self._tasks.__aexit__(exc_type, exc_value, traceback)
+            return await asyncio.shield(self._tasks.__aexit__(exc_type, exc_value, traceback))
         except asyncio.CancelledError:
             for publisher_task in self._publisher_tasks:
                 publisher_task.cancel()
