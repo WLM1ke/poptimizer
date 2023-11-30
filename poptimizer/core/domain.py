@@ -3,7 +3,6 @@ from typing import Annotated, NewType, Protocol
 
 from pydantic import BaseModel, ConfigDict, PlainSerializer
 
-
 UID = NewType("UID", str)
 Version = NewType("Version", int)
 Subdomain = NewType("Subdomain", str)
