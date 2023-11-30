@@ -14,16 +14,16 @@ _DATA: Final = domain.Subdomain("data_new")
 
 async def _run() -> None:
     cfg = config.Cfg()
-    lgr.init(cfg.logger.level)
+    lgr.init(cfg.log_level)
 
     async with (
         http.HTTPClient() as http_client,
-        mongo.client(cfg.mongo_db.uri) as mongo_client,
+        mongo.client(cfg.mongo_db_uri) as mongo_client,
         message.Bus(uow.UOWFactory(mongo_client)) as bus,
     ):
         bus.add_event_handler(
             _APP,
-            telegram.ErrorEventHandler(http_client, cfg.telegram.token, cfg.telegram.chat_id),
+            telegram.ErrorEventHandler(http_client, cfg.telegram_token, cfg.telegram_chat_id),
             message.IgnoreErrorPolicy,
         )
 

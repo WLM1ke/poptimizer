@@ -1,23 +1,9 @@
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import BaseModel, MongoDsn, UrlConstraints
+from pydantic import MongoDsn, UrlConstraints
 from pydantic_core import MultiHostUrl, Url
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-
-class Logger(BaseModel):
-    level: int | str = "INFO"
-
-
-class Telegram(BaseModel):
-    token: str = ""
-    chat_id: str = ""
-
-
-class MongoDB(BaseModel):
-    uri: MongoDsn = MultiHostUrl("mongodb://localhost:27017")
-
 
 NatsDsn = Annotated[
     Url,
@@ -28,18 +14,14 @@ NatsDsn = Annotated[
 ]
 
 
-class Nats(BaseModel):
-    uri: NatsDsn = NatsDsn("nats://localhost:4222")
-
-
 class Cfg(BaseSettings):
-    logger: Logger = Logger()
-    telegram: Telegram = Telegram()
-    mongo_db: MongoDB = MongoDB()
-    nats: Nats = Nats()
+    log_level: int | str = "INFO"
+    telegram_token: str = ""
+    telegram_chat_id: str = ""
+    mongo_db_uri: MongoDsn = MultiHostUrl("mongodb://localhost:27017")
+    nats_uri: NatsDsn = NatsDsn("nats://localhost:4222")
 
     model_config = SettingsConfigDict(
         env_file=Path(".env"),
         env_file_encoding="utf-8",
-        env_nested_delimiter="__",
     )
