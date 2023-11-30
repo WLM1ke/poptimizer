@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from collections import defaultdict
 from datetime import timedelta
 from typing import (
@@ -15,12 +14,14 @@ from typing import (
     get_type_hints,
 )
 
-from poptimizer.adapters import telegram
 from poptimizer.core import domain, errors
 
 if TYPE_CHECKING:
+    import logging
     from collections.abc import Callable
     from types import TracebackType
+
+    from poptimizer.io import telegram
 
 
 _DEFAULT_FIRST_RETRY: Final = timedelta(seconds=30)
@@ -44,7 +45,11 @@ class EventPublisher(Protocol):
 
 class Ctx(Protocol):
     async def get[E: domain.Entity](
-        self, t_entity: type[E], uid: domain.UID | None = None, *, for_update: bool = True
+        self,
+        t_entity: type[E],
+        uid: domain.UID | None = None,
+        *,
+        for_update: bool = True,
     ) -> E:
         ...
 
@@ -101,8 +106,14 @@ class IndefiniteRetryPolicy:
 
 
 class Bus:
-    def __init__(self, uow_factory: Callable[[domain.Subdomain, Bus], Ctx]) -> None:
-        self._logger = logging.getLogger("MessageBus")
+    def __init__(
+        self,
+        logger: logging.Logger,
+        telegram_client: telegram.Client,
+        uow_factory: Callable[[domain.Subdomain, Bus], Ctx],
+    ) -> None:
+        self._logger = logger
+        self._telegram_client = telegram_client
         self._tasks = asyncio.TaskGroup()
 
         self._uow_factory = uow_factory
@@ -122,6 +133,11 @@ class Bus:
         event_type = get_type_hints(event_handler.handle)["event"]
         event_name = _message_name(event_type)
         self._event_handlers[event_name].append((subdomain, event_handler, policy_factory))
+        self._logger.info(
+            "%s was registered for %s",
+            event_handler.__class__.__name__,
+            event_name,
+        )
 
     def add_request_handler[Req: domain.Request[Any], Res: domain.Response](
         self,
@@ -134,6 +150,11 @@ class Bus:
             raise errors.AdaptersError(f"can't register second handler for {request_name}")
 
         self._request_handlers[request_name] = (subdomain, request_handler)
+        self._logger.info(
+            "%s was registered for %s",
+            request_handler.__class__.__name__,
+            request_name,
+        )
 
     def add_event_publisher(
         self,
@@ -141,11 +162,13 @@ class Bus:
     ) -> None:
         publisher_task = self._tasks.create_task(publisher.publish(self.publish))
         self._publisher_tasks.append(publisher_task)
+        self._logger.info(
+            "%s was registered",
+            publisher.__class__.__name__,
+        )
 
     def publish(self, event: domain.Event) -> None:
-        if not isinstance(event, telegram.ErrorHappened):
-            self._logger.info("%s(%s)", event.__class__.__name__, event)
-
+        self._logger.info("%s(%s) published", event.__class__.__name__, event)
         self._tasks.create_task(self._route_event(event))
 
     async def _route_event(self, event: domain.Event) -> None:
@@ -166,12 +189,9 @@ class Bus:
         while err := await self._handled_safe(subdomain, handler, event):
             handler_name = handler.__class__.__name__
             attempt += 1
-            msg = f"{err}"
 
-            self._logger.error("%s attempt %d - %s", handler_name, attempt, msg)
-
-            if not isinstance(event, telegram.ErrorHappened):
-                self.publish(telegram.ErrorHappened(handler=handler_name, attempt=attempt, msg=msg))
+            self._logger.warning("%s attempt %d - %s", handler_name, attempt, err)
+            await self._telegram_client.send(handler, attempt, err)
 
             if not await policy.try_again():
                 break

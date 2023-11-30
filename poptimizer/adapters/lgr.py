@@ -34,7 +34,7 @@ class _ColorFormatter(logging.Formatter):
         return super().formatMessage(record)
 
 
-def init(level: int | str) -> None:
+def init(level: int | str) -> logging.Logger:
     color_handler = logging.StreamHandler(sys.stdout)
     color_handler.setFormatter(_ColorFormatter())
 
@@ -42,3 +42,5 @@ def init(level: int | str) -> None:
         level=level,
         handlers=[color_handler],
     )
+
+    return logging.getLogger()

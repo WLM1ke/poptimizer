@@ -1,7 +1,9 @@
-from datetime import date, datetime
-from typing import Annotated, NewType, Protocol
+from typing import TYPE_CHECKING, Annotated, NewType, Protocol
 
 from pydantic import BaseModel, ConfigDict, PlainSerializer
+
+if TYPE_CHECKING:
+    from datetime import date, datetime
 
 UID = NewType("UID", str)
 Version = NewType("Version", int)
@@ -15,7 +17,7 @@ class Revision(BaseModel):
     model_config = ConfigDict(frozen=True)
 
 
-Day = Annotated[
+type Day = Annotated[
     date,
     PlainSerializer(
         lambda date: datetime(
@@ -46,27 +48,15 @@ class Message(BaseModel):
 
 
 class Event(Message):
-    """Событие.
-
-    Сообщение, которое могут принять 0 или несколько получателей - не предполагает ответа.
-    Собственником события является тот, кто его производит.
-    """
+    ...
 
 
 class Response(Message):
-    """Ответ на запрос.
-
-    Сообщение, которое поступает в ответ на запрос.
-    Собственником события является его единственный получатель запроса.
-    """
+    ...
 
 
 class Request[T: Response](Message):
-    """Запрос.
-
-    Сообщение, которое может принять 1 получатель - предполагает ответ.
-    Собственником события является его единственный получатель.
-    """
+    ...
 
 
 class Ctx(Protocol):
