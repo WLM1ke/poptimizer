@@ -49,11 +49,11 @@ class Event(Message):
     ...
 
 
-class Response(Message):
+class Result(Message):
     ...
 
 
-class Request[T: Response](Message):
+class Command[T: Result](Message):
     ...
 
 
@@ -64,5 +64,5 @@ class Ctx(Protocol):
     def publish(self, event: Event) -> None:
         ...
 
-    async def request[R: Response](self, request: Request[R]) -> R:
+    async def send[R: Result](self, cmd: Command[R]) -> R:
         ...

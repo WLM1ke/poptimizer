@@ -24,6 +24,7 @@ async def _run() -> None:
         ouw_factory = uow.UOWFactory(mongo_client)
         bus = await stack.enter_async_context(message.Bus(logger, telegram_client, ouw_factory))
 
+        bus.add_event_publisher(day_started.DayStartedPublisher())
         bus.add_event_handler(
             _DATA,
             trading_day.TradingDayEventHandler(http_client),
@@ -34,7 +35,6 @@ async def _run() -> None:
             cpi.CPIEventHandler(http_client),
             message.IgnoreErrorPolicy,
         )
-        bus.add_event_publisher(day_started.DayStartedPublisher())
 
 
 def run() -> None:

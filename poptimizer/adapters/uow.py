@@ -91,8 +91,8 @@ class UOW:
     def publish(self, event: domain.Event) -> None:
         self._events.append(event)
 
-    async def request[R: domain.Response](self, request: domain.Request[R]) -> R:
-        return await self._message_bus.request(request)
+    async def send[R: domain.Result](self, cmd: domain.Command[R]) -> R:
+        return await self._message_bus.send(cmd)
 
     async def __aenter__(self) -> Self:
         return self

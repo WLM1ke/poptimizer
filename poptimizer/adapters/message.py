@@ -33,8 +33,8 @@ class EventHandler[E: domain.Event](Protocol):
         ...
 
 
-class RequestHandler[Req: domain.Request[Any], Res: domain.Response](Protocol):
-    async def handle(self, ctx: domain.Ctx, request: Req) -> Res:
+class CommandHandler[Cmd: domain.Command[Any], Res: domain.Result](Protocol):
+    async def handle(self, ctx: domain.Ctx, cmd: Cmd) -> Res:
         ...
 
 
@@ -56,7 +56,7 @@ class Ctx(Protocol):
     def publish(self, event: domain.Event) -> None:
         ...
 
-    async def request[Res: domain.Response](self, request: domain.Request[Res]) -> Res:
+    async def send[Res: domain.Result](self, cmd: domain.Command[Res]) -> Res:
         ...
 
     async def __aenter__(self) -> Self:
@@ -71,7 +71,7 @@ class Ctx(Protocol):
         ...
 
 
-def _message_name[E: domain.Event, Req: domain.Request[Any]](message: type[E | Req]) -> str:
+def _message_name[E: domain.Event, Req: domain.Command[Any]](message: type[E | Req]) -> str:
     return message.__qualname__
 
 
@@ -121,7 +121,7 @@ class Bus:
         self._event_handlers: dict[str, list[tuple[domain.Subdomain, EventHandler[Any], PolicyFactory]]] = defaultdict(
             list
         )
-        self._request_handlers: dict[str, tuple[domain.Subdomain, RequestHandler[Any, Any]]] = {}
+        self._command_handlers: dict[str, tuple[domain.Subdomain, CommandHandler[Any, Any]]] = {}
         self._publisher_tasks: list[asyncio.Task[None]] = []
 
     def add_event_handler[E: domain.Event](
@@ -139,21 +139,21 @@ class Bus:
             event_name,
         )
 
-    def add_request_handler[Req: domain.Request[Any], Res: domain.Response](
+    def add_command_handler[Cmd: domain.Command[Any], Res: domain.Result](
         self,
         subdomain: domain.Subdomain,
-        request_handler: RequestHandler[Req, Res],
+        command_handler: CommandHandler[Cmd, Res],
     ) -> None:
-        request_type = get_type_hints(request_handler.handle)["request"]
-        request_name = _message_name(request_type)
-        if request_name in self._request_handlers:
-            raise errors.AdaptersError(f"can't register second handler for {request_name}")
+        command_type = get_type_hints(command_handler.handle)["cmd"]
+        command_name = _message_name(command_type)
+        if command_name in self._command_handlers:
+            raise errors.AdaptersError(f"can't register second handler for {command_name}")
 
-        self._request_handlers[request_name] = (subdomain, request_handler)
+        self._command_handlers[command_name] = (subdomain, command_handler)
         self._logger.info(
             "%s was registered for %s",
-            request_handler.__class__.__name__,
-            request_name,
+            command_handler.__class__.__name__,
+            command_name,
         )
 
     def add_event_publisher(
@@ -210,14 +210,14 @@ class Bus:
 
         return None
 
-    async def request[Res: domain.Response](self, request: domain.Request[Res]) -> Res:
-        request_name = _message_name(request.__class__)
-        subdomain, handler = self._request_handlers[request_name]
+    async def send[Res: domain.Result](self, cmd: domain.Command[Res]) -> Res:
+        command_name = _message_name(cmd.__class__)
+        subdomain, handler = self._command_handlers[command_name]
 
-        handler = cast(RequestHandler[domain.Request[Res], Res], handler)
+        handler = cast(CommandHandler[domain.Command[Res], Res], handler)
 
         async with self._uow_factory(subdomain, self) as ctx:
-            return await handler.handle(ctx, request)
+            return await handler.handle(ctx, cmd)
 
     async def __aenter__(self) -> Self:
         await self._tasks.__aenter__()
