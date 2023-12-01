@@ -134,9 +134,10 @@ class Bus:
         event_name = _message_name(event_type)
         self._event_handlers[event_name].append((subdomain, event_handler, policy_factory))
         self._logger.info(
-            "%s was registered for %s",
+            "%s was registered for %s with %s",
             event_handler.__class__.__name__,
             event_name,
+            policy_factory.__name__,
         )
 
     def add_command_handler[Cmd: domain.Command[Any], Res: domain.Result](

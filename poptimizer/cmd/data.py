@@ -6,7 +6,7 @@ import uvloop
 from poptimizer import config
 from poptimizer.adapters import lgr, message, uow
 from poptimizer.core import domain
-from poptimizer.data import cpi, day_started, trading_day
+from poptimizer.data import cpi, day_started, indexes, trading_day
 from poptimizer.io import http, mongo, telegram
 
 _APP: Final = domain.Subdomain("app")
@@ -34,6 +34,11 @@ async def _run() -> None:
             _DATA,
             cpi.CPIEventHandler(http_client),
             message.IgnoreErrorPolicy,
+        )
+        bus.add_event_handler(
+            _DATA,
+            indexes.IndexesEventHandler(http_client),
+            message.IndefiniteRetryPolicy,
         )
 
 

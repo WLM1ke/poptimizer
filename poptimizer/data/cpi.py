@@ -61,8 +61,8 @@ class CPIUpdated(domain.Event):
 
 
 class CPIEventHandler:
-    def __init__(self, session: aiohttp.ClientSession) -> None:
-        self._session = session
+    def __init__(self, http_session: aiohttp.ClientSession) -> None:
+        self._http_session = http_session
 
     async def handle(self, ctx: domain.Ctx, event: trading_day.TradingDayEnded) -> None:
         table = await ctx.get(CPI)
@@ -74,7 +74,7 @@ class CPIEventHandler:
         ctx.publish(CPIUpdated(day=event.day))
 
     async def _download(self) -> io.BytesIO:
-        async with self._session.get(_PRICES_PAGE) as resp:
+        async with self._http_session.get(_PRICES_PAGE) as resp:
             if not resp.ok:
                 raise errors.DomainError(f"bad CPI respond status {resp.reason}")
 
@@ -85,7 +85,7 @@ class CPIEventHandler:
 
         cpi_url = _URL_TMPL.format(file_name.group(0))
 
-        async with self._session.get(cpi_url) as resp:
+        async with self._http_session.get(cpi_url) as resp:
             if not resp.ok:
                 raise errors.DomainError(f"bad CPI respond status {resp.reason}")
 
