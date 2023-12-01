@@ -76,11 +76,11 @@ def _message_name[E: domain.Event, Req: domain.Command[Any]](message: type[E | R
 
 
 class Policy(Protocol):
-    async def try_again(self) -> bool:
+    def __init__(self) -> None:
         ...
 
-
-type PolicyFactory = Callable[[], Policy]
+    async def try_again(self) -> bool:
+        ...
 
 
 class IgnoreErrorPolicy:
@@ -118,7 +118,7 @@ class Bus:
 
         self._uow_factory = uow_factory
 
-        self._event_handlers: dict[str, list[tuple[domain.Subdomain, EventHandler[Any], PolicyFactory]]] = defaultdict(
+        self._event_handlers: dict[str, list[tuple[domain.Subdomain, EventHandler[Any], type[Policy]]]] = defaultdict(
             list
         )
         self._command_handlers: dict[str, tuple[domain.Subdomain, CommandHandler[Any, Any]]] = {}
@@ -128,16 +128,16 @@ class Bus:
         self,
         subdomain: domain.Subdomain,
         event_handler: EventHandler[E],
-        policy_factory: PolicyFactory,
+        policy_type: type[Policy],
     ) -> None:
         event_type = get_type_hints(event_handler.handle)["event"]
         event_name = _message_name(event_type)
-        self._event_handlers[event_name].append((subdomain, event_handler, policy_factory))
+        self._event_handlers[event_name].append((subdomain, event_handler, policy_type))
         self._logger.info(
             "%s was registered for %s with %s",
             event_handler.__class__.__name__,
             event_name,
-            policy_factory.__name__,
+            policy_type.__name__,
         )
 
     def add_command_handler[Cmd: domain.Command[Any], Res: domain.Result](
