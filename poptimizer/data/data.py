@@ -3,7 +3,7 @@ from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict
 
-from poptimizer.core import domain
+from poptimizer.core import consts, domain
 
 
 class Row(BaseModel):
@@ -19,5 +19,12 @@ def sorted_by_day_validator(df: list[_RowWithDate]) -> list[_RowWithDate]:
 
     if not all(day < next_ for day, next_ in dates_pairs):
         raise ValueError("df not sorted by day")
+
+    return df
+
+
+def after_start_date_validator(df: list[_RowWithDate]) -> list[_RowWithDate]:
+    if df and (day := df[0].day) < consts.START_DAY:
+        raise ValueError(f"day before start day {day}")
 
     return df
