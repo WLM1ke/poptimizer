@@ -13,6 +13,10 @@ class POError(Exception):
         return " -> ".join(errs)
 
 
+class InputOutputError(POError):
+    ...
+
+
 class AdaptersError(POError):
     ...
 

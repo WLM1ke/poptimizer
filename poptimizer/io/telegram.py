@@ -37,7 +37,7 @@ class Client:
         }
         try:
             await self._send(json)
-        except errors.AdaptersError as err:
+        except errors.InputOutputError as err:
             self._logger.warning("can't send Telegram message - %s", err)
 
     async def _send(self, json: dict[str, str]) -> None:

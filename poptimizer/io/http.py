@@ -115,7 +115,7 @@ class HTTPClient(aiohttp.ClientSession):
 
             return resp
 
-        raise errors.AdaptersError(f"http request failed after {self._retries} retries")
+        raise errors.InputOutputError(f"http request failed after {self._retries} retries")
 
     def _delay(self, attempt: int) -> float:
         if attempt == 0:
