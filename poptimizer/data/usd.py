@@ -1,6 +1,4 @@
-import asyncio
 from datetime import date
-from typing import Final
 
 import aiohttp
 import aiomoex
@@ -9,23 +7,20 @@ from pydantic import Field, TypeAdapter, field_validator
 from poptimizer.core import domain, errors
 from poptimizer.data import data, trading_day
 
-_INDEXES: Final = (
-    domain.UID("MCFTRR"),
-    domain.UID("MEOGTRR"),
-    domain.UID("IMOEX"),
-    domain.UID("RVI"),
-)
-
 
 class _Row(data.Row):
-    day: domain.Day = Field(alias="TRADEDATE")
-    close: float = Field(alias="CLOSE", gt=0)
+    day: domain.Day = Field(alias="begin")
+    open: float = Field(alias="open", gt=0)
+    close: float = Field(alias="close", gt=0)
+    high: float = Field(alias="high", gt=0)
+    low: float = Field(alias="low", gt=0)
+    turnover: float = Field(alias="value", gt=0)
 
 
-class Index(domain.Entity):
+class USD(domain.Entity):
     df: list[_Row] = Field(default_factory=list[_Row])
 
-    def update(self, update_day: date, rows: list[_Row]) -> None:
+    def update(self, update_day: domain.Day, rows: list[_Row]) -> None:
         self.timestamp = update_day
 
         if not self.df:
@@ -49,45 +44,37 @@ class Index(domain.Entity):
     _must_be_sorted_by_date = field_validator("df")(data.sorted_by_day_validator)
 
 
-class IndexesUpdated(domain.Event):
+class USDUpdated(domain.Event):
     day: domain.Day
 
 
-class IndexesEventHandler:
+class USDEventHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
-        self._http_client = http_client
+        self._session = http_client
 
     async def handle(self, ctx: domain.Ctx, event: trading_day.TradingDayEnded) -> None:
-        async with asyncio.TaskGroup() as tg:
-            for index in _INDEXES:
-                tg.create_task(self._update_one(ctx, event.day, index))
-
-        ctx.publish(IndexesUpdated(day=event.day))
-
-    async def _update_one(self, ctx: domain.Ctx, update_day: domain.Day, index: domain.UID) -> None:
-        table = await ctx.get(Index, index)
+        table = await ctx.get(USD)
 
         start_day = table.last_row_date()
-        rows = await self._download(index, start_day, update_day)
+        update_day = event.day
+        rows = await self._download(start_day, update_day)
 
         table.update(update_day, rows)
+        ctx.publish(USDUpdated(day=update_day))
 
     async def _download(
         self,
-        index: str,
         start_day: date | None,
         update_day: date,
     ) -> list[_Row]:
-        json = await aiomoex.get_market_history(
-            session=self._http_client,
+        json = await aiomoex.get_market_candles(
+            session=self._session,
             start=start_day and str(start_day),
             end=str(update_day),
-            security=index,
-            columns=(
-                "TRADEDATE",
-                "CLOSE",
-            ),
-            market="index",
+            interval=24,
+            security="USD000UTSTOM",
+            market="selt",
+            engine="currency",
         )
 
         return TypeAdapter(list[_Row]).validate_python(json)
