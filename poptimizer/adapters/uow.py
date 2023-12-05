@@ -60,10 +60,12 @@ class IdentityMap:
 class UOW:
     def __init__(
         self,
+        component: domain.Component,
         repo: repo.Mongo,
         identity_map: IdentityMap,
         message_bus: message.Bus,
     ) -> None:
+        self._component = component
         self._repo = repo
         self._identity_map = identity_map
         self._message_bus = message_bus
@@ -90,6 +92,9 @@ class UOW:
 
     def publish(self, event: domain.Event) -> None:
         self._events.append(event)
+
+    def publish_err(self, err: str) -> None:
+        self._events.append(domain.ErrorEvent(component=self._component, err=err))
 
     async def request[R: domain.Response](self, request: domain.Request[R]) -> R:
         return await self._message_bus.request(request)
@@ -118,8 +123,9 @@ class UOWFactory:
     def __init__(self, mongo_client: mongo.MongoClient) -> None:
         self._mongo_client = mongo_client
 
-    def __call__(self, subdomain: domain.Subdomain, message_bus: message.Bus) -> UOW:
+    def __call__(self, subdomain: domain.Subdomain, component: domain.Component, message_bus: message.Bus) -> UOW:
         return UOW(
+            component,
             repo.Mongo(self._mongo_client, subdomain),
             IdentityMap(),
             message_bus,

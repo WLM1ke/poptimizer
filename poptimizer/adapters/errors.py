@@ -3,12 +3,12 @@ from typing import Final
 
 import aiohttp
 
-from poptimizer.core import errors
+from poptimizer.core import domain, errors
 
 _TELEGRAM_MAX_MSG_SIZE: Final = 4096
 
 
-class Client:
+class ErrorEventHandler:
     def __init__(
         self,
         logger: logging.Logger,
@@ -21,14 +21,9 @@ class Client:
         self._api_url = f"https://api.telegram.org/bot{token}/SendMessage"
         self._chat_id = chat_id
 
-    async def send(
-        self,
-        component: str,
-        attempt: int,
-        msg: str,
-    ) -> None:
+    async def handle(self, ctx: domain.Ctx, event: domain.ErrorEvent) -> None:  # noqa: ARG002
         """https://core.telegram.org/bots/api#sendmessage."""
-        msg = f"<b>{component}</b>\n<i>Attempt - {attempt}</i>\n\n{msg}"
+        msg = f"<b>{event.component}</b>\n\n{event.err}"
         json = {
             "chat_id": self._chat_id,
             "parse_mode": "HTML",

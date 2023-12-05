@@ -21,8 +21,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import TracebackType
 
-    from poptimizer.io import telegram
-
 
 _DEFAULT_FIRST_RETRY: Final = timedelta(seconds=30)
 _DEFAULT_BACKOFF_FACTOR: Final = 2
@@ -56,6 +54,9 @@ class Ctx(Protocol):
     def publish(self, event: domain.Event) -> None:
         ...
 
+    def publish_err(self, err: str) -> None:
+        ...
+
     async def request[Res: domain.Response](self, request: domain.Request[Res]) -> Res:
         ...
 
@@ -83,7 +84,7 @@ class Policy(Protocol):
         ...
 
 
-class IgnoreErrorPolicy:
+class IgnoreErrorsPolicy:
     async def try_again(self) -> bool:
         return False
 
@@ -109,11 +110,9 @@ class Bus:
     def __init__(
         self,
         logger: logging.Logger,
-        telegram_client: telegram.Client,
-        uow_factory: Callable[[domain.Subdomain, Bus], Ctx],
+        uow_factory: Callable[[domain.Subdomain, domain.Component, Bus], Ctx],
     ) -> None:
         self._logger = logger
-        self._telegram_client = telegram_client
         self._tasks = asyncio.TaskGroup()
 
         self._uow_factory = uow_factory
@@ -169,16 +168,15 @@ class Bus:
         )
 
     def publish(self, event: domain.Event) -> None:
-        self._logger.info("%s(%s) published", event.__class__.__name__, event)
+        match event:
+            case domain.ErrorEvent():
+                self._logger.warning("%s(%s) published", event.__class__.__name__, event)
+            case _:
+                self._logger.info("%s(%s) published", event.__class__.__name__, event)
+
         self._tasks.create_task(self._route_event(event))
 
     async def _route_event(self, event: domain.Event) -> None:
-        if isinstance(event, domain.ErrorEvent):
-            self._logger.warning("%s attempt %d - %s", event.component, event.attempt, event.err)
-            await self._telegram_client.send(event.component, event.attempt, event.err)
-
-            return
-
         event_name = _message_name(event.__class__)
 
         async with asyncio.TaskGroup() as tg:
@@ -195,7 +193,12 @@ class Bus:
         attempt = 0
         while err := await self._handled_safe(subdomain, handler, event):
             attempt += 1
-            self.publish(domain.ErrorEvent(component=handler.__class__.__name__, attempt=attempt, err=str(err)))
+            self.publish(
+                domain.ErrorEvent(
+                    component=domain.Component(handler.__class__.__name__),
+                    err=f"can't handle {event} in {attempt} attempt with {err}",
+                ),
+            )
 
             if not await policy.try_again():
                 break
@@ -205,14 +208,19 @@ class Bus:
         subdomain: domain.Subdomain,
         handler: EventHandler[Any],
         event: domain.Event,
-    ) -> errors.POError | None:
+    ) -> str | None:
+        error_msg: str | None = None
         try:
-            async with self._uow_factory(subdomain, self) as ctx:
+            async with self._uow_factory(
+                subdomain,
+                domain.Component(handler.__class__.__name__),
+                self,
+            ) as ctx:
                 await handler.handle(ctx, event)
-        except errors.POError as err:
-            return err
+        except* errors.POError as err:
+            error_msg = f"{", ".join(map(str, err.exceptions))}"
 
-        return None
+        return error_msg
 
     async def request[Res: domain.Response](self, request: domain.Request[Res]) -> Res:
         request_name = _message_name(request.__class__)
@@ -220,7 +228,11 @@ class Bus:
 
         handler = cast(RequestHandler[domain.Request[Res], Res], handler)
 
-        async with self._uow_factory(subdomain, self) as ctx:
+        async with self._uow_factory(
+            subdomain,
+            domain.Component(handler.__class__.__name__),
+            self,
+        ) as ctx:
             return await handler.handle(ctx, request)
 
     async def __aenter__(self) -> Self:

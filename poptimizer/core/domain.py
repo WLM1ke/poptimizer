@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from datetime import date, datetime
 from typing import Annotated, NewType, Protocol
 
@@ -8,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, PlainSerializer
 UID = NewType("UID", str)
 Version = NewType("Version", int)
 Subdomain = NewType("Subdomain", str)
+Component = NewType("Component", str)
 
 
 class Revision(BaseModel):
@@ -52,16 +51,8 @@ class Event(Message):
 
 
 class ErrorEvent(Event):
-    component: str
-    attempt: int = 1
+    component: Component
     err: str
-
-    @classmethod
-    def for_component_object(cls, component: object, err: str) -> ErrorEvent:
-        return cls(
-            component=component.__class__.__name__,
-            err=str(err),
-        )
 
 
 class Response(Message):
@@ -77,6 +68,9 @@ class Ctx(Protocol):
         ...
 
     def publish(self, event: Event) -> None:
+        ...
+
+    def publish_err(self, err: str) -> None:
         ...
 
     async def request[R: Response](self, request: Request[R]) -> R:
