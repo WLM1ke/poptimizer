@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import date, datetime
 from typing import Annotated, NewType, Protocol
 
@@ -47,6 +49,19 @@ class Message(BaseModel):
 
 class Event(Message):
     ...
+
+
+class ErrorEvent(Event):
+    component: str
+    attempt: int = 1
+    err: str
+
+    @classmethod
+    def for_component_object(cls, component: object, err: str) -> ErrorEvent:
+        return cls(
+            component=component.__class__.__name__,
+            err=str(err),
+        )
 
 
 class Response(Message):

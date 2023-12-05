@@ -173,6 +173,12 @@ class Bus:
         self._tasks.create_task(self._route_event(event))
 
     async def _route_event(self, event: domain.Event) -> None:
+        if isinstance(event, domain.ErrorEvent):
+            self._logger.warning("%s attempt %d - %s", event.component, event.attempt, event.err)
+            await self._telegram_client.send(event.component, event.attempt, event.err)
+
+            return
+
         event_name = _message_name(event.__class__)
 
         async with asyncio.TaskGroup() as tg:
@@ -188,11 +194,8 @@ class Bus:
     ) -> None:
         attempt = 0
         while err := await self._handled_safe(subdomain, handler, event):
-            handler_name = handler.__class__.__name__
             attempt += 1
-
-            self._logger.warning("%s attempt %d - %s", handler_name, attempt, err)
-            await self._telegram_client.send(handler, attempt, err)
+            self.publish(domain.ErrorEvent(component=handler.__class__.__name__, attempt=attempt, err=str(err)))
 
             if not await policy.try_again():
                 break
@@ -202,7 +205,7 @@ class Bus:
         subdomain: domain.Subdomain,
         handler: EventHandler[Any],
         event: domain.Event,
-    ) -> Exception | None:
+    ) -> errors.POError | None:
         try:
             async with self._uow_factory(subdomain, self) as ctx:
                 await handler.handle(ctx, event)

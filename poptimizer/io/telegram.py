@@ -23,13 +23,12 @@ class Client:
 
     async def send(
         self,
-        component: object,
+        component: str,
         attempt: int,
-        err: Exception,
+        msg: str,
     ) -> None:
         """https://core.telegram.org/bots/api#sendmessage."""
-        name = component.__class__.__name__
-        msg = f"<b>{name}</b>\n<i>Attempt - {attempt}</i>\n\n{err}"
+        msg = f"<b>{component}</b>\n<i>Attempt - {attempt}</i>\n\n{msg}"
         json = {
             "chat_id": self._chat_id,
             "parse_mode": "HTML",
