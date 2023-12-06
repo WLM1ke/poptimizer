@@ -37,7 +37,7 @@ class HTTPClient(aiohttp.ClientSession):
         self._backoff_factor = backoff_factor
 
     @override
-    async def _request(  # noqa: PLR0913
+    async def _request(
         self,
         method: str,
         str_or_url: typedefs.StrOrURL,

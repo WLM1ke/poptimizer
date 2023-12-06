@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Annotated, NewType, Protocol
+from typing import Annotated, Any, NewType, Protocol
 
 from pydantic import BaseModel, ConfigDict, PlainSerializer
 
@@ -7,6 +7,14 @@ UID = NewType("UID", str)
 Version = NewType("Version", int)
 Subdomain = NewType("Subdomain", str)
 Component = NewType("Component", str)
+
+
+def get_component_name(component: Any) -> Component:
+    return Component(component.__class__.__name__)
+
+
+def get_component_name_for_type(component_type: type[Any]) -> Component:
+    return Component(component_type.__name__)
 
 
 class Revision(BaseModel):

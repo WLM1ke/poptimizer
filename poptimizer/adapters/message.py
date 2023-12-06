@@ -72,10 +72,6 @@ class Ctx(Protocol):
         ...
 
 
-def _message_name[E: domain.Event, Req: domain.Request[Any]](message: type[E | Req]) -> str:
-    return message.__qualname__
-
-
 class Policy(Protocol):
     def __init__(self) -> None:
         ...
@@ -117,10 +113,10 @@ class Bus:
 
         self._uow_factory = uow_factory
 
-        self._event_handlers: dict[str, list[tuple[domain.Subdomain, EventHandler[Any], type[Policy]]]] = defaultdict(
-            list
-        )
-        self._request_handlers: dict[str, tuple[domain.Subdomain, RequestHandler[Any, Any]]] = {}
+        self._event_handlers: dict[
+            domain.Component, list[tuple[domain.Subdomain, EventHandler[Any], type[Policy]]]
+        ] = defaultdict(list)
+        self._request_handlers: dict[domain.Component, tuple[domain.Subdomain, RequestHandler[Any, Any]]] = {}
         self._publisher_tasks: list[asyncio.Task[None]] = []
 
     def add_event_handler[E: domain.Event](
@@ -130,13 +126,13 @@ class Bus:
         policy_type: type[Policy],
     ) -> None:
         event_type = get_type_hints(event_handler.handle)["event"]
-        event_name = _message_name(event_type)
+        event_name = domain.get_component_name_for_type(event_type)
         self._event_handlers[event_name].append((subdomain, event_handler, policy_type))
         self._logger.info(
             "%s was registered for %s with %s",
-            event_handler.__class__.__name__,
+            domain.get_component_name(event_handler),
             event_name,
-            policy_type.__name__,
+            domain.get_component_name_for_type(policy_type),
         )
 
     def add_request_handler[Req: domain.Request[Any], Res: domain.Response](
@@ -145,14 +141,14 @@ class Bus:
         request_handler: RequestHandler[Req, Res],
     ) -> None:
         request_type = get_type_hints(request_handler.handle)["request"]
-        request_name = _message_name(request_type)
+        request_name = domain.get_component_name_for_type(request_type)
         if request_name in self._request_handlers:
             raise errors.AdaptersError(f"can't register second handler for {request_name}")
 
         self._request_handlers[request_name] = (subdomain, request_handler)
         self._logger.info(
             "%s was registered for %s",
-            request_handler.__class__.__name__,
+            domain.get_component_name(request_handler),
             request_name,
         )
 
@@ -164,20 +160,21 @@ class Bus:
         self._publisher_tasks.append(publisher_task)
         self._logger.info(
             "%s was registered",
-            publisher.__class__.__name__,
+            domain.get_component_name(publisher),
         )
 
     def publish(self, event: domain.Event) -> None:
+        component = domain.get_component_name(event)
         match event:
             case domain.ErrorEvent():
-                self._logger.warning("%s(%s) published", event.__class__.__name__, event)
+                self._logger.warning("%s(%s) published", component, event)
             case _:
-                self._logger.info("%s(%s) published", event.__class__.__name__, event)
+                self._logger.info("%s(%s) published", component, event)
 
         self._tasks.create_task(self._route_event(event))
 
     async def _route_event(self, event: domain.Event) -> None:
-        event_name = _message_name(event.__class__)
+        event_name = domain.get_component_name(event)
 
         async with asyncio.TaskGroup() as tg:
             for subdomain, handler, policy_factory in self._event_handlers[event_name]:
@@ -195,7 +192,7 @@ class Bus:
             attempt += 1
             self.publish(
                 domain.ErrorEvent(
-                    component=domain.Component(handler.__class__.__name__),
+                    component=domain.get_component_name(handler),
                     err=f"can't handle {event} in {attempt} attempt with {err}",
                 ),
             )
@@ -213,7 +210,7 @@ class Bus:
         try:
             async with self._uow_factory(
                 subdomain,
-                domain.Component(handler.__class__.__name__),
+                domain.get_component_name(handler),
                 self,
             ) as ctx:
                 await handler.handle(ctx, event)
@@ -223,14 +220,14 @@ class Bus:
         return error_msg
 
     async def request[Res: domain.Response](self, request: domain.Request[Res]) -> Res:
-        request_name = _message_name(request.__class__)
+        request_name = domain.get_component_name(request)
         subdomain, handler = self._request_handlers[request_name]
 
         handler = cast(RequestHandler[domain.Request[Res], Res], handler)
 
         async with self._uow_factory(
             subdomain,
-            domain.Component(handler.__class__.__name__),
+            domain.get_component_name(handler),
             self,
         ) as ctx:
             return await handler.handle(ctx, request)

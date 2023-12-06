@@ -15,10 +15,6 @@ _UID: Final = "uid"
 _TIMESTAMP: Final = "timestamp"
 
 
-def _collection_name[E: domain.Entity](t_entity: type[E]) -> str:
-    return t_entity.__name__
-
-
 class Mongo:
     def __init__(
         self,
@@ -29,7 +25,7 @@ class Mongo:
         self._db = str(subdomain)
 
     async def get[E: domain.Entity](self, t_entity: type[E], uid: domain.UID) -> E:
-        collection_name = _collection_name(t_entity)
+        collection_name = domain.get_component_name_for_type(t_entity)
 
         if (doc := await self._load(collection_name, uid)) is None:
             doc = await self._create_new(collection_name, uid)
@@ -81,7 +77,7 @@ class Mongo:
                     doc = entity.model_dump()
                     doc.pop(_REV)
 
-                    collection_name = _collection_name(entity.__class__)
+                    collection_name = domain.get_component_name(entity)
                     if (
                         await db[collection_name].find_one_and_update(
                             {_MONGO_ID: entity.uid, _VER: entity.ver},
