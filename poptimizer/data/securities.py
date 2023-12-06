@@ -1,6 +1,5 @@
 import asyncio
 import itertools
-from datetime import date
 from typing import Any, Final
 
 import aiohttp
@@ -56,7 +55,7 @@ class _Row(data.Row):
 class Securities(domain.Entity):
     df: list[_Row] = Field(default_factory=list[_Row])
 
-    def update(self, update_day: date, rows: list[_Row]) -> None:
+    def update(self, update_day: domain.Day, rows: list[_Row]) -> None:
         self.timestamp = update_day
 
         rows.sort(key=lambda sec: sec.ticker)

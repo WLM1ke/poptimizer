@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from enum import StrEnum, auto, unique
 from typing import Annotated, Any, NewType, Protocol
 
 from pydantic import BaseModel, ConfigDict, PlainSerializer
@@ -35,6 +36,12 @@ Day = Annotated[
         return_type=datetime,
     ),
 ]
+
+
+@unique
+class Currency(StrEnum):
+    RUR = auto()
+    USD = auto()
 
 
 class Entity(BaseModel):

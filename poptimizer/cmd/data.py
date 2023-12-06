@@ -6,7 +6,7 @@ import uvloop
 from poptimizer import config
 from poptimizer.adapters import errors, message, uow
 from poptimizer.core import domain
-from poptimizer.data import cpi, day_started, indexes, quotes, securities, status, trading_day, usd
+from poptimizer.data import cpi, day_started, divs, indexes, quotes, securities, status, trading_day, usd
 from poptimizer.io import http, lgr, mongo
 
 _APP: Final = domain.Subdomain("app")
@@ -63,6 +63,11 @@ async def _run() -> None:
         bus.add_event_handler(
             _DATA,
             usd.USDEventHandler(http_client),
+            message.IndefiniteRetryPolicy,
+        )
+        bus.add_event_handler(
+            _DATA,
+            divs.DividendsEventHandler(),
             message.IndefiniteRetryPolicy,
         )
 

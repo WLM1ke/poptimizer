@@ -21,7 +21,7 @@ class _Row(data.Row):
 class Quotes(domain.Entity):
     df: list[_Row] = Field(default_factory=list[_Row])
 
-    def update(self, update_day: date, rows: list[_Row]) -> None:
+    def update(self, update_day: domain.Day, rows: list[_Row]) -> None:
         self.timestamp = update_day
 
         if not self.df:
