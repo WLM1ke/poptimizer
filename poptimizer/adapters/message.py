@@ -11,6 +11,7 @@ from typing import (
     Protocol,
     Self,
     cast,
+    get_args,
     get_type_hints,
 )
 
@@ -126,14 +127,19 @@ class Bus:
         policy_type: type[Policy],
     ) -> None:
         event_type = get_type_hints(event_handler.handle)["event"]
-        event_name = domain.get_component_name_for_type(event_type)
-        self._event_handlers[event_name].append((subdomain, event_handler, policy_type))
-        self._logger.info(
-            "%s was registered for %s with %s",
-            domain.get_component_name(event_handler),
-            event_name,
-            domain.get_component_name_for_type(policy_type),
-        )
+        event_type_union = get_args(event_type)
+        if not event_type_union:
+            event_type_union = (event_type,)
+
+        for event_subtype in event_type_union:
+            event_name = domain.get_component_name_for_type(event_subtype)
+            self._event_handlers[event_name].append((subdomain, event_handler, policy_type))
+            self._logger.info(
+                "%s was registered for %s with %s",
+                domain.get_component_name(event_handler),
+                event_name,
+                domain.get_component_name_for_type(policy_type),
+            )
 
     def add_request_handler[Req: domain.Request[Any], Res: domain.Response](
         self,
