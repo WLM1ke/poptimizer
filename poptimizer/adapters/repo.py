@@ -80,7 +80,7 @@ class Mongo:
                     collection_name = domain.get_component_name(entity)
                     if (
                         await db[collection_name].find_one_and_update(
-                            {_MONGO_ID: entity.uid, _VER: entity.ver},
+                            {_MONGO_ID: entity.uid, _VER: entity.ver, _TIMESTAMP: {"$lte": doc[_TIMESTAMP]}},
                             {"$inc": {_VER: 1}, "$set": doc},
                             projection={_MONGO_ID: False},
                             session=session,
