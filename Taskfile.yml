@@ -2,8 +2,9 @@ version: "3"
 
 vars:
   APP: poptimizer
+  FRONTEND: frontend
   PYTHON: 3.12
-  TOOLS: go-task rye mongodb-community mongosh nats-server
+  TOOLS: go-task rye npm mongodb-community mongosh nats-server
 
 tasks:
   default:
@@ -11,13 +12,14 @@ tasks:
     cmds:
       - task -l
 
-  setup:
+  install:
     desc: Setup venv, install tools and dependencies
     cmds:
       - brew tap mongodb/brew
       - brew install {{.TOOLS}}
-      - rye pin --relaxed {{.PYTHON}} 
+      - rye pin --relaxed {{.PYTHON}}
       - rye sync --update-all --all-features --no-lock --force
+      - cd {{.FRONTEND}} && npm install
 
   update:
     desc: Upgrade tools and dependencies
@@ -25,6 +27,7 @@ tasks:
       - brew upgrade {{.TOOLS}}
       - rye pin --relaxed {{.PYTHON}}
       - rye sync --update-all --all-features
+      - cd {{.FRONTEND}} && npm update --save --save-dev
 
   lint:
     desc: Format and lint
@@ -33,12 +36,23 @@ tasks:
       - rye run ruff format {{.APP}}
       - rye run ruff {{.APP}} --unsafe-fixes
       - rye run pyright {{.APP}}
+      - cd {{.FRONTEND}} && npm run format && npm run lint && npm run check
 
   test:
     desc: Lint and test
     deps: [lint]
     cmds:
       - rye run pytest {{.APP}} --cov={{.APP}}
+
+  dev:
+    desc: Develope frontend
+    cmds:
+      - cd {{.FRONTEND}} && npm run dev -- --open
+
+  build:
+    desc: Build frontend
+    cmds:
+      - cd {{.FRONTEND}} && npm run build && npm run preview
 
   run:
     desc: Run POptimizer with .env file
