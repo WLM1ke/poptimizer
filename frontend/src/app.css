@@ -1,3 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+	body {
+		@apply scroll-smooth bg-bg-main text-text-main antialiased;
+	}
+	@media (prefers-color-scheme: light) {
+		body {
+			--text-main: 17 24 39;
+			--text-muted: 107 114 128;
+			--text-info: 30 64 175;
+			--bg-main: 255 255 255;
+			--bg-medium: 243 244 246;
+			--bg-accent: 229 231 235;
+			--bg-sidebar: 255 255 255;
+		}
+	}
+	@media (prefers-color-scheme: dark) {
+		body {
+			--text-main: 255 255 255;
+			--text-muted: 156 163 175;
+			--text-info: 147 197 253;
+			--bg-main: 17 24 39;
+			--bg-medium: 55 65 81;
+			--bg-accent: 31 41 55;
+			--bg-sidebar: 31 41 55;
+		}
+	}
+	body[data-theme="light"] {
+		--text-main: 17 24 39;
+		--text-muted: 107 114 128;
+		--text-info: 30 64 175;
+		--bg-main: 255 255 255;
+		--bg-medium: 243 244 246;
+		--bg-accent: 229 231 235;
+		--bg-sidebar: 255 255 255;
+	}
+
+	body[data-theme="dark"] {
+		--text-main: 255 255 255;
+		--text-muted: 156 163 175;
+		--text-info: 147 197 253;
+		--bg-main: 17 24 39;
+		--bg-medium: 55 65 81;
+		--bg-accent: 31 41 55;
+		--bg-sidebar: 31 41 55;
+	}
+}
+
+@layer components {
+}
+
+@layer utilities {
+}
