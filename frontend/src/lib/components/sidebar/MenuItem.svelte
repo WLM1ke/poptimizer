@@ -9,11 +9,11 @@
 <li>
 	<a
 		{href}
-		class="flex items-center gap-2 rounded-lg p-2 font-medium hover:bg-bg-medium"
+		class="hover:bg-bg-medium text-text-muted flex items-center gap-2 rounded-lg p-2 font-medium"
 		class:px-4={subItem}
 		class:bg-bg-medium={$pageTitle === title}
 	>
 		<slot />
-		<span>{title}</span>
+		<span class="text-text-main">{title}</span>
 	</a>
 </li>
