@@ -58,7 +58,7 @@ class HTTPClient(aiohttp.ClientSession):
         read_until_eof: bool = True,
         proxy: typedefs.StrOrURL | None = None,
         proxy_auth: helpers.BasicAuth | None = None,
-        timeout: aiohttp.ClientTimeout | helpers._SENTINEL = helpers.sentinel,  # type: ignore[reportPrivateUsage]  # noqa: SLF001
+        timeout: aiohttp.ClientTimeout | helpers._SENTINEL = helpers.sentinel,  # type: ignore[reportPrivateUsage]
         verify_ssl: bool | None = None,
         fingerprint: bytes | None = None,
         ssl_context: ssl.SSLContext | None = None,

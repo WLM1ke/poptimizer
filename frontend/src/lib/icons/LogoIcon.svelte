@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from './Icon.svelte';
+	import Icon from "./Icon.svelte";
 </script>
 
 <Icon viewBox="0 0 256 256" height="h-8">

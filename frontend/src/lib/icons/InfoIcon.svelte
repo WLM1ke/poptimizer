@@ -1,7 +1,6 @@
 <script lang="ts">
-	import Icon from './Icon.svelte';
+	import Icon from "./Icon.svelte";
 </script>
-
 
 <Icon height="h-5">
 	<path
