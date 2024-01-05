@@ -107,9 +107,21 @@ root_package = "poptimizer"
 name = "Layered"
 type = "layers"
 layers = [
-    "poptimizer.cmd",
+    "poptimizer.app",
     "poptimizer.adapters",
     "poptimizer.io",
+    "poptimizer.portfolio",
     "poptimizer.data",
     "poptimizer.core",
+]
+
+[[tool.importlinter.contracts]]
+name = "Weakly coupled middle layer"
+type = "independence"
+modules = [
+    "poptimizer.portfolio",
+    "poptimizer.data",
+]
+ignore_imports = [
+    "poptimizer.*.* -> poptimizer.*.contracts",
 ]

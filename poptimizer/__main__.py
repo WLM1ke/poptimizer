@@ -1,12 +1,12 @@
 import typer
 
-from poptimizer.cmd import data
+from poptimizer.app import app
 
 
 def main() -> None:
-    app = typer.Typer()
-    app.command()(data.run)
-    app()
+    cli = typer.Typer()
+    cli.command()(app.run)
+    cli()
 
 
 if __name__ == "__main__":
