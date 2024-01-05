@@ -10,7 +10,7 @@
 	export let accounts: string[];
 </script>
 
-<aside class="flex flex-col justify-between border-r border-bg-accent bg-bg-sidebar p-2">
+<aside class="border-bg-accent bg-bg-sidebar flex flex-col justify-between border-r p-2">
 	<nav class="flex flex-col gap-2">
 		<ul class="flex flex-col gap-1">
 			<MenuItem title="Portfolio" href="/portfolio">
@@ -29,7 +29,7 @@
 				<OptimizationIcon />
 			</MenuItem>
 		</ul>
-		<ul class="border-t border-bg-medium pt-2">
+		<ul class="border-bg-medium border-t pt-2">
 			<MenuItem title="Dividends" href="/dividends">
 				<DividendsIcon />
 			</MenuItem>
