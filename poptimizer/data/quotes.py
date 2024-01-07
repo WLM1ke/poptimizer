@@ -58,8 +58,8 @@ class QuotesEventHandler:
     async def handle(self, ctx: domain.Ctx, event: securities.SecuritiesUpdated) -> None:
         sec_table = await ctx.get(securities.Securities, for_update=False)
         update_day = event.day
-        for sec in sec_table.df:
-            async with asyncio.TaskGroup() as tg:
+        async with asyncio.TaskGroup() as tg:
+            for sec in sec_table.df:
                 tg.create_task(self._update_one(ctx, sec.ticker, update_day))
 
         ctx.publish(QuotesUpdated(day=update_day))

@@ -1,8 +1,8 @@
-from poptimizer.data.requests import GetLots, Lots
-from poptimizer.data.securities import SecuritiesUpdated
+from poptimizer.data.quotes import QuotesUpdated
+from poptimizer.data.requests import GetSecData, SecData
 
 __all__ = (
-    "GetLots",
-    "Lots",
-    "SecuritiesUpdated",
+    "QuotesUpdated",
+    "GetSecData",
+    "SecData",
 )
