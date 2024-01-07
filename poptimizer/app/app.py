@@ -4,7 +4,7 @@ from typing import Final
 import uvloop
 
 from poptimizer import config
-from poptimizer.adapters import errors, message, uow
+from poptimizer.adapters import message, uow, warn
 from poptimizer.app import data, portfolio
 from poptimizer.core import domain
 from poptimizer.io import http, lgr, mongo
@@ -24,7 +24,7 @@ async def _run() -> None:
 
         bus.add_event_handler(
             _APP,
-            errors.ErrorEventHandler(logger, http_client, cfg.telegram_token, cfg.telegram_chat_id),
+            warn.WarningEventHandler(logger, http_client, cfg.telegram_token, cfg.telegram_chat_id),
             message.IgnoreErrorsPolicy,
         )
         data.init_subdomain(bus, http_client)

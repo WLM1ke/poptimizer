@@ -79,7 +79,7 @@ class PortfolioDataUpdated(domain.Event):
     day: domain.Day
 
 
-class PortfolioLotsHandler:
+class PortfolioEventHandler:
     async def handle(self, ctx: domain.Ctx, event: contracts.QuotesUpdated) -> None:
         port = await ctx.get(Portfolio)
         sec_data = await ctx.request(contracts.GetSecData(day=event.day))

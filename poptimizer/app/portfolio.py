@@ -12,6 +12,6 @@ def init_subdomain(
 ) -> None:
     bus.add_event_handler(
         _PORTFOLIO,
-        portfolio.PortfolioLotsHandler(),
+        portfolio.PortfolioEventHandler(),
         message.IndefiniteRetryPolicy,
     )
