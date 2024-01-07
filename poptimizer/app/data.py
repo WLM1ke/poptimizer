@@ -54,4 +54,4 @@ def init_subdomain(
         divs.DividendsEventHandler(),
         message.IndefiniteRetryPolicy,
     )
-    bus.add_request_handler(_DATA, requests.LotsRequestHandler())
+    bus.add_request_handler(_DATA, requests.SecDataRequestHandler())

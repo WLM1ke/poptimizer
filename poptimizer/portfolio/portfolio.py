@@ -87,6 +87,7 @@ class PortfolioEventHandler:
         _remove_not_traded(ctx, port, sec_data)
         _update_sec_data(ctx, port, sec_data)
         _add_liquid(ctx, port, sec_data)
+        port.timestamp = event.day
 
         ctx.publish(PortfolioDataUpdated(day=event.day))
 

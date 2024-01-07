@@ -37,7 +37,7 @@ class Mongo:
         try:
             return await collection.find_one({_MONGO_ID: uid})
         except PyMongoError as err:
-            raise errors.AdaptersError("can't load {collection_name}.{uid}") from err
+            raise errors.InputOutputError("can't load {collection_name}.{uid}") from err
 
     async def _create_new(self, collection_name: str, uid: domain.UID) -> mongo.MongoDocument | None:
         doc = {
@@ -51,7 +51,7 @@ class Mongo:
         try:
             await collection.insert_one(doc)
         except PyMongoError as err:
-            raise errors.AdaptersError("can't create {collection_name}.{uid}") from err
+            raise errors.InputOutputError("can't create {collection_name}.{uid}") from err
 
         return doc
 
@@ -89,4 +89,4 @@ class Mongo:
                     ):
                         raise errors.AdaptersError(f"wrong version {collection_name}.{entity.uid}")
         except PyMongoError as err:
-            raise errors.AdaptersError("can't save entities") from err
+            raise errors.InputOutputError("can't save entities") from err

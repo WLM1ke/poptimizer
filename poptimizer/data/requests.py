@@ -24,7 +24,7 @@ class GetSecData(domain.Request[SecData]):
     day: domain.Day
 
 
-class LotsRequestHandler:
+class SecDataRequestHandler:
     async def handle(self, ctx: domain.Ctx, request: GetSecData) -> SecData:
         sec_table = await ctx.get(securities.Securities, for_update=False)
 
