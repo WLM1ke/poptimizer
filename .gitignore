@@ -14,3 +14,6 @@ wheels/
 
 # dotenv
 .env
+
+# VSCode
+.vscode
