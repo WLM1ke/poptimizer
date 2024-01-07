@@ -37,6 +37,7 @@ dev-dependencies = [
     "pytest>=7.4.3",
     "pytest-cov>=4.1.0",
     "ruff>=0.1.7",
+    "pandas-stubs>=2.1.4.231227",
 ]
 
 [tool.hatch.metadata]
