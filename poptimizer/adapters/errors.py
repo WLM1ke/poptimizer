@@ -21,9 +21,9 @@ class ErrorEventHandler:
         self._api_url = f"https://api.telegram.org/bot{token}/SendMessage"
         self._chat_id = chat_id
 
-    async def handle(self, ctx: domain.Ctx, event: domain.ErrorEvent) -> None:  # noqa: ARG002
+    async def handle(self, ctx: domain.Ctx, event: domain.WarningEvent) -> None:  # noqa: ARG002
         """https://core.telegram.org/bots/api#sendmessage."""
-        msg = f"<b>{event.component}</b>\n\n{event.err}"
+        msg = f"<b>{event.component}</b>\n\n{event.msg}"
         json = {
             "chat_id": self._chat_id,
             "parse_mode": "HTML",

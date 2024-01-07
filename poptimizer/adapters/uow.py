@@ -93,8 +93,8 @@ class UOW:
     def publish(self, event: domain.Event) -> None:
         self._events.append(event)
 
-    def publish_err(self, err: str) -> None:
-        self._events.append(domain.ErrorEvent(component=self._component, err=err))
+    def warn(self, msg: str) -> None:
+        self._events.append(domain.WarningEvent(component=self._component, msg=msg))
 
     async def request[R: domain.Response](self, request: domain.Request[R]) -> R:
         return await self._message_bus.request(request)

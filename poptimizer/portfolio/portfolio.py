@@ -99,9 +99,9 @@ def _remove_not_traded(ctx: domain.Ctx, port: Portfolio, sec_data: contracts.Sec
 
         match port.remove_ticket(ticker):
             case True:
-                ctx.publish_err(f"not traded {ticker} is removed")
+                ctx.warn(f"not traded {ticker} is removed")
             case False:
-                ctx.publish_err(f"not traded {ticker} is not removed")
+                ctx.warn(f"not traded {ticker} is not removed")
 
 
 def _update_sec_data(ctx: domain.Ctx, port: Portfolio, sec_data: contracts.SecData) -> None:
@@ -121,9 +121,9 @@ def _update_sec_data(ctx: domain.Ctx, port: Portfolio, sec_data: contracts.SecDa
 
         match port.remove_ticket(ticker):
             case True:
-                ctx.publish_err(f"not liquid {ticker} is removed")
+                ctx.warn(f"not liquid {ticker} is removed")
             case False:
-                ctx.publish_err(f"not liquid {ticker} is not removed")
+                ctx.warn(f"not liquid {ticker} is not removed")
 
 
 def _add_liquid(ctx: domain.Ctx, port: Portfolio, sec_data: contracts.SecData) -> None:
@@ -140,4 +140,4 @@ def _add_liquid(ctx: domain.Ctx, port: Portfolio, sec_data: contracts.SecData) -
                 turnover=new_data.turnover,
             )
 
-            ctx.publish_err(f"{ticker} is added")
+            ctx.warn(f"{ticker} is added")

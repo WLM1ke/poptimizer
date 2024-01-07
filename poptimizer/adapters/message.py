@@ -55,7 +55,7 @@ class Ctx(Protocol):
     def publish(self, event: domain.Event) -> None:
         ...
 
-    def publish_err(self, err: str) -> None:
+    def warn(self, msg: str) -> None:
         ...
 
     async def request[Res: domain.Response](self, request: domain.Request[Res]) -> Res:
@@ -172,7 +172,7 @@ class Bus:
     def publish(self, event: domain.Event) -> None:
         component = domain.get_component_name(event)
         match event:
-            case domain.ErrorEvent():
+            case domain.WarningEvent():
                 self._logger.warning("%s(%s) published", component, event)
             case _:
                 self._logger.info("%s(%s) published", component, event)
@@ -197,9 +197,9 @@ class Bus:
         while err := await self._handled_safe(subdomain, handler, event):
             attempt += 1
             self.publish(
-                domain.ErrorEvent(
+                domain.WarningEvent(
                     component=domain.get_component_name(handler),
-                    err=f"can't handle {event} in {attempt} attempt with {err}",
+                    msg=f"can't handle {event} in {attempt} attempt with {err}",
                 ),
             )
 

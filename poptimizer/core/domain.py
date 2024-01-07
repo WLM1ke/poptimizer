@@ -65,9 +65,9 @@ class Event(Message):
     ...
 
 
-class ErrorEvent(Event):
+class WarningEvent(Event):
     component: Component
-    err: str
+    msg: str
 
 
 class Response(Message):
@@ -85,7 +85,7 @@ class Ctx(Protocol):
     def publish(self, event: Event) -> None:
         ...
 
-    def publish_err(self, err: str) -> None:
+    def warn(self, msg: str) -> None:
         ...
 
     async def request[R: Response](self, request: Request[R]) -> R:

@@ -94,7 +94,7 @@ class DivStatusEventHandler:
                 continue
 
             if (ticker_re := _RE_TICKER.search(ticker_raw)) is None:
-                ctx.publish_err(f"can't parse ticker from {ticker_raw}")
+                ctx.warn(f"can't parse ticker from {ticker_raw}")
 
                 continue
 
