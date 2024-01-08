@@ -37,8 +37,8 @@ class RequestHandler[Req: domain.Request[Any], Res: domain.Response](Protocol):
         ...
 
 
-class EventPublisher(Protocol):
-    async def publish(self, bus: Callable[[domain.Event], None]) -> None:
+class Service(Protocol):
+    async def run(self, ctx: domain.SrvCtx) -> None:
         ...
 
 
@@ -118,7 +118,7 @@ class Bus:
             domain.Component, list[tuple[domain.Subdomain, EventHandler[Any], type[Policy]]]
         ] = defaultdict(list)
         self._request_handlers: dict[domain.Component, tuple[domain.Subdomain, RequestHandler[Any, Any]]] = {}
-        self._publisher_tasks: list[asyncio.Task[None]] = []
+        self._service_tasks: list[asyncio.Task[None]] = []
 
     def add_event_handler[E: domain.Event](
         self,
@@ -158,15 +158,15 @@ class Bus:
             request_name,
         )
 
-    def add_event_publisher(
+    def add_service(
         self,
-        publisher: EventPublisher,
+        service: Service,
     ) -> None:
-        publisher_task = self._tasks.create_task(publisher.publish(self.publish))
-        self._publisher_tasks.append(publisher_task)
+        service_task = self._tasks.create_task(service.run(self))
+        self._service_tasks.append(service_task)
         self._logger.info(
             "%s was registered",
-            domain.get_component_name(publisher),
+            domain.get_component_name(service),
         )
 
     def publish(self, event: domain.Event) -> None:
@@ -252,7 +252,7 @@ class Bus:
         try:
             return await asyncio.shield(self._tasks.__aexit__(exc_type, exc_value, traceback))
         except asyncio.CancelledError:
-            for publisher_task in self._publisher_tasks:
+            for publisher_task in self._service_tasks:
                 publisher_task.cancel()
 
             return await self._tasks.__aexit__(exc_type, exc_value, traceback)

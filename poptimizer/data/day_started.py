@@ -1,6 +1,5 @@
 import asyncio
 import zoneinfo
-from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from typing import Final
 
@@ -41,13 +40,13 @@ def _last_day() -> date:
     ) - timedelta(days=delta)
 
 
-class DayStartedPublisher:
-    async def publish(self, bus: Callable[[domain.Event], None]) -> None:
+class DayStartedService:
+    async def run(self, ctx: domain.SrvCtx) -> None:
         day = _last_day()
-        bus(DayStarted(day=day))
+        ctx.publish(DayStarted(day=day))
 
         while True:
             await asyncio.sleep(_CHECK_INTERVAL.total_seconds())
             if day < (cur_day := _last_day()):
                 day = cur_day
-                bus(DayStarted(day=day))
+                ctx.publish(DayStarted(day=day))

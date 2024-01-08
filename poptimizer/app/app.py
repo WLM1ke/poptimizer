@@ -30,7 +30,7 @@ async def _run() -> None:
         )
         data.init_subdomain(bus, http_client)
         portfolio.init_subdomain(bus)
-        bus.add_event_publisher(server.Server(cfg.server_url, bus))
+        bus.add_service(server.APIServerService(cfg.server_url))
 
 
 def run() -> None:

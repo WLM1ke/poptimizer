@@ -90,3 +90,11 @@ class Ctx(Protocol):
 
     async def request[R: Response](self, request: Request[R]) -> R:
         ...
+
+
+class SrvCtx(Protocol):
+    def publish(self, event: Event) -> None:
+        ...
+
+    async def request[R: Response](self, request: Request[R]) -> R:
+        ...

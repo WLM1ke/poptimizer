@@ -1,5 +1,4 @@
 import asyncio
-from collections.abc import Callable
 
 from aiohttp import web
 from pydantic import HttpUrl
@@ -12,20 +11,18 @@ class ServerStatusChanged(domain.Event):
     status: str
 
 
-class Server:
+class APIServerService:
     def __init__(
         self,
         url: HttpUrl,
-        requester: middleware.Requester,
     ) -> None:
         self._url = url
-        self._requester = requester
 
-    async def publish(self, bus: Callable[[domain.Event], None]) -> None:
-        app = self._prepare_app()
+    async def run(self, ctx: domain.SrvCtx) -> None:
+        aiohttp_app = self._prepare_app(ctx)
 
         runner = web.AppRunner(
-            app,
+            aiohttp_app,
             handle_signals=False,
         )
         await runner.setup()
@@ -37,18 +34,18 @@ class Server:
 
         await site.start()
 
-        bus(ServerStatusChanged(status=f"started on {self._url} - press CTRL+C to quit"))
+        ctx.publish(ServerStatusChanged(status=f"started on {self._url} - press CTRL+C to quit"))
 
         try:
             while True:
                 await asyncio.sleep(3600)
         except asyncio.CancelledError:
             await runner.cleanup()
-            bus(ServerStatusChanged(status="shutdown completed"))
+            ctx.publish(ServerStatusChanged(status="shutdown completed"))
 
-    def _prepare_app(self) -> web.Application:
+    def _prepare_app(self, ctx: domain.SrvCtx) -> web.Application:
         api = web.Application()
-        portfolio.Views(api, self._requester)
+        portfolio.Views(api, ctx)
 
         app = web.Application(middlewares=[middleware.error])
         app.add_subapp("/api/", api)

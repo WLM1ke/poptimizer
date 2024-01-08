@@ -13,7 +13,7 @@ def init_subdomain(
     bus: message.Bus,
     http_client: aiohttp.ClientSession,
 ) -> None:
-    bus.add_event_publisher(day_started.DayStartedPublisher())
+    bus.add_service(day_started.DayStartedService())
     bus.add_event_handler(
         _DATA,
         trading_day.TradingDayEventHandler(http_client),

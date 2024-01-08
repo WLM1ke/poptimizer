@@ -1,15 +1,8 @@
-from typing import Protocol
-
 from aiohttp import web
 from aiohttp.typedefs import Handler
 from pydantic import ValidationError
 
-from poptimizer.core import domain, errors
-
-
-class Requester(Protocol):
-    async def request[Res: domain.Response](self, request: domain.Request[Res]) -> Res:
-        ...
+from poptimizer.core import errors
 
 
 @web.middleware
