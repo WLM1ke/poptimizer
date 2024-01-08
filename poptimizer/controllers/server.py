@@ -1,10 +1,55 @@
 import asyncio
 
-from aiohttp import web
-from pydantic import HttpUrl
+from aiohttp import abc, typedefs, web
+from pydantic import HttpUrl, ValidationError
 
-from poptimizer.controllers import middleware, portfolio
-from poptimizer.core import domain
+from poptimizer.controllers import portfolio
+from poptimizer.core import domain, errors
+
+
+class AccessLogger(abc.AbstractAccessLogger):
+    def log(self, request: web.BaseRequest, response: web.StreamResponse, time: float) -> None:
+        self.logger.info(
+            "%s %s %d %s %dms",
+            request.method,
+            request.path_qs,
+            response.status,
+            _content_length(response),
+            int(time * 1000),
+        )
+
+
+def _content_length(response: web.StreamResponse) -> str:
+    size = response.body_length
+    kilo = 2**10
+
+    for unit in ("b", "kb", "Mb", "Gb"):
+        if size < kilo:
+            return f"{size:.0f}{unit}"
+
+        size /= kilo
+
+    return f"{size:.0f}Tb"
+
+
+@web.middleware
+class RequestErrorMiddleware:
+    def __init__(self, ctx: domain.SrvCtx) -> None:
+        self._ctx = ctx
+
+    async def __call__(
+        self,
+        request: web.Request,
+        handler: typedefs.Handler,
+    ) -> web.StreamResponse:
+        try:
+            return await handler(request)
+        except (errors.InputOutputError, errors.AdaptersError) as err:
+            self._ctx.publish(domain.WarningEvent(component=domain.get_component_name(self), msg=f"{err}"))
+            raise web.HTTPInternalServerError(text=str(err)) from err
+        except (ValidationError, errors.DomainError) as err:
+            self._ctx.publish(domain.WarningEvent(component=domain.get_component_name(self), msg=f"{err}"))
+            raise web.HTTPBadRequest(text=str(err)) from err
 
 
 class ServerStatusChanged(domain.Event):
@@ -24,6 +69,7 @@ class APIServerService:
         runner = web.AppRunner(
             aiohttp_app,
             handle_signals=False,
+            access_log_class=AccessLogger,
         )
         await runner.setup()
         site = web.TCPSite(
@@ -47,7 +93,7 @@ class APIServerService:
         api = web.Application()
         portfolio.Views(api, ctx)
 
-        app = web.Application(middlewares=[middleware.error])
+        app = web.Application(middlewares=[RequestErrorMiddleware(ctx)])
         app.add_subapp("/api/", api)
 
         return app
