@@ -15,7 +15,7 @@ class GetPortfolio(domain.Request[PortfolioData]):
 
 class PortfolioDataRequestHandler:
     async def handle(self, ctx: domain.Ctx, request: GetPortfolio) -> PortfolioData:  # noqa: ARG002
-        port = await ctx.get(portfolio.Portfolio)
+        port = await ctx.get(portfolio.Portfolio, for_update=False)
 
         return PortfolioData(
             timestamp=port.timestamp,
