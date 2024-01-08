@@ -112,6 +112,7 @@ layers = [
     "poptimizer.app",
     "poptimizer.adapters",
     "poptimizer.io",
+    "poptimizer.controllers",
     "poptimizer.portfolio",
     "poptimizer.data",
     "poptimizer.core",
@@ -121,6 +122,8 @@ layers = [
 name = "Weakly coupled middle layer"
 type = "independence"
 modules = [
+    "poptimizer.io",
+    "poptimizer.controllers",
     "poptimizer.portfolio",
     "poptimizer.data",
 ]
