@@ -13,4 +13,4 @@ class Views:
     async def get(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
         portfolio = await self._ctx.request(contracts.GetPortfolio())
 
-        return web.json_response(data=portfolio.model_dump_json())
+        return web.json_response(text=portfolio.model_dump_json())

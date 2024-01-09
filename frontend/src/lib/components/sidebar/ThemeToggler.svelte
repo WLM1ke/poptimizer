@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-	import { storable } from "$lib/stores";
+	import { storable } from "$lib/persistent";
 
 	const theme = storable<"system" | "light" | "dark">("theme", "system");
 </script>
