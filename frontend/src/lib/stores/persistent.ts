@@ -1,7 +1,6 @@
 import { writable } from "svelte/store";
-import { type Portfolio } from "./types";
 
-export const storable = <T>(key: string, initial: T) => {
+export const persistent = <T>(key: string, initial: T) => {
 	const saved = localStorage[key];
 	if (!saved) {
 		localStorage[key] = JSON.stringify(initial);
@@ -18,5 +17,3 @@ export const storable = <T>(key: string, initial: T) => {
 		update
 	};
 };
-
-export const portfolio = storable<Portfolio>("portfolio", { securities: {}, accounts: {} });

@@ -4,21 +4,22 @@
 	import Logo from "$lib/components/Logo.svelte";
 	import Header from "$lib/components/Header.svelte";
 	import Sidebar from "$lib/components/sidebar/Sidebar.svelte";
-	import { portfolio } from "$lib/persistent";
-	import { pageTitle } from "$lib/stores";
+	import { accounts, load } from "$lib/stores/portfolio";
+	import { pageTitle } from "$lib/stores/page";
+	import { onMount } from "svelte";
 
-	export let data;
-
-	portfolio.set(data);
+	onMount(() => {
+		load();
+	});
 </script>
 
 <svelte:head>
 	<title>POptimizer - {$pageTitle}</title>
 </svelte:head>
 
-<section class="grid h-screen w-screen grid-cols-layout grid-rows-layout">
+<section class="grid-cols-layout grid-rows-layout grid h-screen w-screen">
 	<Logo />
 	<Header />
-	<Sidebar accounts={Object.keys(data.accounts)} />
+	<Sidebar accounts={$accounts} />
 	<slot />
 </section>

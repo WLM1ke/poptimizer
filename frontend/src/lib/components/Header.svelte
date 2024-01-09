@@ -1,6 +1,6 @@
 <script lang="ts">
 	import InfoIcon from "$lib/icons/InfoIcon.svelte";
-	import { pageTitle } from "$lib/stores";
+	import { pageTitle } from "$lib/stores/page";
 </script>
 
 <header class="min-w-max overflow-auto border-b border-bg-accent px-4 py-2">
