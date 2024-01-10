@@ -2,18 +2,18 @@ import { derived } from "svelte/store";
 import { persistent } from "./persistent";
 import { addError } from "./errors";
 
-export interface Security {
+interface Security {
 	lot: number;
 	price: number;
 	turnover: number;
 }
 
-export interface Account {
+interface Account {
 	cash: number;
 	positions: Record<string, number>;
 }
 
-export interface Portfolio {
+interface Portfolio {
 	accounts: Record<string, Account>;
 	securities: Record<string, Security>;
 }

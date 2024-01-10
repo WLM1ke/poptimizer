@@ -3,7 +3,7 @@ import asyncio
 from aiohttp import abc, typedefs, web
 from pydantic import HttpUrl, ValidationError
 
-from poptimizer.controllers import portfolio
+from poptimizer.controllers import frontend, portfolio
 from poptimizer.core import domain, errors
 
 
@@ -95,5 +95,6 @@ class APIServerService:
 
         app = web.Application(middlewares=[RequestErrorMiddleware(ctx)])
         app.add_subapp("/api/", api)
+        frontend.Views(app)
 
         return app

@@ -23,6 +23,6 @@
 	};
 </script>
 
-<button class="hover:bg-bg-medium rounded-lg p-2" title={`Color theme: ${$theme}`} on:click={toggleTheme}>
+<button class="rounded-lg p-2 hover:bg-bg-medium" title={`Color theme: ${$theme}`} on:click={toggleTheme}>
 	<svelte:component this={icons[$theme]} />
 </button>
