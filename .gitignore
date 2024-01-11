@@ -17,3 +17,6 @@ wheels/
 
 # VSCode
 .vscode
+
+# Frontend build
+static

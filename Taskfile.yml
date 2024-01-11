@@ -19,7 +19,7 @@ tasks:
       - brew install {{.TOOLS}}
       - rye pin --relaxed {{.PYTHON}}
       - rye sync --update-all --all-features --no-lock --force
-      - cd {{.FRONTEND}} && npm install
+      - cd {{.FRONTEND}} && npm install && npm run build
 
   update:
     desc: Upgrade tools and dependencies
