@@ -20,3 +20,6 @@ wheels/
 
 # Frontend build
 static
+
+# pytest
+.coverage

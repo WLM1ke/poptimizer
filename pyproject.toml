@@ -97,6 +97,11 @@ unfixable = [
     "EM102",    # Exception must not use an f-string literal, assign to variable first
 ]
 
+[tool.ruff.per-file-ignores]
+"test_*.py" = [
+    "S101",  # Use of `assert` detected
+]
+
 [tool.ruff.flake8-type-checking]
 runtime-evaluated-base-classes = ["pydantic.BaseModel"]
 
