@@ -221,7 +221,7 @@ def _get_parents() -> tuple[Organism, Organism]:
 
     parents = tuple(Organism(**doc) for doc in collection.aggregate(pipeline))
 
-    if len(parents) == 2:
+    if len(parents) == 2 and parents[0].id != parents[1].id:
         return parents[0], parents[1]
 
     return Organism(), Organism()
