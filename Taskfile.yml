@@ -16,7 +16,7 @@ tasks:
     desc: Setup venv, install tools and dependencies
     cmds:
       - brew tap mongodb/brew
-      - brew install {{.TOOLS}}
+      - brew install --overwrite {{.TOOLS}}
       - rye pin --relaxed {{.PYTHON}}
       - rye sync --update-all --all-features --no-lock --force
       - cd {{.FRONTEND}} && npm install && npm run build
