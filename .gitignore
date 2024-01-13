@@ -18,8 +18,8 @@ wheels/
 # VSCode
 .vscode
 
-# Frontend build
-static
-
 # pytest
 .coverage
+
+# Frontend build
+static

@@ -23,3 +23,29 @@ class PortfolioDataRequestHandler:
             accounts=port.accounts,
             securities=port.securities,
         )
+
+
+class CreateAccount(domain.Request[domain.Response]):
+    name: str
+
+
+class CreateAccountRequestHandler:
+    async def handle(self, ctx: domain.Ctx, request: CreateAccount) -> domain.Response:
+        port = await ctx.get(portfolio.Portfolio)
+
+        port.create_acount(portfolio.AccName(request.name))
+
+        return domain.Response()
+
+
+class RemoveAccount(domain.Request[domain.Response]):
+    name: str
+
+
+class RemoveAccountRequestHandler:
+    async def handle(self, ctx: domain.Ctx, request: RemoveAccount) -> domain.Response:
+        port = await ctx.get(portfolio.Portfolio)
+
+        port.remove_acount(portfolio.AccName(request.name))
+
+        return domain.Response()

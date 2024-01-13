@@ -52,15 +52,15 @@ tasks:
   build:
     desc: Build frontend
     cmds:
+      - task: format
+      - task: lint
+      - task: test
       - cd {{.FRONTEND}} && npm run build
 
   push:
     desc: Check and push
+    deps: [build]
     cmds:
-      - task: format
-      - task: lint
-      - task: test
-      - task: build
       - git push
 
   dev:

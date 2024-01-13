@@ -2,7 +2,7 @@ from typing import NewType, Self
 
 from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt, model_validator
 
-from poptimizer.core import domain
+from poptimizer.core import domain, errors
 from poptimizer.data import contracts
 
 AccName = NewType("AccName", str)
@@ -53,17 +53,23 @@ class Portfolio(domain.Entity):
         return value
 
     def create_acount(self, name: AccName) -> None:
-        if name not in self.accounts:
-            self.accounts[name] = Account()
+        if name in self.accounts:
+            raise errors.DomainError(f"account {name} already exists")
 
-    def remove_acount(self, name: AccName) -> bool:
+        if not name:
+            raise errors.DomainError("account name is empty")
+
+        self.accounts[name] = Account()
+
+    def remove_acount(self, name: AccName) -> None:
         account = self.accounts.pop(name, None)
-        if account is None or (not account.cash and not account.positions):
-            return True
+        if account is None:
+            raise errors.DomainError(f"account {name} doesn't exist")
 
-        self.accounts[name] = account
+        if account.cash or account.positions:
+            self.accounts[name] = account
 
-        return False
+            raise errors.DomainError(f"account {name} is not empty")
 
     def remove_ticket(self, ticker: Ticker) -> bool:
         for account in self.accounts.values():

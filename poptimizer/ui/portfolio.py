@@ -8,9 +8,23 @@ class Views:
     def __init__(self, app: web.Application, ctx: domain.SrvCtx) -> None:
         self._ctx = ctx
 
-        app.add_routes([web.get("/portfolio", self.get)])
+        app.add_routes([web.get("/portfolio", self.get_portfolio)])
+        app.add_routes([web.post("/portfolio/{account}", self.create_acount)])
+        app.add_routes([web.delete("/portfolio/{account}", self.remove_acount)])
 
-    async def get(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
+    async def get_portfolio(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
         portfolio = await self._ctx.request(contracts.GetPortfolio())
 
         return web.json_response(text=portfolio.model_dump_json())
+
+    async def create_acount(self, request: web.Request) -> web.StreamResponse:
+        account = request.match_info["account"]
+        await self._ctx.request(contracts.CreateAccount(name=account))
+
+        raise web.HTTPOk
+
+    async def remove_acount(self, request: web.Request) -> web.StreamResponse:
+        account = request.match_info["account"]
+        await self._ctx.request(contracts.RemoveAccount(name=account))
+
+        raise web.HTTPOk
