@@ -29,30 +29,38 @@ tasks:
       - rye sync --update-all --all-features
       - cd {{.FRONTEND}} && npm update --save --save-dev
 
+  format:
+    desc: Format
+    cmds:
+      - rye run ruff format {{.APP}}
+      - rye run ruff {{.APP}} --unsafe-fixes --exit-zero
+      - cd {{.FRONTEND}} && npm run format
+
   lint:
-    desc: Format and lint
+    desc: Lint
     cmds:
       - rye run lint-imports
-      - rye run ruff format {{.APP}}
-      - rye run ruff {{.APP}} --unsafe-fixes
+      - rye run ruff {{.APP}} --unsafe-fixes --exit-non-zero-on-fix
       - rye run pyright {{.APP}}
-      - cd {{.FRONTEND}} && npm run format && npm run lint && npm run check
+      - cd {{.FRONTEND}} && npm run lint && npm run check
 
   test:
     desc: Lint and test
-    deps: [lint]
     cmds:
       - rye run pytest {{.APP}} --cov={{.APP}}
+
+  build:
+    desc: Build frontend
+    cmds:
+      - task: format
+      - task: lint
+      - task: test
+      - cd {{.FRONTEND}} && npm run build
 
   dev:
     desc: Develope frontend
     cmds:
       - cd {{.FRONTEND}} && npm run dev -- --open
-
-  build:
-    desc: Build frontend
-    cmds:
-      - cd {{.FRONTEND}} && npm run build
 
   run:
     desc: Run POptimizer with .env file

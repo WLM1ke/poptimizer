@@ -3,7 +3,7 @@ name: poptimizer
 on: [push, pull_request]
 
 jobs:
-  tests:
+  install:
     name: Lint and Test
     runs-on: macos-latest
 
@@ -20,5 +20,8 @@ jobs:
       - name: Setup venv, install tools and dependencies
         run: task install
 
-      - name: Lint and test
+      - name: Lint
+        run: task lint
+
+      - name: Test
         run: task test
