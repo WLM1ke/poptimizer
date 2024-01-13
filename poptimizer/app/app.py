@@ -6,9 +6,9 @@ import uvloop
 from poptimizer import config
 from poptimizer.adapters import message, uow, warn
 from poptimizer.app import data, portfolio
-from poptimizer.controllers import server
 from poptimizer.core import domain
 from poptimizer.io import http, lgr, mongo
+from poptimizer.ui import server
 
 _APP: Final = domain.Subdomain("app")
 
