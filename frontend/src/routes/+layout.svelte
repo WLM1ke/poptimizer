@@ -4,6 +4,7 @@
 	import Logo from "$lib/components/Logo.svelte";
 	import Header from "$lib/components/Header.svelte";
 	import Sidebar from "$lib/components/sidebar/Sidebar.svelte";
+	import Alerts from "$lib/components/alerts/Alerts.svelte";
 	import { accounts, load } from "$lib/stores/portfolio";
 	import { pageTitle } from "$lib/stores/page";
 	import { onMount } from "svelte";
@@ -17,9 +18,10 @@
 	<title>POptimizer - {$pageTitle}</title>
 </svelte:head>
 
-<section class="grid h-screen w-screen grid-cols-layout grid-rows-layout">
+<section class="grid-cols-layout grid-rows-layout grid h-screen w-screen">
 	<Logo />
 	<Header />
 	<Sidebar accounts={$accounts} />
 	<slot />
+	<Alerts />
 </section>

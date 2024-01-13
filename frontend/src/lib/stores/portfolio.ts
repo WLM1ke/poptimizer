@@ -1,6 +1,6 @@
 import { derived } from "svelte/store";
 import { persistent } from "./persistent";
-import { addError } from "./errors";
+import { addAlert } from "./alerts";
 
 interface Security {
 	lot: number;
@@ -37,7 +37,10 @@ export const load = async () => {
 		} else {
 			msg = JSON.stringify(err);
 		}
-		addError(msg);
+		addAlert({
+			info: false,
+			msg: msg
+		});
 	}
 };
 
