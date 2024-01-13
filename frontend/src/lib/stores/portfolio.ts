@@ -23,15 +23,9 @@ const portfolio = persistent<Portfolio>("portfolio", {
 	accounts: {}
 });
 
-let loading = false;
-
-export const load = async () => {
-	if (loading) {
-		return;
-	}
-	loading = true;
+const fetchPortfolio = async (url: string, method: "GET" | "POST" | "DELETE" = "GET") => {
 	try {
-		const res = await fetch("/api/portfolio");
+		const res = await fetch(url, { method: method });
 		if (!res.ok) {
 			throw new Error(await res.text());
 		}
@@ -54,9 +48,17 @@ export const load = async () => {
 			info: false,
 			msg: msg
 		});
-	} finally {
-		loading = false;
 	}
+};
+
+export const load = async () => {
+	await fetchPortfolio("/api/portfolio");
+};
+export const removeAccount = async (account: string) => {
+	await fetchPortfolio(`/api/portfolio/${account}`, "DELETE");
+};
+export const createAccount = async (account: string) => {
+	await fetchPortfolio(`/api/portfolio/${account}`, "POST");
 };
 
 export const accounts = derived(portfolio, (portfolio) => {

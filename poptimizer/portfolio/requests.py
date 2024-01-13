@@ -25,7 +25,7 @@ class PortfolioDataRequestHandler:
         )
 
 
-class CreateAccount(domain.Request[domain.Response]):
+class CreateAccount(domain.Request[PortfolioData]):
     name: str
 
 
@@ -35,10 +35,15 @@ class CreateAccountRequestHandler:
 
         port.create_acount(portfolio.AccName(request.name))
 
-        return domain.Response()
+        return PortfolioData(
+            timestamp=port.timestamp,
+            ver=port.ver,
+            accounts=port.accounts,
+            securities=port.securities,
+        )
 
 
-class RemoveAccount(domain.Request[domain.Response]):
+class RemoveAccount(domain.Request[PortfolioData]):
     name: str
 
 
@@ -48,4 +53,9 @@ class RemoveAccountRequestHandler:
 
         port.remove_acount(portfolio.AccName(request.name))
 
-        return domain.Response()
+        return PortfolioData(
+            timestamp=port.timestamp,
+            ver=port.ver,
+            accounts=port.accounts,
+            securities=port.securities,
+        )

@@ -19,3 +19,11 @@ def init_subdomain(
         _PORTFOLIO,
         requests.PortfolioDataRequestHandler(),
     )
+    bus.add_request_handler(
+        _PORTFOLIO,
+        requests.CreateAccountRequestHandler(),
+    )
+    bus.add_request_handler(
+        _PORTFOLIO,
+        requests.RemoveAccountRequestHandler(),
+    )

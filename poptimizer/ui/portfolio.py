@@ -19,12 +19,12 @@ class Views:
 
     async def create_acount(self, request: web.Request) -> web.StreamResponse:
         account = request.match_info["account"]
-        await self._ctx.request(contracts.CreateAccount(name=account))
+        portfolio = await self._ctx.request(contracts.CreateAccount(name=account))
 
-        raise web.HTTPOk
+        return web.json_response(text=portfolio.model_dump_json())
 
     async def remove_acount(self, request: web.Request) -> web.StreamResponse:
         account = request.match_info["account"]
-        await self._ctx.request(contracts.RemoveAccount(name=account))
+        portfolio = await self._ctx.request(contracts.RemoveAccount(name=account))
 
-        raise web.HTTPOk
+        return web.json_response(text=portfolio.model_dump_json())

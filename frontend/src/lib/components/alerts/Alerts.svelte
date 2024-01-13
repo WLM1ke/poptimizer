@@ -6,7 +6,9 @@
 <aside class="absolute bottom-0 right-0 p-2">
 	<ol>
 		{#each $alerts as { id, info, msg } (id)}
-			<Alert {info} {msg}></Alert>
+			<li>
+				<Alert {info} {msg}></Alert>
+			</li>
 		{/each}
 	</ol>
 </aside>
