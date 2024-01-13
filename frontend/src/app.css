@@ -54,50 +54,78 @@
 		--green-900: 20 83 45;
 		--green-950: 5 46 22;
 	}
+	body {
+		@apply scroll-smooth bg-bg-main text-text-main antialiased;
+	}
 
-		@media (prefers-color-scheme: light) {
+	@media (prefers-color-scheme: light) {
 		body {
 			--text-main: var(--grey-900);
 			--text-muted: var(--grey-500);
-			--text-info: var(--blue-800);
 			--bg-main: var(--white);
 			--bg-medium: var(--grey-100);
 			--bg-accent: var(--grey-200);
 			--bg-sidebar: var(--white);
+
+			--text-info: var(--blue-800);
+			--bg-info: var(--blue-50);
+			--bdr-info: var(--blue-300);
+
+			--text-alert: var(--red-800);
+			--bg-alert: var(--red-50);
+			--bdr-alert: var(--red-300);
 		}
 	}
 	@media (prefers-color-scheme: dark) {
 		body {
 			--text-main: var(--white);
 			--text-muted: var(--grey-400);
-			--text-info: var(--blue-300);
 			--bg-main: var(--grey-900);
 			--bg-medium: var(--grey-700);
 			--bg-accent: var(--grey-800);
 			--bg-sidebar: var(--grey-800);
+
+			--text-info: var(--blue-400);
+			--bg-info: var(--grey-800);
+			--bdr-info: var(--blue-800);
+
+			--text-alert: var(--red-400);
+			--bg-alert: var(--grey-800);
+			--bdr-alert: var(--red-800);
 		}
 	}
 	body[data-theme="light"] {
 		--text-main: var(--grey-900);
 		--text-muted: var(--grey-500);
-		--text-info: var(--blue-800);
 		--bg-main: var(--white);
 		--bg-medium: var(--grey-100);
 		--bg-accent: var(--grey-200);
 		--bg-sidebar: var(--white);
+
+		--text-info: var(--blue-800);
+		--bg-info: var(--blue-50);
+		--bdr-info: var(--blue-300);
+
+		--text-alert: var(--red-800);
+		--bg-alert: var(--red-50);
+		--bdr-alert: var(--red-300);
 	}
 
 	body[data-theme="dark"] {
 		--text-main: var(--white);
 		--text-muted: var(--grey-400);
-		--text-info: var(--blue-300);
 		--bg-main: var(--grey-900);
 		--bg-medium: var(--grey-700);
 		--bg-accent: var(--grey-800);
 		--bg-sidebar: var(--grey-800);
-	}
-	body {
-		@apply scroll-smooth bg-bg-main text-text-main antialiased;
+
+		--text-info: var(--blue-400);
+		--bg-info: var(--grey-800);
+		--bdr-info: var(--blue-800);
+
+		--text-alert: var(--red-400);
+		--bg-alert: var(--grey-800);
+		--bdr-alert: var(--red-800);
 	}
 }
 

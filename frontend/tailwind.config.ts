@@ -9,13 +9,20 @@ export default {
 				text: {
 					main: "rgb(var(--text-main) / <alpha-value>)",
 					muted: "rgb(var(--text-muted) / <alpha-value>)",
-					info: "rgb(var(--text-info) / <alpha-value>)"
+					info: "rgb(var(--text-info) / <alpha-value>)",
+					alert: "rgb(var(--text-alert) / <alpha-value>)"
 				},
 				bg: {
 					main: "rgb(var(--bg-main) / <alpha-value>)",
 					medium: "rgb(var(--bg-medium) / <alpha-value>)",
 					accent: "rgb(var(--bg-accent) / <alpha-value>)",
-					sidebar: "rgb(var(--bg-sidebar) / <alpha-value>)"
+					sidebar: "rgb(var(--bg-sidebar) / <alpha-value>)",
+					info: "rgb(var(--bg-info) / <alpha-value>)",
+					alert: "rgb(var(--bg-alert) / <alpha-value>)"
+				},
+				bdr: {
+					info: "rgb(var(--bdr-info) / <alpha-value>)",
+					alert: "rgb(var(--bdr-alert) / <alpha-value>)"
 				}
 			},
 			gridTemplateColumns: {
