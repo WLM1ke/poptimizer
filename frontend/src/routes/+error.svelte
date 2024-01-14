@@ -1,5 +1,8 @@
 <script>
 	import { page } from "$app/stores";
+	import H2 from "$lib/components/base/H2.svelte";
 </script>
 
-<h1>{$page.url.pathname} {$page.status}: {$page.error.message}</h1>
+<section class="flex h-full flex-col items-center justify-center">
+	<H2>{$page.error.message} {$page.status}</H2>
+</section>
