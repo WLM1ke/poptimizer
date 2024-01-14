@@ -29,13 +29,24 @@ const fetchPortfolio = async (url: string, method: "GET" | "POST" | "DELETE" = "
 		if (!res.ok) {
 			throw new Error(await res.text());
 		}
-		const port = await res.json();
+		const port: Portfolio = await res.json();
+
 		if (Object.keys(port.accounts).length === 0) {
 			addAlert({
 				info: true,
 				msg: "Create account in settings"
 			});
 		}
+
+		for (const [name, account] of Object.entries(port.accounts)) {
+			if (Object.keys(account.positions).length === 0 && account.cash === 0) {
+				addAlert({
+					info: true,
+					msg: `Account ${name} is empty - delete it or enter cash and positions`
+				});
+			}
+		}
+
 		portfolio.set(port);
 	} catch (err) {
 		let msg: string;
