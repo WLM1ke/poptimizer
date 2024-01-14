@@ -4,6 +4,8 @@
 	import Delete from "$lib/icons/Delete.svelte";
 	import Add from "$lib/icons/Add.svelte";
 	import { scale } from "svelte/transition";
+	import Switch from "$lib/components/base/Switch.svelte";
+	import { settings } from "$lib/stores/settings";
 
 	let newAccount = "";
 	let inputRef: HTMLElement;
@@ -48,6 +50,34 @@
 			>
 				<Add />
 			</button>
+		</li>
+	</ul>
+	<ul class="pt-2">
+		<li>
+			<Switch
+				label="sort value ascending"
+				checked={$settings.accounts.sortByValue}
+				on:change={() => {
+					settings.update((settings) => {
+						settings.accounts.sortByValue = !settings.accounts.sortByValue;
+
+						return settings;
+					});
+				}}
+			/>
+		</li>
+		<li>
+			<Switch
+				label="hide zero positions"
+				checked={$settings.accounts.hideZeroPositions}
+				on:change={() => {
+					settings.update((settings) => {
+						settings.accounts.hideZeroPositions = !settings.accounts.hideZeroPositions;
+
+						return settings;
+					});
+				}}
+			/>
 		</li>
 	</ul>
 </section>

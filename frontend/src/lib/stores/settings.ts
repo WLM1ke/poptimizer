@@ -5,12 +5,20 @@ interface settingsInterface {
 		sortByValue: boolean;
 		hideZeroPositions: boolean;
 	};
+	accounts: {
+		sortByValue: boolean;
+		hideZeroPositions: boolean;
+	};
 }
 
 const defaultSettings: settingsInterface = {
 	portfolio: {
 		sortByValue: true,
 		hideZeroPositions: true
+	},
+	accounts: {
+		sortByValue: false,
+		hideZeroPositions: false
 	}
 };
 

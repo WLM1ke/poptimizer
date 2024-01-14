@@ -12,10 +12,10 @@
 				label="sort value ascending"
 				checked={$settings.portfolio.sortByValue}
 				on:change={() => {
-					settings.update((port) => {
-						port.portfolio.sortByValue = !port.portfolio.sortByValue;
+					settings.update((settings) => {
+						settings.portfolio.sortByValue = !settings.portfolio.sortByValue;
 
-						return port;
+						return settings;
 					});
 				}}
 			/>
@@ -25,10 +25,10 @@
 				label="hide zero positions"
 				checked={$settings.portfolio.hideZeroPositions}
 				on:change={() => {
-					settings.update((port) => {
-						port.portfolio.hideZeroPositions = !port.portfolio.hideZeroPositions;
+					settings.update((settings) => {
+						settings.portfolio.hideZeroPositions = !settings.portfolio.hideZeroPositions;
 
-						return port;
+						return settings;
 					});
 				}}
 			/>
