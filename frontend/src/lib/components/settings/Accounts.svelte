@@ -5,7 +5,12 @@
 	import Add from "$lib/icons/Add.svelte";
 	import { scale } from "svelte/transition";
 	import Switch from "$lib/components/base/Switch.svelte";
-	import { settings } from "$lib/stores/settings";
+	import {
+		accountsSortByValue,
+		toggleAccountsSortByValue,
+		accountsHideZeroPositions,
+		toggleAccountsHideZeroPositions
+	} from "$lib/stores/settings";
 
 	let newAccount = "";
 	let inputRef: HTMLElement;
@@ -35,7 +40,7 @@
 						newAccount = "";
 					}
 				}}
-				class="border-bg-accent bg-bg-main rounded-md border p-1"
+				class="rounded-md border border-bg-accent bg-bg-main p-1"
 				bind:value={newAccount}
 				type="text"
 				placeholder="Enter account title"
@@ -54,29 +59,13 @@
 	</ul>
 	<ul class="pt-2">
 		<li>
-			<Switch
-				label="sort value ascending"
-				checked={$settings.accounts.sortByValue}
-				on:change={() => {
-					settings.update((settings) => {
-						settings.accounts.sortByValue = !settings.accounts.sortByValue;
-
-						return settings;
-					});
-				}}
-			/>
+			<Switch label="sort value ascending" checked={$accountsSortByValue} on:change={toggleAccountsSortByValue} />
 		</li>
 		<li>
 			<Switch
 				label="hide zero positions"
-				checked={$settings.accounts.hideZeroPositions}
-				on:change={() => {
-					settings.update((settings) => {
-						settings.accounts.hideZeroPositions = !settings.accounts.hideZeroPositions;
-
-						return settings;
-					});
-				}}
+				checked={$accountsHideZeroPositions}
+				on:change={toggleAccountsHideZeroPositions}
 			/>
 		</li>
 	</ul>
