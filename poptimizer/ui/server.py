@@ -46,10 +46,10 @@ class RequestErrorMiddleware:
             return await handler(request)
         except (errors.InputOutputError, errors.AdaptersError) as err:
             self._ctx.publish(domain.WarningEvent(component=domain.get_component_name(self), msg=f"{err}"))
-            raise web.HTTPInternalServerError(text=str(err)) from err
+            raise web.HTTPInternalServerError(text=f"{err.__class__.__name__}: {",".join(err.args)}") from err
         except (ValidationError, errors.DomainError) as err:
             self._ctx.publish(domain.WarningEvent(component=domain.get_component_name(self), msg=f"{err}"))
-            raise web.HTTPBadRequest(text=str(err)) from err
+            raise web.HTTPBadRequest(text=f"{err.__class__.__name__}: {",".join(err.args)}") from err
 
 
 class ServerStatusChanged(domain.Event):

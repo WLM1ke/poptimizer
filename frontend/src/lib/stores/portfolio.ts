@@ -34,7 +34,7 @@ const fetchPortfolio = async (url: string, method: "GET" | "POST" | "DELETE" = "
 		if (Object.keys(port.accounts).length === 0) {
 			addAlert({
 				info: true,
-				msg: "Create account in settings"
+				msg: "No accounts: create them in settings"
 			});
 		}
 
@@ -42,7 +42,7 @@ const fetchPortfolio = async (url: string, method: "GET" | "POST" | "DELETE" = "
 			if (Object.keys(account.positions).length === 0 && account.cash === 0) {
 				addAlert({
 					info: true,
-					msg: `Account ${name} is empty - delete it or enter cash and positions`
+					msg: `Account ${name} is empty: delete it or enter cash and positions`
 				});
 			}
 		}
