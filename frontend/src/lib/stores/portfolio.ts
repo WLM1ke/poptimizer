@@ -1,5 +1,4 @@
-import { derived } from "svelte/store";
-import { persistent } from "./persistent";
+import { derived, writable } from "svelte/store";
 import { addAlert } from "./alerts";
 
 interface Security {
@@ -18,7 +17,7 @@ interface Portfolio {
 	securities: Readonly<Record<string, Security>>;
 }
 
-const portfolio = persistent<Portfolio>("portfolio", {
+const portfolio = writable<Portfolio>({
 	securities: {},
 	accounts: {}
 });

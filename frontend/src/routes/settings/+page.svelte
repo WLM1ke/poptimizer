@@ -8,7 +8,7 @@
 	let newAccount = "";
 	let inputRef: HTMLElement;
 
-	const onSend = () => {
+	const onCreateAccount = () => {
 		inputRef.focus();
 	};
 </script>
@@ -33,7 +33,7 @@
 						newAccount = "";
 					}
 				}}
-				class="rounded-md border border-bg-accent bg-bg-main p-1"
+				class="border-bg-accent bg-bg-main rounded-md border p-1"
 				bind:value={newAccount}
 				type="text"
 				placeholder="Enter account title"
@@ -41,7 +41,7 @@
 			<button
 				on:click={() => {
 					createAccount(newAccount);
-					onSend();
+					onCreateAccount();
 					newAccount = "";
 				}}
 				class="hover:text-text-muted"
