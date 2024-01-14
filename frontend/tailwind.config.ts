@@ -6,6 +6,7 @@ export default {
 	theme: {
 		extend: {
 			colors: {
+				link: "rgb(var(--link) / <alpha-value>)",
 				text: {
 					main: "rgb(var(--text-main) / <alpha-value>)",
 					muted: "rgb(var(--text-muted) / <alpha-value>)",

@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { writable, type Updater } from "svelte/store";
 
 export const persistent = <T>(key: string, initial: T) => {
 	const saved = localStorage[key];
@@ -11,9 +11,15 @@ export const persistent = <T>(key: string, initial: T) => {
 	return {
 		subscribe,
 		set: (value: T) => {
-			localStorage[key] = JSON.stringify(value);
 			set(value);
 		},
-		update
+		update: (updater: Updater<T>) => {
+			update((value: T) => {
+				const newValue = updater(value);
+				localStorage[key] = JSON.stringify(newValue);
+
+				return newValue;
+			});
+		}
 	};
 };
