@@ -13,11 +13,11 @@
 	<title>POptimizer - {$pageTitle}</title>
 </svelte:head>
 
-<section class="grid h-screen w-screen grid-cols-layout grid-rows-layout">
+<section class="grid-cols-layout grid-rows-layout grid h-screen w-screen">
 	<Logo />
 	<Header />
 	<Sidebar accounts={$accounts} />
-	<main class="px-4 py-2">
+	<main class="overflow-scroll px-4 py-2">
 		<slot />
 	</main>
 	<Alerts />

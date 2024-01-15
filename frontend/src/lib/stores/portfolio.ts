@@ -75,6 +75,49 @@ export const accounts = derived(portfolio, (portfolio) => {
 	return Object.keys(portfolio.accounts).toSorted();
 });
 
-export const securities = derived(portfolio, (portfolio) => {
-	return portfolio.securities;
-});
+export interface PortfolioPosition {
+	ticker: string;
+	shares: number;
+	price: number;
+	value: number;
+	weight: number;
+	turnover: number;
+}
+
+const createPortfolioView = (port: Portfolio) => {
+	let portfolioValue = 0;
+	let portfolioCash = 0;
+	const accountsPositions: Record<string, number> = {};
+
+	for (const account of Object.values(port.accounts)) {
+		portfolioValue += account.cash;
+		portfolioCash += account.cash;
+		for (const [ticker, shares] of Object.entries(account.positions)) {
+			accountsPositions[ticker] = (accountsPositions[ticker] ?? 0) + shares;
+			portfolioValue += shares * port.securities[ticker].price;
+		}
+	}
+
+	const portfolioPositions = Object.entries(port.securities).map(([ticker, { price, turnover }]) => {
+		const shares = accountsPositions[ticker] ?? 0;
+		const value = price * shares;
+		const weight = value / portfolioValue || 0;
+
+		return {
+			ticker,
+			shares,
+			price,
+			value,
+			weight,
+			turnover
+		};
+	});
+
+	return {
+		positions: portfolioPositions,
+		cash: portfolioCash,
+		value: portfolioValue
+	};
+};
+
+export const portfolioView = derived(portfolio, createPortfolioView);

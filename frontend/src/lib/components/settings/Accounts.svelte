@@ -59,7 +59,7 @@
 	</ul>
 	<ul class="pt-2">
 		<li>
-			<Switch label="sort value ascending" checked={$accountsSortByValue} on:change={toggleAccountsSortByValue} />
+			<Switch label="sort value descending" checked={$accountsSortByValue} on:change={toggleAccountsSortByValue} />
 		</li>
 		<li>
 			<Switch

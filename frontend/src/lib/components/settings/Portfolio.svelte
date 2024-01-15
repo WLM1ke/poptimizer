@@ -13,7 +13,7 @@
 	<H2>Portfolio</H2>
 	<ul class="pt-2">
 		<li>
-			<Switch label="sort value ascending" checked={$portfolioSortByValue} on:change={togglePortfolioSortByValue} />
+			<Switch label="sort value descending" checked={$portfolioSortByValue} on:change={togglePortfolioSortByValue} />
 		</li>
 		<li>
 			<Switch
