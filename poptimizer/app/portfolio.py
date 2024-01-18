@@ -27,3 +27,7 @@ def init_subdomain(
         _PORTFOLIO,
         requests.RemoveAccountRequestHandler(),
     )
+    bus.add_request_handler(
+        _PORTFOLIO,
+        requests.UpdatePositionRequestHandler(),
+    )

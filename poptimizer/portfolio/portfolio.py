@@ -1,4 +1,4 @@
-from typing import NewType, Self
+from typing import Final, NewType, Self
 
 from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt, model_validator
 
@@ -7,6 +7,8 @@ from poptimizer.data import contracts
 
 AccName = NewType("AccName", str)
 Ticker = NewType("Ticker", str)
+
+_CashTicker: Final = Ticker("CASH")
 
 
 class Security(BaseModel):
@@ -79,6 +81,23 @@ class Portfolio(domain.Entity):
         self.securities.pop(ticker)
 
         return True
+
+    def update_position(self, name: AccName, ticker: Ticker, amount: NonNegativeInt) -> None:
+        if (account := self.accounts.get(name)) is None:
+            raise errors.DomainError(f"account {name} doesn't exist")
+
+        if ticker != _CashTicker and ticker not in self.securities:
+            raise errors.DomainError(f"ticker {ticker} doesn't exist")
+
+        if ticker == _CashTicker:
+            account.cash = amount
+
+            return
+
+        if amount % (lot := self.securities[ticker].lot):
+            raise errors.DomainError(f"amount {amount} must be multiple of {lot}")
+
+        account.positions[ticker] = amount
 
 
 class PortfolioDataUpdated(domain.Event):
