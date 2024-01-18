@@ -10,7 +10,7 @@
 		return a.ticker.localeCompare(b.ticker);
 	};
 	const compValue = (a: PortfolioPosition, b: PortfolioPosition) => {
-		return b.value - a.value || b.turnover - a.turnover;
+		return b.value - a.value;
 	};
 	const preparePositions = (positions: PortfolioPosition[]) => {
 		const filtered = positions.filter((pos) => pos.value !== 0 || !$portfolioHideZeroPositions);
@@ -29,7 +29,6 @@
 		<th>Price</th>
 		<th>Value</th>
 		<th>Weight</th>
-		<th>Turnover</th>
 	</thead>
 	{#each positions as position (position.ticker)}
 		<tbody>
@@ -47,12 +46,6 @@
 					style: "percent",
 					minimumFractionDigits: 2,
 					maximumFractionDigits: 2
-				})}</td
-			>
-			<td
-				>{position.turnover.toLocaleString(undefined, {
-					minimumFractionDigits: 0,
-					maximumFractionDigits: 0
 				})}</td
 			>
 		</tbody>

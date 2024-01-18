@@ -1,5 +1,6 @@
 import { derived, writable } from "svelte/store";
 import { addAlert } from "./alerts";
+import { pageTitle } from "$lib/stores/page";
 
 interface Security {
 	lot: number;
@@ -68,6 +69,7 @@ export const removeAccount = async (account: string) => {
 	await fetchPortfolio(`/api/portfolio/${account}`, "DELETE");
 };
 export const createAccount = async (account: string) => {
+	account = account[0].toUpperCase() + account.substring(1);
 	await fetchPortfolio(`/api/portfolio/${account}`, "POST");
 };
 
@@ -81,10 +83,9 @@ export interface PortfolioPosition {
 	price: number;
 	value: number;
 	weight: number;
-	turnover: number;
 }
 
-const createPortfolioView = (port: Portfolio) => {
+export const portfolioView = derived(portfolio, (port) => {
 	let portfolioValue = 0;
 	let portfolioCash = 0;
 	const accountsPositions: Record<string, number> = {};
@@ -98,7 +99,7 @@ const createPortfolioView = (port: Portfolio) => {
 		}
 	}
 
-	const portfolioPositions = Object.entries(port.securities).map(([ticker, { price, turnover }]) => {
+	const portfolioPositions = Object.entries(port.securities).map(([ticker, { price }]) => {
 		const shares = accountsPositions[ticker] ?? 0;
 		const value = price * shares;
 		const weight = value / portfolioValue || 0;
@@ -108,8 +109,7 @@ const createPortfolioView = (port: Portfolio) => {
 			shares,
 			price,
 			value,
-			weight,
-			turnover
+			weight
 		};
 	});
 
@@ -118,6 +118,46 @@ const createPortfolioView = (port: Portfolio) => {
 		cash: portfolioCash,
 		value: portfolioValue
 	};
-};
+});
 
-export const portfolioView = derived(portfolio, createPortfolioView);
+export interface AccountPosition {
+	ticker: string;
+	shares: number;
+	lot: number;
+	price: number;
+	value: number;
+}
+
+export const accountView = derived([portfolio, pageTitle], ([port, accountName]) => {
+	const account = port.accounts[accountName];
+	if (account === undefined) {
+		return {
+			positions: [],
+			cash: 0,
+			value: 0
+		};
+	}
+
+	const accountCash = account.cash;
+	let accountValue = accountCash;
+
+	const accountPositions = Object.entries(port.securities).map(([ticker, { price, lot }]) => {
+		const shares = account.positions[ticker] ?? 0;
+		const value = price * shares;
+		accountValue += value;
+
+		return {
+			ticker,
+			shares,
+			lot,
+			price,
+			value
+		};
+	});
+
+	return {
+		positions: accountPositions,
+		cash: accountCash,
+		value: accountValue
+	};
+});

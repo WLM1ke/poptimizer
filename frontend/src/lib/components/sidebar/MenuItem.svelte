@@ -8,7 +8,7 @@
 
 <a
 	{href}
-	class="flex items-center gap-2 rounded-lg p-2 font-medium text-text-muted hover:bg-bg-medium"
+	class="text-text-muted hover:bg-bg-medium flex items-center gap-2 rounded-lg p-2 font-medium"
 	class:px-4={subItem}
 	class:bg-bg-medium={$pageTitle === title}
 >
