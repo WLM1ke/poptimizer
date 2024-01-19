@@ -23,9 +23,13 @@ const portfolio = writable<Portfolio>({
 	accounts: {}
 });
 
-const fetchPortfolio = async (url: string, method: "GET" | "POST" | "DELETE" = "GET") => {
+const fetchPortfolio = async (
+	url: string,
+	method: "GET" | "POST" | "DELETE" = "GET",
+	body: BodyInit | undefined = undefined
+) => {
 	try {
-		const res = await fetch(url, { method: method });
+		const res = await fetch(url, { method, body });
 		if (!res.ok) {
 			throw new Error(await res.text());
 		}
@@ -48,6 +52,8 @@ const fetchPortfolio = async (url: string, method: "GET" | "POST" | "DELETE" = "
 		}
 
 		portfolio.set(port);
+
+		return true;
 	} catch (err) {
 		let msg: string;
 		if (err instanceof Error) {
@@ -59,18 +65,20 @@ const fetchPortfolio = async (url: string, method: "GET" | "POST" | "DELETE" = "
 			info: false,
 			msg: msg
 		});
+
+		return false;
 	}
 };
 
 export const load = async () => {
-	await fetchPortfolio("/api/portfolio");
+	return await fetchPortfolio("/api/portfolio");
 };
 export const removeAccount = async (account: string) => {
-	await fetchPortfolio(`/api/portfolio/${account}`, "DELETE");
+	return await fetchPortfolio(`/api/portfolio/${account}`, "DELETE");
 };
 export const createAccount = async (account: string) => {
 	account = account[0].toUpperCase() + account.substring(1);
-	await fetchPortfolio(`/api/portfolio/${account}`, "POST");
+	return await fetchPortfolio(`/api/portfolio/${account}`, "POST");
 };
 
 export const accounts = derived(portfolio, (portfolio) => {
@@ -128,20 +136,21 @@ export interface AccountPosition {
 	value: number;
 }
 
-export const accountView = derived([portfolio, pageTitle], ([port, accountName]) => {
-	const account = port.accounts[accountName];
+export const accountView = derived([portfolio, pageTitle], ([$portfolio, $pageTitle]) => {
+	const account = $portfolio.accounts[$pageTitle];
 	if (account === undefined) {
 		return {
 			positions: [],
 			cash: 0,
-			value: 0
+			value: 0,
+			updatePosition: async () => {}
 		};
 	}
 
 	const accountCash = account.cash;
 	let accountValue = accountCash;
 
-	const accountPositions = Object.entries(port.securities).map(([ticker, { price, lot }]) => {
+	const accountPositions = Object.entries($portfolio.securities).map(([ticker, { price, lot }]) => {
 		const shares = account.positions[ticker] ?? 0;
 		const value = price * shares;
 		accountValue += value;
@@ -158,6 +167,10 @@ export const accountView = derived([portfolio, pageTitle], ([port, accountName])
 	return {
 		positions: accountPositions,
 		cash: accountCash,
-		value: accountValue
+		value: accountValue,
+		updatePosition: async (ticker: string, amount: string) => {
+			const body = JSON.stringify({ amount: amount });
+			return await fetchPortfolio(`/api/portfolio/${$pageTitle}/${ticker}`, "POST", body);
+		}
 	};
 });

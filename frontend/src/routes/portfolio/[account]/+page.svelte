@@ -1,10 +1,9 @@
 <script lang="ts">
+	import { invalidateAll } from "$app/navigation";
 	import { accountView, type AccountPosition } from "$lib/stores/portfolio";
 	import { accountsHideZeroPositions, accountsSortByValue } from "$lib/stores/settings";
 
-	$: positions = preparePositions($accountView.positions);
-	$: cash = $accountView.cash;
-	$: value = $accountView.value;
+	let cash = $accountView.cash;
 
 	const compTickers = (a: AccountPosition, b: AccountPosition) => {
 		return a.ticker.localeCompare(b.ticker);
@@ -15,13 +14,40 @@
 	const preparePositions = (positions: AccountPosition[]) => {
 		const filtered = positions.filter((pos) => pos.value !== 0 || !$accountsHideZeroPositions);
 		filtered.sort($accountsSortByValue ? compValue : compTickers);
+		cash;
 
 		return filtered;
 	};
+
+	interface FormEvent {
+		target: EventTarget | null;
+	}
+	const onChange = async (event: FormEvent, ticker: string) => {
+		const target = event.target as HTMLInputElement;
+		if (!(await $accountView.updatePosition(ticker, target.value))) {
+			cash = $accountView.cash;
+			await invalidateAll();
+		}
+	};
 </script>
 
-<div>Value: {value}</div>
-<div>Cash: {cash}</div>
+<div>
+	Value: {$accountView.value.toLocaleString(undefined, {
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0
+	})}
+</div>
+<div>
+	Cash: <input
+		bind:value={cash}
+		on:change={(event) => {
+			onChange(event, "CASH");
+		}}
+		class="border-bg-accent bg-bg-main rounded-md border p-1"
+		type="text"
+		placeholder="Enter account title"
+	/>
+</div>
 <table>
 	<thead>
 		<th>Ticker</th>
@@ -30,10 +56,20 @@
 		<th>Price</th>
 		<th>Value</th>
 	</thead>
-	{#each positions as position (position.ticker)}
+	{#each preparePositions($accountView.positions) as position (position.ticker)}
 		<tbody>
 			<td>{position.ticker}</td>
-			<td>{position.shares.toLocaleString()}</td>
+			<td
+				><input
+					bind:value={position.shares}
+					on:change={(event) => {
+						onChange(event, position.ticker);
+					}}
+					class="border-bg-accent bg-bg-main rounded-md border p-1"
+					type="text"
+					placeholder="Enter account title"
+				/></td
+			>
 			<td>{position.lot.toLocaleString()}</td>
 			<td>{position.price.toLocaleString()}</td>
 			<td

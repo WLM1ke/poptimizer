@@ -20,7 +20,12 @@
 	};
 </script>
 
-<div>Value: {value}</div>
+<div>
+	Value: {value.toLocaleString(undefined, {
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0
+	})}
+</div>
 <div>Cash: {cash}</div>
 <table>
 	<thead>
