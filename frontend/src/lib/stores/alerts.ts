@@ -12,10 +12,10 @@ const removeAlert = (id: number) => _alerts.update((alerts) => alerts.filter((al
 
 export const addAlert = (alert: Omit<Alert, "id">) =>
 	_alerts.update((alerts) => {
-		const id = alerts.length > 0 ? alerts[alerts.length - 1].id + 1 : 0;
+		const id = alerts.length > 0 ? alerts[0].id - 1 : 0;
 		setTimeout(() => removeAlert(id), removeDelay);
 
-		return [...alerts, { ...alert, id }];
+		return [{ ...alert, id }, ...alerts];
 	});
 
 export const alerts = readonly<Array<Alert>>(_alerts);
