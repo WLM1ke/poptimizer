@@ -56,15 +56,17 @@ class Mongo:
         return doc
 
     def _create_entity[E: domain.Entity](self, t_entity: type[E], doc: Any) -> E:
+        uid = doc.pop(_MONGO_ID)
         doc[_REV] = {
-            _UID: doc.pop(_MONGO_ID),
+            _UID: uid,
             _VER: doc.pop(_VER),
         }
 
         try:
             return t_entity.model_validate(doc)
         except ValidationError as err:
-            raise errors.AdaptersError("can't create entity {collection_name}.{uid}") from err
+            collection_name = domain.get_component_name_for_type(t_entity)
+            raise errors.AdaptersError(f"can't create entity {collection_name}.{uid}") from err
 
     async def save(self, entities: Iterable[domain.Entity]) -> None:
         try:
