@@ -30,10 +30,7 @@ class Evolution:  # noqa: WPS214
         self._end = None
         self._logger = logging.getLogger()
         self._tests = 1
-
-    @property
-    def _scale(self) -> float:
-        return population.count() ** 0.5
+        self._scale = 1
 
     def evolve(self) -> None:
         """Осуществляет эволюции.
@@ -52,25 +49,31 @@ class Evolution:  # noqa: WPS214
             population.print_stat()
             count = population.count()
             self._logger.info(
-                f"Тестов - {self.tests} / "
+                f"Тестов - {self._tests} / "
                 f"Организмов - {count} / "
+                f"Разброс - {1 / self._scale:.2%} / "
                 f"Оценок - {population.min_scores()}-{population.max_scores()}\n"
             )
 
             self._step(org)
 
-            delta = population.count() - count
+            pop = population.count()
+            if pop > config.TARGET_POPULATION:
+                self._scale = max(1, self._scale - 1)
 
-            if delta > 0 and (count + delta) > config.TARGET_POPULATION:
-                self._tests += 1
+            if pop < config.TARGET_POPULATION:
+                self._scale += 1
 
-    @property
-    def tests(self):
+    def tests(self, org: population.Organism) -> int:
         count = population.count()
-        min_tests = seq.minimum_bounding_n(config.P_VALUE / (count + 1))
-        self._tests = max(min_tests, self._tests)
+        if (excess := count - config.TARGET_POPULATION) < 0:
+            self._tests = self._tests + excess
+        elif self._tests <= org.scores:
+            self._tests = org.scores
 
-        return self._tests
+        self._tests = max(self._tests, seq.minimum_bounding_n(config.P_VALUE / (count + 1)))
+
+        return max(self._tests, org.scores + max(1, excess))
 
     def _step_setup(
         self,
@@ -120,7 +123,7 @@ class Evolution:  # noqa: WPS214
         for n_child in itertools.count(1):
             self._logger.info(f"Потомок {n_child}:")
 
-            hunter = hunter.make_child(1 / hunter.scores)
+            hunter = hunter.make_child(1 / self._scale)
             if (margin := self._eval_organism(hunter)) is None:
                 return None
 
@@ -142,16 +145,14 @@ class Evolution:  # noqa: WPS214
 
         try:
             if organism.date == self._end:
-                prob = 1 - _time_delta(organism)
-                retry = max(population.count() - config.TARGET_POPULATION, stats.geom.rvs(prob))
-                dates = all_dates[-max(self.tests, (organism.scores + retry)): -organism.scores].tolist()
+                dates = all_dates[-self.tests(organism): -organism.scores].tolist()
                 organism.retrain(self._tickers, dates[0])
             elif organism.scores:
                 if self._tickers != tuple(organism.tickers):
                     organism.retrain(self._tickers, self._end)
                 dates = [self._end]
             else:
-                dates = all_dates[-self.tests:].tolist()
+                dates = all_dates[-self.tests(organism):].tolist()
                 organism.retrain(self._tickers, dates[0])
         except (ModelError, AttributeError) as error:
             organism.die()
