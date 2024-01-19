@@ -97,6 +97,11 @@ class Portfolio(domain.Entity):
         if amount % (lot := self.securities[ticker].lot):
             raise errors.DomainError(f"amount {amount} must be multiple of {lot}")
 
+        if not amount:
+            account.positions.pop(ticker, None)
+
+            return
+
         account.positions[ticker] = amount
 
 
