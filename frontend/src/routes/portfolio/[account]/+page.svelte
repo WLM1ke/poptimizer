@@ -42,7 +42,7 @@
 		on:change={(event) => {
 			onChange(event, "CASH");
 		}}
-		class="border-bg-accent bg-bg-main rounded-md border p-1"
+		class="rounded-md border border-bg-accent bg-bg-main p-1"
 		type="text"
 		placeholder="Enter account title"
 	/>
@@ -64,7 +64,7 @@
 					on:change={(event) => {
 						onChange(event, position.ticker);
 					}}
-					class="border-bg-accent bg-bg-main rounded-md border p-1"
+					class="rounded-md border border-bg-accent bg-bg-main p-1"
 					type="text"
 					placeholder="Enter account title"
 				/></td

@@ -1,4 +1,5 @@
 from pydantic import NonNegativeInt
+
 from poptimizer.core import domain
 from poptimizer.portfolio import portfolio
 
