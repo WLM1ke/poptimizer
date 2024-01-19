@@ -2,7 +2,7 @@ import { derived } from "svelte/store";
 import { page } from "$app/stores";
 
 export const pageTitle = derived(page, (page) => {
-	const path = page.url.pathname;
+	const path = decodeURI(page.url.pathname);
 	if (path === "/") {
 		return "Summary";
 	}
