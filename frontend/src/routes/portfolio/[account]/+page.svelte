@@ -3,7 +3,7 @@
 	import { accountView, type AccountPosition } from "$lib/stores/portfolio";
 	import { accountsHideZeroPositions, accountsSortByValue } from "$lib/stores/settings";
 
-	let cash = $accountView.cash;
+	let cash: number;
 
 	const compTickers = (a: AccountPosition, b: AccountPosition) => {
 		return a.ticker.localeCompare(b.ticker);
@@ -14,7 +14,7 @@
 	const preparePositions = (positions: AccountPosition[]) => {
 		const filtered = positions.filter((pos) => pos.value !== 0 || !$accountsHideZeroPositions);
 		filtered.sort($accountsSortByValue ? compValue : compTickers);
-		cash;
+		cash = $accountView.cash;
 
 		return filtered;
 	};
@@ -25,7 +25,6 @@
 	const onChange = async (event: FormEvent, ticker: string) => {
 		const target = event.target as HTMLInputElement;
 		if (!(await $accountView.updatePosition(ticker, target.value))) {
-			cash = $accountView.cash;
 			await invalidateAll();
 		}
 	};
