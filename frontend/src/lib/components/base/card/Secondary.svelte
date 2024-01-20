@@ -1,6 +1,6 @@
 <script lang="ts">
 </script>
 
-<div class="text-text-muted italic">
+<div class="italic text-text-muted">
 	<slot />
 </div>

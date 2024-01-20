@@ -19,6 +19,6 @@
 	<Sidebar accounts={$accounts} />
 	<main class="overflow-scroll px-4 py-2">
 		<slot />
+		<Alerts />
 	</main>
-	<Alerts />
 </section>

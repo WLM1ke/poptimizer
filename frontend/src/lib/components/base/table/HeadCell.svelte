@@ -1,3 +1,3 @@
-<th class="px-2">
+<th class="p-2">
 	<slot />
 </th>

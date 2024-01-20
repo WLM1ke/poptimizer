@@ -1,6 +1,6 @@
 <script lang="ts">
 </script>
 
-<section class="bg-bg-accent max-w-max rounded-lg p-4">
+<section class="w-60 rounded-lg bg-bg-accent p-4">
 	<slot />
 </section>

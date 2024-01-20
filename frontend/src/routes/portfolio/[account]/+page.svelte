@@ -15,7 +15,9 @@
 	import { accountView, type AccountPosition } from "$lib/stores/portfolio";
 	import { accountsHideZeroPositions, accountsSortByValue } from "$lib/stores/settings";
 
-	let cash: number = $accountView.cash;
+	let cash: number = (() => {
+		return $accountView.cash;
+	})();
 
 	const compTickers = (a: AccountPosition, b: AccountPosition) => {
 		return a.ticker.localeCompare(b.ticker);
@@ -56,7 +58,7 @@
 		Positions: {$accountView.positionsCount} / {$accountView.positions.length}
 	</CardSecondary>
 </Card>
-{typeof cash}
+
 <Table>
 	<TableHead>
 		<TableHeadCell>Ticker</TableHeadCell>
@@ -68,33 +70,25 @@
 	<TableBody>
 		<TableRow>
 			<TableTickerCell ticker="Cash" />
-			<TableInputCell>
-				<input
-					bind:value={cash}
-					on:change={(event) => {
-						onChange(event, "CASH");
-					}}
-					class="border-bg-accent bg-bg-main w-28 rounded-md border p-1"
-					type="text"
-				/>
-			</TableInputCell>
+			<TableInputCell
+				bind:value={cash}
+				on:change={(event) => {
+					onChange(event, "CASH");
+				}}
+			/>
 			<TableEmptyCell />
 			<TableEmptyCell />
-			<TableNumberCell value={cash} />
+			<TableNumberCell value={$accountView.cash} />
 		</TableRow>
 		{#each preparePositions($accountView.positions) as position (position.ticker)}
 			<TableRow>
 				<TableTickerCell ticker={position.ticker} />
-				<TableInputCell>
-					<input
-						bind:value={position.shares}
-						on:change={(event) => {
-							onChange(event, position.ticker);
-						}}
-						class="border-bg-accent bg-bg-main w-28 rounded-md border p-1"
-						type="text"
-					/>
-				</TableInputCell>
+				<TableInputCell
+					bind:value={position.shares}
+					on:change={(event) => {
+						onChange(event, position.ticker);
+					}}
+				/>
 				<TableNumberCell value={position.lot} />
 				<TableNumberCell value={position.price} />
 				<TableNumberCell value={position.value} fractionDigits={0} />

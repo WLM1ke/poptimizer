@@ -3,7 +3,7 @@
 	export let fractionDigits: number | undefined = 1;
 </script>
 
-<td class="px-2 text-right">
+<td class="w-28 p-2 text-right font-mono">
 	{value.toLocaleString(undefined, {
 		style: "percent",
 		minimumFractionDigits: fractionDigits,
