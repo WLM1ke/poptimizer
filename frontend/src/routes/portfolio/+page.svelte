@@ -21,38 +21,57 @@
 </script>
 
 <div>
+	Date: {$portfolioView.timestamp}
+</div>
+<div>
 	Value: {value.toLocaleString(undefined, {
 		minimumFractionDigits: 0,
 		maximumFractionDigits: 0
 	})}
 </div>
-<div>Cash: {cash}</div>
 <table>
 	<thead>
-		<th>Ticker</th>
-		<th>Shares</th>
-		<th>Price</th>
-		<th>Value</th>
-		<th>Weight</th>
+		<tr>
+			<th>Ticker</th>
+			<th>Amount</th>
+			<th>Price</th>
+			<th>Value</th>
+			<th>Weight</th>
+		</tr>
 	</thead>
-	{#each positions as position (position.ticker)}
-		<tbody>
-			<td>{position.ticker}</td>
-			<td>{position.shares.toLocaleString()}</td>
-			<td>{position.price.toLocaleString()}</td>
+	<tbody>
+		<tr>
+			<td>Cash</td>
+			<td>{cash}</td>
+			<td></td>
+			<td></td>
 			<td
-				>{position.value.toLocaleString(undefined, {
-					minimumFractionDigits: 0,
-					maximumFractionDigits: 0
-				})}</td
-			>
-			<td
-				>{position.weight.toLocaleString(undefined, {
+				>{(cash / value).toLocaleString(undefined, {
 					style: "percent",
-					minimumFractionDigits: 2,
-					maximumFractionDigits: 2
+					minimumFractionDigits: 1,
+					maximumFractionDigits: 1
 				})}</td
 			>
-		</tbody>
-	{/each}
+		</tr>
+		{#each positions as position (position.ticker)}
+			<tr>
+				<td>{position.ticker}</td>
+				<td>{position.shares.toLocaleString()}</td>
+				<td>{position.price.toLocaleString()}</td>
+				<td
+					>{position.value.toLocaleString(undefined, {
+						minimumFractionDigits: 0,
+						maximumFractionDigits: 0
+					})}</td
+				>
+				<td
+					>{position.weight.toLocaleString(undefined, {
+						style: "percent",
+						minimumFractionDigits: 1,
+						maximumFractionDigits: 1
+					})}</td
+				>
+			</tr>
+		{/each}
+	</tbody>
 </table>

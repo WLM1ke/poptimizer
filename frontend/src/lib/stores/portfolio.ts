@@ -14,11 +14,13 @@ interface Account {
 }
 
 interface Portfolio {
+	timestamp: string;
 	accounts: Record<string, Account>;
 	securities: Readonly<Record<string, Security>>;
 }
 
 const portfolio = writable<Portfolio>({
+	timestamp: "",
 	securities: {},
 	accounts: {}
 });
@@ -34,6 +36,7 @@ const fetchPortfolio = async (
 			throw new Error(await res.text());
 		}
 		const port: Portfolio = await res.json();
+		port.timestamp = port.timestamp.slice(0, 10);
 
 		if (Object.keys(port.accounts).length === 0) {
 			addAlert({
@@ -122,6 +125,7 @@ export const portfolioView = derived(portfolio, (port) => {
 	});
 
 	return {
+		timestamp: port.timestamp,
 		positions: portfolioPositions,
 		cash: portfolioCash,
 		value: portfolioValue
@@ -136,8 +140,8 @@ export interface AccountPosition {
 	value: number;
 }
 
-export const accountView = derived([portfolio, pageTitle], ([$portfolio, $pageTitle]) => {
-	const account = $portfolio.accounts[$pageTitle];
+export const accountView = derived([portfolio, pageTitle], ([port, pageTitle]) => {
+	const account = port.accounts[pageTitle];
 	if (account === undefined) {
 		return {
 			positions: [],
@@ -150,7 +154,7 @@ export const accountView = derived([portfolio, pageTitle], ([$portfolio, $pageTi
 	const accountCash = account.cash;
 	let accountValue = accountCash;
 
-	const accountPositions = Object.entries($portfolio.securities).map(([ticker, { price, lot }]) => {
+	const accountPositions = Object.entries(port.securities).map(([ticker, { price, lot }]) => {
 		const shares = account.positions[ticker] ?? 0;
 		const value = price * shares;
 		accountValue += value;
@@ -165,12 +169,13 @@ export const accountView = derived([portfolio, pageTitle], ([$portfolio, $pageTi
 	});
 
 	return {
+		timestamp: port.timestamp,
 		positions: accountPositions,
 		cash: accountCash,
 		value: accountValue,
 		updatePosition: async (ticker: string, amount: string) => {
 			const body = JSON.stringify({ amount: amount });
-			return await fetchPortfolio(`/api/portfolio/${$pageTitle}/${ticker}`, "POST", body);
+			return await fetchPortfolio(`/api/portfolio/${pageTitle}/${ticker}`, "POST", body);
 		}
 	};
 });

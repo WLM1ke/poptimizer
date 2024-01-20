@@ -31,52 +31,65 @@
 </script>
 
 <div>
+	Date: {$accountView.timestamp}
+</div>
+<div>
 	Value: {$accountView.value.toLocaleString(undefined, {
 		minimumFractionDigits: 0,
 		maximumFractionDigits: 0
 	})}
 </div>
-<div>
-	Cash: <input
-		bind:value={cash}
-		on:change={(event) => {
-			onChange(event, "CASH");
-		}}
-		class="rounded-md border border-bg-accent bg-bg-main p-1"
-		type="text"
-		placeholder="Enter account title"
-	/>
-</div>
 <table>
 	<thead>
-		<th>Ticker</th>
-		<th>Shares</th>
-		<th>Lot</th>
-		<th>Price</th>
-		<th>Value</th>
+		<tr>
+			<th>Ticker</th>
+			<th>Shares</th>
+			<th>Lot</th>
+			<th>Price</th>
+			<th>Value</th>
+		</tr>
 	</thead>
-	{#each preparePositions($accountView.positions) as position (position.ticker)}
-		<tbody>
-			<td>{position.ticker}</td>
-			<td
-				><input
-					bind:value={position.shares}
+	<tbody>
+		<tr>
+			<td>Cash</td>
+			<td>
+				<input
+					bind:value={cash}
 					on:change={(event) => {
-						onChange(event, position.ticker);
+						onChange(event, "CASH");
 					}}
-					class="rounded-md border border-bg-accent bg-bg-main p-1"
+					class="border-bg-accent bg-bg-main rounded-md border p-1"
 					type="text"
 					placeholder="Enter account title"
-				/></td
-			>
-			<td>{position.lot.toLocaleString()}</td>
-			<td>{position.price.toLocaleString()}</td>
-			<td
-				>{position.value.toLocaleString(undefined, {
-					minimumFractionDigits: 0,
-					maximumFractionDigits: 0
-				})}</td
-			>
-		</tbody>
-	{/each}
+				/>
+			</td>
+			<td></td>
+			<td></td>
+			<td>{cash}</td>
+		</tr>
+		{#each preparePositions($accountView.positions) as position (position.ticker)}
+			<tr>
+				<td>{position.ticker}</td>
+				<td>
+					<input
+						bind:value={position.shares}
+						on:change={(event) => {
+							onChange(event, position.ticker);
+						}}
+						class="border-bg-accent bg-bg-main rounded-md border p-1"
+						type="text"
+						placeholder="Enter account title"
+					/>
+				</td>
+				<td>{position.lot.toLocaleString()}</td>
+				<td>{position.price.toLocaleString()}</td>
+				<td>
+					{position.value.toLocaleString(undefined, {
+						minimumFractionDigits: 0,
+						maximumFractionDigits: 0
+					})}
+				</td>
+			</tr>
+		{/each}
+	</tbody>
 </table>
