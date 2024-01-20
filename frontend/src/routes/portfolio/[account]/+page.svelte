@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from "$app/navigation";
+	import Card from "$lib/components/base/Card.svelte";
 	import { accountView, type AccountPosition } from "$lib/stores/portfolio";
 	import { accountsHideZeroPositions, accountsSortByValue } from "$lib/stores/settings";
 
@@ -31,65 +32,73 @@
 </script>
 
 <div>
-	Date: {$accountView.timestamp}
-</div>
-<div>
-	Value: {$accountView.value.toLocaleString(undefined, {
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0
-	})}
-</div>
-<table>
-	<thead>
-		<tr>
-			<th>Ticker</th>
-			<th>Shares</th>
-			<th>Lot</th>
-			<th>Price</th>
-			<th>Value</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<td>Cash</td>
-			<td>
-				<input
-					bind:value={cash}
-					on:change={(event) => {
-						onChange(event, "CASH");
-					}}
-					class="border-bg-accent bg-bg-main rounded-md border p-1"
-					type="text"
-					placeholder="Enter account title"
-				/>
-			</td>
-			<td></td>
-			<td></td>
-			<td>{cash}</td>
-		</tr>
-		{#each preparePositions($accountView.positions) as position (position.ticker)}
+	<Card>
+		<svelte:fragment slot="header">
+			Date: {$accountView.timestamp}
+		</svelte:fragment>
+		<svelte:fragment slot="main">
+			Value: {$accountView.value.toLocaleString(undefined, {
+				minimumFractionDigits: 0,
+				maximumFractionDigits: 0
+			})} &#8381;
+		</svelte:fragment>
+		<svelte:fragment slot="footer">
+			Positions: {$accountView.positionsCount} / {$accountView.positions.length}
+		</svelte:fragment>
+	</Card>
+
+	<table>
+		<thead>
 			<tr>
-				<td>{position.ticker}</td>
+				<th>Ticker</th>
+				<th>Shares</th>
+				<th>Lot</th>
+				<th>Price</th>
+				<th>Value</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>Cash</td>
 				<td>
 					<input
-						bind:value={position.shares}
+						bind:value={cash}
 						on:change={(event) => {
-							onChange(event, position.ticker);
+							onChange(event, "CASH");
 						}}
 						class="border-bg-accent bg-bg-main rounded-md border p-1"
 						type="text"
 						placeholder="Enter account title"
 					/>
 				</td>
-				<td>{position.lot.toLocaleString()}</td>
-				<td>{position.price.toLocaleString()}</td>
-				<td>
-					{position.value.toLocaleString(undefined, {
-						minimumFractionDigits: 0,
-						maximumFractionDigits: 0
-					})}
-				</td>
+				<td></td>
+				<td></td>
+				<td>{cash}</td>
 			</tr>
-		{/each}
-	</tbody>
-</table>
+			{#each preparePositions($accountView.positions) as position (position.ticker)}
+				<tr>
+					<td>{position.ticker}</td>
+					<td>
+						<input
+							bind:value={position.shares}
+							on:change={(event) => {
+								onChange(event, position.ticker);
+							}}
+							class="border-bg-accent bg-bg-main rounded-md border p-1"
+							type="text"
+							placeholder="Enter account title"
+						/>
+					</td>
+					<td>{position.lot.toLocaleString()}</td>
+					<td>{position.price.toLocaleString()}</td>
+					<td>
+						{position.value.toLocaleString(undefined, {
+							minimumFractionDigits: 0,
+							maximumFractionDigits: 0
+						})}
+					</td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+</div>

@@ -124,9 +124,15 @@ export const portfolioView = derived(portfolio, (port) => {
 		};
 	});
 
+	const effectiveCount = Math.round(
+		1 / Object.values(portfolioPositions).reduce((acc, { weight }) => acc + (weight > 0 ? weight * weight : 0), 0) || 0
+	);
+
 	return {
 		timestamp: port.timestamp,
 		positions: portfolioPositions,
+		positionsCount: Object.keys(accountsPositions).length,
+		effectiveCount,
 		cash: portfolioCash,
 		value: portfolioValue
 	};
@@ -144,7 +150,9 @@ export const accountView = derived([portfolio, pageTitle], ([port, pageTitle]) =
 	const account = port.accounts[pageTitle];
 	if (account === undefined) {
 		return {
+			timestamp: "",
 			positions: [],
+			positionsCount: 0,
 			cash: 0,
 			value: 0,
 			updatePosition: async () => {}
@@ -171,6 +179,7 @@ export const accountView = derived([portfolio, pageTitle], ([port, pageTitle]) =
 	return {
 		timestamp: port.timestamp,
 		positions: accountPositions,
+		positionsCount: Object.keys(account.positions).length,
 		cash: accountCash,
 		value: accountValue,
 		updatePosition: async (ticker: string, amount: string) => {

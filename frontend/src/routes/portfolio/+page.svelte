@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { portfolioView, type PortfolioPosition } from "$lib/stores/portfolio";
 	import { portfolioHideZeroPositions, portfolioSortByValue } from "$lib/stores/settings";
+	import Card from "$lib/components/base/Card.svelte";
 
 	$: positions = preparePositions($portfolioView.positions);
 	$: cash = $portfolioView.cash;
@@ -20,15 +21,20 @@
 	};
 </script>
 
-<div>
-	Date: {$portfolioView.timestamp}
-</div>
-<div>
-	Value: {value.toLocaleString(undefined, {
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0
-	})}
-</div>
+<Card>
+	<svelte:fragment slot="header">
+		Date: {$portfolioView.timestamp}
+	</svelte:fragment>
+	<svelte:fragment slot="main">
+		Value: {value.toLocaleString(undefined, {
+			minimumFractionDigits: 0,
+			maximumFractionDigits: 0
+		})} &#8381;
+	</svelte:fragment>
+	<svelte:fragment slot="footer">
+		Positions: {$portfolioView.positionsCount} / Effective: {$portfolioView.effectiveCount}
+	</svelte:fragment>
+</Card>
 <table>
 	<thead>
 		<tr>
