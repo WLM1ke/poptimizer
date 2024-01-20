@@ -1,7 +1,18 @@
 <script lang="ts">
 	import { portfolioView, type PortfolioPosition } from "$lib/stores/portfolio";
 	import { portfolioHideZeroPositions, portfolioSortByValue } from "$lib/stores/settings";
-	import Card from "$lib/components/base/Card.svelte";
+	import { Card, CardMain, CardSecondary } from "$lib/components/base/card";
+	import {
+		Table,
+		TableHead,
+		TableHeadCell,
+		TableBody,
+		TableRow,
+		TableTickerCell,
+		TableNumberCell,
+		TableEmptyCell,
+		TablePercentCell
+	} from "$lib/components/base/table";
 
 	$: positions = preparePositions($portfolioView.positions);
 	$: cash = $portfolioView.cash;
@@ -22,62 +33,43 @@
 </script>
 
 <Card>
-	<svelte:fragment slot="header">
+	<CardSecondary>
 		Date: {$portfolioView.timestamp}
-	</svelte:fragment>
-	<svelte:fragment slot="main">
+	</CardSecondary>
+	<CardMain>
 		Value: {value.toLocaleString(undefined, {
 			minimumFractionDigits: 0,
 			maximumFractionDigits: 0
 		})} &#8381;
-	</svelte:fragment>
-	<svelte:fragment slot="footer">
+	</CardMain>
+	<CardSecondary>
 		Positions: {$portfolioView.positionsCount} / Effective: {$portfolioView.effectiveCount}
-	</svelte:fragment>
+	</CardSecondary>
 </Card>
-<table>
-	<thead>
-		<tr>
-			<th>Ticker</th>
-			<th>Amount</th>
-			<th>Price</th>
-			<th>Value</th>
-			<th>Weight</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<td>Cash</td>
-			<td>{cash}</td>
-			<td></td>
-			<td></td>
-			<td
-				>{(cash / value).toLocaleString(undefined, {
-					style: "percent",
-					minimumFractionDigits: 1,
-					maximumFractionDigits: 1
-				})}</td
-			>
-		</tr>
+<Table>
+	<TableHead>
+		<TableHeadCell>Ticker</TableHeadCell>
+		<TableHeadCell>Amount</TableHeadCell>
+		<TableHeadCell>Price</TableHeadCell>
+		<TableHeadCell>Value</TableHeadCell>
+		<TableHeadCell>Weight</TableHeadCell>
+	</TableHead>
+	<TableBody>
+		<TableRow>
+			<TableTickerCell ticker="Cash" />
+			<TableNumberCell value={cash} />
+			<TableEmptyCell />
+			<TableEmptyCell />
+			<TablePercentCell value={cash / value} />
+		</TableRow>
 		{#each positions as position (position.ticker)}
-			<tr>
-				<td>{position.ticker}</td>
-				<td>{position.shares.toLocaleString()}</td>
-				<td>{position.price.toLocaleString()}</td>
-				<td
-					>{position.value.toLocaleString(undefined, {
-						minimumFractionDigits: 0,
-						maximumFractionDigits: 0
-					})}</td
-				>
-				<td
-					>{position.weight.toLocaleString(undefined, {
-						style: "percent",
-						minimumFractionDigits: 1,
-						maximumFractionDigits: 1
-					})}</td
-				>
-			</tr>
+			<TableRow>
+				<TableTickerCell ticker={position.ticker} />
+				<TableNumberCell value={position.shares} />
+				<TableNumberCell value={position.price} />
+				<TableNumberCell value={position.value} fractionDigits={0} />
+				<TablePercentCell value={position.weight} />
+			</TableRow>
 		{/each}
-	</tbody>
-</table>
+	</TableBody>
+</Table>
