@@ -2,6 +2,6 @@
 	export let ticker: string;
 </script>
 
-<td class="pr-1 font-mono">
+<td class="px-2 font-mono">
 	{ticker}
 </td>
