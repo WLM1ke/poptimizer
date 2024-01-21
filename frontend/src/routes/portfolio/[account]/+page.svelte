@@ -14,7 +14,7 @@
 	import { accountView } from "$lib/stores/accountView";
 
 	let account = "";
-	let positions: Record<string, number>;
+	let positions: Record<string, number> = { CASH: 0 };
 	const setFields = () => {
 		positions = { CASH: $accountView.cash };
 		$accountView.positions.forEach((pos) => (positions[pos.ticker] = pos.shares));
