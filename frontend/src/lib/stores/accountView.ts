@@ -21,6 +21,7 @@ export const accountView = derived(
 		const account = port.accounts[pageTitle];
 		if (account === undefined) {
 			return {
+				name: "",
 				timestamp: "",
 				positions: [],
 				positionsCount: 0,
@@ -51,6 +52,7 @@ export const accountView = derived(
 			.sort(sortByValue ? compValue : compTickers);
 
 		return {
+			name: pageTitle,
 			timestamp: port.timestamp,
 			positions: accountPositions,
 			positionsCount: Object.keys(account.positions).length,

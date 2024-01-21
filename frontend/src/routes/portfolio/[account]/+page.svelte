@@ -14,9 +14,15 @@
 	} from "$lib/components/base/table";
 	import { accountView } from "$lib/stores/accountView";
 
-	let cash = (() => {
-		return $accountView.cash;
-	})();
+	let cash: number;
+	let page = "";
+
+	$: {
+		if (page != $accountView.name) {
+			cash = $accountView.cash;
+			page = $accountView.name;
+		}
+	}
 
 	interface FormEvent {
 		target: EventTarget | null;
