@@ -34,7 +34,7 @@ export const portfolioView = derived(
 			.map(([ticker, { price }]) => {
 				const shares = accountsPositions[ticker] ?? 0;
 				const value = price * shares;
-				const weight = value / portfolioValue || 0;
+				const weight = portfolioValue > 0 ? value / portfolioValue : 0;
 
 				return {
 					ticker,
@@ -48,8 +48,9 @@ export const portfolioView = derived(
 			.sort(sortByValue ? compValue : compTickers);
 
 		const effectiveCount = Math.round(
-			1 / Object.values(portfolioPositions).reduce((acc, { weight }) => acc + (weight > 0 ? weight * weight : 0), 0) ||
-				0
+			portfolioValue > 0
+				? 1 / Object.values(portfolioPositions).reduce((acc, { weight }) => acc + (weight > 0 ? weight * weight : 0), 0)
+				: 0
 		);
 
 		return {

@@ -25,6 +25,7 @@ export const accountView = derived(
 				timestamp: "",
 				positions: [],
 				positionsCount: 0,
+				positionsTotal: 0,
 				cash: 0,
 				value: 0,
 				updatePosition: async () => {}
@@ -56,6 +57,7 @@ export const accountView = derived(
 			timestamp: port.timestamp,
 			positions: accountPositions,
 			positionsCount: Object.keys(account.positions).length,
+			positionsTotal: Object.keys(port.securities).length,
 			cash: accountCash,
 			value: accountValue,
 			updatePosition: async (ticker: string, amount: string) => {

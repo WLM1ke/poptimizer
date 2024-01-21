@@ -42,7 +42,7 @@
 			<TableNumberCell value={$portfolioView.cash} />
 			<TableEmptyCell />
 			<TableEmptyCell />
-			<TablePercentCell value={$portfolioView.cash / $portfolioView.value} />
+			<TablePercentCell value={$portfolioView.value > 0 ? $portfolioView.cash / $portfolioView.value : 1} />
 		</TableRow>
 		{#each $portfolioView.positions as position (position.ticker)}
 			<TableRow>

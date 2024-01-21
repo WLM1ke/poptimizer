@@ -48,7 +48,7 @@
 		})} &#8381;
 	</CardMain>
 	<CardSecondary>
-		Positions: {$accountView.positionsCount} / {$accountView.positions.length}
+		Positions: {$accountView.positionsCount} / {$accountView.positionsTotal}
 	</CardSecondary>
 </Card>
 
