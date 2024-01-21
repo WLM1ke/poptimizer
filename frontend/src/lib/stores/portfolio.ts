@@ -19,7 +19,7 @@ interface Portfolio {
 	securities: Readonly<Record<string, Security>>;
 }
 
-const portfolio = writable<Portfolio>({
+export const portfolio = writable<Portfolio>({
 	timestamp: "",
 	securities: {},
 	accounts: {}
@@ -86,56 +86,6 @@ export const createAccount = async (account: string) => {
 
 export const accounts = derived(portfolio, (portfolio) => {
 	return Object.keys(portfolio.accounts).toSorted();
-});
-
-export interface PortfolioPosition {
-	ticker: string;
-	shares: number;
-	price: number;
-	value: number;
-	weight: number;
-}
-
-export const portfolioView = derived(portfolio, (port) => {
-	let portfolioValue = 0;
-	let portfolioCash = 0;
-	const accountsPositions: Record<string, number> = {};
-
-	for (const account of Object.values(port.accounts)) {
-		portfolioValue += account.cash;
-		portfolioCash += account.cash;
-		for (const [ticker, shares] of Object.entries(account.positions)) {
-			accountsPositions[ticker] = (accountsPositions[ticker] ?? 0) + shares;
-			portfolioValue += shares * port.securities[ticker].price;
-		}
-	}
-
-	const portfolioPositions = Object.entries(port.securities).map(([ticker, { price }]) => {
-		const shares = accountsPositions[ticker] ?? 0;
-		const value = price * shares;
-		const weight = value / portfolioValue || 0;
-
-		return {
-			ticker,
-			shares,
-			price,
-			value,
-			weight
-		};
-	});
-
-	const effectiveCount = Math.round(
-		1 / Object.values(portfolioPositions).reduce((acc, { weight }) => acc + (weight > 0 ? weight * weight : 0), 0) || 0
-	);
-
-	return {
-		timestamp: port.timestamp,
-		positions: portfolioPositions,
-		positionsCount: Object.keys(accountsPositions).length,
-		effectiveCount,
-		cash: portfolioCash,
-		value: portfolioValue
-	};
 });
 
 export interface AccountPosition {

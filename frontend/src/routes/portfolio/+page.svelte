@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { portfolioView, type PortfolioPosition } from "$lib/stores/portfolio";
-	import { portfolioHideZeroPositions, portfolioSortByValue } from "$lib/stores/settings";
+	import { portfolioView } from "$lib/stores/portfolioView";
 	import { Card, CardMain, CardSecondary } from "$lib/components/base/card";
 	import {
 		Table,
@@ -13,23 +12,6 @@
 		TableEmptyCell,
 		TablePercentCell
 	} from "$lib/components/base/table";
-
-	$: positions = preparePositions($portfolioView.positions);
-	$: cash = $portfolioView.cash;
-	$: value = $portfolioView.value;
-
-	const compTickers = (a: PortfolioPosition, b: PortfolioPosition) => {
-		return a.ticker.localeCompare(b.ticker);
-	};
-	const compValue = (a: PortfolioPosition, b: PortfolioPosition) => {
-		return b.value - a.value;
-	};
-	const preparePositions = (positions: PortfolioPosition[]) => {
-		const filtered = positions.filter((pos) => pos.value !== 0 || !$portfolioHideZeroPositions);
-		filtered.sort($portfolioSortByValue ? compValue : compTickers);
-
-		return filtered;
-	};
 </script>
 
 <Card>
@@ -37,7 +19,7 @@
 		Date: {$portfolioView.timestamp}
 	</CardSecondary>
 	<CardMain>
-		Value: {value.toLocaleString(undefined, {
+		Value: {$portfolioView.value.toLocaleString(undefined, {
 			minimumFractionDigits: 0,
 			maximumFractionDigits: 0
 		})} &#8381;
@@ -57,12 +39,12 @@
 	<TableBody>
 		<TableRow>
 			<TableTickerCell ticker="Cash" />
-			<TableNumberCell value={cash} />
+			<TableNumberCell value={$portfolioView.cash} />
 			<TableEmptyCell />
 			<TableEmptyCell />
-			<TablePercentCell value={cash / value} />
+			<TablePercentCell value={$portfolioView.cash / $portfolioView.value} />
 		</TableRow>
-		{#each positions as position (position.ticker)}
+		{#each $portfolioView.positions as position (position.ticker)}
 			<TableRow>
 				<TableTickerCell ticker={position.ticker} />
 				<TableNumberCell value={position.shares} />
