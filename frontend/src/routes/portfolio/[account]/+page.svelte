@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { invalidateAll } from "$app/navigation";
 	import { Card, CardMain, CardSecondary } from "$lib/components/base/card";
 	import {
 		Table,
@@ -14,13 +13,17 @@
 	} from "$lib/components/base/table";
 	import { accountView } from "$lib/stores/accountView";
 
-	let cash: number;
-	let page = "";
+	let account = "";
+	let positions: Record<string, number>;
+	const setFields = () => {
+		positions = { CASH: $accountView.cash };
+		$accountView.positions.forEach((pos) => (positions[pos.ticker] = pos.shares));
+	};
 
 	$: {
-		if (page != $accountView.name) {
-			cash = $accountView.cash;
-			page = $accountView.name;
+		if (account != $accountView.name) {
+			account = $accountView.name;
+			setFields();
 		}
 	}
 
@@ -29,10 +32,8 @@
 	}
 	const onChange = async (event: FormEvent, ticker: string) => {
 		const target = event.target as HTMLInputElement;
-		if (!(await $accountView.updatePosition(ticker, target.value))) {
-			await invalidateAll();
-			cash = $accountView.cash;
-		}
+		await $accountView.updatePosition(ticker, target.value);
+		setFields();
 	};
 </script>
 
@@ -63,7 +64,7 @@
 		<TableRow>
 			<TableTickerCell ticker="Cash" />
 			<TableInputCell
-				bind:value={cash}
+				bind:value={positions["CASH"]}
 				on:change={(event) => {
 					onChange(event, "CASH");
 				}}
@@ -76,7 +77,7 @@
 			<TableRow>
 				<TableTickerCell ticker={position.ticker} />
 				<TableInputCell
-					bind:value={position.shares}
+					bind:value={positions[position.ticker]}
 					on:change={(event) => {
 						onChange(event, position.ticker);
 					}}

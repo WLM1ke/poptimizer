@@ -1,5 +1,5 @@
 import { derived } from "svelte/store";
-import { portfolio, fetchPortfolioAPI } from "$lib/stores/portfolio";
+import { portfolio, fetchPortfolioAPI, load } from "$lib/stores/portfolio";
 import { pageTitle } from "$lib/stores/page";
 import { accountsHideZeroPositions, accountsSortByValue } from "$lib/stores/settings";
 
@@ -60,7 +60,9 @@ export const accountView = derived(
 			value: accountValue,
 			updatePosition: async (ticker: string, amount: string) => {
 				const body = JSON.stringify({ amount: amount });
-				return await fetchPortfolioAPI(`/api/portfolio/${pageTitle}/${ticker}`, "POST", body);
+				if (!(await fetchPortfolioAPI(`/api/portfolio/${pageTitle}/${ticker}`, "POST", body))) {
+					await load();
+				}
 			}
 		};
 	}
