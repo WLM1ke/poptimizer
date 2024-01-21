@@ -13,6 +13,7 @@
 		removeAccount,
 		createAccount
 	} from "$lib/stores/settings";
+	import { flip } from "svelte/animate";
 
 	let newAccount = "";
 	let inputRef: HTMLElement;
@@ -26,7 +27,7 @@
 	<H2>Accounts</H2>
 	<ul class="max-w-max">
 		{#each $accounts as account (account)}
-			<li transition:scale class="flex items-center justify-between gap-2 pt-2">
+			<li transition:scale animate:flip class="flex items-center justify-between gap-2 pt-2">
 				{account}
 				<button on:click={() => removeAccount(account)} class="hover:text-link">
 					<Delete />
