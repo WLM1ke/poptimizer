@@ -4,10 +4,7 @@ import { portfolioHideZeroPositions, portfolioSortByValue } from "$lib/stores/se
 
 export interface PortfolioPosition {
 	ticker: string;
-	shares: number;
-	price: number;
 	value: number;
-	weight: number;
 }
 
 const compTickers = (a: PortfolioPosition, b: PortfolioPosition) => {

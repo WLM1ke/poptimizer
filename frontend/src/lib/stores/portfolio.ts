@@ -1,6 +1,5 @@
 import { derived, writable } from "svelte/store";
 import { addAlert } from "./alerts";
-import { pageTitle } from "$lib/stores/page";
 
 interface Security {
 	lot: number;
@@ -25,7 +24,7 @@ export const portfolio = writable<Portfolio>({
 	accounts: {}
 });
 
-const fetchPortfolio = async (
+export const fetchPortfolio = async (
 	url: string,
 	method: "GET" | "POST" | "DELETE" = "GET",
 	body: BodyInit | undefined = undefined
@@ -86,55 +85,4 @@ export const createAccount = async (account: string) => {
 
 export const accounts = derived(portfolio, (portfolio) => {
 	return Object.keys(portfolio.accounts).toSorted();
-});
-
-export interface AccountPosition {
-	ticker: string;
-	shares: number;
-	lot: number;
-	price: number;
-	value: number;
-}
-
-export const accountView = derived([portfolio, pageTitle], ([port, pageTitle]) => {
-	const account = port.accounts[pageTitle];
-	if (account === undefined) {
-		return {
-			timestamp: "",
-			positions: [],
-			positionsCount: 0,
-			cash: 0,
-			value: 0,
-			updatePosition: async () => {}
-		};
-	}
-
-	const accountCash = account.cash;
-	let accountValue = accountCash;
-
-	const accountPositions = Object.entries(port.securities).map(([ticker, { price, lot }]) => {
-		const shares = account.positions[ticker] ?? 0;
-		const value = price * shares;
-		accountValue += value;
-
-		return {
-			ticker,
-			shares,
-			lot,
-			price,
-			value
-		};
-	});
-
-	return {
-		timestamp: port.timestamp,
-		positions: accountPositions,
-		positionsCount: Object.keys(account.positions).length,
-		cash: accountCash,
-		value: accountValue,
-		updatePosition: async (ticker: string, amount: string) => {
-			const body = JSON.stringify({ amount: amount });
-			return await fetchPortfolio(`/api/portfolio/${pageTitle}/${ticker}`, "POST", body);
-		}
-	};
 });

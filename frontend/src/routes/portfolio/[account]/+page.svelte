@@ -12,26 +12,11 @@
 		TableRow,
 		TableTickerCell
 	} from "$lib/components/base/table";
-	import { accountView, type AccountPosition } from "$lib/stores/portfolio";
-	import { accountsHideZeroPositions, accountsSortByValue } from "$lib/stores/settings";
+	import { accountView } from "$lib/stores/accountView";
 
-	let cash: number = (() => {
+	let cash = (() => {
 		return $accountView.cash;
 	})();
-
-	const compTickers = (a: AccountPosition, b: AccountPosition) => {
-		return a.ticker.localeCompare(b.ticker);
-	};
-	const compValue = (a: AccountPosition, b: AccountPosition) => {
-		return b.value - a.value;
-	};
-	const preparePositions = (positions: AccountPosition[]) => {
-		const filtered = positions.filter((pos) => pos.value !== 0 || !$accountsHideZeroPositions);
-		filtered.sort($accountsSortByValue ? compValue : compTickers);
-		cash = $accountView.cash;
-
-		return filtered;
-	};
 
 	interface FormEvent {
 		target: EventTarget | null;
@@ -40,6 +25,7 @@
 		const target = event.target as HTMLInputElement;
 		if (!(await $accountView.updatePosition(ticker, target.value))) {
 			await invalidateAll();
+			cash = $accountView.cash;
 		}
 	};
 </script>
@@ -80,7 +66,7 @@
 			<TableEmptyCell />
 			<TableNumberCell value={$accountView.cash} />
 		</TableRow>
-		{#each preparePositions($accountView.positions) as position (position.ticker)}
+		{#each $accountView.positions as position (position.ticker)}
 			<TableRow>
 				<TableTickerCell ticker={position.ticker} />
 				<TableInputCell
