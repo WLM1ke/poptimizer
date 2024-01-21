@@ -1,4 +1,4 @@
-import { derived, writable } from "svelte/store";
+import { writable } from "svelte/store";
 import { addAlert } from "./alerts";
 
 interface Security {
@@ -24,7 +24,7 @@ export const portfolio = writable<Portfolio>({
 	accounts: {}
 });
 
-export const fetchPortfolio = async (
+export const fetchPortfolioAPI = async (
 	url: string,
 	method: "GET" | "POST" | "DELETE" = "GET",
 	body: BodyInit | undefined = undefined
@@ -73,16 +73,5 @@ export const fetchPortfolio = async (
 };
 
 export const load = async () => {
-	return await fetchPortfolio("/api/portfolio");
+	return await fetchPortfolioAPI("/api/portfolio");
 };
-export const removeAccount = async (account: string) => {
-	return await fetchPortfolio(`/api/portfolio/${account}`, "DELETE");
-};
-export const createAccount = async (account: string) => {
-	account = account[0].toUpperCase() + account.substring(1);
-	return await fetchPortfolio(`/api/portfolio/${account}`, "POST");
-};
-
-export const accounts = derived(portfolio, (portfolio) => {
-	return Object.keys(portfolio.accounts).toSorted();
-});

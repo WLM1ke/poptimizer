@@ -1,6 +1,5 @@
 <script lang="ts">
 	import H2 from "$lib/components/base/H2.svelte";
-	import { accounts, removeAccount, createAccount } from "$lib/stores/portfolio";
 	import Delete from "$lib/icons/Delete.svelte";
 	import Add from "$lib/icons/Add.svelte";
 	import { scale } from "svelte/transition";
@@ -9,7 +8,10 @@
 		accountsSortByValue,
 		toggleAccountsSortByValue,
 		accountsHideZeroPositions,
-		toggleAccountsHideZeroPositions
+		toggleAccountsHideZeroPositions,
+		accounts,
+		removeAccount,
+		createAccount
 	} from "$lib/stores/settings";
 
 	let newAccount = "";
@@ -40,7 +42,7 @@
 						newAccount = "";
 					}
 				}}
-				class="rounded-md border border-bg-accent bg-bg-main p-1"
+				class="border-bg-accent bg-bg-main rounded-md border p-1"
 				bind:value={newAccount}
 				type="text"
 				placeholder="Enter account title"

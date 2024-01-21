@@ -1,5 +1,6 @@
 import { persistent } from "$lib/stores/persistent";
 import { derived } from "svelte/store";
+import { fetchPortfolioAPI, portfolio } from "$lib/stores/portfolio";
 
 interface settingsInterface {
 	portfolio: {
@@ -60,3 +61,15 @@ export const toggleAccountsHideZeroPositions = () => {
 		return settings;
 	});
 };
+
+export const removeAccount = async (account: string) => {
+	return await fetchPortfolioAPI(`/api/portfolio/${account}`, "DELETE");
+};
+export const createAccount = async (account: string) => {
+	account = account[0].toUpperCase() + account.substring(1);
+	return await fetchPortfolioAPI(`/api/portfolio/${account}`, "POST");
+};
+
+export const accounts = derived(portfolio, (portfolio) => {
+	return Object.keys(portfolio.accounts).toSorted();
+});
