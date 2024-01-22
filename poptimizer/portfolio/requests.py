@@ -75,6 +75,8 @@ class UpdatePositionRequestHandler:
             request.amount,
         )
 
+        ctx.publish(port.get_update_event())
+
         return PortfolioData(
             timestamp=port.timestamp,
             accounts=port.accounts,

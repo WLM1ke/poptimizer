@@ -52,7 +52,12 @@ class RequestErrorMiddleware:
             raise web.HTTPBadRequest(text=f"{err.__class__.__name__}: {",".join(err.args)}") from err
         except ValidationError as err:
             msg = ",".join(desc["msg"] for desc in err.errors())
-            self._ctx.publish(domain.WarningEvent(component=domain.get_component_name(self), msg=msg))
+            self._ctx.publish(
+                domain.WarningEvent(
+                    component=domain.get_component_name(self),
+                    msg=f"{err.__class__.__name__}({msg})",
+                ),
+            )
             raise web.HTTPBadRequest(text=f"{err.__class__.__name__}: {msg}") from err
 
 

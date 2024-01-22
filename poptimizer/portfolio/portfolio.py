@@ -22,6 +22,13 @@ class Account(BaseModel):
     positions: dict[Ticker, PositiveInt] = Field(default_factory=dict)
 
 
+class PortfolioDataUpdated(domain.Event):
+    day: domain.Day
+    version: int
+    cash_weight: NonNegativeFloat = Field(repr=False)
+    positions_weight: dict[Ticker, NonNegativeFloat] = Field(repr=False)
+
+
 class Portfolio(domain.Entity):
     accounts: dict[AccName, Account] = Field(default_factory=dict)
     securities: dict[Ticker, Security] = Field(default_factory=dict)
@@ -104,9 +111,34 @@ class Portfolio(domain.Entity):
 
         account.positions[ticker] = amount
 
+    def get_update_event(self) -> PortfolioDataUpdated:
+        port_value = 0
+        cash = 0
+        pos_value = {ticker: 0.0 for ticker in self.securities}
 
-class PortfolioDataUpdated(domain.Event):
-    day: domain.Day
+        for account in self.accounts.values():
+            port_value += account.cash
+            cash += account.cash
+
+            for ticker, amount in account.positions.items():
+                value = self.securities[ticker].price * amount
+                port_value += value
+                pos_value[ticker] += value
+
+        if port_value == 0:
+            return PortfolioDataUpdated(
+                day=self.timestamp,
+                version=self.ver,
+                cash_weight=1,
+                positions_weight=pos_value,
+            )
+
+        return PortfolioDataUpdated(
+            day=self.timestamp,
+            version=self.ver,
+            cash_weight=cash / port_value,
+            positions_weight={ticker: pos / port_value for ticker, pos in pos_value.items()},
+        )
 
 
 class PortfolioEventHandler:
@@ -119,7 +151,7 @@ class PortfolioEventHandler:
         _add_liquid(ctx, port, sec_data)
         port.timestamp = event.day
 
-        ctx.publish(PortfolioDataUpdated(day=event.day))
+        ctx.publish(port.get_update_event())
 
 
 def _remove_not_traded(ctx: domain.Ctx, port: Portfolio, sec_data: contracts.SecData) -> None:
