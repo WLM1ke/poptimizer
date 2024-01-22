@@ -37,6 +37,8 @@ Day = Annotated[
     ),
 ]
 
+Ticker = NewType("Ticker", str)
+
 
 @unique
 class Currency(StrEnum):

@@ -29,7 +29,7 @@ _COLUMNS: Final = (
 
 
 class _Row(data.Row):
-    ticker: str = Field(alias="SECID")
+    ticker: domain.Ticker = Field(alias="SECID")
     lot: int = Field(alias="LOTSIZE")
     isin: str = Field(alias="ISIN")
     board: str = Field(alias="BOARDID")

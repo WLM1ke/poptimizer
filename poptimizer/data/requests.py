@@ -17,7 +17,7 @@ class Security(BaseModel):
 
 
 class SecData(domain.Response):
-    securities: dict[str, Security]
+    securities: dict[domain.Ticker, Security]
 
 
 class GetSecData(domain.Request[SecData]):
@@ -66,14 +66,14 @@ def _turnover(
     return turnover.fillna(0).loc[:day]  # type: ignore[reportUnknownMemberType]
 
 
-async def _quotes(ctx: domain.Ctx, tickers: list[str]) -> list[pd.DataFrame]:
+async def _quotes(ctx: domain.Ctx, tickers: list[domain.Ticker]) -> list[pd.DataFrame]:
     async with asyncio.TaskGroup() as tg:
         tasks = [tg.create_task(_quote(ctx, ticker)) for ticker in tickers]
 
     return [task.result() for task in tasks]
 
 
-async def _quote(ctx: domain.Ctx, ticker: str) -> pd.DataFrame:
+async def _quote(ctx: domain.Ctx, ticker: domain.Ticker) -> pd.DataFrame:
     table = await ctx.get(quotes.Quotes, domain.UID(ticker), for_update=False)
 
     return pd.DataFrame(table.model_dump()["df"]).set_index("day")  # type: ignore[reportUnknownMemberType]

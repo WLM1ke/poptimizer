@@ -6,9 +6,8 @@ from poptimizer.core import domain, errors
 from poptimizer.data import contracts
 
 AccName = NewType("AccName", str)
-Ticker = NewType("Ticker", str)
 
-_CashTicker: Final = Ticker("CASH")
+_CashTicker: Final = domain.Ticker("CASH")
 
 
 class Security(BaseModel):
@@ -19,19 +18,19 @@ class Security(BaseModel):
 
 class Account(BaseModel):
     cash: NonNegativeInt = 0
-    positions: dict[Ticker, PositiveInt] = Field(default_factory=dict)
+    positions: dict[domain.Ticker, PositiveInt] = Field(default_factory=dict)
 
 
 class PortfolioDataUpdated(domain.Event):
     day: domain.Day
     version: int
     cash_weight: NonNegativeFloat = Field(repr=False)
-    positions_weight: dict[Ticker, NonNegativeFloat] = Field(repr=False)
+    positions_weight: dict[domain.Ticker, NonNegativeFloat] = Field(repr=False)
 
 
 class Portfolio(domain.Entity):
     accounts: dict[AccName, Account] = Field(default_factory=dict)
-    securities: dict[Ticker, Security] = Field(default_factory=dict)
+    securities: dict[domain.Ticker, Security] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _positions_are_multiple_of_lots(self) -> Self:
@@ -80,7 +79,7 @@ class Portfolio(domain.Entity):
 
             raise errors.DomainError(f"account {name} is not empty")
 
-    def remove_ticket(self, ticker: Ticker) -> bool:
+    def remove_ticket(self, ticker: domain.Ticker) -> bool:
         for account in self.accounts.values():
             if ticker in account.positions:
                 return False
@@ -89,7 +88,7 @@ class Portfolio(domain.Entity):
 
         return True
 
-    def update_position(self, name: AccName, ticker: Ticker, amount: NonNegativeInt) -> None:
+    def update_position(self, name: AccName, ticker: domain.Ticker, amount: NonNegativeInt) -> None:
         if (account := self.accounts.get(name)) is None:
             raise errors.DomainError(f"account {name} doesn't exist")
 
@@ -197,7 +196,7 @@ def _add_liquid(ctx: domain.Ctx, port: Portfolio, sec_data: contracts.SecData) -
         new_data = sec_data.securities[ticker]
 
         if new_data.turnover > min_turnover:
-            port.securities[Ticker(ticker)] = Security(
+            port.securities[ticker] = Security(
                 lot=new_data.lot,
                 price=new_data.price,
                 turnover=new_data.turnover,

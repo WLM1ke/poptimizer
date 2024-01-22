@@ -11,6 +11,7 @@ from pydantic import Field, field_validator
 
 from poptimizer.core import domain, errors
 from poptimizer.data import data, securities
+from poptimizer.portfolio import contracts
 
 _URL: Final = "https://web.moex.com/moex-web-icdb-api/api/v1/export/site-register-closings/csv?separator=1&language=1"
 _LOOK_BACK_DAYS: Final = 14
@@ -19,7 +20,7 @@ _RE_TICKER = re.compile(r", ([A-Z]+-[A-Z]+|[A-Z]+) \[")
 
 
 class _Row(data.Row):
-    ticker: str
+    ticker: domain.Ticker
     ticker_base: str
     preferred: bool
     day: domain.Day
@@ -28,12 +29,9 @@ class _Row(data.Row):
 class DivStatus(domain.Entity):
     df: list[_Row] = Field(default_factory=list[_Row])
 
-    def update(self, update_day: domain.Day, rows: list[_Row]) -> None:
+    def update(self, update_day: domain.Day, rows: Iterator[_Row]) -> None:
         self.timestamp = update_day
-
-        rows.sort(key=(lambda status: (status.ticker, status.day)))
-
-        self.df = rows
+        self.df = sorted(rows, key=(lambda status: (status.ticker, status.day)))
 
     @field_validator("df")
     def _must_be_sorted_by_ticker_and_day(cls, df: list[_Row]) -> list[_Row]:
@@ -53,14 +51,20 @@ class DivStatusEventHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def handle(self, ctx: domain.Ctx, event: securities.SecuritiesUpdated) -> None:
-        sec_table = await ctx.get(securities.Securities, for_update=False)
+    async def handle(self, ctx: domain.Ctx, event: contracts.PortfolioDataUpdated) -> None:
         table = await ctx.get(DivStatus)
+        if event.day == table.timestamp:
+            return
+
         csv_file = await self._download()
-        parsed_rows = self._parse(ctx, csv_file, sec_table)
+        parsed_rows = _parse(ctx, csv_file)
+
+        sec_table = await ctx.get(securities.Securities, for_update=False)
+        status = _status_gen(parsed_rows, sec_table, event)
 
         update_day = event.day
-        table.update(update_day, parsed_rows)
+        table.update(update_day, status)
+
         ctx.publish(DivStatusUpdated(day=update_day))
 
     async def _download(self) -> io.StringIO:
@@ -70,45 +74,37 @@ class DivStatusEventHandler:
 
             return io.StringIO(await resp.text(encoding="cp1251"), newline="")
 
-    def _parse(
-        self,
-        ctx: domain.Ctx,
-        csv_file: io.StringIO,
-        sec: securities.Securities,
-    ) -> list[_Row]:
-        reader = csv.reader(csv_file)
-        next(reader)
 
-        return list(_status_gen(self._parsed_rows_gen(ctx, reader), sec))
+def _parse(
+    ctx: domain.Ctx,
+    csv_file: io.StringIO,
+) -> Iterator[tuple[domain.Ticker, date]]:
+    reader = csv.reader(csv_file)
+    next(reader)
 
-    def _parsed_rows_gen(
-        self,
-        ctx: domain.Ctx,
-        reader: Iterator[list[str]],
-    ) -> Iterator[tuple[str, date]]:
-        for ticker_raw, date_raw, *_ in reader:
-            timestamp = datetime.strptime(date_raw, _DATE_FMT)
-            day = date(timestamp.year, timestamp.month, timestamp.day)
+    for ticker_raw, date_raw, *_ in reader:
+        timestamp = datetime.strptime(date_raw, _DATE_FMT)
+        day = date(timestamp.year, timestamp.month, timestamp.day)
 
-            if day < date.today() - timedelta(days=_LOOK_BACK_DAYS):
-                continue
+        if day < date.today() - timedelta(days=_LOOK_BACK_DAYS):
+            continue
 
-            if (ticker_re := _RE_TICKER.search(ticker_raw)) is None:
-                ctx.warn(f"can't parse ticker from {ticker_raw}")
+        if (ticker_re := _RE_TICKER.search(ticker_raw)) is None:
+            ctx.warn(f"can't parse ticker from {ticker_raw}")
 
-                continue
+            continue
 
-            yield ticker_re[1], day
+        yield domain.Ticker(ticker_re[1]), day
 
 
 def _status_gen(
-    raw_rows: Iterator[tuple[str, date]],
+    raw_rows: Iterator[tuple[domain.Ticker, date]],
     sec: securities.Securities,
+    event: contracts.PortfolioDataUpdated,
 ) -> Iterator[_Row]:
-    sec_map = {row.ticker: row for row in sec.df}
+    sec_map = {row.ticker: row for row in sec.df if row.ticker in event.positions_weight}
     for ticker, day in raw_rows:
-        sec_desc = sec_map.get(ticker)
-        if sec_desc and sec_desc.is_share:
+        if sec_desc := sec_map.get(ticker):
             yield _Row(
                 ticker=ticker,
                 ticker_base=sec_desc.ticker_base,

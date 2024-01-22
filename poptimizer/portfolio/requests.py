@@ -7,7 +7,7 @@ from poptimizer.portfolio import portfolio
 class PortfolioData(domain.Response):
     timestamp: domain.Day
     accounts: dict[portfolio.AccName, portfolio.Account]
-    securities: dict[portfolio.Ticker, portfolio.Security]
+    securities: dict[domain.Ticker, portfolio.Security]
 
 
 class GetPortfolio(domain.Request[PortfolioData]):
@@ -71,7 +71,7 @@ class UpdatePositionRequestHandler:
 
         port.update_position(
             portfolio.AccName(request.name),
-            portfolio.Ticker(request.ticker),
+            domain.Ticker(request.ticker),
             request.amount,
         )
 
