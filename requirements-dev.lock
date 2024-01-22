@@ -5,6 +5,7 @@
 #   pre: false
 #   features: []
 #   all-features: true
+#   with-sources: false
 
 -e file:.
 aiohttp==3.9.1
@@ -15,13 +16,14 @@ attrs==23.2.0
 click==8.1.7
 colorama==0.4.6
 coverage==7.4.0
-dnspython==2.4.2
+dnspython==2.5.0
 et-xmlfile==1.1.0
 frozenlist==1.4.1
 grimp==3.2
 idna==3.6
 import-linter==2.0
 iniconfig==2.0.0
+lxml==5.1.0
 markdown-it-py==3.0.0
 mdurl==0.1.2
 motor==3.3.2
@@ -38,7 +40,7 @@ pydantic-core==2.14.6
 pydantic-settings==2.1.0
 pygments==2.17.2
 pymongo==4.6.1
-pyright==1.1.347
+pyright==1.1.348
 pytest==7.4.4
 pytest-asyncio==0.23.3
 pytest-cov==4.1.0
