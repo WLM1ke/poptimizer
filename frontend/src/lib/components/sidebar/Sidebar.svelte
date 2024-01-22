@@ -10,7 +10,7 @@
 	import { accounts } from "$lib/stores/settings";
 </script>
 
-<aside class="border-bg-accent bg-bg-sidebar flex flex-col justify-between border-r p-2">
+<aside class="flex flex-col justify-between border-r border-bg-accent bg-bg-sidebar p-2">
 	<nav class="flex flex-col gap-2">
 		<ul class="flex flex-col gap-1">
 			<li>
@@ -37,7 +37,7 @@
 				</MenuItem>
 			</li>
 		</ul>
-		<ul class="border-bg-medium border-t pt-2">
+		<ul class="border-t border-bg-medium pt-2">
 			<li>
 				<MenuItem title="Dividends" href="/dividends">
 					<DividendsIcon />
