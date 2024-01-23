@@ -1,63 +1,16 @@
 import asyncio
 import bisect
 import datetime
-import itertools
 from collections.abc import Iterator
 from datetime import date
 from typing import Final
 
 from pydantic import Field, field_validator
 
-from poptimizer.core import consts, domain
-from poptimizer.data import data, securities, usd
+from poptimizer.core import domain
+from poptimizer.data import data, raw, securities, usd
 
 _MIN_DATE: Final = datetime.datetime(datetime.MINYEAR, 1, 1)
-
-
-class _RawRow(data.Row):
-    day: domain.Day
-    dividend: float = Field(gt=0)
-    currency: domain.Currency
-
-    def to_tuple(self) -> tuple[domain.Day, float, domain.Currency]:
-        return self.day, self.dividend, self.currency
-
-    def is_valid_date(self) -> bool:
-        return self.day >= consts.START_DAY
-
-
-class RawDividends(domain.Entity):
-    df: list[_RawRow] = Field(default_factory=list[_RawRow])
-
-    def update(self, update_day: domain.Day, rows: list[_RawRow]) -> None:
-        self.timestamp = update_day
-
-        rows.sort(key=lambda row: row.to_tuple())
-
-        self.df = rows
-
-    def has_date(self, day: domain.Day) -> bool:
-        pos = bisect.bisect_left(self.df, day, key=lambda row: row.day)
-
-        return pos != len(self.df) and self.df[pos].day == day
-
-    def has_row(self, raw_row: _RawRow) -> bool:
-        pos = bisect.bisect_left(
-            self.df,
-            raw_row.to_tuple(),
-            key=lambda row: row.to_tuple(),
-        )
-
-        return pos != len(self.df) and raw_row == self.df[pos]
-
-    @field_validator("df")
-    def _sorted_by_date_div_currency(cls, df: list[_RawRow]) -> list[_RawRow]:
-        day_pairs = itertools.pairwise(row.to_tuple() for row in df)
-
-        if not all(day < next_ for day, next_ in day_pairs):
-            raise ValueError("raw dividends are not sorted")
-
-        return df
 
 
 class _Row(data.Row):
@@ -107,7 +60,7 @@ class DividendsEventHandler:
 
     async def _update_one(self, ctx: domain.Ctx, update_day: date, ticker: domain.UID, usd_table: usd.USD) -> None:
         div_table = await ctx.get(Dividends, ticker)
-        raw_table = await ctx.get(RawDividends, ticker)
+        raw_table = await ctx.get(raw.RawDividends, ticker)
 
         rows = list(_prepare_rows(raw_table.df, usd_table))
 
@@ -115,7 +68,7 @@ class DividendsEventHandler:
 
 
 def _prepare_rows(
-    raw_list: list[_RawRow],
+    raw_list: list[raw.Row],
     usd_table: usd.USD,
 ) -> Iterator[_Row]:
     div = 0
@@ -136,7 +89,7 @@ def _prepare_rows(
         yield _Row(day=date, dividend=div)
 
 
-def _div_in_rur(raw_row: _RawRow, usd_table: usd.USD) -> float:
+def _div_in_rur(raw_row: raw.Row, usd_table: usd.USD) -> float:
     match raw_row.currency:
         case domain.Currency.RUR:
             return raw_row.dividend

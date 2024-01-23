@@ -19,7 +19,7 @@ _DATE_FMT: Final = "%m/%d/%Y %H:%M:%S"
 _RE_TICKER = re.compile(r", ([A-Z]+-[A-Z]+|[A-Z]+) \[")
 
 
-class _Row(data.Row):
+class Row(data.Row):
     ticker: domain.Ticker
     ticker_base: str
     preferred: bool
@@ -27,14 +27,14 @@ class _Row(data.Row):
 
 
 class DivStatus(domain.Entity):
-    df: list[_Row] = Field(default_factory=list[_Row])
+    df: list[Row] = Field(default_factory=list[Row])
 
-    def update(self, update_day: domain.Day, rows: Iterator[_Row]) -> None:
+    def update(self, update_day: domain.Day, rows: Iterator[Row]) -> None:
         self.timestamp = update_day
         self.df = sorted(rows, key=(lambda status: (status.ticker, status.day)))
 
     @field_validator("df")
-    def _must_be_sorted_by_ticker_and_day(cls, df: list[_Row]) -> list[_Row]:
+    def _must_be_sorted_by_ticker_and_day(cls, df: list[Row]) -> list[Row]:
         ticker_date_pairs = itertools.pairwise((row.ticker, row.day) for row in df)
 
         if not all(ticker_date <= next_ for ticker_date, next_ in ticker_date_pairs):
@@ -45,6 +45,7 @@ class DivStatus(domain.Entity):
 
 class DivStatusUpdated(domain.Event):
     day: domain.Day
+    divs: list[Row] = Field(repr=False)
 
 
 class DivStatusEventHandler:
@@ -65,7 +66,7 @@ class DivStatusEventHandler:
         update_day = event.day
         table.update(update_day, status)
 
-        ctx.publish(DivStatusUpdated(day=update_day))
+        ctx.publish(DivStatusUpdated(day=update_day, divs=table.df))
 
     async def _download(self) -> io.StringIO:
         async with self._http_client.get(_URL) as resp:
@@ -101,11 +102,11 @@ def _status_gen(
     raw_rows: Iterator[tuple[domain.Ticker, date]],
     sec: securities.Securities,
     event: contracts.PortfolioDataUpdated,
-) -> Iterator[_Row]:
+) -> Iterator[Row]:
     sec_map = {row.ticker: row for row in sec.df if row.ticker in event.positions_weight}
     for ticker, day in raw_rows:
         if sec_desc := sec_map.get(ticker):
-            yield _Row(
+            yield Row(
                 ticker=ticker,
                 ticker_base=sec_desc.ticker_base,
                 preferred=sec_desc.is_preferred,

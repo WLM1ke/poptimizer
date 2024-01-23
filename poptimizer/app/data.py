@@ -4,7 +4,7 @@ import aiohttp
 
 from poptimizer.adapters import message
 from poptimizer.core import domain
-from poptimizer.data import cpi, day_started, divs, indexes, quotes, requests, securities, status, trading_day, usd
+from poptimizer.data import cpi, day_started, divs, indexes, quotes, raw, requests, securities, status, trading_day, usd
 
 _DATA: Final = domain.Subdomain("data_new")
 
@@ -46,6 +46,11 @@ def init_subdomain(
     )
     bus.add_event_handler(
         _DATA,
+        raw.CheckRawDividendsEventHandler(),
+        message.IndefiniteRetryPolicy,
+    )
+    bus.add_event_handler(
+        _DATA,
         usd.USDEventHandler(http_client),
         message.IndefiniteRetryPolicy,
     )
@@ -54,4 +59,7 @@ def init_subdomain(
         divs.DividendsEventHandler(),
         message.IndefiniteRetryPolicy,
     )
-    bus.add_request_handler(_DATA, requests.SecDataRequestHandler())
+    bus.add_request_handler(
+        _DATA,
+        requests.SecDataRequestHandler(),
+    )
