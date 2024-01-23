@@ -48,7 +48,7 @@ class Currency(StrEnum):
 
 class Entity(BaseModel):
     rev: Revision
-    timestamp: Day
+    day: Day
 
     @property
     def uid(self) -> UID:

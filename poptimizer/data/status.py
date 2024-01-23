@@ -30,7 +30,7 @@ class DivStatus(domain.Entity):
     df: list[Row] = Field(default_factory=list[Row])
 
     def update(self, update_day: domain.Day, rows: Iterator[Row]) -> None:
-        self.timestamp = update_day
+        self.day = update_day
         self.df = sorted(rows, key=(lambda status: (status.ticker, status.day)))
 
     @field_validator("df")
@@ -54,7 +54,7 @@ class DivStatusEventHandler:
 
     async def handle(self, ctx: domain.Ctx, event: contracts.PortfolioDataUpdated) -> None:
         table = await ctx.get(DivStatus)
-        if event.day == table.timestamp:
+        if event.day == table.day:
             return
 
         csv_file = await self._download()

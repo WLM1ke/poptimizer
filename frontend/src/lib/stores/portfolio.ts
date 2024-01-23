@@ -13,13 +13,13 @@ interface Account {
 }
 
 interface Portfolio {
-	timestamp: string;
+	day: string;
 	accounts: Record<string, Account>;
 	securities: Readonly<Record<string, Security>>;
 }
 
 export const portfolio = writable<Portfolio>({
-	timestamp: "",
+	day: "",
 	securities: {},
 	accounts: {}
 });
@@ -35,7 +35,7 @@ export const fetchPortfolioAPI = async (
 			throw new Error(await res.text());
 		}
 		const port: Portfolio = await res.json();
-		port.timestamp = port.timestamp.slice(0, 10);
+		port.day = port.day.slice(0, 10);
 
 		if (Object.keys(port.accounts).length === 0) {
 			addAlert({

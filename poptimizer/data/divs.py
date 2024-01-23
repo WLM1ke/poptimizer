@@ -22,7 +22,7 @@ class Dividends(domain.Entity):
     df: list[_Row] = Field(default_factory=list[_Row])
 
     def update(self, update_day: domain.Day, rows: list[_Row]) -> None:
-        self.timestamp = update_day
+        self.day = update_day
         self.df = rows
 
     _must_be_sorted_by_date = field_validator("df")(data.sorted_by_day_validator)

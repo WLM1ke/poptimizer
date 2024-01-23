@@ -12,7 +12,7 @@ _MONGO_ID: Final = "_id"
 _REV: Final = "rev"
 _VER: Final = "ver"
 _UID: Final = "uid"
-_TIMESTAMP: Final = "timestamp"
+_DAY: Final = "day"
 
 
 class Mongo:
@@ -43,7 +43,7 @@ class Mongo:
         doc = {
             _MONGO_ID: uid,
             _VER: 0,
-            _TIMESTAMP: datetime.datetime(datetime.MINYEAR, 1, 1),
+            _DAY: datetime.datetime(datetime.MINYEAR, 1, 1),
         }
 
         collection: mongo.MongoCollection = self._mongo_client[self._db][collection_name]
@@ -82,7 +82,7 @@ class Mongo:
                     collection_name = domain.get_component_name(entity)
                     if (
                         await db[collection_name].find_one_and_update(
-                            {_MONGO_ID: entity.uid, _VER: entity.ver, _TIMESTAMP: {"$lte": doc[_TIMESTAMP]}},
+                            {_MONGO_ID: entity.uid, _VER: entity.ver, _DAY: {"$lte": doc[_DAY]}},
                             {"$inc": {_VER: 1}, "$set": doc},
                             projection={_MONGO_ID: False},
                             session=session,

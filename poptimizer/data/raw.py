@@ -24,7 +24,7 @@ class RawDividends(domain.Entity):
     df: list[Row] = Field(default_factory=list[Row])
 
     def update(self, update_day: domain.Day, rows: list[Row]) -> None:
-        self.timestamp = update_day
+        self.day = update_day
 
         rows.sort(key=lambda row: row.to_tuple())
 

@@ -126,14 +126,14 @@ class Portfolio(domain.Entity):
 
         if port_value == 0:
             return PortfolioDataUpdated(
-                day=self.timestamp,
+                day=self.day,
                 version=self.ver,
                 cash_weight=1,
                 positions_weight=pos_value,
             )
 
         return PortfolioDataUpdated(
-            day=self.timestamp,
+            day=self.day,
             version=self.ver,
             cash_weight=cash / port_value,
             positions_weight={ticker: pos / port_value for ticker, pos in pos_value.items()},
@@ -148,7 +148,7 @@ class PortfolioEventHandler:
         _remove_not_traded(ctx, port, sec_data)
         _update_sec_data(ctx, port, sec_data)
         _add_liquid(ctx, port, sec_data)
-        port.timestamp = event.day
+        port.day = event.day
 
         ctx.publish(port.get_update_event())
 

@@ -22,7 +22,7 @@ export const accountView = derived(
 		if (account === undefined) {
 			return {
 				name: "",
-				timestamp: "",
+				day: "",
 				positions: [],
 				positionsCount: 0,
 				positionsTotal: 0,
@@ -54,7 +54,7 @@ export const accountView = derived(
 
 		return {
 			name: pageTitle,
-			timestamp: port.timestamp,
+			day: port.day,
 			positions: accountPositions,
 			positionsCount: Object.keys(account.positions).length,
 			positionsTotal: Object.keys(port.securities).length,

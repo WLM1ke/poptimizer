@@ -16,7 +16,7 @@
 
 <Card>
 	<CardSecondary>
-		Date: {$portfolioView.timestamp}
+		Date: {$portfolioView.day}
 	</CardSecondary>
 	<CardMain>
 		Value: {$portfolioView.value.toLocaleString(undefined, {

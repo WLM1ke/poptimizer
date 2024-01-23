@@ -5,7 +5,7 @@ from poptimizer.portfolio import portfolio
 
 
 class PortfolioData(domain.Response):
-    timestamp: domain.Day
+    day: domain.Day
     accounts: dict[portfolio.AccName, portfolio.Account]
     securities: dict[domain.Ticker, portfolio.Security]
 
@@ -19,7 +19,7 @@ class PortfolioDataRequestHandler:
         port = await ctx.get(portfolio.Portfolio, for_update=False)
 
         return PortfolioData(
-            timestamp=port.timestamp,
+            day=port.day,
             accounts=port.accounts,
             securities=port.securities,
         )
@@ -36,7 +36,7 @@ class CreateAccountRequestHandler:
         port.create_acount(portfolio.AccName(request.name))
 
         return PortfolioData(
-            timestamp=port.timestamp,
+            day=port.day,
             accounts=port.accounts,
             securities=port.securities,
         )
@@ -53,7 +53,7 @@ class RemoveAccountRequestHandler:
         port.remove_acount(portfolio.AccName(request.name))
 
         return PortfolioData(
-            timestamp=port.timestamp,
+            day=port.day,
             accounts=port.accounts,
             securities=port.securities,
         )
@@ -78,7 +78,7 @@ class UpdatePositionRequestHandler:
         ctx.publish(port.get_update_event())
 
         return PortfolioData(
-            timestamp=port.timestamp,
+            day=port.day,
             accounts=port.accounts,
             securities=port.securities,
         )

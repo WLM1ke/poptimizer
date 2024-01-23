@@ -41,7 +41,7 @@ class TradingDayEventHandler:
     async def handle(self, ctx: domain.Ctx, event: day_started.DayStarted) -> None:
         table = await ctx.get(TradingDay)
 
-        if table.timestamp >= event.day:
+        if table.day >= event.day:
             return
 
         json = await aiomoex.get_board_dates(
@@ -54,6 +54,6 @@ class TradingDayEventHandler:
         payload = _Payload.model_validate({"df": json})
         new_last_day = payload.last_day()
 
-        if table.timestamp < new_last_day:
-            table.timestamp = new_last_day
+        if table.day < new_last_day:
+            table.day = new_last_day
             ctx.publish(TradingDayEnded(day=new_last_day))

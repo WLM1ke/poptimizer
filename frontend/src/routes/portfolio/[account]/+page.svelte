@@ -39,7 +39,7 @@
 
 <Card>
 	<CardSecondary>
-		Date: {$accountView.timestamp}
+		Date: {$accountView.day}
 	</CardSecondary>
 	<CardMain>
 		Value: {$accountView.value.toLocaleString(undefined, {

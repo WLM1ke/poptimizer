@@ -26,7 +26,7 @@ class Index(domain.Entity):
     df: list[_Row] = Field(default_factory=list[_Row])
 
     def update(self, update_day: domain.Day, rows: list[_Row]) -> None:
-        self.timestamp = update_day
+        self.day = update_day
 
         if not self.df:
             self.df = rows

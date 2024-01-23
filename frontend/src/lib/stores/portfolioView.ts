@@ -54,7 +54,7 @@ export const portfolioView = derived(
 		);
 
 		return {
-			timestamp: port.timestamp,
+			day: port.day,
 			positions: portfolioPositions,
 			positionsCount: Object.keys(accountsPositions).length,
 			effectiveCount,
