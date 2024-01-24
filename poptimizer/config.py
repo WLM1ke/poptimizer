@@ -65,4 +65,4 @@ START_EVOLVE_HOUR = cast(int, _cfg.get("START_EVOLVE_HOUR", 1))
 STOP_EVOLVE_HOUR = cast(int, _cfg.get("STOP_EVOLVE_HOUR", 1))
 OPTIMIZER = cast(str, _cfg.get("OPTIMIZER", "resample"))
 MIN_TEST_DAYS: Final = 85 * 5
-TARGET_POPULATION: Final = 90
+TARGET_POPULATION: Final = 80
