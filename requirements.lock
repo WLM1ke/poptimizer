@@ -33,7 +33,7 @@ pydantic-settings==2.1.0
 pygments==2.17.2
 pymongo==4.6.1
 python-dateutil==2.8.2
-python-dotenv==1.0.0
+python-dotenv==1.0.1
 pytz==2023.3.post1
 rich==13.7.0
 shellingham==1.5.4
