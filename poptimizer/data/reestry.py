@@ -17,7 +17,7 @@ _RE_DIV: Final = re.compile(r"(\d.*)[\xA0\s](руб|USD|\$)")
 _DIV_TRANSLATE: Final = str.maketrans({",": ".", " ": ""})
 
 
-class ReestryDividends(raw.RawDividends):
+class DivReestry(raw.DivRaw):
     ...
 
 
@@ -42,7 +42,7 @@ class ReestryDividendsEventHandler:
         update_day: domain.Day,
         row: status.Row,
     ) -> None:
-        table = await ctx.get(ReestryDividends, domain.UID(row.ticker))
+        table = await ctx.get(DivReestry, domain.UID(row.ticker))
 
         if table.has_day(row.day):
             return

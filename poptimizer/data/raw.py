@@ -20,7 +20,7 @@ class Row(data.Row):
         return self.day >= consts.START_DAY
 
 
-class RawDividends(domain.Entity):
+class DivRaw(domain.Entity):
     df: list[Row] = Field(default_factory=list[Row])
 
     def update(self, update_day: domain.Day, rows: list[Row]) -> None:
@@ -67,7 +67,7 @@ class CheckRawDividendsEventHandler:
         ctx.publish(RawDividendsChecked(day=event.day))
 
     async def _check_one(self, ctx: domain.Ctx, row: status.Row) -> None:
-        table = await ctx.get(RawDividends, domain.UID(row.ticker), for_update=False)
+        table = await ctx.get(DivRaw, domain.UID(row.ticker), for_update=False)
 
         if not table.has_day(row.day):
             ctx.warn(f"{row.ticker} missed dividend at {row.day}")

@@ -60,7 +60,7 @@ class DividendsEventHandler:
 
     async def _update_one(self, ctx: domain.Ctx, update_day: date, ticker: domain.UID, usd_table: usd.USD) -> None:
         div_table = await ctx.get(Dividends, ticker)
-        raw_table = await ctx.get(raw.RawDividends, ticker)
+        raw_table = await ctx.get(raw.DivRaw, ticker)
 
         rows = list(_prepare_rows(raw_table.df, usd_table))
 
