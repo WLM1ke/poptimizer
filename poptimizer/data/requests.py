@@ -8,7 +8,7 @@ from poptimizer.core import domain
 from poptimizer.data import quotes, securities
 
 _START_LIQUIDITY_DAYS: Final = 21
-_MINIMUM_HISTORY: Final = 8 * 5 + 21
+_MINIMUM_HISTORY: Final = 86 * 5 + 21
 
 
 class Security(BaseModel):
