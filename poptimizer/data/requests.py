@@ -7,7 +7,8 @@ from pydantic import BaseModel, NonNegativeFloat, PositiveFloat, PositiveInt
 from poptimizer.core import domain
 from poptimizer.data import quotes, securities
 
-_MINIMUM_HISTORY: Final = 84 * 5 + 21
+_START_LIQUIDITY_DAYS: Final = 21
+_MINIMUM_HISTORY: Final = 8 * 5 + 21
 
 
 class Security(BaseModel):
@@ -32,10 +33,11 @@ class SecDataRequestHandler:
         quotes = await _quotes(ctx, tickers)
         turnover = (  # type: ignore[reportUnknownMemberType]
             _turnover(tickers, quotes, request.day)  # type: ignore[reportUnknownMemberType]
-            .iloc[-_MINIMUM_HISTORY:]
-            .sort_index(ascending=True)
+            .iloc[-_MINIMUM_HISTORY * 2 :]
+            .sort_index(ascending=False)
             .expanding()
             .median()
+            .iloc[_START_LIQUIDITY_DAYS:]
             .min()
         )
 
