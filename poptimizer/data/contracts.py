@@ -1,8 +1,9 @@
 from poptimizer.data.quotes import QuotesUpdated
-from poptimizer.data.requests import GetSecData, SecData
+from poptimizer.data.requests import GetDivTickers, GetSecData, SecData
 
 __all__ = (
-    "QuotesUpdated",
+    "GetDivTickers",
     "GetSecData",
+    "QuotesUpdated",
     "SecData",
 )

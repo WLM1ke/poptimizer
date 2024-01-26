@@ -5,7 +5,7 @@ import pandas as pd
 from pydantic import BaseModel, NonNegativeFloat, PositiveFloat, PositiveInt
 
 from poptimizer.core import domain
-from poptimizer.data import quotes, securities
+from poptimizer.data import quotes, securities, status
 
 _START_LIQUIDITY_DAYS: Final = 21
 _MINIMUM_HISTORY: Final = 86 * 5 + 21
@@ -79,3 +79,18 @@ async def _quote(ctx: domain.Ctx, ticker: domain.Ticker) -> pd.DataFrame:
     table = await ctx.get(quotes.Quotes, domain.UID(ticker), for_update=False)
 
     return pd.DataFrame(table.model_dump()["df"]).set_index("day")  # type: ignore[reportUnknownMemberType]
+
+
+class DivTickers(domain.Response):
+    tickers: list[domain.Ticker]
+
+
+class GetDivTickers(domain.Request[DivTickers]):
+    ...
+
+
+class DivTickersRequestHandler:
+    async def handle(self, ctx: domain.Ctx, request: GetDivTickers) -> DivTickers:  # noqa: ARG002
+        table = await ctx.get(status.DivStatus, for_update=False)
+
+        return DivTickers(tickers=[row.ticker for row in table.df])

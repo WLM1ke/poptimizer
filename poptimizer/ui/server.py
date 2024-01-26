@@ -4,7 +4,7 @@ from aiohttp import abc, typedefs, web
 from pydantic import HttpUrl, ValidationError
 
 from poptimizer.core import domain, errors
-from poptimizer.ui import frontend, portfolio
+from poptimizer.ui import frontend, handlers
 
 
 class AccessLogger(abc.AbstractAccessLogger):
@@ -100,7 +100,7 @@ class APIServerService:
 
     def _prepare_app(self, ctx: domain.SrvCtx) -> web.Application:
         api = web.Application()
-        portfolio.Views(api, ctx)
+        handlers.Views(api, ctx)
 
         app = web.Application(middlewares=[RequestErrorMiddleware(ctx)])
         app.add_subapp("/api/", api)

@@ -1,7 +1,8 @@
 from aiohttp import web
 
 from poptimizer.core import domain
-from poptimizer.portfolio import contracts
+from poptimizer.data import contracts as data_contracts
+from poptimizer.portfolio import contracts as port_contracts
 
 
 class Views:
@@ -12,21 +13,22 @@ class Views:
         app.add_routes([web.post("/portfolio/{account}", self.create_acount)])
         app.add_routes([web.delete("/portfolio/{account}", self.remove_acount)])
         app.add_routes([web.post("/portfolio/{account}/{ticker}", self.update_position)])
+        app.add_routes([web.get("/dividends", self.get_div_tickers)])
 
     async def get_portfolio(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
-        portfolio = await self._ctx.request(contracts.GetPortfolio())
+        portfolio = await self._ctx.request(port_contracts.GetPortfolio())
 
         return web.json_response(text=portfolio.model_dump_json())
 
     async def create_acount(self, request: web.Request) -> web.StreamResponse:
         account = request.match_info["account"]
-        portfolio = await self._ctx.request(contracts.CreateAccount(name=account))
+        portfolio = await self._ctx.request(port_contracts.CreateAccount(name=account))
 
         return web.json_response(text=portfolio.model_dump_json())
 
     async def remove_acount(self, request: web.Request) -> web.StreamResponse:
         account = request.match_info["account"]
-        portfolio = await self._ctx.request(contracts.RemoveAccount(name=account))
+        portfolio = await self._ctx.request(port_contracts.RemoveAccount(name=account))
 
         return web.json_response(text=portfolio.model_dump_json())
 
@@ -35,7 +37,7 @@ class Views:
         ticker = request.match_info["ticker"]
         json = await request.json()
         portfolio = await self._ctx.request(
-            contracts.UpdatePosition(
+            port_contracts.UpdatePosition(
                 name=account,
                 ticker=ticker,
                 amount=json.get("amount"),
@@ -43,3 +45,8 @@ class Views:
         )
 
         return web.json_response(text=portfolio.model_dump_json())
+
+    async def get_div_tickers(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
+        div = await self._ctx.request(data_contracts.GetDivTickers())
+
+        return web.json_response(text=div.model_dump_json())
