@@ -60,8 +60,10 @@ class RawDividendsChecked(domain.Event):
 
 class CheckRawDividendsEventHandler:
     async def handle(self, ctx: domain.Ctx, event: status.DivStatusUpdated) -> None:
+        status_table = await ctx.get(status.DivStatus, for_update=False)
+
         async with asyncio.TaskGroup() as tg:
-            for row in event.divs:
+            for row in status_table.df:
                 tg.create_task(self._check_one(ctx, row))
 
         ctx.publish(RawDividendsChecked(day=event.day))

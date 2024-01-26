@@ -30,8 +30,10 @@ class ReestryDividendsEventHandler:
         self._http_client = http_client
 
     async def handle(self, ctx: domain.Ctx, event: status.DivStatusUpdated) -> None:
+        status_table = await ctx.get(status.DivStatus, for_update=False)
+
         async with asyncio.TaskGroup() as tg:
-            for row in event.divs:
+            for row in status_table.df:
                 tg.create_task(self._update_one(ctx, event.day, row))
 
         ctx.publish(ReestryDividendsUpdated(day=event.day))

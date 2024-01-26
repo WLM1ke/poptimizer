@@ -45,7 +45,6 @@ class DivStatus(domain.Entity):
 
 class DivStatusUpdated(domain.Event):
     day: domain.Day
-    divs: list[Row] = Field(repr=False)
 
 
 class DivStatusEventHandler:
@@ -66,7 +65,7 @@ class DivStatusEventHandler:
         update_day = event.day
         table.update(update_day, status)
 
-        ctx.publish(DivStatusUpdated(day=update_day, divs=table.df))
+        ctx.publish(DivStatusUpdated(day=update_day))
 
     async def _download(self) -> io.StringIO:
         async with self._http_client.get(_URL) as resp:
