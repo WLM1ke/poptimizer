@@ -2,27 +2,21 @@ import asyncio
 from typing import Final
 
 import pandas as pd
-from pydantic import BaseModel, NonNegativeFloat, PositiveFloat, PositiveInt
 
 from poptimizer.core import domain
 from poptimizer.data import quotes, raw, reestry, securities, status
+from poptimizer.data.contracts import (
+    DividendsData,
+    DivTickers,
+    GetDividends,
+    GetDivTickers,
+    GetSecData,
+    SecData,
+    Security,
+)
 
 _START_LIQUIDITY_DAYS: Final = 21
 _MINIMUM_HISTORY: Final = 86 * 5 + 21
-
-
-class Security(BaseModel):
-    lot: PositiveInt
-    price: PositiveFloat
-    turnover: NonNegativeFloat
-
-
-class SecData(domain.Response):
-    securities: dict[domain.Ticker, Security]
-
-
-class GetSecData(domain.Request[SecData]):
-    day: domain.Day
 
 
 class SecDataRequestHandler:
@@ -81,14 +75,6 @@ async def _quote(ctx: domain.Ctx, ticker: domain.Ticker) -> pd.DataFrame:
     return pd.DataFrame(table.model_dump()["df"]).set_index("day")  # type: ignore[reportUnknownMemberType]
 
 
-class DivTickers(domain.Response):
-    tickers: list[domain.Ticker]
-
-
-class GetDivTickers(domain.Request[DivTickers]):
-    ...
-
-
 class DivTickersRequestHandler:
     async def handle(self, ctx: domain.Ctx, request: GetDivTickers) -> DivTickers:  # noqa: ARG002
         table = await ctx.get(status.DivStatus, for_update=False)
@@ -96,22 +82,13 @@ class DivTickersRequestHandler:
         return DivTickers(tickers=[row.ticker for row in table.df])
 
 
-class DivDividends(domain.Response):
-    saved: list[raw.Row]
-    compare: list[raw.Row]
-
-
-class GetDividends(domain.Request[DivDividends]):
-    ticker: domain.Ticker
-
-
 class DividendsRequestHandler:
-    async def handle(self, ctx: domain.Ctx, request: GetDividends) -> DivDividends:
+    async def handle(self, ctx: domain.Ctx, request: GetDividends) -> DividendsData:
         async with asyncio.TaskGroup() as tg:
             raw_table = tg.create_task(ctx.get(raw.DivRaw, domain.UID(request.ticker), for_update=False))
             reestry_table = tg.create_task(ctx.get(reestry.DivReestry, domain.UID(request.ticker), for_update=False))
 
-        return DivDividends(
+        return DividendsData(
             saved=raw_table.result().df,
             compare=reestry_table.result().df,
         )

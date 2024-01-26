@@ -1,31 +1,12 @@
-from typing import Final, NewType, Self
+from typing import Final, Self
 
-from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt, model_validator
+from pydantic import Field, NonNegativeInt, model_validator
 
 from poptimizer.core import domain, errors
 from poptimizer.data import contracts
-
-AccName = NewType("AccName", str)
+from poptimizer.portfolio.contracts import AccName, Account, PortfolioDataUpdated, Security
 
 _CashTicker: Final = domain.Ticker("CASH")
-
-
-class Security(BaseModel):
-    lot: PositiveInt
-    price: PositiveFloat
-    turnover: NonNegativeFloat
-
-
-class Account(BaseModel):
-    cash: NonNegativeInt = 0
-    positions: dict[domain.Ticker, PositiveInt] = Field(default_factory=dict)
-
-
-class PortfolioDataUpdated(domain.Event):
-    day: domain.Day
-    version: int
-    cash_weight: NonNegativeFloat = Field(repr=False)
-    positions_weight: dict[domain.Ticker, NonNegativeFloat] = Field(repr=False)
 
 
 class Portfolio(domain.Entity):

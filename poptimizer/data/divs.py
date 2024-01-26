@@ -68,7 +68,7 @@ class DividendsEventHandler:
 
 
 def _prepare_rows(
-    raw_list: list[raw.Row],
+    raw_list: list[raw.RawRow],
     usd_table: usd.USD,
 ) -> Iterator[_Row]:
     div = 0
@@ -89,7 +89,7 @@ def _prepare_rows(
         yield _Row(day=date, dividend=div)
 
 
-def _div_in_rur(raw_row: raw.Row, usd_table: usd.USD) -> float:
+def _div_in_rur(raw_row: raw.RawRow, usd_table: usd.USD) -> float:
     match raw_row.currency:
         case domain.Currency.RUR:
             return raw_row.dividend

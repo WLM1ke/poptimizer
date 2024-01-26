@@ -1,17 +1,6 @@
-from pydantic import NonNegativeInt
-
 from poptimizer.core import domain
 from poptimizer.portfolio import portfolio
-
-
-class PortfolioData(domain.Response):
-    day: domain.Day
-    accounts: dict[portfolio.AccName, portfolio.Account]
-    securities: dict[domain.Ticker, portfolio.Security]
-
-
-class GetPortfolio(domain.Request[PortfolioData]):
-    ...
+from poptimizer.portfolio.contracts import CreateAccount, GetPortfolio, PortfolioData, RemoveAccount, UpdatePosition
 
 
 class PortfolioDataRequestHandler:
@@ -23,10 +12,6 @@ class PortfolioDataRequestHandler:
             accounts=port.accounts,
             securities=port.securities,
         )
-
-
-class CreateAccount(domain.Request[PortfolioData]):
-    name: str
 
 
 class CreateAccountRequestHandler:
@@ -42,10 +27,6 @@ class CreateAccountRequestHandler:
         )
 
 
-class RemoveAccount(domain.Request[PortfolioData]):
-    name: str
-
-
 class RemoveAccountRequestHandler:
     async def handle(self, ctx: domain.Ctx, request: RemoveAccount) -> PortfolioData:
         port = await ctx.get(portfolio.Portfolio)
@@ -57,12 +38,6 @@ class RemoveAccountRequestHandler:
             accounts=port.accounts,
             securities=port.securities,
         )
-
-
-class UpdatePosition(domain.Request[PortfolioData]):
-    name: str
-    ticker: str
-    amount: NonNegativeInt
 
 
 class UpdatePositionRequestHandler:

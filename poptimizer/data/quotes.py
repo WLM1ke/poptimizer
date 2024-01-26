@@ -7,6 +7,7 @@ from pydantic import Field, TypeAdapter, field_validator
 
 from poptimizer.core import consts, domain, errors
 from poptimizer.data import data, securities
+from poptimizer.data.contracts import QuotesUpdated
 
 
 class _Row(data.Row):
@@ -45,10 +46,6 @@ class Quotes(domain.Entity):
 
     _must_be_sorted_by_date = field_validator("df")(data.sorted_by_day_validator)
     _must_be_after_start_date = field_validator("df")(data.after_start_date_validator)
-
-
-class QuotesUpdated(domain.Event):
-    day: domain.Day
 
 
 class QuotesEventHandler:
