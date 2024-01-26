@@ -12,7 +12,7 @@
 	export let tickers: string[];
 </script>
 
-<aside class="flex flex-col justify-between border-r border-bg-accent bg-bg-sidebar p-2">
+<aside class="border-bg-accent bg-bg-sidebar flex flex-col justify-between border-r p-2">
 	<nav class="flex flex-col gap-2">
 		<ul class="flex flex-col gap-1">
 			<li>
@@ -42,9 +42,9 @@
 				</MenuItem>
 			</li>
 		</ul>
-		<ul class="flex flex-col gap-1 border-t border-bg-medium pt-2">
+		<ul class="border-bg-medium flex flex-col gap-1 border-t pt-2">
 			<li>
-				<MenuItem title="Dividends" href="/dividends">
+				<MenuItem title="Dividends">
 					<DividendsIcon />
 				</MenuItem>
 			</li>
