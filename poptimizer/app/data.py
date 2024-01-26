@@ -86,3 +86,7 @@ def init_subdomain(
         _DATA,
         requests.DivTickersRequestHandler(),
     )
+    bus.add_request_handler(
+        _DATA,
+        requests.DividendsRequestHandler(),
+    )

@@ -14,6 +14,7 @@ class Views:
         app.add_routes([web.delete("/portfolio/{account}", self.remove_acount)])
         app.add_routes([web.post("/portfolio/{account}/{ticker}", self.update_position)])
         app.add_routes([web.get("/dividends", self.get_div_tickers)])
+        app.add_routes([web.get("/dividends/{ticker}", self.get_dividends)])
 
     async def get_portfolio(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
         portfolio = await self._ctx.request(port_contracts.GetPortfolio())
@@ -48,5 +49,11 @@ class Views:
 
     async def get_div_tickers(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
         div = await self._ctx.request(data_contracts.GetDivTickers())
+
+        return web.json_response(text=div.model_dump_json())
+
+    async def get_dividends(self, request: web.Request) -> web.StreamResponse:
+        ticker = request.match_info["ticker"]
+        div = await self._ctx.request(data_contracts.GetDividends(ticker=domain.Ticker(ticker)))
 
         return web.json_response(text=div.model_dump_json())

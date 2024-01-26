@@ -5,7 +5,7 @@ import pandas as pd
 from pydantic import BaseModel, NonNegativeFloat, PositiveFloat, PositiveInt
 
 from poptimizer.core import domain
-from poptimizer.data import quotes, securities, status
+from poptimizer.data import quotes, raw, reestry, securities, status
 
 _START_LIQUIDITY_DAYS: Final = 21
 _MINIMUM_HISTORY: Final = 86 * 5 + 21
@@ -94,3 +94,24 @@ class DivTickersRequestHandler:
         table = await ctx.get(status.DivStatus, for_update=False)
 
         return DivTickers(tickers=[row.ticker for row in table.df])
+
+
+class DivDividends(domain.Response):
+    saved: list[raw.Row]
+    compare: list[raw.Row]
+
+
+class GetDividends(domain.Request[DivDividends]):
+    ticker: domain.Ticker
+
+
+class DividendsRequestHandler:
+    async def handle(self, ctx: domain.Ctx, request: GetDividends) -> DivDividends:
+        async with asyncio.TaskGroup() as tg:
+            raw_table = tg.create_task(ctx.get(raw.DivRaw, domain.UID(request.ticker), for_update=False))
+            reestry_table = tg.create_task(ctx.get(reestry.DivReestry, domain.UID(request.ticker), for_update=False))
+
+        return DivDividends(
+            saved=raw_table.result().df,
+            compare=reestry_table.result().df,
+        )
