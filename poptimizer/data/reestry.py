@@ -8,7 +8,7 @@ import aiohttp
 from lxml import html
 
 from poptimizer.core import domain, errors
-from poptimizer.data import raw, status
+from poptimizer.data import quotes, raw, status
 
 _URL: Final = "https://закрытияреестров.рф/_/"
 
@@ -47,10 +47,13 @@ class ReestryDividendsEventHandler:
         if table.has_day(row.day):
             return
 
+        quotes_table = await ctx.get(quotes.Quotes, for_update=False)
+        first_day = quotes_table.df[0].day
+
         url = await self._find_url(row.ticker_base)
         html_page = await self._load_html(url, row)
         try:
-            raw_rows = _parse(html_page, 1 + row.preferred)
+            raw_rows = _parse(html_page, 1 + row.preferred, first_day)
         except errors.DomainError as err:
             raise errors.DomainError(f"can't parse {row.ticker}") from err
 
@@ -80,13 +83,13 @@ class ReestryDividendsEventHandler:
             return await resp.text()
 
 
-def _parse(html_page: str, data_col: int) -> list[raw.Row]:
+def _parse(html_page: str, data_col: int, first_day: domain.Day) -> list[raw.Row]:
     rows: list[html.HtmlElement] = html.document_fromstring(html_page).xpath("//*/table/tbody/tr")  # type: ignore[reportUnknownMemberType]
 
     rows_iter = iter(rows)
     _validate_header(next(rows_iter), data_col)
 
-    return list(_parse_rows(rows_iter, data_col))
+    return list(_parse_rows(rows_iter, data_col, first_day))
 
 
 def _validate_header(row: html.HtmlElement, data_col: int) -> None:
@@ -100,7 +103,7 @@ def _validate_header(row: html.HtmlElement, data_col: int) -> None:
         raise errors.DomainError(f"wrong dividends table header {header}")
 
 
-def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int) -> Iterable[raw.Row]:
+def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day: domain.Day) -> Iterable[raw.Row]:
     for row in rows_iter:
         if "ИТОГО" in (date_raw := "".join(row[0].itertext())):
             continue
@@ -110,11 +113,12 @@ def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int) -> Iterabl
 
         div, currency = _parse_div(div_raw)
 
-        yield raw.Row(
-            day=_parse_date(date_raw),
-            dividend=div,
-            currency=currency,
-        )
+        if (day := _parse_date(date_raw)) >= first_day:
+            yield raw.Row(
+                day=day,
+                dividend=div,
+                currency=currency,
+            )
 
 
 def _parse_date(date_raw: str) -> datetime:
