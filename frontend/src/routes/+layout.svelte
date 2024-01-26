@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import "../app.css";
 	import "@fontsource/roboto-condensed";
 	import Logo from "$lib/components/Logo.svelte";
@@ -6,6 +6,9 @@
 	import Sidebar from "$lib/components/sidebar/Sidebar.svelte";
 	import Alerts from "$lib/components/alerts/Alerts.svelte";
 	import { pageTitle } from "$lib/stores/page";
+	import type { LayoutData } from "./$types";
+
+	export let data: LayoutData;
 </script>
 
 <svelte:head>
@@ -15,7 +18,7 @@
 <section class="grid h-screen w-screen grid-cols-layout grid-rows-layout">
 	<Logo />
 	<Header />
-	<Sidebar />
+	<Sidebar tickers={data.tickers} />
 	<main class="overflow-scroll px-4 py-2">
 		<slot />
 		<Alerts />
