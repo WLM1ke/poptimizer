@@ -7,7 +7,7 @@
 		TableHeadCell,
 		TableBody,
 		TableRow,
-		TableTickerCell,
+		TextCell,
 		TableNumberCell,
 		TableEmptyCell,
 		TablePercentCell
@@ -38,7 +38,7 @@
 	</TableHead>
 	<TableBody>
 		<TableRow>
-			<TableTickerCell ticker="Cash" />
+			<TextCell text="Cash" />
 			<TableNumberCell value={$portfolioView.cash} />
 			<TableEmptyCell />
 			<TableEmptyCell />
@@ -46,7 +46,7 @@
 		</TableRow>
 		{#each $portfolioView.positions as position (position.ticker)}
 			<TableRow>
-				<TableTickerCell ticker={position.ticker} />
+				<TextCell text={position.ticker} />
 				<TableNumberCell value={position.shares} />
 				<TableNumberCell value={position.price} />
 				<TableNumberCell value={position.value} fractionDigits={0} />

@@ -9,7 +9,7 @@
 		TableInputCell,
 		TableNumberCell,
 		TableRow,
-		TableTickerCell
+		TextCell
 	} from "$lib/components/base/table";
 	import { accountView } from "$lib/stores/accountView";
 
@@ -62,7 +62,7 @@
 	</TableHead>
 	<TableBody>
 		<TableRow>
-			<TableTickerCell ticker="Cash" />
+			<TextCell ticker="Cash" />
 			<TableInputCell
 				bind:value={positions["CASH"]}
 				on:change={(event) => {
@@ -75,7 +75,7 @@
 		</TableRow>
 		{#each $accountView.positions as position (position.ticker)}
 			<TableRow>
-				<TableTickerCell ticker={position.ticker} />
+				<TextCell ticker={position.ticker} />
 				<TableInputCell
 					bind:value={positions[position.ticker]}
 					on:change={(event) => {
