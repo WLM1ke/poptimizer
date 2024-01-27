@@ -4,6 +4,8 @@ export { default as TableHeadCell } from "$lib/components/base/table/HeadCell.sv
 export { default as TableBody } from "$lib/components/base/table/Body.svelte";
 export { default as TableRow } from "$lib/components/base/table/Row.svelte";
 export { default as TextCell } from "$lib/components/base/table/Text.svelte";
+export { default as AddCell } from "$lib/components/base/table/Add.svelte";
+export { default as DeleteCell } from "$lib/components/base/table/Delete.svelte";
 export { default as TableInputCell } from "$lib/components/base/table/Input.svelte";
 export { default as TableNumberCell } from "$lib/components/base/table/Number.svelte";
 export { default as TableDayCell } from "$lib/components/base/table/Day.svelte";
