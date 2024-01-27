@@ -1,7 +1,7 @@
 import asyncio
 import re
 from collections.abc import Iterable
-from datetime import datetime
+from datetime import date, datetime
 from typing import Final
 
 import aiohttp
@@ -49,7 +49,7 @@ class ReestryDividendsEventHandler:
         if table.has_day(row.day):
             return
 
-        quotes_table = await ctx.get(quotes.Quotes, for_update=False)
+        quotes_table = await ctx.get(quotes.Quotes, domain.UID(row.ticker), for_update=False)
         first_day = quotes_table.df[0].day
 
         url = await self._find_url(row.ticker_base)
@@ -123,11 +123,11 @@ def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day:
             )
 
 
-def _parse_date(date_raw: str) -> datetime:
+def _parse_date(date_raw: str) -> date:
     if not (date_re := _RE_DATE.search(date_raw)):
         raise errors.DomainError(f"can't parse date {date_raw}")
 
-    return datetime.strptime(date_re.group(0), "%d.%m.%Y")
+    return datetime.strptime(date_re.group(0), "%d.%m.%Y").date()
 
 
 def _parse_div(div_raw: str) -> tuple[float, domain.Currency]:

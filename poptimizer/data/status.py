@@ -14,7 +14,7 @@ from poptimizer.data import data, securities
 from poptimizer.portfolio import contracts
 
 _URL: Final = "https://web.moex.com/moex-web-icdb-api/api/v1/export/site-register-closings/csv?separator=1&language=1"
-_LOOK_BACK_DAYS: Final = 14
+_LOOK_BACK_DAYS: Final = 14 * 2
 _DATE_FMT: Final = "%m/%d/%Y %H:%M:%S"
 _RE_TICKER = re.compile(r", ([A-Z]+-[A-Z]+|[A-Z]+) \[")
 
