@@ -1,3 +1,4 @@
+from datetime import date
 from typing import NewType
 
 from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt
@@ -27,7 +28,7 @@ class Security(BaseModel):
 
 
 class PortfolioData(domain.Response):
-    day: domain.Day
+    day: date
     accounts: dict[AccName, Account]
     securities: dict[domain.Ticker, Security]
 

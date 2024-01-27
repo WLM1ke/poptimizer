@@ -1,3 +1,4 @@
+from datetime import date
 import itertools
 from enum import StrEnum, auto
 
@@ -40,12 +41,12 @@ class DivCompStatus(StrEnum):
 
 
 class DivCompareRow(data.Row):
-    day: domain.Day
+    day: date
     dividend: float = Field(gt=0)
     currency: domain.Currency
     status: DivCompStatus
 
-    def to_tuple(self) -> tuple[domain.Day, float, domain.Currency]:
+    def to_tuple(self) -> tuple[date, float, domain.Currency]:
         return self.day, self.dividend, self.currency
 
 
