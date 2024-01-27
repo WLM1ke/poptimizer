@@ -6,6 +6,8 @@ import pandas as pd
 from poptimizer.core import domain
 from poptimizer.data import quotes, raw, reestry, securities, status
 from poptimizer.data.contracts import (
+    DivCompareRow,
+    DivCompStatus,
     DividendsData,
     DivTickers,
     GetDividends,
@@ -85,10 +87,36 @@ class DivTickersRequestHandler:
 class DividendsRequestHandler:
     async def handle(self, ctx: domain.Ctx, request: GetDividends) -> DividendsData:
         async with asyncio.TaskGroup() as tg:
-            raw_table = tg.create_task(ctx.get(raw.DivRaw, domain.UID(request.ticker), for_update=False))
-            reestry_table = tg.create_task(ctx.get(reestry.DivReestry, domain.UID(request.ticker), for_update=False))
+            raw_task = tg.create_task(ctx.get(raw.DivRaw, domain.UID(request.ticker), for_update=False))
+            reestry_task = tg.create_task(ctx.get(reestry.DivReestry, domain.UID(request.ticker), for_update=False))
 
-        return DividendsData(
-            saved=raw_table.result().df,
-            compare=reestry_table.result().df,
-        )
+        raw_table = raw_task.result()
+        reestry_table = reestry_task.result()
+        compare = [
+            DivCompareRow(
+                day=row_source.day,
+                dividend=row_source.dividend,
+                currency=row_source.currency,
+                status=DivCompStatus.MISSED,
+            )
+            for row_source in reestry_table.df
+            if not raw_table.has_row(row_source)
+        ]
+
+        for raw_row in raw_table.df:
+            status = DivCompStatus.EXTRA
+            if reestry_table.has_row(raw_row):
+                status = DivCompStatus.OK
+
+            compare.append(
+                DivCompareRow(
+                    day=raw_row.day,
+                    dividend=raw_row.dividend,
+                    currency=raw_row.currency,
+                    status=status,
+                ),
+            )
+
+        compare.sort(key=lambda compare: compare.to_tuple())
+
+        return DividendsData(dividends=compare)

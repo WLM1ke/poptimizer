@@ -1,6 +1,9 @@
-from pydantic import BaseModel, Field, NonNegativeFloat, PositiveFloat, PositiveInt
+import itertools
+from enum import StrEnum, auto
 
-from poptimizer.core import consts, domain
+from pydantic import BaseModel, Field, NonNegativeFloat, PositiveFloat, PositiveInt, field_validator
+
+from poptimizer.core import domain
 from poptimizer.data import data
 
 
@@ -30,21 +33,33 @@ class GetDivTickers(domain.Request[DivTickers]):
     ...
 
 
-class RawRow(data.Row):
+class DivCompStatus(StrEnum):
+    EXTRA = auto()
+    OK = auto()
+    MISSED = auto()
+
+
+class DivCompareRow(data.Row):
     day: domain.Day
     dividend: float = Field(gt=0)
     currency: domain.Currency
+    status: DivCompStatus
 
     def to_tuple(self) -> tuple[domain.Day, float, domain.Currency]:
         return self.day, self.dividend, self.currency
 
-    def is_valid_date(self) -> bool:
-        return self.day >= consts.START_DAY
-
 
 class DividendsData(domain.Response):
-    saved: list[RawRow]
-    compare: list[RawRow]
+    dividends: list[DivCompareRow]
+
+    @field_validator("dividends")
+    def _sorted_by_date_div_currency(cls, dividends: list[DivCompareRow]) -> list[DivCompareRow]:
+        day_pairs = itertools.pairwise(row.to_tuple() for row in dividends)
+
+        if not all(day < next_ for day, next_ in day_pairs):
+            raise ValueError("raw dividends are not sorted")
+
+        return dividends
 
 
 class GetDividends(domain.Request[DividendsData]):

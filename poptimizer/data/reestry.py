@@ -85,7 +85,7 @@ class ReestryDividendsEventHandler:
             return await resp.text()
 
 
-def _parse(html_page: str, data_col: int, first_day: domain.Day) -> list[raw.RawRow]:
+def _parse(html_page: str, data_col: int, first_day: domain.Day) -> list[raw.Row]:
     rows: list[html.HtmlElement] = html.document_fromstring(html_page).xpath("//*/table/tbody/tr")  # type: ignore[reportUnknownMemberType]
 
     rows_iter = iter(rows)
@@ -105,7 +105,7 @@ def _validate_header(row: html.HtmlElement, data_col: int) -> None:
         raise errors.DomainError(f"wrong dividends table header {header}")
 
 
-def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day: domain.Day) -> Iterable[raw.RawRow]:
+def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day: domain.Day) -> Iterable[raw.Row]:
     for row in rows_iter:
         if "ИТОГО" in (date_raw := "".join(row[0].itertext())):
             continue
@@ -116,7 +116,7 @@ def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day:
         div, currency = _parse_div(div_raw)
 
         if (day := _parse_date(date_raw)) >= first_day:
-            yield raw.RawRow(
+            yield raw.Row(
                 day=day,
                 dividend=div,
                 currency=currency,
