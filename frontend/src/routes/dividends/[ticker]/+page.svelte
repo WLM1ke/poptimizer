@@ -11,8 +11,7 @@
 		DeleteCell,
 		InputCell,
 		InputTextCell,
-		InputSelectCell,
-		EmptyCell
+		InputSelectCell
 	} from "$lib/components/base/table";
 	import Button from "$lib/components/base/Button.svelte";
 	import { addAlert } from "$lib/stores/alerts";
@@ -71,7 +70,22 @@
 		try {
 			const res = await fetch(`/api/dividends/${data.ticker}`, {
 				method: "PUT",
-				body: JSON.stringify({ dividends: data.dividends })
+				body: JSON.stringify({
+					dividends: data.dividends
+						.filter(({ status }) => {
+							return (status = "ok" || status == "extra");
+						})
+						.map(({ day, dividend, currency }) => {
+							return { day, dividend, currency };
+						})
+						.toSorted((a, b) => {
+							return a.day !== b.day
+								? a.day.localeCompare(b.day)
+								: a.dividend !== b.dividend
+									? a.dividend - b.dividend
+									: a.currency.localeCompare(b.currency);
+						})
+				})
 			});
 			if (!res.ok) {
 				throw new Error(await res.text());
