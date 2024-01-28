@@ -8,7 +8,7 @@ import aiohttp
 from lxml import html
 
 from poptimizer.core import domain, errors
-from poptimizer.data import quotes, raw, status
+from poptimizer.data import quotes, status
 
 _URL: Final = "https://закрытияреестров.рф/_/"
 
@@ -17,7 +17,7 @@ _RE_DIV: Final = re.compile(r"(\d.*)[\xA0\s](руб|USD|\$)")
 _DIV_TRANSLATE: Final = str.maketrans({",": ".", " ": ""})
 
 
-class DivReestry(raw.DivRaw):
+class DivReestry(status.DivRaw):
     ...
 
 
@@ -42,7 +42,7 @@ class ReestryDividendsEventHandler:
         self,
         ctx: domain.Ctx,
         update_day: domain.Day,
-        row: status.Row,
+        row: status.RowStatus,
     ) -> None:
         table = await ctx.get(DivReestry, domain.UID(row.ticker))
 
@@ -77,7 +77,7 @@ class ReestryDividendsEventHandler:
 
         raise errors.DomainError(f"{ticker_base} dividends not found")
 
-    async def _load_html(self, url: str, row: status.Row) -> str:
+    async def _load_html(self, url: str, row: status.RowStatus) -> str:
         async with self._http_client.get(url) as resp:
             if not resp.ok:
                 raise errors.DomainError(f"{row.ticker} bad respond status {resp.reason}")
@@ -85,7 +85,7 @@ class ReestryDividendsEventHandler:
             return await resp.text()
 
 
-def _parse(html_page: str, data_col: int, first_day: domain.Day) -> list[raw.Row]:
+def _parse(html_page: str, data_col: int, first_day: domain.Day) -> list[status.RowRaw]:
     rows: list[html.HtmlElement] = html.document_fromstring(html_page).xpath("//*/table/tbody/tr")  # type: ignore[reportUnknownMemberType]
 
     rows_iter = iter(rows)
@@ -105,7 +105,7 @@ def _validate_header(row: html.HtmlElement, data_col: int) -> None:
         raise errors.DomainError(f"wrong dividends table header {header}")
 
 
-def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day: domain.Day) -> Iterable[raw.Row]:
+def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day: domain.Day) -> Iterable[status.RowRaw]:
     for row in rows_iter:
         if "ИТОГО" in (date_raw := "".join(row[0].itertext())):
             continue
@@ -116,7 +116,7 @@ def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day:
         div, currency = _parse_div(div_raw)
 
         if (day := _parse_date(date_raw)) >= first_day:
-            yield raw.Row(
+            yield status.RowRaw(
                 day=day,
                 dividend=div,
                 currency=currency,

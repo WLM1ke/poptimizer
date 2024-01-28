@@ -10,7 +10,6 @@ from poptimizer.data import (
     divs,
     indexes,
     quotes,
-    raw,
     reestry,
     requests,
     securities,
@@ -56,11 +55,6 @@ def init_subdomain(
         _DATA,
         status.DivStatusEventHandler(http_client),
         message.IgnoreErrorsPolicy,
-    )
-    bus.add_event_handler(
-        _DATA,
-        raw.CheckRawDividendsEventHandler(),
-        message.IndefiniteRetryPolicy,
     )
     bus.add_event_handler(
         _DATA,

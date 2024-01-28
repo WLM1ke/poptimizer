@@ -4,7 +4,7 @@ from typing import Final
 import pandas as pd
 
 from poptimizer.core import domain
-from poptimizer.data import quotes, raw, reestry, securities, status
+from poptimizer.data import quotes, reestry, securities, status
 from poptimizer.data.contracts import (
     DivCompareRow,
     DivCompStatus,
@@ -87,7 +87,7 @@ class DivTickersRequestHandler:
 class DividendsRequestHandler:
     async def handle(self, ctx: domain.Ctx, request: GetDividends) -> DividendsData:
         async with asyncio.TaskGroup() as tg:
-            raw_task = tg.create_task(ctx.get(raw.DivRaw, domain.UID(request.ticker), for_update=False))
+            raw_task = tg.create_task(ctx.get(status.DivRaw, domain.UID(request.ticker), for_update=False))
             reestry_task = tg.create_task(ctx.get(reestry.DivReestry, domain.UID(request.ticker), for_update=False))
 
         raw_table = raw_task.result()
@@ -104,16 +104,16 @@ class DividendsRequestHandler:
         ]
 
         for raw_row in raw_table.df:
-            status = DivCompStatus.EXTRA
+            row_status = DivCompStatus.EXTRA
             if reestry_table.has_row(raw_row):
-                status = DivCompStatus.OK
+                row_status = DivCompStatus.OK
 
             compare.append(
                 DivCompareRow(
                     day=raw_row.day,
                     dividend=raw_row.dividend,
                     currency=raw_row.currency,
-                    status=status,
+                    status=row_status,
                 ),
             )
 

@@ -1,8 +1,9 @@
+import bisect
 import csv
 import io
 import itertools
 import re
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from datetime import date, datetime, timedelta
 from typing import Final
 
@@ -19,7 +20,50 @@ _DATE_FMT: Final = "%m/%d/%Y %H:%M:%S"
 _RE_TICKER = re.compile(r", ([A-Z]+-[A-Z]+|[A-Z]+) \[")
 
 
-class Row(data.Row):
+class RowRaw(data.Row):
+    day: domain.Day
+    dividend: float = Field(gt=0)
+    currency: domain.Currency
+
+    def to_tuple(self) -> tuple[domain.Day, float, domain.Currency]:
+        return self.day, self.dividend, self.currency
+
+
+class DivRaw(domain.Entity):
+    df: list[RowRaw] = Field(default_factory=list[RowRaw])
+
+    def update(self, update_day: domain.Day, rows: list[RowRaw]) -> None:
+        self.day = update_day
+
+        rows.sort(key=lambda row: row.to_tuple())
+
+        self.df = rows
+
+    def has_day(self, day: domain.Day) -> bool:
+        pos = bisect.bisect_left(self.df, day, key=lambda row: row.day)
+
+        return pos != len(self.df) and self.df[pos].day == day
+
+    def has_row(self, row: RowRaw) -> bool:
+        pos = bisect.bisect_left(
+            self.df,
+            row.to_tuple(),
+            key=lambda row: row.to_tuple(),
+        )
+
+        return pos != len(self.df) and row == self.df[pos]
+
+    @field_validator("df")
+    def _sorted_by_date_div_currency(cls, df: list[RowRaw]) -> list[RowRaw]:
+        day_pairs = itertools.pairwise(row.to_tuple() for row in df)
+
+        if not all(day < next_ for day, next_ in day_pairs):
+            raise ValueError("raw dividends are not sorted")
+
+        return df
+
+
+class RowStatus(data.Row):
     ticker: domain.Ticker
     ticker_base: str
     preferred: bool
@@ -27,14 +71,15 @@ class Row(data.Row):
 
 
 class DivStatus(domain.Entity):
-    df: list[Row] = Field(default_factory=list[Row])
+    df: list[RowStatus] = Field(default_factory=list[RowStatus])
 
-    def update(self, update_day: domain.Day, rows: Iterator[Row]) -> None:
+    def update(self, update_day: domain.Day, rows: list[RowStatus]) -> None:
         self.day = update_day
-        self.df = sorted(rows, key=(lambda status: (status.ticker, status.day)))
+        rows.sort(key=lambda status: (status.ticker, status.day))
+        self.df = rows
 
     @field_validator("df")
-    def _must_be_sorted_by_ticker_and_day(cls, df: list[Row]) -> list[Row]:
+    def _must_be_sorted_by_ticker_and_day(cls, df: list[RowStatus]) -> list[RowStatus]:
         ticker_date_pairs = itertools.pairwise((row.ticker, row.day) for row in df)
 
         if not all(ticker_date <= next_ for ticker_date, next_ in ticker_date_pairs):
@@ -61,9 +106,10 @@ class DivStatusEventHandler:
 
         sec_table = await ctx.get(securities.Securities, for_update=False)
         status = _status_gen(parsed_rows, sec_table, event)
+        _filter_missed(ctx, status)
 
         update_day = event.day
-        table.update(update_day, status)
+        table.update(update_day, [row async for row in _filter_missed(ctx, status)])
 
         ctx.publish(DivStatusUpdated(day=update_day))
 
@@ -101,13 +147,23 @@ def _status_gen(
     raw_rows: Iterator[tuple[domain.Ticker, date]],
     sec: securities.Securities,
     event: contracts.PortfolioDataUpdated,
-) -> Iterator[Row]:
+) -> Iterator[RowStatus]:
     sec_map = {row.ticker: row for row in sec.df if row.ticker in event.positions_weight}
     for ticker, day in raw_rows:
         if sec_desc := sec_map.get(ticker):
-            yield Row(
+            yield RowStatus(
                 ticker=ticker,
                 ticker_base=sec_desc.ticker_base,
                 preferred=sec_desc.is_preferred,
                 day=day,
             )
+
+
+async def _filter_missed(ctx: domain.Ctx, rows: Iterator[RowStatus]) -> AsyncIterator[RowStatus]:
+    for row in rows:
+        table = await ctx.get(DivRaw, domain.UID(row.ticker), for_update=False)
+
+        if not table.has_day(row.day):
+            ctx.warn(f"{row.ticker} missed dividend at {row.day}")
+
+            yield row

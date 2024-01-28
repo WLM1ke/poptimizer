@@ -8,7 +8,7 @@ from typing import Final
 from pydantic import Field, field_validator
 
 from poptimizer.core import domain
-from poptimizer.data import data, raw, securities, usd
+from poptimizer.data import data, securities, status, usd
 
 _MIN_DATE: Final = datetime.datetime(datetime.MINYEAR, 1, 1)
 
@@ -60,7 +60,7 @@ class DividendsEventHandler:
 
     async def _update_one(self, ctx: domain.Ctx, update_day: date, ticker: domain.UID, usd_table: usd.USD) -> None:
         div_table = await ctx.get(Dividends, ticker)
-        raw_table = await ctx.get(raw.DivRaw, ticker)
+        raw_table = await ctx.get(status.DivRaw, ticker)
 
         rows = list(_prepare_rows(raw_table.df, usd_table))
 
@@ -68,7 +68,7 @@ class DividendsEventHandler:
 
 
 def _prepare_rows(
-    raw_list: list[raw.Row],
+    raw_list: list[status.RowRaw],
     usd_table: usd.USD,
 ) -> Iterator[_Row]:
     div = 0
@@ -89,7 +89,7 @@ def _prepare_rows(
         yield _Row(day=date, dividend=div)
 
 
-def _div_in_rur(raw_row: raw.Row, usd_table: usd.USD) -> float:
+def _div_in_rur(raw_row: status.RowRaw, usd_table: usd.USD) -> float:
     match raw_row.currency:
         case domain.Currency.RUR:
             return raw_row.dividend
