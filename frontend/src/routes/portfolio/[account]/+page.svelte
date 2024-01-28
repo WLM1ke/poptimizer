@@ -3,11 +3,11 @@
 	import {
 		Table,
 		TableBody,
-		TableEmptyCell,
+		EmptyCell,
 		TableHead,
-		TableHeadCell,
-		TableInputCell,
-		TableNumberCell,
+		HeadCell,
+		InputCell,
+		NumberCell,
 		TableRow,
 		TextCell
 	} from "$lib/components/base/table";
@@ -54,37 +54,37 @@
 
 <Table>
 	<TableHead>
-		<TableHeadCell>Ticker</TableHeadCell>
-		<TableHeadCell>Shares</TableHeadCell>
-		<TableHeadCell>Lot</TableHeadCell>
-		<TableHeadCell>Price</TableHeadCell>
-		<TableHeadCell>Value</TableHeadCell>
+		<HeadCell>Ticker</HeadCell>
+		<HeadCell>Shares</HeadCell>
+		<HeadCell>Lot</HeadCell>
+		<HeadCell>Price</HeadCell>
+		<HeadCell>Value</HeadCell>
 	</TableHead>
 	<TableBody>
 		<TableRow>
-			<TextCell ticker="Cash" />
-			<TableInputCell
+			<TextCell text="Cash" />
+			<InputCell
 				bind:value={positions["CASH"]}
 				on:change={(event) => {
 					onChange(event, "CASH");
 				}}
 			/>
-			<TableEmptyCell />
-			<TableEmptyCell />
-			<TableNumberCell value={$accountView.cash} />
+			<EmptyCell />
+			<EmptyCell />
+			<NumberCell value={$accountView.cash} />
 		</TableRow>
 		{#each $accountView.positions as position (position.ticker)}
 			<TableRow>
-				<TextCell ticker={position.ticker} />
-				<TableInputCell
+				<TextCell text={position.ticker} />
+				<InputCell
 					bind:value={positions[position.ticker]}
 					on:change={(event) => {
 						onChange(event, position.ticker);
 					}}
 				/>
-				<TableNumberCell value={position.lot} />
-				<TableNumberCell value={position.price} />
-				<TableNumberCell value={position.value} fractionDigits={0} />
+				<NumberCell value={position.lot} />
+				<NumberCell value={position.price} />
+				<NumberCell value={position.value} fractionDigits={0} />
 			</TableRow>
 		{/each}
 	</TableBody>

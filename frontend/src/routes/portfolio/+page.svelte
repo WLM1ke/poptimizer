@@ -4,13 +4,13 @@
 	import {
 		Table,
 		TableHead,
-		TableHeadCell,
+		HeadCell,
 		TableBody,
 		TableRow,
 		TextCell,
-		TableNumberCell,
-		TableEmptyCell,
-		TablePercentCell
+		NumberCell,
+		EmptyCell,
+		PercentCell
 	} from "$lib/components/base/table";
 </script>
 
@@ -30,27 +30,27 @@
 </Card>
 <Table>
 	<TableHead>
-		<TableHeadCell>Ticker</TableHeadCell>
-		<TableHeadCell>Amount</TableHeadCell>
-		<TableHeadCell>Price</TableHeadCell>
-		<TableHeadCell>Value</TableHeadCell>
-		<TableHeadCell>Weight</TableHeadCell>
+		<HeadCell>Ticker</HeadCell>
+		<HeadCell>Amount</HeadCell>
+		<HeadCell>Price</HeadCell>
+		<HeadCell>Value</HeadCell>
+		<HeadCell>Weight</HeadCell>
 	</TableHead>
 	<TableBody>
 		<TableRow>
 			<TextCell text="Cash" />
-			<TableNumberCell value={$portfolioView.cash} />
-			<TableEmptyCell />
-			<TableEmptyCell />
-			<TablePercentCell value={$portfolioView.value > 0 ? $portfolioView.cash / $portfolioView.value : 1} />
+			<NumberCell value={$portfolioView.cash} />
+			<EmptyCell />
+			<EmptyCell />
+			<PercentCell value={$portfolioView.value > 0 ? $portfolioView.cash / $portfolioView.value : 1} />
 		</TableRow>
 		{#each $portfolioView.positions as position (position.ticker)}
 			<TableRow>
 				<TextCell text={position.ticker} />
-				<TableNumberCell value={position.shares} />
-				<TableNumberCell value={position.price} />
-				<TableNumberCell value={position.value} fractionDigits={0} />
-				<TablePercentCell value={position.weight} />
+				<NumberCell value={position.shares} />
+				<NumberCell value={position.price} />
+				<NumberCell value={position.value} fractionDigits={0} />
+				<PercentCell value={position.weight} />
 			</TableRow>
 		{/each}
 	</TableBody>
