@@ -1,5 +1,5 @@
-from datetime import date
 import itertools
+from datetime import date
 from enum import StrEnum, auto
 
 from pydantic import BaseModel, Field, NonNegativeFloat, PositiveFloat, PositiveInt, field_validator
