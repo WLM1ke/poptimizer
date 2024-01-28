@@ -10,6 +10,7 @@ interface DivCompareRow {
 
 interface Dividends {
 	dividends: DivCompareRow[];
+	ticker: string;
 }
 
 export const load = (async ({ fetch, params }) => {
@@ -18,8 +19,10 @@ export const load = (async ({ fetch, params }) => {
 		if (!res.ok) {
 			throw new Error(await res.text());
 		}
+		const resp = await res.json();
+		resp.ticker = params.ticker;
 
-		return (await res.json()) as Dividends;
+		return resp as Dividends;
 	} catch (err) {
 		let msg: string;
 		if (err instanceof Error) {

@@ -29,7 +29,7 @@
 		{#each $accounts as account (account)}
 			<li transition:scale animate:flip class="flex items-center justify-between gap-2 pt-2">
 				{account}
-				<button on:click={() => removeAccount(account)} class="hover:text-link">
+				<button on:click={() => removeAccount(account)} class="hover:text-link-hover">
 					<Delete />
 				</button>
 			</li>
@@ -43,7 +43,7 @@
 						newAccount = "";
 					}
 				}}
-				class="rounded-md border border-bg-accent bg-bg-main p-1"
+				class="border-bg-accent bg-bg-main rounded-md border p-1"
 				bind:value={newAccount}
 				type="text"
 				placeholder="Enter account title"
@@ -54,7 +54,7 @@
 					onCreateAccount();
 					newAccount = "";
 				}}
-				class="hover:text-link"
+				class="hover:text-link-hover"
 			>
 				<Add />
 			</button>

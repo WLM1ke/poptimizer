@@ -11,9 +11,13 @@
 		DeleteCell,
 		InputCell,
 		InputTextCell,
-		InputSelectCell
+		InputSelectCell,
+		EmptyCell
 	} from "$lib/components/base/table";
+	import Button from "$lib/components/base/Button.svelte";
 	import { addAlert } from "$lib/stores/alerts";
+	import { invalidate } from "$app/navigation";
+
 	export let data;
 
 	let day = data.dividends[data.dividends.length - 1].day;
@@ -63,6 +67,30 @@
 			}
 		];
 	};
+	const save = async () => {
+		try {
+			const res = await fetch(`/api/dividends/${data.ticker}`, {
+				method: "PUT",
+				body: JSON.stringify({ dividends: data.dividends })
+			});
+			if (!res.ok) {
+				throw new Error(await res.text());
+			}
+			invalidate(`/api/dividends/${data.ticker}`);
+		} catch (err) {
+			let msg: string;
+			if (err instanceof Error) {
+				msg = err.message;
+			} else {
+				msg = JSON.stringify(err);
+			}
+			addAlert({
+				info: false,
+				msg: msg
+			});
+			invalidate(`/api/dividends/${data.ticker}`);
+		}
+	};
 </script>
 
 <Table>
@@ -105,3 +133,4 @@
 		</TableRow>
 	</TableBody>
 </Table>
+<Button label="Save" on:click={save} />

@@ -3,7 +3,7 @@
 </script>
 
 <td class="flex w-32 justify-center p-2 font-mono">
-	<button on:click class="hover:text-link">
+	<button on:click class="hover:text-link-hover">
 		<Add />
 	</button>
 </td>

@@ -66,6 +66,7 @@
 	body {
 		@apply scroll-smooth bg-bg-main text-text-main antialiased;
 		--link: var(--blue-600);
+		--link-hover: var(--blue-700);
 	}
 
 	@media (prefers-color-scheme: light) {
