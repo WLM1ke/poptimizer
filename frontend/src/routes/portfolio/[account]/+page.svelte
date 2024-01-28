@@ -77,6 +77,7 @@
 			<TableRow>
 				<TextCell text={position.ticker} />
 				<InputCell
+					step={position.lot}
 					bind:value={positions[position.ticker]}
 					on:change={(event) => {
 						onChange(event, position.ticker);
