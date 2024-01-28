@@ -73,7 +73,7 @@
 				body: JSON.stringify({
 					dividends: data.dividends
 						.filter(({ status }) => {
-							return (status = "ok" || status == "extra");
+							return status === "ok" || status === "extra";
 						})
 						.map(({ day, dividend, currency }) => {
 							return { day, dividend, currency };
