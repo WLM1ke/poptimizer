@@ -57,7 +57,7 @@ class DividendsData(domain.Response):
     def _sorted_by_date_div_currency(cls, dividends: list[DivCompareRow]) -> list[DivCompareRow]:
         day_pairs = itertools.pairwise(row.to_tuple() for row in dividends)
 
-        if not all(day < next_ for day, next_ in day_pairs):
+        if not all(day <= next_ for day, next_ in day_pairs):
             raise ValueError("raw dividends are not sorted")
 
         return dividends
@@ -65,3 +65,17 @@ class DividendsData(domain.Response):
 
 class GetDividends(domain.Request[DividendsData]):
     ticker: domain.Ticker
+
+
+class RowRaw(data.Row):
+    day: domain.Day
+    dividend: float = Field(gt=0)
+    currency: domain.Currency
+
+    def to_tuple(self) -> tuple[domain.Day, float, domain.Currency]:
+        return self.day, self.dividend, self.currency
+
+
+class UpdateDividends(domain.Request[DividendsData]):
+    ticker: domain.Ticker
+    dividends: list[RowRaw]

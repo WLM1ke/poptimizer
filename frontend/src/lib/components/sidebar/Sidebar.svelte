@@ -8,6 +8,7 @@
 	import AccountIcon from "$lib/icons/AccountIcon.svelte";
 	import { scale } from "svelte/transition";
 	import { accounts } from "$lib/stores/settings";
+	import { flip } from "svelte/animate";
 
 	export let tickers: string[];
 </script>
@@ -23,7 +24,7 @@
 			<li>
 				<ul class="flex flex-col gap-1">
 					{#each $accounts as account (account)}
-						<li transition:scale>
+						<li transition:scale animate:flip>
 							<MenuItem title={account} href="/portfolio/{account}" subItem>
 								<AccountIcon />
 							</MenuItem>
@@ -52,7 +53,7 @@
 				<li>
 					<ul class="flex flex-col gap-1">
 						{#each tickers as ticker (ticker)}
-							<li transition:scale>
+							<li transition:scale animate:flip>
 								<MenuItem title={ticker} href="/dividends/{ticker}" subItem>
 									<AccountIcon />
 								</MenuItem>

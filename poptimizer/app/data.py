@@ -82,5 +82,9 @@ def init_subdomain(
     )
     bus.add_request_handler(
         _DATA,
-        requests.DividendsRequestHandler(),
+        requests.GetDividendsRequestHandler(),
+    )
+    bus.add_request_handler(
+        _DATA,
+        requests.UpdateDividendsRequestHandler(),
     )

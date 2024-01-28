@@ -15,6 +15,7 @@ from poptimizer.data.contracts import (
     GetSecData,
     SecData,
     Security,
+    UpdateDividends,
 )
 
 _START_LIQUIDITY_DAYS: Final = 21
@@ -84,7 +85,7 @@ class DivTickersRequestHandler:
         return DivTickers(tickers=[row.ticker for row in table.df])
 
 
-class DividendsRequestHandler:
+class GetDividendsRequestHandler:
     async def handle(self, ctx: domain.Ctx, request: GetDividends) -> DividendsData:
         async with asyncio.TaskGroup() as tg:
             raw_task = tg.create_task(ctx.get(status.DivRaw, domain.UID(request.ticker), for_update=False))
@@ -120,3 +121,22 @@ class DividendsRequestHandler:
         compare.sort(key=lambda compare: compare.to_tuple())
 
         return DividendsData(dividends=compare)
+
+
+class UpdateDividendsRequestHandler:
+    async def handle(self, ctx: domain.Ctx, request: UpdateDividends) -> domain.Response:
+        async with asyncio.TaskGroup() as tg:
+            raw_task = tg.create_task(ctx.get(status.DivRaw, domain.UID(request.ticker)))
+            quotes_task = tg.create_task(ctx.get(quotes.Quotes, domain.UID(request.ticker), for_update=False))
+
+        raw_table = raw_task.result()
+        quotes_table = quotes_task.result()
+        first_day = quotes_table.df[0].day
+
+        raw_table.update(
+            quotes_table.day,
+            [row for row in request.dividends if row.day >= first_day],
+        )
+        ctx.publish(status.RawDivUpdated(day=quotes_table.day))
+
+        return domain.Response()

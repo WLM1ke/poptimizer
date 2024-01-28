@@ -15,6 +15,7 @@ class Views:
         app.add_routes([web.post("/portfolio/{account}/{ticker}", self.update_position)])
         app.add_routes([web.get("/dividends", self.get_div_tickers)])
         app.add_routes([web.get("/dividends/{ticker}", self.get_dividends)])
+        app.add_routes([web.put("/dividends/{ticker}", self.update_dividends)])
 
     async def get_portfolio(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
         portfolio = await self._ctx.request(port_contracts.GetPortfolio())
@@ -57,3 +58,15 @@ class Views:
         div = await self._ctx.request(data_contracts.GetDividends(ticker=domain.Ticker(ticker)))
 
         return web.json_response(text=div.model_dump_json())
+
+    async def update_dividends(self, request: web.Request) -> web.StreamResponse:
+        ticker = request.match_info["ticker"]
+        json = await request.json()
+        await self._ctx.request(
+            data_contracts.UpdateDividends(
+                ticker=domain.Ticker(ticker),
+                dividends=json.get("dividends"),
+            ),
+        )
+
+        raise web.HTTPNoContent

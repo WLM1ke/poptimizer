@@ -3,7 +3,7 @@ import csv
 import io
 import itertools
 import re
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Iterable
 from datetime import date, datetime, timedelta
 from typing import Final
 
@@ -12,21 +12,13 @@ from pydantic import Field, field_validator
 
 from poptimizer.core import domain, errors
 from poptimizer.data import data, securities
-from poptimizer.portfolio import contracts
+from poptimizer.data.contracts import RowRaw
+from poptimizer.portfolio.contracts import PortfolioDataUpdated
 
 _URL: Final = "https://web.moex.com/moex-web-icdb-api/api/v1/export/site-register-closings/csv?separator=1&language=1"
-_LOOK_BACK_DAYS: Final = 14 * 2
+_LOOK_BACK_DAYS: Final = 14
 _DATE_FMT: Final = "%m/%d/%Y %H:%M:%S"
 _RE_TICKER = re.compile(r", ([A-Z]+-[A-Z]+|[A-Z]+) \[")
-
-
-class RowRaw(data.Row):
-    day: domain.Day
-    dividend: float = Field(gt=0)
-    currency: domain.Currency
-
-    def to_tuple(self) -> tuple[domain.Day, float, domain.Currency]:
-        return self.day, self.dividend, self.currency
 
 
 class DivRaw(domain.Entity):
@@ -57,7 +49,7 @@ class DivRaw(domain.Entity):
     def _sorted_by_date_div_currency(cls, df: list[RowRaw]) -> list[RowRaw]:
         day_pairs = itertools.pairwise(row.to_tuple() for row in df)
 
-        if not all(day < next_ for day, next_ in day_pairs):
+        if not all(day <= next_ for day, next_ in day_pairs):
             raise ValueError("raw dividends are not sorted")
 
         return df
@@ -88,6 +80,10 @@ class DivStatus(domain.Entity):
         return df
 
 
+class RawDivUpdated(domain.Event):
+    day: domain.Day
+
+
 class DivStatusUpdated(domain.Event):
     day: domain.Day
 
@@ -96,22 +92,22 @@ class DivStatusEventHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def handle(self, ctx: domain.Ctx, event: contracts.PortfolioDataUpdated) -> None:
+    async def handle(self, ctx: domain.Ctx, event: PortfolioDataUpdated | RawDivUpdated) -> None:
         table = await ctx.get(DivStatus)
-        if event.day == table.day:
-            return
+        status = table.df
 
-        csv_file = await self._download()
-        parsed_rows = _parse(ctx, csv_file)
+        if isinstance(event, PortfolioDataUpdated):
+            if event.day == table.day:
+                return
+            csv_file = await self._download()
+            parsed_rows = _parse(ctx, csv_file)
 
-        sec_table = await ctx.get(securities.Securities, for_update=False)
-        status = _status_gen(parsed_rows, sec_table, event)
-        _filter_missed(ctx, status)
+            sec_table = await ctx.get(securities.Securities, for_update=False)
+            status = _status_gen(parsed_rows, sec_table, event)
 
-        update_day = event.day
-        table.update(update_day, [row async for row in _filter_missed(ctx, status)])
+        table.update(event.day, [row async for row in _filter_missed(ctx, status)])
 
-        ctx.publish(DivStatusUpdated(day=update_day))
+        ctx.publish(DivStatusUpdated(day=event.day))
 
     async def _download(self) -> io.StringIO:
         async with self._http_client.get(_URL) as resp:
@@ -124,7 +120,7 @@ class DivStatusEventHandler:
 def _parse(
     ctx: domain.Ctx,
     csv_file: io.StringIO,
-) -> Iterator[tuple[domain.Ticker, date]]:
+) -> Iterable[tuple[domain.Ticker, date]]:
     reader = csv.reader(csv_file)
     next(reader)
 
@@ -144,10 +140,10 @@ def _parse(
 
 
 def _status_gen(
-    raw_rows: Iterator[tuple[domain.Ticker, date]],
+    raw_rows: Iterable[tuple[domain.Ticker, date]],
     sec: securities.Securities,
-    event: contracts.PortfolioDataUpdated,
-) -> Iterator[RowStatus]:
+    event: PortfolioDataUpdated,
+) -> Iterable[RowStatus]:
     sec_map = {row.ticker: row for row in sec.df if row.ticker in event.positions_weight}
     for ticker, day in raw_rows:
         if sec_desc := sec_map.get(ticker):
@@ -159,7 +155,7 @@ def _status_gen(
             )
 
 
-async def _filter_missed(ctx: domain.Ctx, rows: Iterator[RowStatus]) -> AsyncIterator[RowStatus]:
+async def _filter_missed(ctx: domain.Ctx, rows: Iterable[RowStatus]) -> AsyncIterator[RowStatus]:
     for row in rows:
         table = await ctx.get(DivRaw, domain.UID(row.ticker), for_update=False)
 

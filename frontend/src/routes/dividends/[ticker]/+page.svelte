@@ -19,9 +19,19 @@
 
 	export let data;
 
-	let day = data.dividends[data.dividends.length - 1].day;
-	let dividend = data.dividends[data.dividends.length - 1].dividend;
-	let currency = data.dividends[data.dividends.length - 1].currency.toLocaleUpperCase();
+	let ticker: string;
+	let day: string;
+	let dividend: number;
+	let currency: string;
+
+	$: {
+		if (ticker != data.ticker) {
+			ticker = data.ticker;
+			day = data.dividends[data.dividends.length - 1].day;
+			dividend = data.dividends[data.dividends.length - 1].dividend;
+			currency = data.dividends[data.dividends.length - 1].currency.toLocaleUpperCase();
+		}
+	}
 
 	const toggleRow = (index: number) => {
 		switch (data.dividends[index].status) {
@@ -90,7 +100,7 @@
 			if (!res.ok) {
 				throw new Error(await res.text());
 			}
-			invalidate(`/api/dividends/${data.ticker}`);
+			await invalidate(`/api/dividends/${data.ticker}`);
 		} catch (err) {
 			let msg: string;
 			if (err instanceof Error) {
@@ -102,7 +112,7 @@
 				info: false,
 				msg: msg
 			});
-			invalidate(`/api/dividends/${data.ticker}`);
+			await invalidate(`/api/dividends/${data.ticker}`);
 		}
 	};
 </script>
