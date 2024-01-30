@@ -3,7 +3,7 @@ import ssl
 from collections.abc import Awaitable, Callable, Iterable, Mapping
 from datetime import timedelta
 from types import SimpleNamespace
-from typing import Any, Final, Literal, override
+from typing import Any, Final, override
 
 import aiohttp
 from aiohttp import client_reqrep, helpers, typedefs, web_exceptions
@@ -62,7 +62,7 @@ class HTTPClient(aiohttp.ClientSession):
         verify_ssl: bool | None = None,
         fingerprint: bytes | None = None,
         ssl_context: ssl.SSLContext | None = None,
-        ssl: ssl.SSLContext | Literal[False] | client_reqrep.Fingerprint | None = None,
+        ssl: ssl.SSLContext | bool | client_reqrep.Fingerprint = True,
         server_hostname: str | None = None,
         proxy_headers: typedefs.LooseHeaders | None = None,
         trace_request_ctx: SimpleNamespace | None = None,
