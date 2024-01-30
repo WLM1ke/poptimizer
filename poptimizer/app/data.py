@@ -18,7 +18,7 @@ from poptimizer.data import (
     usd,
 )
 
-_DATA: Final = domain.Subdomain("data_new")
+DATA: Final = domain.Subdomain("data_new")
 
 
 def init_subdomain(
@@ -27,64 +27,64 @@ def init_subdomain(
 ) -> None:
     bus.add_service(day_started.DayStartedService())
     bus.add_event_handler(
-        _DATA,
+        DATA,
         trading_day.TradingDayEventHandler(http_client),
         message.IndefiniteRetryPolicy,
     )
     bus.add_event_handler(
-        _DATA,
+        DATA,
         cpi.CPIEventHandler(http_client),
         message.IgnoreErrorsPolicy,
     )
     bus.add_event_handler(
-        _DATA,
+        DATA,
         indexes.IndexesEventHandler(http_client),
         message.IndefiniteRetryPolicy,
     )
     bus.add_event_handler(
-        _DATA,
+        DATA,
         securities.SecuritiesEventHandler(http_client),
         message.IndefiniteRetryPolicy,
     )
     bus.add_event_handler(
-        _DATA,
+        DATA,
         quotes.QuotesEventHandler(http_client),
         message.IndefiniteRetryPolicy,
     )
     bus.add_event_handler(
-        _DATA,
+        DATA,
         status.DivStatusEventHandler(http_client),
         message.IgnoreErrorsPolicy,
     )
     bus.add_event_handler(
-        _DATA,
+        DATA,
         reestry.ReestryDividendsEventHandler(http_client),
         message.IgnoreErrorsPolicy,
     )
     bus.add_event_handler(
-        _DATA,
+        DATA,
         usd.USDEventHandler(http_client),
         message.IndefiniteRetryPolicy,
     )
     bus.add_event_handler(
-        _DATA,
+        DATA,
         divs.DividendsEventHandler(),
         message.IndefiniteRetryPolicy,
     )
     bus.add_request_handler(
-        _DATA,
+        DATA,
         requests.SecDataRequestHandler(),
     )
 
     bus.add_request_handler(
-        _DATA,
+        DATA,
         requests.DivTickersRequestHandler(),
     )
     bus.add_request_handler(
-        _DATA,
+        DATA,
         requests.GetDividendsRequestHandler(),
     )
     bus.add_request_handler(
-        _DATA,
+        DATA,
         requests.UpdateDividendsRequestHandler(),
     )

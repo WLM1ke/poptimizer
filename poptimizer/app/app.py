@@ -4,9 +4,10 @@ from typing import Final
 import uvloop
 
 from poptimizer import config
-from poptimizer.adapters import message, uow, warn
+from poptimizer.adapters import backup, message, uow, warn
 from poptimizer.app import data, portfolio
 from poptimizer.core import domain
+from poptimizer.data import status
 from poptimizer.io import http, lgr, mongo
 from poptimizer.ui import server
 
@@ -26,6 +27,13 @@ async def _run() -> None:
         bus.add_event_handler(
             _APP,
             warn.WarningEventHandler(logger, http_client, cfg.telegram_token, cfg.telegram_chat_id),
+            message.IgnoreErrorsPolicy,
+        )
+        raw_div_db: mongo.MongoDatabase = mongo_client[data.DATA]
+        raw_div_collection: mongo.MongoCollection = raw_div_db[domain.get_component_name_for_type(status.DivRaw)]
+        bus.add_event_handler(
+            _APP,
+            backup.DivBackupEventHandler(raw_div_collection),
             message.IgnoreErrorsPolicy,
         )
         data.init_subdomain(bus, http_client)
