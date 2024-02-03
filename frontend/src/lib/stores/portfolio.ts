@@ -12,7 +12,7 @@ interface Account {
 	positions: Record<string, number>;
 }
 
-interface Portfolio {
+export interface Portfolio {
 	day: string;
 	accounts: Record<string, Account>;
 	securities: Readonly<Record<string, Security>>;

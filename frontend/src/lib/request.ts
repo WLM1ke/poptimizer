@@ -1,12 +1,13 @@
 import { addAlert } from "$lib/components/alerts";
 
 const request = async (
+	fetchFn: typeof fetch,
 	url: string,
 	method: "GET" | "POST" | "PUT" | "DELETE",
 	body: object | undefined = undefined
 ) => {
 	try {
-		const res = await fetch(url, { method, body: JSON.stringify(body) });
+		const res = await fetchFn(url, { method, body: JSON.stringify(body) });
 		if (!res.ok) {
 			throw new Error(await res.text());
 		}
@@ -20,24 +21,24 @@ const request = async (
 		} else {
 			msg = JSON.stringify(err);
 		}
-		addAlert(msg);
+		addAlert(`${msg} - ${url}`);
 
-		return null;
+		return undefined;
 	}
 };
 
-export const get = async (url: string) => {
-	return await request(url, "GET");
+export const get = async (fetchFn: typeof fetch, url: string) => {
+	return await request(fetchFn, url, "GET");
 };
 
-export const post = async (url: string, body: object | undefined = undefined) => {
-	return await request(url, "POST", body);
+export const post = async (fetchFn: typeof fetch, url: string, body: object | undefined = undefined) => {
+	return await request(fetchFn, url, "POST");
 };
 
-export const put = async (url: string, body: object | undefined = undefined) => {
-	return await request(url, "PUT", body);
+export const put = async (fetchFn: typeof fetch, url: string, body: object | undefined = undefined) => {
+	return await request(fetchFn, url, "PUT", body);
 };
 
-export const del = async (url: string) => {
-	return await request(url, "DELETE");
+export const del = async (fetchFn: typeof fetch, url: string) => {
+	return await request(fetchFn, url, "DELETE");
 };

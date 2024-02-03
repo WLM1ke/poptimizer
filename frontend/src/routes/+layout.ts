@@ -1,38 +1,47 @@
 import type { LayoutLoad } from "./$types";
-import { load as loadPortfolio } from "$lib/stores/portfolio";
-import { addInfo, addAlert } from "$lib/components/alerts";
+import { type Portfolio, portfolio } from "$lib/stores/portfolio";
+import { type Tickers, tickers } from "$lib/stores/dividends";
+import { addInfo } from "$lib/components/alerts";
+import { get } from "$lib/request";
 
 export const ssr = false;
 
-interface DivTickers {
-	tickers: string[];
-}
 export const load = (async ({ fetch }) => {
-	const loadDivTickers = async () => {
-		try {
-			const res = await fetch("/api/dividends");
-			if (!res.ok) {
-				throw new Error(await res.text());
+	const data = {
+		getTitle: (pathname: string) => {
+			const path = decodeURI(pathname);
+			if (path === "/") {
+				return "Summary";
 			}
-			const tickers: DivTickers = await res.json();
+			const lastSlash = path.lastIndexOf("/");
 
-			for (const ticker of tickers.tickers) {
-				addInfo(`Update dividends for ${ticker}`);
-			}
-
-			return tickers;
-		} catch (err) {
-			let msg: string;
-			if (err instanceof Error) {
-				msg = err.message;
-			} else {
-				msg = JSON.stringify(err);
-			}
-			addAlert(msg);
+			return path[lastSlash + 1].toUpperCase() + path.substring(lastSlash + 2);
 		}
 	};
+	const [div, port]: [Tickers, Portfolio] = await Promise.all([
+		get(fetch, "/api/dividends"),
+		get(fetch, "/api/portfolio")
+	]);
+	if (div === undefined || port === undefined) {
+		return data;
+	}
 
-	const rez = await Promise.all([loadDivTickers(), loadPortfolio()]);
+	portfolio.set(port);
+	tickers.set(div);
 
-	return rez[0] ?? { tickers: [] };
+	for (const ticker of div.tickers) {
+		addInfo(`Update dividends for ${ticker}`);
+	}
+
+	if (Object.keys(port.accounts).length === 0) {
+		addInfo("No accounts: create them in settings");
+	}
+
+	for (const [name, account] of Object.entries(port.accounts)) {
+		if (Object.keys(account.positions).length === 0 && account.cash === 0) {
+			addInfo(`Account ${name} is empty: delete it or enter cash and positions`);
+		}
+	}
+
+	return data;
 }) satisfies LayoutLoad;
