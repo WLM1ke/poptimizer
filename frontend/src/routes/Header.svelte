@@ -1,5 +1,5 @@
 <script lang="ts">
-	import H2 from "$lib/components/base/H2.svelte";
+	import H2 from "$lib/components/H2.svelte";
 
 	export let title: string;
 </script>

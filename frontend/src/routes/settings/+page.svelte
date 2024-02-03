@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Accounts from "$lib/components/settings/Accounts.svelte";
-	import Portfolio from "$lib/components/settings/Portfolio.svelte";
+	import Accounts from "./Accounts.svelte";
+	import Portfolio from "./Portfolio.svelte";
 </script>
 
 <Accounts />

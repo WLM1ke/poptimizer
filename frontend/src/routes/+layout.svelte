@@ -4,7 +4,7 @@
 	import Logo from "./Logo.svelte";
 	import Header from "./Header.svelte";
 	import Sidebar from "./Sidebar.svelte";
-	import { Alerts } from "$lib/components/base/alerts";
+	import { Alerts } from "$lib/components/alerts";
 	import { page } from "$app/stores";
 	import type { LayoutData } from "./$types";
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Alert from "$lib/components/base/alerts/Alert.svelte";
-	import { alerts } from "$lib/components/base/alerts/alerts";
+	import Alert from "$lib/components/alerts/Alert.svelte";
+	import { alerts } from "$lib/components/alerts/alerts";
 	import { flip } from "svelte/animate";
 	import { scale } from "svelte/transition";
 </script>

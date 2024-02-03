@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { portfolioView } from "$lib/stores/portfolioView";
-	import { Card, CardMain, CardSecondary } from "$lib/components/base/card";
+	import { Card, CardMain, CardSecondary } from "$lib/components/card";
 	import {
 		Table,
 		TableHead,
@@ -11,7 +11,7 @@
 		NumberCell,
 		EmptyCell,
 		PercentCell
-	} from "$lib/components/base/table";
+	} from "$lib/components/table";
 </script>
 
 <Card>

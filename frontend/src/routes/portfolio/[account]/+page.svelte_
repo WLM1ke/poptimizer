@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Card, CardMain, CardSecondary } from "$lib/components/base/card";
+	import { Card, CardMain, CardSecondary } from "$lib/components/card";
 	import {
 		Table,
 		TableBody,
@@ -10,7 +10,7 @@
 		NumberCell,
 		TableRow,
 		TextCell
-	} from "$lib/components/base/table";
+	} from "$lib/components/table";
 	import { accountView } from "$lib/stores/accountView";
 
 	let account = "";

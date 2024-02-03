@@ -1,6 +1,6 @@
 <script lang="ts">
-	import H2 from "$lib/components/base/H2.svelte";
-	import Switch from "$lib/components/base/Switch.svelte";
+	import H2 from "$lib/components/H2.svelte";
+	import Switch from "$lib/components/Switch.svelte";
 	import {
 		portfolioSortByValue,
 		togglePortfolioSortByValue,

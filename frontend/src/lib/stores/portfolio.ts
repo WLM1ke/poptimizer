@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import { addInfo, addAlert } from "$lib/components/base/alerts";
+import { addInfo, addAlert } from "$lib/components/alerts";
 
 interface Security {
 	lot: number;

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import H2 from "$lib/components/base/H2.svelte";
+	import H2 from "$lib/components/H2.svelte";
 	import Delete from "$lib/icons/Delete.svelte";
 	import Add from "$lib/icons/Add.svelte";
 	import { scale } from "svelte/transition";
-	import Switch from "$lib/components/base/Switch.svelte";
+	import Switch from "$lib/components/Switch.svelte";
 	import {
 		accountsSortByValue,
 		toggleAccountsSortByValue,
@@ -43,7 +43,7 @@
 						newAccount = "";
 					}
 				}}
-				class="rounded-md border border-bg-accent bg-bg-main p-1"
+				class="border-bg-accent bg-bg-main rounded-md border p-1"
 				bind:value={newAccount}
 				type="text"
 				placeholder="Enter account title"

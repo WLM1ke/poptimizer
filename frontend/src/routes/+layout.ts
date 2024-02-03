@@ -1,6 +1,6 @@
 import type { LayoutLoad } from "./$types";
 import { load as loadPortfolio } from "$lib/stores/portfolio";
-import { addInfo, addAlert } from "$lib/components/base/alerts";
+import { addInfo, addAlert } from "$lib/components/alerts";
 
 export const ssr = false;
 

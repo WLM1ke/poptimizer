@@ -12,9 +12,9 @@
 		InputCell,
 		InputTextCell,
 		InputSelectCell
-	} from "$lib/components/base/table";
-	import Button from "$lib/components/base/Button.svelte";
-	import { addAlert } from "$lib/components/base/alerts";
+	} from "$lib/components/table";
+	import Button from "$lib/components/Button.svelte";
+	import { addAlert } from "$lib/components/alerts";
 	import { invalidate } from "$app/navigation";
 
 	export let data;
