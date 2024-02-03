@@ -14,7 +14,7 @@
 		InputSelectCell
 	} from "$lib/components/base/table";
 	import Button from "$lib/components/base/Button.svelte";
-	import { addAlert } from "$lib/stores/alerts";
+	import { addAlert } from "$lib/components/alerts";
 	import { invalidate } from "$app/navigation";
 
 	export let data;
@@ -44,26 +44,17 @@
 	};
 	const addRow = () => {
 		if (typeof dividend !== "number") {
-			addAlert({
-				info: false,
-				msg: "Dividend should be number"
-			});
+			addAlert("Dividend should be number");
 			return;
 		}
 		const date = new Date(day);
 		if (date.toString() === "Invalid Date") {
-			addAlert({
-				info: false,
-				msg: "Invalid Date"
-			});
+			addAlert("Invalid Date");
 			return;
 		}
 		const currencyLower = currency.toLocaleLowerCase();
 		if (currencyLower != "rur" && currencyLower != "usd") {
-			addAlert({
-				info: false,
-				msg: "Invalid currency"
-			});
+			addAlert("Invalid currency");
 			return;
 		}
 		data.dividends = [
@@ -108,10 +99,7 @@
 			} else {
 				msg = JSON.stringify(err);
 			}
-			addAlert({
-				info: false,
-				msg: msg
-			});
+			addAlert(msg);
 			await invalidate(`/api/dividends/${data.ticker}`);
 		}
 	};

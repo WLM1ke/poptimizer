@@ -4,7 +4,7 @@
 	import Logo from "$lib/components/Logo.svelte";
 	import Header from "$lib/components/Header.svelte";
 	import Sidebar from "$lib/components/sidebar/Sidebar.svelte";
-	import Alerts from "$lib/components/alerts/Alerts.svelte";
+	import Alerts from "$lib/components/base/alerts/Alerts.svelte";
 	import { pageTitle } from "$lib/stores/page";
 	import type { LayoutData } from "./$types";
 
@@ -15,7 +15,7 @@
 	<title>POptimizer - {$pageTitle}</title>
 </svelte:head>
 
-<section class="grid h-screen w-screen grid-cols-layout grid-rows-layout">
+<section class="grid-cols-layout grid-rows-layout grid h-screen w-screen">
 	<Logo />
 	<Header />
 	<Sidebar tickers={data.tickers} />

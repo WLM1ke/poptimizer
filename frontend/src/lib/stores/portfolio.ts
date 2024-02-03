@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import { addAlert } from "./alerts";
+import { addInfo, addAlert } from "$lib/components/base/alerts";
 
 interface Security {
 	lot: number;
@@ -37,18 +37,12 @@ export const fetchPortfolioAPI = async (
 		const port: Portfolio = await res.json();
 
 		if (Object.keys(port.accounts).length === 0) {
-			addAlert({
-				info: true,
-				msg: "No accounts: create them in settings"
-			});
+			addInfo("No accounts: create them in settings");
 		}
 
 		for (const [name, account] of Object.entries(port.accounts)) {
 			if (Object.keys(account.positions).length === 0 && account.cash === 0) {
-				addAlert({
-					info: true,
-					msg: `Account ${name} is empty: delete it or enter cash and positions`
-				});
+				addInfo(`Account ${name} is empty: delete it or enter cash and positions`);
 			}
 		}
 
@@ -62,10 +56,7 @@ export const fetchPortfolioAPI = async (
 		} else {
 			msg = JSON.stringify(err);
 		}
-		addAlert({
-			info: false,
-			msg: msg
-		});
+		addAlert(msg);
 
 		return false;
 	}

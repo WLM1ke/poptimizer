@@ -1,6 +1,6 @@
 import type { LayoutLoad } from "./$types";
 import { load as loadPortfolio } from "$lib/stores/portfolio";
-import { addAlert } from "$lib/stores/alerts";
+import { addInfo } from "$lib/components/base/alerts/alerts";
 
 export const ssr = false;
 
@@ -17,10 +17,7 @@ export const load = (async ({ fetch }) => {
 			const tickers: DivTickers = await res.json();
 
 			for (const ticker of tickers.tickers) {
-				addAlert({
-					info: true,
-					msg: `Update dividends for ${ticker}`
-				});
+				addInfo(`Update dividends for ${ticker}`);
 			}
 
 			return tickers;
