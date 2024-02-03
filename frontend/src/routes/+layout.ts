@@ -1,6 +1,6 @@
 import type { LayoutLoad } from "./$types";
 import { load as loadPortfolio } from "$lib/stores/portfolio";
-import { addInfo } from "$lib/components/base/alerts/alerts";
+import { addInfo, addAlert } from "$lib/components/base/alerts";
 
 export const ssr = false;
 
@@ -28,10 +28,7 @@ export const load = (async ({ fetch }) => {
 			} else {
 				msg = JSON.stringify(err);
 			}
-			addAlert({
-				info: false,
-				msg: msg
-			});
+			addAlert(msg);
 		}
 	};
 

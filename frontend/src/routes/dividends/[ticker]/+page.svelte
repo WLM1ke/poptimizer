@@ -14,7 +14,7 @@
 		InputSelectCell
 	} from "$lib/components/base/table";
 	import Button from "$lib/components/base/Button.svelte";
-	import { addAlert } from "$lib/components/alerts";
+	import { addAlert } from "$lib/components/base/alerts";
 	import { invalidate } from "$app/navigation";
 
 	export let data;
