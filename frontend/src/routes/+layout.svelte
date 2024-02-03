@@ -1,10 +1,10 @@
 <script lang="ts">
 	import "../app.css";
 	import "@fontsource/roboto-condensed";
-	import Logo from "$lib/components/Logo.svelte";
-	import Header from "$lib/components/Header.svelte";
-	import Sidebar from "$lib/components/sidebar/Sidebar.svelte";
-	import Alerts from "$lib/components/base/alerts/Alerts.svelte";
+	import Logo from "./Logo.svelte";
+	import Header from "./Header.svelte";
+	import Sidebar from "./Sidebar.svelte";
+	import { Alerts } from "$lib/components/base/alerts";
 	import { page } from "$app/stores";
 	import type { LayoutData } from "./$types";
 
