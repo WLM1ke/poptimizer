@@ -16,6 +16,7 @@
 	import Button from "$lib/components/Button.svelte";
 	import { addAlert } from "$lib/components/alerts";
 	import { invalidate } from "$app/navigation";
+	import { put } from "$lib/request.js";
 
 	export let data;
 
@@ -68,40 +69,23 @@
 		];
 	};
 	const save = async () => {
-		try {
-			const res = await fetch(`/api/dividends/${data.ticker}`, {
-				method: "PUT",
-				body: JSON.stringify({
-					dividends: data.dividends
-						.filter(({ status }) => {
-							return status === "ok" || status === "extra";
-						})
-						.map(({ day, dividend, currency }) => {
-							return { day, dividend, currency };
-						})
-						.toSorted((a, b) => {
-							return a.day !== b.day
-								? a.day.localeCompare(b.day)
-								: a.dividend !== b.dividend
-									? a.dividend - b.dividend
-									: a.currency.localeCompare(b.currency);
-						})
+		await put(fetch, `/api/dividends/${data.ticker}`, {
+			dividends: data.dividends
+				.filter(({ status }) => {
+					return status === "ok" || status === "extra";
 				})
-			});
-			if (!res.ok) {
-				throw new Error(await res.text());
-			}
-			await invalidate(`/api/dividends/${data.ticker}`);
-		} catch (err) {
-			let msg: string;
-			if (err instanceof Error) {
-				msg = err.message;
-			} else {
-				msg = JSON.stringify(err);
-			}
-			addAlert(msg);
-			await invalidate(`/api/dividends/${data.ticker}`);
-		}
+				.map(({ day, dividend, currency }) => {
+					return { day, dividend, currency };
+				})
+				.toSorted((a, b) => {
+					return a.day !== b.day
+						? a.day.localeCompare(b.day)
+						: a.dividend !== b.dividend
+							? a.dividend - b.dividend
+							: a.currency.localeCompare(b.currency);
+				})
+		});
+		await invalidate((url) => url.pathname.startsWith("/api/dividends"));
 	};
 </script>
 

@@ -1,5 +1,8 @@
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
+import { get, put } from "$lib/request";
+import { addAlert } from "$lib/components/alerts";
+import { invalidate } from "$app/navigation";
 
 interface DivCompareRow {
 	day: string;
@@ -10,26 +13,13 @@ interface DivCompareRow {
 
 interface Dividends {
 	dividends: DivCompareRow[];
-	ticker: string;
 }
 
 export const load = (async ({ fetch, params }) => {
-	try {
-		const res = await fetch(`/api/dividends/${params.ticker}`);
-		if (!res.ok) {
-			throw new Error(await res.text());
-		}
-		const resp = await res.json();
-		resp.ticker = params.ticker;
-
-		return resp as Dividends;
-	} catch (err) {
-		let msg: string;
-		if (err instanceof Error) {
-			msg = err.message;
-		} else {
-			msg = JSON.stringify(err);
-		}
-		error(500, msg);
+	const div: Dividends = await get(fetch, `/api/dividends/${params.ticker}`);
+	if (div === undefined) {
+		error(500, "Can't load dividends");
 	}
+
+	return { ...div, ticker: params.ticker };
 }) satisfies PageLoad;

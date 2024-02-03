@@ -11,6 +11,9 @@ const request = async (
 		if (!res.ok) {
 			throw new Error(await res.text());
 		}
+		if (res.status === 204) {
+			return null;
+		}
 
 		return await res.json();
 	} catch (err) {

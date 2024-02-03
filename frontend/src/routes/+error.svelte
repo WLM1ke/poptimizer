@@ -4,5 +4,5 @@
 </script>
 
 <section class="flex h-full flex-col items-center justify-center">
-	<H2>{$page.error.message} {$page.status}</H2>
+	<H2>{$page.status}: {$page.error.message}</H2>
 </section>
