@@ -24,7 +24,7 @@ lxml==5.1.0
 markdown-it-py==3.0.0
 mdurl==0.1.2
 motor==3.3.2
-multidict==6.0.4
+multidict==6.0.5
 numpy==1.26.3
 openpyxl==3.1.2
 pandas==2.2.0
@@ -35,7 +35,7 @@ pygments==2.17.2
 pymongo==4.6.1
 python-dateutil==2.8.2
 python-dotenv==1.0.1
-pytz==2023.4
+pytz==2024.1
 rich==13.7.0
 shellingham==1.5.4
 six==1.16.0
