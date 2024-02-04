@@ -16,7 +16,7 @@
 	<title>POptimizer - {title}</title>
 </svelte:head>
 
-<section class="grid-cols-layout grid-rows-layout grid h-screen w-screen">
+<section class="grid h-screen w-screen grid-cols-layout grid-rows-layout">
 	<Logo />
 	<Header {title} />
 	<Sidebar />

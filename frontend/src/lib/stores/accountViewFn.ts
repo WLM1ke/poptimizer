@@ -2,7 +2,6 @@ import { derived } from "svelte/store";
 import { portfolio, type Portfolio } from "$lib/stores/portfolio";
 import { accountsHideZeroPositions, accountsSortByValue } from "$lib/stores/settings";
 import { post } from "$lib/request";
-import { invalidate } from "$app/navigation";
 
 export interface AccountPosition {
 	ticker: string;
@@ -48,13 +47,9 @@ const getAccountView = (accountName: string, port: Portfolio, hideZero: boolean,
 		value: accountValue,
 		updatePosition: async (ticker: string, amount: string) => {
 			const portfolioData: Portfolio = await post(fetch, `/api/portfolio/${accountName}/${ticker}`, { amount });
-			if (portfolioData === undefined) {
-				invalidate("/api/portfolio");
-
-				return;
+			if (portfolioData !== undefined) {
+				portfolio.set(portfolioData);
 			}
-
-			portfolio.set(portfolioData);
 		}
 	};
 };
