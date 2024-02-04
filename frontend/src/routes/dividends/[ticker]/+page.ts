@@ -1,8 +1,6 @@
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
-import { get, put } from "$lib/request";
-import { addAlert } from "$lib/components/alerts";
-import { invalidate } from "$app/navigation";
+import { get } from "$lib/request";
 
 interface DivCompareRow {
 	day: string;

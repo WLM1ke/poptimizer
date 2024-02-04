@@ -24,7 +24,7 @@ const request = async (
 		} else {
 			msg = JSON.stringify(err);
 		}
-		addAlert(`${msg} - ${url}`);
+		addAlert(`${msg}`);
 
 		return undefined;
 	}
@@ -35,7 +35,7 @@ export const get = async (fetchFn: typeof fetch, url: string) => {
 };
 
 export const post = async (fetchFn: typeof fetch, url: string, body: object | undefined = undefined) => {
-	return await request(fetchFn, url, "POST");
+	return await request(fetchFn, url, "POST", body);
 };
 
 export const put = async (fetchFn: typeof fetch, url: string, body: object | undefined = undefined) => {
