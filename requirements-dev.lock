@@ -42,7 +42,7 @@ pydantic-core==2.16.2
 pydantic-settings==2.1.0
 pygments==2.17.2
 pymongo==4.6.1
-pyright==1.1.349
+pyright==1.1.350
 pytest==7.4.4
 pytest-asyncio==0.23.4
 pytest-cov==4.1.0
