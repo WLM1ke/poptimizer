@@ -66,9 +66,11 @@ omit = ["*/tests/*"]
 
 [tool.ruff]
 line-length = 120
+fix = true
+
+[tool.ruff.lint]
 select = ["ALL"]
 fixable = ["ALL"]
-fix = true
 
 ignore = [
     "A003",     # Class attribute is shadowing a python builtin
@@ -93,6 +95,7 @@ ignore = [
     "RUF001",   # Ambiguous-unicode-character-string - russian
     "RUF002",   # Ambiguous-unicode-character-docstring - russian
     "RUF003",   # Ambiguous-unicode-character-comment - russian
+    "S311",     # Standard pseudo-random generators are not suitable for cryptographic purposes
     "TRY003",   # Avoid specifying long messages outside the exception class - don't like many exceptions
 ]
 
@@ -101,15 +104,12 @@ unfixable = [
     "EM102",    # Exception must not use an f-string literal, assign to variable first
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "test_*.py" = [
     "S101",  # Use of `assert` detected
 ]
 
-[tool.ruff.flake8-type-checking]
-runtime-evaluated-base-classes = ["pydantic.BaseModel"]
-
-[tool.ruff.pep8-naming]
+[tool.ruff.lint.pep8-naming]
 classmethod-decorators = ["pydantic.field_validator", "pydantic.root_validator"]
 
 [tool.importlinter]
