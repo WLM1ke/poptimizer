@@ -17,6 +17,7 @@ dependencies = [
     "pandas>=2.1.4",
     "lxml>=5.1.0",
     "aiofiles>=23.2.1",
+    "scipy>=1.12.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"

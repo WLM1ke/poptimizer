@@ -37,8 +37,8 @@ packaging==23.2
 pandas==2.2.0
 pandas-stubs==2.1.4.231227
 pluggy==1.4.0
-pydantic==2.6.0
-pydantic-core==2.16.1
+pydantic==2.6.1
+pydantic-core==2.16.2
 pydantic-settings==2.1.0
 pygments==2.17.2
 pymongo==4.6.1
@@ -51,6 +51,7 @@ python-dotenv==1.0.1
 pytz==2024.1
 rich==13.7.0
 ruff==0.2.0
+scipy==1.12.0
 shellingham==1.5.4
 six==1.16.0
 typer==0.9.0
