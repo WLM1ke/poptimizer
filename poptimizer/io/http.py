@@ -107,7 +107,7 @@ class HTTPClient(aiohttp.ClientSession):
                     max_line_size=max_line_size,
                     max_field_size=max_field_size,
                 )
-            except (aiohttp.ClientError, asyncio.TimeoutError):
+            except (TimeoutError, aiohttp.ClientError):
                 continue
 
             if resp.status >= web_exceptions.HTTPInternalServerError.status_code:
