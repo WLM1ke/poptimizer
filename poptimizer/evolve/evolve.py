@@ -5,6 +5,7 @@ import itertools
 import random
 from typing import Annotated, Any, Self
 
+import bson
 from pydantic import AfterValidator, BaseModel, Field, PlainSerializer, computed_field, field_validator, model_validator
 
 from poptimizer.core import domain, errors
@@ -80,7 +81,7 @@ def bool_phenotype() -> PlainSerializer:
 
 
 def random_default_range(lower: float, upper: float) -> Any:
-    return Field(default_factory=lambda: random.uniform(lower, upper))
+    return Field(default_factory=lambda: random.uniform(lower, upper))  # noqa: S311
 
 
 type ChromosomeType = type[Chromosome]
@@ -94,10 +95,13 @@ class Genotype(Chromosome):
     pass
 
 
-class Organism(BaseModel):
-    day: domain.Day
+def new_organism_id() -> domain.UID:
+    return domain.UID(str(bson.ObjectId()))
+
+
+class Organism(domain.Entity):
     tickers: list[str] = Field(default_factory=list)
-    genes: Genes = {}
+    genes: Genes = Field(default_factory=dict)
     model: bytes = b""
     lr: list[float] = Field(default_factory=list)
     llh: list[float] = Field(default_factory=list)
@@ -108,17 +112,14 @@ class Organism(BaseModel):
     def wins(self) -> int:
         return len(self.lr)
 
-    def make_child(self, parent1: Organism, parent2: Organism, scale: float) -> Organism:
+    def make_child(self, parent1: Organism, parent2: Organism, scale: float) -> Genes:
         genotype = Genotype.model_validate(self.genes)
         genotype1 = Genotype.model_validate(parent1.genes)
         genotype2 = Genotype.model_validate(parent2.genes)
 
         child = genotype.make_child(genotype1, genotype2, scale)
 
-        return Organism(
-            day=self.day,
-            genes=child.genes,
-        )
+        return child.genes
 
     @field_validator("tickers")
     def _tickers_must_be_sorted(cls, tickers: list[str]) -> list[str]:

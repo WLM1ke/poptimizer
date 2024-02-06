@@ -95,7 +95,6 @@ ignore = [
     "RUF001",   # Ambiguous-unicode-character-string - russian
     "RUF002",   # Ambiguous-unicode-character-docstring - russian
     "RUF003",   # Ambiguous-unicode-character-comment - russian
-    "S311",     # Standard pseudo-random generators are not suitable for cryptographic purposes
     "TRY003",   # Avoid specifying long messages outside the exception class - don't like many exceptions
 ]
 
