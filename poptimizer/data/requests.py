@@ -1,5 +1,6 @@
 import asyncio
 from typing import Final
+from numpy import dtype
 
 import pandas as pd
 
@@ -29,7 +30,7 @@ class SecDataRequestHandler:
         tickers = [sec.ticker for sec in sec_table.df]
         quotes = await _quotes(ctx, tickers)
         turnover = (  # type: ignore[reportUnknownMemberType]
-            _turnover(tickers, quotes, request.day)  # type: ignore[reportUnknownMemberType]
+            _turnover(tickers, quotes, pd.Timestamp(request.day))  # type: ignore[reportUnknownMemberType]
             .iloc[-_MINIMUM_HISTORY * 2 :]
             .sort_index(ascending=False)
             .expanding()
@@ -46,6 +47,7 @@ class SecDataRequestHandler:
                     turnover=turnover[sec.ticker],  # type: ignore[reportUnknownMemberType]
                 )
                 for n, sec in enumerate(sec_table.df)
+                if not quotes[n].empty
             }
         )
 
@@ -53,7 +55,7 @@ class SecDataRequestHandler:
 def _turnover(
     tickers: list[str],
     quotes: list[pd.DataFrame],
-    day: domain.Day,
+    day: pd.Timestamp,
 ) -> pd.DataFrame:
     turnover = pd.concat(  # type: ignore[reportUnknownMemberType]
         [quote["turnover"] for quote in quotes],
@@ -74,6 +76,9 @@ async def _quotes(ctx: domain.Ctx, tickers: list[domain.Ticker]) -> list[pd.Data
 
 async def _quote(ctx: domain.Ctx, ticker: domain.Ticker) -> pd.DataFrame:
     table = await ctx.get(quotes.Quotes, domain.UID(ticker), for_update=False)
+
+    if not table.df:
+        return pd.DataFrame(columns=["day", "open", "close", "high", "low", "turnover"], dtype="float64")
 
     return pd.DataFrame(table.model_dump()["df"]).set_index("day")  # type: ignore[reportUnknownMemberType]
 
