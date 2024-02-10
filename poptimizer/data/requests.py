@@ -1,6 +1,5 @@
 import asyncio
 from typing import Final
-from numpy import dtype
 
 import pandas as pd
 

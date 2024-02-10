@@ -3,7 +3,6 @@ import { writable } from "svelte/store";
 interface Security {
 	lot: number;
 	price: number;
-	turnover: number;
 }
 
 interface Account {

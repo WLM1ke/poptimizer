@@ -1,6 +1,13 @@
 from poptimizer.core import domain
 from poptimizer.portfolio import portfolio
-from poptimizer.portfolio.contracts import CreateAccount, GetPortfolio, PortfolioData, RemoveAccount, UpdatePosition
+from poptimizer.portfolio.contracts import (
+    CreateAccount,
+    GetPortfolio,
+    PortfolioData,
+    RemoveAccount,
+    Security,
+    UpdatePosition,
+)
 
 
 class PortfolioDataRequestHandler:
@@ -10,7 +17,7 @@ class PortfolioDataRequestHandler:
         return PortfolioData(
             day=port.day,
             accounts=port.accounts,
-            securities=port.securities,
+            securities={ticker: Security(lot=sec.lot, price=sec.price) for ticker, sec in port.securities.items()},
         )
 
 
@@ -23,7 +30,7 @@ class CreateAccountRequestHandler:
         return PortfolioData(
             day=port.day,
             accounts=port.accounts,
-            securities=port.securities,
+            securities={ticker: Security(lot=sec.lot, price=sec.price) for ticker, sec in port.securities.items()},
         )
 
 
@@ -36,7 +43,7 @@ class RemoveAccountRequestHandler:
         return PortfolioData(
             day=port.day,
             accounts=port.accounts,
-            securities=port.securities,
+            securities={ticker: Security(lot=sec.lot, price=sec.price) for ticker, sec in port.securities.items()},
         )
 
 
@@ -55,5 +62,5 @@ class UpdatePositionRequestHandler:
         return PortfolioData(
             day=port.day,
             accounts=port.accounts,
-            securities=port.securities,
+            securities={ticker: Security(lot=sec.lot, price=sec.price) for ticker, sec in port.securities.items()},
         )

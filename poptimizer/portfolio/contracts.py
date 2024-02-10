@@ -24,7 +24,6 @@ class Account(BaseModel):
 class Security(BaseModel):
     lot: PositiveInt
     price: PositiveFloat
-    turnover: NonNegativeFloat
 
 
 class PortfolioData(domain.Response):
