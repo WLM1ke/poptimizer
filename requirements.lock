@@ -9,47 +9,101 @@
 
 -e file:.
 aiofiles==23.2.1
+    # via poptimizer
 aiohttp==3.9.3
+    # via aiomoex
+    # via poptimizer
 aiomoex==2.1.2
+    # via poptimizer
 aiosignal==1.3.1
+    # via aiohttp
 annotated-types==0.6.0
+    # via pydantic
 attrs==23.2.0
+    # via aiohttp
 click==8.1.7
+    # via typer
 colorama==0.4.6
-dnspython==2.5.0
+    # via typer
+dnspython==2.6.1
+    # via pymongo
 et-xmlfile==1.1.0
+    # via openpyxl
 filelock==3.13.1
+    # via torch
 frozenlist==1.4.1
+    # via aiohttp
+    # via aiosignal
 fsspec==2024.2.0
+    # via torch
 idna==3.6
+    # via yarl
 jinja2==3.1.3
+    # via torch
 lxml==5.1.0
+    # via poptimizer
 markdown-it-py==3.0.0
+    # via rich
 markupsafe==2.1.5
+    # via jinja2
 mdurl==0.1.2
+    # via markdown-it-py
 motor==3.3.2
+    # via poptimizer
 mpmath==1.3.0
+    # via sympy
 multidict==6.0.5
+    # via aiohttp
+    # via yarl
 networkx==3.2.1
+    # via torch
 numpy==1.26.4
+    # via pandas
+    # via scipy
 openpyxl==3.1.2
+    # via poptimizer
 pandas==2.2.0
+    # via poptimizer
 pydantic==2.6.1
+    # via poptimizer
+    # via pydantic-settings
 pydantic-core==2.16.2
-pydantic-settings==2.1.0
+    # via pydantic
+pydantic-settings==2.2.1
+    # via poptimizer
 pygments==2.17.2
-pymongo==4.6.1
+    # via rich
+pymongo==4.6.2
+    # via motor
 python-dateutil==2.8.2
+    # via pandas
 python-dotenv==1.0.1
+    # via pydantic-settings
 pytz==2024.1
+    # via pandas
 rich==13.7.0
+    # via typer
 scipy==1.12.0
+    # via poptimizer
 shellingham==1.5.4
+    # via typer
 six==1.16.0
+    # via python-dateutil
 sympy==1.12
-torch==2.2.0
+    # via torch
+torch==2.2.1
+    # via poptimizer
 typer==0.9.0
+    # via poptimizer
+    # via typer
 typing-extensions==4.9.0
-tzdata==2023.4
+    # via pydantic
+    # via pydantic-core
+    # via torch
+    # via typer
+tzdata==2024.1
+    # via pandas
 uvloop==0.19.0
+    # via poptimizer
 yarl==1.9.4
+    # via aiohttp
