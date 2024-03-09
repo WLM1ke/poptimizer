@@ -4,7 +4,7 @@ vars:
   APP: poptimizer
   FRONTEND: frontend
   PYTHON: 3.12
-  TOOLS: go-task rye npm mongodb-community mongosh nats-server
+  TOOLS: go-task rye npm mongodb-community mongosh
 
 tasks:
   default:
@@ -78,8 +78,3 @@ tasks:
     cmds:
       - mongod --dbpath db --replSet POptimizer --bind_ip localhost &
       - mongosh --eval "rs.initiate()"
-
-  nats:
-    desc: Run NATS Server
-    cmds:
-      - nats-server --addr localhost --jetstream --store_dir nats

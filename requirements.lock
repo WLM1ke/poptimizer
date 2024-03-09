@@ -62,12 +62,12 @@ numpy==1.26.4
     # via scipy
 openpyxl==3.1.2
     # via poptimizer
-pandas==2.2.0
+pandas==2.2.1
     # via poptimizer
-pydantic==2.6.1
+pydantic==2.6.3
     # via poptimizer
     # via pydantic-settings
-pydantic-core==2.16.2
+pydantic-core==2.16.3
     # via pydantic
 pydantic-settings==2.2.1
     # via poptimizer
@@ -75,13 +75,13 @@ pygments==2.17.2
     # via rich
 pymongo==4.6.2
     # via motor
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via pandas
 python-dotenv==1.0.1
     # via pydantic-settings
 pytz==2024.1
     # via pandas
-rich==13.7.0
+rich==13.7.1
     # via typer
 scipy==1.12.0
     # via poptimizer
@@ -96,7 +96,7 @@ torch==2.2.1
 typer==0.9.0
     # via poptimizer
     # via typer
-typing-extensions==4.9.0
+typing-extensions==4.10.0
     # via pydantic
     # via pydantic-core
     # via torch
