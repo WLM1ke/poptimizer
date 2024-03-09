@@ -17,8 +17,7 @@ _RE_DIV: Final = re.compile(r"(\d.*)[\xA0\s](руб|USD|\$)")
 _DIV_TRANSLATE: Final = str.maketrans({",": ".", " ": ""})
 
 
-class DivReestry(status.DivRaw):
-    ...
+class DivReestry(status.DivRaw): ...
 
 
 class ReestryDividendsUpdated(domain.Event):

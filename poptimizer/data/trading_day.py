@@ -5,7 +5,7 @@ import aiomoex
 from pydantic import BaseModel, Field, field_validator
 
 from poptimizer.core import domain
-from poptimizer.data import data, day_started
+from poptimizer.data import contracts, data
 
 
 class _Row(data.Row):
@@ -26,8 +26,7 @@ class _Payload(BaseModel):
         return df
 
 
-class TradingDay(domain.Entity):
-    ...
+class TradingDay(domain.Entity): ...
 
 
 class TradingDayEnded(domain.Event):
@@ -38,7 +37,7 @@ class TradingDayEventHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def handle(self, ctx: domain.Ctx, event: day_started.DayStarted) -> None:
+    async def handle(self, ctx: domain.Ctx, event: contracts.DayStarted) -> None:
         table = await ctx.get(TradingDay)
 
         if table.day >= event.day:

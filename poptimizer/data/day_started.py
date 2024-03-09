@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from typing import Final
 
 from poptimizer.core import domain
+from poptimizer.data import contracts
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -13,10 +14,6 @@ _END_HOUR: Final = 0
 _END_MINUTE: Final = 45
 
 _CHECK_INTERVAL: Final = timedelta(minutes=1)
-
-
-class DayStarted(domain.Event):
-    day: domain.Day
 
 
 def _last_day() -> date:
@@ -43,10 +40,10 @@ def _last_day() -> date:
 class DayStartedService:
     async def run(self, ctx: domain.SrvCtx) -> None:
         day = _last_day()
-        ctx.publish(DayStarted(day=day))
+        ctx.publish(contracts.DayStarted(day=day))
 
         while True:
             await asyncio.sleep(_CHECK_INTERVAL.total_seconds())
             if day < (cur_day := _last_day()):
                 day = cur_day
-                ctx.publish(DayStarted(day=day))
+                ctx.publish(contracts.DayStarted(day=day))

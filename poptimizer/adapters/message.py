@@ -28,18 +28,15 @@ _DEFAULT_BACKOFF_FACTOR: Final = 2
 
 
 class EventHandler[E: domain.Event](Protocol):
-    async def handle(self, ctx: domain.Ctx, event: E) -> None:
-        ...
+    async def handle(self, ctx: domain.Ctx, event: E) -> None: ...
 
 
 class RequestHandler[Req: domain.Request[Any], Res: domain.Response](Protocol):
-    async def handle(self, ctx: domain.Ctx, request: Req) -> Res:
-        ...
+    async def handle(self, ctx: domain.Ctx, request: Req) -> Res: ...
 
 
 class Service(Protocol):
-    async def run(self, ctx: domain.SrvCtx) -> None:
-        ...
+    async def run(self, ctx: domain.SrvCtx) -> None: ...
 
 
 class Ctx(Protocol):
@@ -49,36 +46,28 @@ class Ctx(Protocol):
         uid: domain.UID | None = None,
         *,
         for_update: bool = True,
-    ) -> E:
-        ...
+    ) -> E: ...
 
-    def publish(self, event: domain.Event) -> None:
-        ...
+    def publish(self, event: domain.Event) -> None: ...
 
-    def warn(self, msg: str) -> None:
-        ...
+    def warn(self, msg: str) -> None: ...
 
-    async def request[Res: domain.Response](self, request: domain.Request[Res]) -> Res:
-        ...
+    async def request[Res: domain.Response](self, request: domain.Request[Res]) -> Res: ...
 
-    async def __aenter__(self) -> Self:
-        ...
+    async def __aenter__(self) -> Self: ...
 
     async def __aexit__(
         self,
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         traceback: TracebackType | None,
-    ) -> Literal[False]:
-        ...
+    ) -> Literal[False]: ...
 
 
 class Policy(Protocol):
-    def __init__(self) -> None:
-        ...
+    def __init__(self) -> None: ...
 
-    async def try_again(self) -> bool:
-        ...
+    async def try_again(self) -> bool: ...
 
 
 class IgnoreErrorsPolicy:
@@ -114,9 +103,9 @@ class Bus:
 
         self._uow_factory = uow_factory
 
-        self._event_handlers: dict[
-            domain.Component, list[tuple[domain.Subdomain, EventHandler[Any], type[Policy]]]
-        ] = defaultdict(list)
+        self._event_handlers: dict[domain.Component, list[tuple[domain.Subdomain, EventHandler[Any], type[Policy]]]] = (
+            defaultdict(list)
+        )
         self._request_handlers: dict[domain.Component, tuple[domain.Subdomain, RequestHandler[Any, Any]]] = {}
         self._service_tasks: list[asyncio.Task[None]] = []
 
@@ -252,6 +241,7 @@ class Bus:
         try:
             return await asyncio.shield(self._tasks.__aexit__(exc_type, exc_value, traceback))
         except asyncio.CancelledError:
+            self.publish(domain.StopEvent())
             for publisher_task in self._service_tasks:
                 publisher_task.cancel()
 

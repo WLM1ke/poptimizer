@@ -32,8 +32,7 @@ class PortfolioData(domain.Response):
     securities: dict[domain.Ticker, Security]
 
 
-class GetPortfolio(domain.Request[PortfolioData]):
-    ...
+class GetPortfolio(domain.Request[PortfolioData]): ...
 
 
 class CreateAccount(domain.Request[PortfolioData]):

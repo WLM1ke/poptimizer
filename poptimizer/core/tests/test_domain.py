@@ -1,8 +1,7 @@
 from poptimizer.core import domain
 
 
-class TestComponent:
-    ...
+class TestComponent: ...
 
 
 def test_get_component_name() -> None:

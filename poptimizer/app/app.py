@@ -5,7 +5,7 @@ import uvloop
 
 from poptimizer import config
 from poptimizer.adapters import backup, message, uow, warn
-from poptimizer.app import data, portfolio
+from poptimizer.app import data, evolve, portfolio
 from poptimizer.core import domain
 from poptimizer.data import status
 from poptimizer.io import http, lgr, mongo
@@ -36,8 +36,11 @@ async def _run() -> None:
             backup.DivBackupEventHandler(raw_div_collection),
             message.IgnoreErrorsPolicy,
         )
+
         data.init_subdomain(bus, http_client)
         portfolio.init_subdomain(bus)
+        evolve.init_subdomain(bus)
+
         bus.add_service(server.APIServerService(cfg.server_url))
 
 

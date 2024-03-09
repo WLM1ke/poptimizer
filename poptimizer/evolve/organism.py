@@ -88,7 +88,7 @@ type ChromosomeType = type[Chromosome]
 
 
 def random_chromosome(chromosome_type: ChromosomeType) -> Any:
-    return Field(default_factory=lambda: chromosome_type())
+    return Field(default_factory=chromosome_type)
 
 
 class Genotype(Chromosome):

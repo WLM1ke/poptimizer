@@ -8,6 +8,10 @@ from poptimizer.core import domain
 from poptimizer.data import data
 
 
+class DayStarted(domain.Event):
+    day: domain.Day
+
+
 class QuotesUpdated(domain.Event):
     day: domain.Day
 
@@ -30,8 +34,7 @@ class DivTickers(domain.Response):
     tickers: list[domain.Ticker]
 
 
-class GetDivTickers(domain.Request[DivTickers]):
-    ...
+class GetDivTickers(domain.Request[DivTickers]): ...
 
 
 class DivCompStatus(StrEnum):
@@ -79,3 +82,8 @@ class RowRaw(data.Row):
 class UpdateDividends(domain.Request[DividendsData]):
     ticker: domain.Ticker
     dividends: list[RowRaw]
+
+
+class FeaturesData(domain.Response):
+    quotes: list[domain.Ticker]
+    dividends: list[DivCompareRow]

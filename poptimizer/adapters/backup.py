@@ -5,7 +5,7 @@ import aiofiles
 import bson
 
 from poptimizer.core import domain
-from poptimizer.data import day_started, status
+from poptimizer.data import contracts, status
 from poptimizer.io import mongo
 
 _DUMP: Final = Path(__file__).parents[2] / "dump" / "dividends.bson"
@@ -23,11 +23,11 @@ class DivBackupEventHandler:
     def __init__(self, collection: mongo.MongoCollection) -> None:
         self._collection = collection
 
-    async def handle(self, ctx: domain.Ctx, event: status.RawDivUpdated | day_started.DayStarted) -> None:
+    async def handle(self, ctx: domain.Ctx, event: contracts.DayStarted | status.RawDivUpdated) -> None:
         match event:
             case status.RawDivUpdated():
                 await self._backup(ctx, event)
-            case day_started.DayStarted():
+            case contracts.DayStarted():
                 await self._restore(ctx, event)
 
     async def _backup(self, ctx: domain.Ctx, event: status.RawDivUpdated) -> None:
@@ -39,7 +39,7 @@ class DivBackupEventHandler:
 
         ctx.publish(DividendsBackupCompleted(day=event.day))
 
-    async def _restore(self, ctx: domain.Ctx, event: day_started.DayStarted) -> None:
+    async def _restore(self, ctx: domain.Ctx, event: contracts.DayStarted) -> None:
         if await self._collection.count_documents({}):
             return
 
