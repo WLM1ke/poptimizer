@@ -33,14 +33,14 @@ tasks:
     desc: Format
     cmds:
       - rye run ruff format {{.APP}}
-      - rye run ruff {{.APP}} --unsafe-fixes --exit-zero
+      - rye run ruff check {{.APP}} --unsafe-fixes --exit-zero
       - cd {{.FRONTEND}} && npm run format
 
   lint:
     desc: Lint
     cmds:
       - rye run lint-imports
-      - rye run ruff {{.APP}} --unsafe-fixes --exit-non-zero-on-fix
+      - rye run ruff check {{.APP}} --unsafe-fixes --exit-non-zero-on-fix
       - rye run pyright {{.APP}}
       - cd {{.FRONTEND}} && npm run lint && npm run check
 
