@@ -1,15 +1,27 @@
 import asyncio
+import itertools
 from enum import IntEnum, auto
+from typing import Annotated
 
 from pydantic import Field, PositiveInt
+from pydantic.functional_validators import AfterValidator
 
 from poptimizer.core import domain
 from poptimizer.data import contracts as data
 from poptimizer.portfolio import contracts as portfolio
 
 
+def _sorted_tickers(tickers: list[domain.Ticker]) -> list[domain.Ticker]:
+    ticker_pairs = itertools.pairwise(ticker for ticker in tickers)
+
+    if not all(ticker < next_ for ticker, next_ in ticker_pairs):
+        raise ValueError("tickers not sorted")
+
+    return tickers
+
+
 class Evolution(domain.Entity):
-    tickers: list[domain.Ticker] = Field(default_factory=list)
+    tickers: Annotated[list[domain.Ticker], AfterValidator(_sorted_tickers)] = Field(default_factory=list)
     target_population: PositiveInt = 1
 
 
