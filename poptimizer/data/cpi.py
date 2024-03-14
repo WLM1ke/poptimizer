@@ -12,7 +12,7 @@ from poptimizer.core import domain, errors
 from poptimizer.data import data, trading_day
 
 _PRICES_PAGE: Final = "https://rosstat.gov.ru/statistics/price"
-_RE_FILE: Final = re.compile(r"/[iI]pc[\-_]mes[\-_][0-9]{1,2}.xlsx")
+_RE_FILE: Final = re.compile(r"/[iI]pc[\-_]mes[\-_][0-9]{1,2}-[0-9]{4}.xlsx")
 _URL_TMPL: Final = "https://rosstat.gov.ru/storage/mediabank/{}"
 _SHEET_NAME: Final = "01"
 
