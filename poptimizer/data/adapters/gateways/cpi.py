@@ -14,7 +14,8 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
 }
 _PRICES_PAGE = "https://rosstat.gov.ru/statistics/price"
-_RE_FILE = re.compile(r"/[iI]pc[\-_]mes[\-_][0-9]{1,2}.xlsx")
+# Было /[iI]pc[\-_]mes[\-_][0-9]{1,2}.xlsx
+_RE_FILE = re.compile(r"/[iI]pc[\-_]mes[\-_][0-9]{1,2}-[0-9]{4}.xlsx")
 _URL = "https://rosstat.gov.ru/storage/mediabank/{}"
 END_OF_JAN = 31
 PARSING_PARAMETERS = types.MappingProxyType(
