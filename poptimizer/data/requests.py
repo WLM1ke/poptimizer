@@ -19,7 +19,7 @@ from poptimizer.data.contracts import (
 )
 
 _START_LIQUIDITY_DAYS: Final = 21
-_MINIMUM_HISTORY: Final = 86 * 5 + 21
+_MINIMUM_HISTORY: Final = 30 * 21
 
 
 class SecDataRequestHandler:
