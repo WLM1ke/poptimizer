@@ -56,7 +56,9 @@ class ReestryDividendsEventHandler:
         try:
             raw_rows = _parse(html_page, 1 + row.preferred, first_day)
         except errors.DomainError as err:
-            raise errors.DomainError(f"can't parse {row.ticker}") from err
+            ctx.warn(f"can't parse {row.ticker} raw dividends data {err}")
+
+            return
 
         table.update(update_day, raw_rows)
 
