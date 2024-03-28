@@ -163,7 +163,7 @@ class Evolution:  # noqa: WPS214
         for date in reversed(dates):
             try:
                 organism.evaluate_fitness(self._tickers, date)
-                if (upper_bound := self._get_margin(organism)) is None:
+                if (thompson := self._get_margin(organism)) is None:
                     organism.die()
                     self._logger.info("Исключен из популяции...\n")
 
@@ -175,25 +175,20 @@ class Evolution:  # noqa: WPS214
                 return None
 
         time_score = _time_delta(organism)
-        self._logger.info(f"Upper bound - {upper_bound:.4f}, Slowness - {time_score:.2%}\n")
+        self._logger.info(f"Thompson sampling - {thompson:.4f}, Slowness - {time_score:.2%}\n")
 
-        return upper_bound, time_score
+        return thompson, time_score
 
     def _get_margin(self, org: population.Organism) -> float | None:
-        """Используется тестирование разницы llh и ret против самого старого организма.
-
-        Используются тесты для связанных выборок, поэтому предварительно происходит выравнивание по
-        датам и отбрасывание значений не имеющих пары (возможно первое значение и хвост из старых
-        значений более старого организма).
-        """
         names = {"llh": "LLH", "ir": "RET"}
-        upper_bound = -np.inf
+        thompson = 0
 
         for metric in ("llh", "ir"):
-            median, upper, maximum = _select_worst_bound(
+            diff = _aligned_diff(
                 candidate={"date": org.date, "llh": org.llh, "ir": org.ir},
                 metric=metric,
             )
+            median, upper, maximum = _test_diff(diff)
 
             self._logger.info(
                 " ".join(
@@ -209,11 +204,12 @@ class Evolution:  # noqa: WPS214
             if upper < 0:
                 return None
 
-            upper_bound = max(upper_bound, upper)
+            if metric == "ir":
+                thompson = float(np.median(np.random.choice(diff, len(diff))))
 
-        org.upper_bound = upper_bound
+        org.upper_bound = thompson
 
-        return upper_bound
+        return thompson
 
 
 def _time_delta(org):
@@ -235,16 +231,6 @@ def _check_time_range() -> bool:
     after_midnight = hour < config.STOP_EVOLVE_HOUR
 
     return before_midnight or after_midnight
-
-
-def _select_worst_bound(candidate: dict, metric: str) -> tuple[float, float, float]:
-    """Выбирает минимальное значение верхней границы доверительного интервала.
-
-    Если данный организм не уступает целевому организму, то верхняя граница будет положительной.
-    """
-    diff = _aligned_diff(candidate, metric)
-
-    return _test_diff(diff)
 
 
 def _aligned_diff(candidate: dict, metric: str) -> list[float]:

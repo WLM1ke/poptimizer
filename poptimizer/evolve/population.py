@@ -248,7 +248,7 @@ def get_next_one() -> Optional[Organism]:
 
     Второй критерий - или самый мало обученный, или с максимальной верхней границе доверительного интервала.
     """
-    selector = random.choice(({"ub": pymongo.DESCENDING}, {"wins": pymongo.ASCENDING}))
+    selector = random.choice(({"ub": pymongo.DESCENDING}, {"ub": pymongo.ASCENDING}))
 
     pipeline = [
         {"$project": {"date": True, "ub": True, "wins": True}},
