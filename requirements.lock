@@ -40,7 +40,7 @@ idna==3.6
     # via yarl
 jinja2==3.1.3
     # via torch
-lxml==5.1.0
+lxml==5.1.1
     # via poptimizer
 markdown-it-py==3.0.0
     # via rich
@@ -73,7 +73,7 @@ pydantic-settings==2.2.1
     # via poptimizer
 pygments==2.17.2
     # via rich
-pymongo==4.6.2
+pymongo==4.6.3
     # via motor
 python-dateutil==2.9.0.post0
     # via pandas
@@ -91,9 +91,9 @@ six==1.16.0
     # via python-dateutil
 sympy==1.12
     # via torch
-torch==2.2.1
+torch==2.2.2
     # via poptimizer
-typer==0.10.0
+typer==0.11.1
     # via poptimizer
     # via typer
 typing-extensions==4.10.0
