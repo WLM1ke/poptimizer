@@ -116,12 +116,14 @@ def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day:
 
         div, currency = _parse_div(div_raw)
 
-        if (day := _parse_date(date_raw)) >= first_day:
-            yield status.RowRaw(
-                day=day,
-                dividend=div,
-                currency=currency,
-            )
+        if (day := _parse_date(date_raw)) < first_day:
+            break
+
+        yield status.RowRaw(
+            day=day,
+            dividend=div,
+            currency=currency,
+        )
 
 
 def _parse_date(date_raw: str) -> date:
