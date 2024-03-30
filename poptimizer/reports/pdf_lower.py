@@ -46,7 +46,7 @@ def drop_small_positions(portfolio: Portfolio):
     value = value.sort_values(ascending=False)
 
     kinds = listing.ticker_types().reindex(value.index)
-    kinds[CASH] = 0
+    kinds[CASH] = 2
     kinds = kinds.replace(KINDS_MAPPING)
 
     n_types = len(set(kinds))
