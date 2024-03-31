@@ -246,7 +246,7 @@ def load_from_yaml(date: Union[str, pd.Timestamp], ports: set = None) -> Portfol
             name.append(path.stem)
             with path.open() as port:
                 port = yaml.safe_load(port)
-                positions.update(port.pop("positions"))
+                positions.update(port.pop("positions", {}))
                 cash += port.get("USD", 0) * usd + port.get("RUR", 0)
                 value += port.get("value", 0)
 
@@ -271,7 +271,7 @@ def load_tickers() -> tuple[str]:
     for path in config.PORT_PATH.glob("*.yaml"):
         with path.open() as port:
             port = yaml.safe_load(port)
-            pos = port.pop("positions")
+            pos = port.pop("positions", {})
             all_pos.update(pos)
 
     return tuple(sorted(all_pos))
