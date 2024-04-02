@@ -36,7 +36,6 @@ def _ticker_type(sec_type: str) -> int:
 MARKETS_BOARDS: Final = (
     ("shares", "TQBR", _ticker_type),
     ("shares", "TQTF", lambda _: col.ETF),
-    ("foreignshares", "FQBR", lambda _: col.FOREIGN),
 )
 
 
