@@ -30,6 +30,8 @@ class Evolution:  # noqa: WPS214
         self._end = None
         self._logger = logging.getLogger()
         self._tests = 1
+        self._prev_org_id = None
+        self._min_step = 1
         self._scale = 1
 
     def evolve(self) -> None:
@@ -42,6 +44,13 @@ class Evolution:  # noqa: WPS214
 
         while _check_time_range():
             org = population.get_next_one()
+            if org.id == self._prev_org_id:
+                self._min_step = max(self._min_step, population.count() - config.TARGET_POPULATION) * 2
+            else:
+                self._min_step = 1
+
+            self._prev_org_id = org.id
+
             step = self._step_setup(step)
 
             date = self._end.date()
@@ -50,8 +59,9 @@ class Evolution:  # noqa: WPS214
             count = population.count()
             self._logger.info(
                 f"Тестов - {self._tests} / "
-                f"Организмов - {count} / "
+                f"Шаг - {self._min_step} / "
                 f"Разброс - {1 / self._scale:.2%} / "
+                f"Организмов - {count} / "
                 f"Оценок - {population.min_scores()}-{population.max_scores()}\n"
             )
 
@@ -73,7 +83,7 @@ class Evolution:  # noqa: WPS214
 
         self._tests = max(self._tests, seq.minimum_bounding_n(config.P_VALUE / (count + 1)))
 
-        return max(self._tests, org.scores + max(1, excess))
+        return max(self._tests, org.scores + max(self._min_step, excess))
 
     def _step_setup(
         self,
