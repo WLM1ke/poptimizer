@@ -1,10 +1,11 @@
 import asyncio
 from datetime import timedelta
-from enum import STRICT, Flag, auto
+from enum import Enum, auto
 from typing import Final, NewType, Protocol
 
 from pydantic import BaseModel, ConfigDict
 
+from poptimizer.adapters import ctx
 from poptimizer.core import domain, errors
 
 _FIRST_RETRY: Final = timedelta(seconds=1)
@@ -61,15 +62,16 @@ class _Node[S: domain.State]:
         return self._inputs_count
 
 
-class _DagStatus(Flag, boundary=STRICT):
+class _DagStatus(Enum):
+    IDLE = auto()
     RUNNING = auto()
-    STOPPED = auto()
+    STOPPING = auto()
 
 
 class Dag[S: domain.State]:
-    def __init__(self, ctx: domain.Ctx, state: S) -> None:
-        self._ctx = ctx
-        self._status = _DagStatus(0)
+    def __init__(self, ctx_factory: ctx.Factory, state: S) -> None:
+        self._ctx_factory = ctx_factory
+        self._status = _DagStatus.IDLE
         self._state = state
         self._nodes: dict[_NodeUID, _Node[S]] = {}
         self._retry_tasks: set[asyncio.Task[None]] = set()
@@ -80,7 +82,7 @@ class Dag[S: domain.State]:
         return _DagID(id(self))
 
     def add_node(self, action: _Action[S], *depends: _NodeUID) -> _NodeUID:
-        if self._status != _DagStatus(0):
+        if self._status != _DagStatus.IDLE:
             raise errors.AdaptersError("Can't add node to running dag")
 
         if any(uid.dag != self.id for uid in depends):
@@ -99,7 +101,7 @@ class Dag[S: domain.State]:
         return uid
 
     def add_node_with_retry(self, action: _Action[S], *depends: _NodeUID) -> _NodeUID:
-        if self._status != _DagStatus(0):
+        if self._status != _DagStatus.IDLE:
             raise errors.AdaptersError("Can't add node to running dag")
 
         if any(uid.dag != self.id for uid in depends):
@@ -118,8 +120,21 @@ class Dag[S: domain.State]:
         return uid
 
     async def run(self) -> S:
+        try:
+            await asyncio.shield(self._run())
+        except asyncio.CancelledError:
+            self._status = _DagStatus.STOPPING
+
+            for task in self._retry_tasks:
+                task.cancel()
+
+        await self._finished_event.wait()
+
+        return self._state
+
+    async def _run(self) -> None:
         async with asyncio.TaskGroup() as tg:
-            if self._status != _DagStatus(0):
+            if self._status != _DagStatus.IDLE:
                 raise errors.AdaptersError("Can't run running dag")
 
             self._status = _DagStatus.RUNNING
@@ -128,45 +143,33 @@ class Dag[S: domain.State]:
                 if not node.inputs_count:
                     tg.create_task(self._run_action(tg, node))
 
-        self._status |= ~_DagStatus.RUNNING
+        self._status = _DagStatus.STOPPING
         self._finished_event.set()
 
-        return self._state
-
-    async def stop(self) -> None:
-        self._status |= _DagStatus.STOPPED
-
-        for task in self._retry_tasks:
-            task.cancel()
-
-        await self._finished_event.wait()
-
     async def _run_action(self, tg: asyncio.TaskGroup, node: _Node[S]) -> None:
-        try:
-            call_next = await node.action(self._ctx, self._state)
-            self._ctx.info(f"{domain.get_component_name(node.action)} finished")
-        except errors.DomainError as err:
-            self._ctx.warn(f"{domain.get_component_name(node.action)} failed - {err}")
+        async with self._ctx_factory() as ctx:
+            try:
+                next_call = await node.action(ctx, self._state)
+                ctx.info(f"{domain.get_component_name(node.action)} finished")
+            except errors.DomainError as err:
+                ctx.warn(f"{domain.get_component_name(node.action)} failed - {err}")
 
-            retry_task = tg.create_task(self._retry_node(tg, node))
-            self._retry_tasks.add(retry_task)
-            retry_task.add_done_callback(lambda _: self._retry_tasks.remove(retry_task))
+                if self._status == _DagStatus.STOPPING or (next_retry := node.get_next_retry()) is None:
+                    return
 
-            return
+                ctx.info(f"{domain.get_component_name(node.action)} waiting for retry in {next_retry}")
 
-        if _DagStatus.STOPPED in self._status or not call_next:
-            return
+                retry_task = tg.create_task(self._retry_node(tg, node, next_retry))
+                self._retry_tasks.add(retry_task)
+                retry_task.add_done_callback(lambda _: self._retry_tasks.remove(retry_task))
 
-        self._run_children(tg, node)
+                return
 
-    async def _retry_node(self, tg: asyncio.TaskGroup, node: _Node[S]) -> None:
-        if _DagStatus.STOPPED in self._status or (next_retry := node.get_next_retry()) is None:
-            return
+        if next_call and self._status != _DagStatus.STOPPING:
+            self._run_children(tg, node)
 
-        self._ctx.info(f"{domain.get_component_name(node.action)} waiting for retry in {next_retry}")
-
-        await asyncio.sleep(next_retry.total_seconds())
-
+    async def _retry_node(self, tg: asyncio.TaskGroup, node: _Node[S], retry_duration: timedelta) -> None:
+        await asyncio.sleep(retry_duration.total_seconds())
         tg.create_task(self._run_action(tg, node))
 
     def _run_children(self, tg: asyncio.TaskGroup, node: _Node[S]) -> None:
