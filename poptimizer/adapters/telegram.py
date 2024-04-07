@@ -12,7 +12,7 @@ _TELEGRAM_MAX_MSG_SIZE: Final = 4096
 _TELEGRAM_MAX_RPS: Final = 1
 
 
-class TelegramLogger:
+class Logger:
     def __init__(
         self,
         logger: logging.Logger,

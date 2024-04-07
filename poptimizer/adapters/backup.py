@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Final
+from types import TracebackType
+from typing import Final, Self
 
 import aiofiles
 import bson
@@ -14,9 +15,9 @@ class Backup:
     def __init__(self, collection: mongo.MongoCollection) -> None:
         self._collection = collection
 
-    async def restore(self) -> None:
+    async def __aenter__(self) -> Self:
         if await self._collection.count_documents({}):
-            return
+            return self
 
         if not _DUMP.exists():
             raise errors.AdaptersError(f"can't restore {self._collection.name}")
@@ -26,7 +27,14 @@ class Backup:
 
         await self._collection.insert_many(bson.decode_all(raw))  # type: ignore[reportUnknownMemberType]
 
-    async def backup(self) -> None:
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         _DUMP.parent.mkdir(parents=True, exist_ok=True)
 
         async with aiofiles.open(_DUMP, "bw") as backup_file:

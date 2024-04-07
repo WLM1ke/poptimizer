@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from types import TracebackType
 from typing import Literal, Self
 
-from poptimizer.adapters import lgr, repo
+from poptimizer.adapters import repo, telegram
 from poptimizer.core import domain, errors
 
 
@@ -16,6 +16,8 @@ class IdentityMap:
         yield from (model for model, for_update in self._seen.values() if for_update)
 
     async def __aenter__(self) -> Self:
+        await self._lock.acquire()
+
         return self
 
     async def __aexit__(
@@ -57,7 +59,7 @@ class IdentityMap:
 class UOW:
     def __init__(
         self,
-        logger: lgr.TelegramLogger,
+        logger: telegram.Logger,
         repo: repo.Mongo,
         identity_map: IdentityMap,
     ) -> None:
