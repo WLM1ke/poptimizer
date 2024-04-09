@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict
 from poptimizer.core import consts, domain
 
 
-class LastTradingDay(domain.State):
-    day: domain.Day
+class LastUpdate(domain.State):
+    day: domain.Day = consts.START_DAY
 
 
 class Row(BaseModel):

@@ -60,7 +60,7 @@ class CPIUpdater:
     def __init__(self, http_session: aiohttp.ClientSession) -> None:
         self._http_session = http_session
 
-    async def __call__(self, ctx: domain.Ctx, state: data.LastTradingDay) -> Literal[True]:
+    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> Literal[True]:
         table = await ctx.get(CPI)
 
         xlsx_file = await self._download()

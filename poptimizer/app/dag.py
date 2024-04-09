@@ -147,23 +147,24 @@ class Dag[S: domain.State]:
         self._finished_event.set()
 
     async def _run_action(self, tg: asyncio.TaskGroup, node: _Node[S]) -> None:
+        ctx = self._ctx_factory()
         try:
-            async with self._ctx_factory() as ctx:
+            async with ctx:
                 next_call = await node.action(ctx, self._state)
-                ctx.info(f"{domain.get_component_name(node.action)} finished")
-                if next_call and self._status != _DagStatus.STOPPING:
-                    self._run_children(tg, node)
+
+            ctx.info(f"{domain.get_component_name(node.action)} finished")
+            if next_call and self._status != _DagStatus.STOPPING:
+                self._run_children(tg, node)
         except* errors.POError as err:
-            async with self._ctx_factory() as ctx:
-                error_msg = f"{", ".join(map(str, err.exceptions))}"
-                ctx.warn(f"{domain.get_component_name(node.action)} failed - {error_msg}")
+            error_msg = f"{", ".join(map(str, err.exceptions))}"
+            ctx.warn(f"{domain.get_component_name(node.action)} failed - {error_msg}")
 
-                if self._status != _DagStatus.STOPPING and (next_retry := node.get_next_retry()) is not None:
-                    ctx.info(f"{domain.get_component_name(node.action)} waiting for retry in {next_retry}")
+            if self._status != _DagStatus.STOPPING and (next_retry := node.get_next_retry()) is not None:
+                ctx.info(f"{domain.get_component_name(node.action)} waiting for retry in {next_retry}")
 
-                    retry_task = tg.create_task(self._retry_node(tg, node, next_retry))
-                    self._retry_tasks.add(retry_task)
-                    retry_task.add_done_callback(lambda _: self._retry_tasks.remove(retry_task))
+                retry_task = tg.create_task(self._retry_node(tg, node, next_retry))
+                self._retry_tasks.add(retry_task)
+                retry_task.add_done_callback(lambda _: self._retry_tasks.remove(retry_task))
 
     async def _retry_node(self, tg: asyncio.TaskGroup, node: _Node[S], retry_duration: timedelta) -> None:
         await asyncio.sleep(retry_duration.total_seconds())

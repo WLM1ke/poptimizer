@@ -6,7 +6,7 @@ import aiohttp
 import aiomoex
 from pydantic import BaseModel, Field, field_validator
 
-from poptimizer.core import domain
+from poptimizer.core import consts, domain
 from poptimizer.data import data
 
 # Часовой пояс MOEX
@@ -35,15 +35,16 @@ class _Payload(BaseModel):
         return df
 
 
-class TradingDay(domain.Entity): ...
+class LastTradingDay(domain.Entity):
+    day: domain.Day = consts.START_DAY
 
 
-class CheckTradingDay:
+class TradingDayChecker:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: domain.Ctx, state: data.LastTradingDay) -> bool:
-        table = await ctx.get(TradingDay, for_update=False)
+    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> bool:
+        table = await ctx.get(LastTradingDay, for_update=False)
 
         if table.day >= _last_day():
             return False
@@ -62,8 +63,8 @@ class CheckTradingDay:
 
 
 class TradingDayUpdater:
-    async def __call__(self, ctx: domain.Ctx, state: data.LastTradingDay) -> bool:
-        table = await ctx.get(TradingDay)
+    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> bool:
+        table = await ctx.get(LastTradingDay)
         table.day = state.day
 
         return True
