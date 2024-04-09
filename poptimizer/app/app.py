@@ -3,7 +3,7 @@ import contextlib
 import uvloop
 
 from poptimizer import config
-from poptimizer.adapters import ctx, repo, telegram
+from poptimizer.adapters import repo, telegram, uow
 from poptimizer.app import data
 from poptimizer.io import http, lgr, mongo
 
@@ -26,7 +26,7 @@ async def _run() -> None:
         # Тут добавить контекстный менеджер для бекапа
 
         mongo_db: mongo.MongoDatabase = mongo_client[cfg.mongo_db_db]
-        ctx_factory = ctx.Factory(
+        ctx_factory = uow.CtxFactory(
             logger,
             repo.Mongo(mongo_db),
         )

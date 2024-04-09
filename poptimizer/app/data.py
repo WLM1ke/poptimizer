@@ -1,13 +1,13 @@
 import aiohttp
 
-from poptimizer.adapters import ctx
+from poptimizer.adapters import uow
 from poptimizer.app import dag
 from poptimizer.data import cpi, data, trading_day
 
 
 async def run(
     http_client: aiohttp.ClientSession,
-    ctx_factory: ctx.Factory,
+    ctx_factory: uow.CtxFactory,
 ) -> None:
     data_update_dag = dag.Dag(ctx_factory, data.LastUpdate())
     trading_day_node = data_update_dag.add_node_with_retry(trading_day.TradingDayChecker(http_client))

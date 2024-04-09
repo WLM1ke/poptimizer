@@ -5,7 +5,7 @@ from typing import Final, NewType, Protocol
 
 from pydantic import BaseModel, ConfigDict
 
-from poptimizer.adapters import ctx
+from poptimizer.adapters import uow
 from poptimizer.core import domain, errors
 
 _FIRST_RETRY: Final = timedelta(seconds=1)
@@ -69,7 +69,7 @@ class _DagStatus(Enum):
 
 
 class Dag[S: domain.State]:
-    def __init__(self, ctx_factory: ctx.Factory, state: S) -> None:
+    def __init__(self, ctx_factory: uow.CtxFactory, state: S) -> None:
         self._ctx_factory = ctx_factory
         self._status = _DagStatus.IDLE
         self._state = state

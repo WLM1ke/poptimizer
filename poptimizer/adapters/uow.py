@@ -105,3 +105,16 @@ class UOW:
 
     def warn(self, msg: str) -> None:
         self._logger.warning(msg)
+
+
+class CtxFactory:
+    def __init__(
+        self,
+        logger: telegram.Logger,
+        repo: repo.Mongo,
+    ) -> None:
+        self._logger = logger
+        self._repo = repo
+
+    def __call__(self) -> UOW:
+        return UOW(self._logger, self._repo, IdentityMap())
