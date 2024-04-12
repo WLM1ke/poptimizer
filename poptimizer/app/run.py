@@ -11,23 +11,48 @@ _DEFAULT_FIRST_RETRY: Final = timedelta(seconds=30)
 _DEFAULT_BACKOFF_FACTOR: Final = 2
 
 
-class Action[**P, R](Protocol):
+class _Action[**P, R](Protocol):
     async def __call__(self, ctx: domain.Ctx, *args: P.args, **kwargs: P.kwargs) -> R: ...
 
 
-class Worker[R](Protocol):
-    async def __call__(self) -> R: ...
-
-
-class ShieldedWorker[**P, R]:
+class _SimpleTask[**P, R]:
     def __init__(
         self,
-        action: Action[P, R],
+        action: _Action[P, R],
         ctx_factory: uow.CtxFactory,
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> None:
-        self._action_coro = action(ctx_factory(), *args, **kwargs)
+        self._action_coro = self._execute(action, ctx_factory, *args, **kwargs)
+
+    async def __call__(self) -> R:
+        return await self._action_coro
+
+    async def _execute(
+        self,
+        action: _Action[P, R],
+        ctx_factory: uow.CtxFactory,
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> R:
+        ctx = ctx_factory()
+        component_name = domain.get_component_name(action)
+        async with ctx:
+            result = await action(ctx, *args, **kwargs)
+            ctx.info(f"{component_name} finished")
+
+            return result
+
+
+class _ShieldedTask[**P, R]:
+    def __init__(
+        self,
+        action: _Action[P, R],
+        ctx_factory: uow.CtxFactory,
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> None:
+        self._action_coro = self._execute(action, ctx_factory, *args, **kwargs)
 
     async def __call__(self) -> R:
         try:
@@ -35,11 +60,32 @@ class ShieldedWorker[**P, R]:
         except asyncio.CancelledError:
             return await self._action_coro
 
+    async def _execute(
+        self,
+        action: _Action[P, R],
+        ctx_factory: uow.CtxFactory,
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> R:
+        ctx = ctx_factory()
+        component_name = domain.get_component_name(action)
+        try:
+            async with ctx:
+                result = await action(ctx, *args, **kwargs)
+                ctx.info(f"{component_name} finished")
 
-class RetryWorker[**P, R]:
+                return result
+        except* errors.POError as err:
+            error_msg = f"{", ".join(map(str, err.exceptions))}"
+            ctx.warn(f"{component_name} failed - {error_msg}")
+
+            raise asyncio.CancelledError from err
+
+
+class _RetryTask[**P, R]:
     def __init__(
         self,
-        action: Action[P, R],
+        action: _Action[P, R],
         ctx_factory: uow.CtxFactory,
         *args: P.args,
         **kwargs: P.kwargs,
@@ -56,7 +102,7 @@ class RetryWorker[**P, R]:
 
     async def _execute(
         self,
-        action: Action[P, R],
+        action: _Action[P, R],
         ctx_factory: uow.CtxFactory,
         *args: P.args,
         **kwargs: P.kwargs,
@@ -90,9 +136,10 @@ class RetryWorker[**P, R]:
         raise asyncio.CancelledError
 
 
-class WorkerPool:
-    def __init__(self) -> None:
+class Runner:
+    def __init__(self, ctx_factory: uow.CtxFactory) -> None:
         self._tg = asyncio.TaskGroup()
+        self._ctx_factory = ctx_factory
 
     async def __aenter__(self) -> asyncio.TaskGroup:
         return await self._tg.__aenter__()
@@ -105,8 +152,26 @@ class WorkerPool:
     ) -> None:
         return await self._tg.__aexit__(exc_type, exc_value, traceback)
 
-    def run_async[R](
+    def run[**P, R](
         self,
-        worker: Worker[R],
+        action: _Action[P, R],
+        *args: P.args,
+        **kwargs: P.kwargs,
     ) -> Awaitable[R]:
-        return self._tg.create_task(worker())
+        return self._tg.create_task(_SimpleTask(action, self._ctx_factory, *args, **kwargs)())
+
+    def run_shielded[**P, R](
+        self,
+        action: _Action[P, R],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> Awaitable[R]:
+        return self._tg.create_task(_ShieldedTask(action, self._ctx_factory, *args, **kwargs)())
+
+    def run_with_retry[**P, R](
+        self,
+        action: _Action[P, R],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> Awaitable[R]:
+        return self._tg.create_task(_RetryTask(action, self._ctx_factory, *args, **kwargs)())
