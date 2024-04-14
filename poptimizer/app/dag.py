@@ -1,11 +1,10 @@
 import asyncio
 from datetime import timedelta
-from enum import Enum, auto
 from typing import Final, NewType, Protocol
 
 from pydantic import BaseModel, ConfigDict
 
-from poptimizer.adapters import uow
+from poptimizer.app import uow
 from poptimizer.core import domain, errors
 
 _FIRST_RETRY: Final = timedelta(seconds=1)
@@ -62,20 +61,15 @@ class _Node[S: domain.State]:
         return self._inputs_count
 
 
-class _DagStatus(Enum):
-    IDLE = auto()
-    RUNNING = auto()
-    STOPPING = auto()
-
-
 class Dag[S: domain.State]:
     def __init__(self, ctx_factory: uow.CtxFactory, state: S) -> None:
         self._ctx_factory = ctx_factory
-        self._status = _DagStatus.IDLE
         self._state = state
         self._nodes: dict[_NodeUID, _Node[S]] = {}
+        self._tg = asyncio.TaskGroup()
+        self._started = False
+        self._stopping = False
         self._retry_tasks: set[asyncio.Task[None]] = set()
-        self._finished_event = asyncio.Event()
 
     @property
     def id(self) -> _DagID:
@@ -92,14 +86,14 @@ class Dag[S: domain.State]:
         return self._add_node(node, *depends)
 
     def _add_node(self, node: _Node[S], *depends: _NodeUID) -> _NodeUID:
-        if self._status != _DagStatus.IDLE:
-            raise errors.AdaptersError("Can't add node to running dag")
+        if self._started:
+            raise errors.AdaptersError("can't add node to running dag")
 
         if any(uid.dag != self.id for uid in depends):
-            raise errors.AdaptersError("Can't add node to dag which depends on other dag")
+            raise errors.AdaptersError("can't add node to dag which depends on other dag")
 
         if set(depends) - set(self._nodes):
-            raise errors.AdaptersError("Can't add node to dag which depends on not existing node")
+            raise errors.AdaptersError("can't add node to dag which depends on not existing node")
 
         uid = _NodeUID(dag=self.id, node=_NodeID(len(self._nodes)))
         self._nodes[uid] = node
@@ -110,58 +104,60 @@ class Dag[S: domain.State]:
         return uid
 
     async def run(self) -> S:
+        if self._started:
+            raise errors.AdaptersError("can't run running dag")
+
+        self._started = True
+        run_task = asyncio.create_task(self._run())
         try:
-            await asyncio.shield(self._run())
+            await asyncio.shield(run_task)
         except asyncio.CancelledError:
-            self._status = _DagStatus.STOPPING
+            self._stopping = True
 
             for task in self._retry_tasks:
                 task.cancel()
 
-        await self._finished_event.wait()
+            await run_task
+
+            raise
 
         return self._state
 
     async def _run(self) -> None:
-        async with asyncio.TaskGroup() as tg:
-            if self._status != _DagStatus.IDLE:
-                raise errors.AdaptersError("Can't run running dag")
-
-            self._status = _DagStatus.RUNNING
-
+        async with self._tg:
             for node in self._nodes.values():
                 if not node.inputs_count:
-                    tg.create_task(self._run_action(tg, node))
+                    self._tg.create_task(self._run_node(node))
 
-        self._status = _DagStatus.STOPPING
-        self._finished_event.set()
+    async def _run_node(self, node: _Node[S]) -> None:
+        if self._stopping:
+            return
 
-    async def _run_action(self, tg: asyncio.TaskGroup, node: _Node[S]) -> None:
         ctx = self._ctx_factory()
+        component_name = domain.get_component_name(node.action)
+
         try:
             async with ctx:
-                next_call = await node.action(ctx, self._state)
+                await node.action(ctx, self._state)
 
-            ctx.info(f"{domain.get_component_name(node.action)} finished")
-            if next_call and self._status != _DagStatus.STOPPING:
-                self._run_children(tg, node)
+            ctx.info(f"{component_name} finished")
+            self._run_children(node)
         except* errors.POError as err:
             error_msg = f"{", ".join(map(str, err.exceptions))}"
-            ctx.warn(f"{domain.get_component_name(node.action)} failed - {error_msg}")
+            ctx.warn(f"{component_name} failed - {error_msg}")
 
-            if self._status != _DagStatus.STOPPING and (next_retry := node.get_next_retry()) is not None:
-                ctx.info(f"{domain.get_component_name(node.action)} waiting for retry in {next_retry}")
-
-                retry_task = tg.create_task(self._retry_node(tg, node, next_retry))
+            if (next_retry := node.get_next_retry()) is not None and not self._stopping:
+                ctx.info(f"{component_name} waiting for retry in {next_retry}")
+                retry_task = self._tg.create_task(self._retry_node(node, next_retry))
                 self._retry_tasks.add(retry_task)
                 retry_task.add_done_callback(lambda _: self._retry_tasks.remove(retry_task))
 
-    async def _retry_node(self, tg: asyncio.TaskGroup, node: _Node[S], retry_duration: timedelta) -> None:
+    async def _retry_node(self, node: _Node[S], retry_duration: timedelta) -> None:
         await asyncio.sleep(retry_duration.total_seconds())
-        tg.create_task(self._run_action(tg, node))
+        self._tg.create_task(self._run_node(node))
 
-    def _run_children(self, tg: asyncio.TaskGroup, node: _Node[S]) -> None:
+    def _run_children(self, node: _Node[S]) -> None:
         for child_uid in node.children:
             child = self._nodes[child_uid]
             if not child.inputs_left():
-                tg.create_task(self._run_action(tg, child))
+                self._tg.create_task(self._run_node(child))

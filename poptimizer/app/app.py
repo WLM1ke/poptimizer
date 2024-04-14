@@ -1,10 +1,11 @@
+import asyncio
 import contextlib
 
 import uvloop
 
 from poptimizer import config
-from poptimizer.adapters import repo, telegram, uow
-from poptimizer.app import data
+from poptimizer.adapters import repo, telegram
+from poptimizer.app import data, uow
 from poptimizer.io import http, lgr, mongo
 
 
@@ -30,8 +31,10 @@ async def _run() -> None:
             logger,
             repo.Mongo(mongo_db),
         )
-
-        await data.run(http_client, ctx_factory)
+        try:
+            await data.run(http_client, ctx_factory)
+        except asyncio.CancelledError:
+            ctx_factory().info("shutdown signal received")
 
 
 def run() -> None:

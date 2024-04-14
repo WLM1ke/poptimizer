@@ -1,7 +1,7 @@
 import io
 import re
 from datetime import date, timedelta
-from typing import Final, Literal
+from typing import Final
 
 import aiohttp
 from openpyxl.reader import excel
@@ -60,15 +60,13 @@ class CPIUpdater:
     def __init__(self, http_session: aiohttp.ClientSession) -> None:
         self._http_session = http_session
 
-    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> Literal[True]:
+    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> None:
         table = await ctx.get(CPI)
 
         xlsx_file = await self._download()
         row = _parse_rows(xlsx_file)
 
         table.update(state.day, row)
-
-        return True
 
     async def _download(self) -> io.BytesIO:
         async with self._http_session.get(_PRICES_PAGE) as resp:
