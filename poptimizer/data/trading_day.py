@@ -61,10 +61,12 @@ class TradingDayService:
         new_last_day = payload.last_day()
 
         if new_last_day > self._last_check:
+            ctx.info(f"New data for {new_last_day}")
             self._last_check = new_last_day
 
             return data.LastUpdate(day=new_last_day)
 
+        ctx.info(f"No new data for {new_last_check}")
         table = await ctx.get(TradingDay)
         table.day = new_last_check
         self._last_check = new_last_check
@@ -77,6 +79,8 @@ class TradingDayService:
 
         table = await ctx.get(TradingDay, for_update=False)
         self._last_check = table.day
+        ctx.info(f"Last data for {table.last}")
+        ctx.info(f"Last check for {table.day}")
 
 
 class TradingDayUpdater:

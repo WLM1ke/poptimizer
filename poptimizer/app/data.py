@@ -17,7 +17,8 @@ async def run(
     trading_day_srv = trading_day.TradingDayService(http_client)
 
     while True:
-        async with ctx_factory() as ctx:
+        ctx = ctx_factory()
+        async with ctx:
             last_update = await trading_day_srv.is_update_required(ctx)
 
         match last_update:
@@ -26,6 +27,7 @@ async def run(
             case data.LastUpdate():
                 data_update_dag = _prepare_data_update_dag(http_client, ctx_factory, last_update)
                 await data_update_dag()
+                ctx.info("Data update finished")
 
 
 def _prepare_data_update_dag(
