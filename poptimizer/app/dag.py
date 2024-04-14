@@ -13,7 +13,7 @@ _BACKOFF_FACTOR: Final = 2
 
 
 class _Action[S: domain.State](Protocol):
-    async def __call__(self, ctx: domain.Ctx, state: S) -> bool: ...
+    async def __call__(self, ctx: domain.Ctx, state: S) -> None: ...
 
 
 _DagID = NewType("_DagID", int)
@@ -81,26 +81,17 @@ class Dag[S: domain.State]:
     def id(self) -> _DagID:
         return _DagID(id(self))
 
-    def add_node(self, action: _Action[S], *depends: _NodeUID) -> _NodeUID:
-        if self._status != _DagStatus.IDLE:
-            raise errors.AdaptersError("Can't add node to running dag")
-
-        if any(uid.dag != self.id for uid in depends):
-            raise errors.AdaptersError("Can't add node to dag which depends on other dag")
-
-        if set(depends) - set(self._nodes):
-            raise errors.AdaptersError("Can't add node to dag which depends on not existing node")
-
-        uid = _NodeUID(dag=self.id, node=_NodeID(len(self._nodes)))
+    def add_node_ignore_errors(self, action: _Action[S], *depends: _NodeUID) -> _NodeUID:
         node = _Node(action=action, inputs_count=len(depends), retry=False)
-        self._nodes[uid] = node
 
-        for parent_uid in depends:
-            self._nodes[parent_uid].add_child(uid)
-
-        return uid
+        return self._add_node(node, *depends)
 
     def add_node_with_retry(self, action: _Action[S], *depends: _NodeUID) -> _NodeUID:
+        node = _Node(action=action, inputs_count=len(depends), retry=True)
+
+        return self._add_node(node, *depends)
+
+    def _add_node(self, node: _Node[S], *depends: _NodeUID) -> _NodeUID:
         if self._status != _DagStatus.IDLE:
             raise errors.AdaptersError("Can't add node to running dag")
 
@@ -111,7 +102,6 @@ class Dag[S: domain.State]:
             raise errors.AdaptersError("Can't add node to dag which depends on not existing node")
 
         uid = _NodeUID(dag=self.id, node=_NodeID(len(self._nodes)))
-        node = _Node(action=action, inputs_count=len(depends), retry=True)
         self._nodes[uid] = node
 
         for parent_uid in depends:
