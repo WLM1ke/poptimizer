@@ -103,7 +103,7 @@ class Dag[S: domain.State]:
 
         return uid
 
-    async def run(self) -> S:
+    async def __call__(self) -> S:
         if self._started:
             raise errors.AdaptersError("can't run running dag")
 

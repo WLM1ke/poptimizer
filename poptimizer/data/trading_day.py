@@ -6,7 +6,7 @@ import aiohttp
 import aiomoex
 from pydantic import BaseModel, Field, field_validator
 
-from poptimizer.core import consts, domain, errors
+from poptimizer.core import consts, domain
 from poptimizer.data import data
 
 # Часовой пояс MOEX
@@ -35,19 +35,21 @@ class _Payload(BaseModel):
         return df
 
 
-class LastTradingDay(domain.Entity):
-    day: domain.Day = consts.START_DAY
+class TradingDay(domain.Entity):
+    last: domain.Day = consts.START_DAY
 
 
-class TradingDayChecker:
+class TradingDayService:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
+        self._last_check = consts.START_DAY
 
-    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> None:
-        table = await ctx.get(LastTradingDay, for_update=False)
+    async def is_update_required(self, ctx: domain.Ctx) -> data.LastUpdate | None:
+        await self._maybe_init(ctx)
 
-        if table.day >= _last_day():
-            raise errors.DomainError(f"last trading day {table.day} not changed")
+        new_last_check = _last_day()
+        if self._last_check >= new_last_check:
+            return None
 
         json = await aiomoex.get_board_dates(
             self._http_client,
@@ -55,15 +57,33 @@ class TradingDayChecker:
             market="shares",
             engine="stock",
         )
-
         payload = _Payload.model_validate({"df": json})
-        state.day = payload.last_day()
+        new_last_day = payload.last_day()
+
+        if new_last_day > self._last_check:
+            self._last_check = new_last_day
+
+            return data.LastUpdate(day=new_last_day)
+
+        table = await ctx.get(TradingDay)
+        table.day = new_last_check
+        self._last_check = new_last_check
+
+        return None
+
+    async def _maybe_init(self, ctx: domain.Ctx) -> None:
+        if self._last_check != consts.START_DAY:
+            return
+
+        table = await ctx.get(TradingDay, for_update=False)
+        self._last_check = table.day
 
 
 class TradingDayUpdater:
     async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> None:
-        table = await ctx.get(LastTradingDay)
+        table = await ctx.get(TradingDay)
         table.day = state.day
+        table.last = state.day
 
 
 def _last_day() -> date:
