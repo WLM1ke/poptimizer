@@ -34,6 +34,8 @@ Day = Annotated[
     ),
 ]
 
+Ticker = NewType("Ticker", str)
+
 
 class State(BaseModel): ...
 

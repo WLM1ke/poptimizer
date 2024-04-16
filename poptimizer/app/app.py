@@ -34,7 +34,7 @@ async def _run() -> None:
         try:
             await data.run(http_client, ctx_factory)
         except asyncio.CancelledError:
-            logger.info("shutdown signal received")
+            logger.info("Shutdown signal received")
 
 
 def run() -> None:
