@@ -5,7 +5,7 @@ from typing import Any, Final
 from pydantic import ValidationError
 from pymongo.errors import PyMongoError
 
-from poptimizer.core import domain, errors
+from poptimizer.core import consts, domain, errors
 from poptimizer.io import mongo
 
 _MONGO_ID: Final = "_id"
@@ -38,7 +38,7 @@ class Mongo:
         doc = {
             _MONGO_ID: uid,
             _VER: 0,
-            _DAY: datetime.datetime(datetime.MINYEAR, 1, 1),
+            _DAY: datetime.datetime(*consts.START_DAY.timetuple()[:3]),
         }
 
         collection: mongo.MongoCollection = self._db[collection_name]
