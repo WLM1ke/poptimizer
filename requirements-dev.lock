@@ -10,7 +10,7 @@
 -e file:.
 aiofiles==23.2.1
     # via poptimizer
-aiohttp==3.9.4
+aiohttp==3.9.5
     # via aiomoex
     # via poptimizer
 aiomoex==2.1.2
@@ -91,7 +91,7 @@ pygments==2.17.2
     # via rich
 pymongo==4.6.3
     # via motor
-pyright==1.1.358
+pyright==1.1.359
 pytest==8.1.1
     # via pytest-asyncio
     # via pytest-cov
@@ -118,7 +118,7 @@ torch==2.2.2
     # via poptimizer
 typer==0.12.3
     # via poptimizer
-types-pytz==2024.1.0.20240203
+types-pytz==2024.1.0.20240417
     # via pandas-stubs
 typing-extensions==4.11.0
     # via grimp
@@ -133,5 +133,5 @@ uvloop==0.19.0
     # via poptimizer
 yarl==1.9.4
     # via aiohttp
-setuptools==69.2.0
+setuptools==69.5.1
     # via nodeenv

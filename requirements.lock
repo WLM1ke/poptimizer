@@ -10,7 +10,7 @@
 -e file:.
 aiofiles==23.2.1
     # via poptimizer
-aiohttp==3.9.4
+aiohttp==3.9.5
     # via aiomoex
     # via poptimizer
 aiomoex==2.1.2
