@@ -5,6 +5,7 @@ from typing import Final, Self
 import aiofiles
 import bson
 
+from poptimizer.adapters import telegram
 from poptimizer.core import errors
 from poptimizer.io import mongo
 
@@ -12,7 +13,8 @@ _DUMP: Final = Path(__file__).parents[2] / "dump" / "dividends.bson"
 
 
 class Backup:
-    def __init__(self, collection: mongo.MongoCollection) -> None:
+    def __init__(self, lgr: telegram.Logger, collection: mongo.MongoCollection) -> None:
+        self._lgr = lgr
         self._collection = collection
 
     async def __aenter__(self) -> Self:
@@ -26,6 +28,7 @@ class Backup:
             raw = await backup_file.read()
 
         await self._collection.insert_many(bson.decode_all(raw))  # type: ignore[reportUnknownMemberType]
+        self._lgr.info(f"Collection {self._collection.name} restored")
 
         return self
 
@@ -40,3 +43,5 @@ class Backup:
         async with aiofiles.open(_DUMP, "bw") as backup_file:
             async for batch in self._collection.find_raw_batches():
                 await backup_file.write(batch)
+
+        self._lgr.info(f"Collection {self._collection.name} dumped")

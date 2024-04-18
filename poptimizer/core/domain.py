@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from enum import StrEnum, auto, unique
 from typing import Annotated, Any, NewType, Protocol
 
 from pydantic import BaseModel, ConfigDict, PlainSerializer
@@ -8,11 +9,10 @@ Version = NewType("Version", int)
 
 
 def get_component_name(component: Any) -> str:
+    if isinstance(component, type):
+        return component.__name__
+
     return component.__class__.__name__
-
-
-def get_component_name_for_type(component_type: type[Any]) -> str:
-    return component_type.__name__
 
 
 class Revision(BaseModel):
@@ -35,6 +35,12 @@ Day = Annotated[
 ]
 
 Ticker = NewType("Ticker", str)
+
+
+@unique
+class Currency(StrEnum):
+    RUR = auto()
+    USD = auto()
 
 
 class State(BaseModel): ...

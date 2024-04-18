@@ -20,7 +20,7 @@ class Mongo:
         self._db = db
 
     async def get[E: domain.Entity](self, t_entity: type[E], uid: domain.UID) -> E:
-        collection_name = domain.get_component_name_for_type(t_entity)
+        collection_name = domain.get_component_name(t_entity)
 
         if (doc := await self._load(collection_name, uid)) is None:
             doc = await self._create_new(collection_name, uid)
@@ -60,7 +60,7 @@ class Mongo:
         try:
             return t_entity.model_validate(doc)
         except ValidationError as err:
-            collection_name = domain.get_component_name_for_type(t_entity)
+            collection_name = domain.get_component_name(t_entity)
             raise errors.AdaptersError(f"can't create entity {collection_name}.{uid}") from err
 
     async def save(self, entities: Iterable[domain.Entity]) -> None:

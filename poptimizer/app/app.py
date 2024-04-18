@@ -4,8 +4,10 @@ import contextlib
 import uvloop
 
 from poptimizer import config
-from poptimizer.adapters import repo, telegram
+from poptimizer.adapters import backup, repo, telegram
 from poptimizer.app import data, uow
+from poptimizer.core import domain
+from poptimizer.data import status
 from poptimizer.io import http, lgr, mongo
 
 
@@ -23,14 +25,15 @@ async def _run() -> None:
             ),
         )
         mongo_client = await stack.enter_async_context(mongo.client(cfg.mongo_db_uri))
-
-        # Тут добавить контекстный менеджер для бекапа
-
         mongo_db: mongo.MongoDatabase = mongo_client[cfg.mongo_db_db]
+        div_raw_collection: mongo.MongoCollection = mongo_db[domain.get_component_name(status.DivRaw)]
+        await stack.enter_async_context(backup.Backup(logger, div_raw_collection))
+
         ctx_factory = uow.CtxFactory(
             logger,
             repo.Mongo(mongo_db),
         )
+
         try:
             await data.run(http_client, ctx_factory)
         except asyncio.CancelledError:
