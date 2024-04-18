@@ -5,7 +5,7 @@ from typing import Final
 import aiohttp
 
 from poptimizer.app import dag, uow
-from poptimizer.data import cpi, data, indexes, quotes, securities, trading_day, usd
+from poptimizer.data import cpi, data, div, indexes, quotes, securities, trading_day, usd
 
 _POLLING_INTERVAL: Final = timedelta(minutes=10)
 
@@ -42,7 +42,8 @@ def _prepare_data_update_dag(
     usd_node = data_update_dag.add_node_with_retry(usd.USDUpdater(http_client))
 
     quotes_node = data_update_dag.add_node_with_retry(quotes.QuotesUpdater(http_client), securities_node)
+    div_node = data_update_dag.add_node_with_retry(div.DividendsUpdater(), securities_node, usd_node)
 
-    data_update_dag.add_node_with_retry(trading_day.TradingDayUpdater(), indexes_node, usd_node, quotes_node)
+    data_update_dag.add_node_with_retry(trading_day.TradingDayUpdater(), indexes_node, quotes_node, div_node)
 
     return data_update_dag
