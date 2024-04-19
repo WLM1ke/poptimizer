@@ -7,7 +7,7 @@ from poptimizer import config
 from poptimizer.adapters import backup, repo, telegram
 from poptimizer.app import data, uow
 from poptimizer.core import domain
-from poptimizer.data import status
+from poptimizer.data import status, view
 from poptimizer.io import http, lgr, mongo
 
 
@@ -29,9 +29,12 @@ async def _run() -> None:
         div_raw_collection: mongo.MongoCollection = mongo_db[domain.get_component_name(status.DivRaw)]
         await stack.enter_async_context(backup.Backup(logger, div_raw_collection))
 
+        mongo_repo = repo.Mongo(mongo_db)
+        viewer = view.Viewer(mongo_repo)
         ctx_factory = uow.CtxFactory(
             logger,
-            repo.Mongo(mongo_db),
+            mongo_repo,
+            viewer,
         )
 
         try:

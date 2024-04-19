@@ -62,10 +62,12 @@ class UOW:
         logger: telegram.Logger,
         repo: repo.Mongo,
         identity_map: IdentityMap,
+        viewer: domain.Viewer,
     ) -> None:
         self._logger = logger
         self._repo = repo
         self._identity_map = identity_map
+        self._viewer = viewer
 
     async def get[E: domain.Entity](
         self,
@@ -106,15 +108,21 @@ class UOW:
     def warn(self, msg: str) -> None:
         self._logger.warning(msg)
 
+    @property
+    def viewer(self) -> domain.Viewer:
+        return self._viewer
+
 
 class CtxFactory:
     def __init__(
         self,
         logger: telegram.Logger,
         repo: repo.Mongo,
+        viewer: domain.Viewer,
     ) -> None:
         self._logger = logger
         self._repo = repo
+        self._viewer = viewer
 
     def __call__(self) -> UOW:
-        return UOW(self._logger, self._repo, IdentityMap())
+        return UOW(self._logger, self._repo, IdentityMap(), self._viewer)

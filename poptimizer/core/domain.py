@@ -2,6 +2,7 @@ from datetime import date, datetime
 from enum import StrEnum, auto, unique
 from typing import Annotated, Any, NewType, Protocol
 
+import pandas as pd
 from pydantic import BaseModel, ConfigDict, PlainSerializer
 
 UID = NewType("UID", str)
@@ -59,6 +60,19 @@ class Entity(BaseModel):
         return self.rev.ver
 
 
+class Viewer(Protocol):
+    async def turnover(
+        self,
+        last_day: Day,
+        tickers: tuple[Ticker, ...],
+    ) -> pd.DataFrame: ...
+    async def close(
+        self,
+        last_day: Day,
+        tickers: tuple[Ticker, ...],
+    ) -> pd.DataFrame: ...
+
+
 class Ctx(Protocol):
     async def get[E: Entity](
         self,
@@ -69,3 +83,6 @@ class Ctx(Protocol):
     ) -> E: ...
     def info(self, msg: str) -> None: ...
     def warn(self, msg: str) -> None: ...
+
+    @property
+    def viewer(self) -> Viewer: ...
