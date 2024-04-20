@@ -21,6 +21,13 @@ class Account(BaseModel):
     positions: dict[domain.Ticker, PositiveInt] = Field(default_factory=dict)
 
 
+class PortfolioWeights(BaseModel):
+    day: domain.Day
+    version: int
+    cash: NonNegativeFloat = Field(repr=False)
+    positions: dict[domain.Ticker, NonNegativeFloat] = Field(repr=False)
+
+
 class _Security(BaseModel):
     lot: PositiveInt
     price: PositiveFloat
@@ -108,6 +115,35 @@ class Portfolio(domain.Entity):
             return
 
         account.positions[ticker] = amount
+
+    def get_non_zero_weights(self) -> PortfolioWeights:
+        port_value = 0
+        cash = 0
+        pos_value = {ticker: 0.0 for ticker in self.securities}
+
+        for account in self.accounts.values():
+            port_value += account.cash
+            cash += account.cash
+
+            for ticker, amount in account.positions.items():
+                value = self.securities[ticker].price * amount
+                port_value += value
+                pos_value[ticker] += value
+
+        if port_value == 0:
+            return PortfolioWeights(
+                day=self.day,
+                version=self.ver,
+                cash=1,
+                positions=pos_value,
+            )
+
+        return PortfolioWeights(
+            day=self.day,
+            version=self.ver,
+            cash=cash / port_value,
+            positions={ticker: pos / port_value for ticker, pos in pos_value.items()},
+        )
 
 
 class PortfolioUpdater:
