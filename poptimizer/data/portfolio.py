@@ -6,7 +6,7 @@ import pandas as pd
 from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt, model_validator
 
 from poptimizer.core import domain, errors
-from poptimizer.data import data, securities
+from poptimizer.data import securities
 
 _START_LIQUIDITY_DAYS: Final = 21
 _MINIMUM_HISTORY: Final = 30 * 21
@@ -147,15 +147,15 @@ class Portfolio(domain.Entity):
 
 
 class PortfolioUpdater:
-    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> None:
+    async def __call__(self, ctx: domain.Ctx, update_day: domain.Day) -> None:
         port = await ctx.get(Portfolio)
 
-        sec_data = await _prepare_sec_data(ctx, state.day)
+        sec_data = await _prepare_sec_data(ctx, update_day)
 
         _remove_not_traded(ctx, port, sec_data)
         _update_sec_data(ctx, port, sec_data)
         _add_liquid(ctx, port, sec_data)
-        port.day = state.day
+        port.day = update_day
 
 
 async def _prepare_sec_data(ctx: domain.Ctx, last_day: domain.Day) -> dict[domain.Ticker, _Security]:

@@ -26,13 +26,13 @@ class Dividends(domain.Entity):
 
 
 class DividendsUpdater:
-    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> None:
+    async def __call__(self, ctx: domain.Ctx, update_day: domain.Day) -> None:
         usd_table = await ctx.get(usd.USD)
         sec_table = await ctx.get(securities.Securities)
 
         async with asyncio.TaskGroup() as tg:
             for sec in sec_table.df:
-                tg.create_task(self._update_one(ctx, state.day, domain.UID(sec.ticker), usd_table))
+                tg.create_task(self._update_one(ctx, update_day, domain.UID(sec.ticker), usd_table))
 
     async def _update_one(self, ctx: domain.Ctx, update_day: date, ticker: domain.UID, usd_table: usd.USD) -> None:
         div_table = await ctx.get(Dividends, ticker)

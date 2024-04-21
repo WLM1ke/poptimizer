@@ -51,12 +51,12 @@ class QuotesUpdater:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> None:
+    async def __call__(self, ctx: domain.Ctx, update_day: domain.Day) -> None:
         sec_table = await ctx.get(securities.Securities, for_update=False)
 
         async with asyncio.TaskGroup() as tg:
             for sec in sec_table.df:
-                tg.create_task(self._update_one(ctx, sec.ticker, state.day))
+                tg.create_task(self._update_one(ctx, sec.ticker, update_day))
 
     async def _update_one(
         self,

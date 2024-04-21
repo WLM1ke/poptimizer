@@ -8,7 +8,7 @@ import aiohttp
 from lxml import html
 
 from poptimizer.core import domain, errors
-from poptimizer.data import data, quotes, status
+from poptimizer.data import quotes, status
 
 _URL: Final = "https://закрытияреестров.рф/_/"
 
@@ -24,12 +24,12 @@ class ReestryDivUpdater:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> None:
+    async def __call__(self, ctx: domain.Ctx, update_day: domain.Day) -> None:
         status_table = await ctx.get(status.DivStatus, for_update=False)
 
         async with asyncio.TaskGroup() as tg:
             for row in status_table.df:
-                tg.create_task(self._update_one(ctx, state.day, row))
+                tg.create_task(self._update_one(ctx, update_day, row))
 
     async def _update_one(
         self,

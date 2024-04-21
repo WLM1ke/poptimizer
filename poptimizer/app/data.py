@@ -1,11 +1,12 @@
 import asyncio
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import Final
 
 import aiohttp
 
 from poptimizer.app import dag, uow
-from poptimizer.data import cpi, data, div, indexes, portfolio, quotes, reestry, securities, status, trading_day, usd
+from poptimizer.core import domain
+from poptimizer.data import cpi, div, indexes, portfolio, quotes, reestry, securities, status, trading_day, usd
 
 _POLLING_INTERVAL: Final = timedelta(minutes=10)
 
@@ -19,22 +20,22 @@ async def run(
     while True:
         ctx = ctx_factory()
         async with ctx:
-            last_update = await trading_day_srv.is_update_required(ctx)
+            update_day = await trading_day_srv.is_update_required(ctx)
 
-        match last_update:
+        match update_day:
             case None:
                 await asyncio.sleep(_POLLING_INTERVAL.total_seconds())
-            case data.LastUpdate():
-                data_update_dag = _prepare_data_update_dag(http_client, ctx_factory, last_update)
+            case date():
+                data_update_dag = _prepare_data_update_dag(http_client, ctx_factory, update_day)
                 await data_update_dag()
 
 
 def _prepare_data_update_dag(
     http_client: aiohttp.ClientSession,
     ctx_factory: uow.CtxFactory,
-    state: data.LastUpdate,
-) -> dag.Dag[data.LastUpdate]:
-    data_update_dag = dag.Dag(ctx_factory, state)
+    update_day: domain.Day,
+) -> dag.Dag[domain.Day]:
+    data_update_dag = dag.Dag(ctx_factory, update_day)
 
     data_update_dag.add_node_ignore_errors(cpi.CPIUpdater(http_client))
     indexes_node = data_update_dag.add_node_with_retry(indexes.IndexesUpdater(http_client))

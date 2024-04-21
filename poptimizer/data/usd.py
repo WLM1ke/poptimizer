@@ -48,11 +48,10 @@ class USDUpdater:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._session = http_client
 
-    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> None:
+    async def __call__(self, ctx: domain.Ctx, update_day: domain.Day) -> None:
         table = await ctx.get(USD)
 
         start_day = table.last_row_date()
-        update_day = state.day
         rows = await self._download(start_day, update_day)
 
         table.update(update_day, rows)

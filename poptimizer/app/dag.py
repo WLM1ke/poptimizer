@@ -1,6 +1,7 @@
 import asyncio
+from collections.abc import Awaitable, Callable
 from datetime import timedelta
-from typing import Final, NewType, Protocol
+from typing import Final, NewType
 
 from pydantic import BaseModel, ConfigDict
 
@@ -11,9 +12,7 @@ _FIRST_RETRY: Final = timedelta(seconds=1)
 _BACKOFF_FACTOR: Final = 2
 
 
-class _Action[S: domain.State](Protocol):
-    async def __call__(self, ctx: domain.Ctx, state: S) -> None: ...
-
+type _Action[P] = Callable[[domain.Ctx, P], Awaitable[None]]
 
 _DagID = NewType("_DagID", int)
 _NodeID = NewType("_NodeID", int)
@@ -25,15 +24,15 @@ class _NodeUID(BaseModel):
     model_config = ConfigDict(frozen=True)
 
 
-class _Node[S: domain.State]:
-    def __init__(self, action: _Action[S], *, retry: bool, inputs_count: int) -> None:
+class _Node[P]:
+    def __init__(self, action: _Action[P], *, retry: bool, inputs_count: int) -> None:
         self._action = action
         self._retry = (retry or None) and (_FIRST_RETRY / _BACKOFF_FACTOR)
         self._inputs_count = inputs_count
         self._children: list[_NodeUID] = []
 
     @property
-    def action(self) -> _Action[S]:
+    def action(self) -> _Action[P]:
         return self._action
 
     def get_next_retry(self) -> None | timedelta:
@@ -61,11 +60,11 @@ class _Node[S: domain.State]:
         return self._inputs_count
 
 
-class Dag[S: domain.State]:
-    def __init__(self, ctx_factory: uow.CtxFactory, state: S) -> None:
+class Dag[P]:
+    def __init__(self, ctx_factory: uow.CtxFactory, params: P) -> None:
         self._ctx_factory = ctx_factory
-        self._state = state
-        self._nodes: dict[_NodeUID, _Node[S]] = {}
+        self._params = params
+        self._nodes: dict[_NodeUID, _Node[P]] = {}
         self._tg = asyncio.TaskGroup()
         self._started = False
         self._stopping = False
@@ -75,17 +74,17 @@ class Dag[S: domain.State]:
     def id(self) -> _DagID:
         return _DagID(id(self))
 
-    def add_node_ignore_errors(self, action: _Action[S], *depends: _NodeUID) -> _NodeUID:
+    def add_node_ignore_errors(self, action: _Action[P], *depends: _NodeUID) -> _NodeUID:
         node = _Node(action=action, inputs_count=len(depends), retry=False)
 
         return self._add_node(node, *depends)
 
-    def add_node_with_retry(self, action: _Action[S], *depends: _NodeUID) -> _NodeUID:
+    def add_node_with_retry(self, action: _Action[P], *depends: _NodeUID) -> _NodeUID:
         node = _Node(action=action, inputs_count=len(depends), retry=True)
 
         return self._add_node(node, *depends)
 
-    def _add_node(self, node: _Node[S], *depends: _NodeUID) -> _NodeUID:
+    def _add_node(self, node: _Node[P], *depends: _NodeUID) -> _NodeUID:
         if self._started:
             raise errors.AdaptersError("can't add node to running dag")
 
@@ -103,7 +102,7 @@ class Dag[S: domain.State]:
 
         return uid
 
-    async def __call__(self) -> S:
+    async def __call__(self) -> P:
         if self._started:
             raise errors.AdaptersError("can't run running dag")
 
@@ -121,7 +120,7 @@ class Dag[S: domain.State]:
 
             raise
 
-        return self._state
+        return self._params
 
     async def _run(self) -> None:
         async with self._tg:
@@ -129,7 +128,7 @@ class Dag[S: domain.State]:
                 if not node.inputs_count:
                     self._tg.create_task(self._run_node(node))
 
-    async def _run_node(self, node: _Node[S]) -> None:
+    async def _run_node(self, node: _Node[P]) -> None:
         if self._stopping:
             return
 
@@ -138,7 +137,7 @@ class Dag[S: domain.State]:
 
         try:
             async with ctx:
-                await node.action(ctx, self._state)
+                await node.action(ctx, self._params)
 
             ctx.info(f"{component_name} finished")
             self._run_children(node)
@@ -152,11 +151,11 @@ class Dag[S: domain.State]:
                 self._retry_tasks.add(retry_task)
                 retry_task.add_done_callback(lambda _: self._retry_tasks.remove(retry_task))
 
-    async def _retry_node(self, node: _Node[S], retry_duration: timedelta) -> None:
+    async def _retry_node(self, node: _Node[P], retry_duration: timedelta) -> None:
         await asyncio.sleep(retry_duration.total_seconds())
         self._tg.create_task(self._run_node(node))
 
-    def _run_children(self, node: _Node[S]) -> None:
+    def _run_children(self, node: _Node[P]) -> None:
         for child_uid in node.children:
             child = self._nodes[child_uid]
             if not child.inputs_left():

@@ -76,12 +76,12 @@ class SecuritiesUpdater:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> None:
+    async def __call__(self, ctx: domain.Ctx, update_day: domain.Day) -> None:
         table = await ctx.get(Securities)
 
         rows = await self._download()
 
-        table.update(state.day, rows)
+        table.update(update_day, rows)
 
     async def _download(self) -> list[_Row]:
         tasks: list[asyncio.Task[list[dict[str, Any]]]] = []

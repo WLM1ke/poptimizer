@@ -44,7 +44,7 @@ class TradingDayService:
         self._http_client = http_client
         self._last_check = consts.START_DAY
 
-    async def is_update_required(self, ctx: domain.Ctx) -> data.LastUpdate | None:
+    async def is_update_required(self, ctx: domain.Ctx) -> domain.Day | None:
         await self._maybe_init(ctx)
 
         new_last_check = _last_day()
@@ -64,7 +64,7 @@ class TradingDayService:
             ctx.info(f"New data for {new_last_day}")
             self._last_check = new_last_day
 
-            return data.LastUpdate(day=new_last_day)
+            return new_last_day
 
         ctx.info(f"No new data for {new_last_check}")
         table = await ctx.get(TradingDay)
@@ -84,10 +84,10 @@ class TradingDayService:
 
 
 class TradingDayUpdater:
-    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> None:
+    async def __call__(self, ctx: domain.Ctx, update_day: domain.Day) -> None:
         table = await ctx.get(TradingDay)
-        table.day = state.day
-        table.last = state.day
+        table.day = update_day
+        table.last = update_day
 
 
 def _last_day() -> date:

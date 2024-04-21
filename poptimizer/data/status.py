@@ -91,7 +91,7 @@ class DivStatusUpdater:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> None:
+    async def __call__(self, ctx: domain.Ctx, update_day: domain.Day) -> None:
         table = await ctx.get(DivStatus)
 
         csv_file = await self._download()
@@ -101,7 +101,7 @@ class DivStatusUpdater:
         port = await ctx.get(portfolio.Portfolio, for_update=False)
         status = _status_gen(parsed_rows, sec_table, port)
 
-        table.update(state.day, [row async for row in _filter_missed(ctx, status)])
+        table.update(update_day, [row async for row in _filter_missed(ctx, status)])
 
     async def _download(self) -> TextIO:
         async with self._http_client.get(_URL) as resp:

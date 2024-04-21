@@ -53,10 +53,10 @@ class IndexesUpdater:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: domain.Ctx, state: data.LastUpdate) -> None:
+    async def __call__(self, ctx: domain.Ctx, update_day: domain.Day) -> None:
         async with asyncio.TaskGroup() as tg:
             for index in _INDEXES:
-                tg.create_task(self._update_one(ctx, state.day, index))
+                tg.create_task(self._update_one(ctx, update_day, index))
 
     async def _update_one(self, ctx: domain.Ctx, update_day: domain.Day, index: domain.UID) -> None:
         table = await ctx.get(Index, index)

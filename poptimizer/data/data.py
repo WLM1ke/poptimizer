@@ -6,10 +6,6 @@ from pydantic import BaseModel, ConfigDict
 from poptimizer.core import consts, domain
 
 
-class LastUpdate(domain.State):
-    day: domain.Day = consts.START_DAY
-
-
 class Row(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
