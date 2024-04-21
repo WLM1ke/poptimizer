@@ -5,7 +5,7 @@ import uvloop
 
 from poptimizer import config
 from poptimizer.adapters import backup, repo, telegram
-from poptimizer.app import data, uow
+from poptimizer.app import data, server, uow
 from poptimizer.core import domain
 from poptimizer.data import status, view
 from poptimizer.io import http, lgr, mongo
@@ -38,9 +38,11 @@ async def _run() -> None:
         )
 
         try:
-            await data.run(http_client, ctx_factory)
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(data.run(http_client, ctx_factory))
+                tg.create_task(server.run(ctx_factory, cfg.server_url))
         except asyncio.CancelledError:
-            logger.info("Shutdown signal received")
+            logger.info("Shutdown finished")
 
 
 def run() -> None:
