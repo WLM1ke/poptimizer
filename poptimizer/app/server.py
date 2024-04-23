@@ -4,7 +4,7 @@ from aiohttp import web
 from pydantic import HttpUrl
 
 from poptimizer.app import uow
-from poptimizer.core import domain
+from poptimizer.data import services
 from poptimizer.ui import api, frontend, middleware
 
 
@@ -12,8 +12,7 @@ async def run(
     ctx_factory: uow.CtxFactory,
     url: HttpUrl,
 ) -> None:
-    ctx = ctx_factory()
-    aiohttp_app = _prepare_app(ctx)
+    aiohttp_app = _prepare_app(ctx_factory)
 
     runner = web.AppRunner(
         aiohttp_app,
@@ -29,6 +28,7 @@ async def run(
 
     await site.start()
 
+    ctx = ctx_factory()
     ctx.info(f"Server started on {url} - press CTRL+C to quit")
 
     try:
@@ -39,11 +39,13 @@ async def run(
         ctx.info("Server shutdown completed")
 
 
-def _prepare_app(ctx: domain.Ctx) -> web.Application:
+def _prepare_app(
+    ctx_factory: uow.CtxFactory,
+) -> web.Application:
     sub_app = web.Application()
-    api.Handlers(sub_app)
+    api.Handlers(sub_app, ctx_factory, services.Portfolio(), services.Dividends())
 
-    app = web.Application(middlewares=[middleware.RequestErrorMiddleware(ctx)])
+    app = web.Application(middlewares=[middleware.RequestErrorMiddleware(ctx_factory())])
     app.add_subapp("/api/", sub_app)
     frontend.Handlers(app)
 

@@ -1,5 +1,4 @@
 import asyncio
-from typing import Protocol
 
 import async_lru
 import numpy as np
@@ -9,12 +8,8 @@ from poptimizer.core import domain
 from poptimizer.data import quotes
 
 
-class Repo(Protocol):
-    async def get[E: domain.Entity](self, t_entity: type[E], uid: domain.UID) -> E: ...
-
-
 class Viewer:
-    def __init__(self, repo: Repo) -> None:
+    def __init__(self, repo: domain.Repo) -> None:
         self._repo = repo
 
     async def _quote(

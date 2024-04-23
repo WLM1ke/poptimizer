@@ -28,6 +28,17 @@ class PortfolioWeights(BaseModel):
     positions: dict[domain.Ticker, NonNegativeFloat] = Field(repr=False)
 
 
+class Security(BaseModel):
+    lot: PositiveInt
+    price: PositiveFloat
+
+
+class PortfolioData(BaseModel):
+    day: domain.Day
+    accounts: dict[AccName, Account]
+    securities: dict[domain.Ticker, Security]
+
+
 class _Security(BaseModel):
     lot: PositiveInt
     price: PositiveFloat
@@ -143,6 +154,13 @@ class Portfolio(domain.Entity):
             version=self.ver,
             cash=cash / port_value,
             positions={ticker: pos / port_value for ticker, pos in pos_value.items()},
+        )
+
+    def get_portfolio_data(self) -> PortfolioData:
+        return PortfolioData(
+            day=self.day,
+            accounts=self.accounts,
+            securities={ticker: Security(lot=sec.lot, price=sec.price) for ticker, sec in self.securities.items()},
         )
 
 

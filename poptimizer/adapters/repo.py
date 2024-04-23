@@ -19,8 +19,13 @@ class Mongo:
     def __init__(self, db: mongo.MongoDatabase) -> None:
         self._db = db
 
-    async def get[E: domain.Entity](self, t_entity: type[E], uid: domain.UID) -> E:
+    async def get[E: domain.Entity](
+        self,
+        t_entity: type[E],
+        uid: domain.UID | None = None,
+    ) -> E:
         collection_name = domain.get_component_name(t_entity)
+        uid = uid or domain.UID(collection_name)
 
         if (doc := await self._load(collection_name, uid)) is None:
             doc = await self._create_new(collection_name, uid)

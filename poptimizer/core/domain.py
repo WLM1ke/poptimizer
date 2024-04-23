@@ -83,3 +83,7 @@ class Ctx(Protocol):
 
     @property
     def viewer(self) -> Viewer: ...
+
+
+class Repo(Protocol):
+    async def get[E: Entity](self, t_entity: type[E], uid: UID | None = None) -> E: ...
