@@ -64,10 +64,10 @@ openpyxl==3.1.2
     # via poptimizer
 pandas==2.2.2
     # via poptimizer
-pydantic==2.7.0
+pydantic==2.7.1
     # via poptimizer
     # via pydantic-settings
-pydantic-core==2.18.1
+pydantic-core==2.18.2
     # via pydantic
 pydantic-settings==2.2.1
     # via poptimizer

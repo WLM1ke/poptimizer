@@ -80,12 +80,12 @@ packaging==24.0
 pandas==2.2.2
     # via poptimizer
 pandas-stubs==2.2.1.240316
-pluggy==1.4.0
+pluggy==1.5.0
     # via pytest
-pydantic==2.7.0
+pydantic==2.7.1
     # via poptimizer
     # via pydantic-settings
-pydantic-core==2.18.1
+pydantic-core==2.18.2
     # via pydantic
 pydantic-settings==2.2.1
     # via poptimizer
@@ -107,7 +107,7 @@ pytz==2024.1
     # via pandas
 rich==13.7.1
     # via typer
-ruff==0.3.7
+ruff==0.4.1
 scipy==1.13.0
     # via poptimizer
 shellingham==1.5.4
