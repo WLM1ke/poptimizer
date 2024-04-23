@@ -26,7 +26,7 @@ class Viewer:
 
         return pd.DataFrame(doc).set_index("day").loc[:last_day]  # type: ignore[reportUnknownMemberType]
 
-    @async_lru.alru_cache(maxsize=2)
+    @async_lru.alru_cache(maxsize=1)
     async def _quotes(
         self,
         last_day: pd.Timestamp,
@@ -37,7 +37,7 @@ class Viewer:
 
         return [task.result() for task in tasks]
 
-    @async_lru.alru_cache(maxsize=2)
+    @async_lru.alru_cache(maxsize=1)
     async def close(
         self,
         last_day: pd.Timestamp,
@@ -53,7 +53,7 @@ class Viewer:
 
         return close.replace(to_replace=0, value=np.nan).ffill()  # type: ignore[reportUnknownMemberType]
 
-    @async_lru.alru_cache(maxsize=2)
+    @async_lru.alru_cache(maxsize=1)
     async def turnover(
         self,
         last_day: pd.Timestamp,
