@@ -4,8 +4,8 @@ import contextlib
 import uvloop
 
 from poptimizer import config
-from poptimizer.adapters import backup, repo, telegram
-from poptimizer.app import data, server, uow
+from poptimizer.adapters import backup, repo, telegram, uow
+from poptimizer.app import data, server
 from poptimizer.core import domain
 from poptimizer.data import status, view
 from poptimizer.io import http, lgr, mongo

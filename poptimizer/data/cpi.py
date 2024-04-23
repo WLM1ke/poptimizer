@@ -1,7 +1,7 @@
 import io
 import re
 from datetime import date, timedelta
-from typing import Final
+from typing import Final, cast
 
 import aiohttp
 from openpyxl.reader import excel
@@ -88,7 +88,8 @@ class CPIUpdater:
 
 
 def _parse_rows(xlsx: io.BytesIO) -> list[_Row]:
-    ws = excel.load_workbook(xlsx)[_SHEET_NAME]
+    wb = excel.load_workbook(xlsx)
+    ws = cast(worksheet.Worksheet, wb[_SHEET_NAME])
 
     _validate_data_position(ws)
 

@@ -122,26 +122,9 @@ name = "Layered"
 type = "layers"
 layers = [
     "poptimizer.app",
+    "poptimizer.ui",
     "poptimizer.adapters",
     "poptimizer.io",
-    "poptimizer.ui",
-    "poptimizer.portfolio",
     "poptimizer.data",
     "poptimizer.core",
-]
-ignore_imports = [
-    "poptimizer.*.* -> poptimizer.*.contracts",
-]
-
-[[tool.importlinter.contracts]]
-name = "Weakly coupled middle layer"
-type = "independence"
-modules = [
-    "poptimizer.io",
-    "poptimizer.ui",
-    "poptimizer.portfolio",
-    "poptimizer.data",
-]
-ignore_imports = [
-    "poptimizer.*.* -> poptimizer.*.contracts",
 ]

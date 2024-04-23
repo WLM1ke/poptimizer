@@ -4,7 +4,7 @@ from typing import Final
 
 import aiohttp
 
-from poptimizer.app import dag, uow
+from poptimizer.adapters import dag, uow
 from poptimizer.core import domain
 from poptimizer.data import cpi, div, indexes, portfolio, quotes, reestry, securities, status, trading_day, usd
 

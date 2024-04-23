@@ -5,7 +5,7 @@ from typing import Final, NewType
 
 from pydantic import BaseModel, ConfigDict
 
-from poptimizer.app import uow
+from poptimizer.adapters import uow
 from poptimizer.core import domain, errors
 
 _FIRST_RETRY: Final = timedelta(seconds=1)

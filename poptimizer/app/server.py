@@ -3,7 +3,7 @@ import asyncio
 from aiohttp import web
 from pydantic import HttpUrl
 
-from poptimizer.app import uow
+from poptimizer.adapters import uow
 from poptimizer.data import services
 from poptimizer.ui import api, frontend, middleware
 
