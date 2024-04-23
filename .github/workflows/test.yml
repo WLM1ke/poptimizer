@@ -14,9 +14,6 @@ jobs:
       - name: Install go-task
         run: brew install go-task
 
-      - name: Unlink default MongoDB
-        run: brew unlink mongodb-community@5.0
-
       - name: Setup venv, install tools and dependencies
         run: task install
 
