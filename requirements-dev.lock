@@ -26,7 +26,7 @@ attrs==23.2.0
 click==8.1.7
     # via import-linter
     # via typer
-coverage==7.4.4
+coverage==7.5.0
     # via coverage
     # via pytest-cov
 dnspython==2.6.1
@@ -93,7 +93,7 @@ pygments==2.17.2
     # via rich
 pymongo==4.6.3
     # via motor
-pyright==1.1.359
+pyright==1.1.360
 pytest==8.1.1
     # via pytest-asyncio
     # via pytest-cov
