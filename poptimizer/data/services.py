@@ -1,5 +1,6 @@
 import asyncio
 import itertools
+from collections.abc import Callable
 from datetime import date
 from enum import StrEnum, auto
 
@@ -86,6 +87,9 @@ class UpdateDividends(BaseModel):
 
 
 class Dividends:
+    def __init__(self, div_backup_srv: Callable[[], None]) -> None:
+        self._div_backup_srv = div_backup_srv
+
     async def get_div_tickers(self, ctx: domain.Ctx) -> DivTickers:
         table = await ctx.get(status.DivStatus, for_update=False)
 
@@ -140,3 +144,4 @@ class Dividends:
             quotes_table.day,
             [row for row in div_update.dividends if row.day >= first_day],
         )
+        self._div_backup_srv()

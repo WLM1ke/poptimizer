@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import logging
 
 import uvloop
 
@@ -11,38 +12,39 @@ from poptimizer.data import status, view
 from poptimizer.io import http, lgr, mongo
 
 
-async def _run() -> None:
-    cfg = config.Cfg()
-
+async def _run(lgr: logging.Logger, cfg: config.Cfg) -> None:
     async with contextlib.AsyncExitStack() as stack:
         http_client = await stack.enter_async_context(http.HTTPClient())
-        logger = await stack.enter_async_context(
-            telegram.Logger(
-                lgr.init(),
-                http_client,
-                cfg.telegram_token,
-                cfg.telegram_chat_id,
-            ),
-        )
         mongo_client = await stack.enter_async_context(mongo.client(cfg.mongo_db_uri))
+        tg = await stack.enter_async_context(asyncio.TaskGroup())
+
+        telegram_client = telegram.Client(
+            lgr,
+            http_client,
+            cfg.telegram_token,
+            cfg.telegram_chat_id,
+        )
+        telegram_lgr = telegram.Logger(
+            lgr,
+            telegram_client,
+            tg,
+        )
+
         mongo_db: mongo.MongoDatabase = mongo_client[cfg.mongo_db_db]
         div_raw_collection: mongo.MongoCollection = mongo_db[domain.get_component_name(status.DivRaw)]
-        await stack.enter_async_context(backup.Backup(logger, div_raw_collection))
+        backup_srv = backup.Service(telegram_lgr, div_raw_collection, tg)
+        await backup_srv.restore()
 
         mongo_repo = repo.Mongo(mongo_db)
         viewer = view.Viewer(mongo_repo)
         ctx_factory = uow.CtxFactory(
-            logger,
+            telegram_lgr,
             mongo_repo,
             viewer,
         )
 
-        try:
-            async with asyncio.TaskGroup() as tg:
-                tg.create_task(data.run(http_client, ctx_factory))
-                tg.create_task(server.run(ctx_factory, cfg.server_url))
-        except asyncio.CancelledError:
-            logger.info("Shutdown finished")
+        tg.create_task(data.run(http_client, ctx_factory))
+        tg.create_task(server.run(telegram_lgr, ctx_factory, cfg.server_url, backup_srv))
 
 
 def run() -> None:
@@ -50,4 +52,10 @@ def run() -> None:
 
     Настройки передаются через .env файл.
     """
-    uvloop.run(_run())
+    logger = lgr.init()
+    cfg = config.Cfg()
+
+    try:
+        uvloop.run(_run(logger, cfg))
+    except KeyboardInterrupt:
+        logger.info("Shutdown finished")

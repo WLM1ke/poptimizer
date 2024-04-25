@@ -1,6 +1,6 @@
+import asyncio
 from pathlib import Path
-from types import TracebackType
-from typing import Final, Self
+from typing import Final
 
 import aiofiles
 import bson
@@ -12,14 +12,15 @@ from poptimizer.io import mongo
 _DUMP: Final = Path(__file__).parents[2] / "dump" / "dividends.bson"
 
 
-class Backup:
-    def __init__(self, lgr: telegram.Logger, collection: mongo.MongoCollection) -> None:
+class Service:
+    def __init__(self, lgr: telegram.Logger, collection: mongo.MongoCollection, tg: asyncio.TaskGroup) -> None:
         self._lgr = lgr
         self._collection = collection
+        self._tg = tg
 
-    async def __aenter__(self) -> Self:
+    async def restore(self) -> None:
         if await self._collection.count_documents({}):
-            return self
+            return
 
         if not _DUMP.exists():
             raise errors.AdaptersError(f"can't restore {self._collection.name}")
@@ -30,14 +31,10 @@ class Backup:
         await self._collection.insert_many(bson.decode_all(raw))  # type: ignore[reportUnknownMemberType]
         self._lgr.info(f"Collection {self._collection.name} restored")
 
-        return self
+    def backup(self) -> None:
+        self._tg.create_task(self._backup())
 
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        traceback: TracebackType | None,
-    ) -> None:
+    async def _backup(self) -> None:
         _DUMP.parent.mkdir(parents=True, exist_ok=True)
 
         async with aiofiles.open(_DUMP, "bw") as backup_file:
