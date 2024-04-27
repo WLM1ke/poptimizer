@@ -135,13 +135,18 @@ class Dividends:
         async with asyncio.TaskGroup() as tg:
             raw_task = tg.create_task(ctx.get(status.DivRaw, domain.UID(div_update.ticker)))
             quotes_task = tg.create_task(ctx.get(quotes.Quotes, domain.UID(div_update.ticker), for_update=False))
+            status_task = tg.create_task(ctx.get(status.DivStatus))
 
         raw_table = raw_task.result()
         quotes_table = quotes_task.result()
+        status_table = status_task.result()
+
         first_day = quotes_table.df[0].day
 
         raw_table.update(
             quotes_table.day,
             [row for row in div_update.dividends if row.day >= first_day],
         )
+        status_table.filter(raw_table)
+
         self._div_backup_srv()

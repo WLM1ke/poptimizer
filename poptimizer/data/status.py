@@ -77,6 +77,13 @@ class DivStatus(domain.Entity):
         rows.sort(key=lambda status: (status.ticker, status.day))
         self.df = rows
 
+    def filter(self, div_raw: DivRaw) -> None:
+        self.df = [
+            status
+            for status in self.df
+            if not (status.ticker == domain.Ticker(div_raw.uid) and div_raw.has_day(status.day))
+        ]
+
     @field_validator("df")
     def _must_be_sorted_by_ticker_and_day(cls, df: list[RowStatus]) -> list[RowStatus]:
         ticker_date_pairs = itertools.pairwise((row.ticker, row.day) for row in df)
