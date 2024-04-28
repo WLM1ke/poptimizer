@@ -93,7 +93,7 @@ class Dividends:
     async def get_div_tickers(self, ctx: domain.Ctx) -> DivTickers:
         table = await ctx.get(status.DivStatus, for_update=False)
 
-        return DivTickers(tickers=[row.ticker for row in table.df])
+        return DivTickers(tickers=sorted({row.ticker for row in table.df}))
 
     async def get_dividends(self, ctx: domain.Ctx, ticker: domain.Ticker) -> DividendsData:
         async with asyncio.TaskGroup() as tg:
