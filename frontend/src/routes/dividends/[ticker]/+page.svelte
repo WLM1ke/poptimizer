@@ -24,6 +24,7 @@
 	let day: string;
 	let dividend: number;
 	let currency: string;
+	let maxFractionDigits: number;
 
 	$: {
 		if (ticker != data.ticker) {
@@ -31,8 +32,20 @@
 			day = data.dividends[data.dividends.length - 1].day;
 			dividend = data.dividends[data.dividends.length - 1].dividend;
 			currency = data.dividends[data.dividends.length - 1].currency.toLocaleUpperCase();
+			maxFractionDigits = Math.max(...data.dividends.map((currentValue) => fractionDigits(currentValue.dividend)));
 		}
 	}
+
+	const fractionDigits = (num: number) => {
+		const numString = num.toString();
+		const pointPos = numString.indexOf(".");
+
+		if (pointPos === -1) {
+			return 0;
+		}
+
+		return numString.length - pointPos - 1;
+	};
 
 	const toggleRow = (index: number) => {
 		switch (data.dividends[index].status) {
@@ -101,21 +114,21 @@
 			{#if dividend.status === "ok"}
 				<TableRow>
 					<TextCell text={dividend.day} />
-					<NumberCell value={dividend.dividend} />
+					<NumberCell value={dividend.dividend} fractionDigits={maxFractionDigits} />
 					<TextCell text={dividend.currency.toUpperCase()} center={true} />
 					<TextCell text="OK" center={true} />
 				</TableRow>
 			{:else if dividend.status === "extra"}
 				<TableRow>
 					<TextCell text={dividend.day} />
-					<NumberCell value={dividend.dividend} />
+					<NumberCell value={dividend.dividend} fractionDigits={maxFractionDigits} />
 					<TextCell text={dividend.currency.toUpperCase()} center={true} />
 					<DeleteCell on:click={() => toggleRow(index)} />
 				</TableRow>
 			{:else if dividend.status === "missed"}
 				<TableRow muted>
 					<TextCell text={dividend.day} />
-					<NumberCell value={dividend.dividend} />
+					<NumberCell value={dividend.dividend} fractionDigits={maxFractionDigits} />
 					<TextCell text={dividend.currency.toUpperCase()} center={true} />
 					<AddCell on:click={() => toggleRow(index)} />
 				</TableRow>
