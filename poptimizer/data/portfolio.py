@@ -1,4 +1,5 @@
 import asyncio
+from datetime import date
 from typing import Final, NewType, Self
 
 import numpy as np
@@ -34,7 +35,7 @@ class Security(BaseModel):
 
 
 class PortfolioData(BaseModel):
-    day: domain.Day
+    day: date
     accounts: dict[AccName, Account]
     securities: dict[domain.Ticker, Security]
 
