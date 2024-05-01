@@ -36,8 +36,7 @@ def _prepare_graph(
         states.States.OPTIMIZATION: {
             "action": optimization.OptimizationAction(),
             "transitions": {
-                states.States.DATA_UPDATE,
-                states.States.OPTIMIZATION,
+                states.States.EVOLUTION_STEP,
             },
         },
     }
