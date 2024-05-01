@@ -1,34 +1,33 @@
 import asyncio
 from collections.abc import Awaitable, Callable
 from enum import StrEnum
-from typing import NewType, TypedDict
+from typing import TypedDict
 
 from poptimizer.adapters import telegram
 from poptimizer.core import errors
 
-State = NewType("State", StrEnum)
-Event = NewType("Event", StrEnum)
-
-type Action[E: Event] = Callable[[], Awaitable[E]]
-
-
-class StateDescription[S: State, E: Event](TypedDict):
-    action: Action[E]
-    transitions: dict[E, S]
+type States = StrEnum
+type Action[S: States] = Callable[[], Awaitable[S]]
+type Transitions[S: States] = set[S]
 
 
-type Graph[S: State, E: Event] = dict[S, StateDescription[S, E]]
+class StateDescription[S: States](TypedDict):
+    action: Action[S]
+    transitions: Transitions[S]
 
 
-class FSM[S: State, E: Event]:
-    def __init__(self, logger: telegram.Logger, graph: Graph[S, E]) -> None:
+type Graph[S: States] = dict[S, StateDescription[S]]
+
+
+class FSM[S: States]:
+    def __init__(self, logger: telegram.Logger, graph: Graph[S]) -> None:
         self._lgr = logger
         self._graph = graph
-        self._events_stream = asyncio.Queue[E]()
+        self._events_stream = asyncio.Queue[S]()
         self._running = False
 
-    def put(self, event: E) -> None:
-        self._events_stream.put_nowait(event)
+    def put(self, next_state: S) -> None:
+        self._events_stream.put_nowait(next_state)
 
     async def __call__(self) -> None:
         if self._running:
@@ -36,23 +35,23 @@ class FSM[S: State, E: Event]:
 
         self._running = True
 
-        current_state = next(iter(self._graph))
-        self._lgr.info(f"Start -> {current_state}")
-        state_transitions = await self._enter_state(current_state)
+        next_state = next(iter(self._graph))
+        transitions = await self._enter_state(next_state)
 
-        while event := await self._events_stream.get():
-            next_state = state_transitions.get(event)
+        while next_state := await self._events_stream.get():
+            match next_state in transitions:
+                case True:
+                    transitions = await self._enter_state(next_state)
+                case False:
+                    self._lgr.info(f"No transitions to {next_state} - skipping")
 
-            match next_state := state_transitions.get(event):
-                case None:
-                    self._lgr.info(f"Event {event} has no transitions")
-                case _:
-                    self._lgr.info(f"Event {event} -> {next_state}")
-                    state_transitions = await self._enter_state(current_state)
+            self._events_stream.task_done()
 
-    async def _enter_state(self, state: S) -> dict[E, S]:
+    async def _enter_state(self, state: S) -> Transitions[S]:
+        self._lgr.info(state)
         state_description = self._graph[state]
-        event = await state_description["action"]()
-        self.put(event)
+        action = state_description["action"]
+        next_state = await action()
+        self.put(next_state)
 
         return state_description["transitions"]

@@ -49,6 +49,7 @@ class TradingDayService:
 
         new_last_check = _last_day()
         if self._last_check >= new_last_check:
+            ctx.info("Data update not required")
             return None
 
         json = await aiomoex.get_board_dates(

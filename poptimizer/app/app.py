@@ -6,7 +6,7 @@ import uvloop
 
 from poptimizer import config
 from poptimizer.adapters import backup, repo, telegram, uow
-from poptimizer.app import data, server
+from poptimizer.app import fsm, server
 from poptimizer.core import domain
 from poptimizer.data import status, view
 from poptimizer.io import http, lgr, mongo
@@ -43,7 +43,8 @@ async def _run(lgr: logging.Logger, cfg: config.Cfg) -> None:
             viewer,
         )
 
-        tg.create_task(data.run(http_client, ctx_factory))
+        app_fsm = fsm.prepare(telegram_lgr, http_client, ctx_factory)
+        tg.create_task(app_fsm())
         tg.create_task(server.run(telegram_lgr, ctx_factory, cfg.server_url, backup_srv))
 
 

@@ -1,33 +1,31 @@
-import asyncio
-from datetime import date, timedelta
-from typing import Final
+from datetime import date
 
 import aiohttp
 
 from poptimizer.adapters import dag, uow
+from poptimizer.app import states
 from poptimizer.core import domain
 from poptimizer.data import cpi, div, indexes, portfolio, quotes, reestry, securities, status, trading_day, usd
 
-_POLLING_INTERVAL: Final = timedelta(minutes=10)
 
+class UpdateDataAction:
+    def __init__(self, http_client: aiohttp.ClientSession, ctx_factory: uow.CtxFactory) -> None:
+        self._http_client = http_client
+        self._ctx_factory = ctx_factory
 
-async def run(
-    http_client: aiohttp.ClientSession,
-    ctx_factory: uow.CtxFactory,
-) -> None:
-    trading_day_srv = trading_day.TradingDayService(http_client)
-
-    while True:
-        ctx = ctx_factory()
-        async with ctx:
+    async def __call__(self) -> states.States:
+        async with self._ctx_factory() as ctx:
+            trading_day_srv = trading_day.TradingDayService(self._http_client)
             update_day = await trading_day_srv.is_update_required(ctx)
 
         match update_day:
             case None:
-                await asyncio.sleep(_POLLING_INTERVAL.total_seconds())
+                return states.States.EVOLUTION_STEP
             case date():
-                data_update_dag = _prepare_data_update_dag(http_client, ctx_factory, update_day)
+                data_update_dag = _prepare_data_update_dag(self._http_client, self._ctx_factory, update_day)
                 await data_update_dag()
+
+                return states.States.OPTIMIZATION
 
 
 def _prepare_data_update_dag(
