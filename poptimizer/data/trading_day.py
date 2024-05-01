@@ -80,8 +80,8 @@ class TradingDayService:
 
         table = await ctx.get(TradingDay, for_update=False)
         self._last_check = table.day
-        ctx.info(f"Last data for {table.last}")
-        ctx.info(f"Last check for {table.day}")
+        ctx.info(f"Last data - {table.last}")
+        ctx.info(f"Last check - {table.day}")
 
 
 class TradingDayUpdater:

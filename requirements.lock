@@ -29,7 +29,7 @@ dnspython==2.6.1
     # via pymongo
 et-xmlfile==1.1.0
     # via openpyxl
-filelock==3.13.4
+filelock==3.14.0
     # via torch
 frozenlist==1.4.1
     # via aiohttp
@@ -73,7 +73,7 @@ pydantic-settings==2.2.1
     # via poptimizer
 pygments==2.17.2
     # via rich
-pymongo==4.6.3
+pymongo==4.7.1
     # via motor
 python-dateutil==2.9.0.post0
     # via pandas
