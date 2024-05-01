@@ -11,6 +11,9 @@ from poptimizer.data import portfolio, quotes, reestry, status
 
 
 class Portfolio:
+    def __init__(self, optimization_action: Callable[[], None]) -> None:
+        self._optimization_action = optimization_action
+
     async def get_portfolio(self, ctx: domain.Ctx) -> portfolio.PortfolioData:
         port = await ctx.get(portfolio.Portfolio, for_update=False)
 
@@ -44,6 +47,8 @@ class Portfolio:
             domain.Ticker(ticker),
             amount,
         )
+
+        self._optimization_action()
 
         return port.get_portfolio_data()
 
@@ -87,8 +92,8 @@ class UpdateDividends(BaseModel):
 
 
 class Dividends:
-    def __init__(self, div_backup_srv: Callable[[], None]) -> None:
-        self._div_backup_srv = div_backup_srv
+    def __init__(self, div_backup_action: Callable[[], None]) -> None:
+        self._div_backup_action = div_backup_action
 
     async def get_div_tickers(self, ctx: domain.Ctx) -> DivTickers:
         table = await ctx.get(status.DivStatus, for_update=False)
@@ -149,4 +154,4 @@ class Dividends:
         )
         status_table.filter(raw_table)
 
-        self._div_backup_srv()
+        self._div_backup_action()
