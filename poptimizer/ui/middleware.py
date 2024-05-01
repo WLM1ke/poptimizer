@@ -1,38 +1,14 @@
-from aiohttp import abc, typedefs, web
+from aiohttp import typedefs, web
 from pydantic import ValidationError
 
-from poptimizer.core import domain, errors
-
-
-class AccessLogger(abc.AbstractAccessLogger):
-    def log(self, request: web.BaseRequest, response: web.StreamResponse, time: float) -> None:
-        self.logger.info(
-            "%s %s %d %s %dms",
-            request.method,
-            request.path_qs,
-            response.status,
-            _content_length(response),
-            int(time * 1000),
-        )
-
-
-def _content_length(response: web.StreamResponse) -> str:
-    size = response.body_length
-    kilo = 2**10
-
-    for unit in ("b", "kb", "Mb", "Gb"):
-        if size < kilo:
-            return f"{size:.0f}{unit}"
-
-        size /= kilo
-
-    return f"{size:.0f}Tb"
+from poptimizer.adapters import telegram
+from poptimizer.core import errors
 
 
 @web.middleware
 class RequestErrorMiddleware:
-    def __init__(self, ctx: domain.Ctx) -> None:
-        self._ctx = ctx
+    def __init__(self, telegram_logger: telegram.Logger) -> None:
+        self._lgr = telegram_logger
 
     async def __call__(
         self,
@@ -42,15 +18,15 @@ class RequestErrorMiddleware:
         try:
             return await handler(request)
         except (errors.InputOutputError, errors.AdaptersError) as err:
-            self._ctx.warn(f"{err}")
+            self._lgr.warning(f"{err}")
 
             raise web.HTTPInternalServerError(text=f"{err.__class__.__name__}: {",".join(err.args)}") from err
         except errors.DomainError as err:
-            self._ctx.warn(f"{err}")
+            self._lgr.warning(f"{err}")
 
             raise web.HTTPBadRequest(text=f"{err.__class__.__name__}: {",".join(err.args)}") from err
         except ValidationError as err:
             msg = ",".join(desc["msg"] for desc in err.errors())
-            self._ctx.warn(msg=f"{err.__class__.__name__}({msg})")
+            self._lgr.warning(msg=f"{err.__class__.__name__}({msg})")
 
             raise web.HTTPBadRequest(text=f"{err.__class__.__name__}: {msg}") from err
