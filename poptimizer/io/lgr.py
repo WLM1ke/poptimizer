@@ -42,5 +42,6 @@ def init(level: int | str = logging.INFO) -> logging.Logger:
         level=level,
         handlers=[color_handler],
     )
+    logging.getLogger("pymongo").setLevel(logging.CRITICAL)
 
     return logging.getLogger()
