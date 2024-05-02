@@ -4,7 +4,7 @@ from typing import Final
 
 from poptimizer.app import states
 
-_OPTIMIZATION_DURATION: Final = timedelta(minutes=10)
+_OPTIMIZATION_DURATION: Final = timedelta(minutes=1)
 
 
 class OptimizationAction:

@@ -9,7 +9,7 @@ from poptimizer.core import domain, errors
 
 class IdentityMap:
     def __init__(self) -> None:
-        self._seen: dict[tuple[type, domain.UID | None], tuple[domain.Entity, bool]] = {}
+        self._seen: dict[tuple[type, domain.UID], tuple[domain.Entity, bool]] = {}
         self._lock = asyncio.Lock()
 
     def __iter__(self) -> Iterator[domain.Entity]:
@@ -33,7 +33,7 @@ class IdentityMap:
     def get[E: domain.Entity](
         self,
         t_entity: type[E],
-        uid: domain.UID | None,
+        uid: domain.UID,
         *,
         for_update: bool,
     ) -> E | None:
@@ -76,6 +76,7 @@ class UOW:
         *,
         for_update: bool = True,
     ) -> E:
+        uid = uid or domain.UID(domain.get_component_name(t_entity))
         async with self._identity_map as identity_map:
             if loaded := identity_map.get(t_entity, uid, for_update=for_update):
                 return loaded
