@@ -93,7 +93,7 @@ pygments==2.17.2
     # via rich
 pymongo==4.7.1
     # via motor
-pyright==1.1.360
+pyright==1.1.361
 pytest==8.2.0
     # via pytest-asyncio
     # via pytest-cov
