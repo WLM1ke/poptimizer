@@ -45,7 +45,13 @@ class ReestryDivUpdater:
         quotes_table = await ctx.get(quotes.Quotes, domain.UID(row.ticker), for_update=False)
         first_day = quotes_table.df[0].day
 
-        url = await self._find_url(row.ticker_base)
+        try:
+            url = await self._find_url(row.ticker_base)
+        except errors.DomainError as err:
+            ctx.warn(f"can't find url for {row.ticker} {err}")
+
+            return
+
         html_page = await self._load_html(url, row)
         try:
             raw_rows = _parse(html_page, 1 + row.preferred, first_day)
