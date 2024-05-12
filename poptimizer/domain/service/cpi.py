@@ -27,8 +27,6 @@ _MIN_COL: Final = 2
 
 _JANUARY_LAST_DAY: Final = 31
 
-_MINIMUM_MONTHLY_CPI: Final = 0.99
-
 
 class CPIUpdater:
     def __init__(self, http_session: aiohttp.ClientSession) -> None:
