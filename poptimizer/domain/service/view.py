@@ -4,20 +4,20 @@ import async_lru
 import numpy as np
 import pandas as pd
 
-from poptimizer.core import domain
-from poptimizer.data import quotes
+from poptimizer.domain.entity import entity, quotes
+from poptimizer.domain.service import service
 
 
 class Viewer:
-    def __init__(self, repo: domain.Repo) -> None:
+    def __init__(self, repo: service.Repo) -> None:
         self._repo = repo
 
     async def _quote(
         self,
         last_day: pd.Timestamp,
-        ticker: domain.Ticker,
+        ticker: entity.Ticker,
     ) -> pd.DataFrame:
-        table = await self._repo.get(quotes.Quotes, domain.UID(ticker))
+        table = await self._repo.get(quotes.Table, entity.UID(ticker))
 
         if not table.df:
             return pd.DataFrame(columns=["day", "open", "close", "high", "low", "turnover"], dtype="float64")
@@ -30,7 +30,7 @@ class Viewer:
     async def _quotes(
         self,
         last_day: pd.Timestamp,
-        tickers: tuple[domain.Ticker, ...],
+        tickers: tuple[entity.Ticker, ...],
     ) -> list[pd.DataFrame]:
         async with asyncio.TaskGroup() as tg:
             tasks = [tg.create_task(self._quote(last_day, ticker)) for ticker in tickers]
@@ -41,7 +41,7 @@ class Viewer:
     async def close(
         self,
         last_day: pd.Timestamp,
-        tickers: tuple[domain.Ticker, ...],
+        tickers: tuple[entity.Ticker, ...],
     ) -> pd.DataFrame:
         quotes_dfs = await self._quotes(last_day, tickers)
         close = pd.concat(  # type: ignore[reportUnknownMemberType]
@@ -57,7 +57,7 @@ class Viewer:
     async def turnover(
         self,
         last_day: pd.Timestamp,
-        tickers: tuple[domain.Ticker, ...],
+        tickers: tuple[entity.Ticker, ...],
     ) -> pd.DataFrame:
         quotes_dfs = await self._quotes(last_day, tickers)
         turnover = pd.concat(  # type: ignore[reportUnknownMemberType]

@@ -1,8 +1,19 @@
-from typing import Protocol
+from typing import Any, Protocol
 
 import pandas as pd
 
 from poptimizer.domain.entity import entity
+
+
+def get_component_name(component: Any) -> str:
+    if isinstance(component, type):
+        return component.__name__
+
+    return component.__class__.__name__
+
+
+class Repo(Protocol):
+    async def get[E: entity.Entity](self, t_entity: type[E], uid: entity.UID | None = None) -> E: ...
 
 
 class Ctx(Protocol):
