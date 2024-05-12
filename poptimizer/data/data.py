@@ -3,7 +3,8 @@ from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict
 
-from poptimizer.core import consts, domain
+from poptimizer.core import domain
+from poptimizer.domain import consts
 
 
 class Row(BaseModel):

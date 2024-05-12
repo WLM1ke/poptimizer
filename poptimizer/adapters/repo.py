@@ -5,7 +5,8 @@ from typing import Any, Final
 from pydantic import ValidationError
 from pymongo.errors import PyMongoError
 
-from poptimizer.core import consts, domain, errors
+from poptimizer.core import domain, errors
+from poptimizer.domain import consts
 from poptimizer.io import mongo
 
 _MONGO_ID: Final = "_id"

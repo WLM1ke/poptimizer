@@ -5,8 +5,9 @@ from datetime import date
 
 from pydantic import Field, field_validator
 
-from poptimizer.core import consts, domain
+from poptimizer.core import domain
 from poptimizer.data import data, securities, status, usd
+from poptimizer.domain import consts
 
 
 class _Row(data.Row):

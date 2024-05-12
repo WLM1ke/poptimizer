@@ -6,8 +6,9 @@ import aiohttp
 import aiomoex
 from pydantic import BaseModel, Field, field_validator
 
-from poptimizer.core import consts, domain
-from poptimizer.data import data
+from poptimizer.domain import consts
+from poptimizer.domain.entity import entity, trading_day
+from poptimizer.domain.service import service
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -17,8 +18,8 @@ _END_HOUR: Final = 0
 _END_MINUTE: Final = 45
 
 
-class _Row(data.Row):
-    day: domain.Day = Field(alias="till")
+class _Row(entity.Row):
+    day: entity.Day = Field(alias="till")
 
 
 class _Payload(BaseModel):
@@ -35,16 +36,12 @@ class _Payload(BaseModel):
         return df
 
 
-class TradingDay(domain.Entity):
-    last: domain.Day = consts.START_DAY
-
-
 class TradingDayService:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
         self._last_check = consts.START_DAY
 
-    async def is_update_required(self, ctx: domain.Ctx) -> domain.Day | None:
+    async def is_update_required(self, ctx: service.Ctx) -> entity.Day | None:
         await self._maybe_init(ctx)
 
         new_last_check = _last_day()
@@ -68,25 +65,25 @@ class TradingDayService:
             return new_last_day
 
         ctx.info(f"No new data for {new_last_check}")
-        table = await ctx.get(TradingDay)
+        table = await ctx.get_for_update(trading_day.Table)
         table.day = new_last_check
         self._last_check = new_last_check
 
         return None
 
-    async def _maybe_init(self, ctx: domain.Ctx) -> None:
+    async def _maybe_init(self, ctx: service.Ctx) -> None:
         if self._last_check != consts.START_DAY:
             return
 
-        table = await ctx.get(TradingDay, for_update=False)
+        table = await ctx.get_for_update(trading_day.Table)
         self._last_check = table.day
         ctx.info(f"Last data - {table.last}")
         ctx.info(f"Last check - {table.day}")
 
 
 class TradingDayUpdater:
-    async def __call__(self, ctx: domain.Ctx, update_day: domain.Day) -> None:
-        table = await ctx.get(TradingDay)
+    async def __call__(self, ctx: service.Ctx, update_day: entity.Day) -> None:
+        table = await ctx.get_for_update(trading_day.Table)
         table.day = update_day
         table.last = update_day
 

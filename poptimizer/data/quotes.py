@@ -5,8 +5,9 @@ import aiohttp
 import aiomoex
 from pydantic import Field, TypeAdapter, field_validator
 
-from poptimizer.core import consts, domain, errors
+from poptimizer.core import domain, errors
 from poptimizer.data import data, securities
+from poptimizer.domain import consts
 
 
 class _Row(data.Row):
