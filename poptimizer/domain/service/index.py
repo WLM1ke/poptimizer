@@ -56,4 +56,4 @@ class IndexesUpdater:
         try:
             return TypeAdapter(list[index.Row]).validate_python(json)
         except ValueError as err:
-            raise consts.DomainError(f"can't validate {ticker} data") from err
+            raise consts.DomainError(f"invalid {ticker} data") from err

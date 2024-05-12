@@ -29,6 +29,8 @@ Day = Annotated[
     ),
 ]
 
+Ticker = NewType("Ticker", str)
+
 
 class Entity(BaseModel):
     rev: Revision

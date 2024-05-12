@@ -84,7 +84,7 @@ class TradingDayCheckService:
         try:
             payload = _Payload.model_validate({"df": json})
         except ValueError as err:
-            raise consts.DomainError("can't validate trading day data") from err
+            raise consts.DomainError("invalid trading day data") from err
 
         return payload.last_day()
 

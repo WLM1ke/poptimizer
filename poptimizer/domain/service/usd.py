@@ -39,4 +39,4 @@ class USDUpdater:
         try:
             return TypeAdapter(list[usd.Row]).validate_python(json)
         except ValueError as err:
-            raise consts.DomainError("can't validate usd data") from err
+            raise consts.DomainError("invalid usd data") from err
