@@ -7,7 +7,7 @@ import aiomoex
 from pydantic import TypeAdapter
 
 from poptimizer.domain import consts
-from poptimizer.domain.entity import entity, security
+from poptimizer.domain.entity import entity, securities
 from poptimizer.domain.service import service
 
 _MARKETS_BOARDS: Final = (
@@ -30,13 +30,13 @@ class SecuritiesUpdater:
         self._http_client = http_client
 
     async def __call__(self, ctx: service.Ctx, update_day: entity.Day) -> None:
-        table = await ctx.get_for_update(security.Table)
+        table = await ctx.get_for_update(securities.Table)
 
         rows = await self._download()
 
         table.update(update_day, rows)
 
-    async def _download(self) -> list[security.Row]:
+    async def _download(self) -> list[securities.Row]:
         tasks: list[asyncio.Task[list[dict[str, Any]]]] = []
 
         async with asyncio.TaskGroup() as tg:
@@ -54,6 +54,6 @@ class SecuritiesUpdater:
         json = list(itertools.chain.from_iterable([await task for task in tasks]))
 
         try:
-            return TypeAdapter(list[security.Row]).validate_python(json)
+            return TypeAdapter(list[securities.Row]).validate_python(json)
         except ValueError as err:
             raise consts.DomainError("invalid securities data") from err
