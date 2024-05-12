@@ -20,7 +20,7 @@ _HEADERS: Final = {
 }
 
 
-class HTTPClient(aiohttp.ClientSession):
+class Client(aiohttp.ClientSession):
     def __init__(
         self,
         con_per_host: int = _MAX_ISS_CON,
