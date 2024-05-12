@@ -6,6 +6,7 @@ import aiohttp
 import aiomoex
 from pydantic import BaseModel, Field, field_validator
 
+from poptimizer.core import domain
 from poptimizer.domain import consts
 from poptimizer.domain.entity import entity, trading_day
 from poptimizer.domain.service import service
@@ -36,7 +37,7 @@ class _Payload(BaseModel):
         return df
 
 
-class TradingDayService:
+class TradingDayCheckService:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
         self._last_check = consts.START_DAY
@@ -49,14 +50,7 @@ class TradingDayService:
             ctx.info("Data update not required")
             return None
 
-        json = await aiomoex.get_board_dates(
-            self._http_client,
-            board="TQBR",
-            market="shares",
-            engine="stock",
-        )
-        payload = _Payload.model_validate({"df": json})
-        new_last_day = payload.last_day()
+        new_last_day = await self._get_last_trading_day_from_moex()
 
         if new_last_day > self._last_check:
             ctx.info(f"New data for {new_last_day}")
@@ -66,7 +60,7 @@ class TradingDayService:
 
         ctx.info(f"No new data for {new_last_check}")
         table = await ctx.get_for_update(trading_day.Table)
-        table.day = new_last_check
+        table.update_last_check(new_last_check)
         self._last_check = new_last_check
 
         return None
@@ -75,17 +69,30 @@ class TradingDayService:
         if self._last_check != consts.START_DAY:
             return
 
-        table = await ctx.get_for_update(trading_day.Table)
+        table = await ctx.get(trading_day.Table)
         self._last_check = table.day
         ctx.info(f"Last data - {table.last}")
         ctx.info(f"Last check - {table.day}")
 
+    async def _get_last_trading_day_from_moex(self) -> domain.Day:
+        json = await aiomoex.get_board_dates(
+            self._http_client,
+            board="TQBR",
+            market="shares",
+            engine="stock",
+        )
+        try:
+            payload = _Payload.model_validate({"df": json})
+        except ValueError as err:
+            raise consts.DomainError("can't validate trading day data") from err
 
-class TradingDayUpdater:
+        return payload.last_day()
+
+
+class TradingDayUpdateService:
     async def __call__(self, ctx: service.Ctx, update_day: entity.Day) -> None:
         table = await ctx.get_for_update(trading_day.Table)
-        table.day = update_day
-        table.last = update_day
+        table.update_last_trading_day(update_day)
 
 
 def _last_day() -> date:
