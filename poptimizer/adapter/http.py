@@ -8,7 +8,7 @@ from typing import Any, Final, override
 import aiohttp
 from aiohttp import client_reqrep, helpers, typedefs, web_exceptions
 
-from poptimizer.core import errors
+from poptimizer.adapter import adapter
 
 _MAX_ISS_CON: Final = 10
 _RETRIES: Final = 3
@@ -115,7 +115,7 @@ class HTTPClient(aiohttp.ClientSession):
 
             return resp
 
-        raise errors.InputOutputError(f"http request failed after {self._retries} retries")
+        raise adapter.AdaptersError(f"http request failed after {self._retries} retries")
 
     def _delay(self, attempt: int) -> float:
         if attempt == 0:
