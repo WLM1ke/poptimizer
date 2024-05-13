@@ -10,7 +10,7 @@ from poptimizer.domain.entity import entity, quotes, securities
 from poptimizer.domain.service import domain_service
 
 
-class QuotesUpdater:
+class UpdateService:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 

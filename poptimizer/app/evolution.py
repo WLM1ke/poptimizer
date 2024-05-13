@@ -3,7 +3,7 @@ import random
 from datetime import timedelta
 from typing import Final
 
-from poptimizer.app import states
+from poptimizer.service import states
 
 _NEW_FORECAST_PROBABILITY: Final = 0.1
 _STEP_DURATION: Final = timedelta(hours=1)

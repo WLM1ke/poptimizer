@@ -18,7 +18,7 @@ _INDEXES: Final = (
 )
 
 
-class IndexesUpdater:
+class UpdateService:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 

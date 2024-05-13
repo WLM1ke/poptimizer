@@ -14,7 +14,7 @@ _FIRST_RETRY: Final = timedelta(seconds=1)
 _BACKOFF_FACTOR: Final = 2
 
 
-type _Action[P] = Callable[[domain_service.Ctx, P], Awaitable[None]]
+type _Action[P] = Callable[[domain_service.VCtx, P], Awaitable[None]]
 
 _DagID = NewType("_DagID", int)
 _NodeID = NewType("_NodeID", int)

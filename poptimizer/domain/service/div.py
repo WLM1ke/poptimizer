@@ -8,7 +8,7 @@ from poptimizer.domain.entity import div, div_raw, entity, securities, usd
 from poptimizer.domain.service import domain_service
 
 
-class DividendsUpdater:
+class UpdateService:
     async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
         usd_table = await ctx.get(usd.USD)
         sec_table = await ctx.get(securities.Securities)

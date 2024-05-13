@@ -11,7 +11,6 @@ from pymongo.errors import PyMongoError
 from poptimizer.adapter import adapter
 from poptimizer.domain import consts
 from poptimizer.domain.entity import entity
-from poptimizer.domain.service import domain_service
 
 type MongoDocument = Mapping[str, Any]
 type MongoClient = AgnosticClient[MongoDocument]

@@ -9,7 +9,7 @@ from poptimizer.domain.entity import entity, usd
 from poptimizer.domain.service import domain_service
 
 
-class USDUpdater:
+class UpdateService:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._session = http_client
 

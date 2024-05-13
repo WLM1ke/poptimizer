@@ -2,8 +2,8 @@ import aiohttp
 
 from poptimizer.adapter import telegram
 from poptimizer.adapters import fsm
-from poptimizer.app import data, evolution, optimization, states
-from poptimizer.service import uow
+from poptimizer.app import evolution, optimization
+from poptimizer.service import data, states, uow
 
 
 def prepare(

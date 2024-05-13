@@ -11,7 +11,7 @@ _START_LIQUIDITY_DAYS: Final = 21
 _MINIMUM_HISTORY: Final = 30 * 21
 
 
-class PortfolioUpdater:
+class UpdateService:
     async def __call__(self, ctx: domain_service.VCtx, update_day: entity.Day) -> None:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
