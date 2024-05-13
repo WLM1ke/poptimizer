@@ -58,7 +58,7 @@ class TradingDayCheckService:
             return new_last_day
 
         ctx.info(f"No new data for {new_last_check}")
-        table = await ctx.get_for_update(trading_day.Table)
+        table = await ctx.get_for_update(trading_day.TradingDay)
         table.update_last_check(new_last_check)
         self._last_check = new_last_check
 
@@ -68,7 +68,7 @@ class TradingDayCheckService:
         if self._last_check != consts.START_DAY:
             return
 
-        table = await ctx.get(trading_day.Table)
+        table = await ctx.get(trading_day.TradingDay)
         self._last_check = table.day
         ctx.info(f"Last data - {table.last}")
         ctx.info(f"Last check - {table.day}")
@@ -111,5 +111,5 @@ def _last_day() -> date:
 
 class TradingDayUpdateService:
     async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
-        table = await ctx.get_for_update(trading_day.Table)
+        table = await ctx.get_for_update(trading_day.TradingDay)
         table.update_last_trading_day(update_day)

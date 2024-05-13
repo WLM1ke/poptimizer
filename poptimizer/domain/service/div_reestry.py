@@ -23,7 +23,7 @@ class ReestryDivUpdater:
         self._http_client = http_client
 
     async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
-        status_table = await ctx.get(div_status.Table)
+        status_table = await ctx.get(div_status.DivStatus)
 
         async with asyncio.TaskGroup() as tg:
             for row in status_table.df:
@@ -40,7 +40,7 @@ class ReestryDivUpdater:
         if table.has_day(row.day):
             return
 
-        quotes_table = await ctx.get(quotes.Table, entity.UID(row.ticker))
+        quotes_table = await ctx.get(quotes.Quotes, entity.UID(row.ticker))
         first_day = quotes_table.df[0].day
 
         try:

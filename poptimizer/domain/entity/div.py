@@ -8,7 +8,7 @@ class Row(entity.Row):
     dividend: float = Field(gt=0)
 
 
-class Table(entity.Entity):
+class Dividends(entity.Entity):
     df: list[Row] = Field(default_factory=list[Row])
 
     def update(self, update_day: entity.Day, rows: list[Row]) -> None:

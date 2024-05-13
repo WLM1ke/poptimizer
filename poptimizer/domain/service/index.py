@@ -28,7 +28,7 @@ class IndexesUpdater:
                 tg.create_task(self._update_one(ctx, update_day, ticker))
 
     async def _update_one(self, ctx: domain_service.Ctx, update_day: entity.Day, ticker: entity.UID) -> None:
-        table = await ctx.get_for_update(index.Table, ticker)
+        table = await ctx.get_for_update(index.Index, ticker)
 
         start_day = table.last_row_date()
         rows = await self._download(ticker, start_day, update_day)

@@ -12,7 +12,7 @@ class Row(entity.Row):
     day: entity.Day
 
 
-class Table(entity.Entity):
+class DivStatus(entity.Entity):
     df: list[Row] = Field(default_factory=list[Row])
 
     def update(self, update_day: entity.Day, rows: list[Row]) -> None:
@@ -20,7 +20,7 @@ class Table(entity.Entity):
         rows.sort(key=lambda status: (status.ticker, status.day))
         self.df = rows
 
-    def filter(self, raw_table: div_raw.Table) -> None:
+    def filter(self, raw_table: div_raw.DivRaw) -> None:
         self.df = [
             status
             for status in self.df

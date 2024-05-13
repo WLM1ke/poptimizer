@@ -26,7 +26,7 @@ class PortfolioUpdater:
 async def _prepare_sec_data(
     ctx: domain_service.VCtx, update_day: entity.Day
 ) -> dict[entity.Ticker, portfolio.Security]:
-    sec_table = await ctx.get(securities.Table)
+    sec_table = await ctx.get(securities.Securities)
 
     tickers = tuple(sec.ticker for sec in sec_table.df)
 

@@ -4,10 +4,9 @@ from aiohttp import web
 from pydantic import HttpUrl
 
 from poptimizer.adapter import telegram
-from poptimizer.adapters import backup
 from poptimizer.adapters.server import Server
 from poptimizer.data import services
-from poptimizer.service import uow
+from poptimizer.service import backup, uow
 from poptimizer.ui import api, frontend, middleware
 
 

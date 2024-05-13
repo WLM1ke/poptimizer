@@ -22,12 +22,12 @@ class DivStatusUpdater:
         self._http_client = http_client
 
     async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
-        table = await ctx.get_for_update(div_status.Table)
+        table = await ctx.get_for_update(div_status.DivStatus)
 
         csv_file = await self._download()
         parsed_rows = _parse(ctx, csv_file)
 
-        sec_table = await ctx.get(securities.Table)
+        sec_table = await ctx.get(securities.Securities)
         port = await ctx.get(portfolio.Portfolio)
         status = _status_gen(parsed_rows, sec_table, port)
 
@@ -65,7 +65,7 @@ def _parse(
 
 def _status_gen(
     raw_rows: Iterable[tuple[entity.Ticker, date]],
-    sec: securities.Table,
+    sec: securities.Securities,
     port: portfolio.Portfolio,
 ) -> Iterable[div_status.Row]:
     weights = port.get_non_zero_weights().positions
@@ -82,7 +82,7 @@ def _status_gen(
 
 async def _filter_missed(ctx: domain_service.Ctx, rows: Iterable[div_status.Row]) -> AsyncIterator[div_status.Row]:
     for row in rows:
-        table = await ctx.get(div_raw.Table, entity.UID(row.ticker))
+        table = await ctx.get(div_raw.DivRaw, entity.UID(row.ticker))
 
         if not table.has_day(row.day):
             ctx.warn(f"{row.ticker} missed dividend at {row.day}")

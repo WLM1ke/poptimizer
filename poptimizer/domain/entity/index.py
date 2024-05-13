@@ -11,7 +11,7 @@ class Row(entity.Row):
     close: float = Field(alias="CLOSE", gt=0)
 
 
-class Table(entity.Entity):
+class Index(entity.Entity):
     df: list[Row] = Field(default_factory=list[Row])
 
     def update(self, update_day: entity.Day, rows: list[Row]) -> None:

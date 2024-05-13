@@ -21,7 +21,7 @@ class Row(entity.Row):
         return date
 
 
-class Table(entity.Entity):
+class CPI(entity.Entity):
     df: list[Row] = Field(default_factory=list[Row])
 
     def update(self, update_day: entity.Day, rows: list[Row]) -> None:

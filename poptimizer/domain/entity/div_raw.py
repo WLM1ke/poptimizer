@@ -15,7 +15,7 @@ class Row(entity.Row):
         return self.day, self.dividend, self.currency
 
 
-class Table(entity.Entity):
+class DivRaw(entity.Entity):
     df: list[Row] = Field(default_factory=list[Row])
 
     def update(self, update_day: entity.Day, rows: list[Row]) -> None:

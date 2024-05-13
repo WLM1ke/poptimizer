@@ -1,14 +1,15 @@
 import asyncio
+import logging
 from types import TracebackType
 from typing import Self
 
-from poptimizer.adapter import lgr, telegram
+from poptimizer.adapter import telegram
 
 
 class Service:
-    def __init__(self, telegram_client: telegram.Client) -> None:
+    def __init__(self, logger: logging.Logger, telegram_client: telegram.Client) -> None:
         self._telegram_client = telegram_client
-        self._logger = lgr.init()
+        self._logger = logger
         self._tg = asyncio.TaskGroup()
 
     async def __aenter__(self) -> Self:

@@ -15,7 +15,7 @@ class QuotesUpdater:
         self._http_client = http_client
 
     async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
-        sec_table = await ctx.get(securities.Table)
+        sec_table = await ctx.get(securities.Securities)
 
         async with asyncio.TaskGroup() as tg:
             for sec in sec_table.df:
@@ -27,7 +27,7 @@ class QuotesUpdater:
         ticker: str,
         update_day: entity.Day,
     ) -> None:
-        table = await ctx.get_for_update(quotes.Table, entity.UID(ticker))
+        table = await ctx.get_for_update(quotes.Quotes, entity.UID(ticker))
 
         start_day = table.last_row_date() or consts.START_DAY
         rows = await self._download(ticker, start_day, update_day)

@@ -2,7 +2,7 @@ from poptimizer.domain import consts
 from poptimizer.domain.entity import entity
 
 
-class Table(entity.Entity):
+class TradingDay(entity.Entity):
     last: entity.Day = consts.START_DAY
 
     def update_last_check(self, day: entity.Day) -> None:

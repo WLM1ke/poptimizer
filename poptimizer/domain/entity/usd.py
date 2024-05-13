@@ -15,7 +15,7 @@ class Row(entity.Row):
     turnover: float = Field(alias="value", gt=0)
 
 
-class Table(entity.Entity):
+class USD(entity.Entity):
     df: list[Row] = Field(default_factory=list[Row])
 
     def update(self, update_day: entity.Day, rows: list[Row]) -> None:

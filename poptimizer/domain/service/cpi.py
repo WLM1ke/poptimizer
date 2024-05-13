@@ -33,7 +33,7 @@ class CPIUpdater:
         self._http_session = http_session
 
     async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
-        table = await ctx.get_for_update(cpi.Table)
+        table = await ctx.get_for_update(cpi.CPI)
 
         xlsx_file = await self._download()
         row = _parse_rows(xlsx_file)

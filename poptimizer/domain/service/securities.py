@@ -30,7 +30,7 @@ class SecuritiesUpdater:
         self._http_client = http_client
 
     async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
-        table = await ctx.get_for_update(securities.Table)
+        table = await ctx.get_for_update(securities.Securities)
 
         rows = await self._download()
 

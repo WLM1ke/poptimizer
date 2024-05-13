@@ -17,7 +17,7 @@ class Service:
         last_day: pd.Timestamp,
         ticker: entity.Ticker,
     ) -> pd.DataFrame:
-        table = await self._repo.get(quotes.Table, entity.UID(ticker))
+        table = await self._repo.get(quotes.Quotes, entity.UID(ticker))
 
         if not table.df:
             return pd.DataFrame(columns=["day", "open", "close", "high", "low", "turnover"], dtype="float64")

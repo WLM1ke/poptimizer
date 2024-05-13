@@ -10,8 +10,8 @@ from poptimizer.domain.service import domain_service
 
 class DividendsUpdater:
     async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
-        usd_table = await ctx.get(usd.Table)
-        sec_table = await ctx.get(securities.Table)
+        usd_table = await ctx.get(usd.USD)
+        sec_table = await ctx.get(securities.Securities)
 
         async with asyncio.TaskGroup() as tg:
             for sec in sec_table.df:
@@ -22,10 +22,10 @@ class DividendsUpdater:
         ctx: domain_service.Ctx,
         update_day: date,
         ticker: entity.UID,
-        usd_table: usd.Table,
+        usd_table: usd.USD,
     ) -> None:
-        div_table = await ctx.get(div.Table, ticker)
-        raw_table = await ctx.get(div_raw.Table, ticker)
+        div_table = await ctx.get(div.Dividends, ticker)
+        raw_table = await ctx.get(div_raw.DivRaw, ticker)
 
         rows = list(_prepare_rows(raw_table.df, usd_table))
 
@@ -34,7 +34,7 @@ class DividendsUpdater:
 
 def _prepare_rows(
     raw_list: list[div_raw.Row],
-    usd_table: usd.Table,
+    usd_table: usd.USD,
 ) -> Iterator[div.Row]:
     div_amount = 0
     date = consts.START_DAY
@@ -54,7 +54,7 @@ def _prepare_rows(
         yield div.Row(day=date, dividend=div_amount)
 
 
-def _div_in_rur(raw_row: div_raw.Row, usd_table: usd.Table) -> float:
+def _div_in_rur(raw_row: div_raw.Row, usd_table: usd.USD) -> float:
     match raw_row.currency:
         case entity.Currency.RUR:
             return raw_row.dividend

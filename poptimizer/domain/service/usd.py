@@ -14,7 +14,7 @@ class USDUpdater:
         self._session = http_client
 
     async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
-        table = await ctx.get_for_update(usd.Table)
+        table = await ctx.get_for_update(usd.USD)
 
         start_day = table.last_row_date()
         rows = await self._download(start_day, update_day)

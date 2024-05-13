@@ -1,6 +1,6 @@
 import typer
 
-from poptimizer.app import app
+from poptimizer import app
 
 
 def main() -> None:
