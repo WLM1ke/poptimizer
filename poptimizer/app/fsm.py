@@ -1,7 +1,9 @@
 import aiohttp
 
-from poptimizer.adapters import fsm, telegram, uow
+from poptimizer.adapter import telegram
+from poptimizer.adapters import fsm
 from poptimizer.app import data, evolution, optimization, states
+from poptimizer.service import uow
 
 
 def prepare(

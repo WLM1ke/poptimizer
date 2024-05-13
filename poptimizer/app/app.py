@@ -5,11 +5,13 @@ import logging
 import uvloop
 
 from poptimizer import config
-from poptimizer.adapters import backup, repo, telegram, uow
+from poptimizer.adapter import telegram
+from poptimizer.adapters import backup, repo
 from poptimizer.app import fsm, server
 from poptimizer.core import domain
 from poptimizer.data import status, view
 from poptimizer.io import http, lgr, mongo
+from poptimizer.service import uow
 
 
 async def _run(lgr: logging.Logger, cfg: config.Cfg) -> None:

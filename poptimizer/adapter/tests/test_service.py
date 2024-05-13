@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from poptimizer.domain.service import service
+from poptimizer.adapter import adapter
 
 
 class TestComponent: ...
@@ -10,4 +10,4 @@ class TestComponent: ...
 
 @pytest.mark.parametrize("component", [TestComponent, TestComponent()])
 def test_get_component_name(component: Any) -> None:
-    assert service.get_component_name(component) == "TestComponent"
+    assert adapter.get_component_name(component) == "TestComponent"

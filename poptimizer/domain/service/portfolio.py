@@ -5,14 +5,14 @@ import numpy as np
 import pandas as pd
 
 from poptimizer.domain.entity import entity, portfolio, securities
-from poptimizer.domain.service import service
+from poptimizer.domain.service import domain_service
 
 _START_LIQUIDITY_DAYS: Final = 21
 _MINIMUM_HISTORY: Final = 30 * 21
 
 
 class PortfolioUpdater:
-    async def __call__(self, ctx: service.VCtx, update_day: entity.Day) -> None:
+    async def __call__(self, ctx: domain_service.VCtx, update_day: entity.Day) -> None:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
         sec_data = await _prepare_sec_data(ctx, update_day)
@@ -23,7 +23,9 @@ class PortfolioUpdater:
         port.day = update_day
 
 
-async def _prepare_sec_data(ctx: service.VCtx, update_day: entity.Day) -> dict[entity.Ticker, portfolio.Security]:
+async def _prepare_sec_data(
+    ctx: domain_service.VCtx, update_day: entity.Day
+) -> dict[entity.Ticker, portfolio.Security]:
     sec_table = await ctx.get(securities.Table)
 
     tickers = tuple(sec.ticker for sec in sec_table.df)
@@ -59,7 +61,7 @@ async def _prepare_sec_data(ctx: service.VCtx, update_day: entity.Day) -> dict[e
 
 
 def _remove_not_traded(
-    ctx: service.Ctx, port: portfolio.Portfolio, sec_data: dict[entity.Ticker, portfolio.Security]
+    ctx: domain_service.Ctx, port: portfolio.Portfolio, sec_data: dict[entity.Ticker, portfolio.Security]
 ) -> None:
     not_traded = port.securities.keys() - sec_data.keys()
 
@@ -74,7 +76,7 @@ def _remove_not_traded(
 
 
 def _update_sec_data(
-    ctx: service.Ctx,
+    ctx: domain_service.Ctx,
     port: portfolio.Portfolio,
     sec_data: dict[entity.Ticker, portfolio.Security],
 ) -> None:
@@ -100,7 +102,7 @@ def _update_sec_data(
 
 
 def _add_liquid(
-    ctx: service.Ctx,
+    ctx: domain_service.Ctx,
     port: portfolio.Portfolio,
     sec_data: dict[entity.Ticker, portfolio.Security],
 ) -> None:

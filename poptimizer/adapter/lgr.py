@@ -34,12 +34,12 @@ class _ColorFormatter(logging.Formatter):
         return super().formatMessage(record)
 
 
-def init(level: int | str = logging.INFO) -> logging.Logger:
+def init() -> logging.Logger:
     color_handler = logging.StreamHandler(sys.stdout)
     color_handler.setFormatter(_ColorFormatter())
 
     logging.basicConfig(
-        level=level,
+        level=logging.INFO,
         handlers=[color_handler],
     )
     logging.getLogger("pymongo").setLevel(logging.CRITICAL)

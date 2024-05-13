@@ -9,7 +9,7 @@ from lxml import html
 
 from poptimizer.domain import consts
 from poptimizer.domain.entity import div_raw, div_reestry, div_status, entity, quotes
-from poptimizer.domain.service import service
+from poptimizer.domain.service import domain_service
 
 _URL: Final = "https://закрытияреестров.рф/_/"
 
@@ -22,7 +22,7 @@ class ReestryDivUpdater:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: service.Ctx, update_day: entity.Day) -> None:
+    async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
         status_table = await ctx.get(div_status.Table)
 
         async with asyncio.TaskGroup() as tg:
@@ -31,7 +31,7 @@ class ReestryDivUpdater:
 
     async def _update_one(
         self,
-        ctx: service.Ctx,
+        ctx: domain_service.Ctx,
         update_day: entity.Day,
         row: div_status.Row,
     ) -> None:

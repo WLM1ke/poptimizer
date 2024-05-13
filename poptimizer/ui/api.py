@@ -1,6 +1,6 @@
 from aiohttp import web
 
-from poptimizer.adapters import uow
+from poptimizer.service import uow
 from poptimizer.core import domain
 from poptimizer.data import portfolio, services
 

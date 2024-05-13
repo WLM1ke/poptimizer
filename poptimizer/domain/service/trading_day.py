@@ -6,10 +6,9 @@ import aiohttp
 import aiomoex
 from pydantic import BaseModel, Field, field_validator
 
-from poptimizer.core import domain
 from poptimizer.domain import consts
 from poptimizer.domain.entity import entity, trading_day
-from poptimizer.domain.service import service
+from poptimizer.domain.service import domain_service
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -42,7 +41,7 @@ class TradingDayCheckService:
         self._http_client = http_client
         self._last_check = consts.START_DAY
 
-    async def is_update_required(self, ctx: service.Ctx) -> entity.Day | None:
+    async def is_update_required(self, ctx: domain_service.Ctx) -> entity.Day | None:
         await self._maybe_init(ctx)
 
         new_last_check = _last_day()
@@ -53,7 +52,7 @@ class TradingDayCheckService:
         new_last_day = await self._get_last_trading_day_from_moex()
 
         if new_last_day > self._last_check:
-            ctx.info(f"New data for {new_last_day}")
+            ctx.info(f"New data - {new_last_day}")
             self._last_check = new_last_day
 
             return new_last_day
@@ -65,7 +64,7 @@ class TradingDayCheckService:
 
         return None
 
-    async def _maybe_init(self, ctx: service.Ctx) -> None:
+    async def _maybe_init(self, ctx: domain_service.Ctx) -> None:
         if self._last_check != consts.START_DAY:
             return
 
@@ -74,7 +73,7 @@ class TradingDayCheckService:
         ctx.info(f"Last data - {table.last}")
         ctx.info(f"Last check - {table.day}")
 
-    async def _get_last_trading_day_from_moex(self) -> domain.Day:
+    async def _get_last_trading_day_from_moex(self) -> entity.Day:
         json = await aiomoex.get_board_dates(
             self._http_client,
             board="TQBR",
@@ -87,12 +86,6 @@ class TradingDayCheckService:
             raise consts.DomainError("invalid trading day data") from err
 
         return payload.last_day()
-
-
-class TradingDayUpdateService:
-    async def __call__(self, ctx: service.Ctx, update_day: entity.Day) -> None:
-        table = await ctx.get_for_update(trading_day.Table)
-        table.update_last_trading_day(update_day)
 
 
 def _last_day() -> date:
@@ -114,3 +107,9 @@ def _last_day() -> date:
         month=now.month,
         day=now.day,
     ) - timedelta(days=delta)
+
+
+class TradingDayUpdateService:
+    async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
+        table = await ctx.get_for_update(trading_day.Table)
+        table.update_last_trading_day(update_day)

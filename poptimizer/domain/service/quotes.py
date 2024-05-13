@@ -7,14 +7,14 @@ from pydantic import TypeAdapter
 
 from poptimizer.domain import consts
 from poptimizer.domain.entity import entity, quotes, securities
-from poptimizer.domain.service import service
+from poptimizer.domain.service import domain_service
 
 
 class QuotesUpdater:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: service.Ctx, update_day: entity.Day) -> None:
+    async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
         sec_table = await ctx.get(securities.Table)
 
         async with asyncio.TaskGroup() as tg:
@@ -23,7 +23,7 @@ class QuotesUpdater:
 
     async def _update_one(
         self,
-        ctx: service.Ctx,
+        ctx: domain_service.Ctx,
         ticker: str,
         update_day: entity.Day,
     ) -> None:

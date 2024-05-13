@@ -5,11 +5,11 @@ import numpy as np
 import pandas as pd
 
 from poptimizer.domain.entity import entity, quotes
-from poptimizer.domain.service import service
+from poptimizer.domain.service import domain_service
 
 
-class Viewer:
-    def __init__(self, repo: service.Repo) -> None:
+class Service:
+    def __init__(self, repo: domain_service.Repo) -> None:
         self._repo = repo
 
     async def _quote(

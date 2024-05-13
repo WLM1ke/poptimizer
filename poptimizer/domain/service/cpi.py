@@ -9,7 +9,7 @@ from openpyxl.worksheet import worksheet
 
 from poptimizer.domain import consts
 from poptimizer.domain.entity import cpi, entity
-from poptimizer.domain.service import service
+from poptimizer.domain.service import domain_service
 
 _PRICES_PAGE: Final = "https://rosstat.gov.ru/statistics/price"
 _RE_FILE: Final = re.compile(r"/[iI]pc[\-_]mes[\-_][0-9]{1,2}-[0-9]{4}.xlsx")
@@ -32,7 +32,7 @@ class CPIUpdater:
     def __init__(self, http_session: aiohttp.ClientSession) -> None:
         self._http_session = http_session
 
-    async def __call__(self, ctx: service.Ctx, update_day: entity.Day) -> None:
+    async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
         table = await ctx.get_for_update(cpi.Table)
 
         xlsx_file = await self._download()

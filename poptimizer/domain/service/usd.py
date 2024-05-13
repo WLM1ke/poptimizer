@@ -6,14 +6,14 @@ from pydantic import TypeAdapter
 
 from poptimizer.domain import consts
 from poptimizer.domain.entity import entity, usd
-from poptimizer.domain.service import service
+from poptimizer.domain.service import domain_service
 
 
 class USDUpdater:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._session = http_client
 
-    async def __call__(self, ctx: service.Ctx, update_day: entity.Day) -> None:
+    async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
         table = await ctx.get_for_update(usd.Table)
 
         start_day = table.last_row_date()

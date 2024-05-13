@@ -1,15 +1,8 @@
-from typing import Any, Protocol
+from typing import Protocol
 
 import pandas as pd
 
 from poptimizer.domain.entity import entity
-
-
-def get_component_name(component: Any) -> str:
-    if isinstance(component, type):
-        return component.__name__
-
-    return component.__class__.__name__
 
 
 class Repo(Protocol):

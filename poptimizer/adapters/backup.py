@@ -5,7 +5,7 @@ from typing import Final
 import aiofiles
 import bson
 
-from poptimizer.adapters import telegram
+from poptimizer.adapter import telegram
 from poptimizer.core import errors
 from poptimizer.io import mongo
 

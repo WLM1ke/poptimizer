@@ -2,10 +2,11 @@ from datetime import date
 
 import aiohttp
 
-from poptimizer.adapters import dag, uow
+from poptimizer.adapters import dag
 from poptimizer.app import states
 from poptimizer.core import domain
 from poptimizer.data import cpi, div, indexes, portfolio, quotes, reestry, securities, status, trading_day, usd
+from poptimizer.service import uow
 
 
 class UpdateDataAction:

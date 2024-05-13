@@ -5,14 +5,16 @@ from typing import Final, NewType
 
 from pydantic import BaseModel, ConfigDict
 
-from poptimizer.adapters import uow
-from poptimizer.core import domain, errors
+from poptimizer.adapter import adapter
+from poptimizer.domain import consts
+from poptimizer.domain.service import domain_service
+from poptimizer.service import service, uow
 
 _FIRST_RETRY: Final = timedelta(seconds=1)
 _BACKOFF_FACTOR: Final = 2
 
 
-type _Action[P] = Callable[[domain.Ctx, P], Awaitable[None]]
+type _Action[P] = Callable[[domain_service.Ctx, P], Awaitable[None]]
 
 _DagID = NewType("_DagID", int)
 _NodeID = NewType("_NodeID", int)
@@ -86,13 +88,13 @@ class Dag[P]:
 
     def _add_node(self, node: _Node[P], *depends: _NodeUID) -> _NodeUID:
         if self._started:
-            raise errors.AdaptersError("can't add node to running dag")
+            raise service.ServiceError("can't add node to running dag")
 
         if any(uid.dag != self.id for uid in depends):
-            raise errors.AdaptersError("can't add node to dag which depends on other dag")
+            raise service.ServiceError("can't add node to dag which depends on other dag")
 
         if set(depends) - set(self._nodes):
-            raise errors.AdaptersError("can't add node to dag which depends on not existing node")
+            raise service.ServiceError("can't add node to dag which depends on not existing node")
 
         uid = _NodeUID(dag=self.id, node=_NodeID(len(self._nodes)))
         self._nodes[uid] = node
@@ -104,7 +106,7 @@ class Dag[P]:
 
     async def __call__(self) -> P:
         if self._started:
-            raise errors.AdaptersError("can't run running dag")
+            raise service.ServiceError("can't run running dag")
 
         self._started = True
         run_task = asyncio.create_task(self._run())
@@ -133,7 +135,7 @@ class Dag[P]:
             return
 
         ctx = self._ctx_factory()
-        component_name = domain.get_component_name(node.action)
+        component_name = adapter.get_component_name(node.action)
 
         try:
             async with ctx:
@@ -141,7 +143,7 @@ class Dag[P]:
 
             ctx.info(f"{component_name} finished")
             self._run_children(node)
-        except* errors.POError as err:
+        except* consts.POError as err:
             error_msg = f"{", ".join(map(str, err.exceptions))}"
             ctx.warn(f"{component_name} failed - {error_msg}")
 

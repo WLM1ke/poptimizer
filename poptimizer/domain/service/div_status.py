@@ -9,7 +9,7 @@ import aiohttp
 
 from poptimizer.domain import consts
 from poptimizer.domain.entity import div_raw, div_status, entity, portfolio, securities
-from poptimizer.domain.service import service
+from poptimizer.domain.service import domain_service
 
 _URL: Final = "https://web.moex.com/moex-web-icdb-api/api/v1/export/site-register-closings/csv?separator=1&language=1"
 _LOOK_BACK_DAYS: Final = 14
@@ -21,7 +21,7 @@ class DivStatusUpdater:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: service.Ctx, update_day: entity.Day) -> None:
+    async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
         table = await ctx.get_for_update(div_status.Table)
 
         csv_file = await self._download()
@@ -42,7 +42,7 @@ class DivStatusUpdater:
 
 
 def _parse(
-    ctx: service.Ctx,
+    ctx: domain_service.Ctx,
     csv_file: TextIO,
 ) -> Iterable[tuple[entity.Ticker, date]]:
     reader = csv.reader(csv_file)
@@ -80,7 +80,7 @@ def _status_gen(
             )
 
 
-async def _filter_missed(ctx: service.Ctx, rows: Iterable[div_status.Row]) -> AsyncIterator[div_status.Row]:
+async def _filter_missed(ctx: domain_service.Ctx, rows: Iterable[div_status.Row]) -> AsyncIterator[div_status.Row]:
     for row in rows:
         table = await ctx.get(div_raw.Table, entity.UID(row.ticker))
 

@@ -3,7 +3,7 @@ from collections.abc import Awaitable, Callable
 from enum import StrEnum
 from typing import TypedDict
 
-from poptimizer.adapters import telegram
+from poptimizer.adapter import telegram
 from poptimizer.core import errors
 
 type States = StrEnum

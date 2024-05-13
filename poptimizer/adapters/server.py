@@ -3,7 +3,7 @@ import asyncio
 from aiohttp import abc, web
 from pydantic import HttpUrl
 
-from poptimizer.adapters import telegram
+from poptimizer.adapter import telegram
 
 
 class _AccessLogger(abc.AbstractAccessLogger):

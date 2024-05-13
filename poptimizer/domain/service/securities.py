@@ -8,7 +8,7 @@ from pydantic import TypeAdapter
 
 from poptimizer.domain import consts
 from poptimizer.domain.entity import entity, securities
-from poptimizer.domain.service import service
+from poptimizer.domain.service import domain_service
 
 _MARKETS_BOARDS: Final = (
     ("shares", "TQBR"),
@@ -29,7 +29,7 @@ class SecuritiesUpdater:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: service.Ctx, update_day: entity.Day) -> None:
+    async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
         table = await ctx.get_for_update(securities.Table)
 
         rows = await self._download()

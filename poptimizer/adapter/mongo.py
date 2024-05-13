@@ -11,7 +11,7 @@ from pymongo.errors import PyMongoError
 from poptimizer.adapter import adapter
 from poptimizer.domain import consts
 from poptimizer.domain.entity import entity
-from poptimizer.domain.service import service
+from poptimizer.domain.service import domain_service
 
 type MongoDocument = Mapping[str, Any]
 type MongoClient = AgnosticClient[MongoDocument]
@@ -44,7 +44,7 @@ class Repo:
         t_entity: type[E],
         uid: entity.UID | None = None,
     ) -> E:
-        collection_name = service.get_component_name(t_entity)
+        collection_name = adapter.get_component_name(t_entity)
         uid = uid or entity.UID(collection_name)
 
         if (doc := await self._load(collection_name, uid)) is None:
@@ -85,7 +85,7 @@ class Repo:
         try:
             return t_entity.model_validate(doc)
         except ValidationError as err:
-            collection_name = service.get_component_name(t_entity)
+            collection_name = adapter.get_component_name(t_entity)
             raise adapter.AdaptersError(f"can't create entity {collection_name}.{uid}") from err
 
     async def save(self, entities: Iterable[entity.Entity]) -> None:
@@ -98,7 +98,7 @@ class Repo:
                     doc = entity.model_dump()
                     doc.pop(_REV)
 
-                    collection_name = service.get_component_name(entity)
+                    collection_name = adapter.get_component_name(entity)
                     if (
                         await self._db[collection_name].find_one_and_update(
                             {_MONGO_ID: entity.uid, _VER: entity.ver, _DAY: {"$lte": doc[_DAY]}},

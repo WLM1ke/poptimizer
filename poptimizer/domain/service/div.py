@@ -5,11 +5,11 @@ from datetime import date
 
 from poptimizer.domain import consts
 from poptimizer.domain.entity import div, div_raw, entity, securities, usd
-from poptimizer.domain.service import service
+from poptimizer.domain.service import domain_service
 
 
 class DividendsUpdater:
-    async def __call__(self, ctx: service.Ctx, update_day: entity.Day) -> None:
+    async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
         usd_table = await ctx.get(usd.Table)
         sec_table = await ctx.get(securities.Table)
 
@@ -19,7 +19,7 @@ class DividendsUpdater:
 
     async def _update_one(
         self,
-        ctx: service.Ctx,
+        ctx: domain_service.Ctx,
         update_day: date,
         ticker: entity.UID,
         usd_table: usd.Table,

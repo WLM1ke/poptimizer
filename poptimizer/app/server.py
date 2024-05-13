@@ -3,9 +3,11 @@ from collections.abc import Callable
 from aiohttp import web
 from pydantic import HttpUrl
 
-from poptimizer.adapters import backup, telegram, uow
+from poptimizer.adapter import telegram
+from poptimizer.adapters import backup
 from poptimizer.adapters.server import Server
 from poptimizer.data import services
+from poptimizer.service import uow
 from poptimizer.ui import api, frontend, middleware
 
 

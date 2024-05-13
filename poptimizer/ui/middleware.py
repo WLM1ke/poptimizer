@@ -1,7 +1,7 @@
 from aiohttp import typedefs, web
 from pydantic import ValidationError
 
-from poptimizer.adapters import telegram
+from poptimizer.adapter import telegram
 from poptimizer.core import errors
 
 

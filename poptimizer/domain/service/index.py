@@ -8,7 +8,7 @@ from pydantic import TypeAdapter
 
 from poptimizer.domain import consts
 from poptimizer.domain.entity import entity, index
-from poptimizer.domain.service import service
+from poptimizer.domain.service import domain_service
 
 _INDEXES: Final = (
     entity.UID("MCFTRR"),
@@ -22,12 +22,12 @@ class IndexesUpdater:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: service.Ctx, update_day: entity.Day) -> None:
+    async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
         async with asyncio.TaskGroup() as tg:
             for ticker in _INDEXES:
                 tg.create_task(self._update_one(ctx, update_day, ticker))
 
-    async def _update_one(self, ctx: service.Ctx, update_day: entity.Day, ticker: entity.UID) -> None:
+    async def _update_one(self, ctx: domain_service.Ctx, update_day: entity.Day, ticker: entity.UID) -> None:
         table = await ctx.get_for_update(index.Table, ticker)
 
         start_day = table.last_row_date()
