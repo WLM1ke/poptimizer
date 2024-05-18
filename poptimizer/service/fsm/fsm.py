@@ -3,8 +3,7 @@ from collections.abc import Awaitable, Callable
 from enum import StrEnum
 from typing import TypedDict
 
-from poptimizer.adapter import telegram
-from poptimizer.core import errors
+from poptimizer.service.common import logging, service
 
 type States = StrEnum
 type Action[S: States] = Callable[[], Awaitable[S]]
@@ -20,8 +19,8 @@ type Graph[S: States] = dict[S, StateDescription[S]]
 
 
 class FSM[S: States]:
-    def __init__(self, logger: telegram.Logger, graph: Graph[S]) -> None:
-        self._lgr = logger
+    def __init__(self, lgr_srv: logging.Service, graph: Graph[S]) -> None:
+        self._lgr_srv = lgr_srv
         self._graph = graph
         self._events_stream = asyncio.Queue[S]()
         self._running = False
@@ -31,7 +30,7 @@ class FSM[S: States]:
 
     async def __call__(self) -> None:
         if self._running:
-            raise errors.AdaptersError("can't run running fsm")
+            raise service.ServiceError("can't run running fsm")
 
         self._running = True
 
@@ -43,12 +42,12 @@ class FSM[S: States]:
                 case True:
                     transitions = await self._enter_state(next_state)
                 case False:
-                    self._lgr.info(f"No transitions to {next_state} - skipping")
+                    self._lgr_srv.info(f"No transitions to {next_state} - skipping")
 
             self._events_stream.task_done()
 
     async def _enter_state(self, state: S) -> Transitions[S]:
-        self._lgr.info(state)
+        self._lgr_srv.info(state)
         state_description = self._graph[state]
         action = state_description["action"]
         next_state = await action()

@@ -1,13 +1,12 @@
 import aiohttp
 
-from poptimizer.adapter import telegram
-from poptimizer.adapters import fsm
-from poptimizer.service import data, uow
-from poptimizer.service.fsm import evolution, optimization, states
+from poptimizer.service.common import logging, uow
+from poptimizer.service.fsm import evolution, fsm, optimization, states
+from poptimizer.service.fsm.data import data
 
 
 def prepare(
-    logger: telegram.Logger,
+    logger: logging.Service,
     http_client: aiohttp.ClientSession,
     ctx_factory: uow.CtxFactory,
 ) -> fsm.FSM[states.States]:

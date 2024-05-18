@@ -4,20 +4,24 @@ import aiohttp
 
 from poptimizer.domain.entity import entity
 from poptimizer.domain.service import (
-    cpi,
-    div,
-    div_reestry,
-    div_status,
-    index,
     portfolio,
+)
+from poptimizer.domain.service.data import (
+    cpi,
+    index,
     quotes,
     securities,
     trading_day,
     usd,
 )
-from poptimizer.service import uow
-from poptimizer.service.data import dag
+from poptimizer.domain.service.data.div import (
+    div,
+    div_reestry,
+    div_status,
+)
+from poptimizer.service.common import uow
 from poptimizer.service.fsm import states
+from poptimizer.service.fsm.data import dag
 
 
 class UpdateDataAction:

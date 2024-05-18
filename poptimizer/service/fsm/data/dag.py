@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict
 from poptimizer.adapter import adapter
 from poptimizer.domain import consts
 from poptimizer.domain.service import domain_service
-from poptimizer.service import service, uow
+from poptimizer.service.common import service, uow
 
 _FIRST_RETRY: Final = timedelta(seconds=1)
 _BACKOFF_FACTOR: Final = 2
