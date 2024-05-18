@@ -4,9 +4,9 @@ import uvloop
 
 from poptimizer import config
 from poptimizer.adapter import adapter, http, lgr, mongo, telegram
-from poptimizer.domain.entity import div_raw
+from poptimizer.domain.entity.data.div import div_raw
 from poptimizer.domain.service import view
-from poptimizer.service import backup, logging, uow
+from poptimizer.service.common import backup, logging, uow
 
 
 async def _run() -> None:

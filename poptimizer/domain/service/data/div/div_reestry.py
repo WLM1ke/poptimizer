@@ -8,7 +8,9 @@ import aiohttp
 from lxml import html
 
 from poptimizer.domain import consts
-from poptimizer.domain.entity import div_raw, div_reestry, div_status, entity, quotes
+from poptimizer.domain.entity import entity
+from poptimizer.domain.entity.data import quotes
+from poptimizer.domain.entity.data.div import div_raw, div_reestry, div_status
 from poptimizer.domain.service import domain_service
 
 _URL: Final = "https://закрытияреестров.рф/_/"

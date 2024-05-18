@@ -7,7 +7,8 @@ import aiomoex
 from pydantic import BaseModel, Field, field_validator
 
 from poptimizer.domain import consts
-from poptimizer.domain.entity import entity, trading_day
+from poptimizer.domain.entity import entity
+from poptimizer.domain.entity.data import trading_day
 from poptimizer.domain.service import domain_service
 
 # Часовой пояс MOEX

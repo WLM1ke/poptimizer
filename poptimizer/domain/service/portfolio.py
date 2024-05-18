@@ -4,7 +4,8 @@ from typing import Final
 import numpy as np
 import pandas as pd
 
-from poptimizer.domain.entity import entity, portfolio, securities
+from poptimizer.domain.entity import entity, portfolio
+from poptimizer.domain.entity.data import securities
 from poptimizer.domain.service import domain_service
 
 _START_LIQUIDITY_DAYS: Final = 21

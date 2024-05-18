@@ -1,13 +1,22 @@
 import asyncio
 from datetime import date
+from typing import Final
 
 import aiohttp
 import aiomoex
 from pydantic import TypeAdapter
 
 from poptimizer.domain import consts
-from poptimizer.domain.entity import entity, quotes, securities
+from poptimizer.domain.entity import entity
+from poptimizer.domain.entity.data import index
 from poptimizer.domain.service import domain_service
+
+_INDEXES: Final = (
+    entity.UID("MCFTRR"),
+    entity.UID("MEOGTRR"),
+    entity.UID("IMOEX"),
+    entity.UID("RVI"),
+)
 
 
 class UpdateService:
@@ -15,21 +24,14 @@ class UpdateService:
         self._http_client = http_client
 
     async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
-        sec_table = await ctx.get(securities.Securities)
-
         async with asyncio.TaskGroup() as tg:
-            for sec in sec_table.df:
-                tg.create_task(self._update_one(ctx, sec.ticker, update_day))
+            for ticker in _INDEXES:
+                tg.create_task(self._update_one(ctx, update_day, ticker))
 
-    async def _update_one(
-        self,
-        ctx: domain_service.Ctx,
-        ticker: str,
-        update_day: entity.Day,
-    ) -> None:
-        table = await ctx.get_for_update(quotes.Quotes, entity.UID(ticker))
+    async def _update_one(self, ctx: domain_service.Ctx, update_day: entity.Day, ticker: entity.UID) -> None:
+        table = await ctx.get_for_update(index.Index, ticker)
 
-        start_day = table.last_row_date() or consts.START_DAY
+        start_day = table.last_row_date()
         rows = await self._download(ticker, start_day, update_day)
 
         table.update(update_day, rows)
@@ -38,19 +40,21 @@ class UpdateService:
         self,
         ticker: str,
         start_day: date | None,
-        update_day: entity.Day,
-    ) -> list[quotes.Row]:
-        json = await aiomoex.get_market_candles(
+        update_day: date,
+    ) -> list[index.Row]:
+        json = await aiomoex.get_market_history(
             session=self._http_client,
             start=start_day and str(start_day),
             end=str(update_day),
-            interval=24,
             security=ticker,
-            market="shares",
-            engine="stock",
+            columns=(
+                "TRADEDATE",
+                "CLOSE",
+            ),
+            market="index",
         )
 
         try:
-            return TypeAdapter(list[quotes.Row]).validate_python(json)
+            return TypeAdapter(list[index.Row]).validate_python(json)
         except ValueError as err:
             raise consts.DomainError(f"invalid {ticker} data") from err

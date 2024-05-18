@@ -4,7 +4,8 @@ import async_lru
 import numpy as np
 import pandas as pd
 
-from poptimizer.domain.entity import entity, quotes
+from poptimizer.domain.entity import entity
+from poptimizer.domain.entity.data import quotes
 from poptimizer.domain.service import domain_service
 
 

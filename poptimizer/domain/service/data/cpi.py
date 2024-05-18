@@ -8,7 +8,8 @@ from openpyxl.reader import excel
 from openpyxl.worksheet import worksheet
 
 from poptimizer.domain import consts
-from poptimizer.domain.entity import cpi, entity
+from poptimizer.domain.entity import entity
+from poptimizer.domain.entity.data import cpi
 from poptimizer.domain.service import domain_service
 
 _PRICES_PAGE: Final = "https://rosstat.gov.ru/statistics/price"
