@@ -15,7 +15,9 @@ from poptimizer.domain.service import (
     trading_day,
     usd,
 )
-from poptimizer.service import dag, states, uow
+from poptimizer.service import uow
+from poptimizer.service.data import dag
+from poptimizer.service.fsm import states
 
 
 class UpdateDataAction:

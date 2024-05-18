@@ -5,8 +5,8 @@ from typing import Self
 
 from poptimizer.adapter import adapter, mongo
 from poptimizer.domain.entity import entity
-from poptimizer.domain.service import domain_service, view
-from poptimizer.service import logging
+from poptimizer.domain.service import view
+from poptimizer.service.common import logging, service
 
 
 class _IdentityMap:
@@ -42,7 +42,7 @@ class _IdentityMap:
             return None
 
         if not isinstance(entity, t_entity):
-            raise domain_service.ServiceError(f"type mismatch in identity map for {t_entity}({uid})")
+            raise service.ServiceError(f"type mismatch in identity map for {t_entity}({uid})")
 
         self._seen[entity.__class__, entity.uid] = (entity, update_flag or for_update)
 
@@ -51,7 +51,7 @@ class _IdentityMap:
     def save(self, entity: entity.Entity, *, for_update: bool) -> None:
         saved, _ = self._seen.get((entity.__class__, entity.uid), (None, False))
         if saved is not None:
-            raise domain_service.ServiceError(f"can't save to identity map {entity.__class__}({entity.uid})")
+            raise service.ServiceError(f"can't save to identity map {entity.__class__}({entity.uid})")
 
         self._seen[entity.__class__, entity.uid] = (entity, for_update)
 

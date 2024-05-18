@@ -5,7 +5,7 @@ import aiofiles
 import bson
 
 from poptimizer.adapter import mongo
-from poptimizer.service import logging, service
+from poptimizer.service.common import logging, service
 
 _DUMP: Final = Path(__file__).parents[2] / "dump" / "dividends.bson"
 
