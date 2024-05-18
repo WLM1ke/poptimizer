@@ -2,7 +2,7 @@ import asyncio
 from datetime import timedelta
 from typing import Final
 
-from poptimizer.service import states
+from poptimizer.service.fsm import states
 
 _OPTIMIZATION_DURATION: Final = timedelta(minutes=1)
 
