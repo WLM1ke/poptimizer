@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 
 import uvloop
@@ -7,6 +8,7 @@ from poptimizer.adapter import adapter, http, lgr, mongo, telegram
 from poptimizer.domain.entity.data.div import div_raw
 from poptimizer.domain.service import view
 from poptimizer.service.common import backup, logging, uow
+from poptimizer.service.fsm import app
 
 
 async def _run() -> None:
@@ -37,9 +39,9 @@ async def _run() -> None:
             view.Service(mongo_repo),
         )
 
-        # app_fsm = fsm.prepare(telegram_lgr, http_client, ctx_factory)
+        tg = await stack.enter_async_context(asyncio.TaskGroup())
+        app_fsm = app.prepare(logging_service, http_client, ctx_factory)
         tg.create_task(app_fsm())
-        # tg.create_task(server.run(telegram_lgr, ctx_factory, cfg.server_url, backup_srv))
 
 
 def run() -> None:

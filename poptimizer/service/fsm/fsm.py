@@ -19,8 +19,8 @@ type Graph[S: States] = dict[S, StateDescription[S]]
 
 
 class FSM[S: States]:
-    def __init__(self, lgr_srv: logging.Service, graph: Graph[S]) -> None:
-        self._lgr_srv = lgr_srv
+    def __init__(self, logging_service: logging.Service, graph: Graph[S]) -> None:
+        self._logging_service = logging_service
         self._graph = graph
         self._events_stream = asyncio.Queue[S]()
         self._running = False
@@ -42,12 +42,12 @@ class FSM[S: States]:
                 case True:
                     transitions = await self._enter_state(next_state)
                 case False:
-                    self._lgr_srv.info(f"No transitions to {next_state} - skipping")
+                    self._logging_service.info(f"No transitions to {next_state} - skipping")
 
             self._events_stream.task_done()
 
     async def _enter_state(self, state: S) -> Transitions[S]:
-        self._lgr_srv.info(state)
+        self._logging_service.info(state)
         state_description = self._graph[state]
         action = state_description["action"]
         next_state = await action()
