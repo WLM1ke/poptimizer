@@ -120,10 +120,8 @@ root_package = "poptimizer"
 name = "Layered"
 type = "layers"
 layers = [
-    "poptimizer.app",
     "poptimizer.ui",
-    "poptimizer.adapters",
-    "poptimizer.io",
-    "poptimizer.data",
-    "poptimizer.core",
+    "poptimizer.service",
+    "poptimizer.adapter",
+    "poptimizer.domain",
 ]
