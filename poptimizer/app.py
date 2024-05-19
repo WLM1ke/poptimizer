@@ -7,8 +7,9 @@ from poptimizer import config
 from poptimizer.adapter import adapter, http, lgr, mongo, telegram
 from poptimizer.domain.entity.data.div import div_raw
 from poptimizer.domain.service import view
+from poptimizer.service import app
 from poptimizer.service.common import backup, logging, uow
-from poptimizer.service.fsm import app
+from poptimizer.ui import server
 
 
 async def _run() -> None:
@@ -40,8 +41,22 @@ async def _run() -> None:
         )
 
         tg = await stack.enter_async_context(asyncio.TaskGroup())
-        app_fsm = app.prepare(logging_service, http_client, ctx_factory)
-        tg.create_task(app_fsm())
+
+        tg.create_task(
+            app.run(
+                logging_service,
+                http_client,
+                ctx_factory,
+            )
+        )
+        tg.create_task(
+            server.run(
+                logging_service,
+                ctx_factory,
+                cfg.server_url,
+                lambda: backup_srv.backup_action(tg),
+            )
+        )
 
 
 def run() -> None:

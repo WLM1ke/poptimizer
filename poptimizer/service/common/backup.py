@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from typing import Final
 
@@ -40,3 +41,6 @@ class Service:
                 await backup_file.write(batch)
 
         self._logging_service.info(f"Collection {self._collection.name} dumped")
+
+    def backup_action(self, tg: asyncio.TaskGroup) -> None:
+        tg.create_task(self.backup())

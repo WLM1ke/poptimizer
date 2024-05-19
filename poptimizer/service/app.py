@@ -5,14 +5,15 @@ from poptimizer.service.fsm import evolution, fsm, optimization, states
 from poptimizer.service.fsm.data import data
 
 
-def prepare(
+async def run(
     logger: logging.Service,
     http_client: aiohttp.ClientSession,
     ctx_factory: uow.CtxFactory,
-) -> fsm.FSM[states.States]:
+) -> None:
     graph = _prepare_graph(http_client, ctx_factory)
+    app_fsm = fsm.FSM(logger, graph)
 
-    return fsm.FSM(logger, graph)
+    await app_fsm()
 
 
 def _prepare_graph(
