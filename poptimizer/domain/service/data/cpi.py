@@ -29,7 +29,7 @@ _MIN_COL: Final = 2
 _JANUARY_LAST_DAY: Final = 31
 
 
-class UpdateService:
+class CPIUpdateService:
     def __init__(self, http_session: aiohttp.ClientSession) -> None:
         self._http_session = http_session
 

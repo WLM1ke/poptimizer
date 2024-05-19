@@ -20,7 +20,7 @@ _RE_DIV: Final = re.compile(r"(\d.*)[\xA0\s](руб|USD|\$)")
 _DIV_TRANSLATE: Final = str.maketrans({",": ".", " ": ""})
 
 
-class UpdateService:
+class ReestryUpdateService:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 

@@ -37,7 +37,7 @@ class _Payload(BaseModel):
         return df
 
 
-class CheckService:
+class TradingDayCheckService:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
         self._last_check = consts.START_DAY
@@ -110,7 +110,7 @@ def _last_day() -> date:
     ) - timedelta(days=delta)
 
 
-class UpdateService:
+class TradingDayUpdateService:
     async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
         table = await ctx.get_for_update(trading_day.TradingDay)
         table.update_last_trading_day(update_day)
