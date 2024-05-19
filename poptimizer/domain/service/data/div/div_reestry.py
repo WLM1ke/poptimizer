@@ -37,7 +37,7 @@ class ReestryUpdateService:
         update_day: entity.Day,
         row: div_status.Row,
     ) -> None:
-        table = await ctx.get_for_update(div_reestry.Table, entity.UID(row.ticker))
+        table = await ctx.get_for_update(div_reestry.DivReestry, entity.UID(row.ticker))
 
         if table.has_day(row.day):
             return

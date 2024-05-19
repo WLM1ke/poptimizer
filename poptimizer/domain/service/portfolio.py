@@ -1,8 +1,11 @@
 import asyncio
-from typing import Final
+from collections.abc import Callable
+from datetime import date
+from typing import Final, Self
 
 import numpy as np
 import pandas as pd
+from pydantic import BaseModel, NonNegativeInt, PositiveFloat, PositiveInt
 
 from poptimizer.domain.entity import entity, portfolio
 from poptimizer.domain.entity.data import securities
@@ -121,3 +124,65 @@ def _add_liquid(
             )
 
             ctx.warn(f"{ticker} is added")
+
+
+class SecurityDTO(BaseModel):
+    lot: PositiveInt
+    price: PositiveFloat
+
+
+class PortfolioDTO(BaseModel):
+    day: date
+    accounts: dict[entity.AccName, portfolio.Account]
+    securities: dict[entity.Ticker, SecurityDTO]
+
+    @classmethod
+    def from_portfolio(cls, port: portfolio.Portfolio) -> Self:
+        return cls(
+            day=port.day,
+            accounts=port.accounts,
+            securities={ticker: SecurityDTO(lot=sec.lot, price=sec.price) for ticker, sec in port.securities.items()},
+        )
+
+
+class PortfolioEditService:
+    def __init__(self, optimization_action: Callable[[], None]) -> None:
+        self._optimization_action = optimization_action
+
+    async def get_portfolio(self, ctx: domain_service.Ctx) -> PortfolioDTO:
+        port = await ctx.get(portfolio.Portfolio)
+
+        return PortfolioDTO.from_portfolio(port)
+
+    async def create_account(self, ctx: domain_service.Ctx, name: entity.AccName) -> PortfolioDTO:
+        port = await ctx.get(portfolio.Portfolio)
+
+        port.create_acount(entity.AccName(name))
+
+        return PortfolioDTO.from_portfolio(port)
+
+    async def remove_acount(self, ctx: domain_service.Ctx, name: entity.AccName) -> PortfolioDTO:
+        port = await ctx.get(portfolio.Portfolio)
+
+        port.remove_acount(entity.AccName(name))
+
+        return PortfolioDTO.from_portfolio(port)
+
+    async def update_position(
+        self,
+        ctx: domain_service.Ctx,
+        name: entity.AccName,
+        ticker: entity.Ticker,
+        amount: NonNegativeInt,
+    ) -> PortfolioDTO:
+        port = await ctx.get(portfolio.Portfolio)
+
+        port.update_position(
+            entity.AccName(name),
+            entity.Ticker(ticker),
+            amount,
+        )
+
+        self._optimization_action()
+
+        return PortfolioDTO.from_portfolio(port)

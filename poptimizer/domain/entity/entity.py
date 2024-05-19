@@ -31,6 +31,7 @@ Day = Annotated[
 ]
 
 Ticker = NewType("Ticker", str)
+AccName = NewType("AccName", str)
 
 
 @unique

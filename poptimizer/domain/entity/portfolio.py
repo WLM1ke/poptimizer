@@ -1,4 +1,4 @@
-from typing import Final, NewType, Self
+from typing import Final, Self
 
 from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt, model_validator
 
@@ -6,8 +6,6 @@ from poptimizer.domain import consts
 from poptimizer.domain.entity import entity
 
 _CashTicker: Final = entity.Ticker("CASH")
-
-AccName = NewType("AccName", str)
 
 
 class Account(BaseModel):
@@ -29,7 +27,7 @@ class Security(BaseModel):
 
 
 class Portfolio(entity.Entity):
-    accounts: dict[AccName, Account] = Field(default_factory=dict)
+    accounts: dict[entity.AccName, Account] = Field(default_factory=dict)
     securities: dict[entity.Ticker, Security] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -60,7 +58,7 @@ class Portfolio(entity.Entity):
 
         return value
 
-    def create_acount(self, name: AccName) -> None:
+    def create_acount(self, name: entity.AccName) -> None:
         if name in self.accounts:
             raise consts.DomainError(f"account {name} already exists")
 
@@ -69,7 +67,7 @@ class Portfolio(entity.Entity):
 
         self.accounts[name] = Account()
 
-    def remove_acount(self, name: AccName) -> None:
+    def remove_acount(self, name: entity.AccName) -> None:
         account = self.accounts.pop(name, None)
         if account is None:
             raise consts.DomainError(f"account {name} doesn't exist")
@@ -88,7 +86,7 @@ class Portfolio(entity.Entity):
 
         return True
 
-    def update_position(self, name: AccName, ticker: entity.Ticker, amount: NonNegativeInt) -> None:
+    def update_position(self, name: entity.AccName, ticker: entity.Ticker, amount: NonNegativeInt) -> None:
         if (account := self.accounts.get(name)) is None:
             raise consts.DomainError(f"account {name} doesn't exist")
 
