@@ -26,7 +26,7 @@ class DividendsUpdateService:
         ticker: entity.UID,
         usd_table: usd.USD,
     ) -> None:
-        div_table = await ctx.get(div.Dividends, ticker)
+        div_table = await ctx.get_for_update(div.Dividends, ticker)
         raw_table = await ctx.get(div_raw.DivRaw, ticker)
 
         rows = list(_prepare_rows(raw_table.df, usd_table))
