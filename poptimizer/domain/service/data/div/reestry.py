@@ -10,7 +10,7 @@ from lxml import html
 from poptimizer.domain import consts
 from poptimizer.domain.entity import entity
 from poptimizer.domain.entity.data import quotes
-from poptimizer.domain.entity.data.div import div_raw, div_reestry, div_status
+from poptimizer.domain.entity.data.div import div_reestry, div_status, raw
 from poptimizer.domain.service import domain_service
 
 _URL: Final = "https://закрытияреестров.рф/_/"
@@ -86,7 +86,7 @@ class DivUpdateService:
             return await resp.text()
 
 
-def _parse(html_page: str, data_col: int, first_day: entity.Day) -> list[div_raw.Row]:
+def _parse(html_page: str, data_col: int, first_day: entity.Day) -> list[raw.Row]:
     rows: list[html.HtmlElement] = html.document_fromstring(html_page).xpath("//*/table/tbody/tr")  # type: ignore[reportUnknownMemberType]
 
     rows_iter = iter(rows)
@@ -106,7 +106,7 @@ def _validate_header(row: html.HtmlElement, data_col: int) -> None:
         raise consts.DomainError(f"wrong dividends table header {header}")
 
 
-def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day: entity.Day) -> Iterable[div_raw.Row]:
+def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day: entity.Day) -> Iterable[raw.Row]:
     for row in rows_iter:
         if "ИТОГО" in (date_raw := "".join(row[0].itertext())):
             continue
@@ -119,7 +119,7 @@ def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day:
         if (day := _parse_date(date_raw)) < first_day:
             break
 
-        yield div_raw.Row(
+        yield raw.Row(
             day=day,
             dividend=div,
             currency=currency,

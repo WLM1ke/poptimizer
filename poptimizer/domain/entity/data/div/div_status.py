@@ -3,7 +3,7 @@ import itertools
 from pydantic import Field, field_validator
 
 from poptimizer.domain.entity import entity
-from poptimizer.domain.entity.data.div import div_raw
+from poptimizer.domain.entity.data.div import raw
 
 
 class Row(entity.Row):
@@ -21,7 +21,7 @@ class DivStatus(entity.Entity):
         rows.sort(key=lambda status: (status.ticker, status.day))
         self.df = rows
 
-    def filter(self, raw_table: div_raw.DivRaw) -> None:
+    def filter(self, raw_table: raw.DivRaw) -> None:
         self.df = [
             status
             for status in self.df

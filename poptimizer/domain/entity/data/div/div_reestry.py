@@ -1,4 +1,4 @@
-from poptimizer.domain.entity.data.div import div_raw
+from poptimizer.domain.entity.data.div import raw
 
 
-class DivReestry(div_raw.DivRaw): ...
+class DivReestry(raw.DivRaw): ...

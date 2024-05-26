@@ -6,7 +6,7 @@ from datetime import date
 from poptimizer.domain import consts
 from poptimizer.domain.entity import entity
 from poptimizer.domain.entity.data import securities, usd
-from poptimizer.domain.entity.data.div import div, div_raw
+from poptimizer.domain.entity.data.div import div, raw
 from poptimizer.domain.service import domain_service
 
 
@@ -27,7 +27,7 @@ class UpdateService:
         usd_table: usd.USD,
     ) -> None:
         div_table = await ctx.get_for_update(div.Dividends, ticker)
-        raw_table = await ctx.get(div_raw.DivRaw, ticker)
+        raw_table = await ctx.get(raw.DivRaw, ticker)
 
         rows = list(_prepare_rows(raw_table.df, usd_table))
 
@@ -35,7 +35,7 @@ class UpdateService:
 
 
 def _prepare_rows(
-    raw_list: list[div_raw.Row],
+    raw_list: list[raw.Row],
     usd_table: usd.USD,
 ) -> Iterator[div.Row]:
     div_amount = 0
@@ -56,7 +56,7 @@ def _prepare_rows(
         yield div.Row(day=date, dividend=div_amount)
 
 
-def _div_in_rur(raw_row: div_raw.Row, usd_table: usd.USD) -> float:
+def _div_in_rur(raw_row: raw.Row, usd_table: usd.USD) -> float:
     match raw_row.currency:
         case entity.Currency.RUR:
             return raw_row.dividend

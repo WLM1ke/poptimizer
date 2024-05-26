@@ -5,7 +5,7 @@ import uvloop
 
 from poptimizer import config
 from poptimizer.adapter import adapter, http, lgr, mongo, telegram
-from poptimizer.domain.entity.data.div import div_raw
+from poptimizer.domain.entity.data.div import raw
 from poptimizer.domain.service import view
 from poptimizer.service import app
 from poptimizer.service.common import backup, logging, uow
@@ -30,7 +30,7 @@ async def _run() -> None:
 
         logging_service = await stack.enter_async_context(logging.Service(logger, telegram_client))
 
-        div_raw_collection: mongo.MongoCollection = mongo_db[adapter.get_component_name(div_raw.DivRaw)]
+        div_raw_collection: mongo.MongoCollection = mongo_db[adapter.get_component_name(raw.DivRaw)]
         backup_srv = backup.Service(logging_service, div_raw_collection)
         await backup_srv.restore()
 

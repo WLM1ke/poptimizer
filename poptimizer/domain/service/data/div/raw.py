@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from poptimizer.domain.entity import entity
 from poptimizer.domain.entity.data import quotes
-from poptimizer.domain.entity.data.div import div_raw, div_reestry, div_status
+from poptimizer.domain.entity.data.div import div_reestry, div_status, raw
 from poptimizer.domain.service import domain_service
 
 
@@ -47,7 +47,7 @@ class DividendsDTO(BaseModel):
 
 class UpdateDividends(BaseModel):
     ticker: entity.Ticker
-    dividends: list[div_raw.Row]
+    dividends: list[raw.Row]
 
 
 class DividendsEditService:
@@ -61,7 +61,7 @@ class DividendsEditService:
 
     async def get_dividends(self, ctx: domain_service.Ctx, ticker: entity.Ticker) -> DividendsDTO:
         async with asyncio.TaskGroup() as tg:
-            raw_task = tg.create_task(ctx.get(div_raw.DivRaw, entity.UID(ticker)))
+            raw_task = tg.create_task(ctx.get(raw.DivRaw, entity.UID(ticker)))
             reestry_task = tg.create_task(ctx.get(div_reestry.DivReestry, entity.UID(ticker)))
 
         raw_table = raw_task.result()
@@ -97,7 +97,7 @@ class DividendsEditService:
 
     async def update_dividends(self, ctx: domain_service.Ctx, div_update: UpdateDividends) -> None:
         async with asyncio.TaskGroup() as tg:
-            raw_task = tg.create_task(ctx.get_for_update(div_raw.DivRaw, entity.UID(div_update.ticker)))
+            raw_task = tg.create_task(ctx.get_for_update(raw.DivRaw, entity.UID(div_update.ticker)))
             quotes_task = tg.create_task(ctx.get(quotes.Quotes, entity.UID(div_update.ticker)))
             status_task = tg.create_task(ctx.get_for_update(div_status.DivStatus))
 

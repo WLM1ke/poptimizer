@@ -10,7 +10,7 @@ import aiohttp
 from poptimizer.domain import consts
 from poptimizer.domain.entity import entity, portfolio
 from poptimizer.domain.entity.data import securities
-from poptimizer.domain.entity.data.div import div_raw, div_status
+from poptimizer.domain.entity.data.div import div_status, raw
 from poptimizer.domain.service import domain_service
 
 _URL: Final = "https://web.moex.com/moex-web-icdb-api/api/v1/export/site-register-closings/csv?separator=1&language=1"
@@ -84,7 +84,7 @@ def _status_gen(
 
 async def _filter_missed(ctx: domain_service.Ctx, rows: Iterable[div_status.Row]) -> AsyncIterator[div_status.Row]:
     for row in rows:
-        table = await ctx.get(div_raw.DivRaw, entity.UID(row.ticker))
+        table = await ctx.get(raw.DivRaw, entity.UID(row.ticker))
 
         if not table.has_day(row.day):
             ctx.warn(f"{row.ticker} missed dividend at {row.day}")
