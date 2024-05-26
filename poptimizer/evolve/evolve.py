@@ -30,7 +30,7 @@ class Evolution:  # noqa: WPS214
         self._end = None
         self._logger = logging.getLogger()
         self._tests = 1
-        self._prev_org_id = None
+        self._prev_count = 0
         self._min_step = 1
         self._scale = 1
 
@@ -44,14 +44,7 @@ class Evolution:  # noqa: WPS214
 
         while _check_time_range():
             org = population.get_next_one()
-            if org.id == self._prev_org_id:
-                self._min_step = max(self._min_step, population.count() - config.TARGET_POPULATION) * 2
-            else:
-                self._min_step = 1
-
-            self._prev_org_id = org.id
-
-            step = self._step_setup(step)
+            step = self._step_setup(step, org)
 
             date = self._end.date()
             self._logger.info(f"***{date}: Шаг эволюции — {step}***")
@@ -67,29 +60,35 @@ class Evolution:  # noqa: WPS214
 
             self._step(org)
 
-            pop = population.count()
-            if pop > config.TARGET_POPULATION:
-                self._scale = max(1, self._scale - 1)
-
-            if pop < config.TARGET_POPULATION:
-                self._scale += 1
-
     def tests(self, org: population.Organism) -> int:
-        count = population.count()
-        if (excess := count - config.TARGET_POPULATION) < 0:
-            self._tests = self._tests + excess
-        elif self._tests <= org.scores:
-            self._tests = org.scores
-
-        self._tests = max(self._tests, seq.minimum_bounding_n(config.P_VALUE / (count + 1)))
-
-        return max(self._tests, org.scores + max(self._min_step, excess))
+        return max(self._tests, org.scores + self._min_step)
 
     def _step_setup(
         self,
         step: int,
+        org: population.Organism,
     ) -> int:
         d_min, d_max = population.min_max_date()
+        current_count = population.count()
+        if (
+                current_count >= config.TARGET_POPULATION
+                and self._prev_count < current_count
+                and self._scale == 1
+        ):
+            self._tests += 1
+
+        if current_count >= config.TARGET_POPULATION and current_count >= self._prev_count and d_min == d_max:
+            self._min_step += 1
+
+        if current_count < config.TARGET_POPULATION:
+            self._min_step = 1
+
+        self._prev_count = current_count
+
+        if current_count < config.TARGET_POPULATION:
+            self._scale += 1
+        else:
+            self._scale = 1
 
         if self._tickers is None:
             self._tickers = load_tickers()
@@ -111,7 +110,8 @@ class Evolution:  # noqa: WPS214
                 org = population.create_new_organism()
                 self._logger.info(f"{org}\n")
 
-        self._tests = max(population.min_scores(), seq.minimum_bounding_n(config.P_VALUE / (population.count() + 1)))
+        self._prev_count = population.count()
+        self._tests = max(population.min_scores(), seq.minimum_bounding_n(config.P_VALUE / (self._prev_count + 1)))
 
     def _step(self, hunter: population.Organism) -> Optional[population.Organism]:
         """Один шаг эволюции."""
@@ -125,7 +125,7 @@ class Evolution:  # noqa: WPS214
         if self._eval_organism(hunter) is None:
             return None
 
-        if have_more_dates and (population.count() > config.TARGET_POPULATION):
+        if have_more_dates and (population.count() >= config.TARGET_POPULATION):
             self._logger.info("Появились новые данные - не размножается...\n")
 
             return None
@@ -162,7 +162,7 @@ class Evolution:  # noqa: WPS214
                     organism.retrain(self._tickers, self._end)
                 dates = [self._end]
             else:
-                dates = all_dates[-self.tests(organism):].tolist()
+                dates = all_dates[-self._tests:].tolist()
                 organism.retrain(self._tickers, dates[0])
         except (ModelError, AttributeError) as error:
             organism.die()
