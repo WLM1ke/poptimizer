@@ -16,7 +16,7 @@ from poptimizer.domain.service.data import (
 )
 from poptimizer.domain.service.data.div import (
     div,
-    div_reestry,
+    reestry,
     status,
 )
 from poptimizer.service.common import uow
@@ -57,12 +57,12 @@ def _prepare_data_update_dag(
     usd_node = data_update_dag.add_node_with_retry(usd.USDUpdateService(http_client))
 
     quotes_node = data_update_dag.add_node_with_retry(quotes.QuotesUpdateService(http_client), securities_node)
-    div_node = data_update_dag.add_node_with_retry(div.DividendsUpdateService(), securities_node, usd_node)
+    div_node = data_update_dag.add_node_with_retry(div.UpdateService(), securities_node, usd_node)
 
     port_node = data_update_dag.add_node_with_retry(portfolio.PortfolioUpdateService(), quotes_node)
 
-    div_status_node = data_update_dag.add_node_ignore_errors(status.DivStatusUpdateService(http_client), port_node)
-    data_update_dag.add_node_ignore_errors(div_reestry.ReestryUpdateService(http_client), div_status_node)
+    div_status_node = data_update_dag.add_node_ignore_errors(status.DivUpdateService(http_client), port_node)
+    data_update_dag.add_node_ignore_errors(reestry.DivUpdateService(http_client), div_status_node)
 
     data_update_dag.add_node_with_retry(trading_day.TradingDayUpdateService(), indexes_node, div_node, port_node)
 

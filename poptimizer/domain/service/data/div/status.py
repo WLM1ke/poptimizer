@@ -19,7 +19,7 @@ _DATE_FMT: Final = "%m/%d/%Y %H:%M:%S"
 _RE_TICKER = re.compile(r", ([A-Z]+-[A-Z]+|[A-Z]+) \[")
 
 
-class DivStatusUpdateService:
+class DivUpdateService:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
