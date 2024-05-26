@@ -99,7 +99,7 @@ class DividendsEditService:
         async with asyncio.TaskGroup() as tg:
             raw_task = tg.create_task(ctx.get_for_update(div_raw.DivRaw, entity.UID(div_update.ticker)))
             quotes_task = tg.create_task(ctx.get(quotes.Quotes, entity.UID(div_update.ticker)))
-            status_task = tg.create_task(ctx.get(div_status.DivStatus))
+            status_task = tg.create_task(ctx.get_for_update(div_status.DivStatus))
 
         raw_table = raw_task.result()
         quotes_table = quotes_task.result()
