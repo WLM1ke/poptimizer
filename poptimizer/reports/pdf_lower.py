@@ -41,9 +41,10 @@ def drop_small_positions(portfolio: Portfolio):
     """
     value = portfolio.value
     portfolio_value = value[PORTFOLIO]
-    value = value.iloc[:-1]
+    value = value.iloc[:-2]
     value = value[value > 0]
     value = value.sort_values(ascending=False)
+    value[CASH] = portfolio.value[CASH]
 
     kinds = listing.ticker_types().reindex(value.index)
     kinds[CASH] = 2
