@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from poptimizer.domain.entity import entity
 from poptimizer.domain.entity.data import quotes
-from poptimizer.domain.entity.data.div import div_reestry, div_status, raw
+from poptimizer.domain.entity.data.div import div_reestry, raw, status
 from poptimizer.domain.service import domain_service
 
 
@@ -55,7 +55,7 @@ class DividendsEditService:
         self._div_backup_action = div_backup_action
 
     async def get_div_tickers(self, ctx: domain_service.Ctx) -> DivTickersDTO:
-        table = await ctx.get(div_status.DivStatus)
+        table = await ctx.get(status.DivStatus)
 
         return DivTickersDTO(tickers=sorted({row.ticker for row in table.df}))
 
@@ -99,7 +99,7 @@ class DividendsEditService:
         async with asyncio.TaskGroup() as tg:
             raw_task = tg.create_task(ctx.get_for_update(raw.DivRaw, entity.UID(div_update.ticker)))
             quotes_task = tg.create_task(ctx.get(quotes.Quotes, entity.UID(div_update.ticker)))
-            status_task = tg.create_task(ctx.get_for_update(div_status.DivStatus))
+            status_task = tg.create_task(ctx.get_for_update(status.DivStatus))
 
         raw_table = raw_task.result()
         quotes_table = quotes_task.result()

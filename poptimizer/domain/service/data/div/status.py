@@ -10,7 +10,7 @@ import aiohttp
 from poptimizer.domain import consts
 from poptimizer.domain.entity import entity, portfolio
 from poptimizer.domain.entity.data import securities
-from poptimizer.domain.entity.data.div import div_status, raw
+from poptimizer.domain.entity.data.div import raw, status
 from poptimizer.domain.service import domain_service
 
 _URL: Final = "https://web.moex.com/moex-web-icdb-api/api/v1/export/site-register-closings/csv?separator=1&language=1"
@@ -24,16 +24,16 @@ class DivUpdateService:
         self._http_client = http_client
 
     async def __call__(self, ctx: domain_service.Ctx, update_day: entity.Day) -> None:
-        table = await ctx.get_for_update(div_status.DivStatus)
+        table = await ctx.get_for_update(status.DivStatus)
 
         csv_file = await self._download()
         parsed_rows = _parse(ctx, csv_file)
 
         sec_table = await ctx.get(securities.Securities)
         port = await ctx.get(portfolio.Portfolio)
-        status = _status_gen(parsed_rows, sec_table, port)
+        status_gen = _status_gen(parsed_rows, sec_table, port)
 
-        table.update(update_day, [row async for row in _filter_missed(ctx, status)])
+        table.update(update_day, [row async for row in _filter_missed(ctx, status_gen)])
 
     async def _download(self) -> TextIO:
         async with self._http_client.get(_URL) as resp:
@@ -69,12 +69,12 @@ def _status_gen(
     raw_rows: Iterable[tuple[entity.Ticker, date]],
     sec: securities.Securities,
     port: portfolio.Portfolio,
-) -> Iterable[div_status.Row]:
+) -> Iterable[status.Row]:
     weights = port.get_non_zero_weights().positions
     sec_map = {row.ticker: row for row in sec.df if row.ticker in weights}
     for ticker, day in raw_rows:
         if sec_desc := sec_map.get(ticker):
-            yield div_status.Row(
+            yield status.Row(
                 ticker=ticker,
                 ticker_base=sec_desc.ticker_base,
                 preferred=sec_desc.is_preferred,
@@ -82,7 +82,7 @@ def _status_gen(
             )
 
 
-async def _filter_missed(ctx: domain_service.Ctx, rows: Iterable[div_status.Row]) -> AsyncIterator[div_status.Row]:
+async def _filter_missed(ctx: domain_service.Ctx, rows: Iterable[status.Row]) -> AsyncIterator[status.Row]:
     for row in rows:
         table = await ctx.get(raw.DivRaw, entity.UID(row.ticker))
 
