@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from poptimizer.domain.entity import entity
 from poptimizer.domain.entity.data import quotes
-from poptimizer.domain.entity.data.div import div_reestry, raw, status
+from poptimizer.domain.entity.data.div import raw, reestry, status
 from poptimizer.domain.service import domain_service
 
 
@@ -62,7 +62,7 @@ class DividendsEditService:
     async def get_dividends(self, ctx: domain_service.Ctx, ticker: entity.Ticker) -> DividendsDTO:
         async with asyncio.TaskGroup() as tg:
             raw_task = tg.create_task(ctx.get(raw.DivRaw, entity.UID(ticker)))
-            reestry_task = tg.create_task(ctx.get(div_reestry.DivReestry, entity.UID(ticker)))
+            reestry_task = tg.create_task(ctx.get(reestry.DivReestry, entity.UID(ticker)))
 
         raw_table = raw_task.result()
         reestry_table = reestry_task.result()

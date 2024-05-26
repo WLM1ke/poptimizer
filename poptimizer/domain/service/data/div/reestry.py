@@ -10,7 +10,7 @@ from lxml import html
 from poptimizer.domain import consts
 from poptimizer.domain.entity import entity
 from poptimizer.domain.entity.data import quotes
-from poptimizer.domain.entity.data.div import div_reestry, raw, status
+from poptimizer.domain.entity.data.div import raw, reestry, status
 from poptimizer.domain.service import domain_service
 
 _URL: Final = "https://закрытияреестров.рф/_/"
@@ -37,7 +37,7 @@ class DivUpdateService:
         update_day: entity.Day,
         row: status.Row,
     ) -> None:
-        table = await ctx.get_for_update(div_reestry.DivReestry, entity.UID(row.ticker))
+        table = await ctx.get_for_update(reestry.DivReestry, entity.UID(row.ticker))
 
         if table.has_day(row.day):
             return
