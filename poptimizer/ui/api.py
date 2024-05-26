@@ -2,7 +2,7 @@ from aiohttp import web
 
 from poptimizer.domain.entity import entity
 from poptimizer.domain.service import portfolio
-from poptimizer.domain.service.data.div import div_raw
+from poptimizer.domain.service.data.div import raw
 from poptimizer.service.common import uow
 
 
@@ -12,7 +12,7 @@ class Handlers:
         app: web.Application,
         ctx_factory: uow.CtxFactory,
         port_srv: portfolio.PortfolioEditService,
-        div_srv: div_raw.DividendsEditService,
+        div_srv: raw.DividendsEditService,
     ) -> None:
         self._ctx_factory = ctx_factory
         self._port_srv = port_srv
@@ -78,7 +78,7 @@ class Handlers:
             json = await request.json()
             await self._div_srv.update_dividends(
                 ctx,
-                div_raw.UpdateDividends.model_validate(
+                raw.UpdateDividends.model_validate(
                     {
                         "ticker": request.match_info["ticker"],
                         "dividends": json.get("dividends"),

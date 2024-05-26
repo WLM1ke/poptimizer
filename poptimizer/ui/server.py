@@ -4,7 +4,7 @@ from aiohttp import web
 from pydantic import HttpUrl
 
 from poptimizer.domain.service import portfolio
-from poptimizer.domain.service.data.div import div_raw
+from poptimizer.domain.service.data.div import raw
 from poptimizer.service.common import logging, uow
 from poptimizer.ui import api, frontend, http, middleware
 
@@ -41,7 +41,7 @@ def _prepare_handlers(
         sub_app,
         ctx_factory,
         portfolio.PortfolioEditService(optimization_action),
-        div_raw.DividendsEditService(backup_action),
+        raw.DividendsEditService(backup_action),
     )
 
     app = web.Application(middlewares=[middleware.RequestErrorMiddleware(logging_service)])
