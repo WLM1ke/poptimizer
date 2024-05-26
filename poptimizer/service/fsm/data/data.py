@@ -17,7 +17,7 @@ from poptimizer.domain.service.data import (
 from poptimizer.domain.service.data.div import (
     div,
     div_reestry,
-    div_status,
+    status,
 )
 from poptimizer.service.common import uow
 from poptimizer.service.fsm import states
@@ -61,7 +61,7 @@ def _prepare_data_update_dag(
 
     port_node = data_update_dag.add_node_with_retry(portfolio.PortfolioUpdateService(), quotes_node)
 
-    div_status_node = data_update_dag.add_node_ignore_errors(div_status.DivStatusUpdateService(http_client), port_node)
+    div_status_node = data_update_dag.add_node_ignore_errors(status.DivStatusUpdateService(http_client), port_node)
     data_update_dag.add_node_ignore_errors(div_reestry.ReestryUpdateService(http_client), div_status_node)
 
     data_update_dag.add_node_with_retry(trading_day.TradingDayUpdateService(), indexes_node, div_node, port_node)
