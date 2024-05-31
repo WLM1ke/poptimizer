@@ -81,7 +81,7 @@ class Evolution:  # noqa: WPS214
             self._min_step += 1
 
         if current_count < config.TARGET_POPULATION:
-            self._min_step = 1
+            self._min_step = max(1, self._min_step - 1)
 
         self._prev_count = current_count
 
