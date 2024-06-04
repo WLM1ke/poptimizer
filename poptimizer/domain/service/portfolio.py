@@ -155,14 +155,14 @@ class PortfolioEditService:
         return PortfolioDTO.from_portfolio(port)
 
     async def create_account(self, ctx: domain_service.Ctx, name: entity.AccName) -> PortfolioDTO:
-        port = await ctx.get(portfolio.Portfolio)
+        port = await ctx.get_for_update(portfolio.Portfolio)
 
         port.create_acount(entity.AccName(name))
 
         return PortfolioDTO.from_portfolio(port)
 
     async def remove_acount(self, ctx: domain_service.Ctx, name: entity.AccName) -> PortfolioDTO:
-        port = await ctx.get(portfolio.Portfolio)
+        port = await ctx.get_for_update(portfolio.Portfolio)
 
         port.remove_acount(entity.AccName(name))
 
@@ -175,7 +175,7 @@ class PortfolioEditService:
         ticker: entity.Ticker,
         amount: NonNegativeInt,
     ) -> PortfolioDTO:
-        port = await ctx.get(portfolio.Portfolio)
+        port = await ctx.get_for_update(portfolio.Portfolio)
 
         port.update_position(
             entity.AccName(name),
