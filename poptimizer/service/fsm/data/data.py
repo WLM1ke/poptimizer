@@ -57,7 +57,7 @@ def _prepare_data_update_dag(
     usd_node = data_update_dag.add_node_with_retry(usd.USDUpdateService(http_client))
 
     quotes_node = data_update_dag.add_node_with_retry(quotes.QuotesUpdateService(http_client), securities_node)
-    div_node = data_update_dag.add_node_with_retry(div.UpdateService(), securities_node, usd_node)
+    div_node = data_update_dag.add_node_with_retry(div.DivUpdateService(), securities_node, usd_node)
 
     port_node = data_update_dag.add_node_with_retry(portfolio.PortfolioUpdateService(), quotes_node)
 
