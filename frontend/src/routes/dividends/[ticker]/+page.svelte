@@ -28,11 +28,18 @@
 
 	$: {
 		if (ticker != data.ticker) {
-			ticker = data.ticker;
-			day = data.dividends[data.dividends.length - 1].day;
-			dividend = data.dividends[data.dividends.length - 1].dividend;
-			currency = data.dividends[data.dividends.length - 1].currency.toLocaleUpperCase();
-			maxFractionDigits = Math.max(...data.dividends.map((currentValue) => fractionDigits(currentValue.dividend)));
+			if (data.dividends.length === 0) {
+				ticker = data.ticker;
+				day = new Date().toJSON().slice(0, 10);
+				dividend = 1;
+				currency = "RUR";
+				maxFractionDigits = 0;
+			} else {
+				day = data.dividends[data.dividends.length - 1].day;
+				dividend = data.dividends[data.dividends.length - 1].dividend;
+				currency = data.dividends[data.dividends.length - 1].currency.toLocaleUpperCase();
+				maxFractionDigits = Math.max(...data.dividends.map((currentValue) => fractionDigits(currentValue.dividend)));
+			}
 		}
 	}
 
