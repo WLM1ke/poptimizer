@@ -106,7 +106,7 @@ class Repo:
                             session=session,
                         )
                         is None
-                    ):
+                    ):  # type: ignore[reportUnnecessaryComparison]
                         raise adapter.AdaptersError(f"wrong version {collection_name}.{entity.uid}")
         except PyMongoError as err:
             raise adapter.AdaptersError("can't save entities") from err

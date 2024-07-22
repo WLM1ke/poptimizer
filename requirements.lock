@@ -59,7 +59,7 @@ multidict==6.0.5
     # via yarl
 networkx==3.3
     # via torch
-numpy==2.0.0
+numpy==2.0.1
     # via pandas
     # via scipy
 openpyxl==3.1.5
@@ -91,7 +91,7 @@ shellingham==1.5.4
     # via typer
 six==1.16.0
     # via python-dateutil
-sympy==1.13.0
+sympy==1.13.1
     # via torch
 torch==2.2.2
     # via poptimizer
