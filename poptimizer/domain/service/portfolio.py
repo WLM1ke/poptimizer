@@ -145,6 +145,12 @@ class PortfolioDTO(BaseModel):
         )
 
 
+class PositionDTO(BaseModel):
+    name: entity.AccName
+    ticker: entity.Ticker
+    amount: NonNegativeInt
+
+
 class PortfolioEditService:
     def __init__(self, optimization_action: Callable[[], None]) -> None:
         self._optimization_action = optimization_action
@@ -171,16 +177,14 @@ class PortfolioEditService:
     async def update_position(
         self,
         ctx: domain_service.Ctx,
-        name: entity.AccName,
-        ticker: entity.Ticker,
-        amount: NonNegativeInt,
+        position: PositionDTO,
     ) -> PortfolioDTO:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
         port.update_position(
-            entity.AccName(name),
-            entity.Ticker(ticker),
-            amount,
+            position.name,
+            position.ticker,
+            position.amount,
         )
 
         self._optimization_action()

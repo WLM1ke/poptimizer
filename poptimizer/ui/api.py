@@ -48,14 +48,16 @@ class Handlers:
 
     async def update_position(self, request: web.Request) -> web.StreamResponse:
         async with self._ctx_factory() as ctx:
-            account = request.match_info["account"]
-            ticker = request.match_info["ticker"]
             json = await request.json()
             port = await self._port_srv.update_position(
                 ctx,
-                name=entity.AccName(account),
-                ticker=entity.Ticker(ticker),
-                amount=json.get("amount"),
+                portfolio.PositionDTO.model_validate(
+                    {
+                        "name": request.match_info["account"],
+                        "ticker": request.match_info["ticker"],
+                        "amount": json.get("amount"),
+                    },
+                ),
             )
 
             return web.json_response(text=port.model_dump_json())
