@@ -4,7 +4,7 @@ vars:
   APP: poptimizer
   FRONTEND: frontend
   PYTHON: 3.12
-  TOOLS: go-task rye npm mongodb-community mongosh
+  TOOLS: go-task uv npm mongodb-community mongosh
 
 tasks:
   default:
@@ -17,37 +17,35 @@ tasks:
     cmds:
       - brew tap mongodb/brew
       - brew install {{.TOOLS}}
-      - rye pin --relaxed {{.PYTHON}}
-      - rye sync --update-all --all-features --no-lock --force
+      - uv sync --frozen
       - cd {{.FRONTEND}} && npm install && npm run build
 
   update:
     desc: Upgrade tools and dependencies
     cmds:
       - brew upgrade {{.TOOLS}}
-      - rye pin --relaxed {{.PYTHON}}
-      - rye sync --update-all --all-features
+      - uv sync
       - cd {{.FRONTEND}} && npm update --save --save-dev
 
   format:
     desc: Format
     cmds:
-      - rye run ruff format {{.APP}}
-      - rye run ruff check {{.APP}} --unsafe-fixes --exit-zero
+      - uv run ruff format {{.APP}}
+      - uv run ruff check {{.APP}} --unsafe-fixes --exit-zero
       - cd {{.FRONTEND}} && npm run format
 
   lint:
     desc: Lint
     cmds:
-      - rye run lint-imports
-      - rye run ruff check {{.APP}} --unsafe-fixes --exit-non-zero-on-fix
-      - rye run pyright {{.APP}}
+      - uv run lint-imports
+      - uv run ruff check {{.APP}} --unsafe-fixes --exit-non-zero-on-fix
+      - uv run pyright {{.APP}}
       - cd {{.FRONTEND}} && npm run lint && npm run check
 
   test:
     desc: Test
     cmds:
-      - rye run pytest {{.APP}} --cov={{.APP}}
+      - uv run pytest {{.APP}} --cov={{.APP}}
 
   build:
     desc: Build frontend
@@ -65,7 +63,7 @@ tasks:
   run:
     desc: Run POptimizer with .env file
     cmds:
-      - rye run {{.APP}}
+      - uv run {{.APP}}
 
   mongo:
     desc: Run MongoDB Server
