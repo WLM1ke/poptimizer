@@ -2,7 +2,6 @@ import asyncio
 import ssl
 from collections.abc import Awaitable, Callable, Iterable, Mapping
 from datetime import timedelta
-from types import SimpleNamespace
 from typing import Any, Final, override
 
 import aiohttp
@@ -58,14 +57,14 @@ class Client(aiohttp.ClientSession):
         read_until_eof: bool = True,
         proxy: typedefs.StrOrURL | None = None,
         proxy_auth: helpers.BasicAuth | None = None,
-        timeout: aiohttp.ClientTimeout | helpers._SENTINEL = helpers.sentinel,  # type: ignore[reportPrivateUsage]
+        timeout: aiohttp.ClientTimeout | helpers._SENTINEL = helpers.sentinel,  # type: ignore[reportPrivateUsage]  # noqa: ASYNC109
         verify_ssl: bool | None = None,
         fingerprint: bytes | None = None,
         ssl_context: ssl.SSLContext | None = None,
         ssl: ssl.SSLContext | bool | client_reqrep.Fingerprint = True,
         server_hostname: str | None = None,
         proxy_headers: typedefs.LooseHeaders | None = None,
-        trace_request_ctx: SimpleNamespace | None = None,
+        trace_request_ctx: Mapping[str, str] | None = None,
         read_bufsize: int | None = None,
         auto_decompress: bool | None = None,
         max_line_size: int | None = None,

@@ -46,7 +46,7 @@ class Service:
     ) -> pd.DataFrame:
         quotes_dfs = await self._quotes(last_day, tickers)
         close = pd.concat(  # type: ignore[reportUnknownMemberType]
-            [quote["close"] for quote in quotes_dfs],
+            [quote["close"] for quote in quotes_dfs],  # type: ignore[PGH003]
             axis=1,
             sort=True,
         )
@@ -62,7 +62,7 @@ class Service:
     ) -> pd.DataFrame:
         quotes_dfs = await self._quotes(last_day, tickers)
         turnover = pd.concat(  # type: ignore[reportUnknownMemberType]
-            [quote["turnover"] for quote in quotes_dfs],
+            [quote["turnover"] for quote in quotes_dfs],  # type: ignore[PGH003]
             axis=1,
             sort=True,
         )
