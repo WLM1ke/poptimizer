@@ -18,6 +18,7 @@ dependencies = [
     "aiofiles>=24.1.0",
     "scipy>=1.14.1",
     "async-lru>=2.0.4",
+    "torch>=2.2.0",
 ]
 
 [project.scripts]
