@@ -24,7 +24,7 @@ tasks:
     desc: Upgrade tools and dependencies
     cmds:
       - brew upgrade {{.TOOLS}}
-      - uv sync
+      - uv sync --upgrade
       - cd {{.FRONTEND}} && npm update --save --save-dev
 
   format:
