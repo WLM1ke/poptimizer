@@ -21,13 +21,6 @@ dependencies = [
     "torch>=2.2.0",
 ]
 
-[project.scripts]
-poptimizer="poptimizer.__main__:main"
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [tool.uv]
 dev-dependencies = [
     "import-linter>=2.0",

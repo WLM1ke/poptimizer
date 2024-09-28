@@ -703,7 +703,7 @@ wheels = [
 [[package]]
 name = "poptimizer"
 version = "3.0.0a0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "aiofiles" },
     { name = "aiohttp" },
