@@ -5,7 +5,7 @@ description = "Portfolio optimization"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "aiohttp>=3.10.5",
+    "aiohttp==3.10.8",
     "motor>=3.5.1",
     "pydantic>=2.9.0",
     "pydantic-settings>=2.4.0",
