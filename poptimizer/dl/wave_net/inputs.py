@@ -27,6 +27,6 @@ class Net(torch.nn.Module):
         )
 
     def forward(self, batch: dl.Batch) -> torch.Tensor:
-        normalized = self._bn(batch[dl.FeatTypes.NUMERICAL])
+        normalized: torch.Tensor = self._bn(batch[dl.FeatTypes.NUMERICAL])
 
-        return self._output(normalized)  # type: ignore[no-any-return]
+        return self._output(normalized)

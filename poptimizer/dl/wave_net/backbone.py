@@ -84,7 +84,7 @@ class _Blocks(torch.nn.Module):
 
 
 class Net(torch.nn.Module):
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         history_days: int,
         in_channels: int,
