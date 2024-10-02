@@ -24,7 +24,7 @@ dependencies = [
 [tool.uv]
 dev-dependencies = [
     "import-linter>=2.0",
-    "pyright>=1.1.377",
+    "pyright==1.1.383",
     "pytest>=8.3.2",
     "pytest-cov>=5.0.0",
     "ruff>=0.6.3",
@@ -32,6 +32,10 @@ dev-dependencies = [
     "pytest-asyncio>=0.24.0",
     "lxml-stubs>=0.5.1",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.pyright]
 verboseOutput = true
