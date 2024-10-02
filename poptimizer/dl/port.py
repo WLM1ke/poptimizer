@@ -7,7 +7,7 @@ from poptimizer.dl import ledoit_wolf
 from poptimizer.domain import consts
 
 
-class Desc(BaseModel):
+class Cfg(BaseModel):
     risk_tolerance: float
 
 
@@ -40,7 +40,7 @@ def optimize(
     variance: NDArray[np.double],
     labels: NDArray[np.double],
     tot_ret: NDArray[np.double],
-    desc: Desc,
+    desc: Cfg,
     forecast_days: int,
 ) -> OptimizationResult:
     mean *= consts.YEAR_IN_TRADING_DAYS / forecast_days

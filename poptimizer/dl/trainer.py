@@ -1,0 +1,165 @@
+import collections
+import io
+import itertools
+import logging
+from typing import Literal
+
+import torch
+import tqdm
+from pydantic import BaseModel
+
+from poptimizer.dl import data_loaders, datasets, port
+from poptimizer.dl.wave_net import wave_net
+
+
+class Batch(BaseModel):
+    size: int
+    feats: datasets.Features
+    days: datasets.Days
+
+    @property
+    def num_feat_count(self) -> int:
+        return self.feats.close + self.feats.div + self.feats.ret
+
+    @property
+    def history_days(self) -> int:
+        return self.days.history
+
+    @property
+    def forecast_days(self) -> int:
+        return self.days.forecast
+
+
+class Optimizer(BaseModel): ...
+
+
+class Scheduler(BaseModel):
+    epochs: float
+    max_lr: float = 1e-3
+
+
+class DLModel(BaseModel):
+    batch: Batch
+    net: wave_net.Cfg
+    optimizer: Optimizer
+    scheduler: Scheduler
+    utility: port.Cfg
+
+
+class RunningMean:
+    def __init__(self, window_size: int) -> None:
+        self._sum: float = 0
+        self._que: collections.deque[float] = collections.deque([0], maxlen=window_size)
+
+    def append(self, num: float) -> None:
+        self._sum += num - self._que[0]
+        self._que.append(num)
+
+    def running_avg(self) -> float:
+        return self._sum / len(self._que)
+
+
+class Trainer:
+    def __init__(self, builder: datasets.Builder, device: Literal["cpu", "cuda", "mps"]):
+        self._logger = logging.getLogger("Trainer")
+        self._builder = builder
+        self._device: Literal["cpu", "cuda", "mps"] = device
+
+    async def test_model(
+        self,
+        state: bytes | None,
+        desc: DLModel,
+    ) -> None:
+        all_data = await self._builder.build(desc.batch.feats, desc.batch.days)
+        net = _prepare_net(state, desc, self._device)
+
+        if state is None:
+            self._train(
+                net,
+                data_loaders.train(all_data, desc.batch.size),
+                desc.scheduler,
+            )
+
+        test_dl = data_loaders.test(all_data)
+
+        with torch.no_grad():
+            net.eval()
+
+            for batch in test_dl:
+                loss, mean, variance = net.loss_and_forecast_mean_and_var(batch)
+                rez = port.optimize(
+                    mean - 1,
+                    variance,
+                    batch[datasets.FeatTypes.LABEL1P].numpy() - 1,
+                    batch[datasets.FeatTypes.RETURNS].numpy(),
+                    desc.utility,
+                    desc.batch.forecast_days,
+                )
+
+                self._logger.info(f"{rez} / LLH = {loss:8.5f}")
+
+    def _train(
+        self,
+        net: wave_net.Net,
+        train_dl: data_loaders.DataLoader,
+        scheduler: Scheduler,
+    ) -> None:
+        optimizer = torch.optim.AdamW(net.parameters())
+
+        steps_per_epoch = len(train_dl)
+        total_steps = 1 + int(steps_per_epoch * scheduler.epochs)
+
+        sch = torch.optim.lr_scheduler.OneCycleLR(  # type: ignore[attr-defined]
+            optimizer,
+            max_lr=scheduler.max_lr,
+            total_steps=total_steps,
+        )
+
+        self._log_net_stats(net, scheduler.epochs, train_dl)
+
+        avg_llh = RunningMean(steps_per_epoch)
+        net.train()
+
+        with tqdm.tqdm(
+            itertools.islice(
+                itertools.chain.from_iterable(itertools.repeat(train_dl)),
+                total_steps,
+            ),
+            total=total_steps,
+            desc="~~> Train",
+        ) as progress_bar:
+            for batch in progress_bar:
+                optimizer.zero_grad()
+
+                loss = -net.llh(batch)
+                loss.backward()  # type: ignore[no-untyped-call]
+                optimizer.step()
+                sch.step()
+
+                avg_llh.append(-loss.item())
+                progress_bar.set_postfix_str(f"{avg_llh.running_avg():.5f}")
+
+    def _log_net_stats(self, net: wave_net.Net, epochs: float, train_dl: data_loaders.DataLoader) -> None:
+        train_size = len(train_dl.dataset)  # type: ignore[arg-type]
+        self._logger.info(f"Epochs - {epochs:.2f} / Train size - {train_size}")
+
+        modules = sum(1 for _ in net.modules())
+        model_params = sum(tensor.numel() for tensor in net.parameters())
+        self._logger.info(f"Layers / parameters - {modules} / {model_params}")
+
+
+def _prepare_net(state: bytes | None, desc: DLModel, device: Literal["cpu", "cuda", "mps"]) -> wave_net.Net:
+    net = wave_net.Net(
+        cfg=desc.net,
+        num_feat_count=desc.batch.num_feat_count,
+        history_days=desc.batch.history_days,
+        forecast_days=desc.batch.forecast_days,
+    )
+    net.to(device)
+
+    if state is not None:
+        buffer = io.BytesIO(state)
+        state_dict = torch.load(buffer, map_location=device)  # type: ignore[no-untyped-call]
+        net.load_state_dict(state_dict)
+
+    return net
