@@ -22,3 +22,4 @@ class DomainError(POError): ...
 
 # Дата, с которой собираются дивиденды
 START_DAY: Final = date(2015, 1, 1)
+AFTER_TAX: Final = 0.85

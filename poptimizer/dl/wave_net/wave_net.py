@@ -1,10 +1,17 @@
 import numpy as np
 import torch
 from numpy.typing import NDArray
+from pydantic import BaseModel
 from torch.distributions import MixtureSameFamily
 
-from poptimizer.dl import dl
+from poptimizer.dl import datasets, dl
 from poptimizer.dl.wave_net import backbone, head, inputs
+
+
+class Cfg(BaseModel):
+    input: inputs.Cfg
+    backbone: backbone.Cfg
+    head: head.Cfg
 
 
 class Net(torch.nn.Module):
@@ -15,55 +22,39 @@ class Net(torch.nn.Module):
 
     def __init__(
         self,
-        *,
-        use_bn: bool,
+        cfg: Cfg,
+        num_feat_count: int,
         history_days: int,
         forecast_days: int,
-        in_channels: int,
-        backbone_channels: int,
-        blocks: int,
-        kernels: int,
-        hidden_channels: int,
-        head_channels: int,
-        out_channels: int,
-        mixture_size: int,
     ) -> None:
-        super().__init__()  # type: ignore[reportUnknownMemberType]
+        super().__init__()
 
-        self.register_buffer(
-            "_llh_adj",
-            torch.log(torch.tensor(forecast_days, dtype=torch.float)) / 2,
-        )
+        self.register_buffer("_llh_adj", torch.log(torch.tensor(forecast_days, dtype=torch.float)) / 2)
+
         self._input = inputs.Net(
-            in_channels=in_channels,
-            out_channels=backbone_channels,
-            use_bn=use_bn,
+            num_feat_count=num_feat_count,
+            cfg=cfg.input,
         )
         self._backbone = backbone.Net(
             history_days=history_days,
-            in_channels=backbone_channels,
-            blocks=blocks,
-            kernels=kernels,
-            hidden_channels=hidden_channels,
-            out_channels=head_channels,
+            in_channels=cfg.input.out_channels,
+            desc=cfg.backbone,
         )
         self._head = head.Net(
-            in_channels=head_channels,
-            out_channels=out_channels,
-            mixture_size=mixture_size,
+            in_channels=cfg.backbone.out_channels,
+            cfg=cfg.head,
         )
 
-    def forward(self, batch: dl.Batch) -> MixtureSameFamily:
+    def forward(self, batch: datasets.Batch) -> MixtureSameFamily:
         norm_input = self._input(batch)
         end = self._backbone(norm_input)
 
-        return self._head(end)
+        return self._head(end)  # type: ignore[no-any-return]
 
-    def llh(self, batch: dl.Batch) -> torch.Tensor:
-        """Минус Log Likelihood с поправкой, обеспечивающей сопоставимость при разной длине прогноза."""
+    def llh(self, batch: datasets.Batch) -> torch.Tensor:
         dist = self(batch)
 
-        labels = batch[dl.FeatTypes.LABEL1P]
+        labels = batch[datasets.FeatTypes.LABEL1P]
 
         try:
             return self._llh_adj.add(dist.log_prob(labels).mean())
@@ -72,11 +63,12 @@ class Net(torch.nn.Module):
 
     def loss_and_forecast_mean_and_var(
         self,
-        batch: dl.Batch,
+        batch: datasets.Batch,
     ) -> tuple[float, NDArray[np.double], NDArray[np.double]]:
+        """Minus Normal Log Likelihood and forecast means and vars."""
         dist = self(batch)
 
-        labels = batch[dl.FeatTypes.LABEL1P]
+        labels = batch[datasets.FeatTypes.LABEL1P]
 
         try:
             llh = self._llh_adj.add(dist.log_prob(labels).mean())

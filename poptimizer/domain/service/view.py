@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import AsyncIterator
 
 import async_lru
 import numpy as np
@@ -6,6 +7,7 @@ import pandas as pd
 
 from poptimizer.domain.entity import entity
 from poptimizer.domain.entity.data import quotes
+from poptimizer.domain.entity.data.div import div
 from poptimizer.domain.service import domain_service
 
 
@@ -69,3 +71,9 @@ class Service:
         turnover.columns = tickers
 
         return turnover.fillna(0)  # type: ignore[reportUnknownMemberType]
+
+    async def dividends(self, ticker: str) -> AsyncIterator[tuple[pd.Timestamp, float]]:
+        dividends = await self._repo.get(div.Dividends, entity.UID(ticker))
+
+        for row in dividends.df:
+            yield pd.Timestamp(row.day), row.dividend

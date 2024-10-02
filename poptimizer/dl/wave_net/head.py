@@ -1,32 +1,43 @@
 import torch
+from pydantic import BaseModel
 from torch.distributions import Categorical, MixtureSameFamily
 
-from poptimizer.domain import consts
+from poptimizer.dl import dl
+
+
+class Cfg(BaseModel):
+    channels: int
+    mixture_size: int
 
 
 class Net(torch.nn.Module):
-    def __init__(self, in_channels: int, out_channels: int, mixture_size: int) -> None:
-        super().__init__()  # type: ignore[reportUnknownMemberType]
-        self.register_buffer("_eps", torch.tensor(torch.finfo().eps))
+    def __init__(self, in_channels: int, cfg: Cfg) -> None:
+        super().__init__()
+
+        self.register_buffer(
+            "_eps",
+            torch.tensor(torch.finfo().eps),
+        )
+
         self._end = torch.nn.Conv1d(
             in_channels=in_channels,
-            out_channels=out_channels,
+            out_channels=cfg.channels,
             kernel_size=1,
         )
 
         self._logit = torch.nn.Conv1d(
-            in_channels=out_channels,
-            out_channels=mixture_size,
+            in_channels=cfg.channels,
+            out_channels=cfg.mixture_size,
             kernel_size=1,
         )
         self._mean = torch.nn.Conv1d(
-            in_channels=out_channels,
-            out_channels=mixture_size,
+            in_channels=cfg.channels,
+            out_channels=cfg.mixture_size,
             kernel_size=1,
         )
         self._std = torch.nn.Conv1d(
-            in_channels=out_channels,
-            out_channels=mixture_size,
+            in_channels=cfg.channels,
+            out_channels=cfg.mixture_size,
             kernel_size=1,
         )
         self._output_soft_plus_s = torch.nn.Softplus()
@@ -39,9 +50,9 @@ class Net(torch.nn.Module):
                 logits=self._logit(end).permute(0, 2, 1),
             )  # type: ignore[no-untyped-call]
         except ValueError as err:
-            raise consts.DomainError("error in categorical distribution") from err
+            raise dl.DLError("error in categorical distribution") from err
 
-        std = self._output_soft_plus_s(self._std(end)) + self._eps
+        std = self._output_soft_plus_s(self._std(end)) + self._esp
         comp_dist = torch.distributions.LogNormal(
             loc=self._mean(end).permute((0, 2, 1)),
             scale=std.permute((0, 2, 1)),
