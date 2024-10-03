@@ -139,17 +139,20 @@ class Builder:
     ) -> list[OneTickerData]:
         prices = await self._data_adapter.close(feats.last_date, feats.tickers)
 
-        aws = [
-            self._prepare_features(
-                ticker,
-                feats,
-                days,
-                prices[ticker].dropna(),
-            )
-            for ticker in feats.tickers
-        ]
+        async with asyncio.TaskGroup() as tg:
+            tasks = [
+                tg.create_task(
+                    self._prepare_features(
+                        ticker,
+                        feats,
+                        days,
+                        prices[ticker].dropna(),
+                    )
+                )
+                for ticker in feats.tickers
+            ]
 
-        return await asyncio.gather(*aws)
+        return [task.result() for task in tasks]
 
     async def _prepare_features(
         self,
