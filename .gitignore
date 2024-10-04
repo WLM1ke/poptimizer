@@ -6,11 +6,11 @@ dist/
 wheels/
 *.egg-info
 
+# MacOS
+.DS_Store
+
 # venv
 .venv
-
-# pyenv
-.python-version
 
 # dotenv
 .env
