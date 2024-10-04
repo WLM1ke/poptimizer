@@ -52,7 +52,7 @@ class Net(torch.nn.Module):
         except ValueError as err:
             raise dl.DLError("error in categorical distribution") from err
 
-        std = self._output_soft_plus_s(self._std(end)) + self._esp
+        std = self._output_soft_plus_s(self._std(end)) + self._eps
         comp_dist = torch.distributions.LogNormal(
             loc=self._mean(end).permute((0, 2, 1)),
             scale=std.permute((0, 2, 1)),

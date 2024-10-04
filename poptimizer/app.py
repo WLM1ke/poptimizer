@@ -37,10 +37,12 @@ async def _run() -> None:
         backup_srv = backup.Service(lgr_service, div_raw_collection)
         await backup_srv.restore()
 
+        view_service = view.Service(mongo_repo)
+
         ctx_factory = uow.CtxFactory(
             lgr_service,
             mongo_repo,
-            view.Service(mongo_repo),
+            view_service,
         )
 
         tg = asyncio.TaskGroup()
@@ -49,6 +51,7 @@ async def _run() -> None:
                 lgr_service,
                 http_client,
                 ctx_factory,
+                view_service,
             ),
             server.run(
                 lgr_service,

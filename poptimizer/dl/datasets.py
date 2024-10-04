@@ -126,10 +126,10 @@ class Features(BaseModel):
 class Builder:
     def __init__(
         self,
-        data_adapter: view.Service,
+        view_service: view.Service,
         device: Literal["cpu", "cuda", "mps"],
     ) -> None:
-        self._data_adapter = data_adapter
+        self._data_adapter = view_service
         self._device: Literal["cpu", "cuda", "mps"] = device
 
     async def build(

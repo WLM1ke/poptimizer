@@ -8,7 +8,7 @@ import torch
 import tqdm
 from pydantic import BaseModel
 
-from poptimizer.dl import data_loaders, datasets, port
+from poptimizer.dl import data_loaders, datasets, risk
 from poptimizer.dl.wave_net import wave_net
 
 
@@ -43,7 +43,7 @@ class DLModel(BaseModel):
     net: wave_net.Cfg
     optimizer: Optimizer
     scheduler: Scheduler
-    utility: port.Cfg
+    utility: risk.Cfg
 
 
 class RunningMean:
@@ -87,11 +87,11 @@ class Trainer:
 
             for batch in test_dl:
                 loss, mean, variance = net.loss_and_forecast_mean_and_var(batch)
-                rez = port.optimize(
+                rez = risk.optimize(
                     mean - 1,
                     variance,
-                    batch[datasets.FeatTypes.LABEL1P].numpy() - 1,
-                    batch[datasets.FeatTypes.RETURNS].numpy(),
+                    batch[datasets.FeatTypes.LABEL1P].cpu().numpy() - 1,
+                    batch[datasets.FeatTypes.RETURNS].cpu().numpy(),
                     desc.utility,
                     desc.batch.forecast_days,
                 )

@@ -75,4 +75,4 @@ class Net(torch.nn.Module):
         except ValueError as err:
             raise dl.DLError("error in categorical distribution") from err
 
-        return llh.item(), dist.mean.numpy(), dist.variance.numpy()
+        return llh.item(), dist.mean.cpu().numpy(), dist.variance.cpu().numpy()
