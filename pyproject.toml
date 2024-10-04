@@ -19,6 +19,7 @@ dependencies = [
     "scipy>=1.14.1",
     "async-lru>=2.0.4",
     "torch>=2.2.0",
+    "tqdm>=4.66.5",
 ]
 
 [tool.uv]
