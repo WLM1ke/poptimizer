@@ -190,7 +190,7 @@ class Builder:
         first_day = index[1]
         last_day = index[-1] + 2 * pd.tseries.offsets.BDay()
 
-        div_df = pd.Series(0, index=index)
+        div_df = pd.Series(0, index=index, dtype=np.float64)
 
         async for date, div in self._data_adapter.dividends(ticker):
             if date < first_day or date >= last_day:
