@@ -60,7 +60,7 @@ class RunningMean:
 
 
 class Trainer:
-    def __init__(self, builder: datasets.Builder, device: Literal["cpu", "cuda", "mps"]):
+    def __init__(self, builder: datasets.Builder, device: Literal["cpu", "cuda", "mps"]) -> None:
         self._logger = logging.getLogger("Trainer")
         self._builder = builder
         self._device: Literal["cpu", "cuda", "mps"] = device
@@ -96,7 +96,7 @@ class Trainer:
                     desc.batch.forecast_days,
                 )
 
-                self._logger.info(f"{rez} / LLH = {loss:8.5f}")
+                self._logger.info("%s / LLH = %8.5f}", rez, loss)
 
     def _train(
         self,
@@ -141,11 +141,11 @@ class Trainer:
 
     def _log_net_stats(self, net: wave_net.Net, epochs: float, train_dl: data_loaders.DataLoader) -> None:
         train_size = len(train_dl.dataset)  # type: ignore[arg-type]
-        self._logger.info(f"Epochs - {epochs:.2f} / Train size - {train_size}")
+        self._logger.info("Epochs - %.2f / Train size - %d", epochs, train_size)
 
         modules = sum(1 for _ in net.modules())
         model_params = sum(tensor.numel() for tensor in net.parameters())
-        self._logger.info(f"Layers / parameters - {modules} / {model_params}")
+        self._logger.info("Layers / parameters - %d / %d", modules, model_params)
 
 
 def _prepare_net(state: bytes | None, desc: DLModel, device: Literal["cpu", "cuda", "mps"]) -> wave_net.Net:

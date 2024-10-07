@@ -14,7 +14,7 @@ def make_days():
     )
 
 
-def test_short_history_error(days):
+def test_short_history_error(days) -> None:
     with pytest.raises(exceptions.FeaturesError):
         data_loader.OneTickerData(
             days,
@@ -26,7 +26,7 @@ def test_short_history_error(days):
         )
 
 
-def test_features_missmatch_error(days):
+def test_features_missmatch_error(days) -> None:
     with pytest.raises(exceptions.FeaturesError):
         data_loader.OneTickerData(
             days,
@@ -51,10 +51,10 @@ def make_one_ticker_data(days):
 
 
 class TestOneTickerData:
-    def test_len(self, one_ticker_data):
+    def test_len(self, one_ticker_data) -> None:
         assert len(one_ticker_data) == 8
 
-    def test_getitem_last_with_label(self, one_ticker_data):
+    def test_getitem_last_with_label(self, one_ticker_data) -> None:
         case = one_ticker_data[5]
 
         assert len(case) == 3
@@ -77,7 +77,7 @@ class TestOneTickerData:
             ),
         )
 
-    def test_getitem_first_without_label(self, one_ticker_data):
+    def test_getitem_first_without_label(self, one_ticker_data) -> None:
         case = one_ticker_data[6]
 
         assert len(case) == 2
@@ -97,12 +97,12 @@ class TestOneTickerData:
             ),
         )
 
-    def test_train_dataset_size(self, one_ticker_data):
+    def test_train_dataset_size(self, one_ticker_data) -> None:
         train_dataset = one_ticker_data.train_dataset()
 
         assert len(train_dataset) == 2
 
-    def test_train_dataset_first(self, one_ticker_data):
+    def test_train_dataset_first(self, one_ticker_data) -> None:
         case_first = one_ticker_data.train_dataset()[0]
 
         assert len(case_first) == 3
@@ -125,7 +125,7 @@ class TestOneTickerData:
             ),
         )
 
-    def test_train_dataset_last(self, one_ticker_data):
+    def test_train_dataset_last(self, one_ticker_data) -> None:
         case_last = one_ticker_data.train_dataset()[1]
 
         assert len(case_last) == 3
@@ -148,12 +148,12 @@ class TestOneTickerData:
             ),
         )
 
-    def test_test_dataset_size(self, one_ticker_data):
+    def test_test_dataset_size(self, one_ticker_data) -> None:
         test_dataset = one_ticker_data.test_dataset()
 
         assert len(test_dataset) == 3
 
-    def test_test_dataset_first(self, one_ticker_data):
+    def test_test_dataset_first(self, one_ticker_data) -> None:
         case_first = one_ticker_data.test_dataset()[0]
 
         assert len(case_first) == 3
@@ -176,7 +176,7 @@ class TestOneTickerData:
             ),
         )
 
-    def test_test_dataset_last(self, one_ticker_data):
+    def test_test_dataset_last(self, one_ticker_data) -> None:
         case_last = one_ticker_data.test_dataset()[2]
 
         assert len(case_last) == 3
@@ -199,7 +199,7 @@ class TestOneTickerData:
             ),
         )
 
-    def test_forecast_dataset(self, one_ticker_data):
+    def test_forecast_dataset(self, one_ticker_data) -> None:
         forecast_dataset = one_ticker_data.forecast_dataset()
 
         assert len(forecast_dataset) == 1
@@ -220,7 +220,7 @@ class TestOneTickerData:
         )
 
 
-def test_train_data_loader(one_ticker_data):
+def test_train_data_loader(one_ticker_data) -> None:
     batch_size = 1024
 
     loader = data_loader.train(
@@ -265,7 +265,7 @@ def make_bad_second_ticker_data():
     )
 
 
-def test_test_length_missmatch_error(one_ticker_data, bad_second_ticker_data):
+def test_test_length_missmatch_error(one_ticker_data, bad_second_ticker_data) -> None:
     with pytest.raises(exceptions.FeaturesError):
         data_loader.test(
             [one_ticker_data, bad_second_ticker_data],
@@ -292,10 +292,10 @@ def make_test_data_loader(one_ticker_data, second_ticker_data):
 
 
 class TestTestDataLoader:
-    def test_size(self, test_data_loader):
+    def test_size(self, test_data_loader) -> None:
         assert len(test_data_loader) == 3
 
-    def test_first_batch(self, test_data_loader):
+    def test_first_batch(self, test_data_loader) -> None:
         loader_iter = iter(test_data_loader)
         batch = next(loader_iter)
 
@@ -317,7 +317,7 @@ class TestTestDataLoader:
         num = batch[data_loader.FeatTypes.NUMERICAL]
         assert num.shape == (2, 2, 4)
 
-    def test_last_batch(self, test_data_loader):
+    def test_last_batch(self, test_data_loader) -> None:
         loader_iter = iter(test_data_loader)
         next(loader_iter)
         next(loader_iter)
@@ -334,7 +334,7 @@ class TestTestDataLoader:
         )
 
 
-def test_forecast_data_loader(one_ticker_data, second_ticker_data):
+def test_forecast_data_loader(one_ticker_data, second_ticker_data) -> None:
     loader = data_loader.forecast(
         [one_ticker_data, second_ticker_data, one_ticker_data],
     )

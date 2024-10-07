@@ -59,7 +59,7 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
             .rolling(self._forecast_days)
             .sum()
             .shift(-(self._forecast_days + self._history_days - 1))
-            .values
+            .to_numpy()
         )
         self._label1p = torch.tensor(
             np.exp(ret),
@@ -196,7 +196,7 @@ class Builder:
             if date < first_day or date >= last_day:
                 continue
 
-            div_df.iat[_ex_div_date(index, date)] += div * consts.AFTER_TAX
+            div_df.iloc[_ex_div_date(index, date)] += div * consts.AFTER_TAX
 
         return div_df
 

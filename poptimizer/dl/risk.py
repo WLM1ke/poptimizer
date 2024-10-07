@@ -35,19 +35,19 @@ class OptimizationResult(BaseModel):
         )
 
 
-def optimize(
+def optimize(  # noqa: PLR0913
     mean: NDArray[np.double],
     variance: NDArray[np.double],
     labels: NDArray[np.double],
     tot_ret: NDArray[np.double],
-    desc: Cfg,
+    cfg: Cfg,
     forecast_days: int,
 ) -> OptimizationResult:
     mean *= consts.YEAR_IN_TRADING_DAYS / forecast_days
     variance *= consts.YEAR_IN_TRADING_DAYS / forecast_days
     labels *= consts.YEAR_IN_TRADING_DAYS / forecast_days
 
-    weights, sigma = _opt_weight(mean, variance, tot_ret, desc.risk_tolerance)
+    weights, sigma = _opt_weight(mean, variance, tot_ret, cfg)
 
     return OptimizationResult(
         ret=(weights.T @ labels).item(),
@@ -63,7 +63,7 @@ def _opt_weight(
     mean: NDArray[np.double],
     variance: NDArray[np.double],
     tot_ret: NDArray[np.double],
-    risk_tolerance: float,
+    cfg: Cfg,
 ) -> tuple[NDArray[np.double], NDArray[np.double]]:
     sigma = ledoit_wolf.ledoit_wolf_cor(tot_ret)[0]
     std = variance**0.5
@@ -73,7 +73,7 @@ def _opt_weight(
     weights /= weights.sum()
 
     rez = scipy.optimize.minimize(
-        _Utility(risk_tolerance, mean, sigma),
+        _Utility(cfg.risk_tolerance, mean, sigma),
         weights,
         bounds=[(0, None) for _ in weights],
         constraints=[
