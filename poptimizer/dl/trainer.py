@@ -7,6 +7,7 @@ from typing import Literal
 import torch
 import tqdm
 from pydantic import BaseModel
+from torch import optim
 
 from poptimizer.dl import data_loaders, datasets, risk
 from poptimizer.dl.wave_net import wave_net
@@ -104,12 +105,12 @@ class Trainer:
         train_dl: data_loaders.DataLoader,
         scheduler: Scheduler,
     ) -> None:
-        optimizer = torch.optim.AdamW(net.parameters())
+        optimizer = optim.AdamW(net.parameters())  # type: ignore[reportPrivateImportUsage]
 
         steps_per_epoch = len(train_dl)
         total_steps = 1 + int(steps_per_epoch * scheduler.epochs)
 
-        sch = torch.optim.lr_scheduler.OneCycleLR(  # type: ignore[attr-defined]
+        sch = optim.lr_scheduler.OneCycleLR(  # type: ignore[attr-defined]
             optimizer,
             max_lr=scheduler.max_lr,
             total_steps=total_steps,
@@ -133,7 +134,7 @@ class Trainer:
 
                 loss = -net.llh(batch)
                 loss.backward()  # type: ignore[no-untyped-call]
-                optimizer.step()
+                optimizer.step()  # type: ignore[reportUnknownMemberType]
                 sch.step()
 
                 avg_llh.append(-loss.item())

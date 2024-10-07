@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import asyncio
-from datetime import datetime
 from enum import Enum, auto, unique
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import pandas as pd
@@ -11,7 +12,11 @@ from torch.utils import data
 
 from poptimizer.dl import dl
 from poptimizer.domain import consts
-from poptimizer.domain.service import view
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from poptimizer.domain.service import view
 
 
 @unique
@@ -34,8 +39,8 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
     def __init__(
         self,
         days: Days,
-        ret_total: pd.Series,
-        num_feat: list[pd.Series],
+        ret_total: pd.Series[float],
+        num_feat: list[pd.Series[float]],
         device: Literal["cpu", "cuda", "mps"] = "cpu",
     ) -> None:
         self._history_days = days.history
@@ -54,12 +59,12 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
             device=device,
         )
 
-        ret = (
+        ret: pd.Series[float] = (
             pd.Series(np.log1p(ret_total))
-            .rolling(self._forecast_days)
+            .rolling(self._forecast_days)  # type: ignore[reportUnknownMemberType]
             .sum()
             .shift(-(self._forecast_days + self._history_days - 1))
-            .to_numpy()
+            .to_numpy()  # type: ignore[reportUnknownMemberType]
         )
         self._label1p = torch.tensor(
             np.exp(ret),
@@ -67,7 +72,7 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
             device=device,
         )
 
-        if any(not ret_total.index.equals(df.index) for df in num_feat):
+        if any(not ret_total.index.equals(df.index) for df in num_feat):  # type: ignore[reportUnknownMemberType]
             raise dl.DLError("features index mismatch")
 
         self._num_feat = torch.vstack(
@@ -146,7 +151,7 @@ class Builder:
                         ticker,
                         feats,
                         days,
-                        prices[ticker].dropna(),
+                        prices[ticker].dropna(),  # type: ignore[reportUnknownMemberType]
                     )
                 )
                 for ticker in feats.tickers
@@ -159,25 +164,25 @@ class Builder:
         ticker: str,
         feats: Features,
         days: Days,
-        price: pd.Series,
+        price: pd.Series[float],
     ) -> OneTickerData:
-        price_prev = price.shift(1).iloc[1:]
-        price = price.iloc[1:]
+        price_prev = price.shift(1).iloc[1:]  # type: ignore[reportUnknownMemberType]
+        price = price.iloc[1:]  # type: ignore[reportUnknownMemberType]
 
-        df_div = await self._prepare_div(ticker, price.index)
+        df_div = await self._prepare_div(ticker, price.index)  # type: ignore[reportUnknownMemberType]
 
-        ret_total = (price + df_div).div(price_prev).sub(1)
+        ret_total = (price + df_div).div(price_prev).sub(1)  # type: ignore[reportUnknownMemberType]
 
-        features = []
+        features: list[pd.Series[float]] = []
 
         if feats.ret:
             features.append(ret_total)
 
         if feats.close:
-            features.append(price.div(price_prev).sub(1))
+            features.append(price.div(price_prev).sub(1))  # type: ignore[reportUnknownMemberType]
 
         if feats.div:
-            features.append(df_div.div(price_prev))
+            features.append(df_div.div(price_prev))  # type: ignore[reportUnknownMemberType]
 
         return OneTickerData(
             days,
@@ -186,11 +191,11 @@ class Builder:
             self._device,
         )
 
-    async def _prepare_div(self, ticker: str, index: pd.DatetimeIndex) -> pd.Series:
+    async def _prepare_div(self, ticker: str, index: pd.DatetimeIndex) -> pd.Series[float]:
         first_day = index[1]
         last_day = index[-1] + 2 * pd.tseries.offsets.BDay()
 
-        div_df = pd.Series(0, index=index, dtype=np.float64)
+        div_df = pd.Series(0, index=index, dtype=float)
 
         async for date, div in self._data_adapter.dividends(ticker):
             if date < first_day or date >= last_day:
@@ -201,5 +206,5 @@ class Builder:
         return div_df
 
 
-def _ex_div_date(index: pd.Index, date: datetime) -> int:
-    return int(index.get_indexer([date], method="ffill")[0]) - 1
+def _ex_div_date(index: pd.DatetimeIndex, date: datetime) -> int:
+    return int(index.get_indexer([date], method="ffill")[0]) - 1  # type: ignore[reportUnknownArgumentType]

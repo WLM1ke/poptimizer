@@ -42,6 +42,7 @@ build-backend = "hatchling.build"
 verboseOutput = true
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
+exclude = ["**/tests/*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

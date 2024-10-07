@@ -27,7 +27,7 @@ class Net(torch.nn.Module):
         history_days: int,
         forecast_days: int,
     ) -> None:
-        super().__init__()
+        super().__init__()  # type: ignore[reportUnknownMemberType]
 
         self.register_buffer("_llh_adj", torch.log(torch.tensor(forecast_days, dtype=torch.float)) / 2)
 

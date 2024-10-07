@@ -11,7 +11,7 @@ class Cfg(BaseModel):
 
 class Net(torch.nn.Module):
     def __init__(self, num_feat_count: int, cfg: Cfg) -> None:
-        super().__init__()
+        super().__init__()  # type: ignore[reportUnknownMemberType]
 
         if num_feat_count == 0:
             raise dl.DLError("no features")

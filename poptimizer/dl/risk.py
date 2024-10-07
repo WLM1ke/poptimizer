@@ -1,5 +1,5 @@
 import numpy as np
-import scipy
+import scipy  # type: ignore[reportMissingTypeStubs]
 from numpy.typing import NDArray
 from pydantic import BaseModel
 
@@ -48,12 +48,13 @@ def optimize(  # noqa: PLR0913
     labels *= consts.YEAR_IN_TRADING_DAYS / forecast_days
 
     weights, sigma = _opt_weight(mean, variance, tot_ret, cfg)
+    port_variance: float = (weights.T @ sigma @ weights).item()
 
     return OptimizationResult(
         ret=(weights.T @ labels).item(),
         avr=labels.mean(),
         ret_plan=(weights * mean).sum(),
-        std_plan=(weights.T @ sigma @ weights).item() ** 0.5,
+        std_plan=port_variance**0.5,
         pos=int(1 / (weights**2).sum()),
         max_weight=weights.max(),
     )
@@ -79,7 +80,7 @@ def _opt_weight(
         constraints=[
             {
                 "type": "eq",
-                "fun": lambda _weights: _weights.sum() - 1,
+                "fun": _weight_constraint,
                 "jac": np.ones_like,
             },
         ],
@@ -88,6 +89,10 @@ def _opt_weight(
     weights = rez.x / rez.x.sum()
 
     return weights.reshape(-1, 1), sigma
+
+
+def _weight_constraint(weights: NDArray[np.double]) -> float:
+    return weights.sum() - 1
 
 
 class _Utility:

@@ -12,7 +12,7 @@ class Cfg(BaseModel):
 
 class Net(torch.nn.Module):
     def __init__(self, in_channels: int, cfg: Cfg) -> None:
-        super().__init__()
+        super().__init__()  # type: ignore[reportUnknownMemberType]
 
         self.register_buffer(
             "_eps",

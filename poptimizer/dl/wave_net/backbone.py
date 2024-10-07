@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 class _GatedBlock(torch.nn.Module):
     def __init__(self, in_channels: int, inner_channels: int, kernels: int) -> None:
-        super().__init__()
+        super().__init__()  # type: ignore[reportUnknownMemberType]
 
         self._pad = torch.nn.ConstantPad1d(
             padding=(kernels - 1, 0),
@@ -48,7 +48,7 @@ class Cfg(BaseModel):
 
 class _Blocks(torch.nn.Module):
     def __init__(self, in_channels: int, cfg: Cfg) -> None:
-        super().__init__()
+        super().__init__()  # type: ignore[reportUnknownMemberType]
 
         self._blocks = torch.nn.Sequential()
         for _ in range(cfg.blocks):
@@ -92,7 +92,7 @@ class Net(torch.nn.Module):
         in_channels: int,
         desc: Cfg,
     ) -> None:
-        super().__init__()
+        super().__init__()  # type: ignore[reportUnknownMemberType]
 
         self._blocks = torch.nn.ModuleList()
         blocks = int(np.log2(history_days - 1)) + 1
