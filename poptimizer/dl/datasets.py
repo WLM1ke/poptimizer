@@ -36,7 +36,7 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
         days: Days,
         ret_total: pd.Series,
         num_feat: list[pd.Series],
-        device: Literal["cpu", "cuda", "mps"],
+        device: Literal["cpu", "cuda", "mps"] = "cpu",
     ) -> None:
         self._history_days = days.history
         self._test_days = days.test

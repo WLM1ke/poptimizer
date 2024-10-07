@@ -2,12 +2,12 @@ import pandas as pd
 import pytest
 import torch
 
-from poptimizer.dl import data_loader, exceptions
+from poptimizer.dl import data_loaders, datasets, dl
 
 
 @pytest.fixture(name="days")
 def make_days():
-    return data_loader.DataDays(
+    return datasets.Days(
         history=4,
         forecast=2,
         test=3,
@@ -15,8 +15,8 @@ def make_days():
 
 
 def test_short_history_error(days) -> None:
-    with pytest.raises(exceptions.FeaturesError):
-        data_loader.OneTickerData(
+    with pytest.raises(dl.DLError):
+        datasets.OneTickerData(
             days,
             pd.Series(range(9)),
             [
@@ -26,9 +26,9 @@ def test_short_history_error(days) -> None:
         )
 
 
-def test_features_missmatch_error(days) -> None:
-    with pytest.raises(exceptions.FeaturesError):
-        data_loader.OneTickerData(
+def test_features_mismatch_error(days) -> None:
+    with pytest.raises(dl.DLError):
+        datasets.OneTickerData(
             days,
             pd.Series(range(10)),
             [
@@ -40,7 +40,7 @@ def test_features_missmatch_error(days) -> None:
 
 @pytest.fixture(name="one_ticker_data")
 def make_one_ticker_data(days):
-    return data_loader.OneTickerData(
+    return datasets.OneTickerData(
         days,
         pd.Series(range(11)),
         [
@@ -59,15 +59,15 @@ class TestOneTickerData:
 
         assert len(case) == 3
         assert torch.allclose(
-            case[data_loader.FeatTypes.LABEL1P],
+            case[datasets.FeatTypes.LABEL1P],
             torch.tensor(110, dtype=torch.float),
         )
         assert torch.allclose(
-            case[data_loader.FeatTypes.RETURNS],
+            case[datasets.FeatTypes.RETURNS],
             torch.tensor([5, 6, 7, 8], dtype=torch.float),
         )
         assert torch.allclose(
-            case[data_loader.FeatTypes.NUMERICAL],
+            case[datasets.FeatTypes.NUMERICAL],
             torch.tensor(
                 [
                     [7, 8, 9, 10],
@@ -83,11 +83,11 @@ class TestOneTickerData:
         assert len(case) == 2
 
         assert torch.allclose(
-            case[data_loader.FeatTypes.RETURNS],
+            case[datasets.FeatTypes.RETURNS],
             torch.tensor([6, 7, 8, 9], dtype=torch.float),
         )
         assert torch.allclose(
-            case[data_loader.FeatTypes.NUMERICAL],
+            case[datasets.FeatTypes.NUMERICAL],
             torch.tensor(
                 [
                     [8, 9, 10, 11],
@@ -107,15 +107,15 @@ class TestOneTickerData:
 
         assert len(case_first) == 3
         assert torch.allclose(
-            case_first[data_loader.FeatTypes.LABEL1P],
+            case_first[datasets.FeatTypes.LABEL1P],
             torch.tensor(30, dtype=torch.float),
         )
         assert torch.allclose(
-            case_first[data_loader.FeatTypes.RETURNS],
+            case_first[datasets.FeatTypes.RETURNS],
             torch.tensor([0, 1, 2, 3], dtype=torch.float),
         )
         assert torch.allclose(
-            case_first[data_loader.FeatTypes.NUMERICAL],
+            case_first[datasets.FeatTypes.NUMERICAL],
             torch.tensor(
                 [
                     [2, 3, 4, 5],
@@ -130,15 +130,15 @@ class TestOneTickerData:
 
         assert len(case_last) == 3
         assert torch.allclose(
-            case_last[data_loader.FeatTypes.LABEL1P],
+            case_last[datasets.FeatTypes.LABEL1P],
             torch.tensor(42, dtype=torch.float),
         )
         assert torch.allclose(
-            case_last[data_loader.FeatTypes.RETURNS],
+            case_last[datasets.FeatTypes.RETURNS],
             torch.tensor([1, 2, 3, 4], dtype=torch.float),
         )
         assert torch.allclose(
-            case_last[data_loader.FeatTypes.NUMERICAL],
+            case_last[datasets.FeatTypes.NUMERICAL],
             torch.tensor(
                 [
                     [3, 4, 5, 6],
@@ -158,15 +158,15 @@ class TestOneTickerData:
 
         assert len(case_first) == 3
         assert torch.allclose(
-            case_first[data_loader.FeatTypes.LABEL1P],
+            case_first[datasets.FeatTypes.LABEL1P],
             torch.tensor(72, dtype=torch.float),
         )
         assert torch.allclose(
-            case_first[data_loader.FeatTypes.RETURNS],
+            case_first[datasets.FeatTypes.RETURNS],
             torch.tensor([3, 4, 5, 6], dtype=torch.float),
         )
         assert torch.allclose(
-            case_first[data_loader.FeatTypes.NUMERICAL],
+            case_first[datasets.FeatTypes.NUMERICAL],
             torch.tensor(
                 [
                     [5, 6, 7, 8],
@@ -181,15 +181,15 @@ class TestOneTickerData:
 
         assert len(case_last) == 3
         assert torch.allclose(
-            case_last[data_loader.FeatTypes.LABEL1P],
+            case_last[datasets.FeatTypes.LABEL1P],
             torch.tensor(110, dtype=torch.float),
         )
         assert torch.allclose(
-            case_last[data_loader.FeatTypes.RETURNS],
+            case_last[datasets.FeatTypes.RETURNS],
             torch.tensor([5, 6, 7, 8], dtype=torch.float),
         )
         assert torch.allclose(
-            case_last[data_loader.FeatTypes.NUMERICAL],
+            case_last[datasets.FeatTypes.NUMERICAL],
             torch.tensor(
                 [
                     [7, 8, 9, 10],
@@ -208,11 +208,11 @@ class TestOneTickerData:
 
         assert len(case) == 2
         assert torch.allclose(
-            case[data_loader.FeatTypes.RETURNS],
+            case[datasets.FeatTypes.RETURNS],
             torch.tensor([7, 8, 9, 10], dtype=torch.float),
         )
         assert torch.allclose(
-            case[data_loader.FeatTypes.NUMERICAL],
+            case[datasets.FeatTypes.NUMERICAL],
             torch.tensor(
                 [[9, 10, 11, 12], [8, 9, 10, 11]],
                 dtype=torch.float,
@@ -223,7 +223,7 @@ class TestOneTickerData:
 def test_train_data_loader(one_ticker_data) -> None:
     batch_size = 1024
 
-    loader = data_loader.train(
+    loader = data_loaders.train(
         [one_ticker_data for _ in range(batch_size)],
         batch_size,
     )
@@ -234,28 +234,23 @@ def test_train_data_loader(one_ticker_data) -> None:
 
     assert len(batch) == 3
 
-    label = batch[data_loader.FeatTypes.LABEL1P]
-    assert all(
-        [
-            label.shape == (batch_size,),
-            torch.min(label) == 30,
-            torch.max(label) == 42,
-        ],
-    )
+    label = batch[datasets.FeatTypes.LABEL1P]
+    assert label.shape == (batch_size, 1)
+    assert torch.min(label) == 30
+    assert torch.max(label) == 42
 
-    assert batch[data_loader.FeatTypes.RETURNS].shape == (batch_size, 4)
-
-    assert batch[data_loader.FeatTypes.NUMERICAL].shape == (batch_size, 2, 4)
+    assert batch[datasets.FeatTypes.RETURNS].shape == (batch_size, 4)
+    assert batch[datasets.FeatTypes.NUMERICAL].shape == (batch_size, 2, 4)
 
 
 @pytest.fixture(name="bad_second_ticker_data")
 def make_bad_second_ticker_data():
-    days = data_loader.DataDays(
+    days = datasets.Days(
         history=4,
         forecast=2,
         test=2,
     )
-    return data_loader.OneTickerData(
+    return datasets.OneTickerData(
         days,
         pd.Series(range(12)),
         [
@@ -265,16 +260,16 @@ def make_bad_second_ticker_data():
     )
 
 
-def test_test_length_missmatch_error(one_ticker_data, bad_second_ticker_data) -> None:
-    with pytest.raises(exceptions.FeaturesError):
-        data_loader.test(
+def test_test_length_mismatch_error(one_ticker_data, bad_second_ticker_data) -> None:
+    with pytest.raises(dl.DLError):
+        data_loaders.test(
             [one_ticker_data, bad_second_ticker_data],
         )
 
 
 @pytest.fixture(name="second_ticker_data")
 def make_second_ticker_data(days):
-    return data_loader.OneTickerData(
+    return datasets.OneTickerData(
         days,
         pd.Series(range(12)),
         [
@@ -286,7 +281,7 @@ def make_second_ticker_data(days):
 
 @pytest.fixture(name="test_data_loader")
 def make_test_data_loader(one_ticker_data, second_ticker_data):
-    return data_loader.test(
+    return data_loaders.test(
         [one_ticker_data, second_ticker_data],
     )
 
@@ -301,20 +296,20 @@ class TestTestDataLoader:
 
         assert len(batch) == 3
 
-        ret = batch[data_loader.FeatTypes.LABEL1P]
-        assert ret.shape == (2,)
+        ret = batch[datasets.FeatTypes.LABEL1P]
+        assert ret.shape == (2, 1)
         assert torch.allclose(
             ret,
             torch.tensor(
-                [72, 90],
+                [[72], [90]],
                 dtype=torch.float,
             ),
         )
 
-        ret = batch[data_loader.FeatTypes.RETURNS]
+        ret = batch[datasets.FeatTypes.RETURNS]
         assert ret.shape == (2, 4)
 
-        num = batch[data_loader.FeatTypes.NUMERICAL]
+        num = batch[datasets.FeatTypes.NUMERICAL]
         assert num.shape == (2, 2, 4)
 
     def test_last_batch(self, test_data_loader) -> None:
@@ -323,19 +318,19 @@ class TestTestDataLoader:
         next(loader_iter)
 
         batch = next(loader_iter)
-        ret = batch[data_loader.FeatTypes.LABEL1P]
-        assert ret.shape == (2,)
+        ret = batch[datasets.FeatTypes.LABEL1P]
+        assert ret.shape == (2, 1)
         assert torch.allclose(
             ret,
             torch.tensor(
-                [110, 132],
+                [[110], [132]],
                 dtype=torch.float,
             ),
         )
 
 
 def test_forecast_data_loader(one_ticker_data, second_ticker_data) -> None:
-    loader = data_loader.forecast(
+    loader = data_loaders.forecast(
         [one_ticker_data, second_ticker_data, one_ticker_data],
     )
 
@@ -345,7 +340,7 @@ def test_forecast_data_loader(one_ticker_data, second_ticker_data) -> None:
 
     assert len(batch) == 2
 
-    ret = batch[data_loader.FeatTypes.RETURNS]
+    ret = batch[datasets.FeatTypes.RETURNS]
     assert ret.shape == (3, 4)
     assert torch.allclose(
         ret,
@@ -359,5 +354,5 @@ def test_forecast_data_loader(one_ticker_data, second_ticker_data) -> None:
         ),
     )
 
-    num = batch[data_loader.FeatTypes.NUMERICAL]
+    num = batch[datasets.FeatTypes.NUMERICAL]
     assert num.shape == (3, 2, 4)

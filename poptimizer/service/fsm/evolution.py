@@ -190,10 +190,10 @@ class EvolutionAction:
     async def __call__(self) -> states.States:
         await asyncio.sleep(_STEP_DURATION.total_seconds())
 
-        # device = get_device()
-        # builder = datasets.Builder(self._view_service, device)
-        # tr = trainer.Trainer(builder, device)
-        # await tr.test_model(None, _DESC)
+        device = get_device()
+        builder = datasets.Builder(self._view_service, device)
+        tr = trainer.Trainer(builder, device)
+        await tr.test_model(None, _DESC)
 
         match random.random() < _NEW_FORECAST_PROBABILITY:  # noqa: S311
             case True:
