@@ -1,3 +1,4 @@
+import asyncio
 import collections
 import io
 import itertools
@@ -69,19 +70,32 @@ class Trainer:
     async def test_model(
         self,
         state: bytes | None,
-        desc: DLModel,
+        cfg: DLModel,
     ) -> None:
-        all_data = await self._builder.build(desc.batch.feats, desc.batch.days)
-        net = _prepare_net(state, desc, self._device)
+        data = await self._builder.build(cfg.batch.feats, cfg.batch.days)
+        await asyncio.to_thread(
+            self._test,
+            state,
+            cfg,
+            data,
+        )
+
+    def _test(
+        self,
+        state: bytes | None,
+        cfg: DLModel,
+        data: list[datasets.OneTickerData],
+    ) -> None:
+        net = _prepare_net(state, cfg, self._device)
 
         if state is None:
             self._train(
                 net,
-                data_loaders.train(all_data, desc.batch.size),
-                desc.scheduler,
+                data_loaders.train(data, cfg.batch.size),
+                cfg.scheduler,
             )
 
-        test_dl = data_loaders.test(all_data)
+        test_dl = data_loaders.test(data)
 
         with torch.no_grad():
             net.eval()
@@ -93,8 +107,8 @@ class Trainer:
                     variance,
                     batch[datasets.FeatTypes.LABEL1P].cpu().numpy() - 1,
                     batch[datasets.FeatTypes.RETURNS].cpu().numpy(),
-                    desc.utility,
-                    desc.batch.forecast_days,
+                    cfg.utility,
+                    cfg.batch.forecast_days,
                 )
 
                 self._logger.info("%s / LLH = %8.5f}", rez, loss)
