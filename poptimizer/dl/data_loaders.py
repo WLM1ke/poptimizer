@@ -24,7 +24,7 @@ def train(
 
 class _DaysSampler(data.Sampler[list[int]]):
     def __init__(self, all_data: list[data.Subset[datasets.Batch]]) -> None:
-        super().__init__(None)
+        super().__init__()
         self._test_days = len(all_data[0])
         self._tests = self._test_days * len(all_data)
 
@@ -43,7 +43,7 @@ class _DaysSampler(data.Sampler[list[int]]):
                     self._test_days,
                 ),
             )
-            for day in range(self._test_days)
+            for day in reversed(range(self._test_days))
         )
 
 

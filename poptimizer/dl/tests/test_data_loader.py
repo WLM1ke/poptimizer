@@ -293,6 +293,28 @@ class TestTestDataLoader:
     def test_first_batch(self, test_data_loader) -> None:
         loader_iter = iter(test_data_loader)
         batch = next(loader_iter)
+        ret = batch[datasets.FeatTypes.LABEL1P]
+        assert ret.shape == (2, 1)
+        assert torch.allclose(
+            ret,
+            torch.tensor(
+                [[110], [132]],
+                dtype=torch.float,
+            ),
+        )
+
+        ret = batch[datasets.FeatTypes.RETURNS]
+        assert ret.shape == (2, 4)
+
+        num = batch[datasets.FeatTypes.NUMERICAL]
+        assert num.shape == (2, 2, 4)
+
+    def test_last_batch(self, test_data_loader) -> None:
+        loader_iter = iter(test_data_loader)
+        next(loader_iter)
+        next(loader_iter)
+
+        batch = next(loader_iter)
 
         assert len(batch) == 3
 
@@ -311,22 +333,6 @@ class TestTestDataLoader:
 
         num = batch[datasets.FeatTypes.NUMERICAL]
         assert num.shape == (2, 2, 4)
-
-    def test_last_batch(self, test_data_loader) -> None:
-        loader_iter = iter(test_data_loader)
-        next(loader_iter)
-        next(loader_iter)
-
-        batch = next(loader_iter)
-        ret = batch[datasets.FeatTypes.LABEL1P]
-        assert ret.shape == (2, 1)
-        assert torch.allclose(
-            ret,
-            torch.tensor(
-                [[110], [132]],
-                dtype=torch.float,
-            ),
-        )
 
 
 def test_forecast_data_loader(one_ticker_data, second_ticker_data) -> None:
