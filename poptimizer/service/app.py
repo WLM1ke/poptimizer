@@ -12,13 +12,14 @@ async def run(
     ctx_factory: uow.CtxFactory,
     view_service: view.Service,
 ) -> None:
-    graph = _prepare_graph(http_client, ctx_factory, view_service)
+    graph = _prepare_graph(logger, http_client, ctx_factory, view_service)
     app_fsm = fsm.FSM(logger, graph)
 
     await app_fsm()
 
 
 def _prepare_graph(
+    logger: logging.Service,
     http_client: aiohttp.ClientSession,
     ctx_factory: uow.CtxFactory,
     view_service: view.Service,
@@ -32,7 +33,7 @@ def _prepare_graph(
             },
         },
         states.States.EVOLUTION_STEP: {
-            "action": evolution.EvolutionAction(view_service),
+            "action": evolution.EvolutionAction(logger, view_service),
             "transitions": {
                 states.States.DATA_UPDATE,
                 states.States.OPTIMIZATION,

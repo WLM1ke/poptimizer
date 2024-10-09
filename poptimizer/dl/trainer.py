@@ -2,7 +2,6 @@ import asyncio
 import collections
 import io
 import itertools
-import logging
 from typing import Literal
 
 import torch
@@ -12,6 +11,7 @@ from torch import optim
 
 from poptimizer.dl import data_loaders, datasets, risk
 from poptimizer.dl.wave_net import wave_net
+from poptimizer.service.common import logging
 
 
 class Batch(BaseModel):
@@ -61,11 +61,21 @@ class RunningMean:
         return self._sum / len(self._que)
 
 
+def _get_device() -> Literal["cpu", "cuda", "mps"]:
+    if torch.cuda.is_available():
+        return "cuda"
+
+    if torch.backends.mps.is_available():
+        return "mps"
+
+    return "cpu"
+
+
 class Trainer:
-    def __init__(self, builder: datasets.Builder, device: Literal["cpu", "cuda", "mps"]) -> None:
-        self._logger = logging.getLogger("Trainer")
+    def __init__(self, lgr: logging.Service, builder: datasets.Builder) -> None:
+        self._lgr = lgr
         self._builder = builder
-        self._device: Literal["cpu", "cuda", "mps"] = device
+        self._device = _get_device()
 
     async def test_model(
         self,
@@ -111,7 +121,7 @@ class Trainer:
                     cfg.batch.forecast_days,
                 )
 
-                self._logger.info("%s / LLH = %8.5f", rez, loss)
+                self._lgr.info(f"{rez} / LLH = {loss:8.5f}")
 
     def _train(
         self,
@@ -156,11 +166,11 @@ class Trainer:
 
     def _log_net_stats(self, net: wave_net.Net, epochs: float, train_dl: data_loaders.DataLoader) -> None:
         train_size = len(train_dl.dataset)  # type: ignore[arg-type]
-        self._logger.info("Epochs - %.2f / Train size - %d", epochs, train_size)
+        self._lgr.info(f"Epochs - {epochs:.2f} / Train size - {train_size}")
 
         modules = sum(1 for _ in net.modules())
         model_params = sum(tensor.numel() for tensor in net.parameters())
-        self._logger.info("Layers / parameters - %d / %d", modules, model_params)
+        self._lgr.info(f"Layers / parameters - {modules} / {model_params}")
 
     def _batch_to_device(self, batch: datasets.Batch) -> datasets.Batch:
         device_batch: datasets.Batch = {}

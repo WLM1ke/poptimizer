@@ -1,13 +1,12 @@
 import asyncio
 import random
 from datetime import datetime, timedelta
-from typing import Final, Literal
-
-import torch
+from typing import Final
 
 from poptimizer.dl import datasets, risk, trainer
 from poptimizer.dl.wave_net import backbone, head, inputs, wave_net
 from poptimizer.domain.service import view
+from poptimizer.service.common import logging
 from poptimizer.service.fsm import states
 
 _NEW_FORECAST_PROBABILITY: Final = 0.1
@@ -173,26 +172,16 @@ _DESC: Final = trainer.DLModel(
 )
 
 
-def get_device() -> Literal["cpu", "cuda", "mps"]:
-    if torch.cuda.is_available():
-        return "cuda"
-
-    if torch.backends.mps.is_available():
-        return "mps"
-
-    return "cpu"
-
-
 class EvolutionAction:
-    def __init__(self, view_service: view.Service) -> None:
+    def __init__(self, lgr: logging.Service, view_service: view.Service) -> None:
+        self._lgr = lgr
         self._view_service = view_service
 
     async def __call__(self) -> states.States:
         await asyncio.sleep(_STEP_DURATION.total_seconds())
 
-        device = get_device()
         builder = datasets.Builder(self._view_service)
-        tr = trainer.Trainer(builder, device)
+        tr = trainer.Trainer(self._lgr, builder)
         await tr.test_model(None, _DESC)
 
         match random.random() < _NEW_FORECAST_PROBABILITY:  # noqa: S311
