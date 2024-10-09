@@ -86,7 +86,7 @@ class Trainer:
         cfg: DLModel,
         data: list[datasets.OneTickerData],
     ) -> None:
-        net = _prepare_net(state, cfg, self._device)
+        net = self._prepare_net(state, cfg)
 
         if state is None:
             self._train(
@@ -101,7 +101,7 @@ class Trainer:
             net.eval()
 
             for batch in test_dl:
-                loss, mean, variance = net.loss_and_forecast_mean_and_var(batch)
+                loss, mean, variance = net.loss_and_forecast_mean_and_var(self._batch_to_device(batch))
                 rez = risk.optimize(
                     mean - 1,
                     variance,
@@ -146,7 +146,7 @@ class Trainer:
             for batch in progress_bar:
                 optimizer.zero_grad()
 
-                loss = -net.llh(batch)
+                loss = -net.llh(self._batch_to_device(batch))
                 loss.backward()  # type: ignore[no-untyped-call]
                 optimizer.step()  # type: ignore[reportUnknownMemberType]
                 sch.step()
@@ -162,19 +162,24 @@ class Trainer:
         model_params = sum(tensor.numel() for tensor in net.parameters())
         self._logger.info("Layers / parameters - %d / %d", modules, model_params)
 
+    def _batch_to_device(self, batch: datasets.Batch) -> datasets.Batch:
+        device_batch: datasets.Batch = {}
+        for k, v in batch.items():
+            device_batch[k] = v.to(self._device)
 
-def _prepare_net(state: bytes | None, desc: DLModel, device: Literal["cpu", "cuda", "mps"]) -> wave_net.Net:
-    net = wave_net.Net(
-        cfg=desc.net,
-        num_feat_count=desc.batch.num_feat_count,
-        history_days=desc.batch.history_days,
-        forecast_days=desc.batch.forecast_days,
-    )
-    net.to(device)
+        return device_batch
 
-    if state is not None:
-        buffer = io.BytesIO(state)
-        state_dict = torch.load(buffer, map_location=device)  # type: ignore[no-untyped-call]
-        net.load_state_dict(state_dict)
+    def _prepare_net(self, state: bytes | None, desc: DLModel) -> wave_net.Net:
+        net = wave_net.Net(
+            cfg=desc.net,
+            num_feat_count=desc.batch.num_feat_count,
+            history_days=desc.batch.history_days,
+            forecast_days=desc.batch.forecast_days,
+        ).to(self._device)
 
-    return net
+        if state is not None:
+            buffer = io.BytesIO(state)
+            state_dict = torch.load(buffer, map_location=self._device)  # type: ignore[no-untyped-call]
+            net.load_state_dict(state_dict)
+
+        return net

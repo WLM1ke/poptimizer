@@ -11,14 +11,12 @@ DataLoader = data.DataLoader[datasets.Batch]
 def train(
     all_data: AllTickersData,
     batch_size: int,
-    num_workers: int = 0,  # Загрузка в отдельном потоке - увеличение потоков не докидывает???
 ) -> DataLoader:
     return data.DataLoader(
         dataset=data.ConcatDataset(ticker.train_dataset() for ticker in all_data),
         batch_size=batch_size,
         shuffle=True,
         drop_last=False,
-        num_workers=num_workers,
     )
 
 
@@ -49,7 +47,6 @@ class _DaysSampler(data.Sampler[list[int]]):
 
 def test(
     all_data: AllTickersData,
-    num_workers: int = 0,  # Загрузка в отдельном потоке - увеличение потоков не докидывает???
 ) -> DataLoader:
     test_dataset = [ticker.test_dataset() for ticker in all_data]
 
@@ -57,7 +54,6 @@ def test(
         dataset=data.ConcatDataset(test_dataset),
         batch_sampler=_DaysSampler(test_dataset),
         drop_last=False,
-        num_workers=num_workers,
     )
 
 

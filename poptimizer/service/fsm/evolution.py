@@ -191,7 +191,7 @@ class EvolutionAction:
         await asyncio.sleep(_STEP_DURATION.total_seconds())
 
         device = get_device()
-        builder = datasets.Builder(self._view_service, device)
+        builder = datasets.Builder(self._view_service)
         tr = trainer.Trainer(builder, device)
         await tr.test_model(None, _DESC)
 

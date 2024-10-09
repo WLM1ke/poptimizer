@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from enum import Enum, auto, unique
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -41,7 +41,6 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
         days: Days,
         ret_total: pd.Series[float],
         num_feat: list[pd.Series[float]],
-        device: Literal["cpu", "cuda", "mps"] = "cpu",
     ) -> None:
         self._history_days = days.history
         self._test_days = days.test
@@ -56,7 +55,6 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
         self._ret_total = torch.tensor(
             ret_total.values,
             dtype=torch.float,
-            device=device,
         )
 
         ret: pd.Series[float] = (
@@ -69,7 +67,6 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
         self._label1p = torch.tensor(
             np.exp(ret),
             dtype=torch.float,
-            device=device,
         )
 
         if any(not ret_total.index.equals(df.index) for df in num_feat):  # type: ignore[reportUnknownMemberType]
@@ -80,7 +77,6 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
                 torch.tensor(
                     feat.values,
                     dtype=torch.float,
-                    device=device,
                 )
                 for feat in num_feat
             ],
@@ -132,10 +128,8 @@ class Builder:
     def __init__(
         self,
         view_service: view.Service,
-        device: Literal["cpu", "cuda", "mps"],
     ) -> None:
         self._data_adapter = view_service
-        self._device: Literal["cpu", "cuda", "mps"] = device
 
     async def build(
         self,
@@ -188,7 +182,6 @@ class Builder:
             days,
             ret_total,
             features,
-            self._device,
         )
 
     async def _prepare_div(self, ticker: str, index: pd.DatetimeIndex) -> pd.Series[float]:
