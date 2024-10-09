@@ -111,7 +111,7 @@ class Trainer:
                     cfg.batch.forecast_days,
                 )
 
-                self._logger.info("%s / LLH = %8.5f}", rez, loss)
+                self._logger.info("%s / LLH = %8.5f", rez, loss)
 
     def _train(
         self,
