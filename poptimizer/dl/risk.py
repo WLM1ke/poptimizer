@@ -43,16 +43,17 @@ def optimize(  # noqa: PLR0913
     cfg: Cfg,
     forecast_days: int,
 ) -> OptimizationResult:
-    mean *= consts.YEAR_IN_TRADING_DAYS / forecast_days
-    variance *= consts.YEAR_IN_TRADING_DAYS / forecast_days
-    labels *= consts.YEAR_IN_TRADING_DAYS / forecast_days
+    year_multiplier = consts.YEAR_IN_TRADING_DAYS / forecast_days
+
+    mean *= year_multiplier
+    variance *= year_multiplier
 
     weights, sigma = _opt_weight(mean, variance, tot_ret, cfg)
     port_variance: float = (weights.T @ sigma @ weights).item()
 
     return OptimizationResult(
-        ret=(weights.T @ labels).item(),
-        avr=labels.mean(),
+        ret=np.log1p((weights.T @ labels).item()) * year_multiplier,
+        avr=np.log1p(labels.mean()) * year_multiplier,
         ret_plan=(weights * mean).sum(),
         std_plan=port_variance**0.5,
         pos=int(1 / (weights**2).sum()),
