@@ -2,21 +2,21 @@ import asyncio
 import collections
 import io
 import itertools
-from typing import Literal
+from typing import Literal, Protocol
 
 import torch
 import tqdm
 from pydantic import BaseModel
 from torch import optim
 
-from poptimizer.dl import data_loaders, datasets, risk
-from poptimizer.dl.wave_net import wave_net
-from poptimizer.service.common import logging
+from poptimizer.domain.entity.dl import data_loaders, datasets, risk
+from poptimizer.domain.entity.dl.wave_net import wave_net
+from poptimizer.domain.service.dl import builder
 
 
 class Batch(BaseModel):
     size: int
-    feats: datasets.Features
+    feats: builder.Features
     days: datasets.Days
 
     @property
@@ -71,8 +71,12 @@ def _get_device() -> Literal["cpu", "cuda", "mps"]:
     return "cpu"
 
 
+class Logger(Protocol):
+    def info(self, msg: str) -> None: ...
+
+
 class Trainer:
-    def __init__(self, lgr: logging.Service, builder: datasets.Builder) -> None:
+    def __init__(self, lgr: Logger, builder: builder.Builder) -> None:
         self._lgr = lgr
         self._builder = builder
         self._device = _get_device()

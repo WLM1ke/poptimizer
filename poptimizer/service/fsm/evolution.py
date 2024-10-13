@@ -3,9 +3,10 @@ import random
 from datetime import datetime, timedelta
 from typing import Final
 
-from poptimizer.dl import datasets, risk, trainer
-from poptimizer.dl.wave_net import backbone, head, inputs, wave_net
+from poptimizer.domain.entity.dl import datasets, risk
+from poptimizer.domain.entity.dl.wave_net import backbone, head, inputs, wave_net
 from poptimizer.domain.service import view
+from poptimizer.domain.service.dl import builder, trainer
 from poptimizer.service.common import logging
 from poptimizer.service.fsm import states
 
@@ -148,7 +149,7 @@ _OPTIMIZATION_DURATION: Final = timedelta(minutes=1)
 _DESC: Final = trainer.DLModel(
     batch=trainer.Batch(
         size=320,
-        feats=datasets.Features(
+        feats=builder.Features(
             tickers=_TICKERS,
             last_date=datetime(2024, 10, 11),
             close=True,
@@ -180,8 +181,8 @@ class EvolutionAction:
     async def __call__(self) -> states.States:
         await asyncio.sleep(_STEP_DURATION.total_seconds())
 
-        builder = datasets.Builder(self._view_service)
-        tr = trainer.Trainer(self._lgr, builder)
+        bldr = builder.Builder(self._view_service)
+        tr = trainer.Trainer(self._lgr, bldr)
         await tr.test_model(None, _DESC)
 
         match random.random() < _NEW_FORECAST_PROBABILITY:  # noqa: S311

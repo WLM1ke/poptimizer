@@ -3,8 +3,8 @@ import scipy  # type: ignore[reportMissingTypeStubs]
 from numpy.typing import NDArray
 from pydantic import BaseModel
 
-from poptimizer.dl import ledoit_wolf
 from poptimizer.domain import consts
+from poptimizer.domain.entity.dl import ledoit_wolf
 
 
 class Cfg(BaseModel):

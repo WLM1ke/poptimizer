@@ -4,8 +4,9 @@ from numpy.typing import NDArray
 from pydantic import BaseModel
 from torch.distributions import MixtureSameFamily
 
-from poptimizer.dl import datasets, dl
-from poptimizer.dl.wave_net import backbone, head, inputs
+from poptimizer.domain import consts
+from poptimizer.domain.entity.dl import datasets
+from poptimizer.domain.entity.dl.wave_net import backbone, head, inputs
 
 
 class Cfg(BaseModel):
@@ -59,7 +60,7 @@ class Net(torch.nn.Module):
         try:
             return self._llh_adj.add(dist.log_prob(labels).mean())
         except ValueError as err:
-            raise dl.DLError("error in categorical distribution") from err
+            raise consts.DomainError("error in categorical distribution") from err
 
     def loss_and_forecast_mean_and_var(
         self,
@@ -73,6 +74,6 @@ class Net(torch.nn.Module):
         try:
             llh = self._llh_adj.add(dist.log_prob(labels).mean())
         except ValueError as err:
-            raise dl.DLError("error in categorical distribution") from err
+            raise consts.DomainError("error in categorical distribution") from err
 
         return llh.item(), dist.mean.cpu().numpy(), dist.variance.cpu().numpy()

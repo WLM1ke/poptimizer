@@ -1,7 +1,8 @@
 import torch
 from pydantic import BaseModel
 
-from poptimizer.dl import datasets, dl
+from poptimizer.domain import consts
+from poptimizer.domain.entity.dl import datasets
 
 
 class Cfg(BaseModel):
@@ -14,7 +15,7 @@ class Net(torch.nn.Module):
         super().__init__()  # type: ignore[reportUnknownMemberType]
 
         if num_feat_count == 0:
-            raise dl.DLError("no features")
+            raise consts.DomainError("no features")
 
         if cfg.use_bn:
             self._bn: torch.nn.BatchNorm1d | torch.nn.Identity = torch.nn.BatchNorm1d(num_feat_count)

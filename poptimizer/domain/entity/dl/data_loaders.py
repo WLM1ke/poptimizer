@@ -2,7 +2,8 @@ from collections.abc import Iterator
 
 from torch.utils import data
 
-from poptimizer.dl import datasets, dl
+from poptimizer.domain import consts
+from poptimizer.domain.entity.dl import datasets
 
 AllTickersData = list[datasets.OneTickerData]
 DataLoader = data.DataLoader[datasets.Batch]
@@ -27,7 +28,7 @@ class _DaysSampler(data.Sampler[list[int]]):
         self._tests = self._test_days * len(all_data)
 
         if any(len(dataset) != self._test_days for dataset in all_data):
-            raise dl.DLError("test length mismatch")
+            raise consts.DomainError("test length mismatch")
 
     def __len__(self) -> int:
         return self._test_days

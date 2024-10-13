@@ -2,7 +2,7 @@ import torch
 from pydantic import BaseModel
 from torch.distributions import Categorical, MixtureSameFamily
 
-from poptimizer.dl import dl
+from poptimizer.domain import consts
 
 
 class Cfg(BaseModel):
@@ -50,7 +50,7 @@ class Net(torch.nn.Module):
                 logits=self._logit(end).permute(0, 2, 1),
             )  # type: ignore[no-untyped-call]
         except ValueError as err:
-            raise dl.DLError("error in categorical distribution") from err
+            raise consts.DomainError("error in categorical distribution") from err
 
         std = self._output_soft_plus_s(self._std(end)) + self._eps
         comp_dist = torch.distributions.LogNormal(
