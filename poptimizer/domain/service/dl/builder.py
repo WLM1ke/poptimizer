@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING
+from datetime import datetime
+from typing import TYPE_CHECKING, Final
 
 import pandas as pd
 from pydantic import BaseModel
@@ -10,9 +11,10 @@ from poptimizer.domain import consts
 from poptimizer.domain.entity.dl import datasets
 
 if TYPE_CHECKING:
-    from datetime import datetime
-
     from poptimizer.domain.service import view
+
+
+_T_PLUS_1_START: Final = datetime(2023, 7, 31)
 
 
 class Features(BaseModel):
@@ -99,4 +101,8 @@ class Builder:
 
 
 def _ex_div_date(index: pd.DatetimeIndex, date: datetime) -> int:
-    return int(index.get_indexer([date], method="ffill")[0]) - 1  # type: ignore[reportUnknownArgumentType]
+    shift = 2
+    if date > _T_PLUS_1_START:
+        shift = 1
+
+    return index.get_indexer([date], method="ffill")[0] - (shift - 1)  # type: ignore[reportUnknownArgumentType]
