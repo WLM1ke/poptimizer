@@ -5,7 +5,7 @@ import async_lru
 import numpy as np
 import pandas as pd
 
-from poptimizer.domain.entity import entity
+from poptimizer.domain.entity import entity, portfolio
 from poptimizer.domain.entity.data import quotes, trading_day
 from poptimizer.domain.entity.data.div import div
 from poptimizer.domain.service import domain_service
@@ -19,6 +19,11 @@ class Service:
         table = await self._repo.get(trading_day.TradingDay)
 
         return pd.Timestamp(table.last)
+
+    async def portfolio_tickers(self) -> tuple[str, ...]:
+        table = await self._repo.get(portfolio.Portfolio)
+
+        return tuple(sorted(table.securities))
 
     async def _quote(
         self,
