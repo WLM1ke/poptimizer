@@ -13,13 +13,10 @@ from poptimizer.domain.entity.dl import datasets
 if TYPE_CHECKING:
     from poptimizer.domain.service import view
 
-
 _T_PLUS_1_START: Final = datetime(2023, 7, 31)
 
 
 class Features(BaseModel):
-    tickers: tuple[str, ...]
-    last_date: datetime
     close: bool
     div: bool
     ret: bool
@@ -34,10 +31,12 @@ class Builder:
 
     async def build(
         self,
+        tickers: tuple[str, ...],
+        last_day: pd.Timestamp,
         feats: Features,
         days: datasets.Days,
     ) -> list[datasets.OneTickerData]:
-        prices = await self._data_adapter.close(feats.last_date, feats.tickers)
+        prices = await self._data_adapter.close(last_day, tickers)
 
         async with asyncio.TaskGroup() as tg:
             tasks = [
@@ -49,7 +48,7 @@ class Builder:
                         prices[ticker].dropna(),  # type: ignore[reportUnknownMemberType]
                     )
                 )
-                for ticker in feats.tickers
+                for ticker in tickers
             ]
 
         return [task.result() for task in tasks]

@@ -4,6 +4,7 @@ import io
 import itertools
 from typing import Literal, Protocol
 
+import pandas as pd
 import torch
 import tqdm
 from pydantic import BaseModel
@@ -83,10 +84,12 @@ class Trainer:
 
     async def test_model(
         self,
-        state: bytes | None,
+        tickers: tuple[str, ...],
+        last_day: pd.Timestamp,
         cfg: DLModel,
+        state: bytes | None,
     ) -> None:
-        data = await self._builder.build(cfg.batch.feats, cfg.batch.days)
+        data = await self._builder.build(tickers, last_day, cfg.batch.feats, cfg.batch.days)
         await asyncio.to_thread(
             self._test,
             state,

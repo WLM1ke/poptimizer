@@ -1,6 +1,6 @@
 import asyncio
 import random
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Final
 
 from poptimizer.domain.entity.dl import datasets, risk
@@ -150,8 +150,6 @@ _DESC: Final = trainer.DLModel(
     batch=trainer.Batch(
         size=320,
         feats=builder.Features(
-            tickers=_TICKERS,
-            last_date=datetime(2024, 10, 11),
             close=True,
             div=True,
             ret=True,
@@ -181,9 +179,10 @@ class EvolutionAction:
     async def __call__(self) -> states.States:
         await asyncio.sleep(_STEP_DURATION.total_seconds())
 
+        last_day = await self._view_service.last_day()
         bldr = builder.Builder(self._view_service)
         tr = trainer.Trainer(self._lgr, bldr)
-        await tr.test_model(None, _DESC)
+        await tr.test_model(_TICKERS, last_day, _DESC, None)
 
         match random.random() < _NEW_FORECAST_PROBABILITY:  # noqa: S311
             case True:

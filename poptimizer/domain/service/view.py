@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from poptimizer.domain.entity import entity
-from poptimizer.domain.entity.data import quotes
+from poptimizer.domain.entity.data import quotes, trading_day
 from poptimizer.domain.entity.data.div import div
 from poptimizer.domain.service import domain_service
 
@@ -14,6 +14,11 @@ from poptimizer.domain.service import domain_service
 class Service:
     def __init__(self, repo: domain_service.Repo) -> None:
         self._repo = repo
+
+    async def last_day(self) -> pd.Timestamp:
+        table = await self._repo.get(trading_day.TradingDay)
+
+        return pd.Timestamp(table.last)
 
     async def _quote(
         self,
