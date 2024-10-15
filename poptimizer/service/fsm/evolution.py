@@ -49,7 +49,7 @@ class EvolutionAction:
         last_day = await self._view_service.last_day()
         tickers = await self._view_service.portfolio_tickers()
         tr = trainer.Trainer(self._lgr, builder.Builder(self._view_service))
-        await tr.test_model(tickers, last_day, _DESC, None)
+        await tr.run(tickers, last_day, _DESC, None)
 
         match random.random() < _NEW_FORECAST_PROBABILITY:  # noqa: S311
             case True:

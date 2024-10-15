@@ -81,8 +81,9 @@ class Trainer:
         self._lgr = lgr
         self._builder = builder
         self._device = _get_device()
+        self._stopping = False
 
-    async def test_model(
+    async def run(
         self,
         tickers: tuple[str, ...],
         last_day: pd.Timestamp,
@@ -90,51 +91,27 @@ class Trainer:
         state: bytes | None,
     ) -> None:
         data = await self._builder.build(tickers, last_day, cfg.batch.feats, cfg.batch.days)
-        await asyncio.to_thread(
-            self._test,
-            state,
-            cfg,
-            data,
-        )
-
-    def _test(
-        self,
-        state: bytes | None,
-        cfg: DLModel,
-        data: list[datasets.OneTickerData],
-    ) -> None:
         net = self._prepare_net(state, cfg)
-
         if state is None:
-            self._train(
-                net,
-                data_loaders.train(data, cfg.batch.size),
-                cfg.scheduler,
-            )
-
-        test_dl = data_loaders.test(data)
-
-        with torch.no_grad():
-            net.eval()
-
-            for batch in test_dl:
-                loss, mean, variance = net.loss_and_forecast_mean_and_var(self._batch_to_device(batch))
-                rez = risk.optimize(
-                    mean - 1,
-                    variance,
-                    batch[datasets.FeatTypes.LABEL1P].cpu().numpy() - 1,
-                    batch[datasets.FeatTypes.RETURNS].cpu().numpy(),
-                    cfg.utility,
-                    cfg.batch.forecast_days,
+            try:
+                await asyncio.to_thread(
+                    self._train,
+                    net,
+                    cfg.scheduler,
+                    data_loaders.train(data, cfg.batch.size),
                 )
+            except asyncio.CancelledError:
+                self._stopping = True
 
-                self._lgr.info(f"{rez} / LLH = {loss:8.5f}")
+                raise
+
+        self._test(net, cfg, data_loaders.test(data))
 
     def _train(
         self,
         net: wave_net.Net,
-        train_dl: data_loaders.DataLoader,
         scheduler: Scheduler,
+        train_dl: data_loaders.DataLoader,
     ) -> None:
         optimizer = optim.AdamW(net.parameters())  # type: ignore[reportPrivateImportUsage]
 
@@ -161,6 +138,9 @@ class Trainer:
             desc="~~> Train",
         ) as progress_bar:
             for batch in progress_bar:
+                if self._stopping:
+                    return
+
                 optimizer.zero_grad()
 
                 loss = -net.llh(self._batch_to_device(batch))
@@ -170,6 +150,23 @@ class Trainer:
 
                 avg_llh.append(-loss.item())
                 progress_bar.set_postfix_str(f"{avg_llh.running_avg():.5f}")
+
+    def _test(self, net: wave_net.Net, cfg: DLModel, test_dl: data_loaders.DataLoader) -> None:
+        with torch.no_grad():
+            net.eval()
+
+            for batch in test_dl:
+                loss, mean, variance = net.loss_and_forecast_mean_and_var(self._batch_to_device(batch))
+                rez = risk.optimize(
+                    mean - 1,
+                    variance,
+                    batch[datasets.FeatTypes.LABEL1P].cpu().numpy() - 1,
+                    batch[datasets.FeatTypes.RETURNS].cpu().numpy(),
+                    cfg.utility,
+                    cfg.batch.forecast_days,
+                )
+
+                self._lgr.info(f"{rez} / LLH = {loss:8.5f}")
 
     def _log_net_stats(self, net: wave_net.Net, epochs: float, train_dl: data_loaders.DataLoader) -> None:
         train_size = len(train_dl.dataset)  # type: ignore[arg-type]
