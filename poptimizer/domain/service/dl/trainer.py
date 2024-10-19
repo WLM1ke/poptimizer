@@ -41,12 +41,12 @@ class Scheduler(BaseModel):
     max_lr: float = 1e-3
 
 
-class DLModel(BaseModel):
+class Cfg(BaseModel):
     batch: Batch
     net: backbone.Cfg
     optimizer: Optimizer
     scheduler: Scheduler
-    utility: risk.Cfg
+    risk: risk.Cfg
 
 
 class RunningMean:
@@ -87,7 +87,7 @@ class Trainer:
         self,
         tickers: tuple[str, ...],
         last_day: pd.Timestamp,
-        cfg: DLModel,
+        cfg: Cfg,
         state: bytes | None,
     ) -> None:
         data = await self._builder.build(tickers, last_day, cfg.batch.feats, cfg.batch.days)
@@ -151,7 +151,7 @@ class Trainer:
                 avg_llh.append(-loss.item())
                 progress_bar.set_postfix_str(f"{avg_llh.running_avg():.5f}")
 
-    def _test(self, net: wave_net.Net, cfg: DLModel, test_dl: data_loaders.DataLoader) -> None:
+    def _test(self, net: wave_net.Net, cfg: Cfg, test_dl: data_loaders.DataLoader) -> None:
         with torch.no_grad():
             net.eval()
 
@@ -162,7 +162,7 @@ class Trainer:
                     variance,
                     batch[datasets.FeatTypes.LABEL1P].cpu().numpy() - 1,
                     batch[datasets.FeatTypes.RETURNS].cpu().numpy(),
-                    cfg.utility,
+                    cfg.risk,
                     cfg.batch.forecast_days,
                 )
 
@@ -183,7 +183,7 @@ class Trainer:
 
         return device_batch
 
-    def _prepare_net(self, state: bytes | None, cfg: DLModel) -> wave_net.Net:
+    def _prepare_net(self, state: bytes | None, cfg: Cfg) -> wave_net.Net:
         net = wave_net.Net(
             cfg=cfg.net,
             num_feat_count=cfg.batch.num_feat_count,

@@ -1,86 +1,119 @@
-from __future__ import annotations
-
-import functools
-import random
-from typing import Any, Self
-
-from pydantic import AfterValidator, BaseModel, Field, PlainSerializer
+from typing import Annotated
 
 from poptimizer.domain import consts
-
-type Genes = dict[str, float | Genes]
-
-
-class Genotype(BaseModel):
-    @property
-    def phenotype(self) -> dict[str, Any]:
-        return self.model_dump()
-
-    @property
-    def genes(self) -> Genes:
-        genes: Genes = {}
-
-        for gene, value in self:
-            match value:
-                case float():
-                    genes[gene] = value
-                case Genotype():
-                    genes[gene] = value.genes
-                case _:
-                    raise consts.DomainError(f"unknown gene type {type(value)}")
-
-        return genes
-
-    def make_child(self, parent1: Self, parent2: Self, scale: float) -> Self:
-        genes1 = dict(parent1)
-        genes2 = dict(parent2)
-
-        child = {}
-
-        for gene, value in self:
-            match value:
-                case float():
-                    child[gene] = value + (genes1[gene] - genes2[gene]) * scale * random.gauss()
-                case Genotype():
-                    child[gene] = value.make_child(genes1[gene], genes2[gene], scale)
-                case _:
-                    raise consts.DomainError(f"unknown gene type {type(value)}")
-
-        return self.model_validate(child)
+from poptimizer.domain.entity.evolve import genetics
 
 
-def _range_validator_wrapper(value: float, lower: float | None, upper: float | None) -> float:
-    if lower is not None and value < lower:
-        return _range_validator_wrapper(lower + (lower - value), lower, upper)
-
-    if upper is not None and value > upper:
-        return _range_validator_wrapper(upper - (value - upper), lower, upper)
-
-    return value
-
-
-def gene_range(lower: float | None = None, upper: float | None = None) -> AfterValidator:
-    return AfterValidator(functools.partial(_range_validator_wrapper, lower=lower, upper=upper))
-
-
-def int_phenotype() -> PlainSerializer:
-    return PlainSerializer(lambda x: int(x), return_type=int)
+class Features(genetics.Chromosome):
+    close: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
+    div: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
+    ret: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
 
 
-def float_phenotype() -> PlainSerializer:
-    return PlainSerializer(lambda x: x, return_type=float)
+class Days(genetics.Chromosome):
+    history: Annotated[
+        float,
+        genetics.gene_range(lower=2),
+        genetics.int_phenotype(),
+    ] = genetics.random_default_range(
+        consts.YEAR_IN_TRADING_DAYS,
+        consts.YEAR_IN_TRADING_DAYS + consts.MONTH_IN_TRADING_DAYS,
+    )
+    forecast: Annotated[
+        float,
+        genetics.int_phenotype(),
+    ] = float(consts.MONTH_IN_TRADING_DAYS)
+    test: Annotated[
+        float,
+        genetics.int_phenotype(),
+    ] = float(64)
 
 
-def bool_phenotype() -> PlainSerializer:
-    return PlainSerializer(lambda x: x > 0, return_type=bool)
+class Batch(genetics.Chromosome):
+    size: Annotated[
+        float,
+        genetics.gene_range(lower=1),
+        genetics.int_phenotype(),
+    ] = genetics.random_default_range(128, 128 * 4)
+    feats: Features = genetics.random_chromosome(Features)
+    days: Days = genetics.random_chromosome(Days)
 
 
-def random_default_range(lower: float, upper: float) -> Any:
-    return Field(default_factory=lambda: random.uniform(lower, upper))  # noqa: S311
+class Net(genetics.Chromosome):
+    use_bn: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
+    sub_blocks: Annotated[
+        float,
+        genetics.gene_range(lower=1),
+        genetics.int_phenotype(),
+    ] = genetics.random_default_range(1, 2)
+    kernels: Annotated[
+        float,
+        genetics.gene_range(lower=1),
+        genetics.int_phenotype(),
+    ] = genetics.random_default_range(2, 8)
+    residual_channels: Annotated[
+        float,
+        genetics.gene_range(lower=1),
+        genetics.int_phenotype(),
+    ] = genetics.random_default_range(4, 8)
+    gate_channels: Annotated[
+        float,
+        genetics.gene_range(lower=1),
+        genetics.int_phenotype(),
+    ] = genetics.random_default_range(4, 8)
+    skip_channels: Annotated[
+        float,
+        genetics.gene_range(lower=1),
+        genetics.int_phenotype(),
+    ] = genetics.random_default_range(4, 8)
+    head_channels: Annotated[
+        float,
+        genetics.gene_range(lower=1),
+        genetics.int_phenotype(),
+    ] = genetics.random_default_range(4, 8)
+    mixture_size: Annotated[
+        float,
+        genetics.gene_range(lower=1),
+        genetics.int_phenotype(),
+    ] = genetics.random_default_range(2, 4)
 
 
-type ChromosomeType = type[Genotype]
+class Optimizer(genetics.Chromosome): ...
 
 
-def random_chromosome(chromosome_type: ChromosomeType) -> Any:
-    return Field(default_factory=chromosome_type)
+class Scheduler(genetics.Chromosome):
+    epochs: Annotated[
+        float,
+        genetics.gene_range(lower=0),
+    ] = genetics.random_default_range(1, 3)
+    max_lr: Annotated[
+        float,
+        genetics.gene_range(lower=0),
+    ] = genetics.random_default_range(0.001, 0.01)
+
+
+class Risk(genetics.Chromosome):
+    risk_tolerance: Annotated[
+        float,
+        genetics.gene_range(lower=0, upper=1),
+    ] = genetics.random_default_range(0, 1)
+
+
+class DLModel(genetics.Chromosome):
+    batch: Batch = genetics.random_chromosome(Batch)
+    net: Net = genetics.random_chromosome(Net)
+    optimizer: Optimizer = genetics.random_chromosome(Optimizer)
+    scheduler: Scheduler = genetics.random_chromosome(Scheduler)
+    risk: Risk = genetics.random_chromosome(Risk)
