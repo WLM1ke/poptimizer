@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from torch import optim
 
 from poptimizer.domain.entity.dl import data_loaders, datasets, risk
-from poptimizer.domain.entity.dl.wave_net import wave_net
+from poptimizer.domain.entity.dl.wave_net import backbone, wave_net
 from poptimizer.domain.service.dl import builder
 
 
@@ -43,7 +43,7 @@ class Scheduler(BaseModel):
 
 class DLModel(BaseModel):
     batch: Batch
-    net: wave_net.Cfg
+    net: backbone.Cfg
     optimizer: Optimizer
     scheduler: Scheduler
     utility: risk.Cfg
@@ -183,12 +183,12 @@ class Trainer:
 
         return device_batch
 
-    def _prepare_net(self, state: bytes | None, desc: DLModel) -> wave_net.Net:
+    def _prepare_net(self, state: bytes | None, cfg: DLModel) -> wave_net.Net:
         net = wave_net.Net(
-            cfg=desc.net,
-            num_feat_count=desc.batch.num_feat_count,
-            history_days=desc.batch.history_days,
-            forecast_days=desc.batch.forecast_days,
+            cfg=cfg.net,
+            num_feat_count=cfg.batch.num_feat_count,
+            history_days=cfg.batch.history_days,
+            forecast_days=cfg.batch.forecast_days,
         ).to(self._device)
 
         if state is not None:

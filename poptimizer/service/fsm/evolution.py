@@ -4,7 +4,7 @@ from datetime import timedelta
 from typing import Final
 
 from poptimizer.domain.entity.dl import datasets, risk
-from poptimizer.domain.entity.dl.wave_net import backbone, head, inputs, wave_net
+from poptimizer.domain.entity.dl.wave_net import backbone
 from poptimizer.domain.service import view
 from poptimizer.domain.service.dl import builder, trainer
 from poptimizer.service.common import logging
@@ -27,10 +27,15 @@ _DESC: Final = trainer.DLModel(
             test=64,
         ),
     ),
-    net=wave_net.Cfg(
-        input=inputs.Cfg(use_bn=True, out_channels=32),
-        backbone=backbone.Cfg(blocks=1, kernels=32, channels=32, out_channels=32),
-        head=head.Cfg(channels=32, mixture_size=4),
+    net=backbone.Cfg(
+        use_bn=True,
+        sub_blocks=1,
+        kernels=32,
+        residual_channels=32,
+        gate_channels=32,
+        skip_channels=32,
+        head_channels=32,
+        mixture_size=4,
     ),
     optimizer=trainer.Optimizer(),
     scheduler=trainer.Scheduler(epochs=3, max_lr=0.0015),

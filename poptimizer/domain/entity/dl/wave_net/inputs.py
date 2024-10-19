@@ -11,20 +11,26 @@ class Cfg(BaseModel):
 
 
 class Net(torch.nn.Module):
-    def __init__(self, num_feat_count: int, cfg: Cfg) -> None:
+    def __init__(
+        self,
+        *,
+        num_feat_count: int,
+        use_bn: bool,
+        residual_channels: int,
+    ) -> None:
         super().__init__()  # type: ignore[reportUnknownMemberType]
 
         if num_feat_count == 0:
             raise consts.DomainError("no features")
 
-        if cfg.use_bn:
+        if use_bn:
             self._bn: torch.nn.BatchNorm1d | torch.nn.Identity = torch.nn.BatchNorm1d(num_feat_count)
         else:
             self._bn = torch.nn.Identity()
 
         self._output = torch.nn.Conv1d(
             in_channels=num_feat_count,
-            out_channels=cfg.out_channels,
+            out_channels=residual_channels,
             kernel_size=1,
         )
 

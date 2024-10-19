@@ -1,18 +1,11 @@
 import numpy as np
 import torch
 from numpy.typing import NDArray
-from pydantic import BaseModel
 from torch.distributions import MixtureSameFamily
 
 from poptimizer.domain import consts
 from poptimizer.domain.entity.dl import datasets
 from poptimizer.domain.entity.dl.wave_net import backbone, head, inputs
-
-
-class Cfg(BaseModel):
-    input: inputs.Cfg
-    backbone: backbone.Cfg
-    head: head.Cfg
 
 
 class Net(torch.nn.Module):
@@ -23,7 +16,7 @@ class Net(torch.nn.Module):
 
     def __init__(
         self,
-        cfg: Cfg,
+        cfg: backbone.Cfg,
         num_feat_count: int,
         history_days: int,
         forecast_days: int,
@@ -34,16 +27,17 @@ class Net(torch.nn.Module):
 
         self._input = inputs.Net(
             num_feat_count=num_feat_count,
-            cfg=cfg.input,
+            use_bn=cfg.use_bn,
+            residual_channels=cfg.residual_channels,
         )
         self._backbone = backbone.Net(
-            history_days=history_days,
-            in_channels=cfg.input.out_channels,
-            desc=cfg.backbone,
+            blocks=int(np.log2(history_days - 1)) + 1,
+            cfg=cfg,
         )
         self._head = head.Net(
-            in_channels=cfg.backbone.out_channels,
-            cfg=cfg.head,
+            skip_channels=cfg.skip_channels,
+            head_channels=cfg.head_channels,
+            mixture_size=cfg.mixture_size,
         )
 
     def forward(self, batch: datasets.Batch) -> MixtureSameFamily:

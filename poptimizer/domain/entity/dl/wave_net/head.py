@@ -11,7 +11,13 @@ class Cfg(BaseModel):
 
 
 class Net(torch.nn.Module):
-    def __init__(self, in_channels: int, cfg: Cfg) -> None:
+    def __init__(
+        self,
+        *,
+        skip_channels: int,
+        head_channels: int,
+        mixture_size: int,
+    ) -> None:
         super().__init__()  # type: ignore[reportUnknownMemberType]
 
         self.register_buffer(
@@ -20,24 +26,24 @@ class Net(torch.nn.Module):
         )
 
         self._end = torch.nn.Conv1d(
-            in_channels=in_channels,
-            out_channels=cfg.channels,
+            in_channels=skip_channels,
+            out_channels=head_channels,
             kernel_size=1,
         )
 
         self._logit = torch.nn.Conv1d(
-            in_channels=cfg.channels,
-            out_channels=cfg.mixture_size,
+            in_channels=head_channels,
+            out_channels=mixture_size,
             kernel_size=1,
         )
         self._mean = torch.nn.Conv1d(
-            in_channels=cfg.channels,
-            out_channels=cfg.mixture_size,
+            in_channels=head_channels,
+            out_channels=mixture_size,
             kernel_size=1,
         )
         self._std = torch.nn.Conv1d(
-            in_channels=cfg.channels,
-            out_channels=cfg.mixture_size,
+            in_channels=head_channels,
+            out_channels=mixture_size,
             kernel_size=1,
         )
         self._output_soft_plus_s = torch.nn.Softplus()

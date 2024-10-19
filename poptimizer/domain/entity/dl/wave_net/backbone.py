@@ -1,10 +1,9 @@
-import numpy as np
 import torch
 from pydantic import BaseModel
 
 
 class _GatedBlock(torch.nn.Module):
-    def __init__(self, in_channels: int, inner_channels: int, kernels: int) -> None:
+    def __init__(self, residual_channels: int, gate_channels: int, kernels: int) -> None:
         super().__init__()  # type: ignore[reportUnknownMemberType]
 
         self._pad = torch.nn.ConstantPad1d(
@@ -12,20 +11,20 @@ class _GatedBlock(torch.nn.Module):
             value=0,
         )
         self._signal = torch.nn.Conv1d(
-            in_channels=in_channels,
-            out_channels=inner_channels,
+            in_channels=residual_channels,
+            out_channels=gate_channels,
             kernel_size=kernels,
             stride=1,
         )
         self._gate = torch.nn.Conv1d(
-            in_channels=in_channels,
-            out_channels=inner_channels,
+            in_channels=residual_channels,
+            out_channels=gate_channels,
             kernel_size=kernels,
             stride=1,
         )
         self._output = torch.nn.Conv1d(
-            in_channels=inner_channels,
-            out_channels=in_channels,
+            in_channels=gate_channels,
+            out_channels=residual_channels,
             kernel_size=1,
         )
 
@@ -40,29 +39,33 @@ class _GatedBlock(torch.nn.Module):
 
 
 class Cfg(BaseModel):
-    blocks: int
+    use_bn: bool
+    sub_blocks: int
     kernels: int
-    channels: int
-    out_channels: int
+    residual_channels: int
+    gate_channels: int
+    skip_channels: int
+    head_channels: int
+    mixture_size: int
 
 
 class _Blocks(torch.nn.Module):
-    def __init__(self, in_channels: int, cfg: Cfg) -> None:
+    def __init__(self, cfg: Cfg) -> None:
         super().__init__()  # type: ignore[reportUnknownMemberType]
 
         self._blocks = torch.nn.Sequential()
-        for _ in range(cfg.blocks):
+        for _ in range(cfg.sub_blocks):
             self._blocks.append(
                 _GatedBlock(
-                    in_channels=in_channels,
-                    inner_channels=cfg.channels,
+                    residual_channels=cfg.residual_channels,
+                    gate_channels=cfg.gate_channels,
                     kernels=cfg.kernels,
                 ),
             )
 
         self._skip = torch.nn.Conv1d(
-            in_channels=in_channels,
-            out_channels=cfg.out_channels,
+            in_channels=cfg.residual_channels,
+            out_channels=cfg.skip_channels,
             kernel_size=1,
         )
         self._dilated_pad = torch.nn.ConstantPad1d(
@@ -70,8 +73,8 @@ class _Blocks(torch.nn.Module):
             value=0,
         )
         self._dilated = torch.nn.Conv1d(
-            in_channels=in_channels,
-            out_channels=in_channels,
+            in_channels=cfg.residual_channels,
+            out_channels=cfg.residual_channels,
             kernel_size=2,
             stride=2,
         )
@@ -88,21 +91,20 @@ class _Blocks(torch.nn.Module):
 class Net(torch.nn.Module):
     def __init__(
         self,
-        history_days: int,
-        in_channels: int,
-        desc: Cfg,
+        *,
+        blocks: int,
+        cfg: Cfg,
     ) -> None:
         super().__init__()  # type: ignore[reportUnknownMemberType]
 
         self._blocks = torch.nn.ModuleList()
-        blocks = int(np.log2(history_days - 1)) + 1
 
         for _ in range(blocks):
-            self._blocks.append(_Blocks(in_channels=in_channels, cfg=desc))
+            self._blocks.append(_Blocks(cfg=cfg))
 
         self._final_skip_conv = torch.nn.Conv1d(
-            in_channels=in_channels,
-            out_channels=desc.out_channels,
+            in_channels=cfg.residual_channels,
+            out_channels=cfg.skip_channels,
             kernel_size=1,
         )
 
