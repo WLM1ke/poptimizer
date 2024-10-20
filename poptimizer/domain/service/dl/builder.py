@@ -8,7 +8,7 @@ import pandas as pd
 from pydantic import BaseModel
 
 from poptimizer.domain import consts
-from poptimizer.domain.entity.dl import datasets
+from poptimizer.domain.entity_.dl import datasets
 
 if TYPE_CHECKING:
     from poptimizer.domain.service import view

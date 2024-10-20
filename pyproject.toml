@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "aiohttp>=3.10.8",
-    "motor>=3.5.1",
     "pydantic>=2.9.0",
     "pydantic-settings>=2.4.0",
     "typer>=0.12.5",
@@ -20,6 +19,7 @@ dependencies = [
     "async-lru>=2.0.4",
     "torch>=2.5.0",
     "tqdm>=4.66.5",
+    "pymongo>=4.9.2",
 ]
 
 [tool.uv]

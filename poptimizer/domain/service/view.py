@@ -5,9 +5,10 @@ import async_lru
 import numpy as np
 import pandas as pd
 
-from poptimizer.domain.entity import entity, portfolio
-from poptimizer.domain.entity.data import quotes, trading_day
-from poptimizer.domain.entity.data.div import div
+from poptimizer.domain.data import trading_day
+from poptimizer.domain.entity_ import entity, portfolio
+from poptimizer.domain.entity_.data import quotes
+from poptimizer.domain.entity_.data.div import div
 from poptimizer.domain.service import domain_service
 
 

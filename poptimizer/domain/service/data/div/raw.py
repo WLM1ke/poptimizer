@@ -6,9 +6,9 @@ from enum import StrEnum, auto
 
 from pydantic import BaseModel, Field, field_validator
 
-from poptimizer.domain.entity import entity
-from poptimizer.domain.entity.data import quotes
-from poptimizer.domain.entity.data.div import raw, reestry, status
+from poptimizer.domain.entity_ import entity
+from poptimizer.domain.entity_.data import quotes
+from poptimizer.domain.entity_.data.div import raw, reestry, status
 from poptimizer.domain.service import domain_service
 
 

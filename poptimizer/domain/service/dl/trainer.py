@@ -10,8 +10,8 @@ import tqdm
 from pydantic import BaseModel
 from torch import optim
 
-from poptimizer.domain.entity.dl import data_loaders, datasets, risk
-from poptimizer.domain.entity.dl.wave_net import backbone, wave_net
+from poptimizer.domain.entity_.dl import data_loaders, datasets, risk
+from poptimizer.domain.entity_.dl.wave_net import backbone, wave_net
 from poptimizer.domain.service.dl import builder
 
 

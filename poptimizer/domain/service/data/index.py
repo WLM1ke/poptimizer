@@ -7,8 +7,8 @@ import aiomoex
 from pydantic import TypeAdapter
 
 from poptimizer.domain import consts
-from poptimizer.domain.entity import entity
-from poptimizer.domain.entity.data import index
+from poptimizer.domain.entity_ import entity
+from poptimizer.domain.entity_.data import index
 from poptimizer.domain.service import domain_service
 
 _INDEXES: Final = (

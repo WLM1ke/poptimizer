@@ -2,7 +2,7 @@ from typing import Protocol
 
 import pandas as pd
 
-from poptimizer.domain.entity import entity
+from poptimizer.domain.entity_ import entity
 
 
 class Repo(Protocol):

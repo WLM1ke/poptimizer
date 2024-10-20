@@ -3,7 +3,7 @@ from datetime import date
 from pydantic import Field, field_validator
 
 from poptimizer.domain import consts
-from poptimizer.domain.entity import entity
+from poptimizer.domain.entity_ import entity
 
 
 class Row(entity.Row):
@@ -12,16 +12,17 @@ class Row(entity.Row):
     close: float = Field(alias="close", gt=0)
     high: float = Field(alias="high", gt=0)
     low: float = Field(alias="low", gt=0)
-    turnover: float = Field(alias="value", gt=0)
+    turnover: float = Field(alias="value", ge=0)
 
 
-class USD(entity.Entity):
+class Quotes(entity.Entity):
     df: list[Row] = Field(default_factory=list[Row])
 
     def update(self, update_day: entity.Day, rows: list[Row]) -> None:
         self.day = update_day
 
         if not self.df:
+            rows.sort(key=lambda row: row.day)
             self.df = rows
 
             return
@@ -40,3 +41,4 @@ class USD(entity.Entity):
         return self.df[-1].day
 
     _must_be_sorted_by_date = field_validator("df")(entity.sorted_by_day_validator)
+    _must_be_after_start_date = field_validator("df")(entity.after_start_date_validator)

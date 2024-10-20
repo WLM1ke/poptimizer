@@ -3,7 +3,7 @@ from typing import Final
 
 from pydantic import Field, field_validator
 
-from poptimizer.domain.entity import entity
+from poptimizer.domain.entity_ import entity
 
 _SHARES_BOARD: Final = "TQBR"
 _PREFERRED_TYPE: Final = "2"

@@ -6,8 +6,8 @@ import aiomoex
 from pydantic import TypeAdapter
 
 from poptimizer.domain import consts
-from poptimizer.domain.entity import entity
-from poptimizer.domain.entity.data import quotes, securities
+from poptimizer.domain.entity_ import entity
+from poptimizer.domain.entity_.data import quotes, securities
 from poptimizer.domain.service import domain_service
 
 

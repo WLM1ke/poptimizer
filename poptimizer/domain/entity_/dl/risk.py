@@ -4,7 +4,7 @@ from numpy.typing import NDArray
 from pydantic import BaseModel
 
 from poptimizer.domain import consts
-from poptimizer.domain.entity.dl import ledoit_wolf
+from poptimizer.domain.entity_.dl import ledoit_wolf
 
 
 class Cfg(BaseModel):

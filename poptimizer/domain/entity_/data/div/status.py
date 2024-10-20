@@ -2,8 +2,8 @@ import itertools
 
 from pydantic import Field, field_validator
 
-from poptimizer.domain.entity import entity
-from poptimizer.domain.entity.data.div import raw
+from poptimizer.domain.entity_ import entity
+from poptimizer.domain.entity_.data.div import raw
 
 
 class Row(entity.Row):

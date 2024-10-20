@@ -5,8 +5,8 @@ from typing import Self
 
 from pydantic import Field, field_validator, model_validator
 
-from poptimizer.domain.entity import entity
-from poptimizer.domain.entity.evolve import genetics, genotype
+from poptimizer.domain.entity_ import entity
+from poptimizer.domain.entity_.evolve import genetics, genotype
 
 
 class Organism(entity.Entity):

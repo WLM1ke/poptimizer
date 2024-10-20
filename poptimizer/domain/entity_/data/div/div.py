@@ -1,6 +1,6 @@
 from pydantic import Field, field_validator
 
-from poptimizer.domain.entity import entity
+from poptimizer.domain.entity_ import entity
 
 
 class Row(entity.Row):

@@ -4,8 +4,8 @@ from numpy.typing import NDArray
 from torch.distributions import MixtureSameFamily
 
 from poptimizer.domain import consts
-from poptimizer.domain.entity.dl import datasets
-from poptimizer.domain.entity.dl.wave_net import backbone, head, inputs
+from poptimizer.domain.entity_.dl import datasets
+from poptimizer.domain.entity_.dl.wave_net import backbone, head, inputs
 
 
 class Net(torch.nn.Module):

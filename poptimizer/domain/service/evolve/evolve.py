@@ -1,7 +1,7 @@
 import bson
 
-from poptimizer.domain.entity import entity
-from poptimizer.domain.entity.evolve import evolve, organism
+from poptimizer.domain.entity_ import entity
+from poptimizer.domain.entity_.evolve import evolve, organism
 from poptimizer.domain.service import domain_service, view
 
 
