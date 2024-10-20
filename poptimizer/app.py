@@ -5,7 +5,6 @@ import uvloop
 
 from poptimizer import config
 from poptimizer.adapter import http, lgr, mongo
-from poptimizer.domain.data import trading_day
 
 
 async def _run() -> None:
@@ -13,6 +12,8 @@ async def _run() -> None:
 
     async with contextlib.AsyncExitStack() as stack:
         http_client = await stack.enter_async_context(http.client())
+        mongo_client = await stack.enter_async_context(mongo.client(cfg.mongo_db_uri))
+
         tg = await stack.enter_async_context(asyncio.TaskGroup())
         lgr.init(
             tg,
@@ -20,9 +21,8 @@ async def _run() -> None:
             cfg.telegram_token,
             cfg.telegram_chat_id,
         )
-        mongo_client = await stack.enter_async_context(mongo.client(cfg.mongo_db_uri))
-        repo = mongo.Repo(mongo_client, cfg.mongo_db_db)
-        print(await repo.get(trading_day.TradingDay))
+        mongo.Repo(mongo_client, cfg.mongo_db_db)
+
 
 
 def run() -> None:

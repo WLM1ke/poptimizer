@@ -5,10 +5,9 @@ from typing import Any, Final
 
 import pymongo
 from pydantic import MongoDsn, ValidationError
-from pymongo import errors
+from pymongo.errors import PyMongoError
 
-from poptimizer import consts
-from poptimizer.domain import domain
+from poptimizer.core import consts, domain, errors
 
 _MONGO_ID: Final = "_id"
 _REV: Final = "rev"
@@ -29,16 +28,6 @@ async def client(uri: MongoDsn) -> AsyncIterator[MongoClient]:
         await mongo_client.aclose()
 
 
-def get_component_name(component: Any) -> str:
-    if isinstance(component, type):
-        return component.__name__
-
-    return component.__class__.__name__
-
-
-class RepoError(domain.POError): ...
-
-
 class Repo:
     def __init__(self, mongo_client: MongoClient, db: str) -> None:
         self._db = mongo_client[db]
@@ -48,7 +37,7 @@ class Repo:
         t_entity: type[E],
         uid: domain.UID | None = None,
     ) -> E:
-        collection_name = get_component_name(t_entity)
+        collection_name = domain.get_component_name(t_entity)
         uid = uid or domain.UID(collection_name)
 
         if (doc := await self._load(collection_name, uid)) is None:
@@ -61,8 +50,8 @@ class Repo:
 
         try:
             return await collection.find_one({_MONGO_ID: uid})
-        except errors.PyMongoError as err:
-            raise RepoError("can't load {collection_name}.{uid}") from err
+        except PyMongoError as err:
+            raise errors.AdapterError("can't load {collection_name}.{uid}") from err
 
     async def _create_new(self, collection_name: str, uid: domain.UID) -> MongoDocument | None:
         doc = {
@@ -75,8 +64,8 @@ class Repo:
 
         try:
             await collection.insert_one(doc)
-        except errors.PyMongoError as err:
-            raise RepoError("can't create {collection_name}.{uid}") from err
+        except PyMongoError as err:
+            raise errors.AdapterError("can't create {collection_name}.{uid}") from err
 
         return doc
 
@@ -90,11 +79,11 @@ class Repo:
         try:
             return t_entity.model_validate(doc)
         except ValidationError as err:
-            collection_name = get_component_name(t_entity)
-            raise RepoError(f"can't create entity {collection_name}.{uid}") from err
+            collection_name = domain.get_component_name(t_entity)
+            raise errors.AdapterError(f"can't create entity {collection_name}.{uid}") from err
 
     async def save(self, entity: domain.Entity) -> None:
-        collection_name = get_component_name(domain)
+        collection_name = domain.get_component_name(domain)
 
         doc = entity.model_dump()
         doc.pop(_REV)
@@ -105,8 +94,8 @@ class Repo:
                 {"$inc": {_VER: 1}, "$set": doc},
                 projection={_MONGO_ID: False},
             )
-        except errors.PyMongoError as err:
-            raise RepoError("can't save entities") from err
+        except PyMongoError as err:
+            raise errors.AdapterError("can't save entities") from err
 
         if updated is None:  # type: ignore[reportUnnecessaryComparison]
-            raise RepoError(f"wrong version {collection_name}.{entity.uid}")
+            raise errors.AdapterError(f"wrong version {collection_name}.{entity.uid}")

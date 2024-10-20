@@ -1,33 +1,26 @@
 import itertools
+import types
 from datetime import date, datetime
 from enum import StrEnum, auto, unique
-from typing import Annotated, NewType, Protocol
+from typing import Annotated, Any, NewType, Protocol
 
 from pydantic import BaseModel, ConfigDict, PlainSerializer
 
-from poptimizer import consts
-
-
-class POError(Exception):
-    def __str__(self) -> str:
-        """Выводи исходную причину ошибки при ее наличии для удобства логирования.
-
-        https://peps.python.org/pep-3134/
-        """
-        errs = [repr(self)]
-        cause_err: BaseException | None = self
-
-        while cause_err := cause_err and (cause_err.__cause__ or cause_err.__context__):
-            errs.append(repr(cause_err))
-
-        return " -> ".join(errs)
-
-
-class DomainError(POError): ...
-
+from poptimizer.core import consts
 
 UID = NewType("UID", str)
 Version = NewType("Version", int)
+Component = NewType("Component", str)
+
+
+def get_component_name(component: Any) -> Component:
+    if isinstance(component, type):
+        return Component(component.__name__)
+
+    if isinstance(component, types.MethodType):
+        return Component(f"{component.__self__.__class__.__name__}.{component.__func__.__name__}")
+
+    return Component(component.__class__.__name__)
 
 
 class Revision(BaseModel):
@@ -57,6 +50,9 @@ AccName = NewType("AccName", str)
 class Currency(StrEnum):
     RUR = auto()
     USD = auto()
+
+
+class Event(BaseModel): ...
 
 
 class Entity(BaseModel):
