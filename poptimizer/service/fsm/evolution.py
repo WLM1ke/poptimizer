@@ -3,6 +3,8 @@ import random
 from datetime import timedelta
 from typing import Final
 
+import pandas as pd
+
 from poptimizer.domain.entity import entity
 from poptimizer.domain.entity.evolve import organism
 from poptimizer.domain.service import view
@@ -25,14 +27,14 @@ class EvolutionAction:
         last_day = await self._view_service.last_day()
         org = organism.Organism(
             rev=entity.Revision(uid=entity.UID("uid"), ver=entity.Version(0)),
-            day=last_day.date(),
+            day=last_day,
             tickers=await self._view_service.portfolio_tickers(),
         )
 
         cfg = trainer.Cfg.model_validate(org.phenotype)
 
         tr = trainer.Trainer(self._lgr, builder.Builder(self._view_service))
-        await tr.run(org.tickers, last_day, cfg, None)
+        await tr.run(org.tickers, pd.Timestamp(last_day), cfg, None)
 
         match random.random() < _NEW_FORECAST_PROBABILITY:  # noqa: S311
             case True:

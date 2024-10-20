@@ -15,10 +15,10 @@ class Service:
     def __init__(self, repo: domain_service.Repo) -> None:
         self._repo = repo
 
-    async def last_day(self) -> pd.Timestamp:
+    async def last_day(self) -> entity.Day:
         table = await self._repo.get(trading_day.TradingDay)
 
-        return pd.Timestamp(table.last)
+        return table.last
 
     async def portfolio_tickers(self) -> tuple[str, ...]:
         table = await self._repo.get(portfolio.Portfolio)
