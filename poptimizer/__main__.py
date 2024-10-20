@@ -4,7 +4,7 @@ from poptimizer import app
 
 
 def main() -> None:
-    cli = typer.Typer()
+    cli = typer.Typer(pretty_exceptions_enable=False)
     cli.command()(app.run)
     cli()
 
