@@ -3,7 +3,7 @@ from typing import Final
 
 from pydantic import Field, field_validator
 
-from poptimizer.domain import consts
+from poptimizer import consts
 from poptimizer.domain.entity_ import entity
 
 _MINIMUM_MONTHLY_CPI: Final = 0.99

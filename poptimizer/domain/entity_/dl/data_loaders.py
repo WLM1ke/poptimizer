@@ -2,7 +2,7 @@ from collections.abc import Iterator
 
 from torch.utils import data
 
-from poptimizer.domain import consts
+from poptimizer import consts
 from poptimizer.domain.entity_.dl import datasets
 
 AllTickersData = list[datasets.OneTickerData]

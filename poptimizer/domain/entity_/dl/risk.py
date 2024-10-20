@@ -3,7 +3,7 @@ import scipy  # type: ignore[reportMissingTypeStubs]
 from numpy.typing import NDArray
 from pydantic import BaseModel
 
-from poptimizer.domain import consts
+from poptimizer import consts
 from poptimizer.domain.entity_.dl import ledoit_wolf
 
 

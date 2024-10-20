@@ -2,7 +2,7 @@ from datetime import date
 
 from pydantic import Field, field_validator
 
-from poptimizer.domain import consts
+from poptimizer import consts
 from poptimizer.domain.entity_ import entity
 
 

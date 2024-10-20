@@ -2,7 +2,7 @@ from typing import Final, Self
 
 from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt, model_validator
 
-from poptimizer.domain import consts
+from poptimizer import consts
 from poptimizer.domain.entity_ import entity
 
 _CashTicker: Final = entity.Ticker("CASH")

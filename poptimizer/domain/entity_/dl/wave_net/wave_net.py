@@ -3,7 +3,7 @@ import torch
 from numpy.typing import NDArray
 from torch.distributions import MixtureSameFamily
 
-from poptimizer.domain import consts
+from poptimizer import consts
 from poptimizer.domain.entity_.dl import datasets
 from poptimizer.domain.entity_.dl.wave_net import backbone, head, inputs
 

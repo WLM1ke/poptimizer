@@ -1,7 +1,7 @@
 import torch
 from pydantic import BaseModel
 
-from poptimizer.domain import consts
+from poptimizer import consts
 from poptimizer.domain.entity_.dl import datasets
 
 

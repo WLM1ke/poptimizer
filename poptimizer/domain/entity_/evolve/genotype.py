@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from poptimizer.domain import consts
+from poptimizer import consts
 from poptimizer.domain.entity_.evolve import genetics
 
 
