@@ -9,7 +9,8 @@ from typing import (
     get_type_hints,
 )
 
-from poptimizer.core import domain, errors
+from poptimizer.adapters import adapter
+from poptimizer.domain import domain
 
 _DEFAULT_FIRST_RETRY: Final = timedelta(seconds=30)
 _DEFAULT_BACKOFF_FACTOR: Final = 2
@@ -51,29 +52,29 @@ class Bus:
     def __init__(self, tg: asyncio.TaskGroup) -> None:
         self._lgr = logging.getLogger()
         self._tg = tg
-        self._handlers: dict[domain.Component, list[tuple[MsgHandler[Any], type[Policy]]]] = defaultdict(list)
+        self._handlers: dict[adapter.Component, list[tuple[MsgHandler[Any], type[Policy]]]] = defaultdict(list)
 
     def add_event_handler[E: domain.Msg](
         self,
         handler: MsgHandler[E],
         policy_type: type[Policy],
     ) -> None:
-        msg_type = get_type_hints(handler)["msg"]
-        msg_name = domain.get_component_name(msg_type)
+        msg_type = get_type_hints(handler.__call__)["msg"]
+        msg_name = adapter.get_component_name(msg_type)
 
         self._handlers[msg_name].append((handler, policy_type))
         self._lgr.info(
             "%s was registered for %s with %s",
-            domain.get_component_name(handler),
+            adapter.get_component_name(handler),
             msg_name,
-            domain.get_component_name(policy_type),
+            adapter.get_component_name(policy_type),
         )
 
     def publish(self, msg: domain.Msg) -> None:
         self._tg.create_task(self._route(msg))
 
     async def _route(self, msg: domain.Msg) -> None:
-        name = domain.get_component_name(msg)
+        name = adapter.get_component_name(msg)
         self._lgr.info("%r published", msg)
 
         for handler, policy_type in self._handlers[name]:
@@ -91,7 +92,7 @@ class Bus:
             attempt += 1
             self._lgr.warning(
                 "%s can't handle %r in %d attempt with %s",
-                domain.get_component_name(handler),
+                adapter.get_component_name(handler),
                 msg,
                 attempt,
                 err,
@@ -102,7 +103,7 @@ class Bus:
 
         self._lgr.info(
             "%s handled %r",
-            domain.get_component_name(handler),
+            adapter.get_component_name(handler),
             msg,
         )
 
@@ -114,7 +115,7 @@ class Bus:
         error_msg: str | None = None
         try:
             await handler(msg)
-        except* errors.POError as err:
+        except* domain.POError as err:
             error_msg = f"{", ".join(map(str, err.exceptions))}"
 
         return error_msg

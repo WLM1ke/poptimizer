@@ -113,8 +113,9 @@ name = "Layered"
 type = "layers"
 layers = [
     "poptimizer.ui",
-    "poptimizer.adapter",
     "poptimizer.service",
+    "poptimizer.adapters",
+    "poptimizer.handlers",
     "poptimizer.domain",
     "poptimizer.core",
 ]

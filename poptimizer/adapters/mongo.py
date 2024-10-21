@@ -7,7 +7,8 @@ import pymongo
 from pydantic import MongoDsn, ValidationError
 from pymongo.errors import PyMongoError
 
-from poptimizer.core import consts, domain, errors
+from poptimizer.adapters import adapter
+from poptimizer.domain import consts, domain
 
 _MONGO_ID: Final = "_id"
 _REV: Final = "rev"
@@ -37,7 +38,7 @@ class Repo:
         t_entity: type[E],
         uid: domain.UID | None = None,
     ) -> E:
-        collection_name = domain.get_component_name(t_entity)
+        collection_name = adapter.get_component_name(t_entity)
         uid = uid or domain.UID(collection_name)
 
         if (doc := await self._load(collection_name, uid)) is None:
@@ -51,7 +52,7 @@ class Repo:
         try:
             return await collection.find_one({_MONGO_ID: uid})
         except PyMongoError as err:
-            raise errors.AdapterError("can't load {collection_name}.{uid}") from err
+            raise adapter.Error("can't load {collection_name}.{uid}") from err
 
     async def _create_new(self, collection_name: str, uid: domain.UID) -> MongoDocument | None:
         doc = {
@@ -65,7 +66,7 @@ class Repo:
         try:
             await collection.insert_one(doc)
         except PyMongoError as err:
-            raise errors.AdapterError("can't create {collection_name}.{uid}") from err
+            raise adapter.Error("can't create {collection_name}.{uid}") from err
 
         return doc
 
@@ -79,11 +80,11 @@ class Repo:
         try:
             return t_entity.model_validate(doc)
         except ValidationError as err:
-            collection_name = domain.get_component_name(t_entity)
-            raise errors.AdapterError(f"can't create entity {collection_name}.{uid}") from err
+            collection_name = adapter.get_component_name(t_entity)
+            raise adapter.Error(f"can't create entity {collection_name}.{uid}") from err
 
     async def save(self, entity: domain.Entity) -> None:
-        collection_name = domain.get_component_name(domain)
+        collection_name = adapter.get_component_name(domain)
 
         doc = entity.model_dump()
         doc.pop(_REV)
@@ -95,7 +96,7 @@ class Repo:
                 projection={_MONGO_ID: False},
             )
         except PyMongoError as err:
-            raise errors.AdapterError("can't save entities") from err
+            raise adapter.Error("can't save entities") from err
 
         if updated is None:  # type: ignore[reportUnnecessaryComparison]
-            raise errors.AdapterError(f"wrong version {collection_name}.{entity.uid}")
+            raise adapter.Error(f"wrong version {collection_name}.{entity.uid}")
