@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from collections import defaultdict
-from collections.abc import Awaitable, Callable
 from datetime import timedelta
 from typing import (
     Any,
@@ -16,7 +15,8 @@ _DEFAULT_FIRST_RETRY: Final = timedelta(seconds=30)
 _DEFAULT_BACKOFF_FACTOR: Final = 2
 
 
-type EventHandler[E: domain.Event] = Callable[[E], Awaitable[None]]
+class MsgHandler[M: domain.Msg](Protocol):
+    async def __call__(self, msg: M) -> None: ...
 
 
 class Policy(Protocol):
@@ -51,48 +51,48 @@ class Bus:
     def __init__(self, tg: asyncio.TaskGroup) -> None:
         self._lgr = logging.getLogger()
         self._tg = tg
-        self._event_handlers: dict[domain.Component, list[tuple[EventHandler[Any], type[Policy]]]] = defaultdict(list)
+        self._handlers: dict[domain.Component, list[tuple[MsgHandler[Any], type[Policy]]]] = defaultdict(list)
 
-    def add_event_handler[E: domain.Event](
+    def add_event_handler[E: domain.Msg](
         self,
-        handler: EventHandler[E],
+        handler: MsgHandler[E],
         policy_type: type[Policy],
     ) -> None:
-        event_type = get_type_hints(handler)["event"]
-        event_name = domain.get_component_name(event_type)
+        msg_type = get_type_hints(handler)["msg"]
+        msg_name = domain.get_component_name(msg_type)
 
-        self._event_handlers[event_name].append((handler, policy_type))
+        self._handlers[msg_name].append((handler, policy_type))
         self._lgr.info(
             "%s was registered for %s with %s",
             domain.get_component_name(handler),
-            event_name,
+            msg_name,
             domain.get_component_name(policy_type),
         )
 
-    def publish(self, event: domain.Event) -> None:
-        self._tg.create_task(self._route_event(event))
+    def publish(self, msg: domain.Msg) -> None:
+        self._tg.create_task(self._route(msg))
 
-    async def _route_event(self, event: domain.Event) -> None:
-        event_name = domain.get_component_name(event)
-        self._lgr.info("%r published", event)
+    async def _route(self, msg: domain.Msg) -> None:
+        name = domain.get_component_name(msg)
+        self._lgr.info("%r published", msg)
 
-        for handler, policy_type in self._event_handlers[event_name]:
-            self._tg.create_task(self._handle_event(handler, event, policy_type()))
+        for handler, policy_type in self._handlers[name]:
+            self._tg.create_task(self._handle(handler, msg, policy_type()))
 
-    async def _handle_event(
+    async def _handle(
         self,
-        handler: EventHandler[Any],
-        event: domain.Event,
+        handler: MsgHandler[Any],
+        msg: domain.Msg,
         policy: Policy,
     ) -> None:
         attempt = 0
 
-        while err := await self._handled_safe(handler, event):
+        while err := await self._handled_safe(handler, msg):
             attempt += 1
             self._lgr.warning(
                 "%s can't handle %r in %d attempt with %s",
                 domain.get_component_name(handler),
-                event,
+                msg,
                 attempt,
                 err,
             )
@@ -103,17 +103,17 @@ class Bus:
         self._lgr.info(
             "%s handled %r",
             domain.get_component_name(handler),
-            event,
+            msg,
         )
 
     async def _handled_safe(
         self,
-        handler: EventHandler[Any],
-        event: domain.Event,
+        handler: MsgHandler[Any],
+        msg: domain.Msg,
     ) -> str | None:
         error_msg: str | None = None
         try:
-            await handler(event)
+            await handler(msg)
         except* errors.POError as err:
             error_msg = f"{", ".join(map(str, err.exceptions))}"
 

@@ -52,7 +52,7 @@ class Currency(StrEnum):
     USD = auto()
 
 
-class Event(BaseModel): ...
+class Msg(BaseModel): ...
 
 
 class Entity(BaseModel):
