@@ -85,14 +85,14 @@ class Repo:
             raise errors.AdapterError(f"can't create entity {collection_name}.{uid}") from err
 
     async def save(self, entity: domain.Entity) -> None:
-        collection_name = adapter.get_component_name(domain)
+        collection_name = adapter.get_component_name(entity)
 
         doc = entity.model_dump()
         doc.pop(_REV)
 
         try:
             updated = await self._db[collection_name].find_one_and_update(
-                {_MONGO_ID: entity.uid, _VER: entity.ver, _DAY: {"$lte": entity.day}},
+                {_MONGO_ID: entity.uid, _VER: entity.ver, _DAY: {"$lte": doc[_DAY]}},
                 {"$inc": {_VER: 1}, "$set": doc},
                 projection={_MONGO_ID: False},
             )

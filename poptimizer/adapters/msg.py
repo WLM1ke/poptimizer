@@ -9,15 +9,16 @@ from typing import (
     get_type_hints,
 )
 
-from poptimizer.adapters import adapter
-from poptimizer.domain import domain
+from poptimizer import errors
+from poptimizer.adapters import adapter, mongo, uow
+from poptimizer.handlers.handler import Ctx, Msg
 
 _DEFAULT_FIRST_RETRY: Final = timedelta(seconds=30)
 _DEFAULT_BACKOFF_FACTOR: Final = 2
 
 
-class MsgHandler[M: domain.Msg](Protocol):
-    async def __call__(self, msg: M) -> None: ...
+class MsgHandler[M: Msg](Protocol):
+    async def __call__(self, ctx: Ctx, msg: M) -> None: ...
 
 
 class Policy(Protocol):
@@ -49,17 +50,26 @@ class IndefiniteRetryPolicy:
 
 
 class Bus:
-    def __init__(self, tg: asyncio.TaskGroup) -> None:
+    def __init__(
+        self,
+        tg: asyncio.TaskGroup,
+        repo: mongo.Repo,
+        uow_factory: uow.CtxFactory,
+    ) -> None:
         self._lgr = logging.getLogger()
+        self._repo = repo
+        self._uow_factory = uow_factory
         self._tg = tg
         self._handlers: dict[adapter.Component, list[tuple[MsgHandler[Any], type[Policy]]]] = defaultdict(list)
 
-    def add_event_handler[E: domain.Msg](
+    def add_event_handler[E: Msg](
         self,
         handler: MsgHandler[E],
         policy_type: type[Policy],
     ) -> None:
-        msg_type = get_type_hints(handler.__call__)["msg"]
+        if not (msg_type := get_type_hints(handler.__call__).get("msg")):
+            msg_type = get_type_hints(handler)["msg"]
+
         msg_name = adapter.get_component_name(msg_type)
 
         self._handlers[msg_name].append((handler, policy_type))
@@ -70,10 +80,10 @@ class Bus:
             adapter.get_component_name(policy_type),
         )
 
-    def publish(self, msg: domain.Msg) -> None:
+    def publish(self, msg: Msg) -> None:
         self._tg.create_task(self._route(msg))
 
-    async def _route(self, msg: domain.Msg) -> None:
+    async def _route(self, msg: Msg) -> None:
         name = adapter.get_component_name(msg)
         self._lgr.info("%r published", msg)
 
@@ -83,7 +93,7 @@ class Bus:
     async def _handle(
         self,
         handler: MsgHandler[Any],
-        msg: domain.Msg,
+        msg: Msg,
         policy: Policy,
     ) -> None:
         attempt = 0
@@ -110,12 +120,13 @@ class Bus:
     async def _handled_safe(
         self,
         handler: MsgHandler[Any],
-        msg: domain.Msg,
+        msg: Msg,
     ) -> str | None:
         error_msg: str | None = None
         try:
-            await handler(msg)
-        except* domain.POError as err:
+            async with self._uow_factory(self._repo, self) as ctx:
+                await handler(ctx, msg)
+        except* errors.POError as err:
             error_msg = f"{", ".join(map(str, err.exceptions))}"
 
         return error_msg

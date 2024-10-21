@@ -1,13 +1,37 @@
 from typing import Protocol
 
+from pydantic import BaseModel
+
+from poptimizer import consts
 from poptimizer.domain import domain
 
 
-class Bus(Protocol):
-    def publish(self, msg: domain.Msg) -> None: ...
+class Msg(BaseModel): ...
 
 
-class TradingDayCheckRequired(domain.Msg): ...
+class Ctx(Protocol):
+    async def get[E: domain.Entity](
+        self,
+        t_entity: type[E],
+        uid: domain.UID | None = None,
+    ) -> E: ...
+
+    async def get_for_update[E: domain.Entity](
+        self,
+        t_entity: type[E],
+        uid: domain.UID | None = None,
+    ) -> E: ...
+
+    def publish(self, msg: Msg) -> None: ...
 
 
-class DataUpdateFinished(domain.Msg): ...
+class NewDataCheckRequired(Msg):
+    day: domain.Day = consts.START_DAY
+
+
+class DataUpdateRequired(Msg):
+    day: domain.Day
+
+
+class DataUpdateFinished(Msg):
+    day: domain.Day

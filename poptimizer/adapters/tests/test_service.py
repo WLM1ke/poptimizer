@@ -1,6 +1,6 @@
 import pytest
 
-from poptimizer.core import domain
+from poptimizer.adapters import adapter
 
 
 class TestComponent:
@@ -16,4 +16,4 @@ _CASES = (
 
 @pytest.mark.parametrize(("component", "name"), _CASES)
 def test_get_component_name(component, name):
-    assert domain.get_component_name(component) == name
+    assert adapter.get_component_name(component) == name

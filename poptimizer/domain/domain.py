@@ -40,9 +40,6 @@ class Currency(StrEnum):
     USD = auto()
 
 
-class Msg(BaseModel): ...
-
-
 class Entity(BaseModel):
     rev: Revision
     day: Day
