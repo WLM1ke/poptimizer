@@ -1,12 +1,6 @@
 import types
 from typing import Any, NewType
 
-from poptimizer.domain import domain
-
-
-class Error(domain.POError): ...
-
-
 Component = NewType("Component", str)
 
 

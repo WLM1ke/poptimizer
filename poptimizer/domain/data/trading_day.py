@@ -1,4 +1,5 @@
-from poptimizer.domain import consts, domain
+from poptimizer import consts
+from poptimizer.domain import domain
 
 
 class TradingDay(domain.Entity):
