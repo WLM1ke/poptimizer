@@ -38,6 +38,10 @@ class IndexesUpdated(Msg):
     day: domain.Day
 
 
+class USDUpdated(Msg):
+    day: domain.Day
+
+
 class DataUpdated(Msg):
     day: domain.Day
 
