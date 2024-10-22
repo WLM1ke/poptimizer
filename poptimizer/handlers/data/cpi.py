@@ -38,7 +38,7 @@ class CPIHandler:
         try:
             xlsx_file = await self._download()
         except (TimeoutError, aiohttp.ClientError) as err:
-            raise errors.HandlerError("MOEX IIS") from err
+            raise errors.HandlerError("CPI download") from err
 
         row = _parse_rows(xlsx_file)
 

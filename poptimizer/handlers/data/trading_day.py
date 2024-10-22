@@ -72,7 +72,7 @@ class TradingDayHandler:
                 engine="stock",
             )
         except (TimeoutError, aiohttp.ClientError) as err:
-            raise errors.HandlerError("MOEX IIS") from err
+            raise errors.HandlerError("trading day MOEX ISS error") from err
 
         try:
             payload = _Payload.model_validate({"df": json})
@@ -81,7 +81,7 @@ class TradingDayHandler:
 
         return payload.last_day()
 
-    async def update(self, ctx: handler.Ctx, msg: handler.DataPublished) -> None:
+    async def update(self, ctx: handler.Ctx, msg: handler.IndexesUpdated) -> None:
         table = await ctx.get_for_update(trading_day.TradingDay)
         table.update_last_trading_day(msg.day)
         ctx.publish(handler.DataUpdated(day=msg.day))

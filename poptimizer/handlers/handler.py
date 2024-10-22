@@ -34,6 +34,10 @@ class DataPublished(Msg):
     day: domain.Day
 
 
+class IndexesUpdated(Msg):
+    day: domain.Day
+
+
 class DataUpdated(Msg):
     day: domain.Day
 
