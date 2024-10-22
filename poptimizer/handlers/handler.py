@@ -25,13 +25,13 @@ class Ctx(Protocol):
     def publish(self, msg: Msg) -> None: ...
 
 
-class NewDataCheckRequired(Msg):
-    day: domain.Day = consts.START_DAY
-
-
-class DataUpdateRequired(Msg):
+class TradingDayFinished(Msg):
     day: domain.Day
 
 
 class DataUpdateFinished(Msg):
     day: domain.Day
+
+
+class EvolutionStepFinished(Msg):
+    day: domain.Day = consts.START_DAY

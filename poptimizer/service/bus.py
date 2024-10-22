@@ -12,4 +12,4 @@ def run(bus: msg.Bus, http_client: aiohttp.ClientSession) -> None:
     bus.add_event_handler(trading_day_handler.update, msg.IndefiniteRetryPolicy)
 
     bus.add_event_handler(evolve.EvolutionHandler(), msg.IndefiniteRetryPolicy)
-    bus.publish(handler.NewDataCheckRequired())
+    bus.publish(handler.EvolutionStepFinished())

@@ -45,7 +45,7 @@ class TradingDayHandler:
 
         self._last_check = consts.START_DAY
 
-    async def check(self, ctx: handler.Ctx, msg: handler.NewDataCheckRequired) -> None:
+    async def check(self, ctx: handler.Ctx, msg: handler.EvolutionStepFinished) -> None:
         last_day = msg.day
         if last_day == consts.START_DAY:
             last_day = await self._init(ctx)
@@ -67,7 +67,7 @@ class TradingDayHandler:
             return
 
         self._last_check = last_day
-        ctx.publish(handler.DataUpdateRequired(day=last_day))
+        ctx.publish(handler.TradingDayFinished(day=last_day))
 
     async def _init(self, ctx: handler.Ctx) -> domain.Day:
         table = await ctx.get(trading_day.TradingDay)
@@ -93,7 +93,7 @@ class TradingDayHandler:
 
         return payload.last_day()
 
-    async def update(self, ctx: handler.Ctx, msg: handler.DataUpdateRequired) -> None:
+    async def update(self, ctx: handler.Ctx, msg: handler.TradingDayFinished) -> None:
         table = await ctx.get_for_update(trading_day.TradingDay)
         table.update_last_trading_day(msg.day)
         ctx.publish(handler.DataUpdateFinished(day=msg.day))
