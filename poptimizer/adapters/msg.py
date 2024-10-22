@@ -6,6 +6,7 @@ from typing import (
     Any,
     Final,
     Protocol,
+    get_args,
     get_type_hints,
 )
 
@@ -60,7 +61,7 @@ class Bus:
         self._tg = tg
         self._handlers: dict[adapter.Component, list[tuple[MsgHandler[Any], type[Policy]]]] = defaultdict(list)
 
-    def add_event_handler[E: Msg](
+    def register_handler[E: Msg](
         self,
         handler: MsgHandler[E],
         policy_type: type[Policy],
@@ -68,15 +69,20 @@ class Bus:
         if not (msg_type := get_type_hints(handler.__call__).get("msg")):
             msg_type = get_type_hints(handler)["msg"]
 
-        msg_name = adapter.get_component_name(msg_type)
+        msg_type_union = get_args(msg_type)
+        if not msg_type_union:
+            msg_type_union = (msg_type,)
 
-        self._handlers[msg_name].append((handler, policy_type))
-        self._lgr.info(
-            "%s was registered for %s with %s",
-            adapter.get_component_name(handler),
-            msg_name,
-            adapter.get_component_name(policy_type),
-        )
+        for msg_subtype in msg_type_union:
+            msg_name = adapter.get_component_name(msg_subtype)
+
+            self._handlers[msg_name].append((handler, policy_type))
+            self._lgr.info(
+                "%s was registered for %s with %s",
+                adapter.get_component_name(handler),
+                msg_name,
+                adapter.get_component_name(policy_type),
+            )
 
     def publish(self, msg: Msg) -> None:
         self._tg.create_task(self._route(msg))

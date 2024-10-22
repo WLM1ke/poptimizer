@@ -2,7 +2,6 @@ from typing import Protocol
 
 from pydantic import BaseModel
 
-from poptimizer import consts
 from poptimizer.domain import domain
 
 
@@ -25,13 +24,18 @@ class Ctx(Protocol):
     def publish(self, msg: Msg) -> None: ...
 
 
-class TradingDayFinished(Msg):
+class AppStarted(Msg): ...
+
+
+class DataChecked(Msg): ...
+
+
+class DataPublished(Msg):
     day: domain.Day
 
 
-class DataUpdateFinished(Msg):
+class DataUpdated(Msg):
     day: domain.Day
 
 
-class EvolutionStepFinished(Msg):
-    day: domain.Day = consts.START_DAY
+class EvolutionStepFinished(Msg): ...

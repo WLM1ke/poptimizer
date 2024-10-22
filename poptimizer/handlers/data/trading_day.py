@@ -7,7 +7,7 @@ import aiohttp
 import aiomoex
 from pydantic import BaseModel, Field, field_validator
 
-from poptimizer import consts, errors
+from poptimizer import errors
 from poptimizer.domain import domain
 from poptimizer.domain.data import trading_day
 from poptimizer.handlers import handler
@@ -43,37 +43,25 @@ class TradingDayHandler:
         self._lgr = logging.getLogger()
         self._http_client = http_client
 
-        self._last_check = consts.START_DAY
-
-    async def check(self, ctx: handler.Ctx, msg: handler.EvolutionStepFinished) -> None:
-        last_day = msg.day
-        if last_day == consts.START_DAY:
-            last_day = await self._init(ctx)
+    async def check(self, ctx: handler.Ctx, msg: handler.AppStarted | handler.EvolutionStepFinished) -> None:  # noqa: ARG002
+        table = await ctx.get(trading_day.TradingDay)
 
         new_last_check = _last_day()
-        if self._last_check >= new_last_check:
-            ctx.publish(handler.DataUpdateFinished(day=last_day))
+        if table.day == new_last_check:
+            ctx.publish(handler.DataChecked())
 
             return
 
         last_day = await self._get_last_trading_day_from_moex()
 
-        if self._last_check >= last_day:
+        if table.day >= last_day:
             table = await ctx.get_for_update(trading_day.TradingDay)
             table.update_last_check(new_last_check)
-            self._last_check = new_last_check
-            ctx.publish(handler.DataUpdateFinished(day=msg.day))
+            ctx.publish(handler.DataChecked())
 
             return
 
-        self._last_check = last_day
-        ctx.publish(handler.TradingDayFinished(day=last_day))
-
-    async def _init(self, ctx: handler.Ctx) -> domain.Day:
-        table = await ctx.get(trading_day.TradingDay)
-        self._last_check = table.day
-
-        return table.last
+        ctx.publish(handler.DataPublished(day=last_day))
 
     async def _get_last_trading_day_from_moex(self) -> domain.Day:
         try:
@@ -93,10 +81,10 @@ class TradingDayHandler:
 
         return payload.last_day()
 
-    async def update(self, ctx: handler.Ctx, msg: handler.TradingDayFinished) -> None:
+    async def update(self, ctx: handler.Ctx, msg: handler.DataPublished) -> None:
         table = await ctx.get_for_update(trading_day.TradingDay)
         table.update_last_trading_day(msg.day)
-        ctx.publish(handler.DataUpdateFinished(day=msg.day))
+        ctx.publish(handler.DataUpdated(day=msg.day))
 
 
 def _last_day() -> date:
