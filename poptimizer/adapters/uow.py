@@ -120,8 +120,3 @@ class UOW:
 
         for msg in self._messages:
             self._bus.publish(msg)
-
-
-class CtxFactory:
-    def __call__(self, repo: mongo.Repo, bus: Bus) -> UOW:
-        return UOW(repo, bus)
