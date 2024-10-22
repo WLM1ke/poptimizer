@@ -4,7 +4,7 @@ import contextlib
 import uvloop
 
 from poptimizer import config
-from poptimizer.adapters import http, lgr, mongo, msg, uow
+from poptimizer.adapters import http, lgr, mongo, msg
 from poptimizer.service import bus
 
 
@@ -24,7 +24,7 @@ async def _run() -> None:
         )
         repo = mongo.Repo(mongo_client, cfg.mongo_db_db)
         bus.run(
-            msg.Bus(tg, repo, uow.CtxFactory()),
+            msg.Bus(tg, repo),
             http_client,
         )
 

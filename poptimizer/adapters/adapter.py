@@ -9,6 +9,6 @@ def get_component_name(component: Any) -> Component:
         return Component(component.__name__)
 
     if isinstance(component, types.MethodType):
-        return Component(f"{component.__self__.__class__.__name__}.{component.__func__.__name__}")
+        return Component(component.__self__.__class__.__name__)
 
     return Component(component.__class__.__name__)
