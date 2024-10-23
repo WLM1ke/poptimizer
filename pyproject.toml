@@ -19,7 +19,7 @@ dependencies = [
     "async-lru>=2.0.4",
     "torch>=2.5.0",
     "tqdm>=4.66.5",
-    "pymongo>=4.9.2",
+    "pymongo>=4.10.1",
 ]
 
 [tool.uv]
