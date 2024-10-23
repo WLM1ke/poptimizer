@@ -38,7 +38,7 @@ class IndexesUpdated(Msg):
     day: domain.Day
 
 
-class USDUpdated(Msg):
+class SecuritiesUpdated(Msg):
     day: domain.Day
 
 
