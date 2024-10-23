@@ -5,6 +5,7 @@ import uvloop
 
 from poptimizer import config
 from poptimizer.adapters import http, lgr, mongo
+from poptimizer.handlers import view
 from poptimizer.service.bus import bus, msg
 
 
@@ -23,10 +24,12 @@ async def _run() -> None:
             cfg.telegram_chat_id,
         )
         repo = mongo.Repo(mongo_client[cfg.mongo_db_db])
+        viewer = view.Viewer(repo)
         bus.run(
             msg.Bus(tg, repo),
             http_client,
             mongo_client[cfg.mongo_db_db],
+            viewer,
         )
 
 

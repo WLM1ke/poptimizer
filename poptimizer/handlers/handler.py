@@ -50,6 +50,10 @@ class DivUpdated(Msg):
     day: domain.Day
 
 
+class PortfolioUpdated(Msg):
+    day: domain.Day
+
+
 class DataUpdated(Msg):
     day: domain.Day
 
