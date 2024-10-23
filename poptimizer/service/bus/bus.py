@@ -4,6 +4,7 @@ from poptimizer.adapters import adapter, mongo
 from poptimizer.domain.data.div import raw
 from poptimizer.handlers import handler
 from poptimizer.handlers.data import cpi, index, quotes, securities, trading_day
+from poptimizer.handlers.data.div import div
 from poptimizer.handlers.evolve import evolve
 from poptimizer.service.bus import backup, msg
 
@@ -26,6 +27,7 @@ def run(
     bus.register_handler(index.IndexesHandler(http_client), msg.IndefiniteRetryPolicy)
     bus.register_handler(securities.SecuritiesHandler(http_client), msg.IndefiniteRetryPolicy)
     bus.register_handler(quotes.QuotesHandler(http_client), msg.IndefiniteRetryPolicy)
+    bus.register_handler(div.DivHandler(), msg.IndefiniteRetryPolicy)
 
     bus.register_handler(evolve.EvolutionHandler(), msg.IndefiniteRetryPolicy)
 

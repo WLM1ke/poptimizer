@@ -81,7 +81,7 @@ class TradingDayHandler:
 
         return payload.last_day()
 
-    async def update(self, ctx: handler.Ctx, msg: handler.QuotesUpdated) -> None:
+    async def update(self, ctx: handler.Ctx, msg: handler.DivUpdated) -> None:
         table = await ctx.get_for_update(trading_day.TradingDay)
         table.update_last_trading_day(msg.day)
         ctx.publish(handler.DataUpdated(day=msg.day))

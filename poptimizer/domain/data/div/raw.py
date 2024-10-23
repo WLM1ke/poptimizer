@@ -9,10 +9,9 @@ from poptimizer.domain import domain
 class Row(domain.Row):
     day: domain.Day
     dividend: float = Field(gt=0)
-    currency: domain.Currency
 
-    def to_tuple(self) -> tuple[domain.Day, float, domain.Currency]:
-        return self.day, self.dividend, self.currency
+    def to_tuple(self) -> tuple[domain.Day, float]:
+        return self.day, self.dividend
 
 
 class DivRaw(domain.Entity):
@@ -40,7 +39,7 @@ class DivRaw(domain.Entity):
         return pos != len(self.df) and row == self.df[pos]
 
     @field_validator("df")
-    def _sorted_by_date_div_currency(cls, df: list[Row]) -> list[Row]:
+    def _sorted_by_date_and_div(cls, df: list[Row]) -> list[Row]:
         day_pairs = itertools.pairwise(row.to_tuple() for row in df)
 
         if not all(day <= next_ for day, next_ in day_pairs):

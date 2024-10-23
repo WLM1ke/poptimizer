@@ -46,6 +46,10 @@ class QuotesUpdated(Msg):
     day: domain.Day
 
 
+class DivUpdated(Msg):
+    day: domain.Day
+
+
 class DataUpdated(Msg):
     day: domain.Day
 
