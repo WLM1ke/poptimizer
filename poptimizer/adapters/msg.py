@@ -57,7 +57,7 @@ class Bus:
         repo: mongo.Repo,
     ) -> None:
         self._lgr = logging.getLogger()
-        self._repo = repo
+        self._uow_factory = uow.Factory(repo, self)
         self._tg = tg
         self._handlers: dict[adapter.Component, list[tuple[MsgHandler[Any], type[Policy]]]] = defaultdict(list)
 
@@ -128,7 +128,7 @@ class Bus:
     ) -> str | None:
         error_msg: str | None = None
         try:
-            async with uow.UOW(self._repo, self) as ctx:
+            async with self._uow_factory() as ctx:
                 await handler(ctx, msg)
         except* errors.POError as err:
             error_msg = f"{", ".join(map(str, err.exceptions))}"

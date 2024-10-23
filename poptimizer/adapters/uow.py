@@ -120,3 +120,12 @@ class UOW:
 
         for msg in self._messages:
             self._bus.publish(msg)
+
+
+class Factory:
+    def __init__(self, repo: mongo.Repo, bus: Bus) -> None:
+        self._repo = repo
+        self._bus = bus
+
+    def __call__(self) -> UOW:
+        return UOW(self._repo, self._bus)
