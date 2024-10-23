@@ -791,7 +791,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.2.2" },
     { name = "pydantic", specifier = ">=2.9.0" },
     { name = "pydantic-settings", specifier = ">=2.4.0" },
-    { name = "pymongo", specifier = ">=4.9.2" },
+    { name = "pymongo", specifier = ">=4.10.1" },
     { name = "scipy", specifier = ">=1.14.1" },
     { name = "torch", specifier = ">=2.5.0" },
     { name = "tqdm", specifier = ">=4.66.5" },

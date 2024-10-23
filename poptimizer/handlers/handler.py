@@ -30,7 +30,7 @@ class AppStarted(Msg): ...
 class DataChecked(Msg): ...
 
 
-class DataPublished(Msg):
+class NewDataPublished(Msg):
     day: domain.Day
 
 
@@ -39,6 +39,10 @@ class IndexesUpdated(Msg):
 
 
 class SecuritiesUpdated(Msg):
+    day: domain.Day
+
+
+class QuotesUpdated(Msg):
     day: domain.Day
 
 

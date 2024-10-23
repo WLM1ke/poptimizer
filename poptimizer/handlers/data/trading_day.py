@@ -61,7 +61,7 @@ class TradingDayHandler:
 
             return
 
-        ctx.publish(handler.DataPublished(day=last_day))
+        ctx.publish(handler.NewDataPublished(day=last_day))
 
     async def _get_last_trading_day_from_moex(self) -> domain.Day:
         try:
@@ -81,7 +81,7 @@ class TradingDayHandler:
 
         return payload.last_day()
 
-    async def update(self, ctx: handler.Ctx, msg: handler.SecuritiesUpdated) -> None:
+    async def update(self, ctx: handler.Ctx, msg: handler.QuotesUpdated) -> None:
         table = await ctx.get_for_update(trading_day.TradingDay)
         table.update_last_trading_day(msg.day)
         ctx.publish(handler.DataUpdated(day=msg.day))

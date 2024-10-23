@@ -32,7 +32,7 @@ class CPIHandler:
     def __init__(self, http_session: aiohttp.ClientSession) -> None:
         self._http_session = http_session
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.DataPublished) -> None:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.NewDataPublished) -> None:
         table = await ctx.get_for_update(cpi.CPI)
 
         try:
