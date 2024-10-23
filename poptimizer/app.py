@@ -4,8 +4,8 @@ import contextlib
 import uvloop
 
 from poptimizer import config
-from poptimizer.adapters import http, lgr, mongo, msg
-from poptimizer.service import bus
+from poptimizer.adapters import http, lgr, mongo
+from poptimizer.service.bus import bus, msg
 
 
 async def _run() -> None:
@@ -22,10 +22,11 @@ async def _run() -> None:
             cfg.telegram_token,
             cfg.telegram_chat_id,
         )
-        repo = mongo.Repo(mongo_client, cfg.mongo_db_db)
+        repo = mongo.Repo(mongo_client[cfg.mongo_db_db])
         bus.run(
             msg.Bus(tg, repo),
             http_client,
+            mongo_client[cfg.mongo_db_db],
         )
 
 

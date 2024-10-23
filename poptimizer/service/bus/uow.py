@@ -42,7 +42,7 @@ class _IdentityMap:
             return None
 
         if not isinstance(entity, t_entity):
-            raise errors.AdapterError(f"type mismatch in identity map for {t_entity}({uid})")
+            raise errors.ServiceError(f"type mismatch in identity map for {t_entity}({uid})")
 
         self._seen[entity.__class__, entity.uid] = (entity, update_flag or for_update)
 
@@ -51,7 +51,7 @@ class _IdentityMap:
     def save(self, entity: domain.Entity, *, for_update: bool) -> None:
         saved, _ = self._seen.get((entity.__class__, entity.uid), (None, False))
         if saved is not None:
-            raise errors.AdapterError(f"can't save to identity map {entity.__class__}({entity.uid})")
+            raise errors.ServiceError(f"can't save to identity map {entity.__class__}({entity.uid})")
 
         self._seen[entity.__class__, entity.uid] = (entity, for_update)
 

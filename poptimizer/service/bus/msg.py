@@ -11,8 +11,9 @@ from typing import (
 )
 
 from poptimizer import errors
-from poptimizer.adapters import adapter, mongo, uow
+from poptimizer.adapters import adapter, mongo
 from poptimizer.handlers.handler import Ctx, Msg
+from poptimizer.service.bus import uow
 
 _DEFAULT_FIRST_RETRY: Final = timedelta(seconds=30)
 _DEFAULT_BACKOFF_FACTOR: Final = 2

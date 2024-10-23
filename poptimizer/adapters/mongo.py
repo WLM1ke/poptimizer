@@ -5,6 +5,7 @@ from typing import Any, Final
 
 import pymongo
 from pydantic import MongoDsn, ValidationError
+from pymongo.asynchronous import collection, database
 from pymongo.errors import PyMongoError
 
 from poptimizer import consts, errors
@@ -19,6 +20,8 @@ _DAY: Final = "day"
 
 type MongoDocument = dict[str, Any]
 type MongoClient = pymongo.AsyncMongoClient[MongoDocument]
+type MongoDatabase = database.AsyncDatabase[MongoDocument]
+type MongoCollection = collection.AsyncCollection[MongoDocument]
 
 
 @asynccontextmanager
@@ -31,8 +34,8 @@ async def client(uri: MongoDsn) -> AsyncIterator[MongoClient]:
 
 
 class Repo:
-    def __init__(self, mongo_client: MongoClient, db: str) -> None:
-        self._db = mongo_client[db]
+    def __init__(self, mongo_db: MongoDatabase) -> None:
+        self._db = mongo_db
 
     async def get[E: domain.Entity](
         self,
