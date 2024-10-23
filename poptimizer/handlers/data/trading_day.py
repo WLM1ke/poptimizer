@@ -85,6 +85,7 @@ class TradingDayHandler:
         table = await ctx.get_for_update(trading_day.TradingDay)
         table.update_last_trading_day(msg.day)
         ctx.publish(handler.DataUpdated(day=msg.day))
+        self._lgr.warning("Data updated for %s", msg.day)
 
 
 def _last_day() -> date:
