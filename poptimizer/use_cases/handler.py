@@ -52,6 +52,10 @@ class PortfolioUpdated(Msg):
     day: domain.Day
 
 
+class DivStatusUpdated(Msg):
+    day: domain.Day
+
+
 class DataUpdated(Msg):
     day: domain.Day
 

@@ -55,6 +55,7 @@ class QuotesHandler:
             )
         except (TimeoutError, aiohttp.ClientError) as err:
             raise errors.UseCasesError(f"{ticker} MOEX ISS error") from err
+
         try:
             return TypeAdapter(list[quotes.Row]).validate_python(json)
         except ValueError as err:
