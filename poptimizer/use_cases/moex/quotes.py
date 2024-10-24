@@ -7,7 +7,7 @@ from pydantic import TypeAdapter
 
 from poptimizer import consts, errors
 from poptimizer.domain import domain
-from poptimizer.domain.data import quotes, securities
+from poptimizer.domain.moex import quotes, securities
 from poptimizer.use_cases import handler
 
 

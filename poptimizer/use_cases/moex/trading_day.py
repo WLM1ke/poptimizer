@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from poptimizer import errors
 from poptimizer.domain import domain
-from poptimizer.domain.data import trading_day
+from poptimizer.domain.moex import trading_day
 from poptimizer.use_cases import handler
 
 # Часовой пояс MOEX

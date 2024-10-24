@@ -8,7 +8,7 @@ from pydantic import TypeAdapter
 
 from poptimizer import errors
 from poptimizer.domain import domain
-from poptimizer.domain.data import index
+from poptimizer.domain.moex import index
 from poptimizer.use_cases import handler
 
 _INDEXES: Final = (

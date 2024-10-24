@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 
 from poptimizer.domain import domain, portfolio
-from poptimizer.domain.data import quotes, trading_day
-from poptimizer.domain.data.div import div
+from poptimizer.domain.div import div
+from poptimizer.domain.moex import quotes, trading_day
 
 
 class Repo(Protocol):

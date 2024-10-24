@@ -7,7 +7,7 @@ import aiomoex
 from pydantic import TypeAdapter
 
 from poptimizer import errors
-from poptimizer.domain.data import securities
+from poptimizer.domain.moex import securities
 from poptimizer.use_cases import handler
 
 _MARKETS_BOARDS: Final = (

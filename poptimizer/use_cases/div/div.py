@@ -4,8 +4,8 @@ from datetime import date
 
 from poptimizer import consts
 from poptimizer.domain import domain
-from poptimizer.domain.data import securities
-from poptimizer.domain.data.div import div, raw
+from poptimizer.domain.div import div, raw
+from poptimizer.domain.moex import securities
 from poptimizer.use_cases import handler
 
 

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from poptimizer.domain import domain, portfolio
-from poptimizer.domain.data import securities
+from poptimizer.domain.moex import securities
 from poptimizer.use_cases import handler
 
 _START_LIQUIDITY_DAYS: Final = 21
