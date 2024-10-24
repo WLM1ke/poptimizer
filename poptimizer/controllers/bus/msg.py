@@ -19,8 +19,8 @@ _DEFAULT_FIRST_RETRY: Final = timedelta(seconds=30)
 _DEFAULT_BACKOFF_FACTOR: Final = 2
 
 
-class MsgHandler[M: Msg](Protocol):
-    async def __call__(self, ctx: Ctx, msg: M) -> None: ...
+class MsgHandler[In: Msg, Out: Msg](Protocol):
+    async def __call__(self, ctx: Ctx, msg: In) -> Out | None: ...
 
 
 class Policy(Protocol):
@@ -57,13 +57,13 @@ class Bus:
         repo: mongo.Repo,
     ) -> None:
         self._lgr = logging.getLogger()
-        self._uow_factory = uow.Factory(repo, self)
+        self._repo = repo
         self._tg = asyncio.TaskGroup()
-        self._handlers: dict[adapter.Component, list[tuple[MsgHandler[Any], type[Policy]]]] = defaultdict(list)
+        self._handlers: dict[adapter.Component, list[tuple[MsgHandler[Any, Any], type[Policy]]]] = defaultdict(list)
 
     def register_handler[E: Msg](
         self,
-        handler: MsgHandler[E],
+        handler: MsgHandler[Any, Any],
         policy_type: type[Policy],
     ) -> None:
         if not (msg_type := get_type_hints(handler.__call__).get("msg")):
@@ -100,7 +100,7 @@ class Bus:
 
     async def _handle(
         self,
-        handler: MsgHandler[Any],
+        handler: MsgHandler[Any, Any],
         msg: Msg,
         policy: Policy,
     ) -> None:
@@ -127,13 +127,15 @@ class Bus:
 
     async def _handled_safe(
         self,
-        handler: MsgHandler[Any],
+        handler: MsgHandler[Any, Any],
         msg: Msg,
     ) -> str | None:
         error_msg: str | None = None
         try:
-            async with self._uow_factory() as ctx:
-                await handler(ctx, msg)
+            async with uow.UOW(self._repo) as ctx:
+                out = await handler(ctx, msg)
+            if out is not None:
+                self.publish(out)
         except* errors.POError as err:
             error_msg = f"{", ".join(map(str, err.exceptions))}"
 

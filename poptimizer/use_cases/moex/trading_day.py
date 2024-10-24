@@ -43,25 +43,26 @@ class TradingDayHandler:
         self._lgr = logging.getLogger()
         self._http_client = http_client
 
-    async def check(self, ctx: handler.Ctx, msg: handler.AppStarted | handler.EvolutionStepFinished) -> None:  # noqa: ARG002
+    async def check(
+        self,
+        ctx: handler.Ctx,
+        msg: handler.AppStarted | handler.EvolutionStepFinished,  # noqa: ARG002
+    ) -> handler.DataChecked | handler.NewDataPublished:
         table = await ctx.get(trading_day.TradingDay)
 
         new_last_check = _last_day()
         if table.day == new_last_check:
-            ctx.publish(handler.DataChecked())
-
-            return
+            return handler.DataChecked()
 
         last_day = await self._get_last_trading_day_from_moex()
 
         if table.day >= last_day:
             table = await ctx.get_for_update(trading_day.TradingDay)
             table.update_last_check(new_last_check)
-            ctx.publish(handler.DataChecked())
 
-            return
+            return handler.DataChecked()
 
-        ctx.publish(handler.NewDataPublished(day=last_day))
+        return handler.NewDataPublished(day=last_day)
 
     async def _get_last_trading_day_from_moex(self) -> domain.Day:
         try:
@@ -81,11 +82,12 @@ class TradingDayHandler:
 
         return payload.last_day()
 
-    async def update(self, ctx: handler.Ctx, msg: handler.PortfolioUpdated) -> None:
+    async def update(self, ctx: handler.Ctx, msg: handler.PortfolioUpdated) -> handler.DataUpdated:
         table = await ctx.get_for_update(trading_day.TradingDay)
         table.update_last_trading_day(msg.day)
-        ctx.publish(handler.DataUpdated(day=msg.day))
         self._lgr.warning("Data updated for %s", msg.day)
+
+        return handler.DataUpdated(day=msg.day)
 
 
 def _last_day() -> date:

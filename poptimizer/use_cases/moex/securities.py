@@ -29,7 +29,7 @@ class SecuritiesHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.IndexesUpdated) -> None:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.IndexesUpdated) -> handler.SecuritiesUpdated:
         table = await ctx.get_for_update(securities.Securities)
 
         try:
@@ -38,7 +38,8 @@ class SecuritiesHandler:
             raise errors.UseCasesError("securities MOEX ISS error") from err
 
         table.update(msg.day, rows)
-        ctx.publish(handler.SecuritiesUpdated(day=msg.day))
+
+        return handler.SecuritiesUpdated(day=msg.day)
 
     async def _download(self) -> list[securities.Row]:
         tasks: list[asyncio.Task[list[dict[str, Any]]]] = []

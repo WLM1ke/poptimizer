@@ -3,10 +3,10 @@ import aiohttp
 from poptimizer.adapters import adapter, mongo
 from poptimizer.controllers.bus import backup, msg
 from poptimizer.domain.div import raw
-from poptimizer.use_cases import portfolio, view
+from poptimizer.use_cases import cpi, portfolio, view
 from poptimizer.use_cases.div import div
 from poptimizer.use_cases.evolve import evolve
-from poptimizer.use_cases.moex import cpi, index, quotes, securities, trading_day
+from poptimizer.use_cases.moex import index, quotes, securities, trading_day
 
 
 async def run(

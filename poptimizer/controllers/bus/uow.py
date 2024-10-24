@@ -61,11 +61,9 @@ class Bus(Protocol):
 
 
 class UOW:
-    def __init__(self, repo: mongo.Repo, bus: Bus) -> None:
+    def __init__(self, repo: mongo.Repo) -> None:
         self._repo = repo
         self._identity_map = _IdentityMap()
-        self._bus = bus
-        self._messages: list[handler.Msg] = []
 
     async def get[E: domain.Entity](
         self,
@@ -99,9 +97,6 @@ class UOW:
 
             return repo_entity
 
-    def publish(self, msg: handler.Msg) -> None:
-        self._messages.append(msg)
-
     async def __aenter__(self) -> Self:
         return self
 
@@ -117,15 +112,3 @@ class UOW:
         async with asyncio.TaskGroup() as tg:
             for entity in self._identity_map:
                 tg.create_task(self._repo.save(entity))
-
-        for msg in self._messages:
-            self._bus.publish(msg)
-
-
-class Factory:
-    def __init__(self, repo: mongo.Repo, bus: Bus) -> None:
-        self._repo = repo
-        self._bus = bus
-
-    def __call__(self) -> UOW:
-        return UOW(self._repo, self._bus)

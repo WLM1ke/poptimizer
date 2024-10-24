@@ -23,12 +23,12 @@ class IndexesHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.NewDataPublished) -> None:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.NewDataPublished) -> handler.IndexesUpdated:
         async with asyncio.TaskGroup() as tg:
             for ticker in _INDEXES:
                 tg.create_task(self._update_one(ctx, msg.day, ticker))
 
-        ctx.publish(handler.IndexesUpdated(day=msg.day))
+        return handler.IndexesUpdated(day=msg.day)
 
     async def _update_one(self, ctx: handler.Ctx, update_day: domain.Day, ticker: domain.UID) -> None:
         table = await ctx.get_for_update(index.Index, ticker)

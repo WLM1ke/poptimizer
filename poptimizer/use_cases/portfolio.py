@@ -32,7 +32,7 @@ class PortfolioHandler:
         self._lgr = logging.getLogger()
         self._viewer = viewer
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.DivUpdated) -> None:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.DivUpdated) -> handler.PortfolioUpdated:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
         sec_data = await self._prepare_sec_data(ctx, msg.day)
@@ -41,7 +41,8 @@ class PortfolioHandler:
         self._update_sec_data(port, sec_data)
         self._add_liquid(port, sec_data)
         port.day = msg.day
-        ctx.publish(handler.PortfolioUpdated(day=msg.day))
+
+        return handler.PortfolioUpdated(day=msg.day)
 
     async def _prepare_sec_data(
         self, ctx: handler.Ctx, update_day: domain.Day

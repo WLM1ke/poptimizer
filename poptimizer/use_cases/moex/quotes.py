@@ -15,14 +15,14 @@ class QuotesHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.SecuritiesUpdated) -> None:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.SecuritiesUpdated) -> handler.QuotesUpdated:
         sec_table = await ctx.get(securities.Securities)
 
         async with asyncio.TaskGroup() as tg:
             for sec in sec_table.df:
                 tg.create_task(self._update_one(ctx, sec.ticker, msg.day))
 
-        ctx.publish(handler.QuotesUpdated(day=msg.day))
+        return handler.QuotesUpdated(day=msg.day)
 
     async def _update_one(
         self,
