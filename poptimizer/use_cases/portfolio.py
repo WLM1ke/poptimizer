@@ -7,7 +7,7 @@ import pandas as pd
 
 from poptimizer.domain import domain, portfolio
 from poptimizer.domain.data import securities
-from poptimizer.handlers import handler
+from poptimizer.use_cases import handler
 
 _START_LIQUIDITY_DAYS: Final = 21
 _MINIMUM_HISTORY: Final = 30 * 21

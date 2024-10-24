@@ -8,7 +8,7 @@ from pydantic import TypeAdapter
 
 from poptimizer import errors
 from poptimizer.domain.data import securities
-from poptimizer.handlers import handler
+from poptimizer.use_cases import handler
 
 _MARKETS_BOARDS: Final = (
     ("shares", "TQBR"),
@@ -35,7 +35,7 @@ class SecuritiesHandler:
         try:
             rows = await self._download()
         except (TimeoutError, aiohttp.ClientError) as err:
-            raise errors.HandlerError("securities MOEX ISS error") from err
+            raise errors.UseCasesError("securities MOEX ISS error") from err
 
         table.update(msg.day, rows)
         ctx.publish(handler.SecuritiesUpdated(day=msg.day))
@@ -60,4 +60,4 @@ class SecuritiesHandler:
         try:
             return TypeAdapter(list[securities.Row]).validate_python(json)
         except ValueError as err:
-            raise errors.HandlerError("invalid securities data") from err
+            raise errors.UseCasesError("invalid securities data") from err

@@ -5,8 +5,8 @@ import uvloop
 
 from poptimizer import config
 from poptimizer.adapters import http, lgr, mongo
-from poptimizer.handlers import view
-from poptimizer.service.bus import bus, msg
+from poptimizer.use_cases import view
+from poptimizer.controllers.bus import bus, msg
 
 
 async def _run() -> None:

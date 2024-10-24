@@ -1,6 +1,6 @@
 import asyncio
 
-from poptimizer.handlers import handler
+from poptimizer.use_cases import handler
 
 
 class EvolutionHandler:

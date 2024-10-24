@@ -7,7 +7,7 @@ import bson
 
 from poptimizer import errors
 from poptimizer.adapters import mongo
-from poptimizer.handlers import handler
+from poptimizer.use_cases import handler
 
 _DUMP: Final = Path(__file__).parents[3] / "dump" / "dividends.bson"
 
@@ -32,7 +32,7 @@ class BackupHandler:
             return
 
         if not _DUMP.exists():
-            raise errors.ServiceError(f"can't restore {self._collection.name} from {_DUMP}")
+            raise errors.ControllersError(f"can't restore {self._collection.name} from {_DUMP}")
 
         async with aiofiles.open(_DUMP, "br") as backup_file:
             raw = await backup_file.read()

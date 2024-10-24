@@ -8,7 +8,7 @@ from pydantic import TypeAdapter
 from poptimizer import consts, errors
 from poptimizer.domain import domain
 from poptimizer.domain.data import quotes, securities
-from poptimizer.handlers import handler
+from poptimizer.use_cases import handler
 
 
 class QuotesHandler:
@@ -54,8 +54,8 @@ class QuotesHandler:
                 engine="stock",
             )
         except (TimeoutError, aiohttp.ClientError) as err:
-            raise errors.HandlerError(f"{ticker} MOEX ISS error") from err
+            raise errors.UseCasesError(f"{ticker} MOEX ISS error") from err
         try:
             return TypeAdapter(list[quotes.Row]).validate_python(json)
         except ValueError as err:
-            raise errors.HandlerError(f"invalid {ticker} data") from err
+            raise errors.UseCasesError(f"invalid {ticker} data") from err

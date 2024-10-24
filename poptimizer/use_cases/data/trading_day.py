@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, field_validator
 from poptimizer import errors
 from poptimizer.domain import domain
 from poptimizer.domain.data import trading_day
-from poptimizer.handlers import handler
+from poptimizer.use_cases import handler
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -72,12 +72,12 @@ class TradingDayHandler:
                 engine="stock",
             )
         except (TimeoutError, aiohttp.ClientError) as err:
-            raise errors.HandlerError("trading day MOEX ISS error") from err
+            raise errors.UseCasesError("trading day MOEX ISS error") from err
 
         try:
             payload = _Payload.model_validate({"df": json})
         except ValueError as err:
-            raise errors.HandlerError("invalid trading day data") from err
+            raise errors.UseCasesError("invalid trading day data") from err
 
         return payload.last_day()
 

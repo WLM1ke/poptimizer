@@ -6,7 +6,7 @@ from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.data import securities
 from poptimizer.domain.data.div import div, raw
-from poptimizer.handlers import handler
+from poptimizer.use_cases import handler
 
 
 class DivHandler:

@@ -9,7 +9,7 @@ from openpyxl.worksheet import worksheet
 
 from poptimizer import errors
 from poptimizer.domain.data import cpi
-from poptimizer.handlers import handler
+from poptimizer.use_cases import handler
 
 _PRICES_PAGE: Final = "https://rosstat.gov.ru/statistics/price"
 _RE_FILE: Final = re.compile(r"/[iI]pc[\-_]mes[\-_][0-9]{1,2}-[0-9]{4}.xlsx")
@@ -38,7 +38,7 @@ class CPIHandler:
         try:
             xlsx_file = await self._download()
         except (TimeoutError, aiohttp.ClientError) as err:
-            raise errors.HandlerError("CPI download") from err
+            raise errors.UseCasesError("CPI download") from err
 
         row = _parse_rows(xlsx_file)
 
@@ -47,18 +47,18 @@ class CPIHandler:
     async def _download(self) -> io.BytesIO:
         async with self._http_session.get(_PRICES_PAGE) as resp:
             if not resp.ok:
-                raise errors.HandlerError(f"bad CPI respond status {resp.reason}")
+                raise errors.UseCasesError(f"bad CPI respond status {resp.reason}")
 
             html = await resp.text()
 
         if (file_name := _RE_FILE.search(html)) is None:
-            raise errors.HandlerError("can't find file with CPI")
+            raise errors.UseCasesError("can't find file with CPI")
 
         cpi_url = _URL_TMPL.format(file_name.group(0))
 
         async with self._http_session.get(cpi_url) as resp:
             if not resp.ok:
-                raise errors.HandlerError(f"bad CPI respond status {resp.reason}")
+                raise errors.UseCasesError(f"bad CPI respond status {resp.reason}")
 
             return io.BytesIO(await resp.read())
 
@@ -80,7 +80,7 @@ def _parse_rows(xlsx: io.BytesIO) -> list[cpi.Row]:
                 case None:
                     return rows
                 case _:
-                    raise errors.HandlerError(f"strange CPI value {cell}")
+                    raise errors.UseCasesError(f"strange CPI value {cell}")
 
             day = _get_next_month_end(day)
 
@@ -89,9 +89,9 @@ def _parse_rows(xlsx: io.BytesIO) -> list[cpi.Row]:
 
 def _validate_data_position(ws: worksheet.Worksheet) -> None:
     if (first_year := ws[_FIRST_YEAR_CELL].value) != _FIRST_YEAR_VALUE:
-        raise errors.HandlerError(f"first year {first_year}")
+        raise errors.UseCasesError(f"first year {first_year}")
     if (first_month := ws[_FIRST_MONTH_CELL].value) != _FIRST_MONTH_VALUE:
-        raise errors.HandlerError(f"wrong first month {first_month}")
+        raise errors.UseCasesError(f"wrong first month {first_month}")
 
 
 def _get_next_month_end(day: date) -> date:
