@@ -12,8 +12,8 @@ from typing import (
 
 from poptimizer import errors
 from poptimizer.adapters import adapter, mongo
-from poptimizer.use_cases.handler import Ctx, Msg
 from poptimizer.controllers.bus import uow
+from poptimizer.use_cases.handler import AppStarted, Ctx, Msg
 
 _DEFAULT_FIRST_RETRY: Final = timedelta(seconds=30)
 _DEFAULT_BACKOFF_FACTOR: Final = 2
@@ -54,12 +54,11 @@ class IndefiniteRetryPolicy:
 class Bus:
     def __init__(
         self,
-        tg: asyncio.TaskGroup,
         repo: mongo.Repo,
     ) -> None:
         self._lgr = logging.getLogger()
         self._uow_factory = uow.Factory(repo, self)
-        self._tg = tg
+        self._tg = asyncio.TaskGroup()
         self._handlers: dict[adapter.Component, list[tuple[MsgHandler[Any], type[Policy]]]] = defaultdict(list)
 
     def register_handler[E: Msg](
@@ -84,6 +83,10 @@ class Bus:
                 msg_name,
                 adapter.get_component_name(policy_type),
             )
+
+    async def run(self) -> None:
+        async with self._tg:
+            self.publish(AppStarted())
 
     def publish(self, msg: Msg) -> None:
         self._tg.create_task(self._route(msg))

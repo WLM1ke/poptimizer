@@ -3,6 +3,8 @@ import logging
 import sys
 import time
 import types
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from copy import copy
 from typing import Final, Literal
 
@@ -93,15 +95,16 @@ class _ColorFormatter(logging.Formatter):
         return super().formatMessage(record)
 
 
-def init(
-    tg: asyncio.TaskGroup,
+@asynccontextmanager
+async def init(
     http_client: aiohttp.ClientSession,
     token: str,
     chat_id: str,
-) -> logging.Logger:
+) -> AsyncIterator[logging.Logger]:
     color_handler = logging.StreamHandler(sys.stdout)
     color_handler.setFormatter(_ColorFormatter())
 
+    tg = asyncio.TaskGroup()
     telegram_handler = _TelegramHandler(
         tg,
         http_client,
@@ -115,4 +118,5 @@ def init(
     )
     logging.getLogger("pymongo").setLevel(logging.CRITICAL)
 
-    return logging.getLogger()
+    async with tg:
+        yield logging.getLogger()

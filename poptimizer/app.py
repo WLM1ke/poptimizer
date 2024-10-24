@@ -4,33 +4,36 @@ import contextlib
 import uvloop
 
 from poptimizer import config
-from poptimizer.adapters import http, lgr, mongo
-from poptimizer.use_cases import view
-from poptimizer.controllers.bus import bus, msg
+from poptimizer.adapters import http, logger, mongo
+from poptimizer.controllers.bus import bus
 
 
 async def _run() -> None:
     cfg = config.Cfg()
+    err: Exception | None = None
 
     async with contextlib.AsyncExitStack() as stack:
         http_client = await stack.enter_async_context(http.client())
-        mongo_client = await stack.enter_async_context(mongo.client(cfg.mongo_db_uri))
+        mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo_db_uri, cfg.mongo_db_db))
 
-        tg = await stack.enter_async_context(asyncio.TaskGroup())
-        lgr.init(
-            tg,
-            http_client,
-            cfg.telegram_token,
-            cfg.telegram_chat_id,
+        lgr = await stack.enter_async_context(
+            logger.init(
+                http_client,
+                cfg.telegram_token,
+                cfg.telegram_chat_id,
+            )
         )
-        repo = mongo.Repo(mongo_client[cfg.mongo_db_db])
-        viewer = view.Viewer(repo)
-        bus.run(
-            msg.Bus(tg, repo),
-            http_client,
-            mongo_client[cfg.mongo_db_db],
-            viewer,
-        )
+
+        try:
+            await bus.run(http_client, mongo_db)
+        except asyncio.CancelledError:
+            lgr.info("Shutdown finished")
+        except Exception as exc:  # noqa: BLE001
+            lgr.warning("Shutdown abnormally: %r", exc)
+            err = exc
+
+    if err:
+        raise err
 
 
 def run() -> None:

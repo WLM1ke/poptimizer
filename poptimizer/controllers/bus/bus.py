@@ -1,20 +1,22 @@
 import aiohttp
 
 from poptimizer.adapters import adapter, mongo
+from poptimizer.controllers.bus import backup, msg
 from poptimizer.domain.data.div import raw
-from poptimizer.use_cases import handler, portfolio, view
+from poptimizer.use_cases import portfolio, view
 from poptimizer.use_cases.data import cpi, index, quotes, securities, trading_day
 from poptimizer.use_cases.data.div import div
 from poptimizer.use_cases.evolve import evolve
-from poptimizer.controllers.bus import backup, msg
 
 
-def run(
-    bus: msg.Bus,
+async def run(
     http_client: aiohttp.ClientSession,
     mongo_db: mongo.MongoDatabase,
-    viewer: view.Viewer,
 ) -> None:
+    repo = mongo.Repo(mongo_db)
+    viewer = view.Viewer(repo)
+    bus = msg.Bus(repo)
+
     bus.register_handler(
         backup.BackupHandler(mongo_db[adapter.get_component_name(raw.DivRaw)]),
         msg.IndefiniteRetryPolicy,
@@ -32,4 +34,4 @@ def run(
 
     bus.register_handler(evolve.EvolutionHandler(), msg.IndefiniteRetryPolicy)
 
-    bus.publish(handler.AppStarted())
+    await bus.run()

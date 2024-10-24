@@ -25,10 +25,10 @@ type MongoCollection = collection.AsyncCollection[MongoDocument]
 
 
 @asynccontextmanager
-async def client(uri: MongoDsn) -> AsyncIterator[MongoClient]:
+async def db(uri: MongoDsn, db: str) -> AsyncIterator[MongoDatabase]:
     mongo_client: MongoClient = pymongo.AsyncMongoClient(str(uri), tz_aware=False)
     try:
-        yield mongo_client
+        yield mongo_client[db]
     finally:
         await mongo_client.aclose()
 
