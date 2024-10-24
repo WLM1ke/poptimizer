@@ -4,7 +4,7 @@ from poptimizer.adapters import adapter, mongo
 from poptimizer.controllers.bus import backup, msg
 from poptimizer.domain.div import raw
 from poptimizer.use_cases import cpi, portfolio, view
-from poptimizer.use_cases.div import div, status
+from poptimizer.use_cases.div import div, reestry, status
 from poptimizer.use_cases.evolve import evolve
 from poptimizer.use_cases.moex import index, quotes, securities, trading_day
 
@@ -31,6 +31,7 @@ async def run(
     bus.register_handler(div.DivHandler(), msg.IndefiniteRetryPolicy)
     bus.register_handler(portfolio.PortfolioHandler(viewer), msg.IndefiniteRetryPolicy)
     bus.register_handler(status.DivStatusHandler(http_client), msg.IgnoreErrorsPolicy)
+    bus.register_handler(reestry.ReestryHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_handler(trading_day_handler.update, msg.IndefiniteRetryPolicy)
 
     bus.register_handler(evolve.EvolutionHandler(), msg.IndefiniteRetryPolicy)

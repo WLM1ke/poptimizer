@@ -46,7 +46,7 @@ class DivStatusHandler:
     async def _download(self) -> TextIO:
         async with self._http_client.get(_URL) as resp:
             if not resp.ok:
-                raise errors.DomainError(f"bad dividends status respond {resp.reason}")
+                raise errors.UseCasesError(f"bad dividends status respond {resp.reason}")
 
             return io.StringIO(await resp.text(encoding="cp1251"), newline="")
 
@@ -65,7 +65,7 @@ class DivStatusHandler:
                 continue
 
             if (ticker_re := _RE_TICKER.search(ticker_raw)) is None:
-                self._lgr.warning("can't parse ticker from %s", ticker_raw)
+                self._lgr.warning("Can't parse ticker from %s", ticker_raw)
 
                 continue
 
