@@ -8,6 +8,9 @@ from poptimizer.domain import domain
 class Msg(BaseModel): ...
 
 
+class DTO(BaseModel): ...
+
+
 class Ctx(Protocol):
     async def get[E: domain.Entity](
         self,

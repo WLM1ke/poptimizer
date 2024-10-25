@@ -1,4 +1,5 @@
 import asyncio
+import bisect
 import logging
 import re
 from collections.abc import Iterable
@@ -10,8 +11,8 @@ from lxml import html
 
 from poptimizer import errors
 from poptimizer.domain import domain
-from poptimizer.domain.div import reestry, status
-from poptimizer.domain.moex import quotes
+from poptimizer.domain.div import raw, reestry, status
+from poptimizer.domain.moex import quotes, usd
 from poptimizer.use_cases import handler
 
 _URL: Final = "https://закрытияреестров.рф/_/"
@@ -44,9 +45,6 @@ class ReestryHandler:
         if table.has_day(row.day):
             return
 
-        quotes_table = await ctx.get(quotes.Quotes, domain.UID(row.ticker))
-        first_day = quotes_table.df[0].day
-
         try:
             url = await self._find_url(row.ticker_base)
         except errors.UseCasesError as err:
@@ -61,8 +59,11 @@ class ReestryHandler:
 
             return
 
+        quotes_table = await ctx.get(quotes.Quotes, domain.UID(row.ticker))
+        usd_table = await ctx.get(usd.USD)
+
         try:
-            raw_rows = _parse(html_page, 1 + row.preferred, first_day)
+            raw_rows = _parse(html_page, 1 + row.preferred, usd_table, quotes_table.df[0].day)
         except errors.UseCasesError as err:
             self._lgr.warning("can't parse dividends for %s - %s", row.ticker, err)
 
@@ -94,13 +95,13 @@ class ReestryHandler:
             return await resp.text()
 
 
-def _parse(html_page: str, data_col: int, first_day: domain.Day) -> list[reestry.Row]:
+def _parse(html_page: str, data_col: int, usd_table: usd.USD, first_day: domain.Day) -> list[raw.Row]:
     rows: list[html.HtmlElement] = html.document_fromstring(html_page).xpath("//*/table/tbody/tr")  # type: ignore[reportUnknownMemberType]
 
     rows_iter = iter(rows)
     _validate_header(next(rows_iter), data_col)
 
-    return list(_parse_rows(rows_iter, data_col, first_day))
+    return list(_parse_rows(rows_iter, data_col, usd_table, first_day))
 
 
 def _validate_header(row: html.HtmlElement, data_col: int) -> None:
@@ -114,7 +115,12 @@ def _validate_header(row: html.HtmlElement, data_col: int) -> None:
         raise errors.UseCasesError(f"wrong dividends table header {header}")
 
 
-def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day: domain.Day) -> Iterable[reestry.Row]:
+def _parse_rows(
+    rows_iter: Iterable[html.HtmlElement],
+    data_col: int,
+    usd_table: usd.USD,
+    first_day: domain.Day,
+) -> Iterable[raw.Row]:
     for row in rows_iter:
         if "ИТОГО" in (date_raw := "".join(row[0].itertext())):
             continue
@@ -127,11 +133,7 @@ def _parse_rows(rows_iter: Iterable[html.HtmlElement], data_col: int, first_day:
         if (day := _parse_date(date_raw)) < first_day:
             break
 
-        yield reestry.Row(
-            day=day,
-            dividend=div,
-            currency=currency,
-        )
+        yield _div_in_rur(day, div, currency, usd_table)
 
 
 def _parse_date(date_raw: str) -> date:
@@ -156,3 +158,13 @@ def _parse_div(raw_row: str) -> tuple[float, domain.Currency]:
     div = float(div_re[1].translate(_DIV_TRANSLATE))
 
     return div, currency
+
+
+def _div_in_rur(day: domain.Day, div: float, currency: domain.Currency, usd_table: usd.USD) -> raw.Row:
+    match currency:
+        case domain.Currency.RUR:
+            return raw.Row(day=day, dividend=div)
+        case domain.Currency.USD:
+            pos = bisect.bisect_right(usd_table.df, day, key=lambda usd_row: usd_row.day)
+
+            return raw.Row(day=day, dividend=div * usd_table.df[pos - 1].close)

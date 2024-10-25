@@ -6,7 +6,7 @@ from poptimizer.domain.div import raw
 from poptimizer.use_cases import cpi, portfolio, view
 from poptimizer.use_cases.div import div, reestry, status
 from poptimizer.use_cases.evolve import evolve
-from poptimizer.use_cases.moex import index, quotes, securities, trading_day
+from poptimizer.use_cases.moex import index, quotes, securities, trading_day, usd
 
 
 async def run(
@@ -25,6 +25,7 @@ async def run(
     trading_day_handler = trading_day.TradingDayHandler(http_client)
     bus.register_handler(trading_day_handler.check, msg.IndefiniteRetryPolicy)
     bus.register_handler(cpi.CPIHandler(http_client), msg.IgnoreErrorsPolicy)
+    bus.register_handler(usd.USDHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_handler(index.IndexesHandler(http_client), msg.IndefiniteRetryPolicy)
     bus.register_handler(securities.SecuritiesHandler(http_client), msg.IndefiniteRetryPolicy)
     bus.register_handler(quotes.QuotesHandler(http_client), msg.IndefiniteRetryPolicy)

@@ -8,7 +8,7 @@ from openpyxl.reader import excel
 from openpyxl.worksheet import worksheet
 
 from poptimizer import errors
-from poptimizer.domain.moex import cpi
+from poptimizer.domain import cpi
 from poptimizer.use_cases import handler
 
 _PRICES_PAGE: Final = "https://rosstat.gov.ru/statistics/price"
