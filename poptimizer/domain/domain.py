@@ -1,5 +1,6 @@
 import itertools
 from datetime import date, datetime
+from enum import StrEnum, auto, unique
 from typing import Annotated, NewType, Protocol
 
 from pydantic import BaseModel, ConfigDict, PlainSerializer
@@ -31,6 +32,12 @@ Day = Annotated[
 
 Ticker = NewType("Ticker", str)
 AccName = NewType("AccName", str)
+
+
+@unique
+class Currency(StrEnum):
+    RUR = auto()
+    USD = auto()
 
 
 class Entity(BaseModel):
