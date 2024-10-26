@@ -68,4 +68,3 @@ tasks:
     desc: Run MongoDB Server
     cmds:
       - mongod --dbpath db --replSet POptimizer --bind_ip localhost &
-      - mongosh --eval "rs.initiate()"
