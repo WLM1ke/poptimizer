@@ -24,8 +24,10 @@ async def _run() -> None:
             )
         )
 
+        msg_bus = bus.run(http_client, mongo_db)
+
         try:
-            await bus.run(http_client, mongo_db)
+            await msg_bus.run()
         except asyncio.CancelledError:
             lgr.info("Shutdown finished")
         except Exception as exc:  # noqa: BLE001

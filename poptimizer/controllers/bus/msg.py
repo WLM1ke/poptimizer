@@ -105,7 +105,7 @@ class Bus:
 
             self._request_handlers[msg_name] = handler
             self._lgr.info(
-                "%s was registered as request handler for %s with %s",
+                "%s was registered as request handler for %s",
                 adapter.get_component_name(handler),
                 msg_name,
             )

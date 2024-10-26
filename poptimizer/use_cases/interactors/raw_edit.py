@@ -11,6 +11,13 @@ from poptimizer.domain.moex import quotes
 from poptimizer.use_cases import handler
 
 
+class GetDivTickers(handler.DTO): ...
+
+
+class GetDividends(handler.DTO):
+    ticker: domain.Ticker
+
+
 class DivTickers(handler.DTO):
     tickers: list[domain.Ticker]
 
@@ -49,15 +56,15 @@ class UpdateDividends(handler.DTO):
 
 
 class DividendsHandler:
-    async def get_div_tickers(self, ctx: handler.Ctx) -> DivTickers:
+    async def get_div_tickers(self, ctx: handler.Ctx, msg: GetDivTickers) -> DivTickers:  # noqa: ARG002
         table = await ctx.get(status.DivStatus)
 
         return DivTickers(tickers=sorted({row.ticker for row in table.df}))
 
-    async def get_dividends(self, ctx: handler.Ctx, ticker: domain.Ticker) -> Dividends:
+    async def get_dividends(self, ctx: handler.Ctx, msg: GetDividends) -> Dividends:
         async with asyncio.TaskGroup() as tg:
-            raw_task = tg.create_task(ctx.get(raw.DivRaw, domain.UID(ticker)))
-            reestry_task = tg.create_task(ctx.get(reestry.DivReestry, domain.UID(ticker)))
+            raw_task = tg.create_task(ctx.get(raw.DivRaw, domain.UID(msg.ticker)))
+            reestry_task = tg.create_task(ctx.get(reestry.DivReestry, domain.UID(msg.ticker)))
 
         raw_table = await raw_task
         reestry_table = await reestry_task
@@ -89,10 +96,10 @@ class DividendsHandler:
 
         return Dividends(dividends=compare)
 
-    async def update_dividends(self, ctx: handler.Ctx, div_update: UpdateDividends) -> Dividends:
+    async def update_dividends(self, ctx: handler.Ctx, msg: UpdateDividends) -> Dividends:
         async with asyncio.TaskGroup() as tg:
-            raw_task = tg.create_task(ctx.get_for_update(raw.DivRaw, domain.UID(div_update.ticker)))
-            quotes_task = tg.create_task(ctx.get(quotes.Quotes, domain.UID(div_update.ticker)))
+            raw_task = tg.create_task(ctx.get_for_update(raw.DivRaw, domain.UID(msg.ticker)))
+            quotes_task = tg.create_task(ctx.get(quotes.Quotes, domain.UID(msg.ticker)))
             status_task = tg.create_task(ctx.get_for_update(status.DivStatus))
 
         raw_table = await raw_task
@@ -103,8 +110,8 @@ class DividendsHandler:
 
         raw_table.update(
             quotes_table.day,
-            [row for row in div_update.dividends if row.day >= first_day],
+            [row for row in msg.dividends if row.day >= first_day],
         )
         status_table.filter(raw_table)
 
-        return await self.get_dividends(ctx, div_update.ticker)
+        return await self.get_dividends(ctx, GetDividends(ticker=msg.ticker))

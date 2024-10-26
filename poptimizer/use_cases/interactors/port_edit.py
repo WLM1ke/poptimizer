@@ -1,13 +1,24 @@
 from datetime import date
 from typing import Self
 
-from pydantic import NonNegativeInt, PositiveFloat, PositiveInt
+from pydantic import BaseModel, NonNegativeInt, PositiveFloat, PositiveInt
 
 from poptimizer.domain import domain, portfolio
 from poptimizer.use_cases import handler
 
 
-class Security(handler.DTO):
+class GetPortfolio(handler.DTO): ...
+
+
+class CreateAccount(handler.DTO):
+    name: domain.AccName
+
+
+class RemoveAccount(handler.DTO):
+    name: domain.AccName
+
+
+class Security(BaseModel):
     lot: PositiveInt
     price: PositiveFloat
 
@@ -33,36 +44,36 @@ class Position(handler.DTO):
 
 
 class PortfolioHandler:
-    async def get_portfolio(self, ctx: handler.Ctx) -> Portfolio:
+    async def get_portfolio(self, ctx: handler.Ctx, msg: GetPortfolio) -> Portfolio:  # noqa: ARG002
         port = await ctx.get(portfolio.Portfolio)
 
         return Portfolio.from_portfolio(port)
 
-    async def create_account(self, ctx: handler.Ctx, name: domain.AccName) -> Portfolio:
+    async def create_account(self, ctx: handler.Ctx, msg: CreateAccount) -> Portfolio:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
-        port.create_acount(domain.AccName(name))
+        port.create_acount(msg.name)
 
         return Portfolio.from_portfolio(port)
 
-    async def remove_acount(self, ctx: handler.Ctx, name: domain.AccName) -> Portfolio:
+    async def remove_acount(self, ctx: handler.Ctx, msg: RemoveAccount) -> Portfolio:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
-        port.remove_acount(domain.AccName(name))
+        port.remove_acount(msg.name)
 
         return Portfolio.from_portfolio(port)
 
     async def update_position(
         self,
         ctx: handler.Ctx,
-        position: Position,
+        msg: Position,
     ) -> Portfolio:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
         port.update_position(
-            position.name,
-            position.ticker,
-            position.amount,
+            msg.name,
+            msg.ticker,
+            msg.amount,
         )
 
         return Portfolio.from_portfolio(port)

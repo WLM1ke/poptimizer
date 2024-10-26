@@ -6,13 +6,14 @@ from poptimizer.domain.div import raw
 from poptimizer.use_cases import cpi, portfolio, view
 from poptimizer.use_cases.div import div, reestry, status
 from poptimizer.use_cases.evolve import evolve
+from poptimizer.use_cases.interactors import port_edit, raw_edit
 from poptimizer.use_cases.moex import index, quotes, securities, trading_day, usd
 
 
-async def run(
+def run(
     http_client: aiohttp.ClientSession,
     mongo_db: mongo.MongoDatabase,
-) -> None:
+) -> msg.Bus:
     repo = mongo.Repo(mongo_db)
     viewer = view.Viewer(repo)
     bus = msg.Bus(repo)
@@ -37,4 +38,15 @@ async def run(
 
     bus.register_event_handler(evolve.EvolutionHandler(), msg.IndefiniteRetryPolicy)
 
-    await bus.run()
+    port_handler = port_edit.PortfolioHandler()
+    bus.register_request_handler(port_handler.get_portfolio)
+    bus.register_request_handler(port_handler.create_account)
+    bus.register_request_handler(port_handler.remove_acount)
+    bus.register_request_handler(port_handler.update_position)
+
+    div_handler = raw_edit.DividendsHandler()
+    bus.register_request_handler(div_handler.get_div_tickers)
+    bus.register_request_handler(div_handler.get_dividends)
+    bus.register_request_handler(div_handler.update_dividends)
+
+    return bus
