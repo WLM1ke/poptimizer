@@ -59,4 +59,4 @@ class Server:
             await asyncio.Event().wait()
         except asyncio.CancelledError:
             await runner.cleanup()
-            self._lgr.info("Server shutdown completed")
+            self._lgr.info("Server shutdown finished")

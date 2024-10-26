@@ -10,7 +10,7 @@ class TestComponent:
 _CASES = (
     (TestComponent, "TestComponent"),
     (TestComponent(), "TestComponent"),
-    (TestComponent().handler, "TestComponent.handler"),
+    (TestComponent().handler, "TestComponent"),
 )
 
 

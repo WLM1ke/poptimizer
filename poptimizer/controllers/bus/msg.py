@@ -111,8 +111,12 @@ class Bus:
             )
 
     async def run(self) -> None:
-        async with self._tg:
-            self.publish(AppStarted())
+        self._lgr.info("Message bus started")
+        try:
+            async with self._tg:
+                self.publish(AppStarted())
+        except asyncio.CancelledError:
+            self._lgr.info("Message bus shutdown finished")
 
     def publish(self, msg: Event) -> None:
         self._tg.create_task(self._route_event(msg))
