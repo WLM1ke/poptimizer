@@ -36,7 +36,16 @@ class Handlers:
         return web.json_response(text=port.model_dump_json())
 
     async def update_position(self, request: web.Request) -> web.StreamResponse:
-        port = await self._bus.request(portfolio.Position.model_validate(await request.json()))
+        json = await request.json()
+        port = await self._bus.request(
+            portfolio.Position.model_validate(
+                {
+                    "name": request.match_info["account"],
+                    "ticker": request.match_info["ticker"],
+                    "amount": json.get("amount"),
+                }
+            )
+        )
 
         return web.json_response(text=port.model_dump_json())
 
@@ -51,6 +60,14 @@ class Handlers:
         return web.json_response(text=div.model_dump_json())
 
     async def update_dividends(self, request: web.Request) -> web.StreamResponse:
-        div = await self._bus.request(raw.UpdateDividends.model_validate(await request.json()))
+        json = await request.json()
+        div = await self._bus.request(
+            raw.UpdateDividends.model_validate(
+                {
+                    "ticker": request.match_info["ticker"],
+                    "dividends": json.get("dividends"),
+                }
+            )
+        )
 
         return web.json_response(text=div.model_dump_json())
