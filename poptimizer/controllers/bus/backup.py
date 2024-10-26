@@ -6,19 +6,17 @@ import aiofiles
 import bson
 
 from poptimizer import errors
-from poptimizer.adapters import mongo
+from poptimizer.adapters import adapter, mongo
+from poptimizer.domain.div import raw
 from poptimizer.use_cases import handler
 
 _DUMP: Final = Path(__file__).parents[3] / "dump" / "dividends.bson"
 
 
 class BackupHandler:
-    def __init__(
-        self,
-        mongo_collection: mongo.MongoCollection,
-    ) -> None:
+    def __init__(self, mongo_db: mongo.MongoDatabase) -> None:
         self._lgr = logging.getLogger()
-        self._collection = mongo_collection
+        self._collection = mongo_db[adapter.get_component_name(raw.DivRaw)]
 
     async def __call__(self, ctx: handler.Ctx, msg: handler.AppStarted) -> None:  # noqa: ARG002
         match await self._collection.count_documents({}):
