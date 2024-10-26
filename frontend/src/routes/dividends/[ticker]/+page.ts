@@ -5,7 +5,6 @@ import { get } from "$lib/request";
 interface DivCompareRow {
 	day: string;
 	dividend: number;
-	currency: "rur" | "usd";
 	status: "extra" | "ok" | "missed";
 }
 

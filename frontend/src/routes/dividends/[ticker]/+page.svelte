@@ -10,8 +10,7 @@
 		AddCell,
 		DeleteCell,
 		InputCell,
-		InputTextCell,
-		InputSelectCell
+		InputTextCell
 	} from "$lib/components/table";
 	import Button from "$lib/components/Button.svelte";
 	import { addAlert } from "$lib/components/alerts";
@@ -23,7 +22,6 @@
 	let ticker: string;
 	let day: string;
 	let dividend: number;
-	let currency: string;
 	let maxFractionDigits: number;
 
 	$: {
@@ -31,7 +29,6 @@
 			ticker = data.ticker;
 			day = data.dividends[data.dividends.length - 1].day;
 			dividend = data.dividends[data.dividends.length - 1].dividend;
-			currency = data.dividends[data.dividends.length - 1].currency.toLocaleUpperCase();
 			maxFractionDigits = Math.max(...data.dividends.map((currentValue) => fractionDigits(currentValue.dividend)));
 		}
 	}
@@ -66,17 +63,11 @@
 			addAlert("Invalid Date");
 			return;
 		}
-		const currencyLower = currency.toLocaleLowerCase();
-		if (currencyLower != "rur" && currencyLower != "usd") {
-			addAlert("Invalid currency");
-			return;
-		}
 		data.dividends = [
 			...data.dividends,
 			{
 				day: date.toISOString().slice(0, 10),
 				dividend: dividend,
-				currency: currencyLower,
 				status: "extra"
 			}
 		];
@@ -87,15 +78,11 @@
 				.filter(({ status }) => {
 					return status === "ok" || status === "extra";
 				})
-				.map(({ day, dividend, currency }) => {
-					return { day, dividend, currency };
+				.map(({ day, dividend }) => {
+					return { day, dividend };
 				})
 				.toSorted((a, b) => {
-					return a.day !== b.day
-						? a.day.localeCompare(b.day)
-						: a.dividend !== b.dividend
-							? a.dividend - b.dividend
-							: a.currency.localeCompare(b.currency);
+					return a.day !== b.day ? a.day.localeCompare(b.day) : a.dividend - b.dividend;
 				})
 		});
 		await invalidate((url) => url.pathname.startsWith("/api/dividends"));
@@ -106,7 +93,6 @@
 	<TableHead>
 		<HeadCell>Day</HeadCell>
 		<HeadCell>Dividend</HeadCell>
-		<HeadCell>Currency</HeadCell>
 		<HeadCell>Status</HeadCell>
 	</TableHead>
 	<TableBody>
@@ -115,21 +101,18 @@
 				<TableRow>
 					<TextCell text={dividend.day} />
 					<NumberCell value={dividend.dividend} fractionDigits={maxFractionDigits} />
-					<TextCell text={dividend.currency.toUpperCase()} center={true} />
 					<TextCell text="OK" center={true} />
 				</TableRow>
 			{:else if dividend.status === "extra"}
 				<TableRow>
 					<TextCell text={dividend.day} />
 					<NumberCell value={dividend.dividend} fractionDigits={maxFractionDigits} />
-					<TextCell text={dividend.currency.toUpperCase()} center={true} />
 					<DeleteCell on:click={() => toggleRow(index)} />
 				</TableRow>
 			{:else if dividend.status === "missed"}
 				<TableRow muted>
 					<TextCell text={dividend.day} />
 					<NumberCell value={dividend.dividend} fractionDigits={maxFractionDigits} />
-					<TextCell text={dividend.currency.toUpperCase()} center={true} />
 					<AddCell on:click={() => toggleRow(index)} />
 				</TableRow>
 			{/if}
@@ -137,7 +120,6 @@
 		<TableRow muted>
 			<InputTextCell bind:value={day} />
 			<InputCell bind:value={dividend} />
-			<InputSelectCell bind:value={currency} options={["RUR", "USD"]} />
 			<AddCell on:click={() => addRow()} />
 		</TableRow>
 	</TableBody>
