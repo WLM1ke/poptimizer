@@ -63,17 +63,9 @@ class PortfolioHandler:
 
         return Portfolio.from_portfolio(port)
 
-    async def update_position(
-        self,
-        ctx: handler.Ctx,
-        msg: Position,
-    ) -> Portfolio:
+    async def update_position(self, ctx: handler.Ctx, msg: Position) -> Portfolio:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
-        port.update_position(
-            msg.name,
-            msg.ticker,
-            msg.amount,
-        )
+        port.update_position(msg.name, msg.ticker, msg.amount)
 
         return Portfolio.from_portfolio(port)

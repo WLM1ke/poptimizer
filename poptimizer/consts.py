@@ -1,5 +1,8 @@
 from datetime import date
+from pathlib import Path
 from typing import Final
+
+ROOT: Final = Path(__file__).parents[1]
 
 # Дата, с которой собираются дивиденды
 START_DAY: Final = date(2015, 1, 1)

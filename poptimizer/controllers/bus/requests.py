@@ -2,7 +2,7 @@ from poptimizer.controllers.bus import msg
 from poptimizer.use_cases.requests import portfolio, raw
 
 
-def register(bus: msg.Bus) -> None:
+def register_handlers(bus: msg.Bus) -> None:
     port_handler = portfolio.PortfolioHandler()
     bus.register_request_handler(port_handler.get_portfolio)
     bus.register_request_handler(port_handler.create_account)

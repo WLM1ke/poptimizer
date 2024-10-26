@@ -6,6 +6,7 @@ import uvloop
 from poptimizer import config
 from poptimizer.adapters import http, logger, mongo
 from poptimizer.controllers.bus import bus
+from poptimizer.controllers.server import server
 
 
 async def _run() -> None:
@@ -24,10 +25,13 @@ async def _run() -> None:
             )
         )
 
-        msg_bus = bus.run(http_client, mongo_db)
+        msg_bus = bus.build(http_client, mongo_db)
+        http_server = server.build(msg_bus, cfg.server_url)
 
         try:
-            await msg_bus.run()
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(msg_bus.run())
+                tg.create_task(http_server.run())
         except asyncio.CancelledError:
             lgr.info("Shutdown finished")
         except Exception as exc:  # noqa: BLE001

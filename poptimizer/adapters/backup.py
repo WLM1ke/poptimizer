@@ -1,16 +1,16 @@
 import logging
-from pathlib import Path
 from typing import Final
 
 import aiofiles
 import bson
+from pymongo.errors import PyMongoError
 
-from poptimizer import errors
+from poptimizer import consts, errors
 from poptimizer.adapters import adapter, mongo
 from poptimizer.domain.div import raw
 from poptimizer.use_cases import handler
 
-_DUMP: Final = Path(__file__).parents[3] / "dump" / "dividends.bson"
+_DUMP: Final = consts.ROOT / "dump" / "dividends.bson"
 
 
 class BackupHandler:
@@ -19,18 +19,26 @@ class BackupHandler:
         self._collection = mongo_db[adapter.get_component_name(raw.DivRaw)]
 
     async def __call__(self, ctx: handler.Ctx, msg: handler.AppStarted) -> None:  # noqa: ARG002
-        match await self._collection.count_documents({}):
+        try:
+            count = await self._collection.count_documents({})
+        except PyMongoError as err:
+            raise errors.AdapterError("can't check raw dividends collection") from err
+
+        match count:
             case 0:
-                await self._restore()
+                try:
+                    await self._restore()
+                except PyMongoError as err:
+                    raise errors.AdapterError("can't restore raw dividends collection") from err
             case _:
-                await self._backup()
+                try:
+                    await self._backup()
+                except PyMongoError as err:
+                    raise errors.AdapterError("can't backup raw dividends collection") from err
 
     async def _restore(self) -> None:
-        if await self._collection.count_documents({}):
-            return
-
         if not _DUMP.exists():
-            raise errors.ControllersError(f"can't restore {self._collection.name} from {_DUMP}")
+            raise errors.AdapterError(f"can't restore dividends collection from {_DUMP}")
 
         async with aiofiles.open(_DUMP, "br") as backup_file:
             raw = await backup_file.read()
