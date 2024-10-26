@@ -95,7 +95,13 @@ class Bus:
         name = adapter.get_component_name(msg)
         self._lgr.info("%r published", msg)
 
-        for handler, policy_type in self._handlers[name]:
+        handlers = self._handlers.get(name)
+        if handlers is None:
+            self._lgr.warning("No handler for %r", msg)
+
+            return
+
+        for handler, policy_type in handlers:
             self._tg.create_task(self._handle(handler, msg, policy_type()))
 
     async def _handle(

@@ -26,7 +26,7 @@ class Portfolio(handler.DTO):
         )
 
 
-class PositionDTO(handler.DTO):
+class Position(handler.DTO):
     name: domain.AccName
     ticker: domain.Ticker
     amount: NonNegativeInt
@@ -55,7 +55,7 @@ class PortfolioHandler:
     async def update_position(
         self,
         ctx: handler.Ctx,
-        position: PositionDTO,
+        position: Position,
     ) -> Portfolio:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
