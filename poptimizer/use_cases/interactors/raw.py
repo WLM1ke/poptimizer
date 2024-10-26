@@ -89,7 +89,7 @@ class DividendsHandler:
 
         return Dividends(dividends=compare)
 
-    async def update_dividends(self, ctx: handler.Ctx, div_update: UpdateDividends) -> None:
+    async def update_dividends(self, ctx: handler.Ctx, div_update: UpdateDividends) -> Dividends:
         async with asyncio.TaskGroup() as tg:
             raw_task = tg.create_task(ctx.get_for_update(raw.DivRaw, domain.UID(div_update.ticker)))
             quotes_task = tg.create_task(ctx.get(quotes.Quotes, domain.UID(div_update.ticker)))
@@ -106,3 +106,5 @@ class DividendsHandler:
             [row for row in div_update.dividends if row.day >= first_day],
         )
         status_table.filter(raw_table)
+
+        return await self.get_dividends(ctx, div_update.ticker)

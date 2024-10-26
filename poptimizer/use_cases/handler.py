@@ -8,7 +8,10 @@ from poptimizer.domain import domain
 class Msg(BaseModel): ...
 
 
-class DTO(BaseModel): ...
+class Event(Msg): ...
+
+
+class DTO(Msg): ...
 
 
 class Ctx(Protocol):
@@ -25,42 +28,42 @@ class Ctx(Protocol):
     ) -> E: ...
 
 
-class AppStarted(Msg): ...
+class AppStarted(Event): ...
 
 
-class DataChecked(Msg): ...
+class DataChecked(Event): ...
 
 
-class NewDataPublished(Msg):
+class NewDataPublished(Event):
     day: domain.Day
 
 
-class IndexesUpdated(Msg):
+class IndexesUpdated(Event):
     day: domain.Day
 
 
-class SecuritiesUpdated(Msg):
+class SecuritiesUpdated(Event):
     day: domain.Day
 
 
-class QuotesUpdated(Msg):
+class QuotesUpdated(Event):
     day: domain.Day
 
 
-class DivUpdated(Msg):
+class DivUpdated(Event):
     day: domain.Day
 
 
-class PortfolioUpdated(Msg):
+class PortfolioUpdated(Event):
     day: domain.Day
 
 
-class DivStatusUpdated(Msg):
+class DivStatusUpdated(Event):
     day: domain.Day
 
 
-class DataUpdated(Msg):
+class DataUpdated(Event):
     day: domain.Day
 
 
-class EvolutionStepFinished(Msg): ...
+class EvolutionStepFinished(Event): ...
