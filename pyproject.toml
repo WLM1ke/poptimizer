@@ -22,13 +22,13 @@ dependencies = [
     "pymongo>=4.10.1",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "import-linter>=2.1",
     "pyright>=1.1.384",
     "pytest>=8.3.2",
     "pytest-cov>=5.0.0",
-    "ruff>=0.6.9",
+    "ruff>=0.7.1",
     "pandas-stubs>=2.2.2.240807",
     "pytest-asyncio>=0.24.0",
     "lxml-stubs>=0.5.1",
