@@ -11,11 +11,11 @@ class GetPortfolio(handler.DTO): ...
 
 
 class CreateAccount(handler.DTO):
-    name: domain.AccName
+    account: domain.AccName
 
 
 class RemoveAccount(handler.DTO):
-    name: domain.AccName
+    account: domain.AccName
 
 
 class Security(BaseModel):
@@ -38,7 +38,7 @@ class Portfolio(handler.DTO):
 
 
 class Position(handler.DTO):
-    name: domain.AccName
+    account: domain.AccName
     ticker: domain.Ticker
     amount: NonNegativeInt
 
@@ -52,20 +52,20 @@ class PortfolioHandler:
     async def create_account(self, ctx: handler.Ctx, msg: CreateAccount) -> Portfolio:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
-        port.create_acount(msg.name)
+        port.create_acount(msg.account)
 
         return Portfolio.from_portfolio(port)
 
     async def remove_acount(self, ctx: handler.Ctx, msg: RemoveAccount) -> Portfolio:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
-        port.remove_acount(msg.name)
+        port.remove_acount(msg.account)
 
         return Portfolio.from_portfolio(port)
 
     async def update_position(self, ctx: handler.Ctx, msg: Position) -> Portfolio:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
-        port.update_position(msg.name, msg.ticker, msg.amount)
+        port.update_position(msg.account, msg.ticker, msg.amount)
 
         return Portfolio.from_portfolio(port)

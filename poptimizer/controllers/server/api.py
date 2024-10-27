@@ -26,26 +26,17 @@ class Handlers:
         return web.json_response(text=port.model_dump_json())
 
     async def create_acount(self, request: web.Request) -> web.StreamResponse:
-        port = await self._bus.request(portfolio.CreateAccount.model_validate({"name": request.match_info["account"]}))
+        port = await self._bus.request(portfolio.CreateAccount.model_validate(request.match_info))
 
         return web.json_response(text=port.model_dump_json())
 
     async def remove_acount(self, request: web.Request) -> web.StreamResponse:
-        port = await self._bus.request(portfolio.RemoveAccount.model_validate({"name": request.match_info["account"]}))
+        port = await self._bus.request(portfolio.RemoveAccount.model_validate(request.match_info))
 
         return web.json_response(text=port.model_dump_json())
 
     async def update_position(self, request: web.Request) -> web.StreamResponse:
-        json = await request.json()
-        port = await self._bus.request(
-            portfolio.Position.model_validate(
-                {
-                    "name": request.match_info["account"],
-                    "ticker": request.match_info["ticker"],
-                    "amount": json.get("amount"),
-                }
-            )
-        )
+        port = await self._bus.request(portfolio.Position.model_validate(await request.json() | request.match_info))
 
         return web.json_response(text=port.model_dump_json())
 
@@ -55,19 +46,11 @@ class Handlers:
         return web.json_response(text=div.model_dump_json())
 
     async def get_dividends(self, request: web.Request) -> web.StreamResponse:
-        div = await self._bus.request(raw.GetDividends.model_validate({"ticker": request.match_info["ticker"]}))
+        div = await self._bus.request(raw.GetDividends.model_validate(request.match_info))
 
         return web.json_response(text=div.model_dump_json())
 
     async def update_dividends(self, request: web.Request) -> web.StreamResponse:
-        json = await request.json()
-        div = await self._bus.request(
-            raw.UpdateDividends.model_validate(
-                {
-                    "ticker": request.match_info["ticker"],
-                    "dividends": json.get("dividends"),
-                }
-            )
-        )
+        div = await self._bus.request(raw.UpdateDividends.model_validate(await request.json() | request.match_info))
 
         return web.json_response(text=div.model_dump_json())
