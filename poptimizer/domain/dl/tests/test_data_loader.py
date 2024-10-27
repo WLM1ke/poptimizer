@@ -2,8 +2,8 @@ import pandas as pd
 import pytest
 import torch
 
-from poptimizer.domain import consts
-from poptimizer.domain.entity.dl import data_loaders, datasets
+from poptimizer import errors
+from poptimizer.domain.dl import data_loaders, datasets
 
 
 @pytest.fixture(name="days")
@@ -16,7 +16,7 @@ def make_days():
 
 
 def test_short_history_error(days) -> None:
-    with pytest.raises(consts.DomainError):
+    with pytest.raises(errors.DomainError):
         datasets.OneTickerData(
             days,
             pd.Series(range(9)),
@@ -28,7 +28,7 @@ def test_short_history_error(days) -> None:
 
 
 def test_features_mismatch_error(days) -> None:
-    with pytest.raises(consts.DomainError):
+    with pytest.raises(errors.DomainError):
         datasets.OneTickerData(
             days,
             pd.Series(range(10)),
@@ -262,7 +262,7 @@ def make_bad_second_ticker_data():
 
 
 def test_test_length_mismatch_error(one_ticker_data, bad_second_ticker_data) -> None:
-    with pytest.raises(consts.DomainError):
+    with pytest.raises(errors.DomainError):
         data_loaders.test(
             [one_ticker_data, bad_second_ticker_data],
         )
