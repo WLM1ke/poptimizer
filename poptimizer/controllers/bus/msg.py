@@ -143,11 +143,12 @@ class Bus:
         while err := await self._handle_event_safe(handler, msg):
             attempt += 1
             self._lgr.warning(
-                "%s can't handle %r in %d attempt with %s",
+                "%s can't handle %r in %d attempt with %s and %d more",
                 adapter.get_component_name(handler),
                 msg,
                 attempt,
-                err,
+                err.exceptions[0],
+                len(err.exceptions) - 1,
             )
 
             if not await policy.try_again():
