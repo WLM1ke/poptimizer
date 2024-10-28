@@ -16,7 +16,7 @@ tasks:
     cmds:
       - brew tap mongodb/brew
       - brew install {{.TOOLS}}
-      - uv sync --frozen --group dev
+      - uv sync --frozen
       - cd {{.FRONTEND}} && npm install && npm run build
 
   update:
