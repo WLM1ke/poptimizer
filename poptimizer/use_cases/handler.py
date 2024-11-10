@@ -31,7 +31,8 @@ class Ctx(Protocol):
 class AppStarted(Event): ...
 
 
-class DataChecked(Event): ...
+class DataNotChanged(Event):
+    day: domain.Day
 
 
 class NewDataPublished(Event):

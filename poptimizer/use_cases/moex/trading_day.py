@@ -47,12 +47,12 @@ class TradingDayHandler:
         self,
         ctx: handler.Ctx,
         msg: handler.AppStarted | handler.EvolutionStepFinished,  # noqa: ARG002
-    ) -> handler.DataChecked | handler.NewDataPublished:
+    ) -> handler.DataNotChanged | handler.NewDataPublished:
         table = await ctx.get(trading_day.TradingDay)
 
         new_last_check = _last_day()
         if table.day == new_last_check:
-            return handler.DataChecked()
+            return handler.DataNotChanged(day=table.last)
 
         last_day = await self._get_last_trading_day_from_moex()
 
@@ -60,7 +60,7 @@ class TradingDayHandler:
             table = await ctx.get_for_update(trading_day.TradingDay)
             table.update_last_check(new_last_check)
 
-            return handler.DataChecked()
+            return handler.DataNotChanged(day=table.last)
 
         return handler.NewDataPublished(day=last_day)
 

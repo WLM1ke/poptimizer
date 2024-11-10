@@ -10,7 +10,7 @@ from poptimizer.domain.evolve import genetics, genotype
 
 
 class Organism(domain.Entity):
-    tickers: tuple[str, ...] = Field(default_factory=list)
+    tickers: tuple[domain.Ticker, ...] = Field(default_factory=list)
     genes: genetics.Genes = Field(default_factory=dict)
     model: bytes = b""
     lr: list[float] = Field(default_factory=list)

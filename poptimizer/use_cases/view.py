@@ -24,7 +24,7 @@ class Viewer:
 
         return table.last
 
-    async def portfolio_tickers(self) -> tuple[str, ...]:
+    async def portfolio_tickers(self) -> tuple[domain.Ticker, ...]:
         table = await self._repo.get(portfolio.Portfolio)
 
         return tuple(sorted(table.securities))
