@@ -3,7 +3,6 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, Final
 
-import bson
 import pymongo
 from pydantic import MongoDsn, ValidationError
 from pymongo.asynchronous import collection, database
@@ -54,11 +53,21 @@ class Repo:
         ]
 
         try:
-            doc = await anext(await collection.aggregate(pipeline), {"_id": str(bson.ObjectId())})
-        except PyMongoError as err:
+            doc = await anext(await collection.aggregate(pipeline))
+        except (PyMongoError, StopAsyncIteration) as err:
             raise errors.AdapterError("can't load next organism") from err
 
         return await self.get(organism.Organism, domain.UID(doc["_id"]))
+
+    async def sample_orgs(self, n: int) -> list[organism.Organism]:
+        collection_name = adapter.get_component_name(organism.Organism)
+        collection = self._db[collection_name]
+        pipeline = [{"$sample": {"size": n}}]
+
+        try:
+            return [self._create_entity(organism.Organism, doc) async for doc in await collection.aggregate(pipeline)]
+        except PyMongoError as err:
+            raise errors.AdapterError("can't sample organisms") from err
 
     async def get[E: domain.Entity](
         self,

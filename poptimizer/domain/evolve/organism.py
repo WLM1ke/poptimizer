@@ -22,7 +22,7 @@ class Organism(domain.Entity):
     def phenotype(self) -> genetics.Phenotype:
         return genotype.DLModel.model_validate(self.genes).phenotype
 
-    def make_child(self, parent1: Organism, parent2: Organism, scale: float) -> genetics.Genes:
+    def make_child_genes(self, parent1: Organism, parent2: Organism, scale: float) -> genetics.Genes:
         model = genotype.DLModel.model_validate(self.genes)
         model1 = genotype.DLModel.model_validate(parent1.genes)
         model2 = genotype.DLModel.model_validate(parent2.genes)

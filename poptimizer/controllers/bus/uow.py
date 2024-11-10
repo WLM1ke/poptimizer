@@ -109,6 +109,9 @@ class UOW:
 
             return repo_entity
 
+    async def sample_orgs(self, n: int) -> list[organism.Organism]:
+        return await self._repo.sample_orgs(n)
+
     async def __aenter__(self) -> Self:
         return self
 
