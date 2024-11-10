@@ -14,10 +14,28 @@ from typing import (
 from poptimizer import errors
 from poptimizer.adapters import adapter, mongo
 from poptimizer.controllers.bus import uow
-from poptimizer.use_cases.handler import DTO, AppStarted, Ctx, Event
+from poptimizer.domain import domain
+from poptimizer.domain.evolve import organism
+from poptimizer.use_cases.handler import DTO, AppStarted, Event
 
 _DEFAULT_FIRST_RETRY: Final = timedelta(seconds=30)
 _DEFAULT_BACKOFF_FACTOR: Final = 2
+
+
+class Ctx(Protocol):
+    async def get[E: domain.Entity](
+        self,
+        t_entity: type[E],
+        uid: domain.UID | None = None,
+    ) -> E: ...
+
+    async def get_for_update[E: domain.Entity](
+        self,
+        t_entity: type[E],
+        uid: domain.UID | None = None,
+    ) -> E: ...
+
+    async def next_org(self) -> organism.Organism: ...
 
 
 class RequestHandler[D: DTO, E: Event](Protocol):

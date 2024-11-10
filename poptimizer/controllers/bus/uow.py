@@ -6,6 +6,7 @@ from typing import Protocol, Self
 from poptimizer import errors
 from poptimizer.adapters import adapter, mongo
 from poptimizer.domain import domain
+from poptimizer.domain.evolve import organism
 from poptimizer.use_cases import handler
 
 
@@ -92,6 +93,17 @@ class UOW:
                 return loaded
 
             repo_entity = await self._repo.get(t_entity, uid)
+
+            identity_map.save(repo_entity, for_update=True)
+
+            return repo_entity
+
+    async def next_org(self) -> organism.Organism:
+        async with self._identity_map as identity_map:
+            repo_entity = await self._repo.next_org()
+
+            if loaded := identity_map.get(organism.Organism, repo_entity.uid, for_update=True):
+                return loaded
 
             identity_map.save(repo_entity, for_update=True)
 

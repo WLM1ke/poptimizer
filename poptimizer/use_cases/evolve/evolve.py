@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Protocol
 
 import pandas as pd
 
@@ -9,6 +10,22 @@ from poptimizer.use_cases import handler, view
 from poptimizer.use_cases.dl import builder, trainer
 
 
+class Ctx(Protocol):
+    async def get[E: domain.Entity](
+        self,
+        t_entity: type[E],
+        uid: domain.UID | None = None,
+    ) -> E: ...
+
+    async def get_for_update[E: domain.Entity](
+        self,
+        t_entity: type[E],
+        uid: domain.UID | None = None,
+    ) -> E: ...
+
+    async def next_org(self) -> organism.Organism: ...
+
+
 class EvolutionHandler:
     def __init__(self, viewer: view.Viewer) -> None:
         self._lgr = logging.getLogger()
@@ -16,23 +33,18 @@ class EvolutionHandler:
 
     async def __call__(
         self,
-        ctx: handler.Ctx,
+        ctx: Ctx,
         msg: handler.DataNotChanged | handler.DataUpdated,
     ) -> handler.EvolutionStepFinished:
         evolution = await self._init_step(ctx, msg.day)
 
-        org = organism.Organism(
-            rev=domain.Revision(uid=domain.UID("uid"), ver=domain.Version(0)),
-            day=evolution.day,
-            tickers=evolution.tickers,
-        )
-
+        org = await ctx.next_org()
         cfg = trainer.Cfg.model_validate(org.phenotype)
 
         tr = trainer.Trainer(builder.Builder(self._viewer))
-        await tr.run(org.tickers, pd.Timestamp(evolution.day), cfg, None)
+        await tr.run(evolution.tickers, pd.Timestamp(evolution.day), cfg, None)
 
-        # await asyncio.sleep(60 * 60)
+        await asyncio.sleep(60 * 60)
 
         return handler.EvolutionStepFinished()
 

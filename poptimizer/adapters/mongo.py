@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, Final
 
+import bson
 import pymongo
 from pydantic import MongoDsn, ValidationError
 from pymongo.asynchronous import collection, database
@@ -11,6 +12,7 @@ from pymongo.errors import PyMongoError
 from poptimizer import consts, errors
 from poptimizer.adapters import adapter
 from poptimizer.domain import domain
+from poptimizer.domain.evolve import organism
 
 _MONGO_ID: Final = "_id"
 _REV: Final = "rev"
@@ -36,6 +38,27 @@ async def db(uri: MongoDsn, db: str) -> AsyncIterator[MongoDatabase]:
 class Repo:
     def __init__(self, mongo_db: MongoDatabase) -> None:
         self._db = mongo_db
+
+    async def next_org(self) -> organism.Organism:
+        collection_name = adapter.get_component_name(organism.Organism)
+        collection = self._db[collection_name]
+        pipeline = [
+            {
+                "$project": {
+                    "day": True,
+                    "ub": {"$abs": "$ub"},
+                },
+            },
+            {"$sort": {"day": pymongo.ASCENDING, "ub": pymongo.DESCENDING}},
+            {"$limit": 1},
+        ]
+
+        try:
+            doc = await anext(await collection.aggregate(pipeline), {"_id": str(bson.ObjectId())})
+        except PyMongoError as err:
+            raise errors.AdapterError("can't load next organism") from err
+
+        return await self.get(organism.Organism, domain.UID(doc["_id"]))
 
     async def get[E: domain.Entity](
         self,
