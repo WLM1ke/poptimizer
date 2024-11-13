@@ -99,7 +99,7 @@ class EvolutionHandler:
         cfg = trainer.Cfg.model_validate(org.phenotype)
 
         tr = trainer.Trainer(builder.Builder(self._viewer))
-        await tr.run(tickers, pd.Timestamp(day), cfg, None)
+        self._lgr.info(f"Return delta - {await tr.run(tickers, pd.Timestamp(day), cfg, None):.2%}")
         org.tickers = tickers
         org.day = day
 
