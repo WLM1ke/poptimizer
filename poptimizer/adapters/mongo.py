@@ -69,6 +69,15 @@ class Repo:
         except PyMongoError as err:
             raise errors.AdapterError("can't sample organisms") from err
 
+    async def count_orgs(self) -> int:
+        collection_name = adapter.get_component_name(organism.Organism)
+        collection = self._db[collection_name]
+
+        try:
+            return await collection.count_documents({})
+        except PyMongoError as err:
+            raise errors.AdapterError("can't count organisms") from err
+
     async def get[E: domain.Entity](
         self,
         t_entity: type[E],
@@ -136,3 +145,15 @@ class Repo:
 
         if updated is None:  # type: ignore[reportUnnecessaryComparison]
             raise errors.AdapterError(f"wrong version {collection_name}.{entity.uid}")
+
+    async def delete(self, entity: domain.Entity) -> None:
+        collection_name = adapter.get_component_name(entity)
+        collection = self._db[collection_name]
+
+        try:
+            result = await collection.delete_one({_MONGO_ID: entity.uid})
+        except PyMongoError as err:
+            raise errors.AdapterError("can't sample organisms") from err
+
+        if result.deleted_count != 1:
+            raise errors.AdapterError(f"can't delete {collection_name}.{entity.uid}")

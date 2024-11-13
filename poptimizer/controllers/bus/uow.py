@@ -52,9 +52,13 @@ class _IdentityMap:
     def save(self, entity: domain.Entity, *, for_update: bool) -> None:
         saved, _ = self._seen.get((entity.__class__, entity.uid), (None, False))
         if saved is not None:
-            raise errors.ControllersError(f"can't save to identity map {entity.__class__}({entity.uid})")
+            raise errors.ControllersError(f"{entity.__class__}({entity.uid}) in identity map ")
 
         self._seen[entity.__class__, entity.uid] = (entity, for_update)
+
+    def delete(self, entity: domain.Entity) -> None:
+        if self._seen.pop((entity.__class__, entity.uid), None) is None:
+            raise errors.ControllersError(f"no {entity.__class__}({entity.uid}) in identity map ")
 
 
 class Bus(Protocol):
@@ -97,6 +101,14 @@ class UOW:
             identity_map.save(repo_entity, for_update=True)
 
             return repo_entity
+
+    async def delete(self, entity: domain.Entity) -> None:
+        async with self._identity_map as identity_map:
+            identity_map.delete(entity)
+            await self._repo.delete(entity)
+
+    async def count_orgs(self) -> int:
+        return await self._repo.count_orgs()
 
     async def next_org(self) -> organism.Organism:
         async with self._identity_map as identity_map:
