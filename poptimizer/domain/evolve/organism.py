@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import itertools
-from typing import Self
+import statistics
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_validator
 
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import genetics, genotype
@@ -13,10 +13,7 @@ class Organism(domain.Entity):
     tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
     genes: genetics.Genes = Field(default_factory=lambda: genotype.DLModel.model_validate({}).genes)
     model: bytes = b""
-    lr: list[float] = Field(default_factory=list)
-    llh: list[float] = Field(default_factory=list)
-    training_time: int = 0
-    ub: float = 0
+    ret_delta: float = 0
 
     @property
     def phenotype(self) -> genetics.Phenotype:
@@ -38,9 +35,7 @@ class Organism(domain.Entity):
 
         return tickers
 
-    @model_validator(mode="after")
-    def _stats_must_be_same_length(self) -> Self:
-        if len(self.lr) != len(self.llh):
-            raise ValueError("lr and llh must be same length")
-
-        return self
+    def update_stats(self, day: domain.Day, tickers: tuple[domain.Ticker, ...], ret_deltas: list[float]) -> None:
+        self.day = day
+        self.tickers = tickers
+        self.ret_delta = statistics.mean(ret_deltas)

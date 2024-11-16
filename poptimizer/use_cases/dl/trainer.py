@@ -84,10 +84,11 @@ class Trainer:
         self,
         tickers: tuple[str, ...],
         last_day: pd.Timestamp,
+        test_days: int,
         cfg: Cfg,
         state: bytes | None,
-    ) -> float:
-        data = await self._builder.build(tickers, last_day, cfg.batch.feats, cfg.batch.days)
+    ) -> list[float]:
+        data = await self._builder.build(tickers, last_day, cfg.batch.feats, cfg.batch.days, test_days)
         net = self._prepare_net(state, cfg)
         if state is None:
             try:
@@ -148,12 +149,11 @@ class Trainer:
                 avg_llh.append(-loss.item())
                 progress_bar.set_postfix_str(f"{avg_llh.running_avg():.5f}")
 
-    def _test(self, net: wave_net.Net, cfg: Cfg, test_dl: data_loaders.DataLoader) -> float:
+    def _test(self, net: wave_net.Net, cfg: Cfg, test_dl: data_loaders.DataLoader) -> list[float]:
         with torch.no_grad():
             net.eval()
 
-            ret_delta = 0
-            count = 0
+            ret_deltas: list[float] = []
 
             for batch in test_dl:
                 loss, mean, variance = net.loss_and_forecast_mean_and_var(self._batch_to_device(batch))
@@ -168,10 +168,9 @@ class Trainer:
 
                 self._lgr.info("%s / LLH = %8.5f", rez, loss)
 
-                ret_delta += rez.ret - rez.avr
-                count += 1
+                ret_deltas.append(rez.ret - rez.avr)
 
-        return ret_delta / count
+        return ret_deltas
 
     def _log_net_stats(self, net: wave_net.Net, epochs: float, train_dl: data_loaders.DataLoader) -> None:
         train_size = len(train_dl.dataset)  # type: ignore[arg-type]

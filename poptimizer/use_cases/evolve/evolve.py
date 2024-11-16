@@ -10,7 +10,7 @@ from poptimizer.domain.evolve import evolve, organism
 from poptimizer.use_cases import handler, view
 from poptimizer.use_cases.dl import builder, trainer
 
-_DIF_PARENTS_COUNT: Final = 2
+_PARENT_COUNT: Final = 2
 
 
 def random_org_uid() -> domain.UID:
@@ -49,62 +49,71 @@ class EvolutionHandler:
         ctx: Ctx,
         msg: handler.DataNotChanged | handler.DataUpdated,
     ) -> handler.EvolutionStepFinished:
-        evolution, org = await self._init_step(ctx, msg.day)
-        self._lgr.info("Evolution step %d for %s", evolution.step, evolution.day)
+        evolution = await ctx.get_for_update(evolve.Evolution)
+        state = evolution.start_step(msg.day)
+        self._lgr.info("%s", evolution)
 
-        self._lgr.info("Train parent")
-        org = await self._eval(org, evolution.day, evolution.tickers)
-        evolution.prev_org_uid = org.uid
-
-        self._lgr.info("Train child")
-        await self._eval(await self._make_child(ctx, org), evolution.day, evolution.tickers)
+        match state:
+            case evolve.State.INIT:
+                org = await ctx.get_for_update(organism.Organism, random_org_uid())
+                await self._init_day(ctx, evolution, org)
+            case evolve.State.INIT_DAY:
+                org = await ctx.next_org()
+                await self._init_day(ctx, evolution, org)
+            case evolve.State.EVAL_ORG:
+                org = await ctx.next_org()
+                await self._eval_org(ctx, evolution, org)
+            case evolve.State.CREATE_ORG:
+                org = await ctx.next_org()
+                await self._create_org(ctx, evolution, org)
 
         await asyncio.sleep(60 * 60)
 
         return handler.EvolutionStepFinished()
 
-    async def _init_step(self, ctx: Ctx, day: domain.Day) -> tuple[evolve.Evolution, organism.Organism]:
-        evolution = await ctx.get_for_update(evolve.Evolution)
-        if evolution.ver == 0:
-            await ctx.get_for_update(organism.Organism, random_org_uid())
+    async def _init_day(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
+        tickers = await self._viewer.portfolio_tickers()
+        ret_deltas = await self._eval(ctx, org, evolution.day, tickers)
 
-        if evolution.day != day and day not in evolution.next_days:
-            evolution.next_days.append(day)
-            evolution.tickers = await self._viewer.portfolio_tickers()
+        evolution.init_new_day(tickers, org.uid, ret_deltas)
 
-        org = await ctx.next_org()
+    async def _eval_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
+        ret_deltas = await self._eval(ctx, org, evolution.day, evolution.tickers)
 
-        match evolution.next_days:
-            case [next_day, *rest] if org.day == evolution.day:
-                evolution.day = next_day
-                evolution.next_days = rest
-                evolution.step = 1
-            case _:
-                evolution.step += 1
+        if evolution.eval_org_is_dead(org.uid, ret_deltas):
+            await ctx.delete(org)
+            self._lgr.info("Too low return delta - removed")
 
-        return evolution, org
+    async def _create_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
+        if org.ver != 0:
+            org = await self._make_child(ctx, org)
+
+        await self._eval_org(ctx, evolution, org)
 
     async def _make_child(self, ctx: Ctx, org: organism.Organism) -> organism.Organism:
-        parents = await ctx.sample_orgs(2)
-        if len(parents) != _DIF_PARENTS_COUNT or parents[0].uid == parents[1].uid:
-            parents = [organism.Organism(day=org.day, rev=org.rev), organism.Organism(day=org.day, rev=org.rev)]
+        parents = await ctx.sample_orgs(_PARENT_COUNT)
+        if len({parent.uid for parent in parents}) != _PARENT_COUNT:
+            parents = [organism.Organism(day=org.day, rev=org.rev) for _ in range(_PARENT_COUNT)]
 
         child = await ctx.get_for_update(organism.Organism, random_org_uid())
-        child.genes = org.make_child_genes(parents[0], parents[1], 1)
+        child.genes = org.make_child_genes(parents[0], parents[1], 1 / org.ver)
 
         return child
 
     async def _eval(
         self,
+        ctx: Ctx,
         org: organism.Organism,
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
-    ) -> organism.Organism:
+    ) -> list[float]:
         cfg = trainer.Cfg.model_validate(org.phenotype)
+        test_days = 1 + await ctx.count_orgs()
 
         tr = trainer.Trainer(builder.Builder(self._viewer))
-        self._lgr.info(f"Return delta - {await tr.run(tickers, pd.Timestamp(day), cfg, None):.2%}")
-        org.tickers = tickers
-        org.day = day
+        ret_deltas = await tr.run(tickers, pd.Timestamp(day), test_days, cfg, None)
 
-        return org
+        org.update_stats(day, tickers, ret_deltas)
+        self._lgr.info(f"Return delta - {org.ret_delta:.2%}")
+
+        return ret_deltas

@@ -32,10 +32,6 @@ class Days(genetics.Chromosome):
         float,
         genetics.int_phenotype(),
     ] = float(consts.MONTH_IN_TRADING_DAYS)
-    test: Annotated[
-        float,
-        genetics.int_phenotype(),
-    ] = float(64)
 
 
 class Batch(genetics.Chromosome):

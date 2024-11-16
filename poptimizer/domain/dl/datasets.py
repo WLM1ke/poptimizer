@@ -24,18 +24,18 @@ Batch = dict[FeatTypes, torch.Tensor]
 class Days(BaseModel):
     history: int
     forecast: int
-    test: int
 
 
 class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
     def __init__(
         self,
         days: Days,
+        test_days: int,
         ret_total: pd.Series[float],
         num_feat: list[pd.Series[float]],
     ) -> None:
         self._history_days = days.history
-        self._test_days = days.test
+        self._test_days = test_days
         self._forecast_days = days.forecast
 
         self._all_days = len(ret_total)
