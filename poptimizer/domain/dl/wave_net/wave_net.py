@@ -63,7 +63,7 @@ class Net(torch.nn.Module):
         labels = batch[datasets.FeatTypes.LABEL1P]
 
         try:
-            llh = self._llh_adj.add(dist.log_prob(labels).mean())
+            llh = dist.log_prob(labels).mean()
         except ValueError as err:
             raise errors.DomainError("error in categorical distribution") from err
 
