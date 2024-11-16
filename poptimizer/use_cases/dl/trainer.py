@@ -192,7 +192,6 @@ class Trainer:
             cfg=cfg.net,
             num_feat_count=cfg.batch.num_feat_count,
             history_days=cfg.batch.history_days,
-            forecast_days=cfg.batch.forecast_days,
         ).to(self._device)
 
         if state is not None:

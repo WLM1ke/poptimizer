@@ -19,11 +19,8 @@ class Net(torch.nn.Module):
         cfg: backbone.Cfg,
         num_feat_count: int,
         history_days: int,
-        forecast_days: int,
     ) -> None:
         super().__init__()  # type: ignore[reportUnknownMemberType]
-
-        self.register_buffer("_llh_adj", torch.log(torch.tensor(forecast_days, dtype=torch.float)) / 2)
 
         self._input = inputs.Net(
             num_feat_count=num_feat_count,
@@ -52,7 +49,7 @@ class Net(torch.nn.Module):
         labels = batch[datasets.FeatTypes.LABEL1P]
 
         try:
-            return self._llh_adj.add(dist.log_prob(labels).mean())
+            return dist.log_prob(labels).mean()
         except ValueError as err:
             raise errors.DomainError("error in categorical distribution") from err
 
