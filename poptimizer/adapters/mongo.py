@@ -45,10 +45,10 @@ class Repo:
             {
                 "$project": {
                     "day": True,
-                    "_MONGO_ID": True,
+                    _MONGO_ID: True,
                 },
             },
-            {"$sort": {"day": pymongo.ASCENDING, "_MONGO_ID": pymongo.DESCENDING}},
+            {"$sort": {"day": pymongo.ASCENDING, _MONGO_ID: pymongo.DESCENDING}},
             {"$limit": 1},
         ]
 
