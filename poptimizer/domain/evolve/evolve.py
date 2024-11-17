@@ -1,6 +1,4 @@
-import statistics
 from enum import StrEnum
-from typing import cast
 
 import numpy as np
 from pydantic import Field, PositiveInt
@@ -60,22 +58,7 @@ class Evolution(domain.Entity):
         org_uid: domain.UID,
         ret_deltas: list[float],
     ) -> bool:
-        if self.org_uid == org_uid:
-            self.ret_deltas = ret_deltas
-
-            self.state = State.CREATE_ORG
-
-            return False
-
         deltas = [org_ret - prev_ret for org_ret, prev_ret in zip(ret_deltas, self.ret_deltas, strict=False)]
-        if statistics.mean(deltas) > 0:
-            self.org_uid = org_uid
-            self.ret_deltas = ret_deltas
-
-            self.state = State.CREATE_ORG
-
-            return False
-
         upper_bound = stats.bootstrap(  # type: ignore[reportUnknownMemberType]
             (deltas,),
             np.mean,
@@ -83,6 +66,13 @@ class Evolution(domain.Entity):
             alternative="less",
         ).confidence_interval.high
 
-        self.state = State.EVAL_ORG
+        if upper_bound < 0 and self.org_uid != org_uid:
+            self.state = State.EVAL_ORG
 
-        return cast(float, upper_bound) < 0
+            return True
+
+        self.org_uid = org_uid
+        self.ret_deltas = ret_deltas
+        self.state = State.CREATE_ORG
+
+        return False
