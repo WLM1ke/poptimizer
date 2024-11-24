@@ -1,6 +1,5 @@
 import statistics
 from enum import StrEnum
-from typing import cast
 
 from pydantic import Field, PositiveInt
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
@@ -112,10 +111,10 @@ class Evolution(domain.Entity):
         match t_value + self.t_adj < t_critical:
             case True:
                 sign = "<"
-                self.t_adj += (1 - consts.P_VALUE) / self.adj_count
+                self.t_adj += (1 - consts.P_VALUE) / self.adj_count**0.5
             case False:
                 sign = ">"
-                self.t_adj -= consts.P_VALUE / self.adj_count
+                self.t_adj -= consts.P_VALUE / self.adj_count**0.5
 
         return (
             f"Changing adjustment t-value({t_value:.2f}) + adj({old_t_adj:.2f}) {sign} "
