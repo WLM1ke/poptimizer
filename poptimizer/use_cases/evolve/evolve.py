@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Final, Protocol
 
@@ -67,8 +66,6 @@ class EvolutionHandler:
                 org = await ctx.next_org()
                 await self._create_org(ctx, evolution, org)
 
-        await asyncio.sleep(60 * 60)
-
         return handler.EvolutionStepFinished()
 
     async def _init_day(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
@@ -79,14 +76,19 @@ class EvolutionHandler:
 
     async def _eval_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
         ret_deltas = await self._eval(ctx, org, evolution.day, evolution.tickers)
+        dead, msg = evolution.eval_org_is_dead(org.uid, ret_deltas)
+        self._lgr.info(msg)
 
-        if evolution.eval_org_is_dead(org.uid, ret_deltas):
+        if dead:
             await ctx.delete(org)
-            self._lgr.info("Too low return delta - removed")
+            self._lgr.info("Organism removed")
 
     async def _create_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
-        if org.ver != 0:
-            org = await self._make_child(ctx, org)
+        while org.ver == 0:
+            await ctx.delete(org)
+            org = await ctx.next_org()
+
+        org = await self._make_child(ctx, org)
 
         await self._eval_org(ctx, evolution, org)
 
