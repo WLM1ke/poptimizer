@@ -3,7 +3,7 @@ version: "3"
 vars:
   APP: poptimizer
   FRONTEND: frontend
-  TOOLS: go-task uv npm mongodb-community mongosh
+  TOOLS: go-task uv npm mongodb-community
 
 tasks:
   default:
@@ -67,4 +67,4 @@ tasks:
   mongo:
     desc: Run MongoDB Server
     cmds:
-      - mongod --dbpath db --replSet POptimizer --bind_ip localhost &
+      - brew services start mongodb-community
