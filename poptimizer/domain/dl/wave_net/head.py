@@ -59,10 +59,13 @@ class Net(torch.nn.Module):
             raise errors.DomainError("error in categorical distribution") from err
 
         std = self._output_soft_plus_s(self._std(end)) + self._eps
-        comp_dist = torch.distributions.LogNormal(
-            loc=self._mean(end).permute((0, 2, 1)),
-            scale=std.permute((0, 2, 1)),
-        )  # type: ignore[no-untyped-call]
+        try:
+            comp_dist = torch.distributions.LogNormal(
+                loc=self._mean(end).permute((0, 2, 1)),
+                scale=std.permute((0, 2, 1)),
+            )  # type: ignore[no-untyped-call]
+        except ValueError as err:
+            raise errors.DomainError("error in mixture distribution") from err
 
         return torch.distributions.MixtureSameFamily(
             mixture_distribution=weights_dist,
