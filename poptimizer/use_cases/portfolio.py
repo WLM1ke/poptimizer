@@ -38,8 +38,8 @@ class PortfolioHandler:
         sec_data = await self._prepare_sec_data(ctx, msg.day)
 
         self._remove_not_traded(port, sec_data)
-        self._update_sec_data(port, sec_data)
-        self._add_liquid(port, sec_data)
+        min_turnover = self._update_sec_data(port, sec_data)
+        self._add_liquid(port, sec_data, min_turnover)
         port.day = msg.day
 
         return handler.PortfolioUpdated(day=msg.day)
@@ -96,8 +96,8 @@ class PortfolioHandler:
         self,
         port: portfolio.Portfolio,
         sec_data: dict[domain.Ticker, portfolio.Security],
-    ) -> None:
-        min_turnover = port.value / (max(1, len(port.securities)))
+    ) -> float:
+        min_turnover = sum(acc.cash for acc in port.accounts.values())
         traded = port.securities.keys() & sec_data.keys()
 
         for ticker in traded:
@@ -108,7 +108,13 @@ class PortfolioHandler:
             cur_data.price = new_data.price
             cur_data.turnover = new_data.turnover
 
-            if cur_data.turnover > min_turnover:
+            min_turnover = max(
+                min_turnover,
+                sum(acc.positions.get(ticker, 0) * cur_data.price for acc in port.accounts.values()),
+            )
+
+        for ticker in traded:
+            if port.securities[ticker].turnover > min_turnover:
                 continue
 
             match port.remove_ticket(ticker):
@@ -117,12 +123,14 @@ class PortfolioHandler:
                 case False:
                     self._lgr.warning("Not liquid %s is not removed", ticker)
 
+        return min_turnover
+
     def _add_liquid(
         self,
         port: portfolio.Portfolio,
         sec_data: dict[domain.Ticker, portfolio.Security],
+        min_turnover: float,
     ) -> None:
-        min_turnover = port.value / (max(1, len(port.securities)))
         not_port = sec_data.keys() - port.securities.keys()
 
         for ticker in not_port:
