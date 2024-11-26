@@ -65,8 +65,6 @@ fixable = ["ALL"]
 
 ignore = [
     "A003",     # Class attribute is shadowing a python builtin
-    "ANN101",   # Missing-type-self
-    "ANN102",   # Missing-type-cls
     "ANN401",   # Dynamically typed expressions (typing.Any) are disallowed
     "COM812",   # Missing-trailing-comma - ruff format recommendations
     "D100",     # Missing docstring in public module
