@@ -60,11 +60,7 @@ class EvolutionHandler:
                 org = await ctx.get_for_update(organism.Organism, evolution.org_uid)
                 await self._init_day(ctx, evolution, org)
             case evolve.State.EVAL_ORG:
-                org = await ctx.next_org()
-                while org.ver == 0:
-                    await ctx.delete(org)
-                    org = await ctx.next_org()
-
+                org = await self._next_org(ctx)
                 await self._eval_org(ctx, evolution, org)
             case evolve.State.CREATE_ORG:
                 org = await ctx.get_for_update(organism.Organism, evolution.org_uid)
@@ -77,6 +73,14 @@ class EvolutionHandler:
         ret_deltas = await self._eval(ctx, org, evolution.day, tickers)
 
         evolution.init_new_day(tickers, org.uid, ret_deltas)
+
+    async def _next_org(self, ctx: Ctx) -> organism.Organism:
+        org = await ctx.next_org()
+        while not org.ver:
+            await ctx.delete(org)
+            org = await ctx.next_org()
+
+        return org
 
     async def _eval_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
         ret_deltas = await self._eval(ctx, org, evolution.day, evolution.tickers)
