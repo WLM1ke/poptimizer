@@ -1,8 +1,7 @@
 import statistics
 from enum import StrEnum
 
-from pydantic import Field, PositiveInt
-from scipy import stats  # type: ignore[reportMissingTypeStubs]
+from pydantic import Field, NonNegativeInt, PositiveInt
 
 from poptimizer import consts, errors
 from poptimizer.domain import domain
@@ -21,8 +20,8 @@ class Evolution(domain.Entity):
     tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
     org_uid: domain.UID = domain.UID("")
     ret_deltas: list[float] = Field(default_factory=list)
-    t_adj: float = 0
-    adj_count: int = 0
+    t_critical: float = 0
+    adj_count: NonNegativeInt = 0
 
     def __str__(self) -> str:
         return f"Evolution day {self.day} step {self.step} - {self.state}"
@@ -70,9 +69,9 @@ class Evolution(domain.Entity):
         if org_uid == self.org_uid:
             return False, self._update_deltas(ret_deltas)
 
-        t_value, t_critical = self._t_values(ret_deltas)
+        t_value = self._t_values(ret_deltas)
 
-        match t_value + self.t_adj < t_critical:
+        match t_value < self.t_critical:
             case True:
                 sign = "<"
 
@@ -86,37 +85,35 @@ class Evolution(domain.Entity):
 
         return (
             sign == "<",
-            f"Evaluating organism t-value({t_value:.2f}) + adj({self.t_adj:.2f}) {sign} t-critical({t_critical:.2f})",
+            f"Evaluating organism t-value({t_value:.2f}) {sign} t-critical({self.t_critical:.2f})",
         )
 
-    def _t_values(self, ret_deltas: list[float]) -> tuple[float, float]:
+    def _t_values(self, ret_deltas: list[float]) -> float:
         deltas = [org_ret - prev_ret for org_ret, prev_ret in zip(ret_deltas, self.ret_deltas, strict=False)]
-        t_value = statistics.mean(deltas) * len(deltas) ** 0.5 / statistics.stdev(deltas)
-        t_critical = stats.t.ppf(consts.P_VALUE, len(deltas) - 1)  # type: ignore[reportUnknownMemberType]
 
-        return t_value, float(t_critical)
+        return statistics.mean(deltas) * len(deltas) ** 0.5 / statistics.stdev(deltas)
 
     def _update_deltas(self, ret_deltas: list[float]) -> str:
         if self.state is not State.EVAL_ORG:
             raise errors.DomainError("incorrect state for base returns update")
 
-        t_value, t_critical = self._t_values(ret_deltas)
+        t_value = self._t_values(ret_deltas)
 
         self.ret_deltas = ret_deltas
         self.adj_count += 1
         self.state = State.CREATE_ORG
 
-        old_t_adj = self.t_adj
+        old_t_critical = self.t_critical
 
-        match t_value + self.t_adj < t_critical:
+        match t_value < self.t_critical:
             case True:
                 sign = "<"
-                self.t_adj += (1 - consts.P_VALUE) / self.adj_count**0.5
+                self.t_critical -= (1 - consts.P_VALUE) / self.adj_count
             case False:
                 sign = ">"
-                self.t_adj -= consts.P_VALUE / self.adj_count**0.5
+                self.t_critical += consts.P_VALUE / self.adj_count
 
         return (
-            f"Changing adjustment t-value({t_value:.2f}) + adj({old_t_adj:.2f}) {sign} "
-            f"t-critical({t_critical:.2f}) -> adj({self.t_adj:.2f})"
+            f"Changing adjustment t-value({t_value:.2f}) {sign} "
+            f"t-critical({old_t_critical:.2f}) -> adj({self.t_critical:.2f})"
         )
