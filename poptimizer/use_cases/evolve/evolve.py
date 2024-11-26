@@ -57,13 +57,13 @@ class EvolutionHandler:
                 org = await ctx.get_for_update(organism.Organism, random_org_uid())
                 await self._init_day(ctx, evolution, org)
             case evolve.State.INIT_DAY:
-                org = await ctx.next_org()
+                org = await ctx.get_for_update(organism.Organism, evolution.org_uid)
                 await self._init_day(ctx, evolution, org)
             case evolve.State.EVAL_ORG:
                 org = await ctx.next_org()
                 await self._eval_org(ctx, evolution, org)
             case evolve.State.CREATE_ORG:
-                org = await ctx.next_org()
+                org = await ctx.get_for_update(organism.Organism, evolution.org_uid)
                 await self._create_org(ctx, evolution, org)
 
         return handler.EvolutionStepFinished()
@@ -84,10 +84,6 @@ class EvolutionHandler:
             self._lgr.info("Organism removed")
 
     async def _create_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
-        while org.ver == 0:
-            await ctx.delete(org)
-            org = await ctx.next_org()
-
         org = await self._make_child(ctx, org)
 
         await self._eval_org(ctx, evolution, org)
