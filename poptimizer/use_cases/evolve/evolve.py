@@ -63,7 +63,7 @@ class EvolutionHandler:
                 org = await self._next_org(ctx)
                 await self._eval_org(ctx, evolution, org)
             case evolve.State.CREATE_ORG:
-                org = await ctx.get_for_update(organism.Organism, evolution.org_uid)
+                org = await ctx.get(organism.Organism, evolution.org_uid)
                 await self._create_org(ctx, evolution, org)
 
         return handler.EvolutionStepFinished()
