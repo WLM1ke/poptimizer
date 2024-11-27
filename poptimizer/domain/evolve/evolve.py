@@ -110,7 +110,6 @@ class Evolution(domain.Entity):
         t_value = self._t_values(ret_deltas)
 
         self.ret_deltas = ret_deltas
-        self.adj_count += 1
         self.state = State.CREATE_ORG
 
         old_t_critical = self.t_critical
@@ -119,10 +118,13 @@ class Evolution(domain.Entity):
         match t_value < adj_t_critical:
             case True:
                 sign = "<"
-                self.t_critical -= (1 - consts.P_VALUE) / self.adj_count
+                self.t_critical -= (1 - consts.P_VALUE) / (self.adj_count + 1)
+
+                if t_value > self._adj_t_critical(duration):
+                    self.adj_count += 1
             case False:
                 sign = ">"
-                self.t_critical += consts.P_VALUE / self.adj_count
+                self.t_critical += consts.P_VALUE / (self.adj_count + 1)
 
         return (
             f"Changing adjustment t-value({t_value:.2f}) {sign} adj-t-critical({adj_t_critical:.2f})"
