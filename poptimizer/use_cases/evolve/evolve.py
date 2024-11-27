@@ -5,6 +5,7 @@ from typing import Final, Protocol
 import bson
 import pandas as pd
 
+from poptimizer import errors
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve, organism
 from poptimizer.use_cases import handler, view
@@ -58,22 +59,57 @@ class EvolutionHandler:
                 org = await ctx.get_for_update(organism.Organism, random_org_uid())
                 await self._init_day(ctx, evolution, org)
             case evolve.State.INIT_DAY:
-                org = await ctx.get_for_update(organism.Organism, evolution.org_uid)
+                org = await self._next_org(ctx)
                 await self._init_day(ctx, evolution, org)
+            case evolve.State.NEW_BASE_ORG:
+                org = await self._next_org(ctx)
+                await self._new_base_org(ctx, evolution, org)
             case evolve.State.EVAL_ORG:
                 org = await self._next_org(ctx)
                 await self._eval_org(ctx, evolution, org)
             case evolve.State.CREATE_ORG:
-                org = await ctx.get(organism.Organism, evolution.org_uid)
-                await self._create_org(ctx, evolution, org)
+                org = await self._next_org(ctx)
+                child = await self._make_child(ctx, org)
+                await self._eval_org(ctx, evolution, child)
 
         return handler.EvolutionStepFinished()
 
     async def _init_day(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
         tickers = await self._viewer.portfolio_tickers()
-        duration, ret_deltas = await self._eval(ctx, org, evolution.day, tickers)
+
+        try:
+            duration, ret_deltas = await self._eval(ctx, org, evolution.day, tickers)
+        except errors.DomainError as err:
+            await self._delete_org(ctx, evolution, org, err)
+
+            return
 
         evolution.init_new_day(tickers, org.uid, ret_deltas, duration)
+
+    async def _new_base_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
+        try:
+            duration, ret_deltas = await self._eval(ctx, org, evolution.day, evolution.tickers)
+        except errors.DomainError as err:
+            await self._delete_org(ctx, evolution, org, err)
+
+            return
+
+        evolution.new_base_org(org.uid, ret_deltas, duration)
+
+    async def _eval_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
+        try:
+            duration, ret_deltas = await self._eval(ctx, org, evolution.day, evolution.tickers)
+        except errors.DomainError as err:
+            await self._delete_org(ctx, evolution, org, err)
+
+            return
+
+        dead, msg = evolution.eval_org_is_dead(org.uid, ret_deltas, duration)
+        self._lgr.info(msg)
+
+        if dead:
+            await ctx.delete(org)
+            self._lgr.info("Organism removed")
 
     async def _next_org(self, ctx: Ctx) -> organism.Organism:
         org = await ctx.next_org()
@@ -83,19 +119,10 @@ class EvolutionHandler:
 
         return org
 
-    async def _eval_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
-        duration, ret_deltas = await self._eval(ctx, org, evolution.day, evolution.tickers)
-        dead, msg = evolution.eval_org_is_dead(org.uid, ret_deltas, duration)
-        self._lgr.info(msg)
-
-        if dead:
-            await ctx.delete(org)
-            self._lgr.info("Organism removed")
-
-    async def _create_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
-        org = await self._make_child(ctx, org)
-
-        await self._eval_org(ctx, evolution, org)
+    async def _delete_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism, err: Exception) -> None:
+        await ctx.delete(org)
+        evolution.org_failed(org.uid)
+        self._lgr.warning("Delete organism - %s", err)
 
     async def _make_child(self, ctx: Ctx, org: organism.Organism) -> organism.Organism:
         parents = await ctx.sample_orgs(_PARENT_COUNT)

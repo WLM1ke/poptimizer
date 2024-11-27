@@ -10,6 +10,7 @@ from poptimizer.domain import domain
 class State(StrEnum):
     INIT = "initializing new evolution"
     INIT_DAY = "initializing new day"
+    NEW_BASE_ORG = "evaluating new base organism"
     EVAL_ORG = "evaluating organism"
     CREATE_ORG = "creating new organism"
 
@@ -55,6 +56,30 @@ class Evolution(domain.Entity):
             raise errors.DomainError("incorrect state for day initialization")
 
         self.tickers = tickers
+        self.org_uid = org_uid
+        self.ret_deltas = ret_deltas
+        self.duration = duration
+
+        self.state = State.CREATE_ORG
+
+    def org_failed(self, org_uid: domain.UID) -> None:
+        match self.state:
+            case State.CREATE_ORG:
+                self.state = State.EVAL_ORG
+            case State.EVAL_ORG if self.org_uid == org_uid:
+                self.state = State.NEW_BASE_ORG
+            case _:
+                return
+
+    def new_base_org(
+        self,
+        org_uid: domain.UID,
+        ret_deltas: list[float],
+        duration: float,
+    ) -> None:
+        if self.state is not State.NEW_BASE_ORG:
+            raise errors.DomainError("incorrect state for new base organism")
+
         self.org_uid = org_uid
         self.ret_deltas = ret_deltas
         self.duration = duration
