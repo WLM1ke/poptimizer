@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Final, Protocol
 
 import bson
@@ -70,9 +71,9 @@ class EvolutionHandler:
 
     async def _init_day(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
         tickers = await self._viewer.portfolio_tickers()
-        ret_deltas = await self._eval(ctx, org, evolution.day, tickers)
+        duration, ret_deltas = await self._eval(ctx, org, evolution.day, tickers)
 
-        evolution.init_new_day(tickers, org.uid, ret_deltas)
+        evolution.init_new_day(tickers, org.uid, ret_deltas, duration)
 
     async def _next_org(self, ctx: Ctx) -> organism.Organism:
         org = await ctx.next_org()
@@ -83,8 +84,8 @@ class EvolutionHandler:
         return org
 
     async def _eval_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
-        ret_deltas = await self._eval(ctx, org, evolution.day, evolution.tickers)
-        dead, msg = evolution.eval_org_is_dead(org.uid, ret_deltas)
+        duration, ret_deltas = await self._eval(ctx, org, evolution.day, evolution.tickers)
+        dead, msg = evolution.eval_org_is_dead(org.uid, ret_deltas, duration)
         self._lgr.info(msg)
 
         if dead:
@@ -112,7 +113,8 @@ class EvolutionHandler:
         org: organism.Organism,
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
-    ) -> list[float]:
+    ) -> tuple[float, list[float]]:
+        start = time.monotonic()
         cfg = trainer.Cfg.model_validate(org.phenotype)
         test_days = 1 + await ctx.count_orgs()
 
@@ -122,4 +124,4 @@ class EvolutionHandler:
         org.update_stats(day, tickers, ret_deltas)
         self._lgr.info(f"Return delta - {org.ret_delta:.2%}")
 
-        return ret_deltas
+        return time.monotonic() - start, ret_deltas
