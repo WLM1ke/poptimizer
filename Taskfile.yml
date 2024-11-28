@@ -3,7 +3,7 @@ version: "3"
 vars:
   APP: poptimizer
   FRONTEND: frontend
-  TOOLS: go-task uv npm mongodb-community
+  TOOLS: go-task uv npm mongodb-community mongodb-compass
 
 tasks:
   default:
