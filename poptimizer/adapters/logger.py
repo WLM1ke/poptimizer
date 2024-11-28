@@ -34,7 +34,7 @@ class _TelegramHandler(logging.Handler):
         self._lgr = logging.getLogger(name=_TELEGRAM_LOGGER_NAME)
 
     def filter(self, record: logging.LogRecord) -> bool:
-        return record.name != _TELEGRAM_LOGGER_NAME
+        return record.name != _TELEGRAM_LOGGER_NAME and self._chat_id != ""
 
     def emit(self, record: logging.LogRecord) -> None:
         self._tg.create_task(self._emit(record.getMessage()))
