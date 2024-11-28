@@ -122,7 +122,7 @@ class EvolutionHandler:
     ) -> None:
         await ctx.delete(org)
         evolution.org_failed(org.uid)
-        self._lgr.warning("Delete organism - %s", err.exceptions[0])
+        self._lgr.warning("Delete %s - %s", org, err.exceptions[0])
 
     async def _make_child(self, ctx: Ctx, org: organism.Organism) -> organism.Organism:
         parents = await ctx.sample_orgs(_PARENT_COUNT)
@@ -149,6 +149,7 @@ class EvolutionHandler:
         ret_deltas = await tr.run(tickers, pd.Timestamp(day), test_days, cfg, None)
 
         org.update_stats(day, tickers, ret_deltas)
-        self._lgr.info(f"Return delta - {org.ret_delta:.2%}")
+
+        self._lgr.info(f"{org} return delta - {org.ret_delta:.2%}")
 
         return time.monotonic() - start, ret_deltas

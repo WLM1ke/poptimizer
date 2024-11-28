@@ -15,6 +15,13 @@ class Organism(domain.Entity):
     model: bytes = b""
     ret_delta: float = 0
 
+    def __str__(self) -> str:
+        genes = genotype.DLModel.model_validate(self.genes)
+        risk_tol = genes.risk.risk_tolerance
+        history = genes.batch.days.history
+
+        return f"Organism(risk_tol={risk_tol:.2%}, history={history:.2f})"
+
     @property
     def phenotype(self) -> genetics.Phenotype:
         return genotype.DLModel.model_validate(self.genes).phenotype
