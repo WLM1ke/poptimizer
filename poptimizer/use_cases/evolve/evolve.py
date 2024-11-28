@@ -79,37 +79,31 @@ class EvolutionHandler:
 
         try:
             duration, ret_deltas = await self._eval(ctx, org, evolution.day, tickers)
-        except errors.DomainError as err:
+        except* errors.DomainError as err:
             await self._delete_org(ctx, evolution, org, err)
-
-            return
-
-        evolution.init_new_day(tickers, org.uid, ret_deltas, duration)
+        else:
+            evolution.init_new_day(tickers, org.uid, ret_deltas, duration)
 
     async def _new_base_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
         try:
             duration, ret_deltas = await self._eval(ctx, org, evolution.day, evolution.tickers)
-        except errors.DomainError as err:
+        except* errors.DomainError as err:
             await self._delete_org(ctx, evolution, org, err)
-
-            return
-
-        evolution.new_base_org(org.uid, ret_deltas, duration)
+        else:
+            evolution.new_base_org(org.uid, ret_deltas, duration)
 
     async def _eval_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
         try:
             duration, ret_deltas = await self._eval(ctx, org, evolution.day, evolution.tickers)
-        except errors.DomainError as err:
+        except* errors.DomainError as err:
             await self._delete_org(ctx, evolution, org, err)
+        else:
+            dead, msg = evolution.eval_org_is_dead(org.uid, ret_deltas, duration)
+            self._lgr.info(msg)
 
-            return
-
-        dead, msg = evolution.eval_org_is_dead(org.uid, ret_deltas, duration)
-        self._lgr.info(msg)
-
-        if dead:
-            await ctx.delete(org)
-            self._lgr.info("Organism removed")
+            if dead:
+                await ctx.delete(org)
+                self._lgr.info("Organism removed")
 
     async def _next_org(self, ctx: Ctx) -> organism.Organism:
         org = await ctx.next_org()
@@ -119,10 +113,16 @@ class EvolutionHandler:
 
         return org
 
-    async def _delete_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism, err: Exception) -> None:
+    async def _delete_org(
+        self,
+        ctx: Ctx,
+        evolution: evolve.Evolution,
+        org: organism.Organism,
+        err: BaseExceptionGroup[errors.DomainError],
+    ) -> None:
         await ctx.delete(org)
         evolution.org_failed(org.uid)
-        self._lgr.warning("Delete organism - %s", err)
+        self._lgr.warning("Delete organism - %s", err.exceptions[0])
 
     async def _make_child(self, ctx: Ctx, org: organism.Organism) -> organism.Organism:
         parents = await ctx.sample_orgs(_PARENT_COUNT)
