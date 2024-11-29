@@ -45,10 +45,10 @@ class Repo:
             {
                 "$project": {
                     "day": True,
-                    "ret_delta": True,
+                    "alfa": True,
                 },
             },
-            {"$sort": {"day": pymongo.ASCENDING, "ret_delta": pymongo.DESCENDING}},
+            {"$sort": {"day": pymongo.ASCENDING, "alfa": pymongo.DESCENDING}},
             {"$limit": 1},
         ]
 

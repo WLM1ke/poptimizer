@@ -14,23 +14,23 @@ class Cfg(BaseModel):
 class OptimizationResult(BaseModel):
     ret: float
     avr: float
-    ret_plan: float
-    std_plan: float
+    e_ret: float
+    e_std: float
     pos: int
-    max_weight: float
+    weight_max: float
 
     def __str__(self) -> str:
-        delta = self.ret - self.avr
+        alfa = self.ret - self.avr
 
         return " / ".join(
             [
-                f"DELTA = {delta:>8.2%}",
-                f"RET = { self.ret:>8.2%}",
-                f"AVR = {self.avr:>8.2%}",
-                f"PLAN = {self.ret_plan:>7.2%}",
-                f"STD = {self.std_plan:>7.2%}",
-                f"POS = {self.pos:>3}",
-                f"MAX = {self.max_weight:>7.2%}",
+                f"Alfa = {alfa:>8.2%}",
+                f"Ret = { self.ret:>8.2%}",
+                f"Avr = {self.avr:>8.2%}",
+                f"ERet = {self.e_ret:>7.2%}",
+                f"EStd = {self.e_std:>7.2%}",
+                f"Pos = {self.pos:>3}",
+                f"WMam = {self.weight_max:>7.2%}",
             ],
         )
 
@@ -54,10 +54,10 @@ def optimize(  # noqa: PLR0913
     return OptimizationResult(
         ret=np.log1p((weights.T @ labels).item()) * year_multiplier,
         avr=np.log1p(labels.mean()) * year_multiplier,
-        ret_plan=(weights * mean).sum(),
-        std_plan=port_variance**0.5,
+        e_ret=(weights * mean).sum(),
+        e_std=port_variance**0.5,
         pos=int(1 / (weights**2).sum()),
-        max_weight=weights.max(),
+        weight_max=weights.max(),
     )
 
 

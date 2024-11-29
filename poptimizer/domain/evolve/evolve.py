@@ -20,7 +20,7 @@ class Evolution(domain.Entity):
     step: PositiveInt = 1
     tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
     org_uid: domain.UID = domain.UID("")
-    ret_deltas: list[float] = Field(default_factory=list)
+    alfas: list[float] = Field(default_factory=list)
     duration: NonNegativeFloat = 0
     t_critical: float = 0
     adj_count: NonNegativeInt = 0
@@ -49,7 +49,7 @@ class Evolution(domain.Entity):
         self,
         tickers: tuple[domain.Ticker, ...],
         org_uid: domain.UID,
-        ret_deltas: list[float],
+        alfas: list[float],
         duration: float,
     ) -> None:
         if self.state not in (State.INIT, State.INIT_DAY):
@@ -57,7 +57,7 @@ class Evolution(domain.Entity):
 
         self.tickers = tickers
         self.org_uid = org_uid
-        self.ret_deltas = ret_deltas
+        self.alfas = alfas
         self.duration = duration
 
         self.state = State.CREATE_ORG
@@ -74,14 +74,14 @@ class Evolution(domain.Entity):
     def new_base_org(
         self,
         org_uid: domain.UID,
-        ret_deltas: list[float],
+        alfas: list[float],
         duration: float,
     ) -> None:
         if self.state is not State.NEW_BASE_ORG:
             raise errors.DomainError("incorrect state for new base organism")
 
         self.org_uid = org_uid
-        self.ret_deltas = ret_deltas
+        self.alfas = alfas
         self.duration = duration
 
         self.state = State.CREATE_ORG
@@ -89,16 +89,16 @@ class Evolution(domain.Entity):
     def eval_org_is_dead(
         self,
         org_uid: domain.UID,
-        ret_deltas: list[float],
+        alfas: list[float],
         duration: float,
     ) -> tuple[bool, str]:
         if self.state not in (State.EVAL_ORG, State.CREATE_ORG):
             raise errors.DomainError("incorrect state for organism evaluation")
 
         if org_uid == self.org_uid:
-            return False, self._update_deltas(ret_deltas, duration)
+            return False, self._update_alfas(alfas, duration)
 
-        t_value = self._t_values(ret_deltas)
+        t_value = self._t_values(alfas)
         adj_t_critical = self._adj_t_critical(duration)
 
         match t_value < adj_t_critical:
@@ -110,7 +110,7 @@ class Evolution(domain.Entity):
                 sign = ">"
 
                 self.org_uid = org_uid
-                self.ret_deltas = ret_deltas
+                self.alfas = alfas
                 self.duration = duration
                 self.state = State.CREATE_ORG
 
@@ -123,18 +123,18 @@ class Evolution(domain.Entity):
     def _adj_t_critical(self, duration: NonNegativeFloat) -> float:
         return self.t_critical * min(1, self.duration / duration)
 
-    def _t_values(self, ret_deltas: list[float]) -> float:
-        deltas = [org_ret - prev_ret for org_ret, prev_ret in zip(ret_deltas, self.ret_deltas, strict=False)]
+    def _t_values(self, alfas: list[float]) -> float:
+        alfas = [org_ret - prev_ret for org_ret, prev_ret in zip(alfas, self.alfas, strict=False)]
 
-        return statistics.mean(deltas) * len(deltas) ** 0.5 / statistics.stdev(deltas)
+        return statistics.mean(alfas) * len(alfas) ** 0.5 / statistics.stdev(alfas)
 
-    def _update_deltas(self, ret_deltas: list[float], duration: float) -> str:
+    def _update_alfas(self, alfas: list[float], duration: float) -> str:
         if self.state is not State.EVAL_ORG:
             raise errors.DomainError("incorrect state for base returns update")
 
-        t_value = self._t_values(ret_deltas)
+        t_value = self._t_values(alfas)
 
-        self.ret_deltas = ret_deltas
+        self.alfas = alfas
         self.state = State.CREATE_ORG
 
         old_t_critical = self.t_critical

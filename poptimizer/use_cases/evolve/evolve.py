@@ -78,27 +78,27 @@ class EvolutionHandler:
         tickers = await self._viewer.portfolio_tickers()
 
         try:
-            duration, ret_deltas = await self._eval(ctx, org, evolution.day, tickers)
+            duration, alfas = await self._eval(ctx, org, evolution.day, tickers)
         except* errors.DomainError as err:
             await self._delete_org(ctx, evolution, org, err)
         else:
-            evolution.init_new_day(tickers, org.uid, ret_deltas, duration)
+            evolution.init_new_day(tickers, org.uid, alfas, duration)
 
     async def _new_base_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
         try:
-            duration, ret_deltas = await self._eval(ctx, org, evolution.day, evolution.tickers)
+            duration, alfas = await self._eval(ctx, org, evolution.day, evolution.tickers)
         except* errors.DomainError as err:
             await self._delete_org(ctx, evolution, org, err)
         else:
-            evolution.new_base_org(org.uid, ret_deltas, duration)
+            evolution.new_base_org(org.uid, alfas, duration)
 
     async def _eval_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
         try:
-            duration, ret_deltas = await self._eval(ctx, org, evolution.day, evolution.tickers)
+            duration, alfas = await self._eval(ctx, org, evolution.day, evolution.tickers)
         except* errors.DomainError as err:
             await self._delete_org(ctx, evolution, org, err)
         else:
-            dead, msg = evolution.eval_org_is_dead(org.uid, ret_deltas, duration)
+            dead, msg = evolution.eval_org_is_dead(org.uid, alfas, duration)
             self._lgr.info(msg)
 
             if dead:
@@ -146,10 +146,10 @@ class EvolutionHandler:
         test_days = 1 + await ctx.count_orgs()
 
         tr = trainer.Trainer(builder.Builder(self._viewer))
-        ret_deltas = await tr.run(tickers, pd.Timestamp(day), test_days, cfg, None)
+        alfas = await tr.run(tickers, pd.Timestamp(day), test_days, cfg, None)
 
-        org.update_stats(day, tickers, ret_deltas)
+        org.update_stats(day, tickers, alfas)
 
-        self._lgr.info(f"{org} return delta - {org.ret_delta:.2%}")
+        self._lgr.info(f"{org} return alfa - {org.alfa:.2%}")
 
-        return time.monotonic() - start, ret_deltas
+        return time.monotonic() - start, alfas

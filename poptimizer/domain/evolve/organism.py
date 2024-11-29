@@ -13,7 +13,7 @@ class Organism(domain.Entity):
     tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
     genes: genetics.Genes = Field(default_factory=lambda: genotype.DLModel.model_validate({}).genes)
     model: bytes = b""
-    ret_delta: float = 0
+    alfa: float = 0
 
     def __str__(self) -> str:
         genes = genotype.DLModel.model_validate(self.genes)
@@ -42,7 +42,7 @@ class Organism(domain.Entity):
 
         return tickers
 
-    def update_stats(self, day: domain.Day, tickers: tuple[domain.Ticker, ...], ret_deltas: list[float]) -> None:
+    def update_stats(self, day: domain.Day, tickers: tuple[domain.Ticker, ...], alfas: list[float]) -> None:
         self.day = day
         self.tickers = tickers
-        self.ret_delta = statistics.mean(ret_deltas)
+        self.alfa = statistics.mean(alfas)

@@ -153,7 +153,7 @@ class Trainer:
         with torch.no_grad():
             net.eval()
 
-            ret_deltas: list[float] = []
+            alfas: list[float] = []
 
             for batch in test_dl:
                 loss, mean, variance = net.loss_and_forecast_mean_and_var(self._batch_to_device(batch))
@@ -168,9 +168,9 @@ class Trainer:
 
                 self._lgr.info("%s / LLH = %8.5f", rez, loss)
 
-                ret_deltas.append(rez.ret - rez.avr)
+                alfas.append(rez.ret - rez.avr)
 
-        return ret_deltas
+        return alfas
 
     def _log_net_stats(self, net: wave_net.Net, epochs: float, train_dl: data_loaders.DataLoader) -> None:
         train_size = len(train_dl.dataset)  # type: ignore[arg-type]
