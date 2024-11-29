@@ -30,7 +30,7 @@ class OptimizationResult(BaseModel):
                 f"ERet = {self.e_ret:>7.2%}",
                 f"EStd = {self.e_std:>7.2%}",
                 f"Pos = {self.pos:>3}",
-                f"WMam = {self.weight_max:>7.2%}",
+                f"WMax = {self.weight_max:>7.2%}",
             ],
         )
 
