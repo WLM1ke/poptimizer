@@ -7,7 +7,7 @@ from pydantic import Field, NonNegativeFloat, NonNegativeInt, PositiveInt
 from poptimizer import consts, errors
 from poptimizer.domain import domain
 
-_adj_delta_step: Final = 0.1
+_adj_delta_step: Final = 0.01
 
 
 class State(StrEnum):
