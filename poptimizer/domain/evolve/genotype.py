@@ -39,7 +39,7 @@ class Batch(genetics.Chromosome):
         float,
         genetics.gene_range(lower=1),
         genetics.int_phenotype(),
-    ] = genetics.random_default_range(128, 128 * 4)
+    ] = genetics.random_default_range(512, 513)
     feats: Features = genetics.random_chromosome(Features)
     days: Days = genetics.random_chromosome(Days)
 
@@ -93,7 +93,7 @@ class Scheduler(genetics.Chromosome):
     epochs: Annotated[
         float,
         genetics.gene_range(lower=0),
-    ] = genetics.random_default_range(1, 3)
+    ] = genetics.random_default_range(1, 1.01)
     max_lr: Annotated[
         float,
         genetics.gene_range(lower=0),
