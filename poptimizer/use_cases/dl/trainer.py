@@ -11,7 +11,9 @@ import tqdm
 from pydantic import BaseModel
 from torch import optim
 
-from poptimizer.domain.dl import data_loaders, datasets, risk
+from poptimizer import consts, errors
+from poptimizer.domain import domain
+from poptimizer.domain.dl import data_loaders, datasets, ledoit_wolf, risk
 from poptimizer.domain.dl.wave_net import backbone, wave_net
 from poptimizer.use_cases.dl import builder
 
@@ -82,13 +84,13 @@ class Trainer:
 
     async def run(
         self,
+        day: domain.Day,
         tickers: tuple[str, ...],
-        last_day: pd.Timestamp,
         test_days: int,
         cfg: Cfg,
         state: bytes | None,
-    ) -> list[float]:
-        data = await self._builder.build(tickers, last_day, cfg.batch.feats, cfg.batch.days, test_days)
+    ) -> tuple[list[float], list[list[float]], list[list[float]]]:
+        data = await self._builder.build(tickers, pd.Timestamp(day), cfg.batch.feats, cfg.batch.days, test_days)
         net = self._prepare_net(state, cfg)
         if state is None:
             try:
@@ -96,21 +98,24 @@ class Trainer:
                     self._train,
                     net,
                     cfg.scheduler,
-                    data_loaders.train(data, cfg.batch.size),
+                    data,
+                    cfg.batch.size,
                 )
             except asyncio.CancelledError:
                 self._stopping = True
 
                 raise
 
-        return self._test(net, cfg, data_loaders.test(data))
+        return self._test(net, cfg, data), *self._forecast(net, cfg.batch.forecast_days, data)
 
     def _train(
         self,
         net: wave_net.Net,
         scheduler: Scheduler,
-        train_dl: data_loaders.DataLoader,
+        data: list[datasets.OneTickerData],
+        batch_size: int,
     ) -> None:
+        train_dl = data_loaders.train(data, batch_size)
         optimizer = optim.AdamW(net.parameters())  # type: ignore[reportPrivateImportUsage]
 
         steps_per_epoch = len(train_dl)
@@ -149,17 +154,22 @@ class Trainer:
                 avg_llh.append(-loss.item())
                 progress_bar.set_postfix_str(f"{avg_llh.running_avg():.5f}")
 
-    def _test(self, net: wave_net.Net, cfg: Cfg, test_dl: data_loaders.DataLoader) -> list[float]:
+    def _test(
+        self,
+        net: wave_net.Net,
+        cfg: Cfg,
+        data: list[datasets.OneTickerData],
+    ) -> list[float]:
         with torch.no_grad():
             net.eval()
 
             alfas: list[float] = []
 
-            for batch in test_dl:
-                loss, mean, variance = net.loss_and_forecast_mean_and_var(self._batch_to_device(batch))
+            for batch in data_loaders.test(data):
+                loss, mean, std = net.loss_and_forecast_mean_and_std(self._batch_to_device(batch))
                 rez = risk.optimize(
-                    mean - 1,
-                    variance,
+                    mean,
+                    std,
                     batch[datasets.FeatTypes.LABEL1P].cpu().numpy() - 1,
                     batch[datasets.FeatTypes.RETURNS].cpu().numpy(),
                     cfg.risk,
@@ -171,6 +181,30 @@ class Trainer:
                 alfas.append(rez.ret - rez.avr)
 
         return alfas
+
+    def _forecast(
+        self,
+        net: wave_net.Net,
+        forecast_days: int,
+        data: list[datasets.OneTickerData],
+    ) -> tuple[list[list[float]], list[list[float]]]:
+        with torch.no_grad():
+            net.eval()
+            forecast_dl = data_loaders.forecast(data)
+            if len(forecast_dl) != 1:
+                raise errors.UseCasesError("invalid forecast dataloader")
+
+            batch = next(iter(forecast_dl))
+            mean, std = net.forecast_mean_and_std(self._batch_to_device(batch))
+
+            year_multiplier = consts.YEAR_IN_TRADING_DAYS / forecast_days
+            mean *= year_multiplier
+            std *= year_multiplier**0.5
+
+            total_ret = batch[datasets.FeatTypes.RETURNS].cpu().numpy()
+            cov = std.T * ledoit_wolf.ledoit_wolf_cor(total_ret)[0] * std
+
+        return mean.tolist(), cov.tolist()
 
     def _log_net_stats(self, net: wave_net.Net, epochs: float, train_dl: data_loaders.DataLoader) -> None:
         train_size = len(train_dl.dataset)  # type: ignore[arg-type]

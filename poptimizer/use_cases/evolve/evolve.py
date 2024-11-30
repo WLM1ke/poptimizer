@@ -3,10 +3,9 @@ import time
 from typing import Final, Protocol
 
 import bson
-import pandas as pd
 
 from poptimizer import errors
-from poptimizer.domain import domain
+from poptimizer.domain import domain, forecast
 from poptimizer.domain.evolve import evolve, organism
 from poptimizer.use_cases import handler, view
 from poptimizer.use_cases.dl import builder, trainer
@@ -57,24 +56,29 @@ class EvolutionHandler:
         match state:
             case evolve.State.INIT:
                 org = await ctx.get_for_update(organism.Organism, random_org_uid())
-                await self._init_day(ctx, evolution, org)
+                uid = await self._init_day(ctx, evolution, org)
             case evolve.State.INIT_DAY:
                 org = await self._next_org(ctx)
-                await self._init_day(ctx, evolution, org)
+                uid = await self._init_day(ctx, evolution, org)
             case evolve.State.NEW_BASE_ORG:
                 org = await self._next_org(ctx)
-                await self._new_base_org(ctx, evolution, org)
+                uid = await self._new_base_org(ctx, evolution, org)
             case evolve.State.EVAL_ORG:
                 org = await self._next_org(ctx)
-                await self._eval_org(ctx, evolution, org)
+                uid = await self._eval_org(ctx, evolution, org)
             case evolve.State.CREATE_ORG:
                 org = await ctx.get(organism.Organism, evolution.org_uid)
                 child = await self._make_child(ctx, org)
-                await self._eval_org(ctx, evolution, child)
+                uid = await self._eval_org(ctx, evolution, child)
 
-        return handler.EvolutionStepFinished()
+        return handler.EvolutionStepFinished(day=msg.day, forecast_uid=uid)
 
-    async def _init_day(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
+    async def _init_day(
+        self,
+        ctx: Ctx,
+        evolution: evolve.Evolution,
+        org: organism.Organism,
+    ) -> domain.UID | None:
         tickers = await self._viewer.portfolio_tickers()
 
         try:
@@ -84,7 +88,16 @@ class EvolutionHandler:
         else:
             evolution.init_new_day(tickers, org.uid, alfas, duration)
 
-    async def _new_base_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
+            return org.uid
+
+        return None
+
+    async def _new_base_org(
+        self,
+        ctx: Ctx,
+        evolution: evolve.Evolution,
+        org: organism.Organism,
+    ) -> domain.UID | None:
         try:
             duration, alfas = await self._eval(ctx, org, evolution.day, evolution.tickers)
         except* errors.DomainError as err:
@@ -92,7 +105,16 @@ class EvolutionHandler:
         else:
             evolution.new_base_org(org.uid, alfas, duration)
 
-    async def _eval_org(self, ctx: Ctx, evolution: evolve.Evolution, org: organism.Organism) -> None:
+            return org.uid
+
+        return None
+
+    async def _eval_org(
+        self,
+        ctx: Ctx,
+        evolution: evolve.Evolution,
+        org: organism.Organism,
+    ) -> domain.UID | None:
         try:
             duration, alfas = await self._eval(ctx, org, evolution.day, evolution.tickers)
         except* errors.DomainError as err:
@@ -104,6 +126,12 @@ class EvolutionHandler:
             if dead:
                 await ctx.delete(org)
                 self._lgr.info("Organism removed")
+
+                return None
+
+            return org.uid
+
+        return None
 
     async def _next_org(self, ctx: Ctx) -> organism.Organism:
         org = await ctx.next_org()
@@ -140,16 +168,27 @@ class EvolutionHandler:
         org: organism.Organism,
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
-    ) -> tuple[float, list[float]]:
+    ) -> tuple[
+        float,
+        list[float],
+    ]:
         start = time.monotonic()
         cfg = trainer.Cfg.model_validate(org.phenotype)
         test_days = 1 + await ctx.count_orgs()
 
         tr = trainer.Trainer(builder.Builder(self._viewer))
-        alfas = await tr.run(tickers, pd.Timestamp(day), test_days, cfg, None)
+        alfas, mean, cov = await tr.run(day, tickers, test_days, cfg, None)
 
         org.update_stats(day, tickers, alfas)
 
         self._lgr.info(f"{org} return alfa - {org.alfa:.2%}")
+
+        forecast_data = await ctx.get_for_update(forecast.Forecast, org.uid)
+
+        forecast_data.day = day
+        forecast_data.tickers = tickers
+        forecast_data.mean = mean
+        forecast_data.cov = cov
+        forecast_data.risk_tolerance = cfg.risk.risk_tolerance
 
         return time.monotonic() - start, alfas

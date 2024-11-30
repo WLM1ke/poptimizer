@@ -67,4 +67,6 @@ class DataUpdated(Event):
     day: domain.Day
 
 
-class EvolutionStepFinished(Event): ...
+class EvolutionStepFinished(Event):
+    day: domain.Day
+    forecast_uid: domain.UID | None

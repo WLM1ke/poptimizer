@@ -53,7 +53,7 @@ class Net(torch.nn.Module):
         except ValueError as err:
             raise errors.DomainError("error in categorical distribution") from err
 
-    def loss_and_forecast_mean_and_var(
+    def loss_and_forecast_mean_and_std(
         self,
         batch: datasets.Batch,
     ) -> tuple[float, NDArray[np.double], NDArray[np.double]]:
@@ -67,4 +67,12 @@ class Net(torch.nn.Module):
         except ValueError as err:
             raise errors.DomainError("error in categorical distribution") from err
 
-        return llh.item(), dist.mean.cpu().numpy(), dist.variance.cpu().numpy()
+        return llh.item(), dist.mean.cpu().numpy() - 1, dist.variance.cpu().numpy() ** 0.5
+
+    def forecast_mean_and_std(
+        self,
+        batch: datasets.Batch,
+    ) -> tuple[NDArray[np.double], NDArray[np.double]]:
+        dist = self(batch)
+
+        return dist.mean.cpu().numpy() - 1, dist.variance.cpu().numpy() ** 0.5

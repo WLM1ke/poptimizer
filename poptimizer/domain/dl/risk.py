@@ -37,7 +37,7 @@ class OptimizationResult(BaseModel):
 
 def optimize(  # noqa: PLR0913
     mean: NDArray[np.double],
-    variance: NDArray[np.double],
+    std: NDArray[np.double],
     labels: NDArray[np.double],
     tot_ret: NDArray[np.double],
     cfg: Cfg,
@@ -46,9 +46,9 @@ def optimize(  # noqa: PLR0913
     year_multiplier = consts.YEAR_IN_TRADING_DAYS / forecast_days
 
     mean *= year_multiplier
-    variance *= year_multiplier
+    std *= year_multiplier**0.5
 
-    weights, sigma = _opt_weight(mean, variance, tot_ret, cfg)
+    weights, sigma = _opt_weight(mean, std, tot_ret, cfg)
     port_variance: float = (weights.T @ sigma @ weights).item()
 
     return OptimizationResult(
@@ -63,13 +63,11 @@ def optimize(  # noqa: PLR0913
 
 def _opt_weight(
     mean: NDArray[np.double],
-    variance: NDArray[np.double],
+    std: NDArray[np.double],
     tot_ret: NDArray[np.double],
     cfg: Cfg,
 ) -> tuple[NDArray[np.double], NDArray[np.double]]:
-    sigma = ledoit_wolf.ledoit_wolf_cor(tot_ret)[0]
-    std = variance**0.5
-    sigma = std.T * sigma * std
+    sigma = std.T * ledoit_wolf.ledoit_wolf_cor(tot_ret)[0] * std
 
     weights = np.ones_like(mean).flatten()
     weights /= weights.sum()
