@@ -6,8 +6,9 @@ from typing import Final, Protocol
 import bson
 
 from poptimizer import errors
-from poptimizer.domain import domain, forecast
+from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve, organism
+from poptimizer.domain.portfolio import forecast
 from poptimizer.use_cases import handler, view
 from poptimizer.use_cases.dl import builder, trainer
 

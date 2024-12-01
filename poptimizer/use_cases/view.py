@@ -6,9 +6,10 @@ import async_lru
 import numpy as np
 import pandas as pd
 
-from poptimizer.domain import domain, portfolio
+from poptimizer.domain import domain
 from poptimizer.domain.div import div
 from poptimizer.domain.moex import quotes
+from poptimizer.domain.portfolio import portfolio
 
 
 class Repo(Protocol):

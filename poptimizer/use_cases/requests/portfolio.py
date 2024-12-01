@@ -3,7 +3,8 @@ from typing import Self
 
 from pydantic import BaseModel, NonNegativeInt, PositiveFloat, PositiveInt
 
-from poptimizer.domain import domain, portfolio
+from poptimizer.domain import domain
+from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
 

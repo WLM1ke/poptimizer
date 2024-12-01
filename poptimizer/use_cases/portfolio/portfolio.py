@@ -5,8 +5,9 @@ from typing import Final, Protocol
 import numpy as np
 import pandas as pd
 
-from poptimizer.domain import domain, portfolio
+from poptimizer.domain import domain
 from poptimizer.domain.moex import securities
+from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
 _START_LIQUIDITY_DAYS: Final = 21

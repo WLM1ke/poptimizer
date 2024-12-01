@@ -1,10 +1,11 @@
 import aiohttp
 
 from poptimizer.controllers.bus import msg
-from poptimizer.use_cases import cpi, portfolio, view
+from poptimizer.use_cases import cpi, view
 from poptimizer.use_cases.div import div, reestry, status
 from poptimizer.use_cases.evolve import evolve
 from poptimizer.use_cases.moex import index, quotes, securities, trading_day, usd
+from poptimizer.use_cases.portfolio import portfolio
 
 
 def register_handlers(

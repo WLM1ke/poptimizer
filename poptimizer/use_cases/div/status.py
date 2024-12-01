@@ -9,9 +9,10 @@ from typing import Final, TextIO
 import aiohttp
 
 from poptimizer import errors
-from poptimizer.domain import domain, portfolio
+from poptimizer.domain import domain
 from poptimizer.domain.div import raw, status
 from poptimizer.domain.moex import securities
+from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
 _URL: Final = "https://web.moex.com/moex-web-icdb-api/api/v1/export/register-closing-dates/csv?separator=1&language=1"
