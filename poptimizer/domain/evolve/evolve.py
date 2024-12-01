@@ -2,7 +2,8 @@ import statistics
 from enum import StrEnum
 from typing import Final
 
-from pydantic import Field, NonNegativeFloat, NonNegativeInt, PositiveInt
+from pydantic import Field, NonNegativeFloat, PositiveInt
+from scipy import stats
 
 from poptimizer import consts, errors
 from poptimizer.domain import domain
@@ -25,8 +26,6 @@ class Evolution(domain.Entity):
     org_uid: domain.UID = domain.UID("")
     alfas: list[float] = Field(default_factory=list)
     duration: NonNegativeFloat = 0
-    delta_critical: float = 0
-    adj_count: NonNegativeInt = 0
 
     def __str__(self) -> str:
         return f"Evolution day {self.day} step {self.step} - {self.state}"
@@ -99,12 +98,17 @@ class Evolution(domain.Entity):
             raise errors.DomainError("incorrect state for organism evaluation")
 
         if org_uid == self.org_uid:
-            return False, self._update_alfas(alfas, duration)
+            self.alfas = alfas
+            self.duration = duration
 
-        delta = self._delta(alfas)
-        adj_delta_critical = self._adj_delta_critical(duration)
+            self.state = State.CREATE_ORG
 
-        match delta < adj_delta_critical:
+            return False, "Reevaluating base org"
+
+        t_value, t_critical = self._t_values(alfas)
+        adj_t_critical = self._adj_t_critical(t_critical, duration)
+
+        match t_value < adj_t_critical:
             case True:
                 sign = "<"
 
@@ -119,42 +123,16 @@ class Evolution(domain.Entity):
 
         return (
             sign == "<",
-            f"Evaluating organism delta({delta:.2%}) {sign} adj-delta-critical({adj_delta_critical:.2%})"
-            f", delta-critical({self.delta_critical:.2%})",
+            f"Evaluating organism t_value({t_value:.2f}) {sign} adj_t_critical({adj_t_critical:.2f})"
+            f", t_critical({t_critical:.2f})",
         )
 
-    def _adj_delta_critical(self, duration: NonNegativeFloat) -> float:
-        return self.delta_critical * min(1, self.duration / duration)
+    def _adj_t_critical(self, t_critical: float, duration: NonNegativeFloat) -> float:
+        return t_critical * min(1, self.duration / duration)
 
-    def _delta(self, alfas: list[float]) -> float:
-        return statistics.mean(alfa - alfa_prev for alfa, alfa_prev in zip(alfas, self.alfas, strict=False))
+    def _t_values(self, alfas: list[float]) -> tuple[float, float]:
+        deltas = [alfa - alfa_prev for alfa, alfa_prev in zip(alfas, self.alfas, strict=False)]
+        t_value = statistics.mean(deltas) * len(deltas) ** 0.5 / statistics.stdev(deltas)
+        t_critical = stats.t.ppf(consts.P_VALUE, len(deltas) - 1)  # type: ignore[reportUnknownMemberType]
 
-    def _update_alfas(self, alfas: list[float], duration: float) -> str:
-        if self.state is not State.EVAL_ORG:
-            raise errors.DomainError("incorrect state for base returns update")
-
-        delta = self._delta(alfas)
-
-        self.alfas = alfas
-        self.state = State.CREATE_ORG
-
-        old_delta_critical = self.delta_critical
-        adj_delta_critical = self._adj_delta_critical(duration)
-
-        match delta < adj_delta_critical:
-            case True:
-                sign = "<"
-                self.delta_critical -= _adj_delta_step * (1 - consts.P_VALUE) / (self.adj_count + 1)
-
-                if delta > self._adj_delta_critical(duration):
-                    self.adj_count += 1
-            case False:
-                sign = ">"
-                self.delta_critical += _adj_delta_step * consts.P_VALUE / (self.adj_count + 1)
-
-                if delta < self._adj_delta_critical(duration):
-                    self.adj_count += 1
-        return (
-            f"Changing adjustment delta({delta:.2%}) {sign} adj-delta-critical({adj_delta_critical:.2%})"
-            f", delta-critical({old_delta_critical:.2%}) -> delta-critical({self.delta_critical:.2%})"
-        )
+        return t_value, float(t_critical)

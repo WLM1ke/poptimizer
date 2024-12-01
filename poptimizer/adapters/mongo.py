@@ -48,7 +48,7 @@ class Repo:
                     "alfa": True,
                 },
             },
-            {"$sort": {"day": pymongo.ASCENDING, "alfa": pymongo.DESCENDING}},
+            {"$sort": {"day": pymongo.ASCENDING, "alfa": pymongo.ASCENDING}},
             {"$limit": 1},
         ]
 
