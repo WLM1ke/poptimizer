@@ -1,4 +1,5 @@
 import logging
+import statistics
 import time
 from typing import Final, Protocol
 
@@ -82,7 +83,7 @@ class EvolutionHandler:
         tickers = await self._viewer.portfolio_tickers()
 
         try:
-            duration, alfas = await self._eval(ctx, evolution, org)
+            duration, alfas = await self._eval(ctx, org, evolution.day, tickers)
         except* errors.DomainError as err:
             await self._delete_org(ctx, evolution, org, err)
         else:
@@ -99,7 +100,7 @@ class EvolutionHandler:
         org: organism.Organism,
     ) -> domain.UID | None:
         try:
-            duration, alfas = await self._eval(ctx, evolution, org)
+            duration, alfas = await self._eval(ctx, org, evolution.day, evolution.tickers)
         except* errors.DomainError as err:
             await self._delete_org(ctx, evolution, org, err)
         else:
@@ -116,7 +117,7 @@ class EvolutionHandler:
         org: organism.Organism,
     ) -> domain.UID | None:
         try:
-            duration, alfas = await self._eval(ctx, evolution, org)
+            duration, alfas = await self._eval(ctx, org, evolution.day, evolution.tickers)
         except* errors.DomainError as err:
             await self._delete_org(ctx, evolution, org, err)
         else:
@@ -165,27 +166,28 @@ class EvolutionHandler:
     async def _eval(
         self,
         ctx: Ctx,
-        evolution: evolve.Evolution,
         org: organism.Organism,
+        day: domain.Day,
+        tickers: tuple[domain.Ticker, ...],
     ) -> tuple[
         float,
         list[float],
     ]:
         start = time.monotonic()
         cfg = trainer.Cfg.model_validate(org.phenotype)
-        test_days = max(len(evolution.alfas), 1 + await ctx.count_orgs())
+        test_days = 1 + await ctx.count_orgs()
 
         tr = trainer.Trainer(builder.Builder(self._viewer))
-        alfas, mean, cov = await tr.run(evolution.day, evolution.tickers, test_days, cfg, None)
+        alfas, mean, cov = await tr.run(day, tickers, test_days, cfg, None)
 
-        org.update_stats(evolution.day, evolution.tickers, alfas)
+        org.update_stats(day, tickers, alfas)
 
-        self._lgr.info(f"{org} return alfa - {org.alfa:.2%}")
+        self._lgr.info(f"{org} return alfa - {statistics.mean(alfas):.2%}")
 
         forecast_data = await ctx.get_for_update(forecast.Forecast, org.uid)
 
-        forecast_data.day = evolution.day
-        forecast_data.tickers = evolution.tickers
+        forecast_data.day = day
+        forecast_data.tickers = tickers
         forecast_data.mean = mean
         forecast_data.cov = cov
         forecast_data.risk_tolerance = cfg.risk.risk_tolerance
