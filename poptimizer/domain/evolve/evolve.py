@@ -3,7 +3,7 @@ from enum import StrEnum
 from typing import Final
 
 from pydantic import Field, NonNegativeFloat, PositiveInt
-from scipy import stats
+from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
 from poptimizer import consts, errors
 from poptimizer.domain import domain

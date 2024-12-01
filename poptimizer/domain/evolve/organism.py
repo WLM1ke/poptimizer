@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import itertools
-import statistics
 
 from pydantic import Field, field_validator
 
+from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import genetics, genotype
 
@@ -45,4 +45,4 @@ class Organism(domain.Entity):
     def update_stats(self, day: domain.Day, tickers: tuple[domain.Ticker, ...], alfas: list[float]) -> None:
         self.day = day
         self.tickers = tickers
-        self.alfa = statistics.mean(alfas)
+        self.alfa = sum(alfas) / consts.YEAR_IN_TRADING_DAYS
