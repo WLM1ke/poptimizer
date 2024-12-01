@@ -8,7 +8,7 @@ import bson
 from poptimizer import errors
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve, organism
-from poptimizer.domain.portfolio import forecast
+from poptimizer.domain.portfolio import forecasts
 from poptimizer.use_cases import handler, view
 from poptimizer.use_cases.dl import builder, trainer
 
@@ -33,6 +33,8 @@ class Ctx(Protocol):
     ) -> E: ...
 
     async def delete(self, entity: domain.Entity) -> None: ...
+
+    async def delete_all[E: domain.Entity](self, t_entity: type[E]) -> None: ...
 
     async def count_orgs(self) -> int: ...
 
@@ -81,6 +83,7 @@ class EvolutionHandler:
         evolution: evolve.Evolution,
         org: organism.Organism,
     ) -> domain.UID | None:
+        await ctx.delete_all(forecasts.Forecast)
         tickers = await self._viewer.portfolio_tickers()
 
         try:
@@ -185,12 +188,12 @@ class EvolutionHandler:
 
         self._lgr.info(f"{org} return alfa - {statistics.mean(alfas):.2%}")
 
-        forecast_data = await ctx.get_for_update(forecast.Forecast, org.uid)
+        forecast = await ctx.get_for_update(forecasts.Forecast, org.uid)
 
-        forecast_data.day = day
-        forecast_data.tickers = tickers
-        forecast_data.mean = mean
-        forecast_data.cov = cov
-        forecast_data.risk_tolerance = cfg.risk.risk_tolerance
+        forecast.day = day
+        forecast.tickers = tickers
+        forecast.mean = mean
+        forecast.cov = cov
+        forecast.risk_tolerance = cfg.risk.risk_tolerance
 
         return time.monotonic() - start, alfas

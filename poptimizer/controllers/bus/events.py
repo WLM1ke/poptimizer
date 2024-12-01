@@ -5,7 +5,7 @@ from poptimizer.use_cases import cpi, view
 from poptimizer.use_cases.div import div, reestry, status
 from poptimizer.use_cases.evolve import evolve
 from poptimizer.use_cases.moex import index, quotes, securities, trading_day, usd
-from poptimizer.use_cases.portfolio import portfolio
+from poptimizer.use_cases.portfolio import forecasts, portfolio
 
 
 def register_handlers(
@@ -26,3 +26,4 @@ def register_handlers(
     bus.register_event_handler(reestry.ReestryHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(trading_day_handler.update, msg.IndefiniteRetryPolicy)
     bus.register_event_handler(evolve.EvolutionHandler(viewer), msg.IndefiniteRetryPolicy)
+    bus.register_event_handler(forecasts.PortForecastHandler(), msg.IndefiniteRetryPolicy)
