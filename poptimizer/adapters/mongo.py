@@ -157,3 +157,11 @@ class Repo:
 
         if result.deleted_count != 1:
             raise errors.AdapterError(f"can't delete {collection_name}.{entity.uid}")
+
+    async def delete_all[E: domain.Entity](self, t_entity: type[E]) -> None:
+        collection_name = adapter.get_component_name(t_entity)
+
+        try:
+            await self._db.drop_collection(collection_name)
+        except PyMongoError as err:
+            raise errors.AdapterError("can't drop {collection_name}") from err

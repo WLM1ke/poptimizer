@@ -124,6 +124,9 @@ class UOW:
     async def sample_orgs(self, n: int) -> list[organism.Organism]:
         return await self._repo.sample_orgs(n)
 
+    async def delete_all[E: domain.Entity](self, t_entity: type[E]) -> None:
+        await self._repo.delete_all(t_entity)
+
     async def __aenter__(self) -> Self:
         return self
 
