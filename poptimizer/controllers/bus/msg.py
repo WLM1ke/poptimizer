@@ -51,7 +51,7 @@ class RequestHandler[D: DTO, E: Event](Protocol):
 
 
 class EventHandler[E: Event](Protocol):
-    async def __call__(self, ctx: Ctx, msg: E) -> E | None: ...
+    async def __call__(self, ctx: Ctx, msg: E) -> list[E] | E | None: ...
 
 
 type Handler = RequestHandler[Any, Any] | EventHandler[Any]
@@ -194,11 +194,19 @@ class Bus:
         try:
             async with uow.UOW(self._repo) as ctx:
                 result = await handler(ctx, msg)
-
-            if result is not None:
-                self.publish(result)
         except* errors.POError as err:
             error = err
+        else:
+            match result:
+                case None:
+                    events = []
+                case Event():
+                    events = [result]
+                case _:
+                    events = result
+
+            for event in events:
+                self.publish(event)
 
         return error
 
