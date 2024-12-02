@@ -51,7 +51,7 @@ class EvolutionHandler:
         self,
         ctx: Ctx,
         msg: handler.DataNotChanged | handler.DataUpdated,
-    ) -> handler.EvolutionStepFinished:
+    ) -> handler.EvolutionStepFinished | tuple[handler.EvolutionStepFinished, handler.ForecastCreated]:
         evolution = await ctx.get_for_update(evolve.Evolution)
         state = evolution.start_step(msg.day)
         self._lgr.info("%s", evolution)
@@ -74,7 +74,10 @@ class EvolutionHandler:
                 child = await self._make_child(ctx, org)
                 uid = await self._eval_org(ctx, evolution, child)
 
-        return handler.EvolutionStepFinished(day=msg.day, forecast_uid=uid)
+        if uid is None:
+            return handler.EvolutionStepFinished(day=msg.day)
+
+        return (handler.EvolutionStepFinished(day=msg.day), handler.ForecastCreated(day=msg.day, uid=uid))
 
     async def _init_day(
         self,

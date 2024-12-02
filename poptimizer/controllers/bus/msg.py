@@ -51,7 +51,7 @@ class RequestHandler[D: DTO, E: Event](Protocol):
 
 
 class EventHandler[E: Event](Protocol):
-    async def __call__(self, ctx: Ctx, msg: E) -> list[E] | E | None: ...
+    async def __call__(self, ctx: Ctx, msg: E) -> Iterable[E] | E | None: ...
 
 
 type Handler = RequestHandler[Any, Any] | EventHandler[Any]
