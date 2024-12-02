@@ -42,7 +42,7 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
 
         min_days_for_one_train_and_test = self._history_days + 2 * self._forecast_days + self._test_days - 1
         if self._all_days < min_days_for_one_train_and_test:
-            raise errors.DomainError("too short history")
+            raise errors.TooShortHistoryError(min_days_for_one_train_and_test)
 
         if not num_feat:
             raise errors.DomainError("no features")
