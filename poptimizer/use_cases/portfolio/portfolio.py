@@ -7,6 +7,7 @@ import pandas as pd
 
 from poptimizer import consts
 from poptimizer.domain import domain
+from poptimizer.domain.evolve import evolve
 from poptimizer.domain.moex import securities
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
@@ -54,13 +55,15 @@ class PortfolioHandler:
         async with asyncio.TaskGroup() as tg:
             turnover_task = tg.create_task(self._viewer.turnover(last_day_ts, tickers))
             close_task = tg.create_task(self._viewer.close(last_day_ts, tickers))
+            history_days_task = tg.create_task(ctx.get(evolve.Evolution))
 
         turnover = turnover_task.result()
         close = close_task.result()
+        history_days = history_days_task.result().minimal_history_days
 
         turnover = (  # type: ignore[reportUnknownMemberType]
             turnover.iloc[  # type: ignore[reportUnknownMemberType]
-                -consts.INITIAL_MINIMAL_REQUIRED_HISTORY_DAYS * 2 :
+                -history_days * 2 :
             ]
             .sort_index(ascending=False)
             .expanding()

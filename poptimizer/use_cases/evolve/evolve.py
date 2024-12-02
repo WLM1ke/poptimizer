@@ -156,7 +156,10 @@ class EvolutionHandler:
         err: BaseExceptionGroup[errors.DomainError],
     ) -> None:
         await ctx.delete(org)
-        evolution.org_failed(org.uid)
+
+        if (history_days := evolution.org_failed(org.uid, err)) is None:
+            self._lgr.warning("Minimal history days increased - %d", history_days)
+
         self._lgr.warning("Delete %s - %s", org, err.exceptions[0])
 
     async def _make_child(self, ctx: Ctx, org: organism.Organism) -> organism.Organism:

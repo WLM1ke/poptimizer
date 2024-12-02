@@ -27,6 +27,7 @@ class Evolution(domain.Entity):
     duration: NonNegativeFloat = 0
     t_critical: float = 0
     adj_count: NonNegativeInt = 0
+    minimal_history_days: int = consts.INITIAL_MINIMAL_HISTORY_DAYS
 
     def __str__(self) -> str:
         return f"Evolution day {self.day} step {self.step} - {self.state}"
@@ -65,14 +66,21 @@ class Evolution(domain.Entity):
 
         self.state = State.CREATE_ORG
 
-    def org_failed(self, org_uid: domain.UID) -> None:
+    def org_failed(self, org_uid: domain.UID, err: BaseExceptionGroup[errors.DomainError]) -> int | None:
         match self.state:
             case State.CREATE_ORG:
                 self.state = State.EVAL_ORG
             case State.EVAL_ORG if self.org_uid == org_uid:
                 self.state = State.NEW_BASE_ORG
             case _:
-                return
+                ...
+
+        if err.subgroup(errors.TooShortHistoryError) is not None:
+            self.minimal_history_days += 1
+
+            return self.minimal_history_days
+
+        return None
 
     def new_base_org(
         self,
