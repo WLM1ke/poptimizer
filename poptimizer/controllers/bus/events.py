@@ -26,4 +26,4 @@ def register_handlers(
     bus.register_event_handler(reestry.ReestryHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(trading_day_handler.update, msg.IndefiniteRetryPolicy)
     bus.register_event_handler(evolve.EvolutionHandler(viewer), msg.IndefiniteRetryPolicy)
-    bus.register_event_handler(forecasts.PortForecastHandler(), msg.IndefiniteRetryPolicy)
+    bus.register_event_handler(forecasts.ForecastHandler(), msg.IndefiniteRetryPolicy)

@@ -2,7 +2,7 @@ from poptimizer.domain.portfolio import forecasts
 from poptimizer.use_cases import handler
 
 
-class PortForecastHandler:
+class ForecastHandler:
     async def __call__(self, ctx: handler.Ctx, msg: handler.EvolutionStepFinished) -> None:
         port_forecast = await ctx.get_for_update(forecasts.PortForecast)
 
