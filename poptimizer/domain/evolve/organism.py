@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import statistics
 
 from pydantic import Field, field_validator
 
@@ -13,6 +14,7 @@ class Organism(domain.Entity):
     tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
     genes: genetics.Genes = Field(default_factory=lambda: genotype.DLModel.model_validate({}).genes)
     model: bytes = b""
+    total_alfa: float = 0
     alfa: float = 0
 
     def __str__(self) -> str:
@@ -20,7 +22,10 @@ class Organism(domain.Entity):
         risk_tol = genes.risk.risk_tolerance
         history = genes.batch.days.history
 
-        return f"Organism(risk_tol={risk_tol:.2%}, history={history:.2f})"
+        return (
+            f"Organism(risk_tol={risk_tol:.2%}, history={history:.2f}) - "
+            f"alfa({self.alfa:.2%}) / total_alfa({self.total_alfa:.2%})"
+        )
 
     @property
     def phenotype(self) -> genetics.Phenotype:
@@ -45,4 +50,5 @@ class Organism(domain.Entity):
     def update_stats(self, day: domain.Day, tickers: tuple[domain.Ticker, ...], alfas: list[float]) -> None:
         self.day = day
         self.tickers = tickers
-        self.alfa = sum(alfas) / consts.YEAR_IN_TRADING_DAYS
+        self.total_alfa = sum(alfas) / consts.YEAR_IN_TRADING_DAYS
+        self.alfa = statistics.mean(alfas)

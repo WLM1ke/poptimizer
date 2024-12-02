@@ -1,5 +1,4 @@
 import logging
-import statistics
 import time
 from typing import Final, Protocol
 
@@ -186,7 +185,7 @@ class EvolutionHandler:
 
         org.update_stats(day, tickers, alfas)
 
-        self._lgr.info(f"{org} return alfa - {statistics.mean(alfas):.2%}")
+        self._lgr.info("%s", org)
 
         forecast = await ctx.get_for_update(forecasts.Forecast, org.uid)
 
