@@ -6,8 +6,24 @@ from pydantic import Field, NonNegativeFloat, NonNegativeInt, PositiveInt
 
 from poptimizer import consts, errors
 from poptimizer.domain import domain
+from poptimizer.domain.dl import datasets
 
-_adj_delta_step: Final = 0.01
+_INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.minimal_returns_days(
+    history_days=consts.INITIAL_HISTORY_DAYS_END,
+    forecast_days=consts.FORECAST_DAYS,
+    test_days=2,
+)
+
+
+def _extract_minimal_returns_days(err_group: BaseExceptionGroup[errors.DomainError]) -> int | None:
+    if (subgroup := err_group.subgroup(errors.TooShortHistoryError)) is None:
+        return None
+
+    while True:
+        if isinstance(subgroup.exceptions[0], errors.TooShortHistoryError):
+            return subgroup.exceptions[0].minimal_returns_days
+
+        subgroup = subgroup.exceptions[0]
 
 
 class State(StrEnum):
@@ -27,7 +43,7 @@ class Evolution(domain.Entity):
     duration: NonNegativeFloat = 0
     t_critical: float = 0
     adj_count: NonNegativeInt = 0
-    minimal_history_days: int = consts.INITIAL_MINIMAL_HISTORY_DAYS
+    minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
 
     def __str__(self) -> str:
         return f"Evolution day {self.day} step {self.step} - {self.state}"
@@ -75,10 +91,11 @@ class Evolution(domain.Entity):
             case _:
                 ...
 
-        if err.subgroup(errors.TooShortHistoryError) is not None:
-            self.minimal_history_days += 1
+        minimal_returns_days = _extract_minimal_returns_days(err)
+        if minimal_returns_days is not None and minimal_returns_days > self.minimal_returns_days:
+            self.minimal_returns_days += 1
 
-            return self.minimal_history_days
+            return self.minimal_returns_days
 
         return None
 

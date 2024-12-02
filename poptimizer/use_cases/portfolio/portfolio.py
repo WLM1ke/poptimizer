@@ -59,12 +59,10 @@ class PortfolioHandler:
 
         turnover = turnover_task.result()
         close = close_task.result()
-        history_days = history_days_task.result().minimal_history_days
+        quotes_days = (history_days_task.result().minimal_returns_days + 1) * 2
 
         turnover = (  # type: ignore[reportUnknownMemberType]
-            turnover.iloc[  # type: ignore[reportUnknownMemberType]
-                -history_days * 2 :
-            ]
+            turnover.iloc[-quotes_days:]  # type: ignore[reportUnknownMemberType]
             .sort_index(ascending=False)
             .expanding()
             .median()

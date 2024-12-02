@@ -157,7 +157,7 @@ class EvolutionHandler:
     ) -> None:
         await ctx.delete(org)
 
-        if (history_days := evolution.org_failed(org.uid, err)) is None:
+        if (history_days := evolution.org_failed(org.uid, err)) is not None:
             self._lgr.warning("Minimal history days increased - %d", history_days)
 
         self._lgr.warning("Delete %s - %s", org, err.exceptions[0])

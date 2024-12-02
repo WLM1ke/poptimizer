@@ -26,6 +26,10 @@ class Days(BaseModel):
     forecast: int
 
 
+def minimal_returns_days(*, history_days: int, forecast_days: int, test_days: int) -> int:
+    return history_days + 2 * forecast_days + test_days - 1
+
+
 class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
     def __init__(
         self,
@@ -40,7 +44,11 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
 
         self._all_days = len(ret_total)
 
-        min_days_for_one_train_and_test = self._history_days + 2 * self._forecast_days + self._test_days - 1
+        min_days_for_one_train_and_test = minimal_returns_days(
+            history_days=self._history_days,
+            forecast_days=self._forecast_days,
+            test_days=self._test_days,
+        )
         if self._all_days < min_days_for_one_train_and_test:
             raise errors.TooShortHistoryError(min_days_for_one_train_and_test)
 
