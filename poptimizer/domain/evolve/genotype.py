@@ -25,13 +25,13 @@ class Days(genetics.Chromosome):
         genetics.gene_range(lower=2),
         genetics.int_phenotype(),
     ] = genetics.random_default_range(
-        consts.YEAR_IN_TRADING_DAYS,
-        consts.YEAR_IN_TRADING_DAYS + consts.MONTH_IN_TRADING_DAYS,
+        consts.INITIAL_HISTORY_DAYS_START,
+        consts.INITIAL_HISTORY_DAYS_END,
     )
     forecast: Annotated[
         float,
         genetics.int_phenotype(),
-    ] = float(consts.MONTH_IN_TRADING_DAYS)
+    ] = float(consts.FORECAST_DAYS)
 
 
 class Batch(genetics.Chromosome):

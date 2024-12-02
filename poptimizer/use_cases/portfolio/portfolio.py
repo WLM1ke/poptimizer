@@ -1,17 +1,15 @@
 import asyncio
 import logging
-from typing import Final, Protocol
+from typing import Protocol
 
 import numpy as np
 import pandas as pd
 
+from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.moex import securities
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
-
-_START_LIQUIDITY_DAYS: Final = 21
-_MINIMUM_HISTORY: Final = 30 * 21
 
 
 class Viewer(Protocol):
@@ -62,12 +60,12 @@ class PortfolioHandler:
 
         turnover = (  # type: ignore[reportUnknownMemberType]
             turnover.iloc[  # type: ignore[reportUnknownMemberType]
-                -_MINIMUM_HISTORY * 2 :
+                -consts.INITIAL_MINIMAL_REQUIRED_HISTORY_DAYS * 2 :
             ]
             .sort_index(ascending=False)
             .expanding()
             .median()
-            .iloc[_START_LIQUIDITY_DAYS:]
+            .iloc[consts.FORECAST_DAYS :]
             .min()
         )
 
