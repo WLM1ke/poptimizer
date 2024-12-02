@@ -11,7 +11,7 @@ from poptimizer.domain.dl import datasets
 _INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.minimal_returns_days(
     history_days=consts.INITIAL_HISTORY_DAYS_END,
     forecast_days=consts.FORECAST_DAYS,
-    test_days=2,
+    test_days=consts.INITIAL_TEST_DAYS,
 )
 
 
