@@ -2,7 +2,7 @@ import statistics
 from enum import StrEnum
 from typing import Final, Self
 
-from pydantic import Field, NonNegativeFloat, NonNegativeInt, PositiveInt, model_validator
+from pydantic import Field, NonNegativeFloat, PositiveInt, model_validator
 
 from poptimizer import consts, errors
 from poptimizer.domain import domain
@@ -43,7 +43,6 @@ class Evolution(domain.Entity):
     llh: list[float] = Field(default_factory=list)
     duration: NonNegativeFloat = 0
     t_critical: float = 0
-    adj_count: NonNegativeInt = 0
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
 
     @model_validator(mode="after")
@@ -188,7 +187,6 @@ class Evolution(domain.Entity):
 
         self.alfas = alfas
         self.llh = llh
-        self.adj_count += 1
         self.state = State.CREATE_ORG
 
         old_t_critical = self.t_critical
@@ -204,9 +202,9 @@ class Evolution(domain.Entity):
 
                 if t_value_llh < adj_t_critical:
                     sign_llh = "<"
-                self.t_critical -= (1 - consts.P_VALUE) / self.adj_count**0.5
+                self.t_critical -= (1 - consts.P_VALUE) / len(alfas)
             case False:
-                self.t_critical += consts.P_VALUE / self.adj_count**0.5
+                self.t_critical += consts.P_VALUE / len(alfas)
 
         return (
             f"Reevaluating alfa's t-value({t_value_alfas:.2f}) {sign_alfa} adj-t-critical({adj_t_critical:.2f}), "
