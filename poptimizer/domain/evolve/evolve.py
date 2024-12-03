@@ -1,8 +1,8 @@
 import statistics
 from enum import StrEnum
-from typing import Final
+from typing import Final, Self
 
-from pydantic import Field, NonNegativeFloat, NonNegativeInt, PositiveInt
+from pydantic import Field, NonNegativeFloat, NonNegativeInt, PositiveInt, model_validator
 
 from poptimizer import consts, errors
 from poptimizer.domain import domain
@@ -40,10 +40,18 @@ class Evolution(domain.Entity):
     tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
     org_uid: domain.UID = domain.UID("")
     alfas: list[float] = Field(default_factory=list)
+    llh: list[float] = Field(default_factory=list)
     duration: NonNegativeFloat = 0
     t_critical: float = 0
     adj_count: NonNegativeInt = 0
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
+
+    @model_validator(mode="after")
+    def _match_length(self) -> Self:
+        if len(self.alfas) != len(self.llh):
+            raise ValueError("different alfas and llh length")
+
+        return self
 
     def __str__(self) -> str:
         return f"Evolution day {self.day} step {self.step} - {self.state}"
@@ -70,6 +78,7 @@ class Evolution(domain.Entity):
         tickers: tuple[domain.Ticker, ...],
         org_uid: domain.UID,
         alfas: list[float],
+        llh: list[float],
         duration: float,
     ) -> None:
         if self.state not in (State.INIT, State.INIT_DAY):
@@ -78,6 +87,7 @@ class Evolution(domain.Entity):
         self.tickers = tickers
         self.org_uid = org_uid
         self.alfas = alfas
+        self.llh = llh
         self.duration = duration
 
         self.state = State.CREATE_ORG
@@ -103,6 +113,7 @@ class Evolution(domain.Entity):
         self,
         org_uid: domain.UID,
         alfas: list[float],
+        llh: list[float],
         duration: float,
     ) -> None:
         if self.state is not State.NEW_BASE_ORG:
@@ -110,6 +121,7 @@ class Evolution(domain.Entity):
 
         self.org_uid = org_uid
         self.alfas = alfas
+        self.llh = llh
         self.duration = duration
 
         self.state = State.CREATE_ORG
@@ -118,66 +130,86 @@ class Evolution(domain.Entity):
         self,
         org_uid: domain.UID,
         alfas: list[float],
+        llh: list[float],
         duration: float,
-    ) -> tuple[bool, str]:
+    ) -> tuple[bool, str, str]:
         if self.state not in (State.EVAL_ORG, State.CREATE_ORG):
             raise errors.DomainError("incorrect state for organism evaluation")
 
         if org_uid == self.org_uid:
-            return False, self._update_alfas(alfas, duration)
+            return False, *self._update_stats(alfas, llh, duration)
 
-        t_value = self._t_values(alfas)
+        t_value_alfas = self._t_values(alfas, self.alfas)
+        t_value_llh = self._t_values(llh, self.llh)
         adj_t_critical = self._adj_t_critical(duration)
 
-        match t_value < adj_t_critical:
+        sign_alfa = ">"
+        sign_llh = ">"
+        dead = True
+
+        match t_value_alfas < adj_t_critical or t_value_llh < adj_t_critical:
             case True:
-                sign = "<"
+                if t_value_alfas < adj_t_critical:
+                    sign_alfa = "<"
+
+                if t_value_llh < adj_t_critical:
+                    sign_llh = "<"
 
                 self.state = State.EVAL_ORG
             case False:
-                sign = ">"
-
+                dead = False
                 self.org_uid = org_uid
                 self.alfas = alfas
+                self.llh = llh
                 self.duration = duration
                 self.state = State.CREATE_ORG
 
         return (
-            sign == "<",
-            f"Evaluating organism t-value({t_value:.2f}) {sign} adj-t-critical({adj_t_critical:.2f})"
+            dead,
+            f"Evaluating alfa's t-value({t_value_alfas:.2f}) {sign_alfa} adj-t-critical({adj_t_critical:.2f})",
+            f"Evaluating llh's t-value({t_value_llh:.2f}) {sign_llh} adj-t-critical({adj_t_critical:.2f})"
             f", t-critical({self.t_critical:.2f})",
         )
 
     def _adj_t_critical(self, duration: NonNegativeFloat) -> float:
         return self.t_critical * min(1, self.duration / duration)
 
-    def _t_values(self, alfas: list[float]) -> float:
-        deltas = [org_ret - prev_ret for org_ret, prev_ret in zip(alfas, self.alfas, strict=False)]
+    def _t_values(self, target: list[float], base: list[float]) -> float:
+        deltas = [target_value - base_value for target_value, base_value in zip(target, base, strict=False)]
 
         return statistics.mean(deltas) * len(deltas) ** 0.5 / statistics.stdev(deltas)
 
-    def _update_alfas(self, alfas: list[float], duration: float) -> str:
+    def _update_stats(self, alfas: list[float], llh: list[float], duration: float) -> tuple[str, str]:
         if self.state is not State.EVAL_ORG:
             raise errors.DomainError("incorrect state for base returns update")
 
-        t_value = self._t_values(alfas)
+        t_value_alfas = self._t_values(alfas, self.alfas)
+        t_value_llh = self._t_values(llh, self.llh)
 
         self.alfas = alfas
+        self.llh = llh
         self.adj_count += 1
         self.state = State.CREATE_ORG
 
         old_t_critical = self.t_critical
         adj_t_critical = self._adj_t_critical(duration)
 
-        match t_value < adj_t_critical:
+        sign_alfa = ">"
+        sign_llh = ">"
+
+        match t_value_alfas < adj_t_critical or t_value_llh < adj_t_critical:
             case True:
-                sign = "<"
+                if t_value_alfas < adj_t_critical:
+                    sign_alfa = "<"
+
+                if t_value_llh < adj_t_critical:
+                    sign_llh = "<"
                 self.t_critical -= (1 - consts.P_VALUE) / self.adj_count**0.5
             case False:
-                sign = ">"
                 self.t_critical += consts.P_VALUE / self.adj_count**0.5
 
         return (
-            f"Changing adjustment t-value({t_value:.2f}) {sign} adj-t-critical({adj_t_critical:.2f})"
-            f", t-critical({old_t_critical:.2f}) -> t-critical({self.t_critical:.2f})"
+            f"Reevaluating alfa's t-value({t_value_alfas:.2f}) {sign_alfa} adj-t-critical({adj_t_critical:.2f}), "
+            f"llh's t-value({t_value_llh:.2f}) {sign_llh} adj-t-critical({adj_t_critical:.2f})",
+            f"Changing t-critical({old_t_critical:.2f}) -> t-critical({self.t_critical:.2f})",
         )

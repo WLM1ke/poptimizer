@@ -74,6 +74,14 @@ def _get_device() -> Literal["cpu", "cuda", "mps"]:
     return "cpu"
 
 
+class TrainingResult(BaseModel):
+    alfas: list[float]
+    llh: list[float]
+    mean: list[list[float]]
+    cov: list[list[float]]
+    risk_tolerance: float
+
+
 class Trainer:
     def __init__(self, builder: builder.Builder) -> None:
         self._lgr = logging.getLogger()
@@ -87,8 +95,9 @@ class Trainer:
         tickers: tuple[str, ...],
         test_days: int,
         cfg: Cfg,
-    ) -> tuple[list[float], list[list[float]], list[list[float]]]:
+    ) -> TrainingResult:
         data = await self._builder.build(tickers, pd.Timestamp(day), cfg.batch.feats, cfg.batch.days, test_days)
+
         try:
             return await asyncio.to_thread(
                 self._run,
@@ -104,11 +113,20 @@ class Trainer:
         self,
         data: list[datasets.OneTickerData],
         cfg: Cfg,
-    ) -> tuple[list[float], list[list[float]], list[list[float]]]:
+    ) -> TrainingResult:
         net = self._prepare_net(cfg)
         self._train(net, cfg.scheduler, data, cfg.batch.size)
 
-        return self._test(net, cfg, data), *self._forecast(net, cfg.batch.forecast_days, data)
+        alfas, llh = self._test(net, cfg, data)
+        mean, cov = self._forecast(net, cfg.batch.forecast_days, data)
+
+        return TrainingResult(
+            alfas=alfas,
+            llh=llh,
+            mean=mean,
+            cov=cov,
+            risk_tolerance=cfg.risk.risk_tolerance,
+        )
 
     def _train(
         self,
@@ -161,13 +179,17 @@ class Trainer:
         net: wave_net.Net,
         cfg: Cfg,
         data: list[datasets.OneTickerData],
-    ) -> list[float]:
+    ) -> tuple[list[float], list[float]]:
         with torch.no_grad():
             net.eval()
 
             alfas: list[float] = []
+            llh: list[float] = []
 
             for batch in data_loaders.test(data):
+                if self._stopping:
+                    break
+
                 loss, mean, std = net.loss_and_forecast_mean_and_std(self._batch_to_device(batch))
                 rez = risk.optimize(
                     mean,
@@ -181,8 +203,9 @@ class Trainer:
                 self._lgr.info("%s / LLH = %8.5f", rez, loss)
 
                 alfas.append(rez.ret - rez.avr)
+                llh.append(loss)
 
-        return alfas
+        return alfas, llh
 
     def _forecast(
         self,

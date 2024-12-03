@@ -59,43 +59,51 @@ class EvolutionHandler:
         match state:
             case evolve.State.INIT:
                 org = await ctx.get_for_update(organism.Organism, random_org_uid())
-                uid = await self._init_day(ctx, evolution, org)
+                training_result = await self._init_day(ctx, evolution, org)
             case evolve.State.INIT_DAY:
                 org = await self._next_org(ctx)
-                uid = await self._init_day(ctx, evolution, org)
+                training_result = await self._init_day(ctx, evolution, org)
             case evolve.State.NEW_BASE_ORG:
                 org = await self._next_org(ctx)
-                uid = await self._new_base_org(ctx, evolution, org)
+                training_result = await self._new_base_org(ctx, evolution, org)
             case evolve.State.EVAL_ORG:
                 org = await self._next_org(ctx)
-                uid = await self._eval_org(ctx, evolution, org)
+                training_result = await self._eval_org(ctx, evolution, org)
             case evolve.State.CREATE_ORG:
                 org = await ctx.get(organism.Organism, evolution.org_uid)
-                child = await self._make_child(ctx, org)
-                uid = await self._eval_org(ctx, evolution, child)
+                org = await self._make_child(ctx, org)
+                training_result = await self._eval_org(ctx, evolution, org)
 
-        if uid is None:
+        if training_result is None:
             return handler.EvolutionStepFinished(day=msg.day)
 
-        return (handler.EvolutionStepFinished(day=msg.day), handler.ForecastCreated(day=msg.day, uid=uid))
+        forecast = await ctx.get_for_update(forecasts.Forecast, org.uid)
+
+        forecast.day = evolution.day
+        forecast.tickers = evolution.tickers
+        forecast.mean = training_result.mean
+        forecast.cov = training_result.cov
+        forecast.risk_tolerance = training_result.risk_tolerance
+
+        return (handler.EvolutionStepFinished(day=msg.day), handler.ForecastCreated(day=msg.day, uid=forecast.uid))
 
     async def _init_day(
         self,
         ctx: Ctx,
         evolution: evolve.Evolution,
         org: organism.Organism,
-    ) -> domain.UID | None:
+    ) -> trainer.TrainingResult | None:
         await ctx.delete_all(forecasts.Forecast)
         tickers = await self._viewer.portfolio_tickers()
 
         try:
-            duration, alfas = await self._eval(ctx, org, evolution.day, tickers)
+            duration, training_result = await self._eval(ctx, org, evolution.day, tickers)
         except* errors.DomainError as err:
             await self._delete_org(ctx, evolution, org, err)
         else:
-            evolution.init_new_day(tickers, org.uid, alfas, duration)
+            evolution.init_new_day(tickers, org.uid, training_result.alfas, training_result.llh, duration)
 
-            return org.uid
+            return training_result
 
         return None
 
@@ -104,15 +112,15 @@ class EvolutionHandler:
         ctx: Ctx,
         evolution: evolve.Evolution,
         org: organism.Organism,
-    ) -> domain.UID | None:
+    ) -> trainer.TrainingResult | None:
         try:
-            duration, alfas = await self._eval(ctx, org, evolution.day, evolution.tickers)
+            duration, training_result = await self._eval(ctx, org, evolution.day, evolution.tickers)
         except* errors.DomainError as err:
             await self._delete_org(ctx, evolution, org, err)
         else:
-            evolution.new_base_org(org.uid, alfas, duration)
+            evolution.new_base_org(org.uid, training_result.alfas, training_result.llh, duration)
 
-            return org.uid
+            return training_result
 
         return None
 
@@ -121,14 +129,15 @@ class EvolutionHandler:
         ctx: Ctx,
         evolution: evolve.Evolution,
         org: organism.Organism,
-    ) -> domain.UID | None:
+    ) -> trainer.TrainingResult | None:
         try:
-            duration, alfas = await self._eval(ctx, org, evolution.day, evolution.tickers)
+            duration, training_result = await self._eval(ctx, org, evolution.day, evolution.tickers)
         except* errors.DomainError as err:
             await self._delete_org(ctx, evolution, org, err)
         else:
-            dead, msg = evolution.eval_org_is_dead(org.uid, alfas, duration)
-            self._lgr.info(msg)
+            dead, msg1, msg2 = evolution.eval_org_is_dead(org.uid, training_result.alfas, training_result.llh, duration)
+            self._lgr.info(msg1)
+            self._lgr.info(msg2)
 
             if dead:
                 await ctx.delete(org)
@@ -136,7 +145,7 @@ class EvolutionHandler:
 
                 return None
 
-            return org.uid
+            return training_result
 
         return None
 
@@ -180,25 +189,17 @@ class EvolutionHandler:
         tickers: tuple[domain.Ticker, ...],
     ) -> tuple[
         float,
-        list[float],
+        trainer.TrainingResult,
     ]:
         start = time.monotonic()
         cfg = trainer.Cfg.model_validate(org.phenotype)
         test_days = 1 + await ctx.count_orgs()
 
         tr = trainer.Trainer(builder.Builder(self._viewer))
-        alfas, mean, cov = await tr.run(day, tickers, test_days, cfg)
+        training_result = await tr.run(day, tickers, test_days, cfg)
 
-        org.update_stats(day, tickers, alfas)
+        org.update_stats(day, tickers, training_result.alfas)
 
         self._lgr.info("%s", org)
 
-        forecast = await ctx.get_for_update(forecasts.Forecast, org.uid)
-
-        forecast.day = day
-        forecast.tickers = tickers
-        forecast.mean = mean
-        forecast.cov = cov
-        forecast.risk_tolerance = cfg.risk.risk_tolerance
-
-        return time.monotonic() - start, alfas
+        return time.monotonic() - start, training_result
