@@ -187,7 +187,7 @@ class EvolutionHandler:
         test_days = 1 + await ctx.count_orgs()
 
         tr = trainer.Trainer(builder.Builder(self._viewer))
-        alfas, mean, cov = await tr.run(day, tickers, test_days, cfg, None)
+        alfas, mean, cov = await tr.run(day, tickers, test_days, cfg)
 
         org.update_stats(day, tickers, alfas)
 

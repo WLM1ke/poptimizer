@@ -13,7 +13,6 @@ from poptimizer.domain.evolve import genetics, genotype
 class Organism(domain.Entity):
     tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
     genes: genetics.Genes = Field(default_factory=lambda: genotype.DLModel.model_validate({}).genes)
-    model: bytes = b""
     total_alfa: float = 0
     alfa: float = 0
 

@@ -1,6 +1,5 @@
 import asyncio
 import collections
-import io
 import itertools
 import logging
 from typing import Literal
@@ -88,23 +87,26 @@ class Trainer:
         tickers: tuple[str, ...],
         test_days: int,
         cfg: Cfg,
-        state: bytes | None,
     ) -> tuple[list[float], list[list[float]], list[list[float]]]:
         data = await self._builder.build(tickers, pd.Timestamp(day), cfg.batch.feats, cfg.batch.days, test_days)
-        net = self._prepare_net(state, cfg)
-        if state is None:
-            try:
-                await asyncio.to_thread(
-                    self._train,
-                    net,
-                    cfg.scheduler,
-                    data,
-                    cfg.batch.size,
-                )
-            except asyncio.CancelledError:
-                self._stopping = True
+        try:
+            return await asyncio.to_thread(
+                self._run,
+                data,
+                cfg,
+            )
+        except asyncio.CancelledError:
+            self._stopping = True
 
-                raise
+            raise
+
+    def _run(
+        self,
+        data: list[datasets.OneTickerData],
+        cfg: Cfg,
+    ) -> tuple[list[float], list[list[float]], list[list[float]]]:
+        net = self._prepare_net(cfg)
+        self._train(net, cfg.scheduler, data, cfg.batch.size)
 
         return self._test(net, cfg, data), *self._forecast(net, cfg.batch.forecast_days, data)
 
@@ -221,16 +223,9 @@ class Trainer:
 
         return device_batch
 
-    def _prepare_net(self, state: bytes | None, cfg: Cfg) -> wave_net.Net:
-        net = wave_net.Net(
+    def _prepare_net(self, cfg: Cfg) -> wave_net.Net:
+        return wave_net.Net(
             cfg=cfg.net,
             num_feat_count=cfg.batch.num_feat_count,
             history_days=cfg.batch.history_days,
         ).to(self._device)
-
-        if state is not None:
-            buffer = io.BytesIO(state)
-            state_dict = torch.load(buffer, map_location=self._device)  # type: ignore[no-untyped-call]
-            net.load_state_dict(state_dict)
-
-        return net
