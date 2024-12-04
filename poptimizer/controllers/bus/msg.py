@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import AsyncIterator, Iterable
 from datetime import timedelta
 from typing import (
     Any,
@@ -38,6 +38,8 @@ class Ctx(Protocol):
     async def delete(self, entity: domain.Entity) -> None: ...
 
     async def count_orgs(self) -> int: ...
+
+    async def iter_orgs(self) -> AsyncIterator[organism.Organism]: ...
 
     async def next_org_for_update(self) -> organism.Organism: ...
 

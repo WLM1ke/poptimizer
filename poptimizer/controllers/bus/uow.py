@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from types import TracebackType
 from typing import Protocol, Self
 
@@ -107,6 +107,9 @@ class UOW:
 
     async def sample_orgs(self, n: int) -> list[organism.Organism]:
         return await self._repo.sample_orgs(n)
+
+    async def iter_orgs(self) -> AsyncIterator[organism.Organism]:
+        return self._repo.iter_orgs()
 
     async def __aenter__(self) -> Self:
         return self
