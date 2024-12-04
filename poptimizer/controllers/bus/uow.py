@@ -12,11 +12,11 @@ from poptimizer.use_cases import handler
 
 class _IdentityMap:
     def __init__(self) -> None:
-        self._seen: dict[tuple[type, domain.UID], tuple[domain.Entity, bool]] = {}
+        self._seen: dict[tuple[type, domain.UID], domain.Entity] = {}
         self._lock = asyncio.Lock()
 
     def __iter__(self) -> Iterator[domain.Entity]:
-        yield from (model for model, for_update in self._seen.values() if for_update)
+        yield from self._seen.values()
 
     async def __aenter__(self) -> Self:
         await self._lock.acquire()
@@ -31,34 +31,25 @@ class _IdentityMap:
     ) -> None:
         self._lock.release()
 
-    def get[E: domain.Entity](
-        self,
-        t_entity: type[E],
-        uid: domain.UID,
-        *,
-        for_update: bool,
-    ) -> E | None:
-        entity, update_flag = self._seen.get((t_entity, uid), (None, False))
+    def get[E: domain.Entity](self, t_entity: type[E], uid: domain.UID) -> E | None:
+        entity = self._seen.get((t_entity, uid))
         if entity is None:
             return None
 
         if not isinstance(entity, t_entity):
             raise errors.ControllersError(f"type mismatch in identity map for {t_entity}({uid})")
 
-        self._seen[entity.__class__, entity.uid] = (entity, update_flag or for_update)
-
         return entity
 
-    def save(self, entity: domain.Entity, *, for_update: bool) -> None:
-        saved, _ = self._seen.get((entity.__class__, entity.uid), (None, False))
+    def save(self, entity: domain.Entity) -> None:
+        saved = self._seen.get((entity.__class__, entity.uid))
         if saved is not None:
             raise errors.ControllersError(f"{entity.__class__}({entity.uid}) in identity map ")
 
-        self._seen[entity.__class__, entity.uid] = (entity, for_update)
+        self._seen[entity.__class__, entity.uid] = entity
 
     def delete(self, entity: domain.Entity) -> None:
-        if self._seen.pop((entity.__class__, entity.uid), None) is None:
-            raise errors.ControllersError(f"no {entity.__class__}({entity.uid}) in identity map ")
+        self._seen.pop((entity.__class__, entity.uid), None)
 
 
 class Bus(Protocol):
@@ -77,14 +68,7 @@ class UOW:
     ) -> E:
         uid = uid or domain.UID(adapter.get_component_name(t_entity))
         async with self._identity_map as identity_map:
-            if loaded := identity_map.get(t_entity, uid, for_update=False):
-                return loaded
-
-            repo_entity = await self._repo.get(t_entity, uid)
-
-            identity_map.save(repo_entity, for_update=False)
-
-            return repo_entity
+            return identity_map.get(t_entity, uid) or await self._repo.get(t_entity, uid)
 
     async def get_for_update[E: domain.Entity](
         self,
@@ -93,14 +77,14 @@ class UOW:
     ) -> E:
         uid = uid or domain.UID(adapter.get_component_name(t_entity))
         async with self._identity_map as identity_map:
-            if loaded := identity_map.get(t_entity, uid, for_update=True):
+            if loaded := identity_map.get(t_entity, uid):
                 return loaded
 
-            repo_entity = await self._repo.get(t_entity, uid)
+            entity = await self._repo.get(t_entity, uid)
 
-            identity_map.save(repo_entity, for_update=True)
+            identity_map.save(entity)
 
-            return repo_entity
+            return entity
 
     async def delete(self, entity: domain.Entity) -> None:
         async with self._identity_map as identity_map:
@@ -110,22 +94,19 @@ class UOW:
     async def count_orgs(self) -> int:
         return await self._repo.count_orgs()
 
-    async def next_org(self) -> organism.Organism:
+    async def next_org_for_update(self) -> organism.Organism:
         async with self._identity_map as identity_map:
-            repo_entity = await self._repo.next_org()
+            entity = await self._repo.next_org()
 
-            if loaded := identity_map.get(organism.Organism, repo_entity.uid, for_update=True):
+            if loaded := identity_map.get(organism.Organism, entity.uid):
                 return loaded
 
-            identity_map.save(repo_entity, for_update=True)
+            identity_map.save(entity)
 
-            return repo_entity
+            return entity
 
     async def sample_orgs(self, n: int) -> list[organism.Organism]:
         return await self._repo.sample_orgs(n)
-
-    async def delete_all[E: domain.Entity](self, t_entity: type[E]) -> None:
-        await self._repo.delete_all(t_entity)
 
     async def __aenter__(self) -> Self:
         return self

@@ -8,7 +8,6 @@ from poptimizer import errors
 from poptimizer.domain import domain
 from poptimizer.domain.dl import training
 from poptimizer.domain.evolve import evolve, organism
-from poptimizer.domain.portfolio import forecasts
 from poptimizer.use_cases import handler, view
 from poptimizer.use_cases.dl import builder, trainer
 
@@ -34,11 +33,9 @@ class Ctx(Protocol):
 
     async def delete(self, entity: domain.Entity) -> None: ...
 
-    async def delete_all[E: domain.Entity](self, t_entity: type[E]) -> None: ...
-
     async def count_orgs(self) -> int: ...
 
-    async def next_org(self) -> organism.Organism: ...
+    async def next_org_for_update(self) -> organism.Organism: ...
 
     async def sample_orgs(self, n: int) -> list[organism.Organism]: ...
 
@@ -83,7 +80,6 @@ class EvolutionHandler:
         evolution: evolve.Evolution,
         org: organism.Organism,
     ) -> None:
-        await ctx.delete_all(forecasts.Forecast)
         tickers = await self._viewer.portfolio_tickers()
 
         try:
@@ -126,10 +122,10 @@ class EvolutionHandler:
                 self._lgr.info("Organism removed")
 
     async def _next_org(self, ctx: Ctx) -> organism.Organism:
-        org = await ctx.next_org()
+        org = await ctx.next_org_for_update()
         while not org.ver:
             await ctx.delete(org)
-            org = await ctx.next_org()
+            org = await ctx.next_org_for_update()
 
         return org
 
