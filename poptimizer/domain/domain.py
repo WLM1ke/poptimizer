@@ -75,3 +75,12 @@ def after_start_date_validator(df: list[_RowWithDate]) -> list[_RowWithDate]:
         raise ValueError(f"day before start day {day}")
 
     return df
+
+
+def sorted_tickers(tickers: tuple[str, ...]) -> tuple[str, ...]:
+    ticker_pairs = itertools.pairwise(tickers)
+
+    if not all(ticker < next_ for ticker, next_ in ticker_pairs):
+        raise ValueError("tickers are not sorted")
+
+    return tickers

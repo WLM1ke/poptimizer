@@ -73,4 +73,3 @@ class EvolutionStepFinished(Event):
 
 class ForecastCreated(Event):
     day: domain.Day
-    uid: domain.UID

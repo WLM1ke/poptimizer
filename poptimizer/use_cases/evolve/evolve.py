@@ -6,6 +6,7 @@ import bson
 
 from poptimizer import errors
 from poptimizer.domain import domain
+from poptimizer.domain.dl import training
 from poptimizer.domain.evolve import evolve, organism
 from poptimizer.domain.portfolio import forecasts
 from poptimizer.use_cases import handler, view
@@ -59,40 +60,29 @@ class EvolutionHandler:
         match state:
             case evolve.State.INIT:
                 org = await ctx.get_for_update(organism.Organism, random_org_uid())
-                training_result = await self._init_day(ctx, evolution, org)
+                await self._init_day(ctx, evolution, org)
             case evolve.State.INIT_DAY:
                 org = await self._next_org(ctx)
-                training_result = await self._init_day(ctx, evolution, org)
+                await self._init_day(ctx, evolution, org)
             case evolve.State.NEW_BASE_ORG:
                 org = await self._next_org(ctx)
-                training_result = await self._new_base_org(ctx, evolution, org)
+                await self._new_base_org(ctx, evolution, org)
             case evolve.State.EVAL_ORG:
                 org = await self._next_org(ctx)
-                training_result = await self._eval_org(ctx, evolution, org)
+                await self._eval_org(ctx, evolution, org)
             case evolve.State.CREATE_ORG:
                 org = await ctx.get(organism.Organism, evolution.org_uid)
                 org = await self._make_child(ctx, org)
-                training_result = await self._eval_org(ctx, evolution, org)
+                await self._eval_org(ctx, evolution, org)
 
-        if training_result is None:
-            return handler.EvolutionStepFinished(day=msg.day)
-
-        forecast = await ctx.get_for_update(forecasts.Forecast, org.uid)
-
-        forecast.day = evolution.day
-        forecast.tickers = evolution.tickers
-        forecast.mean = training_result.mean
-        forecast.cov = training_result.cov
-        forecast.risk_tolerance = training_result.risk_tolerance
-
-        return (handler.EvolutionStepFinished(day=msg.day), handler.ForecastCreated(day=msg.day, uid=forecast.uid))
+        return (handler.EvolutionStepFinished(day=msg.day), handler.ForecastCreated(day=msg.day))
 
     async def _init_day(
         self,
         ctx: Ctx,
         evolution: evolve.Evolution,
         org: organism.Organism,
-    ) -> trainer.TrainingResult | None:
+    ) -> None:
         await ctx.delete_all(forecasts.Forecast)
         tickers = await self._viewer.portfolio_tickers()
 
@@ -103,16 +93,12 @@ class EvolutionHandler:
         else:
             evolution.init_new_day(tickers, org.uid, training_result.alfas, training_result.llh, duration)
 
-            return training_result
-
-        return None
-
     async def _new_base_org(
         self,
         ctx: Ctx,
         evolution: evolve.Evolution,
         org: organism.Organism,
-    ) -> trainer.TrainingResult | None:
+    ) -> None:
         try:
             duration, training_result = await self._eval(ctx, org, evolution.day, evolution.tickers)
         except* errors.DomainError as err:
@@ -120,16 +106,12 @@ class EvolutionHandler:
         else:
             evolution.new_base_org(org.uid, training_result.alfas, training_result.llh, duration)
 
-            return training_result
-
-        return None
-
     async def _eval_org(
         self,
         ctx: Ctx,
         evolution: evolve.Evolution,
         org: organism.Organism,
-    ) -> trainer.TrainingResult | None:
+    ) -> None:
         try:
             duration, training_result = await self._eval(ctx, org, evolution.day, evolution.tickers)
         except* errors.DomainError as err:
@@ -142,12 +124,6 @@ class EvolutionHandler:
             if dead:
                 await ctx.delete(org)
                 self._lgr.info("Organism removed")
-
-                return None
-
-            return training_result
-
-        return None
 
     async def _next_org(self, ctx: Ctx) -> organism.Organism:
         org = await ctx.next_org()
@@ -189,7 +165,7 @@ class EvolutionHandler:
         tickers: tuple[domain.Ticker, ...],
     ) -> tuple[
         float,
-        trainer.TrainingResult,
+        training.Result,
     ]:
         start = time.monotonic()
         cfg = trainer.Cfg.model_validate(org.phenotype)
@@ -198,7 +174,7 @@ class EvolutionHandler:
         tr = trainer.Trainer(builder.Builder(self._viewer))
         training_result = await tr.run(day, tickers, test_days, cfg)
 
-        org.update_stats(day, tickers, training_result.alfas)
+        org.update_stats(day, tickers, training_result)
 
         self._lgr.info("%s", org)
 

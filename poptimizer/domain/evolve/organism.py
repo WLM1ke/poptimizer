@@ -1,13 +1,16 @@
 from __future__ import annotations
 
-import itertools
 import statistics
+from typing import TYPE_CHECKING, Self
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import genetics, genotype
+
+if TYPE_CHECKING:
+    from poptimizer.domain.dl import training
 
 
 class Organism(domain.Entity):
@@ -15,6 +18,29 @@ class Organism(domain.Entity):
     genes: genetics.Genes = Field(default_factory=lambda: genotype.DLModel.model_validate({}).genes)
     total_alfa: float = 0
     alfa: float = 0
+    mean: list[list[float]] = Field(default_factory=list)
+    cov: list[list[float]] = Field(default_factory=list)
+    risk_tolerance: float = Field(default=0, ge=0, le=1)
+
+    _must_be_sorted_by_ticker = field_validator("tickers")(domain.sorted_tickers)
+
+    @model_validator(mode="after")
+    def _match_length(self) -> Self:
+        n = len(self.tickers)
+
+        if len(self.mean) != n:
+            raise ValueError("invalid mean")
+
+        if any(len(row) != 1 for row in self.mean):
+            raise ValueError("invalid mean")
+
+        if len(self.cov) != n:
+            raise ValueError("invalid cov")
+
+        if any(len(row) != n for row in self.cov):
+            raise ValueError("invalid cov")
+
+        return self
 
     def __str__(self) -> str:
         genes = genotype.DLModel.model_validate(self.genes)
@@ -37,17 +63,16 @@ class Organism(domain.Entity):
 
         return model.make_child(model1, model2, scale).genes
 
-    @field_validator("tickers")
-    def _tickers_must_be_sorted(cls, tickers: list[str]) -> list[str]:
-        tickers_pairs = itertools.pairwise(tickers)
-
-        if not all(ticker < next_ for ticker, next_ in tickers_pairs):
-            raise ValueError("tickers not sorted")
-
-        return tickers
-
-    def update_stats(self, day: domain.Day, tickers: tuple[domain.Ticker, ...], alfas: list[float]) -> None:
+    def update_stats(
+        self,
+        day: domain.Day,
+        tickers: tuple[domain.Ticker, ...],
+        result: training.Result,
+    ) -> None:
         self.day = day
         self.tickers = tickers
-        self.total_alfa = sum(alfas) / consts.YEAR_IN_TRADING_DAYS
-        self.alfa = statistics.mean(alfas)
+        self.total_alfa = sum(result.alfas) / consts.YEAR_IN_TRADING_DAYS
+        self.alfa = statistics.mean(result.alfas)
+        self.mean = result.mean
+        self.cov = result.cov
+        self.risk_tolerance = result.risk_tolerance
