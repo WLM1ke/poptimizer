@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.typing import NDArray
 
+from poptimizer import errors
+
 
 def shrinkage(returns: NDArray[np.double]) -> tuple[NDArray[np.double], float, float]:
     """Shrinks sample covariance matrix towards constant correlation unequal variance matrix.
@@ -63,6 +65,10 @@ def ledoit_wolf_cor(
 ) -> tuple[NDArray[np.double], float, float]:
     tot_ret = tot_ret.T
     centered = tot_ret - tot_ret.mean(axis=0)
+    std = tot_ret.std(axis=0, ddof=0)
+    if std.min() == 0:
+        raise errors.DomainError("constant quotes")
+
     normalized = centered / tot_ret.std(axis=0, ddof=0)
 
     return shrinkage(normalized)
