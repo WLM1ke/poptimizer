@@ -138,10 +138,10 @@ class EvolutionHandler:
     ) -> None:
         await ctx.delete(org)
 
+        self._lgr.warning("Delete %s - %s, ...", org, err.exceptions[0])
+
         if (return_days := evolution.org_failed(org.uid, err)) is not None:
             self._lgr.warning("Minimal return days increased - %d", return_days)
-
-        self._lgr.warning("Delete %s - %s", org, err.exceptions[0])
 
     async def _make_child(self, ctx: Ctx, org: model.Model) -> model.Model:
         parents = await ctx.sample_orgs(_PARENT_COUNT)
