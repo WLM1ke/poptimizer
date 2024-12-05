@@ -91,12 +91,12 @@ class UOW:
             identity_map.delete(entity)
             await self._repo.delete(entity)
 
-    async def count_orgs(self) -> int:
-        return await self._repo.count_orgs()
+    async def count_models(self) -> int:
+        return await self._repo.count_models()
 
-    async def next_org_for_update(self) -> model.Model:
+    async def next_model_for_update(self) -> model.Model:
         async with self._identity_map as identity_map:
-            entity = await self._repo.next_org()
+            entity = await self._repo.next_model()
 
             if loaded := identity_map.get(model.Model, entity.uid):
                 return loaded
@@ -105,11 +105,11 @@ class UOW:
 
             return entity
 
-    async def sample_orgs(self, n: int) -> list[model.Model]:
-        return await self._repo.sample_orgs(n)
+    async def sample_models(self, n: int) -> list[model.Model]:
+        return await self._repo.sample_models(n)
 
-    async def iter_orgs(self) -> AsyncIterator[model.Model]:
-        return self._repo.iter_orgs()
+    async def iter_models(self) -> AsyncIterator[model.Model]:
+        return self._repo.iter_models()
 
     async def __aenter__(self) -> Self:
         return self

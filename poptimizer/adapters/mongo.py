@@ -38,7 +38,7 @@ class Repo:
     def __init__(self, mongo_db: MongoDatabase) -> None:
         self._db = mongo_db
 
-    async def next_org(self) -> model.Model:
+    async def next_model(self) -> model.Model:
         collection_name = adapter.get_component_name(model.Model)
         collection = self._db[collection_name]
         pipeline = [
@@ -59,7 +59,7 @@ class Repo:
 
         return await self.get(model.Model, domain.UID(doc["_id"]))
 
-    async def sample_orgs(self, n: int) -> list[model.Model]:
+    async def sample_models(self, n: int) -> list[model.Model]:
         collection_name = adapter.get_component_name(model.Model)
         collection = self._db[collection_name]
         pipeline = [{"$sample": {"size": n}}]
@@ -69,7 +69,7 @@ class Repo:
         except PyMongoError as err:
             raise errors.AdapterError("can't sample organisms") from err
 
-    async def count_orgs(self) -> int:
+    async def count_models(self) -> int:
         collection_name = adapter.get_component_name(model.Model)
         collection = self._db[collection_name]
 
@@ -78,7 +78,7 @@ class Repo:
         except PyMongoError as err:
             raise errors.AdapterError("can't count organisms") from err
 
-    async def iter_orgs(self) -> AsyncIterator[model.Model]:
+    async def iter_models(self) -> AsyncIterator[model.Model]:
         collection_name = adapter.get_component_name(model.Model)
         collection = self._db[collection_name]
 

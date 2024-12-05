@@ -14,7 +14,7 @@ from poptimizer.use_cases.dl import builder, trainer
 _PARENT_COUNT: Final = 2
 
 
-def random_org_uid() -> domain.UID:
+def _random_uid() -> domain.UID:
     return domain.UID(str(bson.ObjectId()))
 
 
@@ -33,11 +33,11 @@ class Ctx(Protocol):
 
     async def delete(self, entity: domain.Entity) -> None: ...
 
-    async def count_orgs(self) -> int: ...
+    async def count_models(self) -> int: ...
 
-    async def next_org_for_update(self) -> model.Model: ...
+    async def next_model_for_update(self) -> model.Model: ...
 
-    async def sample_orgs(self, n: int) -> list[model.Model]: ...
+    async def sample_models(self, n: int) -> list[model.Model]: ...
 
 
 class EvolutionHandler:
@@ -56,18 +56,18 @@ class EvolutionHandler:
 
         match state:
             case evolve.State.INIT:
-                org = await ctx.get_for_update(model.Model, random_org_uid())
+                org = await ctx.get_for_update(model.Model, _random_uid())
                 await self._init_day(ctx, evolution, org)
             case evolve.State.INIT_DAY:
                 org = await self._next_org(ctx)
                 await self._init_day(ctx, evolution, org)
-            case evolve.State.NEW_BASE_ORG:
+            case evolve.State.NEW_BASE_MODEL:
                 org = await self._next_org(ctx)
                 await self._new_base_org(ctx, evolution, org)
-            case evolve.State.EVAL_ORG:
+            case evolve.State.EVAL_MODEL:
                 org = await self._next_org(ctx)
                 await self._eval_org(ctx, evolution, org)
-            case evolve.State.CREATE_ORG:
+            case evolve.State.CREATE_MODEL:
                 org = await ctx.get(model.Model, evolution.org_uid)
                 org = await self._make_child(ctx, org)
                 await self._eval_org(ctx, evolution, org)
@@ -122,10 +122,10 @@ class EvolutionHandler:
                 self._lgr.info("Organism removed")
 
     async def _next_org(self, ctx: Ctx) -> model.Model:
-        org = await ctx.next_org_for_update()
+        org = await ctx.next_model_for_update()
         while not org.ver:
             await ctx.delete(org)
-            org = await ctx.next_org_for_update()
+            org = await ctx.next_model_for_update()
 
         return org
 
@@ -144,11 +144,11 @@ class EvolutionHandler:
             self._lgr.warning("Minimal return days increased - %d", return_days)
 
     async def _make_child(self, ctx: Ctx, org: model.Model) -> model.Model:
-        parents = await ctx.sample_orgs(_PARENT_COUNT)
+        parents = await ctx.sample_models(_PARENT_COUNT)
         if len({parent.uid for parent in parents}) != _PARENT_COUNT:
             parents = [model.Model(day=org.day, rev=org.rev) for _ in range(_PARENT_COUNT)]
 
-        child = await ctx.get_for_update(model.Model, random_org_uid())
+        child = await ctx.get_for_update(model.Model, _random_uid())
         child.genes = org.make_child_genes(parents[0], parents[1], 1 / org.ver)
 
         return child
@@ -165,7 +165,7 @@ class EvolutionHandler:
     ]:
         start = time.monotonic()
         cfg = trainer.Cfg.model_validate(org.phenotype)
-        test_days = 1 + await ctx.count_orgs()
+        test_days = 1 + await ctx.count_models()
 
         tr = trainer.Trainer(builder.Builder(self._viewer))
         training_result = await tr.run(day, tickers, test_days, cfg)

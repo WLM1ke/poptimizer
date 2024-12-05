@@ -29,9 +29,9 @@ def _extract_minimal_returns_days(err_group: BaseExceptionGroup[errors.DomainErr
 class State(StrEnum):
     INIT = "initializing new evolution"
     INIT_DAY = "initializing new day"
-    NEW_BASE_ORG = "evaluating new base organism"
-    EVAL_ORG = "evaluating organism"
-    CREATE_ORG = "creating new organism"
+    NEW_BASE_MODEL = "evaluating new base model"
+    EVAL_MODEL = "evaluating model"
+    CREATE_MODEL = "creating new model"
 
 
 class Evolution(domain.Entity):
@@ -89,14 +89,14 @@ class Evolution(domain.Entity):
         self.llh = llh
         self.duration = duration
 
-        self.state = State.CREATE_ORG
+        self.state = State.CREATE_MODEL
 
     def org_failed(self, org_uid: domain.UID, err: BaseExceptionGroup[errors.DomainError]) -> int | None:
         match self.state:
-            case State.CREATE_ORG:
-                self.state = State.EVAL_ORG
-            case State.EVAL_ORG if self.org_uid == org_uid:
-                self.state = State.NEW_BASE_ORG
+            case State.CREATE_MODEL:
+                self.state = State.EVAL_MODEL
+            case State.EVAL_MODEL if self.org_uid == org_uid:
+                self.state = State.NEW_BASE_MODEL
             case _:
                 ...
 
@@ -115,7 +115,7 @@ class Evolution(domain.Entity):
         llh: list[float],
         duration: float,
     ) -> None:
-        if self.state is not State.NEW_BASE_ORG:
+        if self.state is not State.NEW_BASE_MODEL:
             raise errors.DomainError("incorrect state for new base organism")
 
         self.org_uid = org_uid
@@ -123,7 +123,7 @@ class Evolution(domain.Entity):
         self.llh = llh
         self.duration = duration
 
-        self.state = State.CREATE_ORG
+        self.state = State.CREATE_MODEL
 
     def eval_org_is_dead(
         self,
@@ -132,7 +132,7 @@ class Evolution(domain.Entity):
         llh: list[float],
         duration: float,
     ) -> tuple[bool, str, str]:
-        if self.state not in (State.EVAL_ORG, State.CREATE_ORG):
+        if self.state not in (State.EVAL_MODEL, State.CREATE_MODEL):
             raise errors.DomainError("incorrect state for organism evaluation")
 
         if org_uid == self.org_uid:
@@ -154,14 +154,14 @@ class Evolution(domain.Entity):
                 if t_value_llh < adj_t_critical:
                     sign_llh = "<"
 
-                self.state = State.EVAL_ORG
+                self.state = State.EVAL_MODEL
             case False:
                 dead = False
                 self.org_uid = org_uid
                 self.alfas = alfas
                 self.llh = llh
                 self.duration = duration
-                self.state = State.CREATE_ORG
+                self.state = State.CREATE_MODEL
 
         return (
             dead,
@@ -179,7 +179,7 @@ class Evolution(domain.Entity):
         return statistics.mean(deltas) * len(deltas) ** 0.5 / statistics.stdev(deltas)
 
     def _update_stats(self, alfas: list[float], llh: list[float], duration: float) -> tuple[str, str]:
-        if self.state is not State.EVAL_ORG:
+        if self.state is not State.EVAL_MODEL:
             raise errors.DomainError("incorrect state for base returns update")
 
         t_value_alfas = self._t_values(alfas, self.alfas)
@@ -187,7 +187,7 @@ class Evolution(domain.Entity):
 
         self.alfas = alfas
         self.llh = llh
-        self.state = State.CREATE_ORG
+        self.state = State.CREATE_MODEL
 
         old_t_critical = self.t_critical
         adj_t_critical = self._adj_t_critical(duration)
