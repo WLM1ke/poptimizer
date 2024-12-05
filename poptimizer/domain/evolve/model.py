@@ -12,9 +12,9 @@ if TYPE_CHECKING:
     from poptimizer.domain.dl import training
 
 
-class Organism(domain.Entity):
+class Model(domain.Entity):
     tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
-    genes: genetics.Genes = Field(default_factory=lambda: genotype.DLModel.model_validate({}).genes)
+    genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
     alfa: float = 0
     mean: list[list[float]] = Field(default_factory=list)
     cov: list[list[float]] = Field(default_factory=list)
@@ -41,20 +41,20 @@ class Organism(domain.Entity):
         return self
 
     def __str__(self) -> str:
-        genes = genotype.DLModel.model_validate(self.genes)
+        genes = genotype.Genotype.model_validate(self.genes)
         risk_tol = genes.risk.risk_tolerance
         history = genes.batch.days.history
 
-        return f"Organism(risk_tol={risk_tol:.2%}, history={history:.2f}) - alfa({self.alfa:.2%})"
+        return f"{self.__class__.__name__}(risk_tol={risk_tol:.2%}, history={history:.2f}) - alfa({self.alfa:.2%})"
 
     @property
     def phenotype(self) -> genetics.Phenotype:
-        return genotype.DLModel.model_validate(self.genes).phenotype
+        return genotype.Genotype.model_validate(self.genes).phenotype
 
-    def make_child_genes(self, parent1: Organism, parent2: Organism, scale: float) -> genetics.Genes:
-        model = genotype.DLModel.model_validate(self.genes)
-        model1 = genotype.DLModel.model_validate(parent1.genes)
-        model2 = genotype.DLModel.model_validate(parent2.genes)
+    def make_child_genes(self, parent1: Model, parent2: Model, scale: float) -> genetics.Genes:
+        model = genotype.Genotype.model_validate(self.genes)
+        model1 = genotype.Genotype.model_validate(parent1.genes)
+        model2 = genotype.Genotype.model_validate(parent2.genes)
 
         return model.make_child(model1, model2, scale).genes
 

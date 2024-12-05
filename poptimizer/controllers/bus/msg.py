@@ -15,7 +15,7 @@ from poptimizer import errors
 from poptimizer.adapters import adapter, mongo
 from poptimizer.controllers.bus import uow
 from poptimizer.domain import domain
-from poptimizer.domain.evolve import organism
+from poptimizer.domain.evolve import model
 from poptimizer.use_cases.handler import DTO, AppStarted, Event
 
 _DEFAULT_FIRST_RETRY: Final = timedelta(seconds=30)
@@ -39,11 +39,11 @@ class Ctx(Protocol):
 
     async def count_orgs(self) -> int: ...
 
-    async def iter_orgs(self) -> AsyncIterator[organism.Organism]: ...
+    async def iter_orgs(self) -> AsyncIterator[model.Model]: ...
 
-    async def next_org_for_update(self) -> organism.Organism: ...
+    async def next_org_for_update(self) -> model.Model: ...
 
-    async def sample_orgs(self, n: int) -> list[organism.Organism]: ...
+    async def sample_orgs(self, n: int) -> list[model.Model]: ...
 
 
 class RequestHandler[D: DTO, E: Event](Protocol):

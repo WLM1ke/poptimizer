@@ -107,7 +107,7 @@ class Risk(genetics.Chromosome):
     ] = genetics.random_default_range(0, 1)
 
 
-class DLModel(genetics.Chromosome):
+class Genotype(genetics.Chromosome):
     batch: Batch = genetics.random_chromosome(Batch)
     net: Net = genetics.random_chromosome(Net)
     optimizer: Optimizer = genetics.random_chromosome(Optimizer)

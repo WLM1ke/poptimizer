@@ -7,7 +7,7 @@ import bson
 from poptimizer import errors
 from poptimizer.domain import domain
 from poptimizer.domain.dl import training
-from poptimizer.domain.evolve import evolve, organism
+from poptimizer.domain.evolve import evolve, model
 from poptimizer.use_cases import handler, view
 from poptimizer.use_cases.dl import builder, trainer
 
@@ -35,9 +35,9 @@ class Ctx(Protocol):
 
     async def count_orgs(self) -> int: ...
 
-    async def next_org_for_update(self) -> organism.Organism: ...
+    async def next_org_for_update(self) -> model.Model: ...
 
-    async def sample_orgs(self, n: int) -> list[organism.Organism]: ...
+    async def sample_orgs(self, n: int) -> list[model.Model]: ...
 
 
 class EvolutionHandler:
@@ -56,7 +56,7 @@ class EvolutionHandler:
 
         match state:
             case evolve.State.INIT:
-                org = await ctx.get_for_update(organism.Organism, random_org_uid())
+                org = await ctx.get_for_update(model.Model, random_org_uid())
                 await self._init_day(ctx, evolution, org)
             case evolve.State.INIT_DAY:
                 org = await self._next_org(ctx)
@@ -68,7 +68,7 @@ class EvolutionHandler:
                 org = await self._next_org(ctx)
                 await self._eval_org(ctx, evolution, org)
             case evolve.State.CREATE_ORG:
-                org = await ctx.get(organism.Organism, evolution.org_uid)
+                org = await ctx.get(model.Model, evolution.org_uid)
                 org = await self._make_child(ctx, org)
                 await self._eval_org(ctx, evolution, org)
 
@@ -78,7 +78,7 @@ class EvolutionHandler:
         self,
         ctx: Ctx,
         evolution: evolve.Evolution,
-        org: organism.Organism,
+        org: model.Model,
     ) -> None:
         tickers = await self._viewer.portfolio_tickers()
 
@@ -93,7 +93,7 @@ class EvolutionHandler:
         self,
         ctx: Ctx,
         evolution: evolve.Evolution,
-        org: organism.Organism,
+        org: model.Model,
     ) -> None:
         try:
             duration, training_result = await self._eval(ctx, org, evolution.day, evolution.tickers)
@@ -106,7 +106,7 @@ class EvolutionHandler:
         self,
         ctx: Ctx,
         evolution: evolve.Evolution,
-        org: organism.Organism,
+        org: model.Model,
     ) -> None:
         try:
             duration, training_result = await self._eval(ctx, org, evolution.day, evolution.tickers)
@@ -121,7 +121,7 @@ class EvolutionHandler:
                 await ctx.delete(org)
                 self._lgr.info("Organism removed")
 
-    async def _next_org(self, ctx: Ctx) -> organism.Organism:
+    async def _next_org(self, ctx: Ctx) -> model.Model:
         org = await ctx.next_org_for_update()
         while not org.ver:
             await ctx.delete(org)
@@ -133,7 +133,7 @@ class EvolutionHandler:
         self,
         ctx: Ctx,
         evolution: evolve.Evolution,
-        org: organism.Organism,
+        org: model.Model,
         err: BaseExceptionGroup[errors.DomainError],
     ) -> None:
         await ctx.delete(org)
@@ -143,12 +143,12 @@ class EvolutionHandler:
 
         self._lgr.warning("Delete %s - %s", org, err.exceptions[0])
 
-    async def _make_child(self, ctx: Ctx, org: organism.Organism) -> organism.Organism:
+    async def _make_child(self, ctx: Ctx, org: model.Model) -> model.Model:
         parents = await ctx.sample_orgs(_PARENT_COUNT)
         if len({parent.uid for parent in parents}) != _PARENT_COUNT:
-            parents = [organism.Organism(day=org.day, rev=org.rev) for _ in range(_PARENT_COUNT)]
+            parents = [model.Model(day=org.day, rev=org.rev) for _ in range(_PARENT_COUNT)]
 
-        child = await ctx.get_for_update(organism.Organism, random_org_uid())
+        child = await ctx.get_for_update(model.Model, random_org_uid())
         child.genes = org.make_child_genes(parents[0], parents[1], 1 / org.ver)
 
         return child
@@ -156,7 +156,7 @@ class EvolutionHandler:
     async def _eval(
         self,
         ctx: Ctx,
-        org: organism.Organism,
+        org: model.Model,
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
     ) -> tuple[

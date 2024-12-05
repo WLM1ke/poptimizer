@@ -6,7 +6,7 @@ from typing import Protocol, Self
 from poptimizer import errors
 from poptimizer.adapters import adapter, mongo
 from poptimizer.domain import domain
-from poptimizer.domain.evolve import organism
+from poptimizer.domain.evolve import model
 from poptimizer.use_cases import handler
 
 
@@ -94,21 +94,21 @@ class UOW:
     async def count_orgs(self) -> int:
         return await self._repo.count_orgs()
 
-    async def next_org_for_update(self) -> organism.Organism:
+    async def next_org_for_update(self) -> model.Model:
         async with self._identity_map as identity_map:
             entity = await self._repo.next_org()
 
-            if loaded := identity_map.get(organism.Organism, entity.uid):
+            if loaded := identity_map.get(model.Model, entity.uid):
                 return loaded
 
             identity_map.save(entity)
 
             return entity
 
-    async def sample_orgs(self, n: int) -> list[organism.Organism]:
+    async def sample_orgs(self, n: int) -> list[model.Model]:
         return await self._repo.sample_orgs(n)
 
-    async def iter_orgs(self) -> AsyncIterator[organism.Organism]:
+    async def iter_orgs(self) -> AsyncIterator[model.Model]:
         return self._repo.iter_orgs()
 
     async def __aenter__(self) -> Self:
