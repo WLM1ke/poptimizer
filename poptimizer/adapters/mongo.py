@@ -45,10 +45,10 @@ class Repo:
             {
                 "$project": {
                     "day": True,
-                    "total_alfa": True,
+                    "alfa": True,
                 },
             },
-            {"$sort": {"day": pymongo.ASCENDING, "total_alfa": pymongo.ASCENDING}},
+            {"$sort": {"day": pymongo.ASCENDING, "alfa": pymongo.DESCENDING}},
             {"$limit": 1},
         ]
 

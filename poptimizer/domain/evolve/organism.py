@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Self
 
 from pydantic import Field, field_validator, model_validator
 
-from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import genetics, genotype
 
@@ -16,7 +15,6 @@ if TYPE_CHECKING:
 class Organism(domain.Entity):
     tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
     genes: genetics.Genes = Field(default_factory=lambda: genotype.DLModel.model_validate({}).genes)
-    total_alfa: float = 0
     alfa: float = 0
     mean: list[list[float]] = Field(default_factory=list)
     cov: list[list[float]] = Field(default_factory=list)
@@ -47,10 +45,7 @@ class Organism(domain.Entity):
         risk_tol = genes.risk.risk_tolerance
         history = genes.batch.days.history
 
-        return (
-            f"Organism(risk_tol={risk_tol:.2%}, history={history:.2f}) - "
-            f"alfa({self.alfa:.2%}) / total_alfa({self.total_alfa:.2%})"
-        )
+        return f"Organism(risk_tol={risk_tol:.2%}, history={history:.2f}) - alfa({self.alfa:.2%})"
 
     @property
     def phenotype(self) -> genetics.Phenotype:
@@ -71,7 +66,6 @@ class Organism(domain.Entity):
     ) -> None:
         self.day = day
         self.tickers = tickers
-        self.total_alfa = sum(result.alfas) / consts.YEAR_IN_TRADING_DAYS
         self.alfa = statistics.mean(result.alfas)
         self.mean = result.mean
         self.cov = result.cov
