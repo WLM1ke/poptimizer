@@ -6,7 +6,7 @@ from typing import Protocol, Self
 from poptimizer import errors
 from poptimizer.adapters import adapter, mongo
 from poptimizer.domain import domain
-from poptimizer.domain.evolve import model
+from poptimizer.domain.evolve import evolve
 from poptimizer.use_cases import handler
 
 
@@ -94,21 +94,21 @@ class UOW:
     async def count_models(self) -> int:
         return await self._repo.count_models()
 
-    async def next_model_for_update(self) -> model.Model:
+    async def next_model_for_update(self) -> evolve.Model:
         async with self._identity_map as identity_map:
             entity = await self._repo.next_model()
 
-            if loaded := identity_map.get(model.Model, entity.uid):
+            if loaded := identity_map.get(evolve.Model, entity.uid):
                 return loaded
 
             identity_map.save(entity)
 
             return entity
 
-    async def sample_models(self, n: int) -> list[model.Model]:
+    async def sample_models(self, n: int) -> list[evolve.Model]:
         return await self._repo.sample_models(n)
 
-    async def iter_models(self) -> AsyncIterator[model.Model]:
+    async def iter_models(self) -> AsyncIterator[evolve.Model]:
         return self._repo.iter_models()
 
     async def __aenter__(self) -> Self:

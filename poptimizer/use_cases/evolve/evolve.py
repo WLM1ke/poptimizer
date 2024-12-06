@@ -1,13 +1,12 @@
 import logging
-import time
+import statistics
 from typing import Final, Protocol
 
 import bson
 
-from poptimizer import errors
+from poptimizer import consts, errors
 from poptimizer.domain import domain
-from poptimizer.domain.dl import training
-from poptimizer.domain.evolve import evolve, model
+from poptimizer.domain.evolve import evolve
 from poptimizer.use_cases import handler, view
 from poptimizer.use_cases.dl import builder, trainer
 
@@ -16,6 +15,17 @@ _PARENT_COUNT: Final = 2
 
 def _random_uid() -> domain.UID:
     return domain.UID(str(bson.ObjectId()))
+
+
+def _extract_minimal_returns_days(err_group: BaseExceptionGroup[errors.DomainError]) -> int | None:
+    if (subgroup := err_group.subgroup(errors.TooShortHistoryError)) is None:
+        return None
+
+    while True:
+        if isinstance(subgroup.exceptions[0], errors.TooShortHistoryError):
+            return subgroup.exceptions[0].minimal_returns_days
+
+        subgroup = subgroup.exceptions[0]
 
 
 class Ctx(Protocol):
@@ -35,9 +45,9 @@ class Ctx(Protocol):
 
     async def count_models(self) -> int: ...
 
-    async def next_model_for_update(self) -> model.Model: ...
+    async def next_model_for_update(self) -> evolve.Model: ...
 
-    async def sample_models(self, n: int) -> list[model.Model]: ...
+    async def sample_models(self, n: int) -> list[evolve.Model]: ...
 
 
 class EvolutionHandler:
@@ -49,129 +59,200 @@ class EvolutionHandler:
         self,
         ctx: Ctx,
         msg: handler.DataNotChanged | handler.DataUpdated,
-    ) -> handler.EvolutionStepFinished | tuple[handler.EvolutionStepFinished, handler.ForecastCreated]:
+    ) -> handler.EvolutionStepFinished:
+        evolution, model_count = await self._init_step(ctx, msg.day)
+        model = await self._get_model(ctx, evolution)
+        self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
+
+        try:
+            metrics = await self._get_metrics(model, evolution.day, evolution.tickers, model_count)
+        except* errors.DomainError as err:
+            await self._delete_model(ctx, evolution, model, err)
+        else:
+            await self._eval_model(ctx, evolution, model, metrics)
+
+        return handler.EvolutionStepFinished(day=msg.day)
+
+    async def _init_step(self, ctx: Ctx, day: domain.Day) -> tuple[evolve.Evolution, int]:
+        if not (model_count := await ctx.count_models()):
+            await ctx.get_for_update(evolve.Model, _random_uid())
+            model_count = 1
+
         evolution = await ctx.get_for_update(evolve.Evolution)
-        state = evolution.start_step(msg.day)
-        self._lgr.info("%s", evolution)
 
-        match state:
-            case evolve.State.INIT:
-                org = await ctx.get_for_update(model.Model, _random_uid())
-                await self._init_day(ctx, evolution, org)
-            case evolve.State.INIT_DAY:
-                org = await self._next_org(ctx)
-                await self._init_day(ctx, evolution, org)
-            case evolve.State.NEW_BASE_MODEL:
-                org = await self._next_org(ctx)
-                await self._new_base_org(ctx, evolution, org)
+        if evolution.day != day:
+            evolution.day = day
+            evolution.tickers = await self._viewer.portfolio_tickers()
+            evolution.step = 0
+            evolution.state = evolve.State.EVAL_NEW_BASE_MODEL
+
+        evolution.step += 1
+
+        return evolution, model_count
+
+    async def _get_model(self, ctx: Ctx, evolution: evolve.Evolution) -> evolve.Model:
+        match evolution.state:
+            case evolve.State.EVAL_NEW_BASE_MODEL:
+                return await ctx.next_model_for_update()
             case evolve.State.EVAL_MODEL:
-                org = await self._next_org(ctx)
-                await self._eval_org(ctx, evolution, org)
-            case evolve.State.CREATE_MODEL:
-                org = await ctx.get(model.Model, evolution.org_uid)
-                org = await self._make_child(ctx, org)
-                await self._eval_org(ctx, evolution, org)
+                model = await ctx.next_model_for_update()
+                if model.uid == evolution.base_model_uid:
+                    evolution.state = evolve.State.REEVAL_CURRENT_BASE_MODEL
 
-        return (handler.EvolutionStepFinished(day=msg.day), handler.ForecastCreated(day=msg.day))
+                return model
+            case evolve.State.REEVAL_CURRENT_BASE_MODEL:
+                raise errors.UseCasesError(f"can't be in {evolve.State.REEVAL_CURRENT_BASE_MODEL} state")
+            case evolve.State.CREATE_NEW_MODEL:
+                model = await ctx.get(evolve.Model, evolution.base_model_uid)
 
-    async def _init_day(
-        self,
-        ctx: Ctx,
-        evolution: evolve.Evolution,
-        org: model.Model,
-    ) -> None:
-        tickers = await self._viewer.portfolio_tickers()
+                return await self._make_child(ctx, model)
 
-        try:
-            duration, training_result = await self._eval(ctx, org, evolution.day, tickers)
-        except* errors.DomainError as err:
-            await self._delete_org(ctx, evolution, org, err)
-        else:
-            evolution.init_new_day(tickers, org.uid, training_result.alfas, training_result.llh, duration)
-
-    async def _new_base_org(
-        self,
-        ctx: Ctx,
-        evolution: evolve.Evolution,
-        org: model.Model,
-    ) -> None:
-        try:
-            duration, training_result = await self._eval(ctx, org, evolution.day, evolution.tickers)
-        except* errors.DomainError as err:
-            await self._delete_org(ctx, evolution, org, err)
-        else:
-            evolution.new_base_org(org.uid, training_result.alfas, training_result.llh, duration)
-
-    async def _eval_org(
-        self,
-        ctx: Ctx,
-        evolution: evolve.Evolution,
-        org: model.Model,
-    ) -> None:
-        try:
-            duration, training_result = await self._eval(ctx, org, evolution.day, evolution.tickers)
-        except* errors.DomainError as err:
-            await self._delete_org(ctx, evolution, org, err)
-        else:
-            dead, msg1, msg2 = evolution.eval_org_is_dead(org.uid, training_result.alfas, training_result.llh, duration)
-            self._lgr.info(msg1)
-            self._lgr.info(msg2)
-
-            if dead:
-                await ctx.delete(org)
-                self._lgr.info("Organism removed")
-
-    async def _next_org(self, ctx: Ctx) -> model.Model:
-        org = await ctx.next_model_for_update()
-        while not org.ver:
-            await ctx.delete(org)
-            org = await ctx.next_model_for_update()
-
-        return org
-
-    async def _delete_org(
-        self,
-        ctx: Ctx,
-        evolution: evolve.Evolution,
-        org: model.Model,
-        err: BaseExceptionGroup[errors.DomainError],
-    ) -> None:
-        await ctx.delete(org)
-
-        self._lgr.warning("Delete %s - %s, ...", org, err.exceptions[0])
-
-        if (return_days := evolution.org_failed(org.uid, err)) is not None:
-            self._lgr.warning("Minimal return days increased - %d", return_days)
-
-    async def _make_child(self, ctx: Ctx, org: model.Model) -> model.Model:
+    async def _make_child(self, ctx: Ctx, model: evolve.Model) -> evolve.Model:
         parents = await ctx.sample_models(_PARENT_COUNT)
         if len({parent.uid for parent in parents}) != _PARENT_COUNT:
-            parents = [model.Model(day=org.day, rev=org.rev) for _ in range(_PARENT_COUNT)]
+            parents = [evolve.Model(day=model.day, rev=model.rev) for _ in range(_PARENT_COUNT)]
 
-        child = await ctx.get_for_update(model.Model, _random_uid())
-        child.genes = org.make_child_genes(parents[0], parents[1], 1 / org.ver)
+        child = await ctx.get_for_update(evolve.Model, _random_uid())
+        child.genes = model.make_child_genes(parents[0], parents[1], 1 / model.ver)
 
         return child
 
-    async def _eval(
+    async def _get_metrics(
         self,
-        ctx: Ctx,
-        org: model.Model,
+        model: evolve.Model,
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
-    ) -> tuple[
-        float,
-        training.Result,
-    ]:
-        start = time.monotonic()
-        cfg = trainer.Cfg.model_validate(org.phenotype)
-        test_days = 1 + await ctx.count_models()
-
+        test_days: int,
+    ) -> trainer.Metrics:
+        cfg = trainer.Cfg.model_validate(model.phenotype)
         tr = trainer.Trainer(builder.Builder(self._viewer))
-        training_result = await tr.run(day, tickers, test_days, cfg)
+        metrics = await tr.run(day, tickers, test_days, cfg)
 
-        org.update_stats(day, tickers, training_result)
+        model.day = day
+        model.tickers = tickers
+        model.alfa = statistics.mean(metrics.alfas)
+        model.mean = metrics.mean
+        model.cov = metrics.cov
+        model.risk_tolerance = metrics.risk_tolerance
 
-        self._lgr.info("%s", org)
+        return metrics
 
-        return time.monotonic() - start, training_result
+    async def _delete_model(
+        self,
+        ctx: Ctx,
+        evolution: evolve.Evolution,
+        model: evolve.Model,
+        err: BaseExceptionGroup[errors.DomainError],
+    ) -> None:
+        await ctx.delete(model)
+        self._lgr.warning("Model deleted - %s...", err.exceptions[0])
+
+        minimal_returns_days = _extract_minimal_returns_days(err)
+        if minimal_returns_days is not None and minimal_returns_days > evolution.minimal_returns_days:
+            evolution.minimal_returns_days += 1
+
+            self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
+
+        match evolution.state:
+            case evolve.State.EVAL_NEW_BASE_MODEL:
+                ...
+            case evolve.State.EVAL_MODEL:
+                ...
+            case evolve.State.REEVAL_CURRENT_BASE_MODEL:
+                evolution.state = evolve.State.EVAL_NEW_BASE_MODEL
+            case evolve.State.CREATE_NEW_MODEL:
+                evolution.state = evolve.State.EVAL_MODEL
+
+    async def _eval_model(
+        self,
+        ctx: Ctx,
+        evolution: evolve.Evolution,
+        model: evolve.Model,
+        metrics: trainer.Metrics,
+    ) -> None:
+        match evolution.state:
+            case evolve.State.EVAL_NEW_BASE_MODEL:
+                self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
+            case evolve.State.EVAL_MODEL | evolve.State.CREATE_NEW_MODEL:
+                if self._should_delete(evolution, metrics):
+                    evolution.state = evolve.State.EVAL_MODEL
+                    await ctx.delete(model)
+                    self._lgr.info(f"Model(alfa={model.alfa:.2%}) deleted - low metrics")
+
+                    return
+
+                self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
+            case evolve.State.REEVAL_CURRENT_BASE_MODEL:
+                self._change_t_critical(evolution, metrics)
+                self._lgr.info(f"Current base Model(alfa={model.alfa:.2%}) reevaluated")
+
+        evolution.state = evolve.State.CREATE_NEW_MODEL
+        evolution.base_model_uid = model.uid
+        evolution.alfas = metrics.alfas
+        evolution.llh = metrics.llh
+        evolution.duration = metrics.duration
+
+    def _should_delete(
+        self,
+        evolution: evolve.Evolution,
+        metrics: trainer.Metrics,
+    ) -> bool:
+        t_value_alfas = _t_values(metrics.alfas, evolution.alfas)
+        t_value_llh = _t_values(metrics.llh, evolution.llh)
+        adj_t_critical = evolution.adj_t_critical(metrics.duration)
+
+        sign_alfa = ">"
+        sign_llh = ">"
+        delete = False
+
+        if t_value_alfas < adj_t_critical or t_value_llh < adj_t_critical:
+            delete = True
+            if t_value_alfas < adj_t_critical:
+                sign_alfa = "<"
+
+            if t_value_llh < adj_t_critical:
+                sign_llh = "<"
+
+        self._lgr.info(
+            f"Alfa t-value({t_value_alfas:.2f}) {sign_alfa} adj-t-critical({adj_t_critical:.2f}), "
+            f"llh's t-value({t_value_llh:.2f}) {sign_llh} adj-t-critical({adj_t_critical:.2f}), "
+            f"t-critical({evolution.t_critical:.2f})",
+        )
+
+        return delete
+
+    def _change_t_critical(
+        self,
+        evolution: evolve.Evolution,
+        metrics: trainer.Metrics,
+    ) -> None:
+        t_value_alfas = _t_values(metrics.alfas, evolution.alfas)
+        t_value_llh = _t_values(metrics.llh, evolution.llh)
+        adj_t_critical = evolution.adj_t_critical(metrics.duration)
+        old_t_critical = evolution.t_critical
+
+        sign_alfa = ">"
+        sign_llh = ">"
+
+        match t_value_alfas < adj_t_critical or t_value_llh < adj_t_critical:
+            case True:
+                if t_value_alfas < adj_t_critical:
+                    sign_alfa = "<"
+
+                if t_value_llh < adj_t_critical:
+                    sign_llh = "<"
+                evolution.t_critical -= (1 - consts.P_VALUE) / len(metrics.alfas)
+            case False:
+                evolution.t_critical += consts.P_VALUE / len(metrics.alfas)
+
+        self._lgr.info(
+            f"Alfa t-value({t_value_alfas:.2f}) {sign_alfa} adj-t-critical({adj_t_critical:.2f}), "
+            f"llh's t-value({t_value_llh:.2f}) {sign_llh} adj-t-critical({adj_t_critical:.2f})"
+        )
+        self._lgr.info(f"Changing t-critical({old_t_critical:.2f}) -> t-critical({evolution.t_critical:.2f})")
+
+
+def _t_values(target: list[float], base: list[float]) -> float:
+    deltas = [target_value - base_value for target_value, base_value in zip(target, base, strict=False)]
+
+    return statistics.mean(deltas) * len(deltas) ** 0.5 / statistics.stdev(deltas)

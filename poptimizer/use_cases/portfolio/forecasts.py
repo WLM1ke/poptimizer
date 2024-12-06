@@ -3,6 +3,6 @@ from poptimizer.use_cases import handler
 
 
 class ForecastHandler:
-    async def __call__(self, ctx: handler.Ctx, msg: handler.ForecastCreated) -> None:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.EvolutionStepFinished) -> None:
         forecast = await ctx.get_for_update(forecasts.Forecast)
         forecast.init_day(msg.day)

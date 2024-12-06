@@ -69,7 +69,3 @@ class DataUpdated(Event):
 
 class EvolutionStepFinished(Event):
     day: domain.Day
-
-
-class ForecastCreated(Event):
-    day: domain.Day

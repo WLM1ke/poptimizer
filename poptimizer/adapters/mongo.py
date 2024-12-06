@@ -11,7 +11,7 @@ from pymongo.errors import PyMongoError
 from poptimizer import consts, errors
 from poptimizer.adapters import adapter
 from poptimizer.domain import domain
-from poptimizer.domain.evolve import model
+from poptimizer.domain.evolve import evolve
 
 _MONGO_ID: Final = "_id"
 _REV: Final = "rev"
@@ -38,8 +38,8 @@ class Repo:
     def __init__(self, mongo_db: MongoDatabase) -> None:
         self._db = mongo_db
 
-    async def next_model(self) -> model.Model:
-        collection_name = adapter.get_component_name(model.Model)
+    async def next_model(self) -> evolve.Model:
+        collection_name = adapter.get_component_name(evolve.Model)
         collection = self._db[collection_name]
         pipeline = [
             {
@@ -57,20 +57,20 @@ class Repo:
         except (PyMongoError, StopAsyncIteration) as err:
             raise errors.AdapterError("can't load next organism") from err
 
-        return await self.get(model.Model, domain.UID(doc["_id"]))
+        return await self.get(evolve.Model, domain.UID(doc["_id"]))
 
-    async def sample_models(self, n: int) -> list[model.Model]:
-        collection_name = adapter.get_component_name(model.Model)
+    async def sample_models(self, n: int) -> list[evolve.Model]:
+        collection_name = adapter.get_component_name(evolve.Model)
         collection = self._db[collection_name]
         pipeline = [{"$sample": {"size": n}}]
 
         try:
-            return [self._create_entity(model.Model, doc) async for doc in await collection.aggregate(pipeline)]
+            return [self._create_entity(evolve.Model, doc) async for doc in await collection.aggregate(pipeline)]
         except PyMongoError as err:
             raise errors.AdapterError("can't sample organisms") from err
 
     async def count_models(self) -> int:
-        collection_name = adapter.get_component_name(model.Model)
+        collection_name = adapter.get_component_name(evolve.Model)
         collection = self._db[collection_name]
 
         try:
@@ -78,13 +78,13 @@ class Repo:
         except PyMongoError as err:
             raise errors.AdapterError("can't count organisms") from err
 
-    async def iter_models(self) -> AsyncIterator[model.Model]:
-        collection_name = adapter.get_component_name(model.Model)
+    async def iter_models(self) -> AsyncIterator[evolve.Model]:
+        collection_name = adapter.get_component_name(evolve.Model)
         collection = self._db[collection_name]
 
         try:
             async for doc in collection.find():
-                yield self._create_entity(model.Model, doc)
+                yield self._create_entity(evolve.Model, doc)
         except PyMongoError as err:
             raise errors.AdapterError("can't load {collection_name}.{uid}") from err
 
