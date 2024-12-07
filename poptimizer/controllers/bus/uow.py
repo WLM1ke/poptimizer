@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import Iterator
 from types import TracebackType
 from typing import Protocol, Self
 
@@ -107,9 +107,6 @@ class UOW:
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         return await self._repo.sample_models(n)
-
-    async def iter_models(self) -> AsyncIterator[evolve.Model]:
-        return self._repo.iter_models()
 
     async def __aenter__(self) -> Self:
         return self

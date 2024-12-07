@@ -67,5 +67,15 @@ class DataUpdated(Event):
     day: domain.Day
 
 
-class EvolutionStepFinished(Event):
+class ModelDeleted(Event):
+    day: domain.Day
+    uid: domain.UID
+
+
+class ModelEvaluated(Event):
+    day: domain.Day
+    uid: domain.UID
+
+
+class ForecastsAnalyzed(Event):
     day: domain.Day

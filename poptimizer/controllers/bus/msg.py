@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from collections import defaultdict
-from collections.abc import AsyncIterator, Iterable
+from collections.abc import Iterable
 from datetime import timedelta
 from typing import (
     Any,
@@ -38,8 +38,6 @@ class Ctx(Protocol):
     async def delete(self, entity: domain.Entity) -> None: ...
 
     async def count_models(self) -> int: ...
-
-    async def iter_models(self) -> AsyncIterator[evolve.Model]: ...
 
     async def next_model_for_update(self) -> evolve.Model: ...
 

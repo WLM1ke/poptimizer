@@ -59,7 +59,7 @@ class EvolutionHandler:
         self,
         ctx: Ctx,
         msg: handler.DataNotChanged | handler.DataUpdated,
-    ) -> handler.EvolutionStepFinished:
+    ) -> handler.ModelDeleted | handler.ModelEvaluated:
         evolution, model_count = await self._init_step(ctx, msg.day)
         model = await self._get_model(ctx, evolution)
         self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
@@ -68,10 +68,12 @@ class EvolutionHandler:
             await self._update_model_metrics(model, evolution.day, evolution.tickers, model_count)
         except* errors.DomainError as err:
             await self._delete_model(ctx, evolution, model, err)
-        else:
-            await self._eval_model(ctx, evolution, model)
 
-        return handler.EvolutionStepFinished(day=msg.day)
+            event = handler.ModelDeleted(day=msg.day, uid=model.uid)
+        else:
+            return await self._eval_model(ctx, evolution, model)
+
+        return event
 
     async def _init_step(self, ctx: Ctx, day: domain.Day) -> tuple[evolve.Evolution, int]:
         if not (model_count := await ctx.count_models()):
@@ -156,7 +158,7 @@ class EvolutionHandler:
         ctx: Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
-    ) -> None:
+    ) -> handler.ModelDeleted | handler.ModelEvaluated:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
                 evolution.new_base(model)
@@ -168,7 +170,7 @@ class EvolutionHandler:
                     await ctx.delete(model)
                     self._lgr.info(f"Model(alfa={model.alfa:.2%}) deleted - low metrics")
 
-                    return
+                    return handler.ModelDeleted(day=model.day, uid=model.uid)
 
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
@@ -178,6 +180,8 @@ class EvolutionHandler:
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"Current base Model(alfa={model.alfa:.2%}) reevaluated")
+
+        return handler.ModelEvaluated(day=model.day, uid=model.uid)
 
     def _should_delete(
         self,

@@ -78,16 +78,6 @@ class Repo:
         except PyMongoError as err:
             raise errors.AdapterError("can't count organisms") from err
 
-    async def iter_models(self) -> AsyncIterator[evolve.Model]:
-        collection_name = adapter.get_component_name(evolve.Model)
-        collection = self._db[collection_name]
-
-        try:
-            async for doc in collection.find():
-                yield self._create_entity(evolve.Model, doc)
-        except PyMongoError as err:
-            raise errors.AdapterError("can't load {collection_name}.{uid}") from err
-
     async def get[E: domain.Entity](
         self,
         t_entity: type[E],

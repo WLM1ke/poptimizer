@@ -46,7 +46,7 @@ class TradingDayHandler:
     async def check(
         self,
         ctx: handler.Ctx,
-        msg: handler.AppStarted | handler.EvolutionStepFinished,  # noqa: ARG002
+        msg: handler.AppStarted | handler.ForecastsAnalyzed,  # noqa: ARG002
     ) -> handler.DataNotChanged | handler.NewDataPublished:
         table = await ctx.get(trading_day.TradingDay)
 
