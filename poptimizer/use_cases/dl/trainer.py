@@ -15,6 +15,7 @@ from poptimizer import consts, errors
 from poptimizer.domain import domain
 from poptimizer.domain.dl import data_loaders, datasets, ledoit_wolf, risk
 from poptimizer.domain.dl.wave_net import backbone, wave_net
+from poptimizer.domain.evolve import evolve
 from poptimizer.use_cases.dl import builder
 
 
@@ -75,15 +76,6 @@ def _get_device() -> Literal["cpu", "cuda", "mps"]:
     return "cpu"
 
 
-class Metrics(BaseModel):
-    duration: float
-    alfas: list[float]
-    llh: list[float]
-    mean: list[list[float]]
-    cov: list[list[float]]
-    risk_tolerance: float
-
-
 class Trainer:
     def __init__(self, builder: builder.Builder) -> None:
         self._lgr = logging.getLogger()
@@ -97,7 +89,7 @@ class Trainer:
         tickers: tuple[str, ...],
         test_days: int,
         cfg: Cfg,
-    ) -> Metrics:
+    ) -> evolve.Metrics:
         start = time.monotonic()
         data = await self._builder.build(tickers, pd.Timestamp(day), cfg.batch.feats, cfg.batch.days, test_days)
 
@@ -118,14 +110,14 @@ class Trainer:
         start: float,
         data: list[datasets.OneTickerData],
         cfg: Cfg,
-    ) -> Metrics:
+    ) -> evolve.Metrics:
         net = self._prepare_net(cfg)
         self._train(net, cfg.scheduler, data, cfg.batch.size)
 
         alfas, llh = self._test(net, cfg, data)
         mean, cov = self._forecast(net, cfg.batch.forecast_days, data)
 
-        return Metrics(
+        return evolve.Metrics(
             duration=time.monotonic() - start,
             alfas=alfas,
             llh=llh,

@@ -121,17 +121,12 @@ class EvolutionHandler:
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
         test_days: int,
-    ) -> trainer.Metrics:
+    ) -> evolve.Metrics:
         cfg = trainer.Cfg.model_validate(model.phenotype)
         tr = trainer.Trainer(builder.Builder(self._viewer))
         metrics = await tr.run(day, tickers, test_days, cfg)
 
-        model.day = day
-        model.tickers = tickers
-        model.alfa = statistics.mean(metrics.alfas)
-        model.mean = metrics.mean
-        model.cov = metrics.cov
-        model.risk_tolerance = metrics.risk_tolerance
+        model.update(day, tickers, metrics)
 
         return metrics
 
@@ -166,7 +161,7 @@ class EvolutionHandler:
         ctx: Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
-        metrics: trainer.Metrics,
+        metrics: evolve.Metrics,
     ) -> None:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
@@ -193,7 +188,7 @@ class EvolutionHandler:
     def _should_delete(
         self,
         evolution: evolve.Evolution,
-        metrics: trainer.Metrics,
+        metrics: evolve.Metrics,
     ) -> bool:
         t_value_alfas = _t_values(metrics.alfas, evolution.alfas)
         t_value_llh = _t_values(metrics.llh, evolution.llh)
@@ -222,7 +217,7 @@ class EvolutionHandler:
     def _change_t_critical(
         self,
         evolution: evolve.Evolution,
-        metrics: trainer.Metrics,
+        metrics: evolve.Metrics,
     ) -> None:
         t_value_alfas = _t_values(metrics.alfas, evolution.alfas)
         t_value_llh = _t_values(metrics.llh, evolution.llh)

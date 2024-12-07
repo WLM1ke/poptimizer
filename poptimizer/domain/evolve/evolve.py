@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import statistics
 from enum import StrEnum
 from typing import Final, Self
 
-from pydantic import Field, NonNegativeFloat, PositiveInt, field_validator, model_validator
+from pydantic import BaseModel, Field, NonNegativeFloat, PositiveInt, field_validator, model_validator
 
 from poptimizer import consts
 from poptimizer.domain import domain
@@ -15,6 +16,15 @@ _INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.minimal_returns_days(
     forecast_days=consts.FORECAST_DAYS,
     test_days=consts.INITIAL_TEST_DAYS,
 )
+
+
+class Metrics(BaseModel):
+    duration: float
+    alfas: list[float]
+    llh: list[float]
+    mean: list[list[float]]
+    cov: list[list[float]]
+    risk_tolerance: float
 
 
 class Model(domain.Entity):
@@ -62,6 +72,14 @@ class Model(domain.Entity):
         model2 = genotype.Genotype.model_validate(parent2.genes)
 
         return model.make_child(model1, model2, scale).genes
+
+    def update(self, day: domain.Day, tickers: tuple[domain.Ticker, ...], metrics: Metrics) -> None:
+        self.day = day
+        self.tickers = tickers
+        self.alfa = statistics.mean(metrics.alfas)
+        self.mean = metrics.mean
+        self.cov = metrics.cov
+        self.risk_tolerance = metrics.risk_tolerance
 
 
 class State(StrEnum):
