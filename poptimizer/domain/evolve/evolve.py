@@ -108,3 +108,10 @@ class Evolution(domain.Entity):
 
     def adj_t_critical(self, duration: NonNegativeFloat) -> float:
         return self.t_critical * min(1, self.duration / duration)
+
+    def set_new_base_to_make_child(self, uid: domain.UID, metrics: Metrics) -> None:
+        self.state = State.CREATE_NEW_MODEL
+        self.base_model_uid = uid
+        self.alfas = metrics.alfas
+        self.llh = metrics.llh
+        self.duration = metrics.duration

@@ -165,6 +165,7 @@ class EvolutionHandler:
     ) -> None:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
+                evolution.set_new_base_to_make_child(model.uid, metrics)
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
             case evolve.State.EVAL_MODEL | evolve.State.CREATE_NEW_MODEL:
                 if self._should_delete(evolution, metrics):
@@ -174,16 +175,12 @@ class EvolutionHandler:
 
                     return
 
+                evolution.set_new_base_to_make_child(model.uid, metrics)
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 self._change_t_critical(evolution, metrics)
+                evolution.set_new_base_to_make_child(model.uid, metrics)
                 self._lgr.info(f"Current base Model(alfa={model.alfa:.2%}) reevaluated")
-
-        evolution.state = evolve.State.CREATE_NEW_MODEL
-        evolution.base_model_uid = model.uid
-        evolution.alfas = metrics.alfas
-        evolution.llh = metrics.llh
-        evolution.duration = metrics.duration
 
     def _should_delete(
         self,
