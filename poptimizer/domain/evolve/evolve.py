@@ -4,7 +4,7 @@ import statistics
 from enum import StrEnum
 from typing import Final, Self
 
-from pydantic import BaseModel, Field, NonNegativeFloat, PositiveInt, field_validator, model_validator
+from pydantic import Field, NonNegativeFloat, PositiveInt, computed_field, field_validator, model_validator
 
 from poptimizer import consts
 from poptimizer.domain import domain
@@ -18,19 +18,12 @@ _INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.minimal_returns_days(
 )
 
 
-class Metrics(BaseModel):
-    duration: float
-    alfas: list[float]
-    llh: list[float]
-    mean: list[list[float]]
-    cov: list[list[float]]
-    risk_tolerance: float
-
-
 class Model(domain.Entity):
     tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
-    alfa: float = 0
+    duration: float = 0
+    alfas: list[float] = Field(default_factory=list)
+    llh: list[float] = Field(default_factory=list)
     mean: list[list[float]] = Field(default_factory=list)
     cov: list[list[float]] = Field(default_factory=list)
     risk_tolerance: float = Field(default=0, ge=0, le=1)
@@ -39,6 +32,9 @@ class Model(domain.Entity):
 
     @model_validator(mode="after")
     def _match_length(self) -> Self:
+        if len(self.alfas) != len(self.llh):
+            raise ValueError("invalid metrics length")
+
         n = len(self.tickers)
 
         if len(self.mean) != n:
@@ -62,6 +58,13 @@ class Model(domain.Entity):
 
         return f"{self.__class__.__name__}(risk_tol={risk_tol:.2%}, history={history:.2f})"
 
+    @computed_field
+    def alfa(self) -> float:
+        if not self.alfas:
+            return 0
+
+        return statistics.mean(self.alfas)
+
     @property
     def phenotype(self) -> genetics.Phenotype:
         return genotype.Genotype.model_validate(self.genes).phenotype
@@ -72,14 +75,6 @@ class Model(domain.Entity):
         model2 = genotype.Genotype.model_validate(parent2.genes)
 
         return model.make_child(model1, model2, scale).genes
-
-    def update(self, day: domain.Day, tickers: tuple[domain.Ticker, ...], metrics: Metrics) -> None:
-        self.day = day
-        self.tickers = tickers
-        self.alfa = statistics.mean(metrics.alfas)
-        self.mean = metrics.mean
-        self.cov = metrics.cov
-        self.risk_tolerance = metrics.risk_tolerance
 
 
 class State(StrEnum):
@@ -109,9 +104,8 @@ class Evolution(domain.Entity):
     def adj_t_critical(self, duration: NonNegativeFloat) -> float:
         return self.t_critical * min(1, self.duration / duration)
 
-    def set_new_base_to_make_child(self, uid: domain.UID, metrics: Metrics) -> None:
-        self.state = State.CREATE_NEW_MODEL
-        self.base_model_uid = uid
-        self.alfas = metrics.alfas
-        self.llh = metrics.llh
-        self.duration = metrics.duration
+    def new_base(self, model: Model) -> None:
+        self.base_model_uid = model.uid
+        self.alfas = model.alfas
+        self.llh = model.llh
+        self.duration = model.duration

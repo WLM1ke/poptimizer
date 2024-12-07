@@ -83,20 +83,22 @@ class Trainer:
         self._device = _get_device()
         self._stopping = False
 
-    async def run(
+    async def update_model_metrics(
         self,
+        model: evolve.Model,
         day: domain.Day,
-        tickers: tuple[str, ...],
+        tickers: tuple[domain.Ticker, ...],
         test_days: int,
-        cfg: Cfg,
-    ) -> evolve.Metrics:
+    ) -> None:
+        cfg = Cfg.model_validate(model.phenotype)
+
         start = time.monotonic()
         data = await self._builder.build(tickers, pd.Timestamp(day), cfg.batch.feats, cfg.batch.days, test_days)
 
         try:
-            return await asyncio.to_thread(
+            await asyncio.to_thread(
                 self._run,
-                start,
+                model,
                 data,
                 cfg,
             )
@@ -105,26 +107,22 @@ class Trainer:
 
             raise
 
+        model.day = day
+        model.tickers = tickers
+        model.risk_tolerance = cfg.risk.risk_tolerance
+        model.duration = time.monotonic() - start
+
     def _run(
         self,
-        start: float,
+        model: evolve.Model,
         data: list[datasets.OneTickerData],
         cfg: Cfg,
-    ) -> evolve.Metrics:
+    ) -> None:
         net = self._prepare_net(cfg)
         self._train(net, cfg.scheduler, data, cfg.batch.size)
 
-        alfas, llh = self._test(net, cfg, data)
-        mean, cov = self._forecast(net, cfg.batch.forecast_days, data)
-
-        return evolve.Metrics(
-            duration=time.monotonic() - start,
-            alfas=alfas,
-            llh=llh,
-            mean=mean,
-            cov=cov,
-            risk_tolerance=cfg.risk.risk_tolerance,
-        )
+        model.alfas, model.llh = self._test(net, cfg, data)
+        model.mean, model.cov = self._forecast(net, cfg.batch.forecast_days, data)
 
     def _train(
         self,

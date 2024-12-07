@@ -65,11 +65,11 @@ class EvolutionHandler:
         self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
 
         try:
-            metrics = await self._get_metrics(model, evolution.day, evolution.tickers, model_count)
+            await self._update_model_metrics(model, evolution.day, evolution.tickers, model_count)
         except* errors.DomainError as err:
             await self._delete_model(ctx, evolution, model, err)
         else:
-            await self._eval_model(ctx, evolution, model, metrics)
+            await self._eval_model(ctx, evolution, model)
 
         return handler.EvolutionStepFinished(day=msg.day)
 
@@ -115,20 +115,15 @@ class EvolutionHandler:
 
         return child
 
-    async def _get_metrics(
+    async def _update_model_metrics(
         self,
         model: evolve.Model,
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
         test_days: int,
-    ) -> evolve.Metrics:
-        cfg = trainer.Cfg.model_validate(model.phenotype)
+    ) -> None:
         tr = trainer.Trainer(builder.Builder(self._viewer))
-        metrics = await tr.run(day, tickers, test_days, cfg)
-
-        model.update(day, tickers, metrics)
-
-        return metrics
+        await tr.update_model_metrics(model, day, tickers, test_days)
 
     async def _delete_model(
         self,
@@ -161,35 +156,37 @@ class EvolutionHandler:
         ctx: Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
-        metrics: evolve.Metrics,
     ) -> None:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
-                evolution.set_new_base_to_make_child(model.uid, metrics)
+                evolution.new_base(model)
+                evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
             case evolve.State.EVAL_MODEL | evolve.State.CREATE_NEW_MODEL:
-                if self._should_delete(evolution, metrics):
+                if self._should_delete(evolution, model):
                     evolution.state = evolve.State.EVAL_MODEL
                     await ctx.delete(model)
                     self._lgr.info(f"Model(alfa={model.alfa:.2%}) deleted - low metrics")
 
                     return
 
-                evolution.set_new_base_to_make_child(model.uid, metrics)
+                evolution.new_base(model)
+                evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
-                self._change_t_critical(evolution, metrics)
-                evolution.set_new_base_to_make_child(model.uid, metrics)
+                self._change_t_critical(evolution, model)
+                evolution.new_base(model)
+                evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"Current base Model(alfa={model.alfa:.2%}) reevaluated")
 
     def _should_delete(
         self,
         evolution: evolve.Evolution,
-        metrics: evolve.Metrics,
+        model: evolve.Model,
     ) -> bool:
-        t_value_alfas = _t_values(metrics.alfas, evolution.alfas)
-        t_value_llh = _t_values(metrics.llh, evolution.llh)
-        adj_t_critical = evolution.adj_t_critical(metrics.duration)
+        t_value_alfas = _t_values(model.alfas, evolution.alfas)
+        t_value_llh = _t_values(model.llh, evolution.llh)
+        adj_t_critical = evolution.adj_t_critical(model.duration)
 
         sign_alfa = ">"
         sign_llh = ">"
@@ -214,11 +211,11 @@ class EvolutionHandler:
     def _change_t_critical(
         self,
         evolution: evolve.Evolution,
-        metrics: evolve.Metrics,
+        model: evolve.Model,
     ) -> None:
-        t_value_alfas = _t_values(metrics.alfas, evolution.alfas)
-        t_value_llh = _t_values(metrics.llh, evolution.llh)
-        adj_t_critical = evolution.adj_t_critical(metrics.duration)
+        t_value_alfas = _t_values(model.alfas, evolution.alfas)
+        t_value_llh = _t_values(model.llh, evolution.llh)
+        adj_t_critical = evolution.adj_t_critical(model.duration)
         old_t_critical = evolution.t_critical
 
         sign_alfa = ">"
@@ -231,9 +228,9 @@ class EvolutionHandler:
 
                 if t_value_llh < adj_t_critical:
                     sign_llh = "<"
-                evolution.t_critical -= (1 - consts.P_VALUE) / len(metrics.alfas)
+                evolution.t_critical -= (1 - consts.P_VALUE) / len(model.alfas)
             case False:
-                evolution.t_critical += consts.P_VALUE / len(metrics.alfas)
+                evolution.t_critical += consts.P_VALUE / len(model.alfas)
 
         self._lgr.info(
             f"Alfa t-value({t_value_alfas:.2f}) {sign_alfa} adj-t-critical({adj_t_critical:.2f}), "
