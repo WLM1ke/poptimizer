@@ -82,5 +82,11 @@ class Evolution(domain.Entity):
     t_critical: float = -7
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
 
+    def init_new_day(self, day: domain.Day, tickers: tuple[domain.Ticker, ...]) -> None:
+        self.day = day
+        self.tickers = tickers
+        self.step = 1
+        self.state = State.EVAL_NEW_BASE_MODEL
+
     def adj_t_critical(self, duration: NonNegativeFloat) -> float:
         return self.t_critical * min(1, self.duration / duration)

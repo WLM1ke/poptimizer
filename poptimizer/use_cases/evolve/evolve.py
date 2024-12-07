@@ -80,13 +80,11 @@ class EvolutionHandler:
 
         evolution = await ctx.get_for_update(evolve.Evolution)
 
-        if evolution.day != day:
-            evolution.day = day
-            evolution.tickers = await self._viewer.portfolio_tickers()
-            evolution.step = 0
-            evolution.state = evolve.State.EVAL_NEW_BASE_MODEL
-
-        evolution.step += 1
+        match evolution.day == day:
+            case True:
+                evolution.step += 1
+            case False:
+                evolution.init_new_day(day, await self._viewer.portfolio_tickers())
 
         return evolution, model_count
 
