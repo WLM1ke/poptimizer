@@ -1,4 +1,3 @@
-import itertools
 from typing import Final
 
 from pydantic import Field, field_validator
@@ -44,11 +43,4 @@ class Securities(domain.Entity):
 
         self.df = rows
 
-    @field_validator("df")
-    def _must_be_sorted_by_ticker(cls, df: list[Row]) -> list[Row]:
-        ticker_pairs = itertools.pairwise(row.ticker for row in df)
-
-        if not all(ticker < next_ for ticker, next_ in ticker_pairs):
-            raise ValueError("tickers are not sorted")
-
-        return df
+    _must_be_sorted_by_ticker = field_validator("df")(domain.sorted_with_ticker_field)

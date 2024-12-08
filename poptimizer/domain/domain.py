@@ -87,3 +87,16 @@ def sorted_tickers(tickers: tuple[str, ...]) -> tuple[str, ...]:
         raise ValueError("tickers are not sorted")
 
     return tickers
+
+
+class WithTickerField(Protocol):
+    ticker: Ticker
+
+
+def sorted_with_ticker_field(rows: list[WithTickerField]) -> list[WithTickerField]:
+    ticker_pairs = itertools.pairwise(row.ticker for row in rows)
+
+    if not all(ticker < next_ for ticker, next_ in ticker_pairs):
+        raise ValueError("tickers are not sorted")
+
+    return rows
