@@ -1,7 +1,7 @@
 import itertools
 from datetime import date, datetime
 from enum import StrEnum, auto, unique
-from typing import Annotated, NewType, Protocol
+from typing import Annotated, Final, NewType, Protocol
 
 from pydantic import BaseModel, ConfigDict, PlainSerializer
 
@@ -31,6 +31,9 @@ Day = Annotated[
 ]
 
 Ticker = NewType("Ticker", str)
+CashTicker: Final = Ticker("CASH")
+PortfolioTicker: Final = Ticker("PORTFOLIO")
+
 AccName = NewType("AccName", str)
 
 

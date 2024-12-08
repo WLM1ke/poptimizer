@@ -1,11 +1,9 @@
-from typing import Final, Self
+from typing import Self
 
 from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt, model_validator
 
 from poptimizer import errors
 from poptimizer.domain import domain
-
-_CashTicker: Final = domain.Ticker("CASH")
 
 
 class Account(BaseModel):
@@ -47,17 +45,6 @@ class Portfolio(domain.Entity):
 
         return self
 
-    @property
-    def value(self) -> float:
-        value = 0
-        for account in self.accounts.values():
-            value += account.cash
-
-            for ticker, shares in account.positions.items():
-                value += shares * self.securities[ticker].price
-
-        return value
-
     def create_acount(self, name: domain.AccName) -> None:
         if name in self.accounts:
             raise errors.DomainError(f"account {name} already exists")
@@ -90,10 +77,10 @@ class Portfolio(domain.Entity):
         if (account := self.accounts.get(name)) is None:
             raise errors.DomainError(f"account {name} doesn't exist")
 
-        if ticker != _CashTicker and ticker not in self.securities:
+        if ticker != domain.CashTicker and ticker not in self.securities:
             raise errors.DomainError(f"ticker {ticker} doesn't exist")
 
-        if ticker == _CashTicker:
+        if ticker == domain.CashTicker:
             account.cash = amount
 
             return
