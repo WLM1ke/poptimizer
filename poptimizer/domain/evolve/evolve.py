@@ -92,7 +92,7 @@ class Evolution(domain.Entity):
     alfas: list[float] = Field(default_factory=list)
     llh: list[float] = Field(default_factory=list)
     duration: NonNegativeFloat = 0
-    t_critical: float = -7
+    t_critical: float = 0
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
 
     def init_new_day(self, day: domain.Day, tickers: tuple[domain.Ticker, ...]) -> None:
