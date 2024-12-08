@@ -65,7 +65,7 @@ class EvolutionHandler:
         self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
 
         try:
-            await self._update_model_metrics(model, evolution.day, evolution.tickers, model_count)
+            await self._update_model_metrics(model, evolution.day, evolution.tickers, model_count + 1)
         except* errors.DomainError as err:
             await self._delete_model(ctx, evolution, model, err)
 
