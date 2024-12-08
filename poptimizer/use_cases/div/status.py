@@ -87,8 +87,7 @@ def _status_gen(
     sec: securities.Securities,
     port: portfolio.Portfolio,
 ) -> Iterable[status.Row]:
-    weights = port.get_non_zero_weights().positions
-    sec_map = {row.ticker: row for row in sec.df if row.ticker in weights}
+    sec_map = {row.ticker: row for row in sec.df if port.find_position(row.ticker)[1] is not None}
     for ticker, day in raw_rows:
         if sec_desc := sec_map.get(ticker):
             yield status.Row(

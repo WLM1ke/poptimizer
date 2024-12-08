@@ -1,125 +1,126 @@
-from typing import Self
+import bisect
+from typing import Annotated, Self
 
-from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    NonNegativeFloat,
+    NonNegativeInt,
+    PlainSerializer,
+    PositiveFloat,
+    PositiveInt,
+    field_validator,
+    model_validator,
+)
 
 from poptimizer import errors
 from poptimizer.domain import domain
 
-
-class Account(BaseModel):
-    cash: NonNegativeInt = 0
-    positions: dict[domain.Ticker, PositiveInt] = Field(default_factory=dict)
+type AccountData = dict[domain.AccName, NonNegativeInt]
 
 
-class PortfolioWeights(BaseModel):
-    day: domain.Day
-    version: int
-    cash: NonNegativeFloat = Field(repr=False)
-    positions: dict[domain.Ticker, NonNegativeFloat] = Field(repr=False)
-
-
-class Security(BaseModel):
+class Position(BaseModel):
+    ticker: domain.Ticker
     lot: PositiveInt
     price: PositiveFloat
     turnover: NonNegativeFloat
+    accounts: AccountData = Field(default_factory=dict)
 
 
 class Portfolio(domain.Entity):
-    accounts: dict[domain.AccName, Account] = Field(default_factory=dict)
-    securities: dict[domain.Ticker, Security] = Field(default_factory=dict)
+    account_names: Annotated[
+        set[domain.AccName],
+        PlainSerializer(
+            list,
+            return_type=list,
+        ),
+    ] = Field(default_factory=set)
+    cash: AccountData = Field(default_factory=dict)
+    positions: list[Position]
 
     @model_validator(mode="after")
-    def _positions_are_multiple_of_lots(self) -> Self:
-        for name, account in self.accounts.items():
-            for ticker, shares in account.positions.items():
-                if shares % (lot := self.securities[ticker].lot):
-                    raise ValueError(f"{name} has {shares} {ticker} - not multiple of {lot} shares lot")
+    def _positions_have_know_accounts(self) -> Self:
+        for position in self.positions:
+            if unknown_accounts := position.accounts.keys() - self.account_names:
+                raise ValueError(f"{position.ticker} has unknown accounts {unknown_accounts}")
 
         return self
 
-    @model_validator(mode="after")
-    def _account_has_known_tickers(self) -> Self:
-        for name, account in self.accounts.items():
-            if unknown_tickers := account.positions.keys() - self.securities.keys():
-                raise ValueError(f"{name} has {unknown_tickers}")
+    _must_be_sorted_by_ticker = field_validator("positions")(domain.sorted_with_ticker_field)
 
-        return self
+    @field_validator("positions")
+    def _positions_are_multiple_of_lots(cls, positions: list[Position]) -> list[Position]:
+        for position in positions:
+            for acc, shares in position.accounts:
+                ticker = position.ticker
+
+                if shares % position.lot:
+                    raise ValueError(f"{acc} has {shares} {ticker} - not multiple of lot of {position.lot} shares")
+
+                if not shares:
+                    raise ValueError(f"{acc} has zero {ticker} shares")
+
+        return positions
+
+    def tickers(self) -> tuple[domain.Ticker, ...]:
+        return tuple(position.ticker for position in self.positions)
 
     def create_acount(self, name: domain.AccName) -> None:
-        if name in self.accounts:
+        if name in self.account_names:
             raise errors.DomainError(f"account {name} already exists")
 
         if not name:
             raise errors.DomainError("account name is empty")
 
-        self.accounts[name] = Account()
+        self.account_names.add(name)
 
     def remove_acount(self, name: domain.AccName) -> None:
-        account = self.accounts.pop(name, None)
-        if account is None:
+        if name not in self.account_names:
             raise errors.DomainError(f"account {name} doesn't exist")
 
-        if account.cash or account.positions:
-            self.accounts[name] = account
+        if name in self.cash:
+            raise errors.DomainError(f"account {name} has not zero cash")
 
-            raise errors.DomainError(f"account {name} is not empty")
+        for position in self.positions:
+            if name in position.accounts:
+                raise errors.DomainError(f"account {name} has not zero {position.ticker}")
 
-    def remove_ticket(self, ticker: domain.Ticker) -> bool:
-        for account in self.accounts.values():
-            if ticker in account.positions:
+    def find_position(self, ticker: domain.Ticker) -> tuple[int, Position | None]:
+        n = bisect.bisect_left(self.positions, ticker, key=lambda pos: pos.ticker)
+        if n == len(self.positions) or self.positions[n].ticker != ticker:
+            return n, None
+
+        return n, self.positions[n]
+
+    def _try_remove_ticket(self, ticker: domain.Ticker) -> bool:
+        match self.find_position(ticker):
+            case (n, None):
                 return False
+            case (n, position):
+                if position.accounts:
+                    return False
 
-        self.securities.pop(ticker)
+                self.positions = self.positions[:n] + self.positions[n + 1 :]
 
-        return True
+                return True
 
-    def update_position(self, name: domain.AccName, ticker: domain.Ticker, amount: NonNegativeInt) -> None:
-        if (account := self.accounts.get(name)) is None:
-            raise errors.DomainError(f"account {name} doesn't exist")
-
-        if ticker != domain.CashTicker and ticker not in self.securities:
-            raise errors.DomainError(f"ticker {ticker} doesn't exist")
+    def update_position(self, acc_name: domain.AccName, ticker: domain.Ticker, amount: NonNegativeInt) -> None:
+        if acc_name not in self.account_names:
+            raise errors.DomainError(f"account {acc_name} doesn't exist")
 
         if ticker == domain.CashTicker:
-            account.cash = amount
+            self.cash[acc_name] = amount
 
             return
 
-        if amount % (lot := self.securities[ticker].lot):
-            raise errors.DomainError(f"amount {amount} must be multiple of {lot}")
+        match self.find_position(ticker):
+            case (_, None):
+                raise errors.DomainError(f"ticker {ticker} doesn't exist")
+            case (_, position):
+                if amount % (lot := position.lot):
+                    raise errors.DomainError(f"amount {amount} must be multiple of {lot}")
 
-        if not amount:
-            account.positions.pop(ticker, None)
+                if not amount:
+                    position.accounts.pop(acc_name, None)
 
-            return
-
-        account.positions[ticker] = amount
-
-    def get_non_zero_weights(self) -> PortfolioWeights:
-        port_value = 0
-        cash = 0
-        pos_value = {ticker: 0.0 for ticker in self.securities}
-
-        for account in self.accounts.values():
-            port_value += account.cash
-            cash += account.cash
-
-            for ticker, amount in account.positions.items():
-                value = self.securities[ticker].price * amount
-                port_value += value
-                pos_value[ticker] += value
-
-        if port_value == 0:
-            return PortfolioWeights(
-                day=self.day,
-                version=self.ver,
-                cash=1,
-                positions=pos_value,
-            )
-
-        return PortfolioWeights(
-            day=self.day,
-            version=self.ver,
-            cash=cash / port_value,
-            positions={ticker: pos / port_value for ticker, pos in pos_value.items()},
-        )
+                position.accounts[acc_name] = amount

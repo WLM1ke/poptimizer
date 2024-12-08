@@ -1,7 +1,6 @@
-from datetime import date
-from typing import Self
+from typing import Annotated, Self
 
-from pydantic import BaseModel, NonNegativeInt, PositiveFloat, PositiveInt
+from pydantic import BaseModel, NonNegativeInt, PlainSerializer, PositiveFloat, PositiveInt
 
 from poptimizer.domain import domain
 from poptimizer.domain.portfolio import portfolio
@@ -25,16 +24,24 @@ class Security(BaseModel):
 
 
 class Portfolio(handler.DTO):
-    day: date
-    accounts: dict[domain.AccName, portfolio.Account]
-    securities: dict[domain.Ticker, Security]
+    day: domain.Day
+    account_names: Annotated[
+        set[domain.AccName],
+        PlainSerializer(
+            list,
+            return_type=list,
+        ),
+    ]
+    cash: portfolio.AccountData
+    positions: list[portfolio.Position]
 
     @classmethod
     def from_portfolio(cls, port: portfolio.Portfolio) -> Self:
         return cls(
             day=port.day,
-            accounts=port.accounts,
-            securities={ticker: Security(lot=sec.lot, price=sec.price) for ticker, sec in port.securities.items()},
+            account_names=port.account_names,
+            cash=port.cash,
+            positions=port.positions,
         )
 
 

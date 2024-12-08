@@ -7,6 +7,7 @@ import bson
 from poptimizer import consts, errors
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
+from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler, view
 from poptimizer.use_cases.dl import builder, trainer
 
@@ -89,7 +90,8 @@ class EvolutionHandler:
             case True:
                 evolution.step += 1
             case False:
-                evolution.init_new_day(day, await self._viewer.portfolio_tickers())
+                port = await ctx.get(portfolio.Portfolio)
+                evolution.init_new_day(day, port.tickers())
 
         return evolution, model_count
 

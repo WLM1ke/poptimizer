@@ -32,7 +32,6 @@ Day = Annotated[
 
 Ticker = NewType("Ticker", str)
 CashTicker: Final = Ticker("CASH")
-PortfolioTicker: Final = Ticker("PORTFOLIO")
 
 AccName = NewType("AccName", str)
 

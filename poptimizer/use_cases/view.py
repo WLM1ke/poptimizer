@@ -9,7 +9,6 @@ import pandas as pd
 from poptimizer.domain import domain
 from poptimizer.domain.div import div
 from poptimizer.domain.moex import quotes
-from poptimizer.domain.portfolio import portfolio
 
 
 class Repo(Protocol):
@@ -19,11 +18,6 @@ class Repo(Protocol):
 class Viewer:
     def __init__(self, repo: Repo) -> None:
         self._repo = repo
-
-    async def portfolio_tickers(self) -> tuple[domain.Ticker, ...]:
-        table = await self._repo.get(portfolio.Portfolio)
-
-        return tuple(sorted(table.securities))
 
     async def _quote(
         self,

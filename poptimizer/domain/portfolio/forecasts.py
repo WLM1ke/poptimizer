@@ -1,4 +1,3 @@
-import itertools
 from typing import Annotated
 
 from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PlainSerializer, field_validator
@@ -24,18 +23,11 @@ class Forecast(domain.Entity):
     ] = Field(default_factory=set)
     forecasts: NonNegativeInt = 0
     portfolio_ver: domain.Version = domain.Version(0)
-    portfolio: Position = Field(default_factory=lambda: Position(ticker=domain.PortfolioTicker))
-    cash: Position = Field(default_factory=lambda: Position(ticker=domain.CashTicker))
+    mean: float
+    std: float
     positions: list[Position] = Field(default_factory=list)
 
-    @field_validator("positions")
-    def _sorted_by_tickers(cls, positions: list[Position]) -> list[Position]:
-        positions_pairs = itertools.pairwise(positions)
-
-        if not all(cur.ticker < next_.ticker for cur, next_ in positions_pairs):
-            raise ValueError("tickers are not sorted")
-
-        return positions
+    _must_be_sorted_by_ticker = field_validator("positions")(domain.sorted_with_ticker_field)
 
     def init_day(self, day: domain.Day) -> None:
         self.models.clear()

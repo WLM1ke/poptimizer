@@ -35,18 +35,20 @@ class PortfolioHandler:
     async def __call__(self, ctx: handler.Ctx, msg: handler.DivUpdated) -> handler.PortfolioUpdated:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
-        sec_data = await self._prepare_sec_data(ctx, msg.day)
+        sec_cache = await self._prepare_sec_cache(ctx, msg.day)
+        min_turnover = _calc_min_turnover(port, sec_cache)
 
-        self._remove_not_traded(port, sec_data)
-        min_turnover = self._update_sec_data(port, sec_data)
-        self._add_liquid(port, sec_data, min_turnover)
+        self._update_existing_positions(port, sec_cache, min_turnover)
+        self._add_new_liquid(port, sec_cache, min_turnover)
         port.day = msg.day
 
         return handler.PortfolioUpdated(day=msg.day)
 
-    async def _prepare_sec_data(
-        self, ctx: handler.Ctx, update_day: domain.Day
-    ) -> dict[domain.Ticker, portfolio.Security]:
+    async def _prepare_sec_cache(
+        self,
+        ctx: handler.Ctx,
+        update_day: domain.Day,
+    ) -> dict[domain.Ticker, portfolio.Position]:
         sec_table = await ctx.get(securities.Securities)
 
         tickers = tuple(sec.ticker for sec in sec_table.df)
@@ -57,9 +59,9 @@ class PortfolioHandler:
             close_task = tg.create_task(self._viewer.close(last_day_ts, tickers))
             history_days_task = tg.create_task(ctx.get(evolve.Evolution))
 
-        turnover = turnover_task.result()
-        close = close_task.result()
-        quotes_days = (history_days_task.result().minimal_returns_days + 1) * 2
+        turnover = await turnover_task
+        close = await close_task
+        quotes_days = ((await history_days_task).minimal_returns_days + 1) * 2
 
         turnover = (  # type: ignore[reportUnknownMemberType]
             turnover.iloc[-quotes_days:]  # type: ignore[reportUnknownMemberType]
@@ -71,7 +73,8 @@ class PortfolioHandler:
         )
 
         return {
-            sec.ticker: portfolio.Security(
+            sec.ticker: portfolio.Position(
+                ticker=sec.ticker,
                 lot=sec.lot,
                 price=close.loc[last_day_ts, sec.ticker],  # type: ignore[reportUnknownMemberType]
                 turnover=turnover[sec.ticker],  # type: ignore[reportUnknownMemberType]
@@ -80,67 +83,57 @@ class PortfolioHandler:
             if not np.isnan(close.loc[last_day_ts, sec.ticker])  # type: ignore[reportUnknownMemberType]
         }
 
-    def _remove_not_traded(self, port: portfolio.Portfolio, sec_data: dict[domain.Ticker, portfolio.Security]) -> None:
-        not_traded = port.securities.keys() - sec_data.keys()
-
-        for ticker in not_traded:
-            port.securities[ticker].turnover = 0
-
-            match port.remove_ticket(ticker):
-                case True:
-                    self._lgr.warning("Not traded %s is removed", ticker)
-                case False:
-                    self._lgr.warning("Not traded %s is not removed", ticker)
-
-    def _update_sec_data(
+    def _update_existing_positions(
         self,
         port: portfolio.Portfolio,
-        sec_data: dict[domain.Ticker, portfolio.Security],
-    ) -> float:
-        min_turnover = sum(acc.cash for acc in port.accounts.values())
-        traded = port.securities.keys() & sec_data.keys()
-
-        for ticker in traded:
-            cur_data = port.securities[ticker]
-            new_data = sec_data[ticker]
-
-            cur_data.lot = new_data.lot
-            cur_data.price = new_data.price
-            cur_data.turnover = new_data.turnover
-
-            min_turnover = max(
-                min_turnover,
-                sum(acc.positions.get(ticker, 0) * cur_data.price for acc in port.accounts.values()),
-            )
-
-        for ticker in traded:
-            if port.securities[ticker].turnover > min_turnover:
-                continue
-
-            match port.remove_ticket(ticker):
-                case True:
-                    self._lgr.warning("Not liquid %s is removed", ticker)
-                case False:
-                    self._lgr.warning("Not liquid %s is not removed", ticker)
-
-        return min_turnover
-
-    def _add_liquid(
-        self,
-        port: portfolio.Portfolio,
-        sec_data: dict[domain.Ticker, portfolio.Security],
+        sec_cache: dict[domain.Ticker, portfolio.Position],
         min_turnover: float,
     ) -> None:
-        not_port = sec_data.keys() - port.securities.keys()
+        updated_positions: list[portfolio.Position] = []
 
-        for ticker in not_port:
-            new_data = sec_data[ticker]
+        for position in port.positions:
+            match sec_cache.pop(position.ticker, None):
+                case None if not position.accounts:
+                    self._lgr.warning("Not traded %s is removed", position.ticker)
+                case None:
+                    position.turnover = 0
+                    updated_positions.append(position)
+                    self._lgr.warning("Not traded %s is not removed", position.ticker)
+                case new_position if new_position.turnover < min_turnover and not position.accounts:
+                    self._lgr.warning("Not liquid %s is removed", position.ticker)
+                case new_position if new_position.turnover < min_turnover:
+                    new_position.accounts = position.accounts
+                    updated_positions.append(new_position)
+                    self._lgr.warning("Not liquid %s is not removed", position.ticker)
+                case new_position:
+                    new_position.accounts = position.accounts
+                    updated_positions.append(new_position)
 
-            if new_data.turnover > min_turnover:
-                port.securities[ticker] = portfolio.Security(
-                    lot=new_data.lot,
-                    price=new_data.price,
-                    turnover=new_data.turnover,
-                )
+        port.positions = updated_positions
 
+    def _add_new_liquid(
+        self,
+        port: portfolio.Portfolio,
+        sec_cache: dict[domain.Ticker, portfolio.Position],
+        min_turnover: float,
+    ) -> None:
+        for ticker, position in sec_cache.items():
+            if position.turnover > min_turnover:
+                n, _ = port.find_position(position.ticker)
+                port.positions.insert(n, position)
                 self._lgr.warning("%s is added", ticker)
+
+
+def _calc_min_turnover(
+    port: portfolio.Portfolio,
+    sec_cache: dict[domain.Ticker, portfolio.Position],
+) -> float:
+    min_turnover = sum(port.cash.values())
+    for position in port.positions:
+        price = position.price
+        if new_position := sec_cache.get(position.ticker):
+            price = new_position.price
+
+        min_turnover = max(min_turnover, sum(position.accounts.values()) * price)
+
+    return min_turnover
