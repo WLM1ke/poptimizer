@@ -164,7 +164,7 @@ class EvolutionHandler:
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
-            case evolve.State.EVAL_MODEL | evolve.State.CREATE_NEW_MODEL:
+            case evolve.State.EVAL_MODEL:
                 if self._should_delete(evolution, model):
                     evolution.state = evolve.State.EVAL_MODEL
                     await ctx.delete(model)
@@ -174,6 +174,17 @@ class EvolutionHandler:
 
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
+                self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
+            case evolve.State.CREATE_NEW_MODEL:
+                if self._should_delete(evolution, model):
+                    evolution.state = evolve.State.EVAL_MODEL
+                    await ctx.delete(model)
+                    self._lgr.info(f"Model(alfa={model.alfa:.2%}) deleted - low metrics")
+
+                    return handler.ModelDeleted(day=model.day, uid=model.uid)
+
+                evolution.new_base(model)
+                evolution.state = evolve.State.EVAL_MODEL
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 self._change_t_critical(evolution, model)
