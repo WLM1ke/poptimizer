@@ -65,7 +65,7 @@ class EvolutionHandler:
         self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
 
         try:
-            await self._update_model_metrics(model, evolution.day, evolution.tickers, model_count + 1)
+            await self._update_model_metrics(model, evolution.day, evolution.tickers, model_count)
         except* errors.DomainError as err:
             await self._delete_model(ctx, evolution, model, err)
 
@@ -76,9 +76,12 @@ class EvolutionHandler:
         return event
 
     async def _init_step(self, ctx: Ctx, day: domain.Day) -> tuple[evolve.Evolution, int]:
-        if not (model_count := await ctx.count_models()):
-            await ctx.get_for_update(evolve.Model, _random_uid())
-            model_count = 1
+        model_count = await ctx.count_models()
+        if model_count < _PARENT_COUNT:
+            for _ in range(_PARENT_COUNT - model_count):
+                await ctx.get_for_update(evolve.Model, _random_uid())
+
+            model_count = _PARENT_COUNT
 
         evolution = await ctx.get_for_update(evolve.Evolution)
 
