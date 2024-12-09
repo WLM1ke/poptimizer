@@ -36,7 +36,7 @@ class Portfolio(domain.Entity):
         ),
     ] = Field(default_factory=set)
     cash: AccountData = Field(default_factory=dict)
-    positions: list[Position]
+    positions: list[Position] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _positions_have_know_accounts(self) -> Self:
@@ -51,7 +51,7 @@ class Portfolio(domain.Entity):
     @field_validator("positions")
     def _positions_are_multiple_of_lots(cls, positions: list[Position]) -> list[Position]:
         for position in positions:
-            for acc, shares in position.accounts:
+            for acc, shares in position.accounts.items():
                 ticker = position.ticker
 
                 if shares % position.lot:

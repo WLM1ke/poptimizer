@@ -23,8 +23,8 @@ class Forecast(domain.Entity):
     ] = Field(default_factory=set)
     forecasts: NonNegativeInt = 0
     portfolio_ver: domain.Version = domain.Version(0)
-    mean: float
-    std: float
+    mean: float = 0
+    std: float = 0
     positions: list[Position] = Field(default_factory=list)
 
     _must_be_sorted_by_ticker = field_validator("positions")(domain.sorted_with_ticker_field)
