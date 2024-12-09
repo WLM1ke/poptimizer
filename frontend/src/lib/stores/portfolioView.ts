@@ -17,23 +17,22 @@ const compValue = (a: PortfolioPosition, b: PortfolioPosition) => {
 export const portfolioView = derived(
 	[portfolio, portfolioHideZeroPositions, portfolioSortByValue],
 	([port, hideZero, sortByValue]) => {
-		let portfolioValue = 0;
-		let portfolioCash = 0;
-		const accountsPositions: Record<string, number> = {};
+		const portfolioCash = Object.values(port.cash).reduce((accumulator, cash) => accumulator + cash, 0);
+		const positionsShares = port.positions.map((position) =>
+			Object.values(position.accounts).reduce((accumulator, shares) => accumulator + shares, 0)
+		);
+		const portfolioValue = positionsShares.reduce(
+			(accumulator, shares, n) => accumulator + shares * port.positions[n].price,
+			portfolioCash
+		);
 
-		for (const account of Object.values(port.accounts)) {
-			portfolioValue += account.cash;
-			portfolioCash += account.cash;
-			for (const [ticker, shares] of Object.entries(account.positions)) {
-				accountsPositions[ticker] = (accountsPositions[ticker] ?? 0) + shares;
-				portfolioValue += shares * port.securities[ticker].price;
-			}
-		}
+		const portfolioPositions = positionsShares
+			.map((shares, n) => {
+				const position = port.positions[n];
 
-		const portfolioPositions = Object.entries(port.securities)
-			.map(([ticker, { price }]) => {
-				const shares = accountsPositions[ticker] ?? 0;
-				const value = price * shares;
+				const ticker = position.ticker;
+				const price = position.price;
+				const value = position.price * shares;
 				const weight = portfolioValue > 0 ? value / portfolioValue : 0;
 
 				return {
@@ -56,7 +55,7 @@ export const portfolioView = derived(
 		return {
 			day: port.day,
 			positions: portfolioPositions,
-			positionsCount: Object.keys(accountsPositions).length,
+			positionsCount: port.positions.length,
 			effectiveCount,
 			cash: portfolioCash,
 			value: portfolioValue

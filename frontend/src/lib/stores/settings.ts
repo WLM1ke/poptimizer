@@ -78,5 +78,5 @@ export const createAccount = async (account: string) => {
 };
 
 export const accounts = derived(portfolio, (portfolio) => {
-	return Object.keys(portfolio.accounts).toSorted();
+	return portfolio.account_names.toSorted();
 });

@@ -132,7 +132,7 @@ class Repo:
             return t_entity.model_validate(doc)
         except ValidationError as err:
             collection_name = adapter.get_component_name(t_entity)
-            raise errors.AdapterError(f"can't create entity {collection_name}.{uid}") from err
+            raise errors.AdapterError(f"can't create entity {collection_name}.{uid} {err}") from err
 
     async def save(self, entity: domain.Entity) -> None:
         collection_name = adapter.get_component_name(entity)

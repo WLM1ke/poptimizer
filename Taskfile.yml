@@ -55,7 +55,7 @@ tasks:
       - cd {{.FRONTEND}} && npm run build
 
   dev:
-    desc: Develope frontend
+    desc: Develop frontend
     cmds:
       - cd {{.FRONTEND}} && npm run dev -- --open
 

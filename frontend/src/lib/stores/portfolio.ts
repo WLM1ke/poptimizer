@@ -1,23 +1,22 @@
 import { writable } from "svelte/store";
 
-interface Security {
+interface Positions {
+	ticker: string;
 	lot: number;
 	price: number;
-}
-
-interface Account {
-	cash: number;
-	positions: Record<string, number>;
+	accounts: Record<string, number>;
 }
 
 export interface Portfolio {
 	day: string;
-	accounts: Record<string, Account>;
-	securities: Readonly<Record<string, Security>>;
+	account_names: string[];
+	cash: Record<string, number>;
+	positions: Positions[];
 }
 
 export const portfolio = writable<Portfolio>({
 	day: "",
-	securities: {},
-	accounts: {}
+	account_names: [],
+	cash: {},
+	positions: []
 });

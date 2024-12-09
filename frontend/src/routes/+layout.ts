@@ -33,12 +33,17 @@ export const load = (async ({ fetch }) => {
 		addInfo(`Update dividends for ${ticker}`);
 	}
 
-	if (Object.keys(port.accounts).length === 0) {
+	if (Object.keys(port.account_names).length === 0) {
 		addInfo("No accounts: create them in settings");
 	}
 
-	for (const [name, account] of Object.entries(port.accounts)) {
-		if (Object.keys(account.positions).length === 0 && account.cash === 0) {
+	for (const name of port.account_names) {
+		if (
+			port.positions.reduce(
+				(accumulator, position) => accumulator + (position.accounts[name] ?? 0),
+				port.cash[name] ?? 0
+			) === 0
+		) {
 			addInfo(`Account ${name} is empty: delete it or enter cash and positions`);
 		}
 	}

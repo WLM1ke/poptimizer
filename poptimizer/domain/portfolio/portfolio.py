@@ -85,6 +85,8 @@ class Portfolio(domain.Entity):
             if name in position.accounts:
                 raise errors.DomainError(f"account {name} has not zero {position.ticker}")
 
+        self.account_names.remove(name)
+
     def find_position(self, ticker: domain.Ticker) -> tuple[int, Position | None]:
         n = bisect.bisect_left(self.positions, ticker, key=lambda pos: pos.ticker)
         if n == len(self.positions) or self.positions[n].ticker != ticker:
@@ -111,6 +113,9 @@ class Portfolio(domain.Entity):
         if ticker == domain.CashTicker:
             self.cash[acc_name] = amount
 
+            if not amount:
+                self.cash.pop(acc_name)
+
             return
 
         match self.find_position(ticker):
@@ -120,7 +125,7 @@ class Portfolio(domain.Entity):
                 if amount % (lot := position.lot):
                     raise errors.DomainError(f"amount {amount} must be multiple of {lot}")
 
-                if not amount:
-                    position.accounts.pop(acc_name, None)
-
                 position.accounts[acc_name] = amount
+
+                if not amount:
+                    position.accounts.pop(acc_name)

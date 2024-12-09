@@ -16,15 +16,22 @@ const compValue = (a: AccountPosition, b: AccountPosition) => {
 };
 
 const getAccountView = (accountName: string, port: Portfolio, hideZero: boolean, sortByValue: boolean) => {
-	const account = port.accounts[accountName];
-	const accountCash = account.cash;
+	const accountCash = port.cash[accountName] ?? 0;
 	let accountValue = accountCash;
+	let positionsCount = 0;
 
-	const accountPositions = Object.entries(port.securities)
-		.map(([ticker, { price, lot }]) => {
-			const shares = account.positions[ticker] ?? 0;
+	const accountPositions = port.positions
+		.map((position) => {
+			const ticker = position.ticker;
+			const shares = position.accounts[accountName] ?? 0;
+			const lot = position.lot;
+			const price = position.price;
 			const value = price * shares;
 			accountValue += value;
+
+			if (value > 0) {
+				positionsCount++;
+			}
 
 			return {
 				ticker,
@@ -41,8 +48,8 @@ const getAccountView = (accountName: string, port: Portfolio, hideZero: boolean,
 		name: accountName,
 		day: port.day,
 		positions: accountPositions,
-		positionsCount: Object.keys(account.positions).length,
-		positionsTotal: Object.keys(port.securities).length,
+		positionsCount: positionsCount,
+		positionsTotal: port.positions.length,
 		cash: accountCash,
 		value: accountValue,
 		updatePosition: async (ticker: string, amount: string) => {
