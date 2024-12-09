@@ -189,7 +189,7 @@ class EvolutionHandler:
                     return handler.ModelDeleted(day=model.day, uid=model.uid)
 
                 evolution.new_base(model)
-                evolution.state = evolve.State.EVAL_MODEL
+                evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 self._change_t_critical(evolution, model)
