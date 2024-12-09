@@ -1,4 +1,5 @@
 import datetime
+import random
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, Final
@@ -48,7 +49,12 @@ class Repo:
                     "alfa": True,
                 },
             },
-            {"$sort": {"day": pymongo.ASCENDING, "alfa": pymongo.DESCENDING}},
+            {
+                "$sort": {
+                    "day": pymongo.ASCENDING,
+                    "alfa": random.choice([pymongo.DESCENDING, pymongo.ASCENDING]),  # noqa: S311
+                }
+            },
             {"$limit": 1},
         ]
 
