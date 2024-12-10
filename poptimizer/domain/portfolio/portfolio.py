@@ -129,3 +129,9 @@ class Portfolio(domain.Entity):
 
                 if not amount:
                     position.accounts.pop(acc_name)
+
+    def weights(self) -> list[float]:
+        values = [position.price * sum(position.accounts.values()) for position in self.positions]
+        port_value = sum(values) + sum(self.cash.values())
+
+        return [value / port_value for value in values]
