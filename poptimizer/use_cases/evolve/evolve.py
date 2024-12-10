@@ -147,6 +147,7 @@ class EvolutionHandler:
 
             if evolution.state != evolve.State.CREATE_NEW_MODEL:
                 evolution.more_tests = False
+                self._lgr.warning("Stop increasing test day for today - %d", evolution.test_days)
 
             self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
 
@@ -183,11 +184,10 @@ class EvolutionHandler:
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 if evolution.more_tests and (
-                    (evolution.test_days < consts.INITIAL_TEST_DAYS)
-                    or (await ctx.count_models() > consts.TARGET_MODELS_COUNT)
+                    evolution.test_days < (models_count := await ctx.count_models())
+                    or (models_count > consts.TARGET_MODELS_COUNT)
                 ):
                     evolution.test_days += 1
-
                     self._lgr.warning("Test days increased - %d", evolution.test_days)
             case evolve.State.CREATE_NEW_MODEL:
                 if self._should_delete(evolution, model):
