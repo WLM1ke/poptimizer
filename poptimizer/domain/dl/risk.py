@@ -1,9 +1,9 @@
 import numpy as np
 import scipy  # type: ignore[reportMissingTypeStubs]
 from numpy.typing import NDArray
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
-from poptimizer import consts
+from poptimizer import consts, errors
 from poptimizer.domain.dl import ledoit_wolf
 
 
@@ -51,14 +51,17 @@ def optimize(  # noqa: PLR0913
     weights, sigma = _opt_weight(mean, std, tot_ret, cfg)
     port_variance: float = (weights.T @ sigma @ weights).item()
 
-    return OptimizationResult(
-        ret=np.log1p((weights.T @ labels).item()) * year_multiplier,
-        avr=np.log1p(labels.mean()) * year_multiplier,
-        e_ret=(weights * mean).sum(),
-        e_std=port_variance**0.5,
-        pos=int(1 / (weights**2).sum()),
-        weight_max=weights.max(),
-    )
+    try:
+        return OptimizationResult(
+            ret=np.log1p((weights.T @ labels).item()) * year_multiplier,
+            avr=np.log1p(labels.mean()) * year_multiplier,
+            e_ret=(weights * mean).sum(),
+            e_std=port_variance**0.5,
+            pos=int(1 / (weights**2).sum()),
+            weight_max=weights.max(),
+        )
+    except ValidationError as err:
+        raise errors.DomainError("invalid optimization result") from err
 
 
 def _opt_weight(
