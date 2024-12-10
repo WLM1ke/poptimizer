@@ -61,12 +61,13 @@ class EvolutionHandler:
         ctx: Ctx,
         msg: handler.DataNotChanged | handler.DataUpdated,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
-        evolution, model_count = await self._init_step(ctx, msg.day)
+        await self._init_evolution(ctx)
+        evolution = await self._init_step(ctx, msg.day)
         model = await self._get_model(ctx, evolution)
         self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
 
         try:
-            await self._update_model_metrics(model, evolution.day, evolution.tickers, model_count)
+            await self._update_model_metrics(model, evolution.day, evolution.tickers, evolution.test_days)
         except* errors.DomainError as err:
             await self._delete_model(ctx, evolution, model, err)
 
@@ -76,14 +77,12 @@ class EvolutionHandler:
 
         return event
 
-    async def _init_step(self, ctx: Ctx, day: domain.Day) -> tuple[evolve.Evolution, int]:
-        model_count = await ctx.count_models()
-        if model_count < _PARENT_COUNT:
-            for _ in range(_PARENT_COUNT - model_count):
-                await ctx.get_for_update(evolve.Model, _random_uid())
+    async def _init_evolution(self, ctx: Ctx) -> None:
+        if not await ctx.count_models():
+            self._lgr.info("Creating initial model")
+            await ctx.get_for_update(evolve.Model, _random_uid())
 
-            model_count = _PARENT_COUNT
-
+    async def _init_step(self, ctx: Ctx, day: domain.Day) -> evolve.Evolution:
         evolution = await ctx.get_for_update(evolve.Evolution)
 
         match evolution.day == day:
@@ -93,7 +92,7 @@ class EvolutionHandler:
                 port = await ctx.get(portfolio.Portfolio)
                 evolution.init_new_day(day, port.tickers())
 
-        return evolution, model_count
+        return evolution
 
     async def _get_model(self, ctx: Ctx, evolution: evolve.Evolution) -> evolve.Model:
         match evolution.state:
@@ -146,6 +145,9 @@ class EvolutionHandler:
         if minimal_returns_days is not None and minimal_returns_days > evolution.minimal_returns_days:
             evolution.minimal_returns_days += 1
 
+            if evolution.state != evolve.State.CREATE_NEW_MODEL:
+                evolution.more_tests = False
+
             self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
 
         match evolution.state:
@@ -178,8 +180,15 @@ class EvolutionHandler:
                     return handler.ModelDeleted(day=model.day, uid=model.uid)
 
                 evolution.new_base(model)
-                evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
+                evolution.state = evolve.State.CREATE_NEW_MODEL
+                if evolution.more_tests and (
+                    (evolution.test_days < consts.INITIAL_TEST_DAYS)
+                    or (await ctx.count_models() > consts.TARGET_MODELS_COUNT)
+                ):
+                    evolution.test_days += 1
+
+                    self._lgr.warning("Test days increased - %d", evolution.test_days)
             case evolve.State.CREATE_NEW_MODEL:
                 if self._should_delete(evolution, model):
                     evolution.state = evolve.State.EVAL_MODEL
@@ -248,9 +257,9 @@ class EvolutionHandler:
 
                 if t_value_llh < adj_t_critical:
                     sign_llh = "<"
-                evolution.t_critical -= (1 - consts.P_VALUE) / len(model.alfas)
+                evolution.t_critical -= (1 - consts.P_VALUE) / evolution.test_days
             case False:
-                evolution.t_critical += consts.P_VALUE / len(model.alfas)
+                evolution.t_critical += consts.P_VALUE / evolution.test_days
 
         self._lgr.info(
             f"Alfa t-value({t_value_alfas:.2f}) {sign_alfa} adj-t-critical({adj_t_critical:.2f}), "
