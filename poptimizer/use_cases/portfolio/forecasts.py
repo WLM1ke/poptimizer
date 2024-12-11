@@ -27,13 +27,17 @@ class ForecastHandler:
 
                 forecast.models.add(msg.uid)
 
-        if len(forecast.models) ** 0.5 - forecast.forecasts**0.5 >= 1:
-            await self._update_forecast(ctx, msg.day, forecast)
+        await self._update_forecast(ctx, msg.day, forecast)
 
         return handler.ForecastsAnalyzed(day=msg.day)
 
     async def _update_forecast(self, ctx: handler.Ctx, day: domain.Day, forecast: forecasts.Forecast) -> None:
+        if len(forecast.models) ** 0.5 - forecast.forecasts**0.5 >= 1:
+            return
+
         port = await ctx.get(portfolio.Portfolio)
+        if port.day != day:
+            return
 
         weights = np.array(port.weights()).reshape(-1, 1)
         tickers = port.tickers()
