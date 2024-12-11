@@ -57,6 +57,8 @@ class Forecast(handler.DTO):
     mean: float = 0
     std: float = 0
     positions: list[forecasts.Position]
+    forecasts_count: int
+    risk_tolerance: float
 
     @classmethod
     def from_forecast(cls, forecast: forecasts.Forecast) -> Self:
@@ -66,6 +68,8 @@ class Forecast(handler.DTO):
             mean=forecast.mean,
             std=forecast.std,
             positions=forecast.positions,
+            forecasts_count=forecast.forecasts_count,
+            risk_tolerance=forecast.risk_tolerance,
         )
 
 

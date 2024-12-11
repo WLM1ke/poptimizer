@@ -4,7 +4,7 @@
 </script>
 
 <td class="w-32 p-2 text-right font-mono">
-	{value.toLocaleString(undefined, {
+	{value.toLocaleString("RU", {
 		minimumFractionDigits: fractionDigits,
 		maximumFractionDigits: fractionDigits
 	})}

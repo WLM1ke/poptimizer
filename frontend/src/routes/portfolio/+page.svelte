@@ -19,7 +19,7 @@
 		Date: {$portfolioView.day}
 	</CardSecondary>
 	<CardMain>
-		Value: {$portfolioView.value.toLocaleString(undefined, {
+		Value: {$portfolioView.value.toLocaleString("RU", {
 			minimumFractionDigits: 0,
 			maximumFractionDigits: 0
 		})} &#8381;

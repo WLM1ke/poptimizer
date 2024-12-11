@@ -32,7 +32,7 @@ class ForecastHandler:
         return handler.ForecastsAnalyzed(day=msg.day)
 
     async def _update_forecast(self, ctx: handler.Ctx, day: domain.Day, forecast: forecasts.Forecast) -> None:
-        if len(forecast.models) ** 0.5 - forecast.forecasts**0.5 < 1:
+        if len(forecast.models) ** 0.5 - forecast.forecasts_count**0.5 < 1:
             return
 
         port = await ctx.get(portfolio.Portfolio)
@@ -50,6 +50,8 @@ class ForecastHandler:
 
         betas: list[NDArray[np.double]] = []
         grads: list[NDArray[np.double]] = []
+
+        risk_tol: list[float] = []
 
         for uid in forecast.models:
             model = await ctx.get(evolve.Model, uid)
@@ -76,6 +78,8 @@ class ForecastHandler:
             grad_err = port_std * (beta - 1)
             grads.append(model.risk_tolerance * grad_log_ret - (1 - model.risk_tolerance) * grad_err)
 
+            risk_tol.append(model.risk_tolerance)
+
         forecast.mean = np.median(port_means).item()
         forecast.std = np.median(port_stds).item()
 
@@ -91,6 +95,8 @@ class ForecastHandler:
         stacked_grads = np.hstack(grads)
         median_grads = np.median(stacked_grads, axis=1)
 
+        median_risk_tol = np.median(risk_tol)
+
         forecast.positions = []
         for n, ticker in enumerate(tickers):
             forecast.positions.append(
@@ -103,5 +109,6 @@ class ForecastHandler:
                 )
             )
 
-        forecast.forecasts = len(means)
+        forecast.risk_tolerance = median_risk_tol.item()
+        forecast.forecasts_count = len(means)
         forecast.portfolio_ver = port.ver

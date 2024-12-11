@@ -46,7 +46,7 @@
 		Date: {accountView.day}
 	</CardSecondary>
 	<CardMain>
-		Value: {accountView.value.toLocaleString(undefined, {
+		Value: {accountView.value.toLocaleString("RU", {
 			minimumFractionDigits: 0,
 			maximumFractionDigits: 0
 		})} &#8381;

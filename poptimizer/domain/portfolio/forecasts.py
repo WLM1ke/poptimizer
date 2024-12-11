@@ -21,8 +21,9 @@ class Forecast(domain.Entity):
             return_type=list,
         ),
     ] = Field(default_factory=set)
-    forecasts: NonNegativeInt = 0
+    forecasts_count: NonNegativeInt = 0
     portfolio_ver: domain.Version = domain.Version(0)
+    risk_tolerance: float = Field(0, ge=0, le=1)
     mean: float = 0
     std: float = 0
     positions: list[Position] = Field(default_factory=list)
@@ -31,5 +32,5 @@ class Forecast(domain.Entity):
 
     def init_day(self, day: domain.Day) -> None:
         self.models.clear()
-        self.forecasts = 0
+        self.forecasts_count = 0
         self.day = day
