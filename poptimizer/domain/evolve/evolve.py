@@ -14,7 +14,7 @@ from poptimizer.domain.evolve import genetics, genotype
 _INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.minimal_returns_days(
     history_days=consts.INITIAL_HISTORY_DAYS_END,
     forecast_days=consts.FORECAST_DAYS,
-    test_days=consts.TARGET_MODELS_COUNT,
+    test_days=consts.INITIAL_FORECAST_DAYS,
 )
 
 
@@ -94,6 +94,7 @@ class Evolution(domain.Entity):
     duration: NonNegativeFloat = 0
     test_days: int = Field(default=2, ge=2)
     more_tests: bool = True
+    target_population: PositiveInt = 1
     t_critical: float = -7
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
 

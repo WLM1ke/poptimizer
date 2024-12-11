@@ -183,10 +183,7 @@ class EvolutionHandler:
                 evolution.new_base(model)
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
                 evolution.state = evolve.State.CREATE_NEW_MODEL
-                if evolution.more_tests and (
-                    evolution.test_days < (models_count := await ctx.count_models())
-                    or (models_count > consts.TARGET_MODELS_COUNT)
-                ):
+                if evolution.more_tests and (await ctx.count_models() > evolution.target_population):
                     evolution.test_days += 1
                     self._lgr.warning("Test days increased - %d", evolution.test_days)
             case evolve.State.CREATE_NEW_MODEL:
@@ -200,6 +197,9 @@ class EvolutionHandler:
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
+                if await ctx.count_models() > 2 * evolution.target_population:
+                    evolution.target_population += 1
+                    self._lgr.warning("Target population increased - %d", evolution.target_population)
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 self._change_t_critical(evolution, model)
                 evolution.new_base(model)
