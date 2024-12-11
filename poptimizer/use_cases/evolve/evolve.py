@@ -145,9 +145,9 @@ class EvolutionHandler:
         if minimal_returns_days is not None and minimal_returns_days > evolution.minimal_returns_days:
             evolution.minimal_returns_days += 1
 
-            if evolution.state != evolve.State.CREATE_NEW_MODEL:
+            if evolution.more_tests and evolution.state != evolve.State.CREATE_NEW_MODEL:
                 evolution.more_tests = False
-                self._lgr.warning("Stop increasing test day for today - %d", evolution.test_days)
+                self._lgr.warning("Stop increasing test days for today - %d", evolution.test_days)
 
             self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
 
