@@ -8,6 +8,7 @@ def register_handlers(bus: msg.Bus) -> None:
     bus.register_request_handler(port_handler.create_account)
     bus.register_request_handler(port_handler.remove_acount)
     bus.register_request_handler(port_handler.update_position)
+    bus.register_request_handler(port_handler.get_forecast)
 
     div_handler = raw.DividendsHandler()
     bus.register_request_handler(div_handler.get_div_tickers)

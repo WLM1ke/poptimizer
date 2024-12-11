@@ -4,7 +4,7 @@ from typing import Self
 from pydantic import BaseModel, NonNegativeInt, PositiveFloat, PositiveInt
 
 from poptimizer.domain import domain
-from poptimizer.domain.portfolio import portfolio
+from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
 
 
@@ -26,6 +26,7 @@ class Security(BaseModel):
 
 class Portfolio(handler.DTO):
     day: date
+    ver: int
     account_names: list[domain.AccName]
     cash: portfolio.AccountData
     positions: list[portfolio.Position]
@@ -34,6 +35,7 @@ class Portfolio(handler.DTO):
     def from_portfolio(cls, port: portfolio.Portfolio) -> Self:
         return cls(
             day=port.day,
+            ver=port.ver,
             account_names=list(port.account_names),
             cash=port.cash,
             positions=port.positions,
@@ -44,6 +46,27 @@ class Position(handler.DTO):
     account: domain.AccName
     ticker: domain.Ticker
     amount: NonNegativeInt
+
+
+class GetForecast(handler.DTO): ...
+
+
+class Forecast(handler.DTO):
+    day: date
+    portfolio_ver: int
+    mean: float = 0
+    std: float = 0
+    positions: list[forecasts.Position]
+
+    @classmethod
+    def from_forecast(cls, forecast: forecasts.Forecast) -> Self:
+        return cls(
+            day=forecast.day,
+            portfolio_ver=forecast.portfolio_ver,
+            mean=forecast.mean,
+            std=forecast.std,
+            positions=forecast.positions,
+        )
 
 
 class PortfolioHandler:
@@ -72,3 +95,8 @@ class PortfolioHandler:
         port.update_position(msg.account, msg.ticker, msg.amount)
 
         return Portfolio.from_portfolio(port)
+
+    async def get_forecast(self, ctx: handler.Ctx, msg: GetForecast) -> Forecast:  # noqa: ARG002
+        forecast = await ctx.get(forecasts.Forecast)
+
+        return Forecast.from_forecast(forecast)
