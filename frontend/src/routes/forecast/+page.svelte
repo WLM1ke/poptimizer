@@ -11,34 +11,42 @@
 		NumberCell,
 		PercentCell
 	} from "$lib/components/table";
+	import type { PageData } from "./$types";
+	import { get } from "$lib/request";
 
-	export let data;
+	let { data }: { data: PageData } = $props();
+	let forecast = $state(data);
 
-	$: outdated = $portfolio.ver == data.portfolio_ver ? "" : "outdated";
+	$effect(() => {
+		if ($portfolio.ver != forecast.portfolio_ver) {
+			setTimeout(async () => {
+				forecast = await get(fetch, `/api/forecast`);
+			}, 1000);
+		}
+	});
 </script>
 
 <Card>
 	<CardSecondary>
-		Date: {data.day}
-		{outdated}
+		Date: {forecast.day}
 	</CardSecondary>
 	<CardMain>
-		Mean: {data.mean.toLocaleString("RU", {
+		Mean: {forecast.mean.toLocaleString("RU", {
 			style: "percent",
 			minimumFractionDigits: 2,
 			maximumFractionDigits: 2
-		})} / Std: {data.std.toLocaleString("RU", {
+		})} / Std: {forecast.std.toLocaleString("RU", {
 			style: "percent",
 			minimumFractionDigits: 2,
 			maximumFractionDigits: 2
 		})}
 	</CardMain>
 	<CardSecondary>
-		Risk tolerance: {data.risk_tolerance.toLocaleString("RU", {
+		Risk tolerance: {forecast.risk_tolerance.toLocaleString("RU", {
 			style: "percent",
 			minimumFractionDigits: 2,
 			maximumFractionDigits: 2
-		})} / Count: {data.forecasts_count}
+		})} / Count: {forecast.forecasts_count}
 	</CardSecondary>
 </Card>
 <Table>
@@ -50,7 +58,7 @@
 		<HeadCell>Gradient</HeadCell>
 	</TableHead>
 	<TableBody>
-		{#each data.positions as position (position.ticker)}
+		{#each forecast.positions as position (position.ticker)}
 			<TableRow>
 				<TextCell text={position.ticker} />
 				<PercentCell value={position.mean} />

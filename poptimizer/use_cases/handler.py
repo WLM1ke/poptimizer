@@ -59,6 +59,10 @@ class PortfolioUpdated(Event):
     day: domain.Day
 
 
+class PositionsUpdated(Event):
+    day: domain.Day
+
+
 class DivStatusUpdated(Event):
     day: domain.Day
 

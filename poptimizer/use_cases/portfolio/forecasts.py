@@ -15,27 +15,39 @@ class ForecastHandler:
     async def __call__(
         self,
         ctx: handler.Ctx,
-        msg: handler.ModelDeleted | handler.ModelEvaluated,
-    ) -> handler.ForecastsAnalyzed:
+        msg: handler.ModelDeleted | handler.ModelEvaluated | handler.PositionsUpdated,
+    ) -> handler.ForecastsAnalyzed | None:
         forecast = await ctx.get_for_update(forecasts.Forecast)
         match msg:
             case handler.ModelDeleted():
                 forecast.models -= {msg.uid}
+
+                return handler.ForecastsAnalyzed(day=msg.day)
             case handler.ModelEvaluated():
                 if forecast.day != msg.day:
                     forecast.init_day(msg.day)
 
                 forecast.models.add(msg.uid)
 
-        await self._update_forecast(ctx, msg.day, forecast)
+                if len(forecast.models) ** 0.5 - forecast.forecasts_count**0.5 >= 1:
+                    port = await ctx.get(portfolio.Portfolio)
+                    await self._update_forecast(ctx, msg.day, port, forecast)
 
-        return handler.ForecastsAnalyzed(day=msg.day)
+                return handler.ForecastsAnalyzed(day=msg.day)
+            case handler.PositionsUpdated():
+                port = await ctx.get(portfolio.Portfolio)
+                if forecast.portfolio_ver < port.ver:
+                    await self._update_forecast(ctx, msg.day, port, forecast)
 
-    async def _update_forecast(self, ctx: handler.Ctx, day: domain.Day, forecast: forecasts.Forecast) -> None:
-        if len(forecast.models) ** 0.5 - forecast.forecasts_count**0.5 < 1:
-            return
+                return None
 
-        port = await ctx.get(portfolio.Portfolio)
+    async def _update_forecast(
+        self,
+        ctx: handler.Ctx,
+        day: domain.Day,
+        port: portfolio.Portfolio,
+        forecast: forecasts.Forecast,
+    ) -> None:
         if port.day != day:
             return
 
@@ -55,7 +67,7 @@ class ForecastHandler:
 
         for uid in forecast.models:
             model = await ctx.get(evolve.Model, uid)
-            if model.day != day or model.tickers != tickers:
+            if model.day != port.day or model.tickers != tickers:
                 forecast.models.remove(uid)
                 continue
 

@@ -41,6 +41,16 @@ class Portfolio(handler.DTO):
             positions=port.positions,
         )
 
+    @classmethod
+    def from_updated_portfolio(cls, port: portfolio.Portfolio) -> Self:
+        return cls(
+            day=port.day,
+            ver=port.ver + 1,
+            account_names=list(port.account_names),
+            cash=port.cash,
+            positions=port.positions,
+        )
+
 
 class Position(handler.DTO):
     account: domain.AccName
@@ -84,21 +94,21 @@ class PortfolioHandler:
 
         port.create_acount(msg.account)
 
-        return Portfolio.from_portfolio(port)
+        return Portfolio.from_updated_portfolio(port)
 
     async def remove_acount(self, ctx: handler.Ctx, msg: RemoveAccount) -> Portfolio:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
         port.remove_acount(msg.account)
 
-        return Portfolio.from_portfolio(port)
+        return Portfolio.from_updated_portfolio(port)
 
-    async def update_position(self, ctx: handler.Ctx, msg: Position) -> Portfolio:
+    async def update_position(self, ctx: handler.Ctx, msg: Position) -> tuple[Portfolio, handler.PositionsUpdated]:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
         port.update_position(msg.account, msg.ticker, msg.amount)
 
-        return Portfolio.from_portfolio(port)
+        return Portfolio.from_updated_portfolio(port), handler.PositionsUpdated(day=port.day)
 
     async def get_forecast(self, ctx: handler.Ctx, msg: GetForecast) -> Forecast:  # noqa: ARG002
         forecast = await ctx.get(forecasts.Forecast)
