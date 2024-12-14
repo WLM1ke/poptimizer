@@ -257,9 +257,9 @@ class EvolutionHandler:
 
                 if t_value_llh < adj_t_critical:
                     sign_llh = "<"
-                evolution.t_critical -= (1 - consts.P_VALUE) / evolution.test_days
+                evolution.t_critical -= (1 - consts.P_VALUE) / evolution.target_population
             case False:
-                evolution.t_critical += consts.P_VALUE / evolution.test_days
+                evolution.t_critical += consts.P_VALUE / evolution.target_population
 
         self._lgr.info(
             f"Alfa t-value({t_value_alfas:.2f}) {sign_alfa} adj-t-critical({adj_t_critical:.2f}), "
