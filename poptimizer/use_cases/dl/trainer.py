@@ -121,7 +121,7 @@ class Trainer:
         net = self._prepare_net(cfg)
         self._train(net, cfg.scheduler, data, cfg.batch.size)
 
-        model.alfas, model.llh = self._test(net, cfg, data)
+        model.alfas = self._test(net, cfg, data)
         model.mean, model.cov = self._forecast(net, cfg.batch.forecast_days, data)
 
     def _train(
@@ -175,7 +175,7 @@ class Trainer:
         net: wave_net.Net,
         cfg: Cfg,
         data: list[datasets.OneTickerData],
-    ) -> tuple[list[float], list[float]]:
+    ) -> list[float]:
         with torch.no_grad():
             net.eval()
 
@@ -201,7 +201,7 @@ class Trainer:
                 alfas.append(rez.ret - rez.avr)
                 llh.append(loss)
 
-        return alfas, llh
+        return alfas
 
     def _forecast(
         self,

@@ -1,4 +1,5 @@
 import logging
+import operator
 import statistics
 from typing import Final, Protocol
 
@@ -144,12 +145,11 @@ class EvolutionHandler:
         minimal_returns_days = _extract_minimal_returns_days(err)
         if minimal_returns_days is not None and minimal_returns_days > evolution.minimal_returns_days:
             evolution.minimal_returns_days += 1
+            self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
 
             if evolution.more_tests and evolution.state != evolve.State.CREATE_NEW_MODEL:
                 evolution.more_tests = False
                 self._lgr.warning("Stop increasing test days for today - %d", evolution.test_days)
-
-            self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
 
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
@@ -171,7 +171,7 @@ class EvolutionHandler:
             case evolve.State.EVAL_NEW_BASE_MODEL:
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
-                self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
+                self._lgr.info(f"New base Model(alfa={model.alfa:.2%})")
             case evolve.State.EVAL_MODEL:
                 if self._should_delete(evolution, model):
                     evolution.state = evolve.State.EVAL_MODEL
@@ -183,9 +183,6 @@ class EvolutionHandler:
                 evolution.new_base(model)
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
                 evolution.state = evolve.State.CREATE_NEW_MODEL
-                if evolution.more_tests and (await ctx.count_models() > evolution.target_population):
-                    evolution.test_days += 1
-                    self._lgr.warning("Test days increased - %d", evolution.test_days)
             case evolve.State.CREATE_NEW_MODEL:
                 if self._should_delete(evolution, model):
                     evolution.state = evolve.State.EVAL_MODEL
@@ -197,9 +194,15 @@ class EvolutionHandler:
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
-                if await ctx.count_models() > 2 * evolution.target_population:
+
+                models_count = await ctx.count_models()
+                if models_count > 2 * evolution.target_population:
                     evolution.target_population += 1
                     self._lgr.warning("Target population increased - %d", evolution.target_population)
+
+                if evolution.more_tests and (models_count >= evolution.target_population):
+                    evolution.increase_tests()
+                    self._lgr.warning("Test days increased - %d", evolution.test_days)
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 self._change_t_critical(evolution, model)
                 evolution.new_base(model)
@@ -213,26 +216,19 @@ class EvolutionHandler:
         evolution: evolve.Evolution,
         model: evolve.Model,
     ) -> bool:
-        t_value_alfas = _t_values(model.alfas, evolution.alfas)
-        t_value_llh = _t_values(model.llh, evolution.llh)
-        adj_t_critical = evolution.adj_t_critical(model.duration)
+        delta = _delta(model.alfas, evolution.alfas)
+        adj_delta_critical = evolution.adj_delta_critical(model.duration)
 
-        sign_alfa = ">"
-        sign_llh = ">"
+        sign = ">"
         delete = False
 
-        if t_value_alfas < adj_t_critical or t_value_llh < adj_t_critical:
+        if delta < adj_delta_critical:
             delete = True
-            if t_value_alfas < adj_t_critical:
-                sign_alfa = "<"
-
-            if t_value_llh < adj_t_critical:
-                sign_llh = "<"
-
+            if delta < adj_delta_critical:
+                sign = "<"
         self._lgr.info(
-            f"Alfa t-value({t_value_alfas:.2f}) {sign_alfa} adj-t-critical({adj_t_critical:.2f}), "
-            f"llh's t-value({t_value_llh:.2f}) {sign_llh} adj-t-critical({adj_t_critical:.2f}), "
-            f"t-critical({evolution.t_critical:.2f})",
+            f"Delta({delta:.2%}) {sign} adj-delta-critical({adj_delta_critical:.2%}), "
+            f"delta-critical({evolution.delta_critical:.2%})",
         )
 
         return delete
@@ -242,33 +238,25 @@ class EvolutionHandler:
         evolution: evolve.Evolution,
         model: evolve.Model,
     ) -> None:
-        t_value_alfas = _t_values(model.alfas, evolution.alfas)
-        t_value_llh = _t_values(model.llh, evolution.llh)
-        adj_t_critical = evolution.adj_t_critical(model.duration)
-        old_t_critical = evolution.t_critical
+        delta = _delta(model.alfas, evolution.alfas)
+        adj_delta_critical = evolution.adj_delta_critical(model.duration)
+        old_delta_critical = evolution.delta_critical
 
         sign_alfa = ">"
-        sign_llh = ">"
 
-        match t_value_alfas < adj_t_critical or t_value_llh < adj_t_critical:
+        match delta < adj_delta_critical:
             case True:
-                if t_value_alfas < adj_t_critical:
+                if delta < adj_delta_critical:
                     sign_alfa = "<"
-
-                if t_value_llh < adj_t_critical:
-                    sign_llh = "<"
-                evolution.t_critical -= (1 - consts.P_VALUE) / evolution.target_population
+                evolution.delta_critical -= (1 - consts.P_VALUE) / evolution.test_days
             case False:
-                evolution.t_critical += consts.P_VALUE / evolution.target_population
+                evolution.delta_critical += consts.P_VALUE / evolution.test_days
 
         self._lgr.info(
-            f"Alfa t-value({t_value_alfas:.2f}) {sign_alfa} adj-t-critical({adj_t_critical:.2f}), "
-            f"llh's t-value({t_value_llh:.2f}) {sign_llh} adj-t-critical({adj_t_critical:.2f})"
+            f"Delta({delta:.2%}) {sign_alfa} adj-delta-critical({adj_delta_critical:.2%}), "
+            f"changing delta-critical({old_delta_critical:.2%}) -> delta-critical({evolution.delta_critical:.2%})"
         )
-        self._lgr.info(f"Changing t-critical({old_t_critical:.2f}) -> t-critical({evolution.t_critical:.2f})")
 
 
-def _t_values(target: list[float], base: list[float]) -> float:
-    deltas = [target_value - base_value for target_value, base_value in zip(target, base, strict=False)]
-
-    return statistics.mean(deltas) * len(deltas) ** 0.5 / statistics.stdev(deltas)
+def _delta(target: list[float], base: list[float]) -> float:
+    return statistics.mean(map(operator.sub, target, base))

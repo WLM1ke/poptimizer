@@ -23,7 +23,6 @@ class Model(domain.Entity):
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
     duration: float = 0
     alfas: list[float] = Field(default_factory=list)
-    llh: list[float] = Field(default_factory=list)
     mean: list[list[float]] = Field(default_factory=list)
     cov: list[list[float]] = Field(default_factory=list)
     risk_tolerance: float = Field(default=0, ge=0, le=1)
@@ -32,9 +31,6 @@ class Model(domain.Entity):
 
     @model_validator(mode="after")
     def _match_length(self) -> Self:
-        if len(self.alfas) != len(self.llh):
-            raise ValueError("invalid metrics length")
-
         n = len(self.tickers)
 
         if len(self.mean) != n:
@@ -90,12 +86,11 @@ class Evolution(domain.Entity):
     tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
     base_model_uid: domain.UID = domain.UID("")
     alfas: list[float] = Field(default_factory=list)
-    llh: list[float] = Field(default_factory=list)
     duration: NonNegativeFloat = 0
     test_days: int = Field(default=2, ge=2)
     more_tests: bool = True
     target_population: PositiveInt = 1
-    t_critical: float = -7
+    delta_critical: float = 0
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
 
     def init_new_day(self, day: domain.Day, tickers: tuple[domain.Ticker, ...]) -> None:
@@ -105,11 +100,14 @@ class Evolution(domain.Entity):
         self.more_tests = True
         self.state = State.EVAL_NEW_BASE_MODEL
 
-    def adj_t_critical(self, duration: NonNegativeFloat) -> float:
-        return self.t_critical * min(1, self.duration / duration)
+    def increase_tests(self) -> None:
+        self.delta_critical *= (self.test_days / (self.test_days + 1)) ** 0.5
+        self.test_days += 1
+
+    def adj_delta_critical(self, duration: NonNegativeFloat) -> float:
+        return self.delta_critical * min(1, self.duration / duration)
 
     def new_base(self, model: Model) -> None:
         self.base_model_uid = model.uid
         self.alfas = model.alfas
-        self.llh = model.llh
         self.duration = model.duration
