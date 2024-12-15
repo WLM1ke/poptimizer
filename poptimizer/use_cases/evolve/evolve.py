@@ -248,9 +248,9 @@ class EvolutionHandler:
             case True:
                 if delta < adj_delta_critical:
                     sign_alfa = "<"
-                evolution.delta_critical -= (1 - consts.P_VALUE) / evolution.test_days
+                evolution.delta_critical -= (1 - consts.P_VALUE) / evolution.target_population
             case False:
-                evolution.delta_critical += consts.P_VALUE / evolution.test_days
+                evolution.delta_critical += consts.P_VALUE / evolution.target_population
 
         self._lgr.info(
             f"Delta({delta:.2%}) {sign_alfa} adj-delta-critical({adj_delta_critical:.2%}), "
