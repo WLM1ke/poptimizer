@@ -62,7 +62,7 @@ class EvolutionHandler:
         ctx: Ctx,
         msg: handler.DataNotChanged | handler.DataUpdated,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
-        await self._init_evolution(ctx)
+        await self._init_evolution(ctx, msg.day)
         evolution = await self._init_step(ctx, msg.day)
         model = await self._get_model(ctx, evolution)
         self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
@@ -78,10 +78,13 @@ class EvolutionHandler:
 
         return event
 
-    async def _init_evolution(self, ctx: Ctx) -> None:
+    async def _init_evolution(self, ctx: Ctx, day: domain.Day) -> None:
         if not await ctx.count_models():
-            self._lgr.info("Creating initial model")
-            await ctx.get_for_update(evolve.Model, _random_uid())
+            self._lgr.info("Creating initial models")
+            for _ in range(consts.INITIAL_POPULATION):
+                model = await ctx.get_for_update(evolve.Model, _random_uid())
+                model.day = day
+                model.alfas = [0]
 
     async def _init_step(self, ctx: Ctx, day: domain.Day) -> evolve.Evolution:
         evolution = await ctx.get_for_update(evolve.Evolution)
@@ -197,7 +200,7 @@ class EvolutionHandler:
 
                 models_count = await ctx.count_models()
                 if models_count > 2 * evolution.target_population:
-                    evolution.target_population += 1
+                    evolution.increase_target_population()
                     self._lgr.warning("Target population increased - %d", evolution.target_population)
 
                 if evolution.more_tests and (models_count >= evolution.target_population):
@@ -248,9 +251,9 @@ class EvolutionHandler:
             case True:
                 if delta < adj_delta_critical:
                     sign_alfa = "<"
-                evolution.delta_critical -= (1 - consts.P_VALUE) / evolution.target_population
+                evolution.delta_critical -= (1 - consts.P_VALUE) / evolution.test_days
             case False:
-                evolution.delta_critical += consts.P_VALUE / evolution.target_population
+                evolution.delta_critical += consts.P_VALUE / evolution.test_days
 
         self._lgr.info(
             f"Delta({delta:.2%}) {sign_alfa} adj-delta-critical({adj_delta_critical:.2%}), "

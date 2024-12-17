@@ -14,7 +14,7 @@ from poptimizer.domain.evolve import genetics, genotype
 _INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.minimal_returns_days(
     history_days=consts.INITIAL_HISTORY_DAYS_END,
     forecast_days=consts.FORECAST_DAYS,
-    test_days=consts.INITIAL_FORECAST_DAYS,
+    test_days=consts.INITIAL_POPULATION,
 )
 
 
@@ -103,6 +103,10 @@ class Evolution(domain.Entity):
     def increase_tests(self) -> None:
         self.delta_critical *= (self.test_days / (self.test_days + 1)) ** 0.5
         self.test_days += 1
+
+    def increase_target_population(self) -> None:
+        self.delta_critical /= 2
+        self.target_population += 1
 
     def adj_delta_critical(self, duration: NonNegativeFloat) -> float:
         return self.delta_critical * min(1, self.duration / duration)

@@ -3,7 +3,7 @@ import collections
 import itertools
 import logging
 import time
-from typing import Literal
+from typing import Literal, cast
 
 import pandas as pd
 import torch
@@ -225,7 +225,7 @@ class Trainer:
             total_ret = batch[datasets.FeatTypes.RETURNS].cpu().numpy()
             cov = std.T * ledoit_wolf.ledoit_wolf_cor(total_ret)[0] * std
 
-        return mean.tolist(), cov.tolist()
+        return cast(list[list[float]], mean.tolist()), cov.tolist()
 
     def _log_net_stats(self, net: wave_net.Net, epochs: float, train_dl: data_loaders.DataLoader) -> None:
         train_size = len(train_dl.dataset)  # type: ignore[arg-type]
