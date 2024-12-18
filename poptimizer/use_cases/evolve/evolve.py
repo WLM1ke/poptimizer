@@ -62,7 +62,7 @@ class EvolutionHandler:
         ctx: Ctx,
         msg: handler.DataNotChanged | handler.DataUpdated,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
-        await self._init_evolution(ctx, msg.day)
+        await self._init_evolution(ctx)
         evolution = await self._init_step(ctx, msg.day)
         model = await self._get_model(ctx, evolution)
         self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
@@ -78,12 +78,11 @@ class EvolutionHandler:
 
         return event
 
-    async def _init_evolution(self, ctx: Ctx, day: domain.Day) -> None:
+    async def _init_evolution(self, ctx: Ctx) -> None:
         if not await ctx.count_models():
             self._lgr.info("Creating initial models")
             for _ in range(consts.INITIAL_POPULATION):
                 model = await ctx.get_for_update(evolve.Model, _random_uid())
-                model.day = day
                 model.alfas = [0]
 
     async def _init_step(self, ctx: Ctx, day: domain.Day) -> evolve.Evolution:
@@ -146,13 +145,14 @@ class EvolutionHandler:
         self._lgr.warning("Model deleted - %s...", err.exceptions[0])
 
         minimal_returns_days = _extract_minimal_returns_days(err)
-        if minimal_returns_days is not None and minimal_returns_days > evolution.minimal_returns_days:
-            evolution.minimal_returns_days += 1
-            self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
-
-            if evolution.more_tests and evolution.state != evolve.State.CREATE_NEW_MODEL:
+        if minimal_returns_days is not None and evolution.state is not evolve.State.CREATE_NEW_MODEL:
+            if evolution.more_tests:
                 evolution.more_tests = False
                 self._lgr.warning("Stop increasing test days for today - %d", evolution.test_days)
+
+            if minimal_returns_days > evolution.minimal_returns_days:
+                evolution.minimal_returns_days += 1
+                self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
 
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
@@ -198,14 +198,11 @@ class EvolutionHandler:
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
 
-                models_count = await ctx.count_models()
-                if models_count > 2 * evolution.target_population:
-                    evolution.increase_target_population()
-                    self._lgr.warning("Target population increased - %d", evolution.target_population)
-
-                if evolution.more_tests and (models_count >= evolution.target_population):
-                    evolution.increase_tests()
-                    self._lgr.warning("Test days increased - %d", evolution.test_days)
+                if await ctx.count_models() > evolution.test_days:
+                    evolution.delta_critical = 0
+                    if evolution.more_tests:
+                        evolution.test_days += 1
+                        self._lgr.warning("Test days increased - %d", evolution.test_days)
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 self._change_t_critical(evolution, model)
                 evolution.new_base(model)
@@ -253,7 +250,7 @@ class EvolutionHandler:
                     sign_alfa = "<"
                 evolution.delta_critical -= (1 - consts.P_VALUE) / evolution.test_days
             case False:
-                evolution.delta_critical += consts.P_VALUE / evolution.test_days
+                evolution.delta_critical = min(0, evolution.delta_critical + consts.P_VALUE / evolution.test_days)
 
         self._lgr.info(
             f"Delta({delta:.2%}) {sign_alfa} adj-delta-critical({adj_delta_critical:.2%}), "

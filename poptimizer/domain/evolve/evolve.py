@@ -4,7 +4,15 @@ import statistics
 from enum import StrEnum
 from typing import Final, Self
 
-from pydantic import Field, NonNegativeFloat, PositiveInt, computed_field, field_validator, model_validator
+from pydantic import (
+    Field,
+    NonNegativeFloat,
+    NonPositiveFloat,
+    PositiveInt,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 
 from poptimizer import consts
 from poptimizer.domain import domain
@@ -89,8 +97,7 @@ class Evolution(domain.Entity):
     duration: NonNegativeFloat = 0
     test_days: int = Field(default=2, ge=2)
     more_tests: bool = True
-    target_population: PositiveInt = 1
-    delta_critical: float = 0
+    delta_critical: NonPositiveFloat = 0
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
 
     def init_new_day(self, day: domain.Day, tickers: tuple[domain.Ticker, ...]) -> None:
@@ -99,14 +106,6 @@ class Evolution(domain.Entity):
         self.step = 1
         self.more_tests = True
         self.state = State.EVAL_NEW_BASE_MODEL
-
-    def increase_tests(self) -> None:
-        self.delta_critical *= (self.test_days / (self.test_days + 1)) ** 0.5
-        self.test_days += 1
-
-    def increase_target_population(self) -> None:
-        self.delta_critical /= 2
-        self.target_population += 1
 
     def adj_delta_critical(self, duration: NonNegativeFloat) -> float:
         return self.delta_critical * min(1, self.duration / duration)
