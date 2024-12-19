@@ -96,7 +96,6 @@ class Evolution(domain.Entity):
     alfas: list[float] = Field(default_factory=list)
     duration: NonNegativeFloat = 0
     test_days: int = Field(default=2, ge=2)
-    more_tests: bool = True
     delta_critical: NonPositiveFloat = 0
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
 
@@ -104,7 +103,6 @@ class Evolution(domain.Entity):
         self.day = day
         self.tickers = tickers
         self.step = 1
-        self.more_tests = True
         self.state = State.EVAL_NEW_BASE_MODEL
 
     def adj_delta_critical(self, duration: NonNegativeFloat) -> float:

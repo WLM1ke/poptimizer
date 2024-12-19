@@ -145,13 +145,8 @@ class EvolutionHandler:
 
         minimal_returns_days = _extract_minimal_returns_days(err)
         if minimal_returns_days is not None and evolution.state is not evolve.State.CREATE_NEW_MODEL:
-            if evolution.more_tests:
-                evolution.more_tests = False
-                self._lgr.warning("Stop increasing test days for today - %d", evolution.test_days)
-
-            if minimal_returns_days > evolution.minimal_returns_days:
-                evolution.minimal_returns_days += 1
-                self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
+            evolution.minimal_returns_days = max(evolution.minimal_returns_days + 1, minimal_returns_days)
+            self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
 
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
@@ -199,9 +194,8 @@ class EvolutionHandler:
 
                 if await ctx.count_models() > evolution.test_days:
                     evolution.delta_critical = 0
-                    if evolution.more_tests:
-                        evolution.test_days += 1
-                        self._lgr.warning("Test days increased - %d", evolution.test_days)
+                    evolution.test_days += 1
+                    self._lgr.warning("Test days increased - %d", evolution.test_days)
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 self._change_t_critical(evolution, model)
                 evolution.new_base(model)
