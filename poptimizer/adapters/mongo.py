@@ -45,11 +45,13 @@ class Repo:
         pipeline = [
             {
                 "$project": {
+                    "day": True,
                     "alfa": True,
                 },
             },
             {
                 "$sort": {
+                    "day": random.choice([pymongo.DESCENDING, pymongo.ASCENDING]),  # noqa: S311,
                     "alfa": random.choice([pymongo.DESCENDING, pymongo.ASCENDING]),  # noqa: S311
                 }
             },
