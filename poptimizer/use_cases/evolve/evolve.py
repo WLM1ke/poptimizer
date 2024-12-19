@@ -62,7 +62,7 @@ class EvolutionHandler:
         ctx: Ctx,
         msg: handler.DataNotChanged | handler.DataUpdated,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
-        await self._init_evolution(ctx, msg.day)
+        await self._init_evolution(ctx)
         evolution = await self._init_step(ctx, msg.day)
         model = await self._get_model(ctx, evolution)
         self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
@@ -70,7 +70,7 @@ class EvolutionHandler:
         try:
             await self._update_model_metrics(model, evolution.day, evolution.tickers, evolution.test_days)
         except* errors.DomainError as err:
-            await self._delete_model(ctx, evolution, model, err)
+            await self._delete_model_on_error(ctx, evolution, model, err)
 
             event = handler.ModelDeleted(day=msg.day, uid=model.uid)
         else:
@@ -78,13 +78,11 @@ class EvolutionHandler:
 
         return event
 
-    async def _init_evolution(self, ctx: Ctx, day: domain.Day) -> None:
+    async def _init_evolution(self, ctx: Ctx) -> None:
         if not await ctx.count_models():
             self._lgr.info("Creating initial models")
             for _ in range(consts.INITIAL_POPULATION):
-                model = await ctx.get_for_update(evolve.Model, _random_uid())
-                model.day = day
-                model.alfas = [0]
+                await ctx.get_for_update(evolve.Model, _random_uid())
 
     async def _init_step(self, ctx: Ctx, day: domain.Day) -> evolve.Evolution:
         evolution = await ctx.get_for_update(evolve.Evolution)
@@ -135,7 +133,7 @@ class EvolutionHandler:
         tr = trainer.Trainer(builder.Builder(self._viewer))
         await tr.update_model_metrics(model, day, tickers, test_days)
 
-    async def _delete_model(
+    async def _delete_model_on_error(
         self,
         ctx: Ctx,
         evolution: evolve.Evolution,
