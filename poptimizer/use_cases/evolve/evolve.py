@@ -62,7 +62,7 @@ class EvolutionHandler:
         ctx: Ctx,
         msg: handler.DataNotChanged | handler.DataUpdated,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
-        await self._init_evolution(ctx)
+        await self._init_evolution(ctx, msg.day)
         evolution = await self._init_step(ctx, msg.day)
         model = await self._get_model(ctx, evolution)
         self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
@@ -78,11 +78,12 @@ class EvolutionHandler:
 
         return event
 
-    async def _init_evolution(self, ctx: Ctx) -> None:
+    async def _init_evolution(self, ctx: Ctx, day: domain.Day) -> None:
         if not await ctx.count_models():
             self._lgr.info("Creating initial models")
             for _ in range(consts.INITIAL_POPULATION):
                 model = await ctx.get_for_update(evolve.Model, _random_uid())
+                model.day = day
                 model.alfas = [0]
 
     async def _init_step(self, ctx: Ctx, day: domain.Day) -> evolve.Evolution:
