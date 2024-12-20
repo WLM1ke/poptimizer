@@ -11,6 +11,8 @@ class Position(BaseModel):
     std: NonNegativeFloat = 0
     beta: float = 0
     grad: float = 0
+    grad_lower: float = 0
+    grad_upper: float = 0
 
 
 class Forecast(domain.Entity):
