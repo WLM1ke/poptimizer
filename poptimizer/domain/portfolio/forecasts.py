@@ -1,18 +1,18 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field, NonNegativeFloat, PlainSerializer, PositiveInt, field_validator
+from pydantic import BaseModel, Field, FiniteFloat, NonNegativeFloat, PlainSerializer, PositiveInt, field_validator
 
 from poptimizer.domain import domain
 
 
 class Position(BaseModel):
     ticker: domain.Ticker
-    mean: float = 0
+    mean: FiniteFloat = 0
     std: NonNegativeFloat = 0
-    beta: float = 0
-    grad: float = 0
-    grad_lower: float = 0
-    grad_upper: float = 0
+    beta: FiniteFloat = 0
+    grad: FiniteFloat = 0
+    grad_lower: FiniteFloat = 0
+    grad_upper: FiniteFloat = 0
 
 
 class Forecast(domain.Entity):

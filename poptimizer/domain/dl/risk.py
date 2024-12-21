@@ -1,7 +1,7 @@
 import numpy as np
 import scipy  # type: ignore[reportMissingTypeStubs]
 from numpy.typing import NDArray
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, FiniteFloat, ValidationError
 
 from poptimizer import consts, errors
 from poptimizer.domain.dl import ledoit_wolf
@@ -12,12 +12,12 @@ class Cfg(BaseModel):
 
 
 class OptimizationResult(BaseModel):
-    ret: float
-    avr: float
-    e_ret: float
-    e_std: float
+    ret: FiniteFloat
+    avr: FiniteFloat
+    e_ret: FiniteFloat
+    e_std: FiniteFloat
     pos: int
-    weight_max: float
+    weight_max: FiniteFloat
 
     def __str__(self) -> str:
         alfa = self.ret - self.avr

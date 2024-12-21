@@ -6,6 +6,7 @@ from typing import Final, Self
 
 from pydantic import (
     Field,
+    FiniteFloat,
     NonNegativeFloat,
     NonPositiveFloat,
     PositiveInt,
@@ -30,10 +31,10 @@ class Model(domain.Entity):
     tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
     duration: float = 0
-    alfas: list[float] = Field(default_factory=list)
-    mean: list[list[float]] = Field(default_factory=list)
-    cov: list[list[float]] = Field(default_factory=list)
-    risk_tolerance: float = Field(default=0, ge=0, le=1)
+    alfas: list[FiniteFloat] = Field(default_factory=list)
+    mean: list[list[FiniteFloat]] = Field(default_factory=list)
+    cov: list[list[FiniteFloat]] = Field(default_factory=list)
+    risk_tolerance: FiniteFloat = Field(default=0, ge=0, le=1)
 
     _must_be_sorted_by_ticker = field_validator("tickers")(domain.sorted_tickers)
 
