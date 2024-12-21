@@ -7,6 +7,7 @@
 
 	let { data }: { data: PageData } = $props();
 	let forecast = $state(data);
+	let status = $derived($portfolio.ver != forecast.portfolio_ver ? "outdate" : "");
 	let optimization = $derived.by(() => {
 		const maxLower = Math.max(...forecast.positions.map((pos) => pos.grad_lower));
 		const minUpper = Math.min(...forecast.positions.map((pos) => (pos.weight > 0 ? pos.grad_upper : Infinity)));
@@ -51,6 +52,7 @@
 <Card>
 	<CardSecondary>
 		Date: {forecast.day}
+		{status}
 	</CardSecondary>
 	<CardMain>Buy: {optimization.buy.length} / Sell: {optimization.sell.length}</CardMain>
 	<CardSecondary>

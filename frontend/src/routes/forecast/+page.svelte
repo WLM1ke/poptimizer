@@ -16,6 +16,7 @@
 
 	let { data }: { data: PageData } = $props();
 	let forecast = $state(data);
+	let status = $derived($portfolio.ver != forecast.portfolio_ver ? "outdate" : "");
 
 	$effect(() => {
 		if ($portfolio.ver != forecast.portfolio_ver) {
@@ -37,6 +38,7 @@
 <Card>
 	<CardSecondary>
 		Date: {forecast.day}
+		{status}
 	</CardSecondary>
 	<CardMain>
 		Mean: {percent(forecast.mean)} / Std: {percent(forecast.std)}
