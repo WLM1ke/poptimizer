@@ -95,7 +95,7 @@ class Trainer:
                 model,
                 data,
                 cfg,
-                test_days,
+                model.forecast_days,
             )
         except asyncio.CancelledError:
             self._stopping = True
