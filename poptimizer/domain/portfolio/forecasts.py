@@ -7,12 +7,13 @@ from poptimizer.domain import domain
 
 class Position(BaseModel):
     ticker: domain.Ticker
-    mean: FiniteFloat = 0
-    std: NonNegativeFloat = 0
-    beta: FiniteFloat = 0
-    grad: FiniteFloat = 0
-    grad_lower: FiniteFloat = 0
-    grad_upper: FiniteFloat = 0
+    weight: NonNegativeFloat
+    mean: FiniteFloat
+    std: NonNegativeFloat
+    beta: FiniteFloat
+    grad: FiniteFloat
+    grad_lower: FiniteFloat
+    grad_upper: FiniteFloat
 
 
 class Forecast(domain.Entity):

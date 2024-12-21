@@ -155,6 +155,7 @@ class ForecastHandler:
             forecast.positions.append(
                 forecasts.Position(
                     ticker=ticker,
+                    weight=weights[n, 0],
                     mean=median_mean[n],
                     std=median_std[n],
                     beta=median_betas[n],
