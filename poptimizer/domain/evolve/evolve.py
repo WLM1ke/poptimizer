@@ -60,7 +60,7 @@ class Model(domain.Entity):
     def __str__(self) -> str:
         genes = genotype.Genotype.model_validate(self.genes)
         risk_tol = genes.risk.risk_tolerance
-        history = genes.batch.days.history
+        history = genes.batch.history_days
 
         return f"{self.__class__.__name__}(ver={self.ver}, risk_tol={risk_tol:.2%}, history={history:.2f})"
 

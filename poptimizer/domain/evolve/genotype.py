@@ -19,21 +19,6 @@ class Features(genetics.Chromosome):
     ] = genetics.random_default_range(-1, 1)
 
 
-class Days(genetics.Chromosome):
-    history: Annotated[
-        float,
-        genetics.gene_range(lower=2),
-        genetics.int_phenotype(),
-    ] = genetics.random_default_range(
-        consts.INITIAL_HISTORY_DAYS_START,
-        consts.INITIAL_HISTORY_DAYS_END,
-    )
-    forecast: Annotated[
-        float,
-        genetics.int_phenotype(),
-    ] = float(consts.FORECAST_DAYS)
-
-
 class Batch(genetics.Chromosome):
     size: Annotated[
         float,
@@ -41,7 +26,14 @@ class Batch(genetics.Chromosome):
         genetics.int_phenotype(),
     ] = genetics.random_default_range(512, 513)
     feats: Features = genetics.random_chromosome(Features)
-    days: Days = genetics.random_chromosome(Days)
+    history_days: Annotated[
+        float,
+        genetics.gene_range(lower=2),
+        genetics.int_phenotype(),
+    ] = genetics.random_default_range(
+        consts.INITIAL_HISTORY_DAYS_START,
+        consts.INITIAL_HISTORY_DAYS_END,
+    )
 
 
 class Net(genetics.Chromosome):
