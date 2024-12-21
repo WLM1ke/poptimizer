@@ -24,6 +24,14 @@
 			}, 1000);
 		}
 	});
+
+	const percent = (num: number) => {
+		return num.toLocaleString("RU", {
+			style: "percent",
+			minimumFractionDigits: 1,
+			maximumFractionDigits: 1
+		});
+	};
 </script>
 
 <Card>
@@ -31,22 +39,10 @@
 		Date: {forecast.day}
 	</CardSecondary>
 	<CardMain>
-		Mean: {forecast.mean.toLocaleString("RU", {
-			style: "percent",
-			minimumFractionDigits: 2,
-			maximumFractionDigits: 2
-		})} / Std: {forecast.std.toLocaleString("RU", {
-			style: "percent",
-			minimumFractionDigits: 2,
-			maximumFractionDigits: 2
-		})}
+		Mean: {percent(forecast.mean)} / Std: {percent(forecast.std)}
 	</CardMain>
 	<CardSecondary>
-		Risk tolerance: {forecast.risk_tolerance.toLocaleString("RU", {
-			style: "percent",
-			minimumFractionDigits: 2,
-			maximumFractionDigits: 2
-		})} / Count: {forecast.forecasts_count}
+		Risk tolerance: {percent(forecast.risk_tolerance)} / Count: {forecast.forecasts_count}
 	</CardSecondary>
 </Card>
 <Table>
