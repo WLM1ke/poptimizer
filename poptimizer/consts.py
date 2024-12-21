@@ -8,6 +8,7 @@ ROOT: Final = Path(__file__).parents[1]
 START_DAY: Final = date(2015, 1, 1)
 P_VALUE: Final = 0.05
 COSTS: Final = 0.04 / 100
+IMPACT_COSTS_SCALE: Final = 1.5
 AFTER_TAX: Final = 0.85
 MONTH_IN_TRADING_DAYS: Final = 21
 YEAR_IN_TRADING_DAYS: Final = 21 * 12

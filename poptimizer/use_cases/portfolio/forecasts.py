@@ -75,6 +75,7 @@ class ForecastHandler:
     ) -> None:
         tickers = port.tickers()
         weights = np.array(port.weights()).reshape(-1, 1)
+        turnover = np.array(port.normalized_turnover()).reshape(-1, 1)
 
         means: list[NDArray[np.double]] = []
         port_means: list[float] = []
@@ -84,6 +85,7 @@ class ForecastHandler:
 
         betas: list[NDArray[np.double]] = []
         grads: list[NDArray[np.double]] = []
+        costs: list[NDArray[np.double]] = []
 
         risk_tol: list[float] = []
         p_value = consts.P_VALUE * 2 / len(tickers)
@@ -95,7 +97,8 @@ class ForecastHandler:
             port_means.append(port_mean.item())
 
             cov: NDArray[np.double] = np.array(model.cov)
-            stds.append(np.diag(cov).reshape(-1, 1) ** 0.5)
+            std = np.diag(cov).reshape(-1, 1) ** 0.5
+            stds.append(std)
             covs = cov @ weights
             port_var = weights.reshape(1, -1) @ covs
             port_std = port_var**0.5
@@ -107,6 +110,16 @@ class ForecastHandler:
             grad_log_ret = (mean - port_mean) - port_var * (beta - 1)
             grad_err = port_std * (beta - 1)
             grads.append(model.risk_tolerance * grad_log_ret - (1 - model.risk_tolerance) * grad_err)
+            # 2.3 https://arxiv.org/pdf/1705.00109.pdf
+            # 2.2 Rule of thumb, trading one day’s volume moves the price by about one day’s volatility
+            # Here grad by weight
+            costs.append(
+                (consts.YEAR_IN_TRADING_DAYS / model.forecast_days)
+                * (
+                    consts.COSTS
+                    + (std / consts.YEAR_IN_TRADING_DAYS**0.5) * consts.IMPACT_COSTS_SCALE * (weights / turnover) ** 0.5
+                )
+            )
 
             risk_tol.append(model.risk_tolerance)
 
@@ -118,15 +131,17 @@ class ForecastHandler:
 
         stacked_grads = np.hstack(grads)
         median_grads = np.median(stacked_grads, axis=1)
+
+        stacked_costs = np.hstack(costs)
         median_grads_lower, _ = stats.bootstrap(  # type: ignore[reportUnknownMemberType]
-            stacked_grads,
+            stacked_grads - stacked_costs,
             _median,
             confidence_level=(1 - p_value),
             paired=True,
             random_state=0,
         ).confidence_interval
         _, median_grads_upper = stats.bootstrap(  # type: ignore[reportUnknownMemberType]
-            stacked_grads,
+            stacked_grads + stacked_costs,
             _median,
             confidence_level=(1 - p_value),
             paired=True,

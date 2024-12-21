@@ -135,3 +135,9 @@ class Portfolio(domain.Entity):
         port_value = sum(values) + sum(self.cash.values())
 
         return [value / port_value for value in values]
+
+    def normalized_turnover(self) -> list[float]:
+        values = [position.price * sum(position.accounts.values()) for position in self.positions]
+        port_value = sum(values) + sum(self.cash.values())
+
+        return [position.turnover / port_value for position in self.positions]
