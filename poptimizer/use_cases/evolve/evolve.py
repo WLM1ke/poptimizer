@@ -68,7 +68,7 @@ class EvolutionHandler:
         self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
 
         try:
-            await self._update_model_metrics(model, evolution.day, evolution.tickers, evolution.test_days)
+            await self._update_model_metrics(evolution, model)
         except* errors.DomainError as err:
             await self._delete_model_on_error(ctx, evolution, model, err)
 
@@ -92,7 +92,7 @@ class EvolutionHandler:
                 evolution.step += 1
             case False:
                 port = await ctx.get(portfolio.Portfolio)
-                evolution.init_new_day(day, port.tickers())
+                evolution.init_new_day(day, port.tickers(), consts.FORECAST_DAYS)
 
         return evolution
 
@@ -125,13 +125,14 @@ class EvolutionHandler:
 
     async def _update_model_metrics(
         self,
+        evolution: evolve.Evolution,
         model: evolve.Model,
-        day: domain.Day,
-        tickers: tuple[domain.Ticker, ...],
-        test_days: int,
     ) -> None:
+        model.day = evolution.day
+        model.tickers = evolution.tickers
+        model.forecast_days = evolution.forecast_days
         tr = trainer.Trainer(builder.Builder(self._viewer))
-        await tr.update_model_metrics(model, day, tickers, test_days)
+        await tr.update_model_metrics(model, evolution.test_days)
 
     async def _delete_model_on_error(
         self,

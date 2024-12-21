@@ -35,7 +35,6 @@ class Builder:
         last_day: pd.Timestamp,
         feats: Features,
         days: datasets.Days,
-        test_days: int,
     ) -> list[datasets.OneTickerData]:
         prices = await self._data_adapter.close(last_day, tickers)
 
@@ -46,7 +45,6 @@ class Builder:
                         ticker,
                         feats,
                         days,
-                        test_days,
                         prices[ticker].dropna(),  # type: ignore[reportUnknownMemberType]
                     )
                 )
@@ -60,7 +58,6 @@ class Builder:
         ticker: str,
         feats: Features,
         days: datasets.Days,
-        test_days: int,
         price: pd.Series[float],
     ) -> datasets.OneTickerData:
         price_prev = price.shift(1).iloc[1:]  # type: ignore[reportUnknownMemberType]
@@ -83,7 +80,6 @@ class Builder:
 
         return datasets.OneTickerData(
             days,
-            test_days,
             ret_total,
             features,
         )

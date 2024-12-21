@@ -12,7 +12,6 @@ from pydantic import BaseModel
 from torch import optim
 
 from poptimizer import consts, errors
-from poptimizer.domain import domain
 from poptimizer.domain.dl import data_loaders, datasets, ledoit_wolf, risk
 from poptimizer.domain.dl.wave_net import backbone, wave_net
 from poptimizer.domain.evolve import evolve
@@ -22,19 +21,11 @@ from poptimizer.use_cases.dl import builder
 class Batch(BaseModel):
     size: int
     feats: builder.Features
-    days: datasets.Days
+    history_days: int
 
     @property
     def num_feat_count(self) -> int:
         return self.feats.close + self.feats.div + self.feats.ret
-
-    @property
-    def history_days(self) -> int:
-        return self.days.history
-
-    @property
-    def forecast_days(self) -> int:
-        return self.days.forecast
 
 
 class Optimizer(BaseModel): ...
@@ -86,14 +77,17 @@ class Trainer:
     async def update_model_metrics(
         self,
         model: evolve.Model,
-        day: domain.Day,
-        tickers: tuple[domain.Ticker, ...],
         test_days: int,
     ) -> None:
-        cfg = Cfg.model_validate(model.phenotype)
-
         start = time.monotonic()
-        data = await self._builder.build(tickers, pd.Timestamp(day), cfg.batch.feats, cfg.batch.days, test_days)
+
+        cfg = Cfg.model_validate(model.phenotype)
+        days = datasets.Days(
+            history=cfg.batch.history_days,
+            forecast=model.forecast_days,
+            test=test_days,
+        )
+        data = await self._builder.build(model.tickers, pd.Timestamp(model.day), cfg.batch.feats, days)
 
         try:
             await asyncio.to_thread(
@@ -101,14 +95,13 @@ class Trainer:
                 model,
                 data,
                 cfg,
+                test_days,
             )
         except asyncio.CancelledError:
             self._stopping = True
 
             raise
 
-        model.day = day
-        model.tickers = tickers
         model.risk_tolerance = cfg.risk.risk_tolerance
         model.duration = time.monotonic() - start
 
@@ -117,12 +110,13 @@ class Trainer:
         model: evolve.Model,
         data: list[datasets.OneTickerData],
         cfg: Cfg,
+        forecast_days: int,
     ) -> None:
         net = self._prepare_net(cfg)
         self._train(net, cfg.scheduler, data, cfg.batch.size)
 
-        model.alfas = self._test(net, cfg, data)
-        model.mean, model.cov = self._forecast(net, cfg.batch.forecast_days, data)
+        model.alfas = self._test(net, cfg, forecast_days, data)
+        model.mean, model.cov = self._forecast(net, forecast_days, data)
 
     def _train(
         self,
@@ -174,6 +168,7 @@ class Trainer:
         self,
         net: wave_net.Net,
         cfg: Cfg,
+        forecast_days: int,
         data: list[datasets.OneTickerData],
     ) -> list[float]:
         with torch.no_grad():
@@ -193,7 +188,7 @@ class Trainer:
                     batch[datasets.FeatTypes.LABEL1P].cpu().numpy() - 1,
                     batch[datasets.FeatTypes.RETURNS].cpu().numpy(),
                     cfg.risk,
-                    cfg.batch.forecast_days,
+                    forecast_days,
                 )
 
                 self._lgr.info("%s / LLH = %8.5f", rez, loss)
