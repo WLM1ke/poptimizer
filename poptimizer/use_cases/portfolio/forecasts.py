@@ -1,3 +1,4 @@
+import asyncio
 from typing import cast
 
 import numpy as np
@@ -5,7 +6,6 @@ from numpy.typing import NDArray
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
 from poptimizer import consts
-from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
@@ -31,28 +31,50 @@ class ForecastHandler:
 
                 if len(forecast.models) ** 0.5 - forecast.forecasts_count**0.5 >= 1:
                     port = await ctx.get(portfolio.Portfolio)
-                    await self._update_forecast(ctx, msg.day, port, forecast)
+                    if port.day == msg.day:
+                        await self._update(ctx, port, forecast)
 
                 return handler.ForecastsAnalyzed(day=msg.day)
             case handler.PositionsUpdated():
                 port = await ctx.get(portfolio.Portfolio)
-                if forecast.portfolio_ver < port.ver:
-                    await self._update_forecast(ctx, msg.day, port, forecast)
+                if forecast.portfolio_ver < port.ver and port.day == msg.day:
+                    await self._update(ctx, port, forecast)
 
                 return None
 
-    async def _update_forecast(
+    async def _update(
         self,
         ctx: handler.Ctx,
-        day: domain.Day,
         port: portfolio.Portfolio,
         forecast: forecasts.Forecast,
     ) -> None:
-        if port.day != day:
-            return
-
-        weights = np.array(port.weights()).reshape(-1, 1)
         tickers = port.tickers()
+
+        models: list[evolve.Model] = []
+
+        for uid in forecast.models:
+            model = await ctx.get(evolve.Model, uid)
+            if model.day != port.day or model.tickers != tickers:
+                forecast.models.remove(uid)
+                continue
+
+            models.append(model)
+
+        await asyncio.to_thread(
+            self._update_forecast,
+            port,
+            forecast,
+            models,
+        )
+
+    def _update_forecast(
+        self,
+        port: portfolio.Portfolio,
+        forecast: forecasts.Forecast,
+        models: list[evolve.Model],
+    ) -> None:
+        tickers = port.tickers()
+        weights = np.array(port.weights()).reshape(-1, 1)
 
         means: list[NDArray[np.double]] = []
         port_means: list[float] = []
@@ -66,12 +88,7 @@ class ForecastHandler:
         risk_tol: list[float] = []
         p_value = consts.P_VALUE * 2 / len(tickers)
 
-        for uid in forecast.models:
-            model = await ctx.get(evolve.Model, uid)
-            if model.day != port.day or model.tickers != tickers:
-                forecast.models.remove(uid)
-                continue
-
+        for model in models:
             mean: NDArray[np.double] = np.array(model.mean)
             means.append(mean)
             port_mean = weights.reshape(1, -1) @ mean
