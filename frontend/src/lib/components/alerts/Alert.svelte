@@ -1,8 +1,7 @@
 <script lang="ts">
 	import InfoIcon from "$lib/icons/InfoIcon.svelte";
 
-	export let info: boolean;
-	export let msg: string;
+	let { info, msg }: { info: boolean; msg: string } = $props();
 </script>
 
 <div

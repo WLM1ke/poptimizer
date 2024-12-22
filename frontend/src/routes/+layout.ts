@@ -1,8 +1,8 @@
 import type { LayoutLoad } from "./$types";
 import { type Portfolio, portfolio } from "$lib/stores/portfolio";
 import { type Tickers, tickers } from "$lib/stores/dividends";
-import { addInfo } from "$lib/components/alerts";
 import { get } from "$lib/request";
+import { addInfo } from "$lib/state/alerts.svelte";
 
 export const ssr = false;
 

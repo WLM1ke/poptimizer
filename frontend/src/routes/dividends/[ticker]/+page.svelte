@@ -13,9 +13,9 @@
 		InputTextCell
 	} from "$lib/components/table";
 	import Button from "$lib/components/Button.svelte";
-	import { addAlert } from "$lib/components/alerts";
 	import { invalidate } from "$app/navigation";
 	import { put } from "$lib/request.js";
+	import { addAlert } from "$lib/state/alerts.svelte.js";
 
 	export let data;
 
