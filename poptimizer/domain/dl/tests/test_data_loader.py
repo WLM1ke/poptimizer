@@ -11,19 +11,14 @@ def make_days():
     return datasets.Days(
         history=4,
         forecast=2,
+        test=3,
     )
 
 
-@pytest.fixture
-def test_days():
-    return 3
-
-
-def test_short_history_error(days, test_days) -> None:
+def test_short_history_error(days) -> None:
     with pytest.raises(errors.DomainError):
         datasets.OneTickerData(
             days,
-            test_days,
             pd.Series(range(9)),
             [
                 pd.Series(range(2, 13)),
@@ -32,11 +27,10 @@ def test_short_history_error(days, test_days) -> None:
         )
 
 
-def test_features_mismatch_error(days, test_days) -> None:
+def test_features_mismatch_error(days) -> None:
     with pytest.raises(errors.DomainError):
         datasets.OneTickerData(
             days,
-            test_days,
             pd.Series(range(10)),
             [
                 pd.Series(range(2, 13)),
@@ -46,10 +40,9 @@ def test_features_mismatch_error(days, test_days) -> None:
 
 
 @pytest.fixture(name="one_ticker_data")
-def make_one_ticker_data(days, test_days):
+def make_one_ticker_data(days):
     return datasets.OneTickerData(
         days,
-        test_days,
         pd.Series(range(11)),
         [
             pd.Series(range(2, 13)),
@@ -256,11 +249,11 @@ def make_bad_second_ticker_data():
     days = datasets.Days(
         history=4,
         forecast=2,
+        test=2,
     )
 
     return datasets.OneTickerData(
         days,
-        2,
         pd.Series(range(12)),
         [
             pd.Series(range(2, 14)),
@@ -277,10 +270,9 @@ def test_test_length_mismatch_error(one_ticker_data, bad_second_ticker_data) -> 
 
 
 @pytest.fixture(name="second_ticker_data")
-def make_second_ticker_data(days, test_days):
+def make_second_ticker_data(days):
     return datasets.OneTickerData(
         days,
-        test_days,
         pd.Series(range(12)),
         [
             pd.Series(range(2, 14)),
