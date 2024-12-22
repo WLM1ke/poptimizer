@@ -13,17 +13,19 @@
 		const minUpper = Math.min(...forecast.positions.map((pos) => (pos.weight > 0 ? pos.grad_upper : Infinity)));
 		const breakEven = Math.min(maxLower, (maxLower + minUpper) / 2);
 
-		const positions = forecast.positions.map((pos) => {
-			return { ...pos, grad_lower: pos.grad_lower - breakEven, grad_upper: pos.grad_upper - breakEven };
-		});
+		const buy = forecast.positions
+			.filter((pos) => pos.grad_lower >= breakEven)
+			.map(({ weight, ticker, grad_lower, grad_upper }) => {
+				return { weight, ticker, grad_lower, grad_upper, priority: grad_lower - breakEven };
+			});
+		buy.sort((pos1, pos2) => (pos1.weight !== pos2.weight ? pos1.weight - pos2.weight : pos2.priority - pos1.priority));
 
-		const buy = positions.filter((pos) => pos.grad_lower >= 0);
-		buy.sort((pos1, pos2) =>
-			pos1.weight !== pos2.weight ? pos1.weight - pos2.weight : pos2.grad_lower - pos1.grad_lower
-		);
-
-		const sell = positions.filter((pos) => pos.grad_upper < 0 && pos.weight > 0);
-		sell.sort((pos1, pos2) => pos2.weight * pos2.grad_upper - pos1.weight * pos1.grad_upper);
+		const sell = forecast.positions
+			.filter((pos) => pos.grad_upper < breakEven && pos.weight > 0)
+			.map(({ weight, ticker, grad_lower, grad_upper }) => {
+				return { weight, ticker, grad_lower, grad_upper, priority: grad_upper - breakEven };
+			});
+		sell.sort((pos1, pos2) => pos2.weight * pos2.priority - pos1.weight * pos1.priority);
 
 		return {
 			breakEven,
@@ -65,6 +67,7 @@
 		<HeadCell>Weight</HeadCell>
 		<HeadCell>Lower bound</HeadCell>
 		<HeadCell>Upper bound</HeadCell>
+		<HeadCell>Priority</HeadCell>
 		<HeadCell>Signal</HeadCell>
 	</TableHead>
 	<TableBody>
@@ -74,6 +77,7 @@
 				<PercentCell value={position.weight} />
 				<PercentCell value={position.grad_lower} />
 				<PercentCell value={position.grad_upper} />
+				<PercentCell value={position.priority} />
 				<TextCell text="Buy" center />
 			</TableRow>
 		{/each}
@@ -83,6 +87,7 @@
 				<PercentCell value={position.weight} />
 				<PercentCell value={position.grad_lower} />
 				<PercentCell value={position.grad_upper} />
+				<PercentCell value={position.priority} />
 				<TextCell text="Sell" center />
 			</TableRow>
 		{/each}
