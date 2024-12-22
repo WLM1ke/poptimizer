@@ -1,8 +1,10 @@
 <script lang="ts">
-	import Icon from "./Icon.svelte";
+	import { defaultFill, defaultHeight, defaultViewBox } from "./icons";
+
+	let { height = "h-8", viewBox = "0 0 256 256", fill = defaultFill } = $props();
 </script>
 
-<Icon viewBox="0 0 256 256" height="h-8">
+<svg xmlns="http://www.w3.org/2000/svg" class="{height} {fill}" {viewBox}>
 	<path
 		fill="#38bdf8"
 		d="M195.804 252.9H57.096C25.613 252.9 0 227.287 0 195.804V57.096C0 25.613 25.613 0 57.096 0h138.708C227.287 0 252.9 25.613 252.9 57.096v138.708c0 31.483-25.613 57.096-57.096 57.096M57.096 15.806c-22.766 0-41.29 18.524-41.29 41.29v138.708c0 22.766 18.524 41.29 41.29 41.29h138.708c22.766 0 41.29-18.524 41.29-41.29V57.096c0-22.766-18.524-41.29-41.29-41.29H57.096"
@@ -27,4 +29,4 @@
 		fill="#0ea5e9"
 		d="M169.83 113.62v99.89a5.554 5.554 0 0 0 5.554 5.555h17.74a5.554 5.554 0 0 0 5.555-5.555V84.77l-28.85 28.85"
 	/>
-</Icon>
+</svg>

@@ -1,11 +1,13 @@
 <script lang="ts">
-	import Icon from "./Icon.svelte";
+	import { defaultFill, defaultHeight, defaultViewBox } from "./icons";
+
+	let { height = defaultHeight, viewBox = defaultViewBox, fill = defaultFill } = $props();
 </script>
 
-<Icon>
+<svg xmlns="http://www.w3.org/2000/svg" class="{height} {fill}" {viewBox}>
 	<path
 		fill-rule="evenodd"
 		d="M13.5 8a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0ZM15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM8.75 5.5a.75.75 0 0 0-1.5 0v1.75H5.5a.75.75 0 0 0 0 1.5h1.75v1.75a.75.75 0 0 0 1.5 0V8.75h1.75a.75.75 0 0 0 0-1.5H8.75V5.5Z"
 		clip-rule="evenodd"
 	/>
-</Icon>
+</svg>
