@@ -62,13 +62,13 @@
 	</ul>
 	<ul class="pt-2">
 		<li>
-			<Switch label="sort value descending" checked={$accountsSortByValue} on:change={toggleAccountsSortByValue} />
+			<Switch label="sort value descending" checked={$accountsSortByValue} onchange={toggleAccountsSortByValue} />
 		</li>
 		<li>
 			<Switch
 				label="hide zero positions"
 				checked={$accountsHideZeroPositions}
-				on:change={toggleAccountsHideZeroPositions}
+				onchange={toggleAccountsHideZeroPositions}
 			/>
 		</li>
 	</ul>

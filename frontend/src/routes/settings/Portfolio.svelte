@@ -13,13 +13,13 @@
 	<H2>{#snippet text()}Portfolio{/snippet}</H2>
 	<ul class="pt-2">
 		<li>
-			<Switch label="sort value descending" checked={$portfolioSortByValue} on:change={togglePortfolioSortByValue} />
+			<Switch label="sort value descending" checked={$portfolioSortByValue} onchange={togglePortfolioSortByValue} />
 		</li>
 		<li>
 			<Switch
 				label="hide zero positions"
 				checked={$portfolioHideZeroPositions}
-				on:change={togglePortfolioHideZeroPositions}
+				onchange={togglePortfolioHideZeroPositions}
 			/>
 		</li>
 	</ul>
