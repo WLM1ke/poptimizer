@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Card, CardMain, CardSecondary } from "$lib/components/card";
+	import Card from "$lib/components/Card.svelte";
 	import { portfolio } from "$lib/stores/portfolio";
 	import { Table, TableHead, HeadCell, TableBody, TableRow, TextCell, PercentCell } from "$lib/components/table";
 	import type { PageData } from "./$types";
@@ -52,14 +52,15 @@
 </script>
 
 <Card>
-	<CardSecondary>
-		Date: {forecast.day}
-		{status}
-	</CardSecondary>
-	<CardMain>Buy: {optimization.buy.length} / Sell: {optimization.sell.length}</CardMain>
-	<CardSecondary>
+	{#snippet upper()}
+		Date: {forecast.day} {status}
+	{/snippet}
+	{#snippet main()}
+		Buy: {optimization.buy.length} / Sell: {optimization.sell.length}
+	{/snippet}
+	{#snippet lower()}
 		Breakeven: {percent(optimization.breakEven)} / Count: {forecast.forecasts_count}
-	</CardSecondary>
+	{/snippet}
 </Card>
 <Table>
 	<TableHead>

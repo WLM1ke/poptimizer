@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Card, CardMain, CardSecondary } from "$lib/components/card";
+	import Card from "$lib/components/Card.svelte";
 	import {
 		Table,
 		TableBody,
@@ -42,20 +42,16 @@
 </script>
 
 <Card>
-	<CardSecondary>
+	{#snippet upper()}
 		Date: {accountView.day}
-	</CardSecondary>
-	<CardMain>
-		Value: {accountView.value.toLocaleString("RU", {
-			minimumFractionDigits: 0,
-			maximumFractionDigits: 0
-		})} &#8381;
-	</CardMain>
-	<CardSecondary>
+	{/snippet}
+	{#snippet main()}
+		Value: {accountView.value.toLocaleString("RU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} &#8381;
+	{/snippet}
+	{#snippet lower()}
 		Positions: {accountView.positionsCount} / {accountView.positionsTotal}
-	</CardSecondary>
+	{/snippet}
 </Card>
-
 <Table>
 	<TableHead>
 		<HeadCell>Ticker</HeadCell>

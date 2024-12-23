@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Card, CardMain, CardSecondary } from "$lib/components/card";
 	import { portfolio } from "$lib/stores/portfolio";
 	import {
 		Table,
@@ -13,6 +12,7 @@
 	} from "$lib/components/table";
 	import type { PageData } from "./$types";
 	import { get } from "$lib/request";
+	import Card from "$lib/components/Card.svelte";
 
 	let { data }: { data: PageData } = $props();
 	let forecast = $state(data);
@@ -36,16 +36,15 @@
 </script>
 
 <Card>
-	<CardSecondary>
-		Date: {forecast.day}
-		{status}
-	</CardSecondary>
-	<CardMain>
+	{#snippet upper()}
+		Date: {forecast.day} {status}
+	{/snippet}
+	{#snippet main()}
 		Mean: {percent(forecast.mean)} / Std: {percent(forecast.std)}
-	</CardMain>
-	<CardSecondary>
+	{/snippet}
+	{#snippet lower()}
 		Risk tolerance: {percent(forecast.risk_tolerance)} / Count: {forecast.forecasts_count}
-	</CardSecondary>
+	{/snippet}
 </Card>
 <Table>
 	<TableHead>

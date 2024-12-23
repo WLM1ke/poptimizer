@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { portfolioView } from "$lib/stores/portfolioView";
-	import { Card, CardMain, CardSecondary } from "$lib/components/card";
+	import Card from "$lib/components/Card.svelte";
 	import {
 		Table,
 		TableHead,
@@ -15,19 +15,17 @@
 </script>
 
 <Card>
-	<CardSecondary>
+	{#snippet upper()}
 		Date: {$portfolioView.day}
-	</CardSecondary>
-	<CardMain>
-		Value: {$portfolioView.value.toLocaleString("RU", {
-			minimumFractionDigits: 0,
-			maximumFractionDigits: 0
-		})} &#8381;
-	</CardMain>
-	<CardSecondary>
+	{/snippet}
+	{#snippet main()}
+		Value: {$portfolioView.value.toLocaleString("RU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} &#8381;
+	{/snippet}
+	{#snippet lower()}
 		Positions: {$portfolioView.positionsCount} / Effective: {$portfolioView.effectiveCount}
-	</CardSecondary>
+	{/snippet}
 </Card>
+
 <Table>
 	<TableHead>
 		<HeadCell>Ticker</HeadCell>
