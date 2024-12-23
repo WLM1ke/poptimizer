@@ -9,9 +9,7 @@
 	<div class="text-text-muted italic">
 		{@render upper()}
 	</div>
-	<H2>
-		{@render main()}
-	</H2>
+	<H2 text={main} />
 	<div class="text-text-muted italic">
 		{@render lower()}
 	</div>

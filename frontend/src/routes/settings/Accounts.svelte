@@ -24,7 +24,7 @@
 </script>
 
 <section>
-	<H2>Accounts</H2>
+	<H2>{#snippet text()}Accounts{/snippet}</H2>
 	<ul class="max-w-max">
 		{#each $accounts as account (account)}
 			<li transition:scale animate:flip class="flex items-center justify-between gap-2 pt-2">
@@ -43,7 +43,7 @@
 						newAccount = "";
 					}
 				}}
-				class="rounded-md border border-bg-accent bg-bg-main p-1"
+				class="border-bg-accent bg-bg-main rounded-md border p-1"
 				bind:value={newAccount}
 				type="text"
 				placeholder="Enter account title"
