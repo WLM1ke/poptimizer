@@ -10,7 +10,7 @@ class Alerts {
 	alerts = $state<Array<Alert>>([]);
 	id = $state(0);
 
-	public getAlerts = () => {
+	public get = () => {
 		return this.alerts;
 	};
 

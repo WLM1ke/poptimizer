@@ -6,7 +6,6 @@
 	import Sidebar from "./Sidebar.svelte";
 	import { page } from "$app/stores";
 	import Alerts from "$lib/components/Alerts.svelte";
-	import { alerts } from "$lib/state/alerts.svelte";
 
 	let { data } = $props();
 
@@ -23,6 +22,6 @@
 	<Sidebar />
 	<main class="overflow-scroll px-4 py-2">
 		<slot />
-		<Alerts alerts={alerts.getAlerts()} />
+		<Alerts />
 	</main>
 </section>

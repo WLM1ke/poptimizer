@@ -2,14 +2,7 @@
 	import { flip } from "svelte/animate";
 	import { scale } from "svelte/transition";
 	import InfoIcon from "$lib/icons/InfoIcon.svelte";
-
-	interface AlertData {
-		id: number;
-		msg: string;
-		info: boolean;
-	}
-
-	let { alerts }: { alerts: AlertData[] } = $props();
+	import { alerts } from "$lib/state/alerts.svelte";
 </script>
 
 {#snippet alert(info: boolean, msg: string)}
@@ -30,7 +23,7 @@
 
 <aside class="absolute bottom-0 right-0 p-2">
 	<ol>
-		{#each alerts.reverse() as { id, info, msg } (id)}
+		{#each alerts.get().reverse() as { id, info, msg } (id)}
 			<li transition:scale animate:flip>
 				{@render alert(info, msg)}
 			</li>
