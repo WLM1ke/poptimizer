@@ -1,4 +1,4 @@
-export class PersistentState<T> {
+class PersistentState<T> {
 	state = $state<T>();
 	key = "";
 
@@ -12,7 +12,9 @@ export class PersistentState<T> {
 		localStorage[this.key] = JSON.stringify(value);
 		this.state = value;
 	};
-	get = (): T => {
+	get = () => {
 		return this.state as T;
 	};
 }
+
+export const theme = new PersistentState<"system" | "light" | "dark">("theme", "system");
