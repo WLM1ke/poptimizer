@@ -2,7 +2,7 @@ import type { LayoutLoad } from "./$types";
 import { type Portfolio, portfolio } from "$lib/stores/portfolio";
 import { type Tickers, tickers } from "$lib/stores/dividends";
 import { get } from "$lib/request";
-import { addInfo } from "$lib/state/alerts.svelte";
+import { alerts } from "$lib/state/states";
 
 export const ssr = false;
 
@@ -30,11 +30,11 @@ export const load = (async ({ fetch }) => {
 	tickers.set(div);
 
 	for (const ticker of div.tickers) {
-		addInfo(`Update dividends for ${ticker}`);
+		alerts.addInfo(`Update dividends for ${ticker}`);
 	}
 
 	if (Object.keys(port.account_names).length === 0) {
-		addInfo("No accounts: create them in settings");
+		alerts.addInfo("No accounts: create them in settings");
 	}
 
 	for (const name of port.account_names) {
@@ -44,7 +44,7 @@ export const load = (async ({ fetch }) => {
 				port.cash[name] ?? 0
 			) === 0
 		) {
-			addInfo(`Account ${name} is empty: delete it or enter cash and positions`);
+			alerts.addInfo(`Account ${name} is empty: delete it or enter cash and positions`);
 		}
 	}
 

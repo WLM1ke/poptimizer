@@ -15,7 +15,7 @@
 	import Button from "$lib/components/Button.svelte";
 	import { invalidate } from "$app/navigation";
 	import { put } from "$lib/request.js";
-	import { addAlert } from "$lib/state/alerts.svelte.js";
+	import { alerts } from "$lib/state/states";
 
 	export let data;
 
@@ -55,12 +55,12 @@
 	};
 	const addRow = () => {
 		if (typeof dividend !== "number") {
-			addAlert("Dividend should be number");
+			alerts.addAlert("Dividend should be number");
 			return;
 		}
 		const date = new Date(day);
 		if (date.toString() === "Invalid Date") {
-			addAlert("Invalid Date");
+			alerts.addAlert("Invalid Date");
 			return;
 		}
 		data.dividends = [

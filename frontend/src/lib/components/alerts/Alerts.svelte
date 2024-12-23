@@ -5,8 +5,8 @@
 
 	interface AlertData {
 		id: number;
-		info: boolean;
 		msg: string;
+		info: boolean;
 	}
 
 	let { alerts }: { alerts: AlertData[] } = $props();
@@ -14,7 +14,7 @@
 
 <aside class="absolute bottom-0 right-0 p-2">
 	<ol>
-		{#each alerts as { id, info, msg } (id)}
+		{#each alerts.reverse() as { id, info, msg } (id)}
 			<li transition:scale animate:flip>
 				<Alert {info} {msg}></Alert>
 			</li>

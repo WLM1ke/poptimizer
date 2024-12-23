@@ -1,29 +1,29 @@
 interface Alert {
 	id: number;
-	info: boolean;
 	msg: string;
+	info: boolean;
 }
 
-let alerts = $state<Array<Alert>>([]);
 const removeDelay = 30000;
-const removeAlert = (id: number) => {
-	alerts.filter((alert) => alert.id !== id);
-};
 
-export const addAlert = (msg: string) => {
-	const info = false;
-	const id = alerts.length > 0 ? alerts[0].id - 1 : 0;
-	setTimeout(() => removeAlert(id), removeDelay);
+class Alerts {
+	alerts = $state<Array<Alert>>([]);
+	id = $state(0);
 
-	alerts = [{ msg, id, info }, ...alerts];
-};
+	public getAlerts = () => {
+		return this.alerts;
+	};
 
-export const addInfo = (msg: string) => {
-	const info = true;
-	const id = alerts.length > 0 ? alerts[0].id - 1 : 0;
-	setTimeout(() => removeAlert(id), removeDelay);
+	addAlert = (msg: string) => {
+		this.id = this.id + 1;
+		this.alerts.push({ id: this.id, msg, info: false });
+		setTimeout(() => this.alerts.shift(), removeDelay);
+	};
+	addInfo = (msg: string) => {
+		this.id = this.id + 1;
+		this.alerts.push({ id: this.id, msg, info: true });
+		setTimeout(() => this.alerts.shift(), removeDelay);
+	};
+}
 
-	alerts = [{ msg, id, info }, ...alerts];
-};
-
-export const getAlerts = () => alerts;
+export const alerts = new Alerts();

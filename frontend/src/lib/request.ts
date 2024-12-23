@@ -1,4 +1,4 @@
-import { addAlert } from "$lib/state/alerts.svelte";
+import { alerts } from "$lib/state/states";
 
 const request = async (
 	fetchFn: typeof fetch,
@@ -24,7 +24,7 @@ const request = async (
 		} else {
 			msg = JSON.stringify(err);
 		}
-		addAlert(`${msg}`);
+		alerts.addAlert(`${msg}`);
 
 		return undefined;
 	}

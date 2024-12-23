@@ -6,11 +6,11 @@
 	import Sidebar from "./Sidebar.svelte";
 	import { page } from "$app/stores";
 	import Alerts from "$lib/components/alerts/Alerts.svelte";
-	import { getAlerts } from "$lib/state/alerts.svelte";
+	import { alerts } from "$lib/state/states";
 
-	export let data;
+	let { data } = $props();
 
-	$: title = data.getTitle($page.url.pathname);
+	let title = data.getTitle($page.url.pathname);
 </script>
 
 <svelte:head>
@@ -23,6 +23,6 @@
 	<Sidebar />
 	<main class="overflow-scroll px-4 py-2">
 		<slot />
-		<Alerts alerts={getAlerts()} />
+		<Alerts alerts={alerts.getAlerts()} />
 	</main>
 </section>
