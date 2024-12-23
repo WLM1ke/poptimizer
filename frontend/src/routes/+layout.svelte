@@ -5,7 +5,7 @@
 	import Header from "./Header.svelte";
 	import Sidebar from "./Sidebar.svelte";
 	import { page } from "$app/stores";
-	import Alerts from "$lib/components/alerts/Alerts.svelte";
+	import Alerts from "$lib/components/Alerts.svelte";
 	import { alerts } from "$lib/state/alerts.svelte";
 
 	let { data } = $props();
