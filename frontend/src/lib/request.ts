@@ -1,4 +1,4 @@
-import { alerts } from "$lib/state/states";
+import { alerts } from "$lib/state/alerts.svelte";
 
 const request = async (
 	fetchFn: typeof fetch,

@@ -6,7 +6,7 @@
 	import Sidebar from "./Sidebar.svelte";
 	import { page } from "$app/stores";
 	import Alerts from "$lib/components/alerts/Alerts.svelte";
-	import { alerts } from "$lib/state/states";
+	import { alerts } from "$lib/state/alerts.svelte";
 
 	let { data } = $props();
 

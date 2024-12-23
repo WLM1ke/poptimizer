@@ -2,7 +2,7 @@ import type { LayoutLoad } from "./$types";
 import { type Portfolio, portfolio } from "$lib/stores/portfolio";
 import { type Tickers, tickers } from "$lib/stores/dividends";
 import { get } from "$lib/request";
-import { alerts } from "$lib/state/states";
+import { alerts } from "$lib/state/alerts.svelte";
 
 export const ssr = false;
 

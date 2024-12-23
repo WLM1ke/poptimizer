@@ -15,7 +15,7 @@
 	import Button from "$lib/components/Button.svelte";
 	import { invalidate } from "$app/navigation";
 	import { put } from "$lib/request.js";
-	import { alerts } from "$lib/state/states";
+	import { alerts } from "$lib/state/alerts.svelte";
 
 	export let data;
 

@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { defaultFill, defaultHeight, defaultViewBox } from "./icons";
-
-	let { height = defaultHeight, viewBox = "0 0 20 20", fill = defaultFill } = $props();
+	let { height = "h-5", viewBox = "0 0 20 20", fill = "fill-current" } = $props();
 </script>
 
 <svg xmlns="http://www.w3.org/2000/svg" class="{height} {fill}" {viewBox}>
