@@ -4,12 +4,12 @@
 	import Logo from "./Logo.svelte";
 	import Header from "./Header.svelte";
 	import Sidebar from "./Sidebar.svelte";
-	import { page } from "$app/stores";
+	import { page } from "$app/state";
 	import Alerts from "$lib/components/Alerts.svelte";
 
 	let { data } = $props();
 
-	let title = data.getTitle($page.url.pathname);
+	let title = $derived(data.getTitle(page.url.pathname));
 </script>
 
 <svelte:head>
