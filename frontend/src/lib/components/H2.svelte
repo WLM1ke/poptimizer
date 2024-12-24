@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
 
-	let { text }: { text: Snippet } = $props();
+	let { text }: { text: string } = $props();
 </script>
 
 <h2 class="text-xl font-semibold">
-	{@render text()}
+	{text}
 </h2>

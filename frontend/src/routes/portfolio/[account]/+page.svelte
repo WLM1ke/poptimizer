@@ -31,17 +31,11 @@
 	};
 </script>
 
-<Card>
-	{#snippet upper()}
-		Date: {accountView.day}
-	{/snippet}
-	{#snippet main()}
-		Value: {accountView.value.toLocaleString("RU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} &#8381;
-	{/snippet}
-	{#snippet lower()}
-		Positions: {accountView.positionsCount} / {accountView.positionsTotal}
-	{/snippet}
-</Card>
+<Card
+	upper={`Date: ${accountView.day}`}
+	main={`Value: ${accountView.value.toLocaleString("RU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} &#8381;`}
+	lower={`Positions: ${accountView.positionsCount} / ${accountView.positionsTotal}`}
+/>
 <Table headers={["Ticker", "Shares", "Lot", "Price", "Value"]}>
 	{#snippet rows()}
 		<TableRow>

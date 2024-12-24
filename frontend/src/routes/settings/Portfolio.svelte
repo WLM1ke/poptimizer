@@ -10,7 +10,7 @@
 </script>
 
 <section class="mt-4">
-	<H2>{#snippet text()}Portfolio{/snippet}</H2>
+	<H2 text="Portfolio" />
 	<ul class="pt-2">
 		<li>
 			<Switch label="sort value descending" checked={$portfolioSortByValue} onchange={togglePortfolioSortByValue} />

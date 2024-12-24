@@ -4,17 +4,11 @@
 	import { Table, TableRow, TextCell, NumberCell, EmptyCell, PercentCell } from "$lib/components/table";
 </script>
 
-<Card>
-	{#snippet upper()}
-		Date: {$portfolioView.day}
-	{/snippet}
-	{#snippet main()}
-		Value: {$portfolioView.value.toLocaleString("RU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} &#8381;
-	{/snippet}
-	{#snippet lower()}
-		Positions: {$portfolioView.positionsCount} / Effective: {$portfolioView.effectiveCount}
-	{/snippet}
-</Card>
+<Card
+	upper={`Date: ${$portfolioView.day}`}
+	main={`Value: ${$portfolioView.value.toLocaleString("RU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} &#8381;`}
+	lower={`Positions: ${$portfolioView.positionsCount} / Effective: ${$portfolioView.effectiveCount}`}
+/>
 <Table headers={["Ticker", "Amount", "Price", "Value", "Weight"]}>
 	{#snippet rows()}
 		<TableRow>

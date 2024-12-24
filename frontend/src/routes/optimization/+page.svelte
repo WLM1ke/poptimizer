@@ -51,17 +51,11 @@
 	};
 </script>
 
-<Card>
-	{#snippet upper()}
-		Date: {forecast.day} {status}
-	{/snippet}
-	{#snippet main()}
-		Buy: {optimization.buy.length} / Sell: {optimization.sell.length}
-	{/snippet}
-	{#snippet lower()}
-		Breakeven: {percent(optimization.breakEven)} / Count: {forecast.forecasts_count}
-	{/snippet}
-</Card>
+<Card
+	upper={`Date: ${forecast.day} ${status}`}
+	main={`Buy: ${optimization.buy.length} / Sell: ${optimization.sell.length}`}
+	lower={`Breakeven: ${percent(optimization.breakEven)} / Count: ${forecast.forecasts_count}`}
+/>
 <Table headers={["Ticker", "Weight", "Lower bound", "Upper bound", "Priority", "Signal"]}>
 	{#snippet rows()}
 		{#each optimization.buy as position (position.ticker)}

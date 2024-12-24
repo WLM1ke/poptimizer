@@ -24,7 +24,7 @@
 </script>
 
 <section>
-	<H2>{#snippet text()}Accounts{/snippet}</H2>
+	<H2 text="Accounts" />
 	<ul class="max-w-max">
 		{#each $accounts as account (account)}
 			<li transition:scale animate:flip class="flex items-center justify-between gap-2 pt-2">

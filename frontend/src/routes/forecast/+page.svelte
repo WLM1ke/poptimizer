@@ -26,17 +26,11 @@
 	};
 </script>
 
-<Card>
-	{#snippet upper()}
-		Date: {forecast.day} {status}
-	{/snippet}
-	{#snippet main()}
-		Mean: {percent(forecast.mean)} / Std: {percent(forecast.std)}
-	{/snippet}
-	{#snippet lower()}
-		Risk tolerance: {percent(forecast.risk_tolerance)} / Count: {forecast.forecasts_count}
-	{/snippet}
-</Card>
+<Card
+	upper={`Date: ${forecast.day} ${status}`}
+	main={`Mean: ${percent(forecast.mean)} / Std: ${percent(forecast.std)}`}
+	lower={`Risk tolerance: ${percent(forecast.risk_tolerance)} / Count: ${forecast.forecasts_count}`}
+/>
 <Table headers={["Ticker", "Mean", "Std", "Beta", "Gradient"]}>
 	{#snippet rows()}
 		{#each forecast.positions as position (position.ticker)}
