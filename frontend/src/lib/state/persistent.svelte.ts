@@ -13,7 +13,7 @@ class PersistentState<T> {
 		this.state = value;
 	};
 	get = () => {
-		return this.state as T;
+		return this.state!;
 	};
 }
 

@@ -1,9 +1,6 @@
 <script lang="ts">
 	import {
 		Table,
-		TableHead,
-		HeadCell,
-		TableBody,
 		TableRow,
 		TextCell,
 		NumberCell,
@@ -89,39 +86,42 @@
 	};
 </script>
 
-<Table>
-	<TableHead>
-		<HeadCell>Day</HeadCell>
-		<HeadCell>Dividend</HeadCell>
-		<HeadCell>Status</HeadCell>
-	</TableHead>
-	<TableBody>
+<Table headers={["Day", "Dividend", "Status"]}>
+	{#snippet rows()}
 		{#each data.dividends as dividend, index (index)}
 			{#if dividend.status === "ok"}
 				<TableRow>
-					<TextCell text={dividend.day} />
-					<NumberCell value={dividend.dividend} fractionDigits={maxFractionDigits} />
-					<TextCell text="OK" center={true} />
+					{#snippet cells()}
+						<TextCell text={dividend.day} />
+						<NumberCell value={dividend.dividend} fractionDigits={maxFractionDigits} />
+						<TextCell text="OK" center={true} />
+					{/snippet}
 				</TableRow>
 			{:else if dividend.status === "extra"}
 				<TableRow>
-					<TextCell text={dividend.day} />
-					<NumberCell value={dividend.dividend} fractionDigits={maxFractionDigits} />
-					<DeleteCell on:click={() => toggleRow(index)} />
+					{#snippet cells()}
+						<TextCell text={dividend.day} />
+						<NumberCell value={dividend.dividend} fractionDigits={maxFractionDigits} />
+						<DeleteCell onclick={() => toggleRow(index)} />
+					{/snippet}
 				</TableRow>
 			{:else if dividend.status === "missed"}
 				<TableRow muted>
-					<TextCell text={dividend.day} />
-					<NumberCell value={dividend.dividend} fractionDigits={maxFractionDigits} />
-					<AddCell on:click={() => toggleRow(index)} />
+					{#snippet cells()}
+						<TextCell text={dividend.day} />
+						<NumberCell value={dividend.dividend} fractionDigits={maxFractionDigits} />
+						<AddCell onclick={() => toggleRow(index)} />
+					{/snippet}
 				</TableRow>
 			{/if}
 		{/each}
 		<TableRow muted>
-			<InputTextCell bind:value={day} />
-			<InputCell bind:value={dividend} />
-			<AddCell on:click={() => addRow()} />
+			{#snippet cells()}
+				<InputTextCell bind:value={day} />
+				<InputCell bind:value={dividend} />
+				<AddCell onclick={() => addRow()} />
+			{/snippet}
 		</TableRow>
-	</TableBody>
+	{/snippet}
 </Table>
-<Button label="Save" on:click={save} />
+<Button label="Save" onclick={save} />

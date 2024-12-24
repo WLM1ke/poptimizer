@@ -1,7 +1,4 @@
 export { default as Table } from "$lib/components/table/Table.svelte";
-export { default as TableHead } from "$lib/components/table/Head.svelte";
-export { default as HeadCell } from "$lib/components/table/HeadCell.svelte";
-export { default as TableBody } from "$lib/components/table/Body.svelte";
 export { default as TableRow } from "$lib/components/table/Row.svelte";
 export { default as TextCell } from "$lib/components/table/Text.svelte";
 export { default as AddCell } from "$lib/components/table/Add.svelte";

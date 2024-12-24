@@ -1,6 +1,5 @@
 <script lang="ts">
-	export let value: number;
-	export let fractionDigits: number | undefined = 1;
+	let { value, fractionDigits = 1 }: { value: number; fractionDigits?: number | undefined } = $props();
 </script>
 
 <td class="w-32 p-2 text-right font-mono">

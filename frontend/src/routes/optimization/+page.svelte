@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Card from "$lib/components/Card.svelte";
 	import { portfolio } from "$lib/stores/portfolio";
-	import { Table, TableHead, HeadCell, TableBody, TableRow, TextCell, PercentCell } from "$lib/components/table";
+	import { Table, TableRow, TextCell, PercentCell } from "$lib/components/table";
 	import type { PageData } from "./$types";
 	import { get } from "$lib/request";
 
@@ -62,35 +62,31 @@
 		Breakeven: {percent(optimization.breakEven)} / Count: {forecast.forecasts_count}
 	{/snippet}
 </Card>
-<Table>
-	<TableHead>
-		<HeadCell>Ticker</HeadCell>
-		<HeadCell>Weight</HeadCell>
-		<HeadCell>Lower bound</HeadCell>
-		<HeadCell>Upper bound</HeadCell>
-		<HeadCell>Priority</HeadCell>
-		<HeadCell>Signal</HeadCell>
-	</TableHead>
-	<TableBody>
+<Table headers={["Ticker", "Weight", "Lower bound", "Upper bound", "Priority", "Signal"]}>
+	{#snippet rows()}
 		{#each optimization.buy as position (position.ticker)}
 			<TableRow>
-				<TextCell text={position.ticker} />
-				<PercentCell value={position.weight} />
-				<PercentCell value={position.grad_lower} />
-				<PercentCell value={position.grad_upper} />
-				<PercentCell value={position.priority} />
-				<TextCell text="Buy" center />
+				{#snippet cells()}
+					<TextCell text={position.ticker} />
+					<PercentCell value={position.weight} />
+					<PercentCell value={position.grad_lower} />
+					<PercentCell value={position.grad_upper} />
+					<PercentCell value={position.priority} />
+					<TextCell text="Buy" center />
+				{/snippet}
 			</TableRow>
 		{/each}
 		{#each optimization.sell as position (position.ticker)}
 			<TableRow>
-				<TextCell text={position.ticker} />
-				<PercentCell value={position.weight} />
-				<PercentCell value={position.grad_lower} />
-				<PercentCell value={position.grad_upper} />
-				<PercentCell value={position.priority} />
-				<TextCell text="Sell" center />
+				{#snippet cells()}
+					<TextCell text={position.ticker} />
+					<PercentCell value={position.weight} />
+					<PercentCell value={position.grad_lower} />
+					<PercentCell value={position.grad_upper} />
+					<PercentCell value={position.priority} />
+					<TextCell text="Sell" center />
+				{/snippet}
 			</TableRow>
 		{/each}
-	</TableBody>
+	{/snippet}
 </Table>

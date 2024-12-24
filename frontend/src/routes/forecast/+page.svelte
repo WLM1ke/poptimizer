@@ -1,15 +1,6 @@
 <script lang="ts">
 	import { portfolio } from "$lib/stores/portfolio";
-	import {
-		Table,
-		TableHead,
-		HeadCell,
-		TableBody,
-		TableRow,
-		TextCell,
-		NumberCell,
-		PercentCell
-	} from "$lib/components/table";
+	import { Table, TableRow, TextCell, NumberCell, PercentCell } from "$lib/components/table";
 	import type { PageData } from "./$types";
 	import { get } from "$lib/request";
 	import Card from "$lib/components/Card.svelte";
@@ -46,23 +37,18 @@
 		Risk tolerance: {percent(forecast.risk_tolerance)} / Count: {forecast.forecasts_count}
 	{/snippet}
 </Card>
-<Table>
-	<TableHead>
-		<HeadCell>Ticker</HeadCell>
-		<HeadCell>Mean</HeadCell>
-		<HeadCell>Std</HeadCell>
-		<HeadCell>Beta</HeadCell>
-		<HeadCell>Gradient</HeadCell>
-	</TableHead>
-	<TableBody>
+<Table headers={["Ticker", "Mean", "Std", "Beta", "Gradient"]}>
+	{#snippet rows()}
 		{#each forecast.positions as position (position.ticker)}
 			<TableRow>
-				<TextCell text={position.ticker} />
-				<PercentCell value={position.mean} />
-				<PercentCell value={position.std} />
-				<NumberCell value={position.beta} fractionDigits={2} />
-				<PercentCell value={position.grad} />
+				{#snippet cells()}
+					<TextCell text={position.ticker} />
+					<PercentCell value={position.mean} />
+					<PercentCell value={position.std} />
+					<NumberCell value={position.beta} fractionDigits={2} />
+					<PercentCell value={position.grad} />
+				{/snippet}
 			</TableRow>
 		{/each}
-	</TableBody>
+	{/snippet}
 </Table>

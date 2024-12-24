@@ -1,16 +1,6 @@
 <script lang="ts">
 	import Card from "$lib/components/Card.svelte";
-	import {
-		Table,
-		TableBody,
-		EmptyCell,
-		TableHead,
-		HeadCell,
-		InputCell,
-		NumberCell,
-		TableRow,
-		TextCell
-	} from "$lib/components/table";
+	import { Table, EmptyCell, InputCell, NumberCell, TableRow, TextCell } from "$lib/components/table";
 	import { accountViewFn } from "$lib/stores/accountViewFn";
 
 	export let data;
@@ -52,41 +42,38 @@
 		Positions: {accountView.positionsCount} / {accountView.positionsTotal}
 	{/snippet}
 </Card>
-<Table>
-	<TableHead>
-		<HeadCell>Ticker</HeadCell>
-		<HeadCell>Shares</HeadCell>
-		<HeadCell>Lot</HeadCell>
-		<HeadCell>Price</HeadCell>
-		<HeadCell>Value</HeadCell>
-	</TableHead>
-	<TableBody>
+<Table headers={["Ticker", "Shares", "Lot", "Price", "Value"]}>
+	{#snippet rows()}
 		<TableRow>
-			<TextCell text="Cash" />
-			<InputCell
-				bind:value={positions["CASH"]}
-				on:change={(event) => {
-					onChange(event, "CASH");
-				}}
-			/>
-			<EmptyCell />
-			<EmptyCell />
-			<NumberCell value={accountView.cash} />
+			{#snippet cells()}
+				<TextCell text="Cash" />
+				<InputCell
+					bind:value={positions["CASH"]}
+					onchange={(event) => {
+						onChange(event, "CASH");
+					}}
+				/>
+				<EmptyCell />
+				<EmptyCell />
+				<NumberCell value={accountView.cash} />
+			{/snippet}
 		</TableRow>
 		{#each accountView.positions as position (position.ticker)}
 			<TableRow>
-				<TextCell text={position.ticker} />
-				<InputCell
-					step={position.lot}
-					bind:value={positions[position.ticker]}
-					on:change={(event) => {
-						onChange(event, position.ticker);
-					}}
-				/>
-				<NumberCell value={position.lot} />
-				<NumberCell value={position.price} />
-				<NumberCell value={position.value} fractionDigits={0} />
+				{#snippet cells()}
+					<TextCell text={position.ticker} />
+					<InputCell
+						step={position.lot}
+						bind:value={positions[position.ticker]}
+						onchange={(event) => {
+							onChange(event, position.ticker);
+						}}
+					/>
+					<NumberCell value={position.lot} />
+					<NumberCell value={position.price} />
+					<NumberCell value={position.value} fractionDigits={0} />
+				{/snippet}
 			</TableRow>
 		{/each}
-	</TableBody>
+	{/snippet}
 </Table>
