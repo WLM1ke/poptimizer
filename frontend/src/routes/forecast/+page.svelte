@@ -4,6 +4,7 @@
 	import type { PageData } from "./$types";
 	import { get } from "$lib/request";
 	import Card from "$lib/components/Card.svelte";
+	import { formatPercent } from "$lib/format";
 
 	let { data }: { data: PageData } = $props();
 	let forecast = $state(data);
@@ -16,20 +17,12 @@
 			}, 1000);
 		}
 	});
-
-	const percent = (num: number) => {
-		return num.toLocaleString("RU", {
-			style: "percent",
-			minimumFractionDigits: 1,
-			maximumFractionDigits: 1
-		});
-	};
 </script>
 
 <Card
 	upper={`Date: ${forecast.day} ${status}`}
-	main={`Mean: ${percent(forecast.mean)} / Std: ${percent(forecast.std)}`}
-	lower={`Risk tolerance: ${percent(forecast.risk_tolerance)} / Count: ${forecast.forecasts_count}`}
+	main={`Mean: ${formatPercent(forecast.mean)} / Std: ${formatPercent(forecast.std)}`}
+	lower={`Risk tolerance: ${formatPercent(forecast.risk_tolerance)} / Count: ${forecast.forecasts_count}`}
 />
 <Table headers={["Ticker", "Mean", "Std", "Beta", "Gradient"]}>
 	{#snippet rows()}

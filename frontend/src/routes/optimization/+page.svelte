@@ -4,6 +4,7 @@
 	import { Table, TableRow, TextCell, PercentCell } from "$lib/components/table";
 	import type { PageData } from "./$types";
 	import { get } from "$lib/request";
+	import { formatPercent } from "$lib/format";
 
 	let { data }: { data: PageData } = $props();
 	let forecast = $state(data);
@@ -41,20 +42,12 @@
 			}, 1000);
 		}
 	});
-
-	const percent = (num: number) => {
-		return num.toLocaleString("RU", {
-			style: "percent",
-			minimumFractionDigits: 1,
-			maximumFractionDigits: 1
-		});
-	};
 </script>
 
 <Card
 	upper={`Date: ${forecast.day} ${status}`}
 	main={`Buy: ${optimization.buy.length} / Sell: ${optimization.sell.length}`}
-	lower={`Breakeven: ${percent(optimization.breakEven)} / Count: ${forecast.forecasts_count}`}
+	lower={`Breakeven: ${formatPercent(optimization.breakEven)} / Count: ${forecast.forecasts_count}`}
 />
 <Table headers={["Ticker", "Weight", "Lower bound", "Upper bound", "Priority", "Signal"]}>
 	{#snippet rows()}

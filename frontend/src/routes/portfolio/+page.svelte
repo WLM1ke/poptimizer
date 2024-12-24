@@ -2,11 +2,12 @@
 	import { portfolioView } from "$lib/stores/portfolioView";
 	import Card from "$lib/components/Card.svelte";
 	import { Table, TableRow, TextCell, NumberCell, EmptyCell, PercentCell } from "$lib/components/table";
+	import { formatNumber } from "$lib/format";
 </script>
 
 <Card
 	upper={`Date: ${$portfolioView.day}`}
-	main={`Value: ${$portfolioView.value.toLocaleString("RU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} &#8381;`}
+	main={`Value: ${formatNumber($portfolioView.value)} ₽`}
 	lower={`Positions: ${$portfolioView.positionsCount} / Effective: ${$portfolioView.effectiveCount}`}
 />
 <Table headers={["Ticker", "Amount", "Price", "Value", "Weight"]}>

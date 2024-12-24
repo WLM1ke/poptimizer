@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Card from "$lib/components/Card.svelte";
 	import { Table, EmptyCell, InputCell, NumberCell, TableRow, TextCell } from "$lib/components/table";
+	import { formatNumber } from "$lib/format.js";
 	import { accountViewFn } from "$lib/stores/accountViewFn";
 
 	export let data;
@@ -33,7 +34,7 @@
 
 <Card
 	upper={`Date: ${accountView.day}`}
-	main={`Value: ${accountView.value.toLocaleString("RU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} &#8381;`}
+	main={`Value: ${formatNumber(accountView.value)} ₽`}
 	lower={`Positions: ${accountView.positionsCount} / ${accountView.positionsTotal}`}
 />
 <Table headers={["Ticker", "Shares", "Lot", "Price", "Value"]}>
