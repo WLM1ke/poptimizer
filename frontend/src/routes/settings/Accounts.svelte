@@ -4,16 +4,9 @@
 	import Add from "$lib/icons/Add.svelte";
 	import { scale } from "svelte/transition";
 	import Switch from "$lib/components/Switch.svelte";
-	import {
-		accountsSortByValue,
-		toggleAccountsSortByValue,
-		accountsHideZeroPositions,
-		toggleAccountsHideZeroPositions,
-		accounts,
-		removeAccount,
-		createAccount
-	} from "$lib/stores/settings";
+	import { accounts, removeAccount, createAccount } from "$lib/stores/settings";
 	import { flip } from "svelte/animate";
+	import { accountsHideZeroPositions, accountsSortByValue } from "$lib/state/settings.svelte";
 
 	let newAccount = "";
 	let inputRef: HTMLElement;
@@ -62,13 +55,13 @@
 	</ul>
 	<ul class="pt-2">
 		<li>
-			<Switch label="sort value descending" checked={$accountsSortByValue} onchange={toggleAccountsSortByValue} />
+			<Switch label="sort value descending" checked={accountsSortByValue.get()} onchange={accountsSortByValue.toggle} />
 		</li>
 		<li>
 			<Switch
 				label="hide zero positions"
-				checked={$accountsHideZeroPositions}
-				onchange={toggleAccountsHideZeroPositions}
+				checked={accountsHideZeroPositions.get()}
+				onchange={accountsHideZeroPositions.toggle}
 			/>
 		</li>
 	</ul>

@@ -2,7 +2,7 @@
 	import SunIcon from "$lib/icons/SunIcon.svelte";
 	import MoonIcon from "$lib/icons/MoonIcon.svelte";
 	import SystemIcon from "$lib/icons/SystemIcon.svelte";
-	import { theme } from "$lib/state/persistent.svelte";
+	import { theme } from "$lib/state/settings.svelte";
 
 	let themeName = $derived(theme.get());
 	document.querySelector("body")?.setAttribute("data-theme", theme.get());
