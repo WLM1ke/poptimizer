@@ -1,6 +1,6 @@
 import { derived } from "svelte/store";
 import { portfolio } from "$lib/stores/portfolio";
-import { portfolioHideZeroPositions, portfolioSortByValue } from "$lib/state/settings.svelte";
+import { portfolioSortByValue } from "$lib/state/settings.svelte";
 
 export interface PortfolioPosition {
 	ticker: string;
@@ -41,7 +41,7 @@ export const portfolioView = derived([portfolio], ([port]) => {
 				weight
 			};
 		})
-		.filter((pos) => pos.value !== 0 || !portfolioHideZeroPositions.get())
+		.filter((pos) => pos.value !== 0)
 		.sort(portfolioSortByValue.get() ? compValue : compTickers);
 
 	const effectiveCount = Math.round(

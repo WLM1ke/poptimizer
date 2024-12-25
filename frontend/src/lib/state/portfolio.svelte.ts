@@ -1,5 +1,5 @@
 import { get } from "$lib/request";
-import { portfolioHideZeroPositions, portfolioSortByValue } from "./settings.svelte";
+import { portfolioSortByValue } from "./settings.svelte";
 
 interface Positions {
 	ticker: string;
@@ -54,13 +54,13 @@ class PortfolioView {
 	};
 
 	public day = $derived(this._day);
-	public cash = $derived.by(() => Object.values(this._cash).reduce((accumulator, cash) => accumulator + cash, 0));
-	public value = $derived.by(() => {
-		return this._positions.reduce((acc, pos) => {
+	public cash = $derived(Object.values(this._cash).reduce((accumulator, cash) => accumulator + cash, 0));
+	public value = $derived(
+		this._positions.reduce((acc, pos) => {
 			const shares = Object.values(pos.accounts).reduce((acc, shares) => acc + shares, 0);
 			return acc + pos.price * shares;
-		}, this.cash);
-	});
+		}, this.cash)
+	);
 	public positions = $derived.by(() => {
 		return this._positions
 			.map((position) => {
@@ -78,7 +78,7 @@ class PortfolioView {
 					weight
 				};
 			})
-			.filter((pos) => pos.value !== 0 || !portfolioHideZeroPositions.get())
+			.filter((pos) => pos.value !== 0)
 			.sort(portfolioSortByValue.get() ? compValue : compTickers);
 	});
 	public positionsCount = $derived(this._positions.length);

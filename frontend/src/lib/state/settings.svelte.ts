@@ -40,7 +40,6 @@ class PersistentToggle {
 export const theme = new PersistentState<"system" | "light" | "dark">("theme", "system");
 
 export const portfolioSortByValue = new PersistentToggle("portfolio_sort_by_value", true);
-export const portfolioHideZeroPositions = new PersistentToggle("portfolio_hide_zero_positions", true);
 
 export const accountsSortByValue = new PersistentToggle("accounts_sort_by_value", false);
 export const accountsHideZeroPositions = new PersistentToggle("accounts_hide_zero_positions", false);
