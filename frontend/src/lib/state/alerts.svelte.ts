@@ -7,8 +7,8 @@ interface Alert {
 const removeDelay = 30000;
 
 class Alerts {
-	alerts = $state<Array<Alert>>([]);
-	id = $state(0);
+	private alerts = $state<Array<Alert>>([]);
+	private id = $state(0);
 
 	public get = () => {
 		return this.alerts;

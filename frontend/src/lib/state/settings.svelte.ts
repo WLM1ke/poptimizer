@@ -1,6 +1,6 @@
 class PersistentState<T> {
-	state = $state<T>();
-	key = "";
+	private state = $state<T>();
+	private key = "";
 
 	constructor(key: string, initial: T) {
 		this.key = key;
@@ -18,8 +18,8 @@ class PersistentState<T> {
 }
 
 class PersistentToggle {
-	state = $state(true);
-	key = "";
+	private state = $state(true);
+	private key = "";
 
 	constructor(key: string, initial: boolean) {
 		this.key = key;

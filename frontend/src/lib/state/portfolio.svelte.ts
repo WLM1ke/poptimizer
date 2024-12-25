@@ -31,11 +31,11 @@ const compValue = (a: PortfolioPosition, b: PortfolioPosition) => {
 const retryDelay = 1000;
 
 class PortfolioView {
-	_day = $state<string>("");
-	ver = $state<number>(-1);
-	account_names = $state<string[]>([]);
-	_cash = $state<Record<string, number>>({});
-	_positions = $state<Positions[]>([]);
+	private _day = $state<string>("");
+	private ver = $state<number>(-1);
+	private account_names = $state<string[]>([]);
+	private _cash = $state<Record<string, number>>({});
+	private _positions = $state<Positions[]>([]);
 
 	update = async (fetchFn: typeof fetch) => {
 		const port: Portfolio | undefined = await get(fetchFn, "/api/dividends");
