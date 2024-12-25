@@ -1,6 +1,5 @@
 <script lang="ts">
 	import H2 from "$lib/components/H2.svelte";
-	import type { Snippet } from "svelte";
 
 	let { upper, main, lower }: { upper: string; main: string; lower: string } = $props();
 </script>

@@ -1,6 +1,4 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-
 	let { text }: { text: string } = $props();
 </script>
 
