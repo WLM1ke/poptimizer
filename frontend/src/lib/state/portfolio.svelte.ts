@@ -61,8 +61,8 @@ class PortfolioView {
 			return acc + pos.price * shares;
 		}, this.cash)
 	);
-	public positions = $derived.by(() => {
-		return this._positions
+	public positions = $derived(
+		this._positions
 			.map((position) => {
 				const ticker = position.ticker;
 				const shares = Object.values(position.accounts).reduce((acc, shares) => acc + shares, 0);
@@ -79,8 +79,8 @@ class PortfolioView {
 				};
 			})
 			.filter((pos) => pos.value !== 0)
-			.sort(portfolioSortByValue.get() ? compValue : compTickers);
-	});
+			.sort(portfolioSortByValue.get() ? compValue : compTickers)
+	);
 	public positionsCount = $derived(this._positions.length);
 	public effectiveCount = $derived(
 		Math.round(
