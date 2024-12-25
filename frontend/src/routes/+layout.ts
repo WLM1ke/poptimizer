@@ -7,17 +7,7 @@ import { alerts } from "$lib/state/alerts.svelte";
 export const ssr = false;
 
 export const load = (async ({ fetch }) => {
-	const data = {
-		getTitle: (pathname: string) => {
-			const path = decodeURI(pathname);
-			if (path === "/") {
-				return "Summary";
-			}
-			const lastSlash = path.lastIndexOf("/");
-
-			return path[lastSlash + 1].toUpperCase() + path.substring(lastSlash + 2);
-		}
-	};
+	const data = {};
 	const [div, port]: [Tickers, Portfolio] = await Promise.all([
 		get(fetch, "/api/dividends"),
 		get(fetch, "/api/portfolio")
