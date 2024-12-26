@@ -57,10 +57,10 @@ class PortfolioView {
 		this._positions = port.positions;
 	};
 
-	public day = $derived(this._day);
-	public cash = $derived(sumValues(this._cash));
-	public value = $derived(this._positions.reduce((acc, pos) =>  acc + pos.price * sumValues(pos.accounts), this.cash));
-	public positions = $derived(
+	day = $derived(this._day);
+	cash = $derived(sumValues(this._cash));
+	value = $derived(this._positions.reduce((acc, pos) =>  acc + pos.price * sumValues(pos.accounts), this.cash));
+	positions = $derived(
 		this._positions
 			.map((position) => {
 				const ticker = position.ticker;
@@ -80,8 +80,8 @@ class PortfolioView {
 			.filter((pos) => pos.value !== 0)
 			.sort(portfolioSortByValue.get() ? compValue : compTickers)
 	);
-	public positionsCount = $derived(this._positions.length);
-	public effectiveCount = $derived(
+	positionsCount = $derived(this._positions.length);
+	effectiveCount = $derived(
 		Math.round(
 			this.value - this.cash > 0
 				? 1 / Object.values(this.positions).reduce((acc, { weight }) => acc + weight * weight, 0)

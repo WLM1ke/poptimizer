@@ -1,19 +1,18 @@
-class PersistentState<T> {
-	private state = $state<T>();
-	private key = "";
+class PersistentTheme {
+	private state: "system" | "light" | "dark" = $state("system");
+	private key = "theme";
 
-	constructor(key: string, initial: T) {
-		this.key = key;
-		const saved: string = localStorage[key];
-		this.state = saved ? JSON.parse(saved) : initial;
+	constructor() {
+		const saved: string = localStorage[this.key];
+		this.state = saved ? JSON.parse(saved) : this.state;
 	}
 
-	set = (value: T) => {
-		localStorage[this.key] = JSON.stringify(value);
-		this.state = value;
+	toggle = () => {
+		this.state = this.state === "system" ? "light" : this.state === "light" ? "dark" : "system";
+		localStorage[this.key] = JSON.stringify(this.state);
 	};
 	get = () => {
-		return this.state!;
+		return this.state;
 	};
 }
 
@@ -37,7 +36,7 @@ class PersistentToggle {
 	};
 }
 
-export const theme = new PersistentState<"system" | "light" | "dark">("theme", "system");
+export const theme = new PersistentTheme();
 
 export const portfolioSortByValue = new PersistentToggle("portfolio_sort_by_value", true);
 

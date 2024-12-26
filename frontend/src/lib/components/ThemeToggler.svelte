@@ -8,10 +8,8 @@
 	document.querySelector("body")?.setAttribute("data-theme", theme.get());
 
 	const toggleTheme = () => {
-		const current = themeName;
-		const next = current === "system" ? "light" : current === "light" ? "dark" : "system";
-		theme.set(next);
-		document.querySelector("body")?.setAttribute("data-theme", next);
+		theme.toggle();
+		document.querySelector("body")?.setAttribute("data-theme", theme.get());
 	};
 </script>
 
