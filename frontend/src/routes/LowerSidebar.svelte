@@ -1,3 +1,5 @@
+<svelte:options runes />
+
 <script lang="ts">
 	import SettingsIcon from "$lib/icons/SettingsIcon.svelte";
 	import GitHubIcon from "$lib/icons/GitHubIcon.svelte";

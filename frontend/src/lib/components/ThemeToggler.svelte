@@ -4,7 +4,6 @@
 	import SystemIcon from "$lib/icons/SystemIcon.svelte";
 	import { theme } from "$lib/state/settings.svelte";
 
-	let themeName = $derived(theme.get());
 	document.querySelector("body")?.setAttribute("data-theme", theme.get());
 
 	const toggleTheme = () => {
@@ -13,12 +12,12 @@
 	};
 </script>
 
-<button class="hover:bg-bg-medium rounded-lg p-2" title={`Color theme: ${themeName}`} onclick={toggleTheme}>
-	{#if themeName === "system"}
+<button class="hover:bg-bg-medium rounded-lg p-2" title={`Color theme: ${theme.get()}`} onclick={toggleTheme}>
+	{#if theme.get() === "system"}
 		<SystemIcon />
-	{:else if themeName === "light"}
+	{:else if theme.get() === "light"}
 		<SunIcon />
-	{:else if themeName === "dark"}
+	{:else if theme.get() === "dark"}
 		<MoonIcon />
 	{/if}
 </button>

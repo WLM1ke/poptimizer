@@ -1,3 +1,5 @@
+<svelte:options runes />
+
 <script lang="ts">
 	import LowerSidebar from "./LowerSidebar.svelte";
 	import MenuItem from "./MenuItem.svelte";
@@ -7,25 +9,29 @@
 	import DividendsIcon from "$lib/icons/DividendsIcon.svelte";
 	import AccountIcon from "$lib/icons/AccountIcon.svelte";
 	import { scale } from "svelte/transition";
-	import { accounts } from "$lib/stores/settings";
 	import { flip } from "svelte/animate";
-	import { tickers } from "$lib/stores/dividends";
+	import { port } from "$lib/state/portfolio.svelte";
+	import { divTickers } from "$lib/state/dividends.svelte";
 </script>
 
-<aside class="flex flex-col justify-between border-r border-bg-accent bg-bg-sidebar p-2">
+<aside class="border-bg-accent bg-bg-sidebar flex flex-col justify-between border-r p-2">
 	<nav class="flex flex-col gap-2">
 		<ul class="flex flex-col gap-1">
 			<li>
 				<MenuItem title="Portfolio" href="/portfolio">
-					<PortfolioIcon />
+					{#snippet icon()}
+						<PortfolioIcon />
+					{/snippet}
 				</MenuItem>
 			</li>
 			<li>
 				<ul class="flex flex-col gap-1">
-					{#each $accounts as account (account)}
+					{#each port.accounts as account (account)}
 						<li transition:scale animate:flip>
 							<MenuItem title={account} href="/portfolio/{account}" subItem>
-								<AccountIcon />
+								{#snippet icon()}
+									<AccountIcon />
+								{/snippet}
 							</MenuItem>
 						</li>
 					{/each}
@@ -33,28 +39,36 @@
 			</li>
 			<li>
 				<MenuItem title="Forecast" href="/forecast">
-					<ForecastIcon />
+					{#snippet icon()}
+						<ForecastIcon />
+					{/snippet}
 				</MenuItem>
 			</li>
 			<li>
 				<MenuItem title="Optimization" href="/optimization">
-					<OptimizationIcon />
+					{#snippet icon()}
+						<OptimizationIcon />
+					{/snippet}
 				</MenuItem>
 			</li>
 		</ul>
-		{#if $tickers.tickers.length}
-			<ul class="flex flex-col gap-1 border-t border-bg-medium pt-2" transition:scale>
+		{#if divTickers.get().length}
+			<ul class="border-bg-medium flex flex-col gap-1 border-t pt-2" transition:scale>
 				<li>
 					<MenuItem title="Dividends">
-						<DividendsIcon />
+						{#snippet icon()}
+							<DividendsIcon />
+						{/snippet}
 					</MenuItem>
 				</li>
 				<li>
 					<ul class="flex flex-col gap-1">
-						{#each $tickers.tickers as ticker (ticker)}
+						{#each divTickers.get() as ticker (ticker)}
 							<li transition:scale animate:flip>
 								<MenuItem title={ticker} href="/dividends/{ticker}" subItem>
-									<AccountIcon />
+									{#snippet icon()}
+										<AccountIcon />
+									{/snippet}
 								</MenuItem>
 							</li>
 						{/each}

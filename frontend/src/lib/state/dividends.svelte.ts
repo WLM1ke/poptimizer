@@ -1,4 +1,5 @@
 import { get, retryDelay } from "$lib/request";
+import { alerts } from "./alerts.svelte";
 
 export interface Tickers {
 	tickers: string[];
@@ -14,6 +15,10 @@ class DivTickers {
 			setTimeout(() => this.update(fetchFn), retryDelay);
 
 			return;
+		}
+
+		for (const ticker of tickers.tickers) {
+			alerts.addInfo(`Update dividends for ${ticker}`);
 		}
 
 		this.tickers = tickers.tickers;

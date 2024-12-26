@@ -1,4 +1,5 @@
 import { get, retryDelay } from "$lib/request";
+import { alerts } from "./alerts.svelte";
 import { portfolioSortByValue } from "./settings.svelte";
 
 interface Positions {
@@ -35,12 +36,12 @@ const sumValues = (account: Record<string, number>) => {
 class PortfolioView {
 	day = $state<string>("");
 	private ver = $state<number>(-1);
-	private account_names = $state<string[]>([]);
+	accounts = $state<string[]>([]);
 	accCash = $state<Record<string, number>>({});
 	accPositions = $state<Positions[]>([]);
 
 	update = async (fetchFn: typeof fetch) => {
-		const port: Portfolio | undefined = await get(fetchFn, "/api/dividends");
+		const port: Portfolio | undefined = await get(fetchFn, "/api/portfolio");
 
 		if (!port) {
 			setTimeout(() => this.update(fetchFn), retryDelay);
@@ -48,9 +49,13 @@ class PortfolioView {
 			return;
 		}
 
+		if (Object.keys(port.account_names).length === 0) {
+			alerts.addInfo("No accounts: create them in settings");
+		}
+
 		this.day = port.day;
 		this.ver = port.ver;
-		this.account_names = port.account_names;
+		this.accounts = port.account_names;
 		this.accCash = port.cash;
 		this.accPositions = port.positions;
 	};

@@ -2,16 +2,15 @@ class PersistentTheme {
 	private state: "system" | "light" | "dark" = $state("system");
 	private key = "theme";
 
-	constructor() {
-		const saved: string = localStorage[this.key];
-		this.state = saved ? JSON.parse(saved) : this.state;
-	}
-
 	toggle = () => {
-		this.state = this.state === "system" ? "light" : this.state === "light" ? "dark" : "system";
+		const current = this.state;
+		this.state = current === "system" ? "light" : current === "light" ? "dark" : "system";
 		localStorage[this.key] = JSON.stringify(this.state);
 	};
 	get = () => {
+		const saved: string = localStorage[this.key];
+		this.state = saved ? JSON.parse(saved) : this.state;
+
 		return this.state;
 	};
 }
@@ -22,8 +21,7 @@ class PersistentToggle {
 
 	constructor(key: string, initial: boolean) {
 		this.key = key;
-		const saved: string = localStorage[key];
-		this.state = saved ? JSON.parse(saved) : initial;
+		this.state = initial;
 	}
 
 	toggle = () => {
@@ -32,6 +30,9 @@ class PersistentToggle {
 	};
 
 	get = () => {
+		const saved: string = localStorage[this.key];
+		this.state = saved ? JSON.parse(saved) : this.state;
+
 		return this.state;
 	};
 }
