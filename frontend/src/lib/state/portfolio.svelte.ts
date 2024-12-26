@@ -28,6 +28,10 @@ const compValue = (a: PortfolioPosition, b: PortfolioPosition) => {
 	return b.value - a.value;
 };
 
+const sumValues = (account: Record<string, number>) => {
+	return Object.values(account).reduce((accumulator, val) => accumulator + val, 0)
+}
+
 const retryDelay = 1000;
 
 class PortfolioView {
@@ -54,18 +58,13 @@ class PortfolioView {
 	};
 
 	public day = $derived(this._day);
-	public cash = $derived(Object.values(this._cash).reduce((accumulator, cash) => accumulator + cash, 0));
-	public value = $derived(
-		this._positions.reduce((acc, pos) => {
-			const shares = Object.values(pos.accounts).reduce((acc, shares) => acc + shares, 0);
-			return acc + pos.price * shares;
-		}, this.cash)
-	);
+	public cash = $derived(sumValues(this._cash));
+	public value = $derived(this._positions.reduce((acc, pos) =>  acc + pos.price * sumValues(pos.accounts), this.cash));
 	public positions = $derived(
 		this._positions
 			.map((position) => {
 				const ticker = position.ticker;
-				const shares = Object.values(position.accounts).reduce((acc, shares) => acc + shares, 0);
+				const shares = sumValues(position.accounts);
 				const price = position.price;
 				const value = position.price * shares;
 				const weight = this.value > 0 ? value / this.value : 0;
@@ -84,8 +83,8 @@ class PortfolioView {
 	public positionsCount = $derived(this._positions.length);
 	public effectiveCount = $derived(
 		Math.round(
-			this.value > 0
-				? 1 / Object.values(this.positions).reduce((acc, { weight }) => acc + (weight > 0 ? weight * weight : 0), 0)
+			this.value - this.cash > 0
+				? 1 / Object.values(this.positions).reduce((acc, { weight }) => acc + weight * weight, 0)
 				: 0
 		)
 	);
