@@ -16,30 +16,30 @@ interface Portfolio {
 	positions: Positions[];
 }
 
-export interface PortfolioPosition {
+export interface CompPosition {
 	ticker: string;
 	value: number;
 }
 
-const compTickers = (a: PortfolioPosition, b: PortfolioPosition) => {
+export const compTickers = (a: CompPosition, b: CompPosition) => {
 	return a.ticker.localeCompare(b.ticker);
 };
-const compValue = (a: PortfolioPosition, b: PortfolioPosition) => {
+export const compValue = (a: CompPosition, b: CompPosition) => {
 	return b.value - a.value;
 };
 
 const sumValues = (account: Record<string, number>) => {
-	return Object.values(account).reduce((accumulator, val) => accumulator + val, 0)
-}
+	return Object.values(account).reduce((acc, val) => acc + val, 0);
+};
 
 const retryDelay = 1000;
 
 class PortfolioView {
-	private _day = $state<string>("");
+	day = $state<string>("");
 	private ver = $state<number>(-1);
 	private account_names = $state<string[]>([]);
-	private _cash = $state<Record<string, number>>({});
-	private _positions = $state<Positions[]>([]);
+	accCash = $state<Record<string, number>>({});
+	accPositions = $state<Positions[]>([]);
 
 	update = async (fetchFn: typeof fetch) => {
 		const port: Portfolio | undefined = await get(fetchFn, "/api/dividends");
@@ -50,18 +50,17 @@ class PortfolioView {
 			return;
 		}
 
-		this._day = port.day;
+		this.day = port.day;
 		this.ver = port.ver;
 		this.account_names = port.account_names;
-		this._cash = port.cash;
-		this._positions = port.positions;
+		this.accCash = port.cash;
+		this.accPositions = port.positions;
 	};
 
-	day = $derived(this._day);
-	cash = $derived(sumValues(this._cash));
-	value = $derived(this._positions.reduce((acc, pos) =>  acc + pos.price * sumValues(pos.accounts), this.cash));
+	cash = $derived(sumValues(this.accCash));
+	value = $derived(this.accPositions.reduce((acc, pos) => acc + pos.price * sumValues(pos.accounts), this.cash));
 	positions = $derived(
-		this._positions
+		this.accPositions
 			.map((position) => {
 				const ticker = position.ticker;
 				const shares = sumValues(position.accounts);
@@ -80,7 +79,7 @@ class PortfolioView {
 			.filter((pos) => pos.value !== 0)
 			.sort(portfolioSortByValue.get() ? compValue : compTickers)
 	);
-	positionsCount = $derived(this._positions.length);
+	positionsCount = $derived(this.accPositions.length);
 	effectiveCount = $derived(
 		Math.round(
 			this.value - this.cash > 0
