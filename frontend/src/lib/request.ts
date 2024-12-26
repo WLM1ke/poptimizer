@@ -1,5 +1,7 @@
 import { alerts } from "$lib/state/alerts.svelte";
 
+export const retryDelay = 1000;
+
 const request = async (
 	fetchFn: typeof fetch,
 	url: string,
@@ -26,7 +28,7 @@ const request = async (
 		}
 		alerts.addAlert(`${msg}`);
 
-		return undefined;
+		return request(fetchFn, url, method, body);
 	}
 };
 

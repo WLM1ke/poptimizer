@@ -1,4 +1,4 @@
-import { get } from "$lib/request";
+import { get, retryDelay } from "$lib/request";
 import { portfolioSortByValue } from "./settings.svelte";
 
 interface Positions {
@@ -31,8 +31,6 @@ export const compValue = (a: CompPosition, b: CompPosition) => {
 const sumValues = (account: Record<string, number>) => {
 	return Object.values(account).reduce((acc, val) => acc + val, 0);
 };
-
-const retryDelay = 1000;
 
 class PortfolioView {
 	day = $state<string>("");
