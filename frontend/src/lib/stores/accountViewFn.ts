@@ -1,7 +1,7 @@
 import { derived } from "svelte/store";
 import { portfolio, type Portfolio } from "$lib/stores/portfolio";
 import { post } from "$lib/request";
-import { accountsHideZeroPositions, accountsSortByValue } from "$lib/state/settings.svelte";
+import { accHideZeroPositions, accSortByValue } from "$lib/state/settings.svelte";
 
 export interface AccountPosition {
 	ticker: string;
@@ -63,6 +63,6 @@ const getAccountView = (accountName: string, port: Portfolio, hideZero: boolean,
 
 export const accountViewFn = derived([portfolio], ([port]) => {
 	return (accountName: string) => {
-		return getAccountView(accountName, port, accountsHideZeroPositions.get(), accountsSortByValue.get());
+		return getAccountView(accountName, port, accHideZeroPositions.get(), accSortByValue.get());
 	};
 });

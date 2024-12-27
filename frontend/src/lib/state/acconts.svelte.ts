@@ -1,5 +1,5 @@
 import { compTickers, compValue, port } from "./portfolio.svelte";
-import { accountsHideZeroPositions, accountsSortByValue } from "./settings.svelte";
+import { accHideZeroPositions, accSortByValue } from "./settings.svelte";
 
 class AccountView {
 	name = "";
@@ -22,8 +22,8 @@ class AccountView {
 					value
 				};
 			})
-			.filter((pos) => pos.value !== 0 || !accountsHideZeroPositions.get())
-			.sort(accountsSortByValue.get() ? compValue : compTickers)
+			.filter((pos) => pos.value !== 0 || !accHideZeroPositions.get())
+			.sort(accSortByValue.get() ? compValue : compTickers)
 	);
 	posCount = $derived(port.accPositions.filter((pos) => pos.accounts[this.name] ?? 0 > 0).length);
 	posTotal = $derived(port.accPositions.length);

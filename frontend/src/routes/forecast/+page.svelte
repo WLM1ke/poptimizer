@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
 	import { portfolio } from "$lib/stores/portfolio";
 	import { Table, TableRow, TextCell, NumberCell, PercentCell } from "$lib/components/table";
 	import type { PageData } from "./$types";
@@ -38,4 +38,4 @@
 			</TableRow>
 		{/each}
 	{/snippet}
-</Table>
+</Table> -->

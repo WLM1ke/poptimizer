@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
 	import Card from "$lib/components/Card.svelte";
 	import { Table, EmptyCell, InputCell, NumberCell, TableRow, TextCell } from "$lib/components/table";
 	import { formatNumber } from "$lib/format.js";
@@ -71,4 +71,4 @@
 			</TableRow>
 		{/each}
 	{/snippet}
-</Table>
+</Table> -->

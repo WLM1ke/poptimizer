@@ -7,8 +7,12 @@
 	import LogoIcon from "$lib/icons/LogoIcon.svelte";
 	import H2 from "$lib/components/H2.svelte";
 	import type { Snippet } from "svelte";
+	import { loadSettingsFromLocalStorage } from "$lib/state/settings.svelte";
+	import { type PageData } from "./$types";
 
-	let { children }: { children: Snippet } = $props();
+	let { data, children }: { data: PageData; children: Snippet } = $props();
+
+	loadSettingsFromLocalStorage();
 
 	let title = $derived.by(() => {
 		const path = decodeURI(page.url.pathname);
@@ -37,7 +41,7 @@
 			<H2 text={title} />
 		</section>
 	</header>
-	<Sidebar />
+	<Sidebar accounts={data.portfolio.account_names} divTickers={data.divTickers} />
 	<main class="overflow-scroll px-4 py-2">
 		{@render children()}
 		<Alerts />

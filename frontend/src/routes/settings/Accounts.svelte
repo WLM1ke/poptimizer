@@ -6,7 +6,7 @@
 	import Switch from "$lib/components/Switch.svelte";
 	import { accounts, removeAccount, createAccount } from "$lib/stores/settings";
 	import { flip } from "svelte/animate";
-	import { accountsHideZeroPositions, accountsSortByValue } from "$lib/state/settings.svelte";
+	import { accHideZeroPositions, accSortByValue } from "$lib/state/settings.svelte";
 
 	let newAccount = "";
 	let inputRef: HTMLElement;
@@ -55,14 +55,10 @@
 	</ul>
 	<ul class="pt-2">
 		<li>
-			<Switch label="sort value descending" checked={accountsSortByValue.get()} onchange={accountsSortByValue.toggle} />
+			<Switch label="sort value descending" checked={accSortByValue.get()} onchange={accSortByValue.toggle} />
 		</li>
 		<li>
-			<Switch
-				label="hide zero positions"
-				checked={accountsHideZeroPositions.get()}
-				onchange={accountsHideZeroPositions.toggle}
-			/>
+			<Switch label="hide zero positions" checked={accHideZeroPositions.get()} onchange={accHideZeroPositions.toggle} />
 		</li>
 	</ul>
 </section>

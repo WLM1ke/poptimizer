@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
 	import {
 		Table,
 		TableRow,
@@ -124,4 +124,4 @@
 		</TableRow>
 	{/snippet}
 </Table>
-<Button label="Save" onclick={save} />
+<Button label="Save" onclick={save} /> -->

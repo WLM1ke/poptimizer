@@ -1,9 +1,11 @@
+import { getDivTickers, getPortfolio } from "$lib/request";
 import type { LayoutLoad } from "./$types";
-import { divTickers } from "$lib/state/dividends.svelte";
-import { port } from "$lib/state/portfolio.svelte";
 
 export const ssr = false;
 
 export const load = (async ({ fetch }) => {
-	await Promise.all([port.update(fetch), divTickers.update(fetch)]);
+	return {
+		divTickers: await getDivTickers(fetch),
+		portfolio: await getPortfolio(fetch)
+	};
 }) satisfies LayoutLoad;

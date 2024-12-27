@@ -1,6 +1,6 @@
 import { get, retryDelay } from "$lib/request";
 import { alerts } from "./alerts.svelte";
-import { portfolioSortByValue } from "./settings.svelte";
+import { portSortByValue } from "./settings.svelte";
 
 interface Positions {
 	ticker: string;
@@ -80,7 +80,7 @@ class PortfolioView {
 				};
 			})
 			.filter((pos) => pos.value !== 0)
-			.sort(portfolioSortByValue.get() ? compValue : compTickers)
+			.sort(portSortByValue.get() ? compValue : compTickers)
 	);
 	positionsCount = $derived(this.accPositions.length);
 	effectiveCount = $derived(

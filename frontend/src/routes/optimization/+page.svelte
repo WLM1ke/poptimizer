@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
 	import Card from "$lib/components/Card.svelte";
 	import { portfolio } from "$lib/stores/portfolio";
 	import { Table, TableRow, TextCell, PercentCell } from "$lib/components/table";
@@ -76,4 +76,4 @@
 			</TableRow>
 		{/each}
 	{/snippet}
-</Table>
+</Table> -->

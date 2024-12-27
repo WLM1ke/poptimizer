@@ -1,4 +1,4 @@
-<svelte:options runes />
+<!-- <svelte:options runes />
 
 <script lang="ts">
 	import Card from "$lib/components/Card.svelte";
@@ -35,4 +35,4 @@
 			</TableRow>
 		{/each}
 	{/snippet}
-</Table>
+</Table> -->
