@@ -1,22 +1,10 @@
-// import { error } from "@sveltejs/kit";
-// import type { PageLoad } from "./$types";
-// import { get } from "$lib/request";
+import type { PageLoad } from "./$types";
+import { Dividends } from "$lib/state/dividends.svelte";
 
-// interface DivCompareRow {
-// 	day: string;
-// 	dividend: number;
-// 	status: "extra" | "ok" | "missed";
-// }
+export const load: PageLoad = async ({ fetch, params }) => {
+	const dividends = new Dividends(params.ticker);
 
-// interface Dividends {
-// 	dividends: DivCompareRow[];
-// }
+	await dividends.load(fetch);
 
-// export const load = (async ({ fetch, params }) => {
-// 	const div: Dividends = await get(fetch, `/api/dividends/${params.ticker}`);
-// 	if (div === undefined) {
-// 		error(500, "Can't load dividends");
-// 	}
-
-// 	return { ...div, ticker: params.ticker };
-// }) satisfies PageLoad;
+	return { dividends };
+};
