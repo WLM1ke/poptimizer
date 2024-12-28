@@ -10,8 +10,8 @@
 	import AccountIcon from "$lib/icons/AccountIcon.svelte";
 	import { scale } from "svelte/transition";
 	import { flip } from "svelte/animate";
-
-	let { accounts, divTickers }: { accounts: string[]; divTickers: string[] } = $props();
+	import { portfolio } from "$lib/state/portfolio.svelte";
+	import { dividends } from "$lib/state/dividends.svelte";
 </script>
 
 <aside class="border-bg-accent bg-bg-sidebar flex flex-col justify-between border-r p-2">
@@ -26,7 +26,7 @@
 			</li>
 			<li>
 				<ul class="flex flex-col gap-1">
-					{#each accounts as account (account)}
+					{#each portfolio.accounts as account (account)}
 						<li transition:scale animate:flip>
 							<MenuItem title={account} href="/portfolio/{account}" subItem>
 								{#snippet icon()}
@@ -52,7 +52,7 @@
 				</MenuItem>
 			</li>
 		</ul>
-		{#if divTickers.length > 0}
+		{#if dividends.tickers.length > 0}
 			<ul class="border-bg-medium flex flex-col gap-1 border-t pt-2" transition:scale>
 				<li>
 					<MenuItem title="Dividends">
@@ -63,7 +63,7 @@
 				</li>
 				<li>
 					<ul class="flex flex-col gap-1">
-						{#each divTickers as ticker (ticker)}
+						{#each dividends.tickers as ticker (ticker)}
 							<li transition:scale animate:flip>
 								<MenuItem title={ticker} href="/dividends/{ticker}" subItem>
 									{#snippet icon()}

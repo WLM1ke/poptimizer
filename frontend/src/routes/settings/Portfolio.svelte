@@ -1,8 +1,9 @@
+<svelte:options runes />
+
 <script lang="ts">
 	import H2 from "$lib/components/H2.svelte";
 	import Switch from "$lib/components/Switch.svelte";
-	import { portfolioHideZeroPositions, portSortByValue } from "$lib/state/settings.svelte";
-	import {} from "$lib/stores/settings";
+	import { portSortByValue } from "$lib/state/settings.svelte";
 </script>
 
 <section class="mt-4">
@@ -10,13 +11,6 @@
 	<ul class="pt-2">
 		<li>
 			<Switch label="sort value descending" checked={portSortByValue.get()} onchange={portSortByValue.toggle} />
-		</li>
-		<li>
-			<Switch
-				label="hide zero positions"
-				checked={portfolioHideZeroPositions.get()}
-				onchange={portfolioHideZeroPositions.toggle}
-			/>
 		</li>
 	</ul>
 </section>

@@ -4,25 +4,21 @@
 	import Add from "$lib/icons/Add.svelte";
 	import { scale } from "svelte/transition";
 	import Switch from "$lib/components/Switch.svelte";
-	import { accounts, removeAccount, createAccount } from "$lib/stores/settings";
 	import { flip } from "svelte/animate";
+	import { portfolio } from "$lib/state/portfolio.svelte";
 	import { accHideZeroPositions, accSortByValue } from "$lib/state/settings.svelte";
 
-	let newAccount = "";
+	let newAccount = $state();
 	let inputRef: HTMLElement;
-
-	const onCreateAccount = () => {
-		inputRef.focus();
-	};
 </script>
 
 <section>
 	<H2 text="Accounts" />
 	<ul class="max-w-max">
-		{#each $accounts as account (account)}
+		{#each portfolio.accounts as account (account)}
 			<li transition:scale animate:flip class="flex items-center justify-between gap-2 pt-2">
 				{account}
-				<button on:click={() => removeAccount(account)} class="hover:text-link-hover">
+				<button onclick={() => portfolio.removeAccount(account)} class="hover:text-link-hover">
 					<Delete />
 				</button>
 			</li>
@@ -30,9 +26,9 @@
 		<li class="flex items-center justify-between gap-2 pt-2">
 			<input
 				bind:this={inputRef}
-				on:keydown={(event) => {
+				onkeydown={(event) => {
 					if (event.key === "Enter") {
-						createAccount(newAccount);
+						portfolio.createAccount(newAccount);
 						newAccount = "";
 					}
 				}}
@@ -42,9 +38,9 @@
 				placeholder="Enter account title"
 			/>
 			<button
-				on:click={() => {
-					createAccount(newAccount);
-					onCreateAccount();
+				onclick={() => {
+					portfolio.createAccount(newAccount);
+					inputRef.focus();
 					newAccount = "";
 				}}
 				class="hover:text-link-hover"

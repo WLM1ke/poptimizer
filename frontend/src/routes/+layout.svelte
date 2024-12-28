@@ -8,9 +8,8 @@
 	import H2 from "$lib/components/H2.svelte";
 	import type { Snippet } from "svelte";
 	import { loadSettingsFromLocalStorage } from "$lib/state/settings.svelte";
-	import { type PageData } from "./$types";
 
-	let { data, children }: { data: PageData; children: Snippet } = $props();
+	let { children }: { children: Snippet } = $props();
 
 	loadSettingsFromLocalStorage();
 
@@ -41,7 +40,7 @@
 			<H2 text={title} />
 		</section>
 	</header>
-	<Sidebar accounts={data.portfolio.account_names} divTickers={data.divTickers} />
+	<Sidebar />
 	<main class="overflow-scroll px-4 py-2">
 		{@render children()}
 		<Alerts />
