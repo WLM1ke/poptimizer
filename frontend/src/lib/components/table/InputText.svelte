@@ -3,5 +3,5 @@
 </script>
 
 <td>
-	<input bind:value {onchange} class="border-bg-accent bg-bg-main w-32 rounded-md border p-1 font-mono" type="text" />
+	<input bind:value {onchange} class="w-32 rounded-md border border-bg-accent bg-bg-main p-1 font-mono" type="text" />
 </td>

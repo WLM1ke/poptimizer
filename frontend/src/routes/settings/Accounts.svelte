@@ -32,7 +32,7 @@
 						newAccount = "";
 					}
 				}}
-				class="border-bg-accent bg-bg-main rounded-md border p-1"
+				class="rounded-md border border-bg-accent bg-bg-main p-1"
 				bind:value={newAccount}
 				type="text"
 				placeholder="Enter account title"

@@ -14,7 +14,7 @@
 	import { divTickers } from "$lib/state/dividends.svelte";
 </script>
 
-<aside class="border-bg-accent bg-bg-sidebar flex flex-col justify-between border-r p-2">
+<aside class="flex flex-col justify-between border-r border-bg-accent bg-bg-sidebar p-2">
 	<nav class="flex flex-col gap-2">
 		<ul class="flex flex-col gap-1">
 			<li>
@@ -53,7 +53,7 @@
 			</li>
 		</ul>
 		{#if divTickers.tickers.length > 0}
-			<ul class="border-bg-medium flex flex-col gap-1 border-t pt-2" transition:scale>
+			<ul class="flex flex-col gap-1 border-t border-bg-medium pt-2" transition:scale>
 				<li>
 					<MenuItem title="Dividends">
 						{#snippet icon()}
