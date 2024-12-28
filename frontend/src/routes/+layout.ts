@@ -4,8 +4,6 @@ import type { LayoutLoad } from "./$types";
 
 export const ssr = false;
 
-export const load = (async ({ fetch }) => {
+export const load: LayoutLoad = async ({ fetch }) => {
 	await Promise.all([loadPortfolio(fetch), dividends.load(fetch)]);
-
-	return {};
-}) satisfies LayoutLoad;
+};

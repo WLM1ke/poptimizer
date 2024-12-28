@@ -36,7 +36,7 @@ class Portfolio(handler.DTO):
         return cls(
             day=port.day,
             ver=port.ver,
-            account_names=list(port.account_names),
+            account_names=sorted(port.account_names),
             cash=port.cash,
             positions=port.positions,
         )

@@ -1,7 +1,7 @@
 import { del, get, post } from "$lib/request";
 import { error, redirect } from "@sveltejs/kit";
 import { alerts } from "./alerts.svelte";
-import { portSortByValue } from "./settings.svelte";
+import { accHideZeroPositions, accSortByValue, portSortByValue } from "./settings.svelte";
 
 interface Positions {
 	ticker: string;
@@ -55,15 +55,15 @@ class Accounts {
 
 export const accounts = new Accounts();
 
-export interface CompPosition {
+interface CompPosition {
 	ticker: string;
 	value: number;
 }
 
-export const compTickers = (a: CompPosition, b: CompPosition) => {
+const compTickers = (a: CompPosition, b: CompPosition) => {
 	return a.ticker.localeCompare(b.ticker);
 };
-export const compValue = (a: CompPosition, b: CompPosition) => {
+const compValue = (a: CompPosition, b: CompPosition) => {
 	return b.value - a.value;
 };
 
@@ -71,7 +71,7 @@ const sumValues = (account: Record<string, number>) => {
 	return Object.values(account).reduce((acc, val) => acc + val, 0);
 };
 
-export class PortfolioView {
+class PortfolioView {
 	day = $derived(portfolio.day);
 	cash = $derived(sumValues(portfolio.cash));
 	value = $derived(portfolio.positions.reduce((acc, pos) => acc + pos.price * sumValues(pos.accounts), this.cash));
@@ -106,3 +106,47 @@ export class PortfolioView {
 }
 
 export const portfolioView = new PortfolioView();
+
+export class AccountView {
+	constructor(name: string) {
+		this.name = name;
+	}
+
+	name = "";
+	day = $derived(portfolio.day);
+	cash = $derived(portfolio.cash[this.name] ?? 0);
+	value = $derived(
+		portfolio.positions.reduce((acc, pos) => acc + pos.price * (pos.accounts[this.name] ?? 0), this.cash)
+	);
+	positions = $derived(
+		portfolio.positions
+			.map((pos) => {
+				const ticker = pos.ticker;
+				const shares = pos.accounts[this.name] ?? 0;
+				const lot = pos.lot;
+				const price = pos.price;
+				const value = price * shares;
+
+				return {
+					ticker,
+					shares,
+					lot,
+					price,
+					value
+				};
+			})
+			.filter((pos) => pos.value !== 0 || !accHideZeroPositions.value)
+			.sort(accSortByValue.value ? compValue : compTickers)
+	);
+	posCount = $derived(portfolio.positions.filter((pos) => pos.accounts[this.name] ?? 0 > 0).length);
+	posTotal = $derived(portfolio.positions.length);
+
+	updatePosition = async (ticker: string, amount: string) => {
+		const port: Portfolio | undefined = await post(fetch, `/api/portfolio/${this.name}/${ticker}`, {
+			amount
+		});
+		if (port !== undefined) {
+			portfolio = port;
+		}
+	};
+}

@@ -1,41 +1,25 @@
-<!-- <script lang="ts">
+<script lang="ts">
 	import Card from "$lib/components/Card.svelte";
 	import { Table, EmptyCell, InputCell, NumberCell, TableRow, TextCell } from "$lib/components/table";
 	import { formatNumber } from "$lib/format.js";
-	import { accountViewFn } from "$lib/stores/accountViewFn";
+	import { type PageData } from "./$types";
 
-	export let data;
-
-	$: accountView = $accountViewFn(data.accountName);
-
-	let account = "";
-	let positions: Record<string, number> = { CASH: 0 };
-	const setFields = () => {
-		positions = { CASH: accountView.cash };
-		accountView.positions.forEach((pos) => (positions[pos.ticker] = pos.shares));
-	};
-
-	$: {
-		if (account != accountView.name) {
-			account = accountView.name;
-			setFields();
-		}
-	}
+	let { data }: { data: PageData } = $props();
+	const account = $derived(data.account);
 
 	interface FormEvent {
 		target: EventTarget | null;
 	}
 	const onChange = async (event: FormEvent, ticker: string) => {
 		const target = event.target as HTMLInputElement;
-		await accountView.updatePosition(ticker, target.value);
-		setFields();
+		await account.updatePosition(ticker, target.value);
 	};
 </script>
 
 <Card
-	upper={`Date: ${accountView.day}`}
-	main={`Value: ${formatNumber(accountView.value)} ₽`}
-	lower={`Positions: ${accountView.positionsCount} / ${accountView.positionsTotal}`}
+	upper={`Date: ${account.day}`}
+	main={`Value: ${formatNumber(account.value, 0)} ₽`}
+	lower={`Positions: ${account.posCount} / ${account.posTotal}`}
 />
 <Table headers={["Ticker", "Shares", "Lot", "Price", "Value"]}>
 	{#snippet rows()}
@@ -43,23 +27,23 @@
 			{#snippet cells()}
 				<TextCell text="Cash" />
 				<InputCell
-					bind:value={positions["CASH"]}
+					bind:value={account.cash}
 					onchange={(event) => {
 						onChange(event, "CASH");
 					}}
 				/>
 				<EmptyCell />
 				<EmptyCell />
-				<NumberCell value={accountView.cash} />
+				<NumberCell value={account.cash} />
 			{/snippet}
 		</TableRow>
-		{#each accountView.positions as position (position.ticker)}
+		{#each account.positions as position (position.ticker)}
 			<TableRow>
 				{#snippet cells()}
 					<TextCell text={position.ticker} />
 					<InputCell
 						step={position.lot}
-						bind:value={positions[position.ticker]}
+						bind:value={position.shares}
 						onchange={(event) => {
 							onChange(event, position.ticker);
 						}}
@@ -71,4 +55,4 @@
 			</TableRow>
 		{/each}
 	{/snippet}
-</Table> -->
+</Table>
