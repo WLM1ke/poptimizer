@@ -11,9 +11,9 @@ class PersistentTheme {
 		this.state = current === "system" ? "light" : current === "light" ? "dark" : "system";
 		localStorage[this.key] = JSON.stringify(this.state);
 	};
-	get = () => {
+	get theme() {
 		return this.state;
-	};
+	}
 }
 
 class PersistentToggle {
@@ -35,9 +35,9 @@ class PersistentToggle {
 		this.state = !this.state;
 	};
 
-	get = () => {
+	get value() {
 		return this.state;
-	};
+	}
 }
 
 export const theme = new PersistentTheme();

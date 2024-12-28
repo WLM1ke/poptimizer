@@ -10,7 +10,7 @@
 	<H2 text="Portfolio" />
 	<ul class="pt-2">
 		<li>
-			<Switch label="sort value descending" checked={portSortByValue.get()} onchange={portSortByValue.toggle} />
+			<Switch label="sort value descending" checked={portSortByValue.value} onchange={portSortByValue.toggle} />
 		</li>
 	</ul>
 </section>

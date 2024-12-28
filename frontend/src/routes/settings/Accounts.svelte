@@ -5,20 +5,20 @@
 	import { scale } from "svelte/transition";
 	import Switch from "$lib/components/Switch.svelte";
 	import { flip } from "svelte/animate";
-	import { portfolio } from "$lib/state/portfolio.svelte";
+	import { accounts } from "$lib/state/portfolio.svelte";
 	import { accHideZeroPositions, accSortByValue } from "$lib/state/settings.svelte";
 
-	let newAccount = $state();
+	let newAccount = $state("");
 	let inputRef: HTMLElement;
 </script>
 
 <section>
 	<H2 text="Accounts" />
 	<ul class="max-w-max">
-		{#each portfolio.accounts as account (account)}
+		{#each accounts.accounts as account (account)}
 			<li transition:scale animate:flip class="flex items-center justify-between gap-2 pt-2">
 				{account}
-				<button onclick={() => portfolio.removeAccount(account)} class="hover:text-link-hover">
+				<button onclick={() => accounts.remove(account)} class="hover:text-link-hover">
 					<Delete />
 				</button>
 			</li>
@@ -28,7 +28,7 @@
 				bind:this={inputRef}
 				onkeydown={(event) => {
 					if (event.key === "Enter") {
-						portfolio.createAccount(newAccount);
+						accounts.create(newAccount);
 						newAccount = "";
 					}
 				}}
@@ -39,7 +39,7 @@
 			/>
 			<button
 				onclick={() => {
-					portfolio.createAccount(newAccount);
+					accounts.create(newAccount);
 					inputRef.focus();
 					newAccount = "";
 				}}
@@ -51,10 +51,10 @@
 	</ul>
 	<ul class="pt-2">
 		<li>
-			<Switch label="sort value descending" checked={accSortByValue.get()} onchange={accSortByValue.toggle} />
+			<Switch label="sort value descending" checked={accSortByValue.value} onchange={accSortByValue.toggle} />
 		</li>
 		<li>
-			<Switch label="hide zero positions" checked={accHideZeroPositions.get()} onchange={accHideZeroPositions.toggle} />
+			<Switch label="hide zero positions" checked={accHideZeroPositions.value} onchange={accHideZeroPositions.toggle} />
 		</li>
 	</ul>
 </section>

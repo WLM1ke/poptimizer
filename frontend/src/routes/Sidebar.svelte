@@ -10,7 +10,7 @@
 	import AccountIcon from "$lib/icons/AccountIcon.svelte";
 	import { scale } from "svelte/transition";
 	import { flip } from "svelte/animate";
-	import { portfolio } from "$lib/state/portfolio.svelte";
+	import { accounts } from "$lib/state/portfolio.svelte";
 	import { dividends } from "$lib/state/dividends.svelte";
 </script>
 
@@ -26,7 +26,7 @@
 			</li>
 			<li>
 				<ul class="flex flex-col gap-1">
-					{#each portfolio.accounts as account (account)}
+					{#each accounts.accounts as account (account)}
 						<li transition:scale animate:flip>
 							<MenuItem title={account} href="/portfolio/{account}" subItem>
 								{#snippet icon()}
