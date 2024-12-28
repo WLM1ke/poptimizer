@@ -24,7 +24,9 @@
 		const sell = forecast.positions
 			.filter((pos) => pos.grad_upper < breakEven && pos.weight > 0)
 			.map(({ weight, ticker, grad_lower, grad_upper }) => {
-				return { weight, ticker, grad_lower, grad_upper, priority: grad_upper - breakEven };
+				const accounts = portfolioView.tickerAccounts[ticker];
+
+				return { weight, ticker, grad_lower, grad_upper, priority: grad_upper - breakEven, accounts };
 			});
 		sell.sort((pos1, pos2) => pos2.weight * pos2.priority - pos1.weight * pos1.priority);
 
@@ -72,6 +74,7 @@
 					<PercentCell value={position.grad_upper} />
 					<PercentCell value={position.priority} />
 					<TextCell text="Sell" center />
+					<TextCell text={position.accounts} center />
 				{/snippet}
 			</TableRow>
 		{/each}

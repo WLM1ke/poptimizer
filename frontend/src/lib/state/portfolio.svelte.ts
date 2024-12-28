@@ -78,6 +78,12 @@ class PortfolioView {
 	ver = $derived(portfolio.ver);
 	cash = $derived(sumValues(portfolio.cash));
 	value = $derived(portfolio.positions.reduce((acc, pos) => acc + pos.price * sumValues(pos.accounts), this.cash));
+	tickerAccounts = $derived(
+		portfolio.positions.reduce((acc: Record<string, string>, { ticker, accounts }) => {
+			acc[ticker] = Object.keys(accounts).sort().join(" ");
+			return acc;
+		}, {})
+	);
 	positions = $derived(
 		portfolio.positions
 			.map((position) => {
