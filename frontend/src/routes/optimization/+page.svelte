@@ -1,14 +1,14 @@
-<!-- <script lang="ts">
+<script lang="ts">
 	import Card from "$lib/components/Card.svelte";
-	import { portfolio } from "$lib/stores/portfolio";
 	import { Table, TableRow, TextCell, PercentCell } from "$lib/components/table";
 	import type { PageData } from "./$types";
-	import { get } from "$lib/request";
 	import { formatPercent } from "$lib/format";
+	import { portfolioView } from "$lib/state/portfolio.svelte";
+	import { invalidate } from "$app/navigation";
 
 	let { data }: { data: PageData } = $props();
-	let forecast = $state(data);
-	let status = $derived($portfolio.ver != forecast.portfolio_ver ? "outdate" : "");
+	let forecast = $derived(data);
+	let status = $derived(portfolioView.ver != forecast.portfolio_ver ? "outdate" : "");
 	let optimization = $derived.by(() => {
 		const maxLower = Math.max(...forecast.positions.map((pos) => pos.grad_lower));
 		const minUpper = Math.min(...forecast.positions.map((pos) => (pos.weight > 0 ? pos.grad_upper : Infinity)));
@@ -36,9 +36,9 @@
 	});
 
 	$effect(() => {
-		if ($portfolio.ver != forecast.portfolio_ver) {
+		if (portfolioView.ver != forecast.portfolio_ver) {
 			setTimeout(async () => {
-				forecast = await get(fetch, `/api/forecast`);
+				invalidate(`/api/forecast`);
 			}, 1000);
 		}
 	});
@@ -46,8 +46,8 @@
 
 <Card
 	upper={`Date: ${forecast.day} ${status}`}
-	main={`Buy: ${optimization.buy.length} / Sell: ${optimization.sell.length}`}
-	lower={`Breakeven: ${formatPercent(optimization.breakEven)} / Count: ${forecast.forecasts_count}`}
+	main={`Buy tickets: ${optimization.buy.length} / Sell tickets : ${optimization.sell.length}`}
+	lower={`Breakeven: ${formatPercent(optimization.breakEven)} / Forecast count: ${forecast.forecasts_count}`}
 />
 <Table headers={["Ticker", "Weight", "Lower bound", "Upper bound", "Priority", "Signal"]}>
 	{#snippet rows()}
@@ -76,4 +76,4 @@
 			</TableRow>
 		{/each}
 	{/snippet}
-</Table> -->
+</Table>

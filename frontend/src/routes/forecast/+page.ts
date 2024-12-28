@@ -20,11 +20,11 @@ export interface Forecast {
 	positions: Positions[];
 }
 
-export const load = (async ({ fetch }) => {
+export const load: PageLoad = async ({ fetch }) => {
 	const forecast: Forecast = await get(fetch, `/api/forecast`);
 	if (forecast === undefined) {
 		error(500, "Can't load forecast");
 	}
 
 	return forecast;
-}) satisfies PageLoad;
+};
