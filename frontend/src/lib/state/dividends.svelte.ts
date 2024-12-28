@@ -8,6 +8,7 @@ interface Tickers {
 
 class Dividends {
 	private _tickers = $state<string[]>([]);
+	redirected = false;
 
 	load = async (fetchFn: typeof fetch) => {
 		const tickers: Tickers | undefined = await get(fetchFn, "/api/dividends");
@@ -16,11 +17,11 @@ class Dividends {
 			error(500, "Can't load dividend tickers");
 		}
 
-		for (const ticker of tickers.tickers) {
-			alerts.addInfo(`Update dividends for ${ticker}`);
-		}
+		this._tickers = tickers.tickers;
 
-		if (tickers.tickers.length > 0) {
+		if (tickers.tickers.length > 0 && !this.redirected) {
+			alerts.addInfo(`Update dividends`);
+			this.redirected = true;
 			redirect(307, `/dividends/${tickers.tickers[0]}`);
 		}
 	};

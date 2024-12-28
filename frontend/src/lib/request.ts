@@ -1,6 +1,4 @@
-import { invalidate } from "$app/navigation";
 import { alerts } from "$lib/state/alerts.svelte";
-import { error, redirect } from "@sveltejs/kit";
 
 const request = async (
 	fetchFn: typeof fetch,
@@ -27,8 +25,6 @@ const request = async (
 			msg = JSON.stringify(err);
 		}
 		alerts.addAlert(`${msg}`);
-
-		setTimeout(() => invalidate("/api/dividends"), retryDelay);
 
 		return undefined;
 	}

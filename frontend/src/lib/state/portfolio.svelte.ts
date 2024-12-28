@@ -1,7 +1,7 @@
 import { del, get, post } from "$lib/request";
 import { error, redirect } from "@sveltejs/kit";
-import { alerts } from "./alerts.svelte";
 import { accHideZeroPositions, accSortByValue, portSortByValue } from "./settings.svelte";
+import { alerts } from "./alerts.svelte";
 
 interface Positions {
 	ticker: string;
@@ -19,6 +19,7 @@ interface Portfolio {
 }
 
 let portfolio = $state<Portfolio>({ day: "", ver: -1, account_names: [], cash: {}, positions: [] });
+let redirected = false;
 
 export const loadPortfolio = async (fetchFn: typeof fetch) => {
 	const port: Portfolio | undefined = await get(fetchFn, "/api/portfolio");
@@ -29,8 +30,9 @@ export const loadPortfolio = async (fetchFn: typeof fetch) => {
 
 	portfolio = port;
 
-	if (Object.keys(portfolio.account_names).length === 0) {
+	if (Object.keys(portfolio.account_names).length === 0 && !redirected) {
 		alerts.addInfo("No accounts: create them in settings");
+		redirected = true;
 		redirect(307, "/settings");
 	}
 };
