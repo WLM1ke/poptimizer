@@ -49,7 +49,7 @@
 <Card
 	upper={`Date: ${forecast.day} ${status}`}
 	main={`Buy tickets: ${optimization.buy.length} / Sell tickets : ${optimization.sell.length}`}
-	lower={`Breakeven: ${formatPercent(optimization.breakEven)} / Forecast count: ${forecast.forecasts_count}`}
+	lower={`Breakeven: ${formatPercent(optimization.breakEven)} / Forecasts: ${forecast.forecasts_count}`}
 />
 <Table headers={["Ticker", "Weight", "Lower bound", "Upper bound", "Priority", "Signal"]}>
 	{#snippet rows()}

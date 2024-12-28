@@ -22,7 +22,7 @@
 <Card
 	upper={`Date: ${forecast.day} ${status}`}
 	main={`Mean: ${formatPercent(forecast.mean)} / Std: ${formatPercent(forecast.std)}`}
-	lower={`Risk tolerance: ${formatPercent(forecast.risk_tolerance)} / Forecast count: ${forecast.forecasts_count}`}
+	lower={`Risk tolerance: ${formatPercent(forecast.risk_tolerance)} / Forecasts: ${forecast.forecasts_count}`}
 />
 <Table headers={["Ticker", "Mean", "Std", "Beta", "Gradient"]}>
 	{#snippet rows()}
