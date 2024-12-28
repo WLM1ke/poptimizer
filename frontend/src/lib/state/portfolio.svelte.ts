@@ -73,6 +73,7 @@ const sumValues = (account: Record<string, number>) => {
 
 class PortfolioView {
 	day = $derived(portfolio.day);
+	ver = $derived(portfolio.ver);
 	cash = $derived(sumValues(portfolio.cash));
 	value = $derived(portfolio.positions.reduce((acc, pos) => acc + pos.price * sumValues(pos.accounts), this.cash));
 	positions = $derived(

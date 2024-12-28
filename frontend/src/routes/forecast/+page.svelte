@@ -1,19 +1,19 @@
-<!-- <script lang="ts">
-	import { portfolio } from "$lib/stores/portfolio";
+<script lang="ts">
 	import { Table, TableRow, TextCell, NumberCell, PercentCell } from "$lib/components/table";
 	import type { PageData } from "./$types";
-	import { get } from "$lib/request";
 	import Card from "$lib/components/Card.svelte";
 	import { formatPercent } from "$lib/format";
+	import { invalidate } from "$app/navigation";
+	import { portfolioView } from "$lib/state/portfolio.svelte";
 
 	let { data }: { data: PageData } = $props();
-	let forecast = $state(data);
-	let status = $derived($portfolio.ver != forecast.portfolio_ver ? "outdate" : "");
+	let forecast = $derived(data);
+	let status = $derived(forecast.portfolio_ver != portfolioView.ver ? "outdate" : "");
 
 	$effect(() => {
-		if ($portfolio.ver != forecast.portfolio_ver) {
+		if (forecast.portfolio_ver != portfolioView.ver) {
 			setTimeout(async () => {
-				forecast = await get(fetch, `/api/forecast`);
+				invalidate(`/api/forecast`);
 			}, 1000);
 		}
 	});
@@ -38,4 +38,4 @@
 			</TableRow>
 		{/each}
 	{/snippet}
-</Table> -->
+</Table>
