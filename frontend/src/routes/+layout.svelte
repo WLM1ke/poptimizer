@@ -16,7 +16,7 @@
 	let title = $derived.by(() => {
 		const path = decodeURI(page.url.pathname);
 		if (path === "/") {
-			return "Summary";
+			return "Portfolio";
 		}
 		const lastSlash = path.lastIndexOf("/");
 

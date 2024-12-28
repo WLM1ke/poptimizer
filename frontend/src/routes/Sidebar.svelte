@@ -18,7 +18,7 @@
 	<nav class="flex flex-col gap-2">
 		<ul class="flex flex-col gap-1">
 			<li>
-				<MenuItem title="Portfolio" href="/portfolio">
+				<MenuItem title="Portfolio" href="/">
 					{#snippet icon()}
 						<PortfolioIcon />
 					{/snippet}
@@ -28,7 +28,7 @@
 				<ul class="flex flex-col gap-1">
 					{#each accounts.accounts as account (account)}
 						<li transition:scale animate:flip>
-							<MenuItem title={account} href="/portfolio/{account}" subItem>
+							<MenuItem title={account} href="/accounts/{account}" subItem>
 								{#snippet icon()}
 									<AccountIcon />
 								{/snippet}
