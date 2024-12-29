@@ -1,36 +1,17 @@
 import asyncio
 import logging
-from typing import Protocol
+import statistics
 
-import numpy as np
-import pandas as pd
-
-from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
-from poptimizer.domain.moex import securities
+from poptimizer.domain.moex import quotes, securities
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
 
-class Viewer(Protocol):
-    async def close(
-        self,
-        last_day: pd.Timestamp,
-        tickers: tuple[domain.Ticker, ...],
-    ) -> pd.DataFrame: ...
-
-    async def turnover(
-        self,
-        last_day: pd.Timestamp,
-        tickers: tuple[domain.Ticker, ...],
-    ) -> pd.DataFrame: ...
-
-
 class PortfolioHandler:
-    def __init__(self, viewer: Viewer) -> None:
+    def __init__(self) -> None:
         self._lgr = logging.getLogger()
-        self._viewer = viewer
 
     async def __call__(self, ctx: handler.Ctx, msg: handler.DivUpdated) -> handler.PortfolioUpdated:
         port = await ctx.get_for_update(portfolio.Portfolio)
@@ -49,38 +30,25 @@ class PortfolioHandler:
         ctx: handler.Ctx,
         update_day: domain.Day,
     ) -> dict[domain.Ticker, portfolio.Position]:
-        sec_table = await ctx.get(securities.Securities)
-
-        tickers = tuple(sec.ticker for sec in sec_table.df)
-
-        last_day_ts = pd.Timestamp(update_day)
         async with asyncio.TaskGroup() as tg:
-            turnover_task = tg.create_task(self._viewer.turnover(last_day_ts, tickers))
-            close_task = tg.create_task(self._viewer.close(last_day_ts, tickers))
-            history_days_task = tg.create_task(ctx.get(evolve.Evolution))
+            sec_task = tg.create_task(ctx.get(securities.Securities))
+            evolution_task = tg.create_task(ctx.get(evolve.Evolution))
 
-        turnover = await turnover_task
-        close = await close_task
-        quotes_days = ((await history_days_task).minimal_returns_days + 1) * 2
+        sec_table = await sec_task
+        evolution = await evolution_task
 
-        turnover = (  # type: ignore[reportUnknownMemberType]
-            turnover.iloc[-quotes_days:]  # type: ignore[reportUnknownMemberType]
-            .sort_index(ascending=False)
-            .expanding()
-            .median()
-            .iloc[consts.FORECAST_DAYS :]
-            .min()
-        )
+        async with asyncio.TaskGroup() as tg:
+            quotes_tasks = [tg.create_task(ctx.get(quotes.Quotes, domain.UID(sec.ticker))) for sec in sec_table.df]
 
         return {
             sec.ticker: portfolio.Position(
                 ticker=sec.ticker,
                 lot=sec.lot,
-                price=close.loc[last_day_ts, sec.ticker],  # type: ignore[reportUnknownMemberType]
-                turnover=turnover[sec.ticker],  # type: ignore[reportUnknownMemberType]
+                price=quotes.result().df[-1].close,
+                turnover=statistics.median(quote.turnover for quote in quotes.result().df[-evolution.forecast_days :]),
             )
-            for sec in sec_table.df
-            if not np.isnan(close.loc[last_day_ts, sec.ticker])  # type: ignore[reportUnknownMemberType]
+            for sec, quotes in zip(sec_table.df, quotes_tasks, strict=True)
+            if len(quotes.result().df) > evolution.minimal_returns_days and quotes.result().df[-1].day == update_day
         }
 
     def _update_existing_positions(
@@ -94,11 +62,11 @@ class PortfolioHandler:
         for position in port.positions:
             match sec_cache.pop(position.ticker, None):
                 case None if not position.accounts:
-                    self._lgr.warning("Not traded %s is removed", position.ticker)
+                    self._lgr.warning("Not enough traded %s is removed", position.ticker)
                 case None:
                     position.turnover = 0
                     updated_positions.append(position)
-                    self._lgr.warning("Not traded %s is not removed", position.ticker)
+                    self._lgr.warning("Not enough traded %s is not removed", position.ticker)
                 case new_position if new_position.turnover < min_turnover and not position.accounts:
                     self._lgr.warning("Not liquid %s is removed", position.ticker)
                 case new_position if new_position.turnover < min_turnover:

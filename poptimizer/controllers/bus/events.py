@@ -21,7 +21,7 @@ def register_handlers(
     bus.register_event_handler(securities.SecuritiesHandler(http_client), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(quotes.QuotesHandler(http_client), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(div.DivHandler(), msg.IndefiniteRetryPolicy)
-    bus.register_event_handler(portfolio.PortfolioHandler(viewer), msg.IndefiniteRetryPolicy)
+    bus.register_event_handler(portfolio.PortfolioHandler(), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(status.DivStatusHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(reestry.ReestryHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(trading_day_handler.update, msg.IndefiniteRetryPolicy)
