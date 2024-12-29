@@ -37,7 +37,7 @@ class Model(domain.Entity):
     cov: list[list[FiniteFloat]] = Field(default_factory=list)
     risk_tolerance: FiniteFloat = Field(default=0, ge=0, le=1)
 
-    _must_be_sorted_by_ticker = field_validator("tickers")(domain.sorted_tickers)
+    _must_be_sorted_by_ticker = field_validator("tickers")(domain.sorted_tickers_validator)
 
     @model_validator(mode="after")
     def _match_length(self) -> Self:

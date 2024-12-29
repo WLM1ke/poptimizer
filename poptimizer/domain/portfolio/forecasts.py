@@ -31,7 +31,7 @@ class Forecast(domain.Entity):
     std: float = 0
     positions: list[Position] = Field(default_factory=list)
 
-    _must_be_sorted_by_ticker = field_validator("positions")(domain.sorted_with_ticker_field)
+    _must_be_sorted_by_ticker = field_validator("positions")(domain.sorted_with_ticker_field_validator)
 
     def init_day(self, day: domain.Day) -> None:
         self.models.clear()

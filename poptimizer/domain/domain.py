@@ -79,7 +79,7 @@ def after_start_date_validator(df: list[_RowWithDate]) -> list[_RowWithDate]:
     return df
 
 
-def sorted_tickers(tickers: tuple[str, ...]) -> tuple[str, ...]:
+def sorted_tickers_validator(tickers: tuple[Ticker, ...]) -> tuple[Ticker, ...]:
     ticker_pairs = itertools.pairwise(tickers)
 
     if not all(ticker < next_ for ticker, next_ in ticker_pairs):
@@ -92,7 +92,7 @@ class WithTickerField(Protocol):
     ticker: Ticker
 
 
-def sorted_with_ticker_field(rows: list[WithTickerField]) -> list[WithTickerField]:
+def sorted_with_ticker_field_validator(rows: list[WithTickerField]) -> list[WithTickerField]:
     ticker_pairs = itertools.pairwise(row.ticker for row in rows)
 
     if not all(ticker < next_ for ticker, next_ in ticker_pairs):

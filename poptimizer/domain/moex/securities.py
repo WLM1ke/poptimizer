@@ -43,4 +43,4 @@ class Securities(domain.Entity):
 
         self.df = rows
 
-    _must_be_sorted_by_ticker = field_validator("df")(domain.sorted_with_ticker_field)
+    _must_be_sorted_by_ticker = field_validator("df")(domain.sorted_with_ticker_field_validator)

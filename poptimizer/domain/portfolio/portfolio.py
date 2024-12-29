@@ -46,7 +46,7 @@ class Portfolio(domain.Entity):
 
         return self
 
-    _must_be_sorted_by_ticker = field_validator("positions")(domain.sorted_with_ticker_field)
+    _must_be_sorted_by_ticker = field_validator("positions")(domain.sorted_with_ticker_field_validator)
 
     @field_validator("positions")
     def _positions_are_multiple_of_lots(cls, positions: list[Position]) -> list[Position]:
