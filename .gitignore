@@ -22,4 +22,7 @@ wheels/
 .coverage
 
 # Frontend build
-static
+/static
+
+# Personal scripts
+/scripts
