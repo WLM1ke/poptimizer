@@ -52,7 +52,7 @@ class ForecastHandler:
 
         models: list[evolve.Model] = []
 
-        for uid in forecast.models:
+        for uid in frozenset(forecast.models):
             model = await ctx.get(evolve.Model, uid)
             if model.day != port.day or model.tickers != tickers:
                 forecast.models.remove(uid)
