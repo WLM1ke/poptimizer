@@ -32,7 +32,7 @@ class DivStatusHandler:
         try:
             csv_file = await self._download()
         except (TimeoutError, aiohttp.ClientError) as err:
-            raise errors.UseCasesError("Dividends status error") from err
+            raise errors.UseCasesError("dividends status error") from err
 
         parsed_rows = self._parse(csv_file)
 
