@@ -8,7 +8,6 @@ import bson
 from poptimizer import consts, errors
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
-from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler, view
 from poptimizer.use_cases.dl import builder, trainer
 
@@ -68,7 +67,7 @@ class EvolutionHandler:
         self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
 
         try:
-            await self._update_model_metrics(evolution, model)
+            await self._update_model_metrics(model, msg, evolution.test_days)
         except* errors.DomainError as err:
             await self._delete_model_on_error(ctx, evolution, model, err)
 
@@ -91,8 +90,7 @@ class EvolutionHandler:
             case True:
                 evolution.step += 1
             case False:
-                port = await ctx.get(portfolio.Portfolio)
-                evolution.init_new_day(day, port.tickers(), consts.FORECAST_DAYS)
+                evolution.init_new_day(day)
 
         return evolution
 
@@ -125,14 +123,15 @@ class EvolutionHandler:
 
     async def _update_model_metrics(
         self,
-        evolution: evolve.Evolution,
         model: evolve.Model,
+        msg: handler.DataNotChanged | handler.DataUpdated,
+        test_days: int,
     ) -> None:
-        model.day = evolution.day
-        model.tickers = evolution.tickers
-        model.forecast_days = evolution.forecast_days
+        model.day = msg.day
+        model.tickers = msg.tickers
+        model.forecast_days = msg.forecast_days
         tr = trainer.Trainer(builder.Builder(self._viewer))
-        await tr.update_model_metrics(model, evolution.test_days)
+        await tr.update_model_metrics(model, test_days)
 
     async def _delete_model_on_error(
         self,

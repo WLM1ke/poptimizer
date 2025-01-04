@@ -93,8 +93,6 @@ class State(StrEnum):
 class Evolution(domain.Entity):
     state: State = State.EVAL_NEW_BASE_MODEL
     step: PositiveInt = 1
-    tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
-    forecast_days: PositiveInt = 1
     base_model_uid: domain.UID = domain.UID("")
     alfas: list[float] = Field(default_factory=list)
     duration: NonNegativeFloat = 0
@@ -102,10 +100,8 @@ class Evolution(domain.Entity):
     delta_critical: NonPositiveFloat = 0
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
 
-    def init_new_day(self, day: domain.Day, tickers: tuple[domain.Ticker, ...], forecast_days: PositiveInt) -> None:
+    def init_new_day(self, day: domain.Day) -> None:
         self.day = day
-        self.tickers = tickers
-        self.forecast_days = forecast_days
         self.step = 1
         self.state = State.EVAL_NEW_BASE_MODEL
 
