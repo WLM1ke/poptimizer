@@ -79,6 +79,15 @@ def after_start_date_validator(df: list[_RowWithDate]) -> list[_RowWithDate]:
     return df
 
 
+def sorted_days_validator(days: list[Day]) -> list[Day]:
+    day_pairs = itertools.pairwise(days)
+
+    if not all(day < next_ for day, next_ in day_pairs):
+        raise ValueError("days are not sorted")
+
+    return days
+
+
 def sorted_tickers_validator(tickers: tuple[Ticker, ...]) -> tuple[Ticker, ...]:
     ticker_pairs = itertools.pairwise(tickers)
 

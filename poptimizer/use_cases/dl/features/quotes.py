@@ -12,39 +12,29 @@ from poptimizer.domain import domain
 from poptimizer.domain.div import div
 from poptimizer.domain.dl import features
 from poptimizer.domain.moex import quotes
-from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
 _T_PLUS_1_START: Final = datetime(2023, 7, 31)
 
 
-class QuotesFeaturesHandler:
-    async def __call__(self, ctx: handler.Ctx, msg: handler.PortfolioUpdated) -> handler.QuotesFeaturesUpdated:
-        port = await ctx.get(portfolio.Portfolio)
-        tickers = port.tickers()
+class QuotesFeatHandler:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.PortfolioUpdated) -> handler.QuotesFeatUpdated:
+        index = pd.DatetimeIndex(msg.trading_days)
 
         async with asyncio.TaskGroup() as tg:
-            quotes_tasks = [tg.create_task(ctx.get(quotes.Quotes, domain.UID(ticker))) for ticker in tickers]
-            all_trading_days: set[domain.Day] = set()
-            for quotes_table in asyncio.as_completed(quotes_tasks):
-                for row in (await quotes_table).df:
-                    if row.day >= consts.START_DAY and row.day <= msg.day:
-                        all_trading_days.add(row.day)
+            for ticker in msg.tickers:
+                tg.create_task(_build_features(ctx, domain.UID(ticker), index))
 
-        sorted_days = sorted(all_trading_days)
-        index = pd.DatetimeIndex(sorted_days)
-
-        async with asyncio.TaskGroup() as tg:
-            for task in quotes_tasks:
-                tg.create_task(_build_features(ctx, task.result(), index))
-
-        return handler.QuotesFeaturesUpdated(
-            day=msg.day,
-            trading_days=sorted_days,
+        return handler.QuotesFeatUpdated(
+            tickers=msg.tickers,
+            trading_days=msg.trading_days,
+            forecast_days=msg.forecast_days,
         )
 
 
-async def _build_features(ctx: handler.Ctx, quotes_table: quotes.Quotes, index: pd.DatetimeIndex) -> None:
+async def _build_features(ctx: handler.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> None:
+    quotes_table = await ctx.get(quotes.Quotes, ticker)
+
     first_day = pd.Timestamp(quotes_table.df[0].day)
     quotes_df = pd.DataFrame(quotes_table.model_dump()["df"]).set_index("day").reindex(index).loc[first_day:]  # type: ignore[reportUnknownMemberType]
 

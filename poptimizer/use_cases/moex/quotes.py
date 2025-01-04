@@ -15,20 +15,27 @@ class QuotesHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.SecuritiesUpdated) -> handler.QuotesUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.DivUpdated) -> handler.QuotesUpdated:
         sec_table = await ctx.get(securities.Securities)
+
+        trading_days: set[domain.Day] = set()
 
         async with asyncio.TaskGroup() as tg:
             for sec in sec_table.df:
-                tg.create_task(self._update_one(ctx, sec.ticker, msg.day))
+                tg.create_task(self._update_one(ctx, sec.ticker, msg.day, trading_days))
 
-        return handler.QuotesUpdated(day=msg.day)
+        sorted_trading_days = sorted(trading_days)
+        if msg.day != sorted_trading_days[-1]:
+            raise errors.UseCasesError("no quotes for last trading day")
+
+        return handler.QuotesUpdated(trading_days=sorted_trading_days)
 
     async def _update_one(
         self,
         ctx: handler.Ctx,
         ticker: str,
         update_day: domain.Day,
+        trading_days: set[domain.Day],
     ) -> None:
         table = await ctx.get_for_update(quotes.Quotes, domain.UID(ticker))
 
@@ -36,6 +43,8 @@ class QuotesHandler:
         rows = await self._download(ticker, start_day, update_day)
 
         table.update(update_day, rows)
+
+        trading_days.update(row.day for row in table.df)
 
     async def _download(
         self,

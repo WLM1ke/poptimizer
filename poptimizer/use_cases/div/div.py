@@ -10,7 +10,7 @@ from poptimizer.use_cases import handler
 
 
 class DivHandler:
-    async def __call__(self, ctx: handler.Ctx, msg: handler.QuotesUpdated) -> handler.DivUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.SecuritiesUpdated) -> handler.DivUpdated:
         sec_table = await ctx.get(securities.Securities)
 
         async with asyncio.TaskGroup() as tg:

@@ -2,6 +2,7 @@ import asyncio
 import logging
 import statistics
 
+from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
 from poptimizer.domain.moex import quotes, securities
@@ -13,7 +14,7 @@ class PortfolioHandler:
     def __init__(self) -> None:
         self._lgr = logging.getLogger()
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.DivUpdated) -> handler.PortfolioUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.QuotesUpdated) -> handler.PortfolioUpdated:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
         sec_cache = await self._prepare_sec_cache(ctx, msg.day)
@@ -23,7 +24,11 @@ class PortfolioHandler:
         self._add_new_liquid(port, sec_cache, min_turnover)
         port.day = msg.day
 
-        return handler.PortfolioUpdated(day=msg.day)
+        return handler.PortfolioUpdated(
+            tickers=port.tickers(),
+            trading_days=msg.trading_days,
+            forecast_days=consts.FORECAST_DAYS,
+        )
 
     async def _prepare_sec_cache(
         self,
