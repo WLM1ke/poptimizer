@@ -23,7 +23,7 @@ class QuotesFeatHandler:
 
         async with asyncio.TaskGroup() as tg:
             for ticker in msg.tickers:
-                tg.create_task(_build_features(ctx, domain.UID(ticker), index))
+                tg.create_task(_build_features(ctx, domain.UID(ticker), index, msg.forecast_days))
 
         return handler.QuotesFeatUpdated(
             tickers=msg.tickers,
@@ -32,7 +32,7 @@ class QuotesFeatHandler:
         )
 
 
-async def _build_features(ctx: handler.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> None:
+async def _build_features(ctx: handler.Ctx, ticker: domain.UID, index: pd.DatetimeIndex, forecast_days: int) -> None:
     quotes_table = await ctx.get(quotes.Quotes, ticker)
 
     first_day = pd.Timestamp(quotes_table.df[0].day)
@@ -49,7 +49,7 @@ async def _build_features(ctx: handler.Ctx, ticker: domain.UID, index: pd.Dateti
     quotes_df["ret"] = dividends + quotes_df["close"]
     quotes_df = np.log(quotes_df.div(close_prev, axis="index"))  # type: ignore[reportUnknownMemberType]
 
-    quotes_df["label"] = quotes_df["ret"].rolling(consts.FORECAST_DAYS).sum().shift(-(consts.FORECAST_DAYS - 1))  # type: ignore[reportUnknownMemberType]
+    quotes_df["label"] = quotes_df["ret"].rolling(forecast_days).sum().shift(-(forecast_days - 1))  # type: ignore[reportUnknownMemberType]
     quotes_df["turnover"] = turnover_df  # type: ignore[reportUnknownMemberType]
 
     feat = await ctx.get_for_update(features.Features, quotes_table.uid)
