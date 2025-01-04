@@ -19,7 +19,7 @@
 			.map(({ weight, ticker, grad_lower, grad_upper }) => {
 				return { weight, ticker, grad_lower, grad_upper, priority: grad_lower - breakEven };
 			});
-		buy.sort((pos1, pos2) => (pos1.weight !== pos2.weight ? pos1.weight - pos2.weight : pos2.priority - pos1.priority));
+		buy.sort((pos1, pos2) => pos2.priority - pos1.priority);
 
 		const sell = forecast.positions
 			.filter((pos) => pos.grad_upper < breakEven && pos.weight > 0)
@@ -28,7 +28,7 @@
 
 				return { weight, ticker, grad_lower, grad_upper, priority: grad_upper - breakEven, accounts };
 			});
-		sell.sort((pos1, pos2) => pos2.weight * pos2.priority - pos1.weight * pos1.priority);
+		sell.sort((pos1, pos2) => pos2.priority - pos1.priority);
 
 		return {
 			breakEven,
