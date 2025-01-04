@@ -24,6 +24,7 @@ class Forecast(domain.Entity):
             return_type=list,
         ),
     ] = Field(default_factory=set)
+    outdated: bool = False
     forecasts_count: PositiveInt = 1
     portfolio_ver: domain.Version = domain.Version(0)
     risk_tolerance: float = Field(0, ge=0, le=1)
@@ -37,3 +38,6 @@ class Forecast(domain.Entity):
         self.models.clear()
         self.forecasts_count = 1
         self.day = day
+
+    def update_required(self) -> bool:
+        return (self.outdated and len(self.models) > 1) or (len(self.models) ** 0.5 - self.forecasts_count**0.5 >= 1)

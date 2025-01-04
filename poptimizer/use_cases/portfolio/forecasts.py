@@ -29,7 +29,7 @@ class ForecastHandler:
 
                 forecast.models.add(msg.uid)
 
-                if len(forecast.models) ** 0.5 - forecast.forecasts_count**0.5 >= 1:
+                if forecast.update_required():
                     port = await ctx.get(portfolio.Portfolio)
                     if port.day == msg.day:
                         await self._update(ctx, port, forecast)
@@ -38,7 +38,7 @@ class ForecastHandler:
             case handler.PositionsUpdated():
                 port = await ctx.get(portfolio.Portfolio)
                 if forecast.portfolio_ver < port.ver and port.day == msg.day:
-                    await self._update(ctx, port, forecast)
+                    forecast.outdated = True
 
                 return None
 
@@ -59,6 +59,9 @@ class ForecastHandler:
                 continue
 
             models.append(model)
+
+        if len(models) <= 1:
+            return
 
         await asyncio.to_thread(
             self._update_forecast,
@@ -168,6 +171,7 @@ class ForecastHandler:
         forecast.risk_tolerance = median_risk_tol.item()
         forecast.forecasts_count = len(means)
         forecast.portfolio_ver = port.ver
+        forecast.outdated = False
 
 
 def _median(*args: tuple[NDArray[np.double], ...]) -> list[NDArray[np.double]]:
