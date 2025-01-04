@@ -37,6 +37,7 @@ class Forecast(domain.Entity):
     def init_day(self, day: domain.Day) -> None:
         self.models.clear()
         self.forecasts_count = 1
+        self.outdated = False
         self.day = day
 
     def update_required(self) -> bool:

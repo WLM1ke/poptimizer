@@ -178,7 +178,7 @@ class EvolutionHandler:
                     return handler.ModelDeleted(day=model.day, uid=model.uid)
 
                 evolution.new_base(model)
-                self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
+                self._lgr.info(f"New base Model(alfa={model.alfa:.2%})")
                 evolution.state = evolve.State.CREATE_NEW_MODEL
             case evolve.State.CREATE_NEW_MODEL:
                 if self._should_delete(evolution, model):
@@ -190,7 +190,7 @@ class EvolutionHandler:
 
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
-                self._lgr.info(f"New base Model(alfa={model.alfa:.2%}) set")
+                self._lgr.info(f"New base Model(alfa={model.alfa:.2%})")
 
                 if await ctx.count_models() > evolution.test_days:
                     evolution.delta_critical = 0
