@@ -21,6 +21,7 @@ class TradingDay(domain.Entity):
         trading_days: list[domain.Day],
         forecast_days: int,
     ) -> None:
+        self.day = trading_days[-1]
         self.tickers = tickers
         self.trading_days = trading_days
         self.forecast_days = forecast_days
