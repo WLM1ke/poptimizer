@@ -1,25 +1,24 @@
-from typing import Self
-
-from pydantic import Field, model_validator
+import pandas as pd
+from pydantic import Field, FiniteFloat, field_validator
 
 from poptimizer.domain import domain
 
 
 class Features(domain.Entity):
-    labels: list[list[float]] = Field(default_factory=list)
-    features: list[list[float]] = Field(default_factory=list)
+    features: list[dict[str, float]] = Field(default_factory=list)
 
-    @model_validator(mode="after")
-    def _match_length(self) -> Self:
-        if len(self.labels) != len(self.features):
-            raise ValueError("features length not match labels")
+    @field_validator("features")
+    def _match_labels(cls, features: list[dict[str, FiniteFloat]]) -> list[dict[str, FiniteFloat]]:
+        if not features:
+            return features
 
-        if any(len(row) != 1 for row in self.labels):
-            raise ValueError("invalid labels")
+        labels = features[0].keys()
 
-        features_count = self.features and len(self.features[0])
-
-        if any(len(row) != features_count for row in self.features):
+        if any(row.keys() != labels for row in features):
             raise ValueError("invalid features")
 
-        return self
+        return features
+
+    def update(self, day: domain.Day, df: pd.DataFrame) -> None:
+        self.day = day
+        self.features = df.to_dict("records")  # type: ignore[reportUnknownMemberType]

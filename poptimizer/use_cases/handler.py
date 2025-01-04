@@ -59,6 +59,11 @@ class PortfolioUpdated(Event):
     day: domain.Day
 
 
+class QuotesFeaturesUpdated(Event):
+    day: domain.Day
+    trading_days: list[domain.Day]
+
+
 class PositionsUpdated(Event):
     day: domain.Day
 
