@@ -1,40 +1,18 @@
 from __future__ import annotations
 
-from enum import Enum, auto, unique
-
 import numpy as np
 import pandas as pd
 import torch
-from pydantic import BaseModel
 from torch.utils import data
 
 from poptimizer import errors
+from poptimizer.domain.dl import features
 
 
-@unique
-class FeatTypes(Enum):
-    LABEL1P = auto()
-    RETURNS = auto()
-    NUMERICAL = auto()
-
-
-Batch = dict[FeatTypes, torch.Tensor]
-
-
-class Days(BaseModel):
-    history: int
-    forecast: int
-    test: int
-
-
-def minimal_returns_days(*, history_days: int, forecast_days: int, test_days: int) -> int:
-    return history_days + 2 * forecast_days + test_days - 1
-
-
-class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
+class OneTickerData(data.Dataset[dict[features.FeatTypes, torch.Tensor]]):
     def __init__(
         self,
-        days: Days,
+        days: features.Days,
         ret_total: pd.Series[float],
         num_feat: list[pd.Series[float]],
     ) -> None:
@@ -44,11 +22,8 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
 
         self._all_days = len(ret_total)
 
-        min_days_for_one_train_and_test = minimal_returns_days(
-            history_days=self._history_days,
-            forecast_days=self._forecast_days,
-            test_days=self._test_days,
-        )
+        min_days_for_one_train_and_test = days.minimal_returns_days
+
         if self._all_days < min_days_for_one_train_and_test:
             raise errors.TooShortHistoryError(min_days_for_one_train_and_test)
 
@@ -88,18 +63,18 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
     def __len__(self) -> int:
         return self._all_days - self._history_days + 1
 
-    def __getitem__(self, start_day: int) -> Batch:
+    def __getitem__(self, start_day: int) -> features.Batch:
         case = {
-            FeatTypes.NUMERICAL: self._num_feat[:, start_day : start_day + self._history_days],
-            FeatTypes.RETURNS: self._ret_total[start_day : start_day + self._history_days],
+            features.FeatTypes.NUMERICAL: self._num_feat[:, start_day : start_day + self._history_days],
+            features.FeatTypes.RETURNS: self._ret_total[start_day : start_day + self._history_days],
         }
 
         if start_day < self._all_days - (self._history_days + self._forecast_days) + 1:
-            case[FeatTypes.LABEL1P] = self._label1p[start_day].reshape(-1)
+            case[features.FeatTypes.LABEL] = self._label1p[start_day].reshape(-1)
 
         return case
 
-    def train_dataset(self) -> data.Subset[Batch]:
+    def train_dataset(self) -> data.Subset[features.Batch]:
         end = (
             self._all_days
             - (self._forecast_days + self._test_days - 1)
@@ -108,12 +83,12 @@ class OneTickerData(data.Dataset[dict[FeatTypes, torch.Tensor]]):
 
         return data.Subset(self, range(end))
 
-    def test_dataset(self) -> data.Subset[Batch]:
+    def test_dataset(self) -> data.Subset[features.Batch]:
         end = self._all_days - (self._history_days + self._forecast_days - 1)
 
         return data.Subset(self, range(end - self._test_days, end))
 
-    def forecast_dataset(self) -> data.Subset[Batch]:
+    def forecast_dataset(self) -> data.Subset[features.Batch]:
         start = self._all_days - self._history_days
 
         return data.Subset(self, range(start, start + 1))

@@ -2,7 +2,7 @@ import torch
 from pydantic import BaseModel
 
 from poptimizer import errors
-from poptimizer.domain.dl import datasets
+from poptimizer.domain.dl import features
 
 
 class Cfg(BaseModel):
@@ -34,7 +34,7 @@ class Net(torch.nn.Module):
             kernel_size=1,
         )
 
-    def forward(self, batch: datasets.Batch) -> torch.Tensor:
-        normalized = self._bn(batch[datasets.FeatTypes.NUMERICAL])
+    def forward(self, batch: features.Batch) -> torch.Tensor:
+        normalized = self._bn(batch[features.FeatTypes.NUMERICAL])
 
         return self._output(normalized)  # type: ignore[no-any-return]

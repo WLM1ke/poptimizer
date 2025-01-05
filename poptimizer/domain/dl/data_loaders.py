@@ -3,10 +3,10 @@ from collections.abc import Iterator
 from torch.utils import data
 
 from poptimizer import errors
-from poptimizer.domain.dl import datasets
+from poptimizer.domain.dl import datasets, features
 
 AllTickersData = list[datasets.OneTickerData]
-DataLoader = data.DataLoader[datasets.Batch]
+DataLoader = data.DataLoader[features.Batch]
 
 
 def train(
@@ -22,7 +22,7 @@ def train(
 
 
 class _DaysSampler(data.Sampler[list[int]]):
-    def __init__(self, all_data: list[data.Subset[datasets.Batch]]) -> None:
+    def __init__(self, all_data: list[data.Subset[features.Batch]]) -> None:
         super().__init__()
         self._test_days = len(all_data[0])
         self._tests = self._test_days * len(all_data)

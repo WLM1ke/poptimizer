@@ -4,7 +4,7 @@ from numpy.typing import NDArray
 from torch.distributions import MixtureSameFamily
 
 from poptimizer import errors
-from poptimizer.domain.dl import datasets
+from poptimizer.domain.dl import features
 from poptimizer.domain.dl.wave_net import backbone, head, inputs
 
 
@@ -37,16 +37,16 @@ class Net(torch.nn.Module):
             mixture_size=cfg.mixture_size,
         )
 
-    def forward(self, batch: datasets.Batch) -> MixtureSameFamily:
+    def forward(self, batch: features.Batch) -> MixtureSameFamily:
         norm_input = self._input(batch)
         end = self._backbone(norm_input)
 
         return self._head(end)  # type: ignore[no-any-return]
 
-    def llh(self, batch: datasets.Batch) -> torch.Tensor:
+    def llh(self, batch: features.Batch) -> torch.Tensor:
         dist = self(batch)
 
-        labels = batch[datasets.FeatTypes.LABEL1P]
+        labels = batch[features.FeatTypes.LABEL]
 
         try:
             return dist.log_prob(labels).mean()
@@ -55,12 +55,12 @@ class Net(torch.nn.Module):
 
     def loss_and_forecast_mean_and_std(
         self,
-        batch: datasets.Batch,
+        batch: features.Batch,
     ) -> tuple[float, NDArray[np.double], NDArray[np.double]]:
         """Minus Normal Log Likelihood and forecast means and vars."""
         dist = self(batch)
 
-        labels = batch[datasets.FeatTypes.LABEL1P]
+        labels = batch[features.FeatTypes.LABEL]
 
         try:
             llh = dist.log_prob(labels).mean()
@@ -71,7 +71,7 @@ class Net(torch.nn.Module):
 
     def forecast_mean_and_std(
         self,
-        batch: datasets.Batch,
+        batch: features.Batch,
     ) -> tuple[NDArray[np.double], NDArray[np.double]]:
         dist = self(batch)
 

@@ -8,7 +8,7 @@ import pandas as pd
 from pydantic import BaseModel
 
 from poptimizer import consts
-from poptimizer.domain.dl import datasets
+from poptimizer.domain.dl import datasets, features
 
 if TYPE_CHECKING:
     from poptimizer.use_cases import view
@@ -34,7 +34,7 @@ class Builder:
         tickers: tuple[str, ...],
         last_day: pd.Timestamp,
         feats: Features,
-        days: datasets.Days,
+        days: features.Days,
     ) -> list[datasets.OneTickerData]:
         prices = await self._data_adapter.close(last_day, tickers)
 
@@ -57,7 +57,7 @@ class Builder:
         self,
         ticker: str,
         feats: Features,
-        days: datasets.Days,
+        days: features.Days,
         price: pd.Series[float],
     ) -> datasets.OneTickerData:
         price_prev = price.shift(1).iloc[1:]  # type: ignore[reportUnknownMemberType]
