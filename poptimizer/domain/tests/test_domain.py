@@ -88,6 +88,26 @@ def test_sorted_tickers_validator(tickers: tuple[domain.Ticker, ...], *, err: bo
         domain.sorted_tickers_validator(tickers)
 
 
+@pytest.mark.parametrize(
+    ("days", "err"),
+    [
+        ([], False),
+        ([date(2025, 1, 5)], False),
+        ([date(2025, 1, 5), date(2025, 1, 6)], False),
+        ([date(2025, 1, 5), date(2025, 1, 5)], True),
+        ([date(2025, 1, 5), date(2025, 1, 4)], True),
+    ],
+)
+def test_sorted_days_validator(days: list[domain.Day], *, err: bool) -> None:
+    if not err:
+        assert days == domain.sorted_days_validator(days)
+
+        return
+
+    with pytest.raises(ValueError, match="days are not sorted"):
+        domain.sorted_days_validator(days)
+
+
 class _TestTickerRow(BaseModel):
     ticker: domain.Ticker
 
