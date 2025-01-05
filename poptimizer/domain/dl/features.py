@@ -61,7 +61,7 @@ class Features(domain.Entity):
         self.day = day
         self.numerical = num_feat_df.to_dict("records")  # type: ignore[reportUnknownMemberType]
 
-    def prepare(self, days: Days, num_feat: set[NumFeat]) -> Batch:
+    def prepare_all_data_batch(self, days: Days, num_feat: set[NumFeat]) -> Batch:
         if not num_feat:
             raise errors.DomainError("no features")
 
@@ -80,7 +80,7 @@ class Features(domain.Entity):
                 dtype=torch.float,
             ).exp(),
             FeatTypes.NUMERICAL: torch.tensor(
-                all_feat_df[sorted[num_feat]].values,  # type: ignore[reportUnknownMemberType]
+                all_feat_df[sorted(num_feat)].values,  # type: ignore[reportUnknownMemberType]
                 dtype=torch.float,
             ).T,
             FeatTypes.RETURNS: torch.tensor(

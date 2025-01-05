@@ -8,7 +8,7 @@ import bson
 from poptimizer import consts, errors
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
-from poptimizer.use_cases import handler, view
+from poptimizer.use_cases import handler
 from poptimizer.use_cases.dl import builder, trainer
 
 _PARENT_COUNT: Final = 2
@@ -52,9 +52,9 @@ class Ctx(Protocol):
 
 
 class EvolutionHandler:
-    def __init__(self, viewer: view.Viewer) -> None:
+    def __init__(self) -> None:
         self._lgr = logging.getLogger()
-        self._viewer = viewer
+        self._builder = builder.Builder()
 
     async def __call__(
         self,
@@ -67,7 +67,7 @@ class EvolutionHandler:
         self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
 
         try:
-            await self._update_model_metrics(model, msg, evolution.test_days)
+            await self._update_model_metrics(ctx, model, msg, evolution.test_days)
         except* errors.DomainError as err:
             await self._delete_model_on_error(ctx, evolution, model, err)
 
@@ -123,6 +123,7 @@ class EvolutionHandler:
 
     async def _update_model_metrics(
         self,
+        ctx: Ctx,
         model: evolve.Model,
         msg: handler.DataNotChanged | handler.DataUpdated,
         test_days: int,
@@ -130,8 +131,8 @@ class EvolutionHandler:
         model.day = msg.day
         model.tickers = msg.tickers
         model.forecast_days = msg.forecast_days
-        tr = trainer.Trainer(builder.Builder(self._viewer))
-        await tr.update_model_metrics(model, test_days)
+        tr = trainer.Trainer(self._builder)
+        await tr.update_model_metrics(ctx, model, test_days)
 
     async def _delete_model_on_error(
         self,

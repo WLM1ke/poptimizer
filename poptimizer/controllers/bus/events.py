@@ -1,7 +1,7 @@
 import aiohttp
 
 from poptimizer.controllers.bus import msg
-from poptimizer.use_cases import cpi, view
+from poptimizer.use_cases import cpi
 from poptimizer.use_cases.div import div, reestry, status
 from poptimizer.use_cases.dl.features import quotes as quotes_features
 from poptimizer.use_cases.evolve import evolve
@@ -12,7 +12,6 @@ from poptimizer.use_cases.portfolio import forecasts, portfolio
 def register_handlers(
     bus: msg.Bus,
     http_client: aiohttp.ClientSession,
-    viewer: view.Viewer,
 ) -> None:
     trading_day_handler = trading_day.TradingDayHandler(http_client)
     bus.register_event_handler(trading_day_handler.check, msg.IndefiniteRetryPolicy)
@@ -27,5 +26,5 @@ def register_handlers(
     bus.register_event_handler(status.DivStatusHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(reestry.ReestryHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(trading_day_handler.update, msg.IndefiniteRetryPolicy)
-    bus.register_event_handler(evolve.EvolutionHandler(viewer), msg.IndefiniteRetryPolicy)
+    bus.register_event_handler(evolve.EvolutionHandler(), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(forecasts.ForecastHandler(), msg.IndefiniteRetryPolicy)

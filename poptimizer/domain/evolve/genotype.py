@@ -9,11 +9,11 @@ class Features(genetics.Chromosome):
         float,
         genetics.bool_phenotype(),
     ] = genetics.random_default_range(-1, 1)
-    div: Annotated[
+    dividends: Annotated[
         float,
         genetics.bool_phenotype(),
     ] = genetics.random_default_range(-1, 1)
-    ret: Annotated[
+    returns: Annotated[
         float,
         genetics.bool_phenotype(),
     ] = genetics.random_default_range(-1, 1)

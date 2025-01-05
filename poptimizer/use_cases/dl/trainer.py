@@ -5,7 +5,6 @@ import logging
 import time
 from typing import Literal, cast
 
-import pandas as pd
 import torch
 import tqdm
 from pydantic import BaseModel
@@ -15,6 +14,7 @@ from poptimizer import consts, errors
 from poptimizer.domain.dl import data_loaders, datasets, features, ledoit_wolf, risk
 from poptimizer.domain.dl.wave_net import backbone, wave_net
 from poptimizer.domain.evolve import evolve
+from poptimizer.use_cases import handler
 from poptimizer.use_cases.dl import builder
 
 
@@ -25,7 +25,7 @@ class Batch(BaseModel):
 
     @property
     def num_feat_count(self) -> int:
-        return self.feats.close + self.feats.div + self.feats.ret
+        return self.feats.close + self.feats.dividends + self.feats.returns
 
 
 class Optimizer(BaseModel): ...
@@ -76,6 +76,7 @@ class Trainer:
 
     async def update_model_metrics(
         self,
+        ctx: handler.Ctx,
         model: evolve.Model,
         test_days: int,
     ) -> None:
@@ -87,7 +88,7 @@ class Trainer:
             forecast=model.forecast_days,
             test=test_days,
         )
-        data = await self._builder.build(model.tickers, pd.Timestamp(model.day), cfg.batch.feats, days)
+        data = await self._builder.build(ctx, model.day, model.tickers, cfg.batch.feats, days)
 
         try:
             await asyncio.to_thread(

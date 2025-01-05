@@ -1,107 +1,64 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING
 
-import pandas as pd
 from pydantic import BaseModel
 
 from poptimizer import consts
+from poptimizer.domain import domain
 from poptimizer.domain.dl import datasets, features
 
 if TYPE_CHECKING:
-    from poptimizer.use_cases import view
-
-_T_PLUS_1_START: Final = datetime(2023, 7, 31)
+    from poptimizer.use_cases import handler
 
 
 class Features(BaseModel):
     close: bool
-    div: bool
-    ret: bool
+    dividends: bool
+    returns: bool
 
 
 class Builder:
-    def __init__(
-        self,
-        viewer: view.Viewer,
-    ) -> None:
-        self._data_adapter = viewer
+    def __init__(self) -> None:
+        self._day = consts.START_DAY
+        self._tickers: tuple[domain.Ticker, ...] = ()
+        self._cache: list[features.Features] = []
 
     async def build(
         self,
-        tickers: tuple[str, ...],
-        last_day: pd.Timestamp,
+        ctx: handler.Ctx,
+        day: domain.Day,
+        tickers: tuple[domain.Ticker, ...],
         feats: Features,
         days: features.Days,
     ) -> list[datasets.OneTickerData]:
-        prices = await self._data_adapter.close(last_day, tickers)
+        await self._update_cache(ctx, day, tickers)
+
+        num_feat = {features.NumFeat(feat) for feat, on in feats if on}
+
+        return [
+            datasets.OneTickerData(
+                feat,
+                days,
+                num_feat,
+            )
+            for feat in self._cache
+        ]
+
+    async def _update_cache(
+        self,
+        ctx: handler.Ctx,
+        day: domain.Day,
+        tickers: tuple[domain.Ticker, ...],
+    ) -> None:
+        if self._day == day and self._tickers == tickers:
+            return
+
+        self._day = day
+        self._tickers = tickers
 
         async with asyncio.TaskGroup() as tg:
-            tasks = [
-                tg.create_task(
-                    self._prepare_features(
-                        ticker,
-                        feats,
-                        days,
-                        prices[ticker].dropna(),  # type: ignore[reportUnknownMemberType]
-                    )
-                )
-                for ticker in tickers
-            ]
+            tasks = [tg.create_task(ctx.get(features.Features, domain.UID(ticker))) for ticker in tickers]
 
-        return [task.result() for task in tasks]
-
-    async def _prepare_features(
-        self,
-        ticker: str,
-        feats: Features,
-        days: features.Days,
-        price: pd.Series[float],
-    ) -> datasets.OneTickerData:
-        price_prev = price.shift(1).iloc[1:]  # type: ignore[reportUnknownMemberType]
-        price = price.iloc[1:]  # type: ignore[reportUnknownMemberType]
-
-        df_div = await self._prepare_div(ticker, price.index)  # type: ignore[reportUnknownMemberType]
-
-        ret_total = (price + df_div).div(price_prev).sub(1)  # type: ignore[reportUnknownMemberType]
-
-        features: list[pd.Series[float]] = []
-
-        if feats.ret:
-            features.append(ret_total)
-
-        if feats.close:
-            features.append(price.div(price_prev).sub(1))  # type: ignore[reportUnknownMemberType]
-
-        if feats.div:
-            features.append(df_div.div(price_prev))  # type: ignore[reportUnknownMemberType]
-
-        return datasets.OneTickerData(
-            days,
-            ret_total,
-            features,
-        )
-
-    async def _prepare_div(self, ticker: str, index: pd.DatetimeIndex) -> pd.Series[float]:
-        first_day = index[1]
-        last_day = index[-1] + 2 * pd.tseries.offsets.BDay()
-
-        div_df = pd.Series(0, index=index, dtype=float)
-
-        async for date, div in self._data_adapter.dividends(ticker):
-            if date < first_day or date >= last_day:
-                continue
-
-            div_df.iloc[_ex_div_date(index, date)] += div * consts.AFTER_TAX
-
-        return div_df
-
-
-def _ex_div_date(index: pd.DatetimeIndex, date: datetime) -> int:
-    shift = 2
-    if date > _T_PLUS_1_START:
-        shift = 1
-
-    return index.get_indexer([date], method="ffill")[0] - (shift - 1)  # type: ignore[reportUnknownArgumentType]
+        self._cache = [await task for task in tasks]
