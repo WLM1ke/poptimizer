@@ -47,7 +47,7 @@ async def _build_features(ctx: handler.Ctx, ticker: domain.UID, index: pd.Dateti
 
     dividends = await _prepare_div(ctx, quotes_table.uid, quotes_df.index)  # type: ignore[reportUnknownMemberType]
     quotes_df[NumFeat.DIVIDENDS] = dividends + close_prev
-    quotes_df[NumFeat.RETURN] = dividends + quotes_df[NumFeat.CLOSE]
+    quotes_df[NumFeat.RETURNS] = dividends + quotes_df[NumFeat.CLOSE]
     quotes_df = np.log(quotes_df.div(close_prev, axis="index"))  # type: ignore[reportUnknownMemberType]
     quotes_df[NumFeat.TURNOVER] = turnover_df  # type: ignore[reportUnknownMemberType]
 
