@@ -50,7 +50,7 @@ class ForecastHandler:
 
         for uid in frozenset(forecast.models):
             model = await ctx.get(evolve.Model, uid)
-            if model.day != port.day or model.tickers != tickers:
+            if model.day != port.day or model.tickers != tickers or model.forecast_days != port.forecast_days:
                 forecast.models.remove(uid)
                 continue
 

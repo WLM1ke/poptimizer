@@ -2,7 +2,6 @@ import asyncio
 import logging
 import statistics
 
-from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
 from poptimizer.domain.moex import quotes, securities
@@ -17,7 +16,7 @@ class PortfolioHandler:
     async def __call__(self, ctx: handler.Ctx, msg: handler.QuotesUpdated) -> handler.PortfolioUpdated:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
-        sec_cache = await self._prepare_sec_cache(ctx, msg.day)
+        sec_cache = await self._prepare_sec_cache(ctx, msg.day, port.forecast_days)
         min_turnover = _calc_min_turnover(port, sec_cache)
 
         self._update_existing_positions(port, sec_cache, min_turnover)
@@ -27,13 +26,14 @@ class PortfolioHandler:
         return handler.PortfolioUpdated(
             tickers=port.tickers(),
             trading_days=msg.trading_days,
-            forecast_days=consts.FORECAST_DAYS,
+            forecast_days=port.forecast_days,
         )
 
     async def _prepare_sec_cache(
         self,
         ctx: handler.Ctx,
         update_day: domain.Day,
+        forecast_days: int,
     ) -> dict[domain.Ticker, portfolio.Position]:
         async with asyncio.TaskGroup() as tg:
             sec_task = tg.create_task(ctx.get(securities.Securities))
@@ -50,7 +50,7 @@ class PortfolioHandler:
                 ticker=sec.ticker,
                 lot=sec.lot,
                 price=quotes.result().df[-1].close,
-                turnover=statistics.median(quote.turnover for quote in quotes.result().df[-consts.FORECAST_DAYS :]),
+                turnover=statistics.median(quote.turnover for quote in quotes.result().df[-forecast_days:]),
             )
             for sec, quotes in zip(sec_table.df, quotes_tasks, strict=True)
             if len(quotes.result().df) > evolution.minimal_returns_days and quotes.result().df[-1].day == update_day

@@ -7,7 +7,7 @@ from poptimizer.domain import domain
 class TradingDay(domain.Entity):
     last: domain.Day = consts.START_DAY
     tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
-    forecast_days: PositiveInt = consts.FORECAST_DAYS
+    forecast_days: PositiveInt = 1
 
     _sorted_tickers = field_validator("tickers")(domain.sorted_tickers_validator)
 

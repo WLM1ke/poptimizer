@@ -13,7 +13,7 @@ from pydantic import (
     model_validator,
 )
 
-from poptimizer import errors
+from poptimizer import consts, errors
 from poptimizer.domain import domain
 
 type AccountData = dict[domain.AccName, NonNegativeInt]
@@ -28,6 +28,7 @@ class Position(BaseModel):
 
 
 class Portfolio(domain.Entity):
+    forecast_days: PositiveInt = consts.FORECAST_DAYS
     account_names: Annotated[
         set[domain.AccName],
         PlainSerializer(
