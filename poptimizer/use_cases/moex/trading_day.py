@@ -53,8 +53,8 @@ class TradingDayHandler:
         new_last_check = _last_day()
         if table.day == new_last_check:
             return handler.DataNotChanged(
+                day=table.last,
                 tickers=table.tickers,
-                trading_days=table.trading_days,
                 forecast_days=table.forecast_days,
             )
 
@@ -65,8 +65,8 @@ class TradingDayHandler:
             table.update_last_check(new_last_check)
 
             return handler.DataNotChanged(
+                day=table.last,
                 tickers=table.tickers,
-                trading_days=table.trading_days,
                 forecast_days=table.forecast_days,
             )
 
@@ -92,12 +92,12 @@ class TradingDayHandler:
 
     async def update(self, ctx: handler.Ctx, msg: handler.QuotesFeatUpdated) -> handler.DataUpdated:
         table = await ctx.get_for_update(trading_day.TradingDay)
-        table.update_last_trading_day(msg.tickers, msg.trading_days, msg.forecast_days)
-        self._lgr.warning("Data updated for %s", msg.trading_days[-1])
+        table.update_last_trading_day(msg.day, msg.tickers, msg.forecast_days)
+        self._lgr.warning("Data updated for %s", msg.day)
 
         return handler.DataUpdated(
+            day=table.last,
             tickers=table.tickers,
-            trading_days=table.trading_days,
             forecast_days=table.forecast_days,
         )
 
