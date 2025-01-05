@@ -5,7 +5,19 @@ from poptimizer.domain.evolve import genetics
 
 
 class Features(genetics.Chromosome):
+    open: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
     close: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
+    high: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
+    low: Annotated[
         float,
         genetics.bool_phenotype(),
     ] = genetics.random_default_range(-1, 1)
@@ -14,6 +26,10 @@ class Features(genetics.Chromosome):
         genetics.bool_phenotype(),
     ] = genetics.random_default_range(-1, 1)
     returns: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
+    turnover: Annotated[
         float,
         genetics.bool_phenotype(),
     ] = genetics.random_default_range(-1, 1)

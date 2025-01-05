@@ -14,9 +14,13 @@ if TYPE_CHECKING:
 
 
 class Features(BaseModel):
+    open: bool
     close: bool
+    high: bool
+    low: bool
     dividends: bool
     returns: bool
+    turnover: bool
 
 
 class Builder:

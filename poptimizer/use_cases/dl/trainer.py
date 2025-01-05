@@ -25,7 +25,7 @@ class Batch(BaseModel):
 
     @property
     def num_feat_count(self) -> int:
-        return self.feats.close + self.feats.dividends + self.feats.returns
+        return sum(on for _, on in self.feats)
 
 
 class Optimizer(BaseModel): ...
