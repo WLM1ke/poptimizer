@@ -41,4 +41,7 @@ class Forecast(domain.Entity):
         self.day = day
 
     def update_required(self) -> bool:
-        return (self.outdated and len(self.models) > 1) or (len(self.models) ** 0.5 - self.forecasts_count**0.5 >= 1)
+        if len(self.models) <= 1:
+            return False
+
+        return self.outdated or (len(self.models) ** 0.5 - self.forecasts_count**0.5 >= 1)

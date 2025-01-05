@@ -18,36 +18,32 @@ class ForecastHandler:
         msg: handler.ModelDeleted | handler.ModelEvaluated | handler.PositionsUpdated,
     ) -> handler.ForecastsAnalyzed | None:
         forecast = await ctx.get_for_update(forecasts.Forecast)
+        if forecast.day < msg.day:
+            forecast.init_day(msg.day)
+
         match msg:
-            case handler.ModelDeleted():
-                forecast.models -= {msg.uid}
-
-                return handler.ForecastsAnalyzed(day=msg.day)
-            case handler.ModelEvaluated():
-                if forecast.day != msg.day:
-                    forecast.init_day(msg.day)
-
-                forecast.models.add(msg.uid)
-
-                if forecast.update_required():
-                    port = await ctx.get(portfolio.Portfolio)
-                    if port.day == msg.day:
-                        await self._update(ctx, port, forecast)
-
-                return handler.ForecastsAnalyzed(day=msg.day)
             case handler.PositionsUpdated():
                 port = await ctx.get(portfolio.Portfolio)
-                if forecast.portfolio_ver < port.ver and port.day == msg.day:
+                if forecast.portfolio_ver < port.ver:
                     forecast.outdated = True
 
                 return None
+            case handler.ModelDeleted():
+                forecast.models -= {msg.uid}
+            case handler.ModelEvaluated():
+                forecast.models.add(msg.uid)
+
+        if forecast.update_required():
+            await self._update(ctx, forecast)
+
+        return handler.ForecastsAnalyzed(day=msg.day)
 
     async def _update(
         self,
         ctx: handler.Ctx,
-        port: portfolio.Portfolio,
         forecast: forecasts.Forecast,
     ) -> None:
+        port = await ctx.get(portfolio.Portfolio)
         tickers = port.tickers()
 
         models: list[evolve.Model] = []
