@@ -10,7 +10,7 @@ import pandas as pd
 from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.div import div
-from poptimizer.domain.dl import features
+from poptimizer.domain.dl.features import Features, Label, NumFeat
 from poptimizer.domain.moex import quotes
 from poptimizer.use_cases import handler
 
@@ -37,22 +37,23 @@ async def _build_features(ctx: handler.Ctx, ticker: domain.UID, index: pd.Dateti
 
     first_day = pd.Timestamp(quotes_table.df[0].day)
     quotes_df = pd.DataFrame(quotes_table.model_dump()["df"]).set_index("day").reindex(index).loc[first_day:]  # type: ignore[reportUnknownMemberType]
+    quotes_df.columns = [NumFeat(col) for col in quotes_df.columns]
 
-    turnover_df = np.log1p(quotes_df["turnover"].fillna(0).iloc[1:])  # type: ignore[reportUnknownMemberType]
+    turnover_df = np.log1p(quotes_df[NumFeat.TURNOVER].fillna(0).iloc[1:])  # type: ignore[reportUnknownMemberType]
 
-    quotes_df = quotes_df[["open", "close", "high", "low"]].ffill()  # type: ignore[reportUnknownMemberType]
-    close_prev = quotes_df["close"].shift(1).iloc[1:]  # type: ignore[reportUnknownMemberType]
+    quotes_df = quotes_df[[NumFeat.OPEN, NumFeat.CLOSE, NumFeat.HIGH, NumFeat.LOW]].ffill()  # type: ignore[reportUnknownMemberType]
+    close_prev = quotes_df[NumFeat.CLOSE].shift(1).iloc[1:]  # type: ignore[reportUnknownMemberType]
     quotes_df = quotes_df.iloc[1:]
 
     dividends = await _prepare_div(ctx, quotes_table.uid, quotes_df.index)  # type: ignore[reportUnknownMemberType]
-    quotes_df["div"] = dividends + close_prev
-    quotes_df["ret"] = dividends + quotes_df["close"]
+    quotes_df[NumFeat.DIVIDENDS] = dividends + close_prev
+    quotes_df[NumFeat.RETURN] = dividends + quotes_df[NumFeat.CLOSE]
     quotes_df = np.log(quotes_df.div(close_prev, axis="index"))  # type: ignore[reportUnknownMemberType]
 
-    quotes_df["label"] = quotes_df["ret"].rolling(forecast_days).sum().shift(-(forecast_days - 1))  # type: ignore[reportUnknownMemberType]
-    quotes_df["turnover"] = turnover_df  # type: ignore[reportUnknownMemberType]
+    quotes_df[Label.LABEL] = quotes_df[NumFeat.RETURN].rolling(forecast_days).sum().shift(-(forecast_days - 1))  # type: ignore[reportUnknownMemberType]
+    quotes_df[NumFeat.TURNOVER] = turnover_df  # type: ignore[reportUnknownMemberType]
 
-    feat = await ctx.get_for_update(features.Features, quotes_table.uid)
+    feat = await ctx.get_for_update(Features, quotes_table.uid)
     feat.update(quotes_table.day, quotes_df)  # type: ignore[reportUnknownMemberType]
 
 
@@ -62,7 +63,7 @@ async def _prepare_div(ctx: handler.Ctx, ticker: domain.UID, index: pd.DatetimeI
     first_day = index[1]
     last_day = index[-1] + 2 * pd.tseries.offsets.BDay()
 
-    div_df = pd.Series(0, index=index, dtype=float, name="div")
+    div_df = pd.Series(0, index=index, dtype=float, name=NumFeat.DIVIDENDS)
 
     for row in div_table.df:
         timestamp = pd.Timestamp(row.day)
