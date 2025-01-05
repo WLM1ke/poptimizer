@@ -85,15 +85,6 @@ wheels = [
 ]
 
 [[package]]
-name = "async-lru"
-version = "2.0.4"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/80/e2/2b4651eff771f6fd900d233e175ddc5e2be502c7eb62c0c42f975c6d36cd/async-lru-2.0.4.tar.gz", hash = "sha256:b8a59a5df60805ff63220b2a0c5b5393da5521b113cd5465a44eb037d81a5627", size = 10019 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/fa/9f/3c3503693386c4b0f245eaf5ca6198e3b28879ca0a40bde6b0e319793453/async_lru-2.0.4-py3-none-any.whl", hash = "sha256:ff02944ce3c288c5be660c42dbcca0742b32c3b279d6dceda655190240b99224", size = 6111 },
-]
-
-[[package]]
 name = "attrs"
 version = "24.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -604,7 +595,6 @@ dependencies = [
     { name = "aiofiles" },
     { name = "aiohttp" },
     { name = "aiomoex" },
-    { name = "async-lru" },
     { name = "lxml" },
     { name = "openpyxl" },
     { name = "pandas" },
@@ -635,7 +625,6 @@ requires-dist = [
     { name = "aiofiles", specifier = ">=24.1.0" },
     { name = "aiohttp", specifier = ">=3.11.8" },
     { name = "aiomoex", specifier = ">=2.1.2" },
-    { name = "async-lru", specifier = ">=2.0.4" },
     { name = "lxml", specifier = ">=5.3.0" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "pandas", specifier = ">=2.2.2" },
