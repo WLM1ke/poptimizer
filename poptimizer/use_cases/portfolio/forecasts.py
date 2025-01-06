@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import cast
 
 import numpy as np
@@ -13,6 +14,9 @@ from poptimizer.use_cases import handler
 
 
 class ForecastHandler:
+    def __init__(self) -> None:
+        self._lgr = logging.getLogger()
+
     async def __call__(
         self,
         ctx: handler.Ctx,
@@ -162,6 +166,16 @@ class ForecastHandler:
         forecast.risk_tolerance = median_risk_tol.item()
         forecast.forecasts_count = len(means)
         forecast.portfolio_ver = port.ver
+
+        bye_grad, bye_ticker = max((pos.grad_lower, pos.ticker) for pos in forecast.positions)
+        sell_grad, sell_ticker = min((pos.grad_upper, pos.ticker) for pos in forecast.positions if pos.weight)
+        if bye_grad > sell_grad:
+            self._lgr.warning(
+                "New update of %d forecasts - sell %s and buy %s",
+                forecast.forecasts_count,
+                sell_ticker,
+                bye_ticker,
+            )
 
 
 def _median(*args: tuple[NDArray[np.double], ...]) -> list[NDArray[np.double]]:
