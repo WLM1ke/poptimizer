@@ -22,7 +22,7 @@ from poptimizer.domain.evolve import genetics, genotype
 
 _INITIAL_MINIMAL_RETURNS_DAYS: Final = features.Days(
     history=consts.INITIAL_HISTORY_DAYS_END,
-    forecast=1,
+    forecast=consts.INITIAL_FORECAST_DAYS,
     test=consts.INITIAL_POPULATION,
 ).minimal_returns_days
 

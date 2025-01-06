@@ -13,7 +13,7 @@ from pydantic import (
     model_validator,
 )
 
-from poptimizer import errors
+from poptimizer import consts, errors
 from poptimizer.domain import domain
 
 type AccountData = dict[domain.AccName, NonNegativeInt]
@@ -28,7 +28,7 @@ class Position(BaseModel):
 
 
 class Portfolio(domain.Entity):
-    trading_interval: float = Field(1, ge=1)
+    trading_interval: float = Field(consts.INITIAL_FORECAST_DAYS, ge=1)
     traded: bool = False
     account_names: Annotated[
         set[domain.AccName],
