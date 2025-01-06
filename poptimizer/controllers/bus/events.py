@@ -13,7 +13,7 @@ def register_handlers(
     bus: msg.Bus,
     http_client: aiohttp.ClientSession,
 ) -> None:
-    trading_day_handler = trading_day.TradingDayHandler(http_client)
+    trading_day_handler = trading_day.DataHandler(http_client)
     bus.register_event_handler(trading_day_handler.check, msg.IndefiniteRetryPolicy)
     bus.register_event_handler(cpi.CPIHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(usd.USDHandler(http_client), msg.IgnoreErrorsPolicy)

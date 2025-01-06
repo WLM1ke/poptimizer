@@ -38,7 +38,7 @@ class _Payload(BaseModel):
         return df
 
 
-class TradingDayHandler:
+class DataHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._lgr = logging.getLogger()
         self._http_client = http_client
@@ -47,7 +47,7 @@ class TradingDayHandler:
         self,
         ctx: handler.Ctx,
         msg: handler.AppStarted | handler.ForecastsAnalyzed,  # noqa: ARG002
-    ) -> handler.DataChecked:
+    ) -> handler.NewDataPublished | handler.DataChecked:
         table = await ctx.get(trading_day.TradingDay)
 
         new_last_check = _last_day()
@@ -70,11 +70,7 @@ class TradingDayHandler:
                 forecast_days=table.forecast_days,
             )
 
-        return handler.DataChecked(
-            day=table.last,
-            tickers=table.tickers,
-            forecast_days=table.forecast_days,
-        )
+        return handler.NewDataPublished(day=last_day)
 
     async def _get_last_trading_day_from_moex(self) -> domain.Day:
         try:
