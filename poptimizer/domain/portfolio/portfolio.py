@@ -13,7 +13,7 @@ from pydantic import (
     model_validator,
 )
 
-from poptimizer import consts, errors
+from poptimizer import errors
 from poptimizer.domain import domain
 
 type AccountData = dict[domain.AccName, NonNegativeInt]
@@ -28,7 +28,9 @@ class Position(BaseModel):
 
 
 class Portfolio(domain.Entity):
-    forecast_days: PositiveInt = consts.FORECAST_DAYS
+    trading_interval: float = Field(1, ge=1)
+    trading_interval_max: float = Field(1, ge=1)
+    traded: bool = False
     account_names: Annotated[
         set[domain.AccName],
         PlainSerializer(
@@ -62,6 +64,24 @@ class Portfolio(domain.Entity):
                     raise ValueError(f"{acc} has zero {ticker} shares")
 
         return positions
+
+    @property
+    def forecast_days(self) -> int:
+        return int(self.trading_interval)
+
+    def update_forecast_days(self, trading_days: list[domain.Day]) -> None:
+        old_day = self.day
+        self.day = trading_days[-1]
+
+        if not self.ver:
+            old_day = self.day
+
+        for day in reversed(trading_days):
+            if day > old_day:
+                decay = (1 + self.trading_interval_max) ** -(1 / self.trading_interval_max)
+                self.trading_interval = 1 / (decay / self.trading_interval + (1 - decay) * self.traded)
+                self.trading_interval_max = max(self.trading_interval_max, self.trading_interval)
+                self.traded = False
 
     def tickers(self) -> tuple[domain.Ticker, ...]:
         return tuple(position.ticker for position in self.positions)
@@ -130,6 +150,9 @@ class Portfolio(domain.Entity):
 
                 if not amount:
                     position.accounts.pop(acc_name)
+
+                if not position.accounts:
+                    self.traded = True
 
     def weights(self) -> list[float]:
         values = [position.price * sum(position.accounts.values()) for position in self.positions]

@@ -21,7 +21,7 @@ class PortfolioHandler:
 
         self._update_existing_positions(port, sec_cache, min_turnover)
         self._add_new_liquid(port, sec_cache, min_turnover)
-        port.day = msg.day
+        port.update_forecast_days(msg.trading_days)
 
         return handler.PortfolioUpdated(
             tickers=port.tickers(),
@@ -94,7 +94,8 @@ class PortfolioHandler:
             if position.turnover > min_turnover:
                 n, _ = port.find_position(position.ticker)
                 port.positions.insert(n, position)
-                self._lgr.warning("%s is added", ticker)
+                if port.ver:
+                    self._lgr.warning("%s is added", ticker)
 
 
 def _calc_min_turnover(
