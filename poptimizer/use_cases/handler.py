@@ -31,14 +31,6 @@ class Ctx(Protocol):
 class AppStarted(Event): ...
 
 
-class DataNotChanged(Event):
-    day: domain.Day
-    tickers: tuple[domain.Ticker, ...] = Field(repr=False)
-    forecast_days: PositiveInt
-
-    _sorted_tickers = field_validator("tickers")(domain.sorted_tickers_validator)
-
-
 class NewDataPublished(Event):
     day: domain.Day
 
@@ -99,7 +91,7 @@ class DivStatusUpdated(Event):
     day: domain.Day
 
 
-class DataUpdated(Event):
+class DataChecked(Event):
     day: domain.Day
     tickers: tuple[domain.Ticker, ...] = Field(repr=False)
     forecast_days: PositiveInt

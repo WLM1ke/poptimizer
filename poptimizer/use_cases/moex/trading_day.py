@@ -47,12 +47,12 @@ class TradingDayHandler:
         self,
         ctx: handler.Ctx,
         msg: handler.AppStarted | handler.ForecastsAnalyzed,  # noqa: ARG002
-    ) -> handler.DataNotChanged | handler.NewDataPublished:
+    ) -> handler.DataChecked:
         table = await ctx.get(trading_day.TradingDay)
 
         new_last_check = _last_day()
         if table.day == new_last_check:
-            return handler.DataNotChanged(
+            return handler.DataChecked(
                 day=table.last,
                 tickers=table.tickers,
                 forecast_days=table.forecast_days,
@@ -64,13 +64,17 @@ class TradingDayHandler:
             table = await ctx.get_for_update(trading_day.TradingDay)
             table.update_last_check(new_last_check)
 
-            return handler.DataNotChanged(
+            return handler.DataChecked(
                 day=table.last,
                 tickers=table.tickers,
                 forecast_days=table.forecast_days,
             )
 
-        return handler.NewDataPublished(day=last_day)
+        return handler.DataChecked(
+            day=table.last,
+            tickers=table.tickers,
+            forecast_days=table.forecast_days,
+        )
 
     async def _get_last_trading_day_from_moex(self) -> domain.Day:
         try:
@@ -90,12 +94,12 @@ class TradingDayHandler:
 
         return payload.last_day()
 
-    async def update(self, ctx: handler.Ctx, msg: handler.QuotesFeatUpdated) -> handler.DataUpdated:
+    async def update(self, ctx: handler.Ctx, msg: handler.QuotesFeatUpdated) -> handler.DataChecked:
         table = await ctx.get_for_update(trading_day.TradingDay)
         table.update_last_trading_day(msg.day, msg.tickers, msg.forecast_days)
         self._lgr.warning("Data updated for %s", msg.day)
 
-        return handler.DataUpdated(
+        return handler.DataChecked(
             day=table.last,
             tickers=table.tickers,
             forecast_days=table.forecast_days,

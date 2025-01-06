@@ -59,7 +59,7 @@ class EvolutionHandler:
     async def __call__(
         self,
         ctx: Ctx,
-        msg: handler.DataNotChanged | handler.DataUpdated,
+        msg: handler.DataChecked,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
         await self._init_evolution(ctx)
         evolution = await self._init_step(ctx, msg.day)
@@ -125,7 +125,7 @@ class EvolutionHandler:
         self,
         ctx: Ctx,
         model: evolve.Model,
-        msg: handler.DataNotChanged | handler.DataUpdated,
+        msg: handler.DataChecked,
         test_days: int,
     ) -> None:
         model.day = msg.day
