@@ -83,10 +83,6 @@ class QuotesFeatUpdated(Event):
     _sorted_trading_days = field_validator("trading_days")(domain.sorted_days_validator)
 
 
-class PositionsUpdated(Event):
-    day: domain.Day
-
-
 class DivStatusUpdated(Event):
     day: domain.Day
 

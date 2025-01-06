@@ -16,19 +16,13 @@ class ForecastHandler:
     async def __call__(
         self,
         ctx: handler.Ctx,
-        msg: handler.ModelDeleted | handler.ModelEvaluated | handler.PositionsUpdated,
+        msg: handler.ModelDeleted | handler.ModelEvaluated,
     ) -> handler.ForecastsAnalyzed | None:
         forecast = await ctx.get_for_update(forecasts.Forecast)
         if forecast.day < msg.day:
             forecast.init_day(msg.day)
 
         match msg:
-            case handler.PositionsUpdated():
-                port = await ctx.get(portfolio.Portfolio)
-                if forecast.portfolio_ver < port.ver:
-                    forecast.outdated = True
-
-                return None
             case handler.ModelDeleted():
                 forecast.models -= {msg.uid}
             case handler.ModelEvaluated():
@@ -168,7 +162,6 @@ class ForecastHandler:
         forecast.risk_tolerance = median_risk_tol.item()
         forecast.forecasts_count = len(means)
         forecast.portfolio_ver = port.ver
-        forecast.outdated = False
 
 
 def _median(*args: tuple[NDArray[np.double], ...]) -> list[NDArray[np.double]]:
