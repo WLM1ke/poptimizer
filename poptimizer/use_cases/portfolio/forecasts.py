@@ -2,6 +2,7 @@ import asyncio
 from typing import cast
 
 import numpy as np
+from numpy import random
 from numpy.typing import NDArray
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
@@ -137,14 +138,14 @@ class ForecastHandler:
             _median,
             confidence_level=(1 - p_value),
             paired=True,
-            random_state=0,
+            rng=random.default_rng(0),
         ).confidence_interval
         _, median_grads_upper = stats.bootstrap(  # type: ignore[reportUnknownMemberType]
             stacked_grads + stacked_costs,
             _median,
             confidence_level=(1 - p_value),
             paired=True,
-            random_state=0,
+            rng=random.default_rng(0),
         ).confidence_interval
 
         median_risk_tol = np.median(risk_tol)
