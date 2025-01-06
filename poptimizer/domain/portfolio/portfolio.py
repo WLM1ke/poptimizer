@@ -77,9 +77,11 @@ class Portfolio(domain.Entity):
             old_day = self.day
 
         for day in reversed(trading_days):
-            if day > old_day:
-                self.trading_interval = self.trading_interval + 1 / self.trading_interval - self.traded
-                self.traded = False
+            if day <= old_day:
+                break
+
+            self.trading_interval = self.trading_interval + 1 / self.trading_interval - self.traded
+            self.traded = False
 
         return old_forecast_days != self.forecast_days
 
