@@ -68,8 +68,9 @@ class Portfolio(domain.Entity):
     def forecast_days(self) -> int:
         return round(self.trading_interval)
 
-    def update_forecast_days(self, trading_days: list[domain.Day]) -> None:
+    def update_forecast_days(self, trading_days: list[domain.Day]) -> bool:
         old_day = self.day
+        old_forecast_days = self.forecast_days
         self.day = trading_days[-1]
 
         if not self.ver:
@@ -79,6 +80,8 @@ class Portfolio(domain.Entity):
             if day > old_day:
                 self.trading_interval = self.trading_interval + 1 / self.trading_interval - self.traded
                 self.traded = False
+
+        return old_forecast_days != self.forecast_days
 
     def tickers(self) -> tuple[domain.Ticker, ...]:
         return tuple(position.ticker for position in self.positions)

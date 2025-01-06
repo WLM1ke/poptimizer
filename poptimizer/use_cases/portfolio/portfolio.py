@@ -21,7 +21,8 @@ class PortfolioHandler:
 
         self._update_existing_positions(port, sec_cache, min_turnover)
         self._add_new_liquid(port, sec_cache, min_turnover)
-        port.update_forecast_days(msg.trading_days)
+        if port.update_forecast_days(msg.trading_days):
+            self._lgr.warning("Forecast days changed - %d", port.forecast_days)
 
         return handler.PortfolioUpdated(
             tickers=port.tickers(),
