@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from pydantic import BaseModel, Field, PositiveInt, field_validator
+from pydantic import BaseModel, Field, computed_field
 
 from poptimizer.domain import domain
 
@@ -57,18 +57,14 @@ class QuotesUpdated(Event):
 
 class PortfolioUpdated(Event):
     trading_days: domain.TradingDays = Field(repr=False)
-    positions: domain.Positions = Field(repr=False)
-    forecast_days: PositiveInt
 
-    @property
+    @computed_field
     def day(self) -> domain.Day:
         return self.trading_days[-1]
 
 
 class QuotesFeatUpdated(Event):
     day: domain.Day
-    positions: domain.Positions = Field(repr=False)
-    forecast_days: PositiveInt
 
 
 class DivStatusUpdated(Event):
@@ -77,21 +73,21 @@ class DivStatusUpdated(Event):
 
 class DataChecked(Event):
     day: domain.Day
-    tickers: tuple[domain.Ticker, ...] = Field(repr=False)
-    forecast_days: PositiveInt
-
-    _sorted_tickers = field_validator("tickers")(domain.sorted_tickers_validator)
+    portfolio_ver: domain.Version
 
 
 class ModelDeleted(Event):
     day: domain.Day
+    portfolio_ver: domain.Version
     uid: domain.UID
 
 
 class ModelEvaluated(Event):
     day: domain.Day
+    portfolio_ver: domain.Version
     uid: domain.UID
 
 
 class ForecastsAnalyzed(Event):
     day: domain.Day
+    portfolio_ver: domain.Version
