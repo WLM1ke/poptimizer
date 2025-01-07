@@ -3,7 +3,7 @@ from datetime import date, datetime
 from enum import StrEnum, auto, unique
 from typing import Annotated, Final, NewType, Protocol
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, NonNegativeFloat, PlainSerializer
+from pydantic import AfterValidator, BaseModel, ConfigDict, PlainSerializer
 
 from poptimizer import consts
 
@@ -79,7 +79,7 @@ def after_start_date_validator(df: list[_RowWithDate]) -> list[_RowWithDate]:
     return df
 
 
-def sorted_days_validator(days: list[Day]) -> list[Day]:
+def _sorted_days_validator(days: list[Day]) -> list[Day]:
     day_pairs = itertools.pairwise(days)
 
     if not all(day < next_ for day, next_ in day_pairs):
@@ -88,13 +88,19 @@ def sorted_days_validator(days: list[Day]) -> list[Day]:
     return days
 
 
-def sorted_tickers_validator(tickers: tuple[Ticker, ...]) -> tuple[Ticker, ...]:
+TradingDays = Annotated[list[Day], AfterValidator(_sorted_days_validator)]
+
+
+def _sorted_tickers_validator(tickers: tuple[Ticker, ...]) -> tuple[Ticker, ...]:
     ticker_pairs = itertools.pairwise(tickers)
 
     if not all(ticker < next_ for ticker, next_ in ticker_pairs):
         raise ValueError("tickers are not sorted")
 
     return tickers
+
+
+Tickers = Annotated[tuple[Ticker, ...], AfterValidator(_sorted_tickers_validator)]
 
 
 class WithTickerField(Protocol):
@@ -108,15 +114,3 @@ def sorted_with_ticker_field_validator(rows: list[WithTickerField]) -> list[With
         raise ValueError("tickers are not sorted")
 
     return rows
-
-
-TradingDays = Annotated[list[Day], AfterValidator(sorted_days_validator)]
-
-
-class Position(BaseModel):
-    ticker: Ticker
-    weight: float = Field(ge=0, le=1)
-    norm_turnover: NonNegativeFloat
-
-
-Positions = Annotated[list[Position], AfterValidator(sorted_with_ticker_field_validator)]

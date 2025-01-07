@@ -8,6 +8,7 @@ import bson
 from poptimizer import consts, errors
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
+from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 from poptimizer.use_cases.dl import builder, trainer
 
@@ -62,16 +63,16 @@ class EvolutionHandler:
         msg: handler.DataChecked,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
         await self._init_evolution(ctx)
-        evolution = await self._init_step(ctx, msg.day)
+        evolution = await self._init_step(ctx, msg)
         model = await self._get_model(ctx, evolution)
         self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
 
         try:
-            await self._update_model_metrics(ctx, model, msg, evolution.test_days)
+            await self._update_model_metrics(ctx, evolution, model)
         except* errors.DomainError as err:
             await self._delete_model_on_error(ctx, evolution, model, err)
 
-            event = handler.ModelDeleted(day=msg.day, uid=model.uid)
+            event = handler.ModelDeleted(day=evolution.day, portfolio_ver=evolution.portfolio_ver, uid=model.uid)
         else:
             return await self._eval_model(ctx, evolution, model)
 
@@ -83,14 +84,18 @@ class EvolutionHandler:
             for _ in range(consts.INITIAL_POPULATION):
                 await ctx.get_for_update(evolve.Model, _random_uid())
 
-    async def _init_step(self, ctx: Ctx, day: domain.Day) -> evolve.Evolution:
+    async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> evolve.Evolution:
         evolution = await ctx.get_for_update(evolve.Evolution)
 
-        match evolution.day == day:
+        match evolution.day == msg.day:
             case True:
                 evolution.step += 1
             case False:
-                evolution.init_new_day(day)
+                evolution.init_new_day(msg.day)
+
+        if evolution.portfolio_ver < msg.portfolio_ver:
+            port = await ctx.get(portfolio.Portfolio)
+            evolution.update_portfolio_ver(port.ver, port.tickers, port.forecast_days)
 
         return evolution
 
@@ -124,15 +129,15 @@ class EvolutionHandler:
     async def _update_model_metrics(
         self,
         ctx: Ctx,
+        evolution: evolve.Evolution,
         model: evolve.Model,
-        msg: handler.DataChecked,
-        test_days: int,
     ) -> None:
-        model.day = msg.day
-        model.tickers = msg.tickers
-        model.forecast_days = msg.forecast_days
+        model.day = evolution.day
+        model.tickers = evolution.tickers
+        model.forecast_days = evolution.forecast_days
+
         tr = trainer.Trainer(self._builder)
-        await tr.update_model_metrics(ctx, model, test_days)
+        await tr.update_model_metrics(ctx, model, evolution.test_days)
 
     async def _delete_model_on_error(
         self,
@@ -176,7 +181,7 @@ class EvolutionHandler:
                     await ctx.delete(model)
                     self._lgr.info(f"Model(alfa={model.alfa:.2%}) deleted - low metrics")
 
-                    return handler.ModelDeleted(day=model.day, uid=model.uid)
+                    return handler.ModelDeleted(day=evolution.day, portfolio_ver=evolution.portfolio_ver, uid=model.uid)
 
                 evolution.new_base(model)
                 self._lgr.info(f"New base Model(alfa={model.alfa:.2%})")
@@ -187,7 +192,7 @@ class EvolutionHandler:
                     await ctx.delete(model)
                     self._lgr.info(f"Model(alfa={model.alfa:.2%}) deleted - low metrics")
 
-                    return handler.ModelDeleted(day=model.day, uid=model.uid)
+                    return handler.ModelDeleted(day=evolution.day, portfolio_ver=evolution.portfolio_ver, uid=model.uid)
 
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
@@ -203,7 +208,7 @@ class EvolutionHandler:
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"Current base Model(alfa={model.alfa:.2%}) reevaluated")
 
-        return handler.ModelEvaluated(day=model.day, uid=model.uid)
+        return handler.ModelEvaluated(day=evolution.day, portfolio_ver=evolution.portfolio_ver, uid=model.uid)
 
     def _should_delete(
         self,

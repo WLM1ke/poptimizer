@@ -59,6 +59,7 @@ class PortfolioUpdated(Event):
     trading_days: domain.TradingDays = Field(repr=False)
 
     @computed_field
+    @property
     def day(self) -> domain.Day:
         return self.trading_days[-1]
 

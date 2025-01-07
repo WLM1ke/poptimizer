@@ -27,6 +27,12 @@ class Position(BaseModel):
     accounts: AccountData = Field(default_factory=dict)
 
 
+class NormalizedPosition(BaseModel):
+    ticker: domain.Ticker
+    weight: float = Field(ge=0, le=1)
+    norm_turnover: NonNegativeFloat
+
+
 class Portfolio(domain.Entity):
     trading_interval: float = Field(consts.INITIAL_FORECAST_DAYS, ge=1)
     traded: bool = False
@@ -82,6 +88,7 @@ class Portfolio(domain.Entity):
             self.trading_interval = self.trading_interval + 1 / self.trading_interval - self.traded
             self.traded = False
 
+    @property
     def tickers(self) -> tuple[domain.Ticker, ...]:
         return tuple(position.ticker for position in self.positions)
 
@@ -166,12 +173,12 @@ class Portfolio(domain.Entity):
         return [position.turnover / port_value for position in self.positions]
 
     @property
-    def normalized_positions(self) -> domain.Positions:
+    def normalized_positions(self) -> list[NormalizedPosition]:
         values = [pos.price * sum(pos.accounts.values()) for pos in self.positions]
         port_value = sum(values) + sum(self.cash.values())
 
         return [
-            domain.Position(
+            NormalizedPosition(
                 ticker=pos.ticker,
                 weight=value / port_value,
                 norm_turnover=pos.turnover / port_value,

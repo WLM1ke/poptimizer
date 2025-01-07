@@ -32,10 +32,10 @@ class ForecastHandler:
             case handler.ModelEvaluated():
                 forecast.models.add(msg.uid)
 
-        if forecast.update_required():
+        if forecast.update_required(msg.portfolio_ver):
             await self._update(ctx, forecast)
 
-        return handler.ForecastsAnalyzed(day=msg.day)
+        return handler.ForecastsAnalyzed(day=forecast.day, portfolio_ver=forecast.portfolio_ver)
 
     async def _update(
         self,
@@ -43,13 +43,12 @@ class ForecastHandler:
         forecast: forecasts.Forecast,
     ) -> None:
         port = await ctx.get(portfolio.Portfolio)
-        tickers = port.tickers()
 
         models: list[evolve.Model] = []
 
         for uid in frozenset(forecast.models):
             model = await ctx.get(evolve.Model, uid)
-            if model.day != port.day or model.tickers != tickers or model.forecast_days != port.forecast_days:
+            if model.day != port.day or model.tickers != port.tickers or model.forecast_days != port.forecast_days:
                 forecast.models.remove(uid)
                 continue
 
@@ -71,9 +70,10 @@ class ForecastHandler:
         forecast: forecasts.Forecast,
         models: list[evolve.Model],
     ) -> None:
-        tickers = port.tickers()
-        weights = np.array(port.weights()).reshape(-1, 1)
-        turnover = np.array(port.normalized_turnover()).reshape(-1, 1)
+        positions = port.normalized_positions
+
+        weights = np.array([pos.weight for pos in positions]).reshape(-1, 1)
+        turnover = np.array([pos.norm_turnover for pos in positions]).reshape(-1, 1)
 
         means: list[NDArray[np.double]] = []
         port_means: list[float] = []
@@ -86,7 +86,7 @@ class ForecastHandler:
         costs: list[NDArray[np.double]] = []
 
         risk_tol: list[float] = []
-        p_value = consts.P_VALUE * 2 / len(tickers)
+        p_value = consts.P_VALUE * 2 / len(positions)
 
         for model in models:
             mean: NDArray[np.double] = np.array(model.mean)
@@ -149,11 +149,11 @@ class ForecastHandler:
         median_risk_tol = np.median(risk_tol)
 
         forecast.positions = []
-        for n, ticker in enumerate(tickers):
+        for n, pos in enumerate(positions):
             forecast.positions.append(
                 forecasts.Position(
-                    ticker=ticker,
-                    weight=weights[n, 0],
+                    ticker=pos.ticker,
+                    weight=pos.weight,
                     mean=median_mean[n],
                     std=median_std[n],
                     beta=median_betas[n],
@@ -164,7 +164,7 @@ class ForecastHandler:
             )
 
         forecast.risk_tolerance = median_risk_tol.item()
-        forecast.forecasts_count = len(means)
+        forecast.forecasts_count = len(models)
         forecast.portfolio_ver = port.ver
 
         bye_grad, bye_ticker = max((pos.grad_lower, pos.ticker) for pos in forecast.positions)

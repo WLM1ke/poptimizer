@@ -12,6 +12,7 @@ from poptimizer.domain import domain
 from poptimizer.domain.div import div
 from poptimizer.domain.dl.features import Features, NumFeat
 from poptimizer.domain.moex import quotes
+from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
 _T_PLUS_1_START: Final = datetime(2023, 7, 31)
@@ -20,16 +21,13 @@ _T_PLUS_1_START: Final = datetime(2023, 7, 31)
 class QuotesFeatHandler:
     async def __call__(self, ctx: handler.Ctx, msg: handler.PortfolioUpdated) -> handler.QuotesFeatUpdated:
         index = pd.DatetimeIndex(msg.trading_days)
+        port = await ctx.get(portfolio.Portfolio)
 
         async with asyncio.TaskGroup() as tg:
-            for pos in msg.positions:
+            for pos in port.positions:
                 tg.create_task(_build_features(ctx, domain.UID(pos.ticker), index))
 
-        return handler.QuotesFeatUpdated(
-            day=msg.day,
-            positions=msg.positions,
-            forecast_days=msg.forecast_days,
-        )
+        return handler.QuotesFeatUpdated(day=msg.day)
 
 
 async def _build_features(ctx: handler.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> None:

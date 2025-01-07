@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, field_validator
 from poptimizer import errors
 from poptimizer.domain import domain
 from poptimizer.domain.moex import trading_day
+from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
 # Часовой пояс MOEX
@@ -52,25 +53,30 @@ class DataHandler:
 
         new_last_check = _last_day()
         if table.last_check >= new_last_check:
-            return handler.DataChecked(
-                day=table.day,
-                tickers=tuple(pos.ticker for pos in table.positions),
-                forecast_days=table.forecast_days,
-            )
+            return await self._check_portfolio_ver(ctx, table)
 
         last_day = await self._get_last_trading_day_from_moex()
 
         if table.day >= last_day:
             table = await ctx.get_for_update(trading_day.TradingDay)
-            table.update_last_check(new_last_check)
+            table.last_check = new_last_check
 
-            return handler.DataChecked(
-                day=table.last_check,
-                tickers=tuple(pos.ticker for pos in table.positions),
-                forecast_days=table.forecast_days,
-            )
+            return await self._check_portfolio_ver(ctx, table)
 
         return handler.NewDataPublished(day=last_day)
+
+    async def _check_portfolio_ver(self, ctx: handler.Ctx, table: trading_day.TradingDay) -> handler.DataChecked:
+        port = await ctx.get(portfolio.Portfolio)
+        if port.ver > table.portfolio_ver:
+            table = await ctx.get_for_update(trading_day.TradingDay)
+            table.portfolio_ver = port.ver
+
+            self._lgr.warning("New portfolio version %s", table.portfolio_ver)
+
+        return handler.DataChecked(
+            day=table.day,
+            portfolio_ver=table.portfolio_ver,
+        )
 
     async def _get_last_trading_day_from_moex(self) -> domain.Day:
         try:
@@ -92,14 +98,10 @@ class DataHandler:
 
     async def update(self, ctx: handler.Ctx, msg: handler.QuotesFeatUpdated) -> handler.DataChecked:
         table = await ctx.get_for_update(trading_day.TradingDay)
-        table.update_last_trading_day(msg.day, msg.positions, msg.forecast_days)
-        self._lgr.warning("Data updated for %s", msg.day)
+        table.update_last_trading_day(msg.day)
+        self._lgr.warning("Moex data updated for %s", msg.day)
 
-        return handler.DataChecked(
-            day=table.last_check,
-            tickers=tuple(pos.ticker for pos in table.positions),
-            forecast_days=table.forecast_days,
-        )
+        return await self._check_portfolio_ver(ctx, table)
 
 
 def _last_day() -> date:

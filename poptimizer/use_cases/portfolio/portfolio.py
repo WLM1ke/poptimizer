@@ -35,11 +35,7 @@ class PortfolioHandler:
             change = new_value / old_value - 1
             self._lgr.warning(f"Portfolio value changed {change:.2%} - {old_value:_.0f} {new_value:_.0f}")
 
-        return handler.PortfolioUpdated(
-            trading_days=msg.trading_days,
-            positions=port.normalized_positions,
-            forecast_days=port.forecast_days,
-        )
+        return handler.PortfolioUpdated(trading_days=msg.trading_days)
 
     async def _prepare_sec_cache(
         self,

@@ -1,6 +1,14 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field, FiniteFloat, NonNegativeFloat, PlainSerializer, PositiveInt, field_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    Field,
+    FiniteFloat,
+    NonNegativeFloat,
+    PlainSerializer,
+    PositiveInt,
+)
 
 from poptimizer.domain import domain
 
@@ -24,22 +32,25 @@ class Forecast(domain.Entity):
             return_type=list,
         ),
     ] = Field(default_factory=set)
-    forecasts_count: PositiveInt = 1
     portfolio_ver: domain.Version = domain.Version(0)
+    forecasts_count: PositiveInt = 1
+    positions: Annotated[
+        list[Position],
+        AfterValidator(domain.sorted_with_ticker_field_validator),
+    ] = Field(default_factory=list)
     risk_tolerance: float = Field(0, ge=0, le=1)
     mean: float = 0
     std: float = 0
-    positions: list[Position] = Field(default_factory=list)
-
-    _must_be_sorted_by_ticker = field_validator("positions")(domain.sorted_with_ticker_field_validator)
 
     def init_day(self, day: domain.Day) -> None:
-        self.models.clear()
-        self.forecasts_count = 1
         self.day = day
+        self.models.clear()
 
-    def update_required(self) -> bool:
+    def update_required(self, portfolio_ver: domain.Version) -> bool:
         if len(self.models) <= 1:
             return False
+
+        if portfolio_ver > self.portfolio_ver:
+            return True
 
         return len(self.models) ** 0.5 - self.forecasts_count**0.5 >= 1
