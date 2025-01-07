@@ -111,6 +111,9 @@ class Evolution(domain.Entity):
         tickers: domain.Tickers,
         forecast_days: int,
     ) -> None:
+        if self.tickers != tickers or self.forecast_days != forecast_days:
+            self.state = State.EVAL_NEW_BASE_MODEL
+
         self.portfolio_ver = portfolio_ver
         self.tickers = tickers
         self.forecast_days = forecast_days

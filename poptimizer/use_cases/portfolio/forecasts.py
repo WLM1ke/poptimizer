@@ -8,6 +8,7 @@ from numpy.typing import NDArray
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
 from poptimizer import consts
+from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
@@ -43,12 +44,14 @@ class ForecastHandler:
         forecast: forecasts.Forecast,
     ) -> None:
         port = await ctx.get(portfolio.Portfolio)
+        positions = port.normalized_positions
+        port_tickers = tuple(pos.ticker for pos in positions)
 
         models: list[evolve.Model] = []
 
         for uid in frozenset(forecast.models):
             model = await ctx.get(evolve.Model, uid)
-            if model.day != port.day or model.tickers != port.tickers or model.forecast_days != port.forecast_days:
+            if model.day != port.day or model.tickers != port_tickers or model.forecast_days != port.forecast_days:
                 forecast.models.remove(uid)
                 continue
 
@@ -57,21 +60,15 @@ class ForecastHandler:
         if len(models) <= 1:
             return
 
-        await asyncio.to_thread(
-            self._update_forecast,
-            port,
-            forecast,
-            models,
-        )
+        await asyncio.to_thread(self._update_forecast, forecast, models, positions, port.ver)
 
     def _update_forecast(
         self,
-        port: portfolio.Portfolio,
         forecast: forecasts.Forecast,
         models: list[evolve.Model],
+        positions: list[portfolio.NormalizedPosition],
+        portfolio_ver: domain.Version,
     ) -> None:
-        positions = port.normalized_positions
-
         weights = np.array([pos.weight for pos in positions]).reshape(-1, 1)
         turnover = np.array([pos.norm_turnover for pos in positions]).reshape(-1, 1)
 
@@ -165,7 +162,7 @@ class ForecastHandler:
 
         forecast.risk_tolerance = median_risk_tol.item()
         forecast.forecasts_count = len(models)
-        forecast.portfolio_ver = port.ver
+        forecast.portfolio_ver = portfolio_ver
 
         bye_grad, bye_ticker = max((pos.grad_lower, pos.ticker) for pos in forecast.positions)
         sell_grad, sell_ticker = min((pos.grad_upper, pos.ticker) for pos in forecast.positions if pos.weight)

@@ -95,7 +95,8 @@ class EvolutionHandler:
 
         if evolution.portfolio_ver < msg.portfolio_ver:
             port = await ctx.get(portfolio.Portfolio)
-            evolution.update_portfolio_ver(port.ver, port.tickers, port.forecast_days)
+            tickers = tuple(pos.ticker for pos in port.positions)
+            evolution.update_portfolio_ver(port.ver, tickers, port.forecast_days)
 
         return evolution
 

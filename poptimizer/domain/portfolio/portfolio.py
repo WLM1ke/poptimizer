@@ -88,10 +88,6 @@ class Portfolio(domain.Entity):
             self.trading_interval = self.trading_interval + 1 / self.trading_interval - self.traded
             self.traded = False
 
-    @property
-    def tickers(self) -> tuple[domain.Ticker, ...]:
-        return tuple(position.ticker for position in self.positions)
-
     def create_acount(self, name: domain.AccName) -> None:
         if name in self.account_names:
             raise errors.DomainError(f"account {name} already exists")
@@ -159,12 +155,6 @@ class Portfolio(domain.Entity):
 
                 if not position.accounts:
                     self.traded = True
-
-    def weights(self) -> list[float]:
-        values = [position.price * sum(position.accounts.values()) for position in self.positions]
-        port_value = sum(values) + sum(self.cash.values())
-
-        return [value / port_value for value in values]
 
     def normalized_turnover(self) -> list[float]:
         values = [position.price * sum(position.accounts.values()) for position in self.positions]
