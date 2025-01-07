@@ -30,7 +30,7 @@ class PortfolioHandler:
         if old_forecast_days != port.forecast_days:
             self._lgr.warning("Forecast days changed - %d -> %d", old_forecast_days, port.forecast_days)
 
-        if not port.ver and old_day != port.day:
+        if port.ver and old_day != port.day:
             new_value = port.value
             change = new_value / old_value - 1
             self._lgr.warning(f"Portfolio value changed {change:.2%} - {old_value:_.0f} {new_value:_.0f}")
