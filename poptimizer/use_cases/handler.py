@@ -48,18 +48,16 @@ class DivUpdated(Event):
 
 
 class QuotesUpdated(Event):
-    trading_days: list[domain.Day] = Field(repr=False)
+    trading_days: domain.TradingDays = Field(repr=False)
 
     @property
     def day(self) -> domain.Day:
         return self.trading_days[-1]
-
-    _sorted_trading_days = field_validator("trading_days")(domain.sorted_days_validator)
 
 
 class PortfolioUpdated(Event):
     tickers: tuple[domain.Ticker, ...] = Field(repr=False)
-    trading_days: list[domain.Day] = Field(repr=False)
+    trading_days: domain.TradingDays = Field(repr=False)
     forecast_days: PositiveInt
 
     @property
@@ -67,12 +65,11 @@ class PortfolioUpdated(Event):
         return self.trading_days[-1]
 
     _sorted_tickers = field_validator("tickers")(domain.sorted_tickers_validator)
-    _sorted_trading_days = field_validator("trading_days")(domain.sorted_days_validator)
 
 
 class QuotesFeatUpdated(Event):
     tickers: tuple[domain.Ticker, ...] = Field(repr=False)
-    trading_days: list[domain.Day] = Field(repr=False)
+    trading_days: domain.TradingDays = Field(repr=False)
     forecast_days: PositiveInt
 
     @property
@@ -80,7 +77,6 @@ class QuotesFeatUpdated(Event):
         return self.trading_days[-1]
 
     _sorted_tickers = field_validator("tickers")(domain.sorted_tickers_validator)
-    _sorted_trading_days = field_validator("trading_days")(domain.sorted_days_validator)
 
 
 class DivStatusUpdated(Event):

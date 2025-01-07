@@ -110,6 +110,9 @@ def sorted_with_ticker_field_validator(rows: list[WithTickerField]) -> list[With
     return rows
 
 
+TradingDays = Annotated[list[Day], AfterValidator(sorted_days_validator)]
+
+
 class Position(BaseModel):
     ticker: Ticker
     weight: float = Field(ge=0, le=1)
