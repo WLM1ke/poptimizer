@@ -51,10 +51,10 @@ class DataHandler:
         table = await ctx.get(trading_day.TradingDay)
 
         new_last_check = _last_day()
-        if table.day == new_last_check:
+        if table.last_check >= new_last_check:
             return handler.DataChecked(
-                day=table.last,
-                tickers=table.tickers,
+                day=table.day,
+                tickers=tuple(pos.ticker for pos in table.positions),
                 forecast_days=table.forecast_days,
             )
 
@@ -65,8 +65,8 @@ class DataHandler:
             table.update_last_check(new_last_check)
 
             return handler.DataChecked(
-                day=table.last,
-                tickers=table.tickers,
+                day=table.last_check,
+                tickers=tuple(pos.ticker for pos in table.positions),
                 forecast_days=table.forecast_days,
             )
 
@@ -92,12 +92,12 @@ class DataHandler:
 
     async def update(self, ctx: handler.Ctx, msg: handler.QuotesFeatUpdated) -> handler.DataChecked:
         table = await ctx.get_for_update(trading_day.TradingDay)
-        table.update_last_trading_day(msg.day, msg.tickers, msg.forecast_days)
+        table.update_last_trading_day(msg.day, msg.positions, msg.forecast_days)
         self._lgr.warning("Data updated for %s", msg.day)
 
         return handler.DataChecked(
-            day=table.last,
-            tickers=table.tickers,
+            day=table.last_check,
+            tickers=tuple(pos.ticker for pos in table.positions),
             forecast_days=table.forecast_days,
         )
 

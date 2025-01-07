@@ -1,26 +1,24 @@
-from pydantic import Field, PositiveInt, field_validator
+from pydantic import Field, PositiveInt
 
 from poptimizer import consts
 from poptimizer.domain import domain
 
 
 class TradingDay(domain.Entity):
-    last: domain.Day = consts.START_DAY
-    tickers: tuple[domain.Ticker, ...] = Field(default_factory=tuple)
-    forecast_days: PositiveInt = 1
-
-    _sorted_tickers = field_validator("tickers")(domain.sorted_tickers_validator)
+    last_check: domain.Day = consts.START_DAY
+    positions: domain.Positions = Field(repr=False)
+    forecast_days: PositiveInt
 
     def update_last_check(self, day: domain.Day) -> None:
-        self.day = day
+        self.last_check = day
 
     def update_last_trading_day(
         self,
         day: domain.Day,
-        tickers: tuple[domain.Ticker, ...],
+        positions: domain.Positions,
         forecast_days: int,
     ) -> None:
         self.day = day
-        self.last = day
-        self.tickers = tickers
+        self.last_check = day
+        self.positions = positions
         self.forecast_days = forecast_days

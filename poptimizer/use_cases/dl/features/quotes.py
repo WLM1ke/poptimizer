@@ -26,8 +26,8 @@ class QuotesFeatHandler:
                 tg.create_task(_build_features(ctx, domain.UID(pos.ticker), index))
 
         return handler.QuotesFeatUpdated(
-            tickers=tuple(pos.ticker for pos in msg.positions),
-            trading_days=msg.trading_days,
+            day=msg.day,
+            positions=msg.positions,
             forecast_days=msg.forecast_days,
         )
 
