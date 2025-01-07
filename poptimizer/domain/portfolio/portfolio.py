@@ -168,6 +168,8 @@ class Portfolio(domain.Entity):
     def normalized_positions(self) -> list[NormalizedPosition]:
         values = [pos.price * sum(pos.accounts.values()) for pos in self.positions]
         port_value = sum(values) + sum(self.cash.values())
+        if not port_value:
+            port_value = 1
 
         return [
             NormalizedPosition(
