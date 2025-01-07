@@ -3,7 +3,7 @@ from datetime import date, datetime
 from enum import StrEnum, auto, unique
 from typing import Annotated, Final, NewType, Protocol
 
-from pydantic import BaseModel, ConfigDict, PlainSerializer
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, NonNegativeFloat, PlainSerializer
 
 from poptimizer import consts
 
@@ -108,3 +108,12 @@ def sorted_with_ticker_field_validator(rows: list[WithTickerField]) -> list[With
         raise ValueError("tickers are not sorted")
 
     return rows
+
+
+class Position(BaseModel):
+    ticker: Ticker
+    weight: float = Field(ge=0, le=1)
+    norm_turnover: NonNegativeFloat
+
+
+Positions = Annotated[list[Position], AfterValidator(sorted_with_ticker_field_validator)]
