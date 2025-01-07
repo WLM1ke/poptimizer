@@ -57,7 +57,7 @@ class ForecastHandler:
 
             models.append(model)
 
-        if len(models) <= 1:
+        if len(models) <= 1 or not any(pos.weight for pos in positions):
             return
 
         await asyncio.to_thread(self._update_forecast, forecast, models, positions, port.ver)
