@@ -1,6 +1,7 @@
 from datetime import date
+from typing import Annotated
 
-from pydantic import Field, field_validator
+from pydantic import AfterValidator, Field
 
 from poptimizer import errors
 from poptimizer.domain import domain
@@ -16,7 +17,10 @@ class Row(domain.Row):
 
 
 class USD(domain.Entity):
-    df: list[Row] = Field(default_factory=list[Row])
+    df: Annotated[
+        list[Row],
+        AfterValidator(domain.sorted_by_day_validator),
+    ] = Field(default_factory=list[Row])
 
     def update(self, update_day: domain.Day, rows: list[Row]) -> None:
         self.day = update_day
@@ -38,5 +42,3 @@ class USD(domain.Entity):
             return None
 
         return self.df[-1].day
-
-    _must_be_sorted_by_date = field_validator("df")(domain.sorted_by_day_validator)

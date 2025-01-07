@@ -2,6 +2,7 @@ import bisect
 from typing import Annotated, Self
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     Field,
     NonNegativeFloat,
@@ -44,7 +45,10 @@ class Portfolio(domain.Entity):
         ),
     ] = Field(default_factory=set)
     cash: AccountData = Field(default_factory=dict)
-    positions: list[Position] = Field(default_factory=list)
+    positions: Annotated[
+        list[Position],
+        AfterValidator(domain.sorted_with_ticker_field_validator),
+    ] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _positions_have_know_accounts(self) -> Self:
@@ -53,8 +57,6 @@ class Portfolio(domain.Entity):
                 raise ValueError(f"{position.ticker} has unknown accounts {unknown_accounts}")
 
         return self
-
-    _must_be_sorted_by_ticker = field_validator("positions")(domain.sorted_with_ticker_field_validator)
 
     @field_validator("positions")
     def _positions_are_multiple_of_lots(cls, positions: list[Position]) -> list[Position]:

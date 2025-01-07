@@ -1,7 +1,7 @@
 from datetime import date, timedelta
-from typing import Final
+from typing import Annotated, Final
 
-from pydantic import Field, field_validator
+from pydantic import AfterValidator, Field, field_validator
 
 from poptimizer import errors
 from poptimizer.domain import domain
@@ -22,7 +22,10 @@ class Row(domain.Row):
 
 
 class CPI(domain.Entity):
-    df: list[Row] = Field(default_factory=list[Row])
+    df: Annotated[
+        list[Row],
+        AfterValidator(domain.sorted_by_day_validator),
+    ] = Field(default_factory=list[Row])
 
     def update(self, update_day: domain.Day, rows: list[Row]) -> None:
         self.day = update_day
@@ -31,5 +34,3 @@ class CPI(domain.Entity):
             raise errors.DomainError("data mismatch error")
 
         self.df = rows
-
-    _must_be_sorted_by_date = field_validator("df")(domain.sorted_by_day_validator)
