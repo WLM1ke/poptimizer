@@ -68,9 +68,8 @@ class Portfolio(domain.Entity):
     def forecast_days(self) -> int:
         return round(self.trading_interval)
 
-    def update_forecast_days(self, trading_days: list[domain.Day]) -> bool:
+    def update_forecast_days(self, trading_days: list[domain.Day]) -> None:
         old_day = self.day
-        old_forecast_days = self.forecast_days
         self.day = trading_days[-1]
 
         if not self.ver:
@@ -82,8 +81,6 @@ class Portfolio(domain.Entity):
 
             self.trading_interval = self.trading_interval + 1 / self.trading_interval - self.traded
             self.traded = False
-
-        return old_forecast_days != self.forecast_days
 
     def tickers(self) -> tuple[domain.Ticker, ...]:
         return tuple(position.ticker for position in self.positions)
@@ -168,6 +165,7 @@ class Portfolio(domain.Entity):
 
         return [position.turnover / port_value for position in self.positions]
 
+    @property
     def normalized_positions(self) -> domain.Positions:
         values = [pos.price * sum(pos.accounts.values()) for pos in self.positions]
         port_value = sum(values) + sum(self.cash.values())
@@ -180,3 +178,9 @@ class Portfolio(domain.Entity):
             )
             for pos, value in zip(self.positions, values, strict=True)
         ]
+
+    @property
+    def value(self) -> float:
+        values = [pos.price * sum(pos.accounts.values()) for pos in self.positions]
+
+        return sum(values) + sum(self.cash.values())

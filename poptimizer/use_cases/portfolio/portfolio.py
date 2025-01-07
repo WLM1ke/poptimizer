@@ -16,17 +16,28 @@ class PortfolioHandler:
     async def __call__(self, ctx: handler.Ctx, msg: handler.QuotesUpdated) -> handler.PortfolioUpdated:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
+        old_day = port.day
+        old_value = port.value
+        old_forecast_days = port.forecast_days
+
         sec_cache = await self._prepare_sec_cache(ctx, msg.day, port.forecast_days)
         min_turnover = _calc_min_turnover(port, sec_cache)
 
         self._update_existing_positions(port, sec_cache, min_turnover)
         self._add_new_liquid(port, sec_cache, min_turnover)
-        if port.update_forecast_days(msg.trading_days):
-            self._lgr.warning("Forecast days changed - %d", port.forecast_days)
+        port.update_forecast_days(msg.trading_days)
+
+        if old_forecast_days != port.forecast_days:
+            self._lgr.warning("Forecast days changed - %d -> %d", old_forecast_days, port.forecast_days)
+
+        if not port.ver and old_day != port.day:
+            new_value = port.value
+            change = new_value / old_value - 1
+            self._lgr.warning(f"Portfolio value changed {change:.2%} - {old_value:_.0f} {new_value:_.0f}")
 
         return handler.PortfolioUpdated(
-            tickers=port.tickers(),
             trading_days=msg.trading_days,
+            positions=port.normalized_positions,
             forecast_days=port.forecast_days,
         )
 

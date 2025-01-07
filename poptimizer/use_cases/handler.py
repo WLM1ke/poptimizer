@@ -56,15 +56,13 @@ class QuotesUpdated(Event):
 
 
 class PortfolioUpdated(Event):
-    tickers: tuple[domain.Ticker, ...] = Field(repr=False)
     trading_days: domain.TradingDays = Field(repr=False)
+    positions: domain.Positions = Field(repr=False)
     forecast_days: PositiveInt
 
     @property
     def day(self) -> domain.Day:
         return self.trading_days[-1]
-
-    _sorted_tickers = field_validator("tickers")(domain.sorted_tickers_validator)
 
 
 class QuotesFeatUpdated(Event):

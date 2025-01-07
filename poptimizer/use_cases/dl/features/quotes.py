@@ -22,11 +22,11 @@ class QuotesFeatHandler:
         index = pd.DatetimeIndex(msg.trading_days)
 
         async with asyncio.TaskGroup() as tg:
-            for ticker in msg.tickers:
-                tg.create_task(_build_features(ctx, domain.UID(ticker), index))
+            for pos in msg.positions:
+                tg.create_task(_build_features(ctx, domain.UID(pos.ticker), index))
 
         return handler.QuotesFeatUpdated(
-            tickers=msg.tickers,
+            tickers=tuple(pos.ticker for pos in msg.positions),
             trading_days=msg.trading_days,
             forecast_days=msg.forecast_days,
         )
