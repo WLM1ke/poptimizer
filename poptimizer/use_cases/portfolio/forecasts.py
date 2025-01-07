@@ -171,7 +171,7 @@ class ForecastHandler:
         sell_grad, sell_ticker = min((pos.grad_upper, pos.ticker) for pos in forecast.positions if pos.weight)
         if bye_grad > sell_grad:
             self._lgr.warning(
-                "New update of %d forecasts - sell %s and buy %s",
+                "New %d forecasts update - sell %s and buy %s",
                 forecast.forecasts_count,
                 sell_ticker,
                 bye_ticker,

@@ -10,12 +10,21 @@
 	let forecast = $derived(data);
 	let status = $derived(forecast.portfolio_ver != portfolioView.ver ? "outdate" : "");
 
+	const firstRetry = 1000;
+	const backOffFactor = 2;
+	let retryDelay = firstRetry;
+
 	$effect(() => {
 		if (forecast.portfolio_ver != portfolioView.ver) {
 			setTimeout(async () => {
 				invalidate(`/api/forecast`);
-			}, 1000);
+			}, retryDelay);
+			retryDelay *= backOffFactor;
+
+			return;
 		}
+
+		retryDelay = firstRetry;
 	});
 </script>
 
