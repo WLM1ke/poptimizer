@@ -33,6 +33,7 @@ class Forecast(domain.Entity):
         ),
     ] = Field(default_factory=set)
     portfolio_ver: domain.Version = domain.Version(0)
+    forecast_days: PositiveInt = 1
     forecasts_count: PositiveInt = 1
     positions: Annotated[
         list[Position],

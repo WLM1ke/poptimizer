@@ -60,7 +60,7 @@ class ForecastHandler:
         if len(models) <= 1 or not any(pos.weight for pos in positions):
             return
 
-        await asyncio.to_thread(self._update_forecast, forecast, models, positions, port.ver)
+        await asyncio.to_thread(self._update_forecast, forecast, models, positions, port.ver, port.forecast_days)
 
     def _update_forecast(
         self,
@@ -68,6 +68,7 @@ class ForecastHandler:
         models: list[evolve.Model],
         positions: list[portfolio.NormalizedPosition],
         portfolio_ver: domain.Version,
+        forecast_days: int,
     ) -> None:
         weights = np.array([pos.weight for pos in positions]).reshape(-1, 1)
         turnover = np.array([pos.norm_turnover for pos in positions]).reshape(-1, 1)
@@ -163,6 +164,7 @@ class ForecastHandler:
         forecast.risk_tolerance = median_risk_tol.item()
         forecast.forecasts_count = len(models)
         forecast.portfolio_ver = portfolio_ver
+        forecast.forecast_days = forecast_days
 
         bye_grad, bye_ticker = max((pos.grad_lower, pos.ticker) for pos in forecast.positions)
         sell_grad, sell_ticker = min((pos.grad_upper, pos.ticker) for pos in forecast.positions if pos.weight)

@@ -14,6 +14,7 @@ export interface Forecast {
 	day: string;
 	portfolio_ver: number;
 	forecasts_count: number;
+	forecast_days: number;
 	risk_tolerance: number;
 	mean: number;
 	std: number;

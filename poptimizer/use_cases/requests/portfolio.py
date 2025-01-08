@@ -68,6 +68,7 @@ class Forecast(handler.DTO):
     std: float = 0
     positions: list[forecasts.Position]
     forecasts_count: int
+    forecast_days: int
     risk_tolerance: float
 
     @classmethod
@@ -79,6 +80,7 @@ class Forecast(handler.DTO):
             std=forecast.std,
             positions=forecast.positions,
             forecasts_count=forecast.forecasts_count,
+            forecast_days=forecast.forecast_days,
             risk_tolerance=forecast.risk_tolerance,
         )
 
