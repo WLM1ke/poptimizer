@@ -86,6 +86,7 @@ task build
 Frontend сделан на `TypeScript` и `Svelte`, а Backend на `asyncio` `Python`, в том числе:
 
 - HTTP клиент и сервер `aiohttp`
+- Хранение данных `async` `PyMongo`
 - Валидация и сериализация данных `Pydantic`
 - Обучения моделей `PyTorch`
 - Статистические тесты и оптимизация `SciPy`
