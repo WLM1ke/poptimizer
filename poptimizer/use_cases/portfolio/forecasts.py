@@ -8,7 +8,6 @@ from numpy.typing import NDArray
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
 from poptimizer import consts
-from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
@@ -60,15 +59,18 @@ class ForecastHandler:
         if len(models) <= 1 or not any(pos.weight for pos in positions):
             return
 
-        await asyncio.to_thread(self._update_forecast, forecast, models, positions, port.ver, port.forecast_days)
+        forecast.day = port.day
+        forecast.portfolio_ver = port.ver
+        forecast.forecast_days = port.forecast_days
+        forecast.forecasts_count = len(models)
+
+        await asyncio.to_thread(self._update_forecast, forecast, models, positions)
 
     def _update_forecast(
         self,
         forecast: forecasts.Forecast,
         models: list[evolve.Model],
         positions: list[portfolio.NormalizedPosition],
-        portfolio_ver: domain.Version,
-        forecast_days: int,
     ) -> None:
         weights = np.array([pos.weight for pos in positions]).reshape(-1, 1)
         turnover = np.array([pos.norm_turnover for pos in positions]).reshape(-1, 1)
@@ -162,9 +164,6 @@ class ForecastHandler:
             )
 
         forecast.risk_tolerance = median_risk_tol.item()
-        forecast.forecasts_count = len(models)
-        forecast.portfolio_ver = portfolio_ver
-        forecast.forecast_days = forecast_days
 
         bye_grad, bye_ticker = max((pos.grad_lower, pos.ticker) for pos in forecast.positions)
         sell_grad, sell_ticker = min((pos.grad_upper, pos.ticker) for pos in forecast.positions if pos.weight)
