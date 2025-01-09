@@ -25,7 +25,7 @@ class ForecastHandler:
     ) -> handler.ForecastsAnalyzed | None:
         forecast = await ctx.get_for_update(forecasts.Forecast)
         if forecast.day < msg.day:
-            forecast.init_day(msg.day)
+            forecast.init_day()
 
         match msg:
             case handler.ModelDeleted():
