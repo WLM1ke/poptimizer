@@ -176,7 +176,6 @@ class Trainer:
             net.eval()
 
             alfas: list[float] = []
-            llh: list[float] = []
 
             for batch in data_loaders.test(data):
                 if self._stopping:
@@ -195,7 +194,6 @@ class Trainer:
                 self._lgr.info("%s / LLH = %8.5f", rez, loss)
 
                 alfas.append(rez.ret - rez.avr)
-                llh.append(loss)
 
         return alfas
 
