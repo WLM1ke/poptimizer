@@ -33,7 +33,7 @@ class PortfolioHandler:
         if old_value and old_day != port.day:
             new_value = port.value
             change = new_value / old_value - 1
-            self._lgr.warning(f"Portfolio value changed {change:.2%} - {old_value:_.0f} {new_value:_.0f}")
+            self._lgr.warning(f"Portfolio value changed {change:.2%} - {old_value:_.0f} -> {new_value:_.0f}")
 
         return handler.PortfolioUpdated(trading_days=msg.trading_days)
 
