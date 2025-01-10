@@ -43,7 +43,8 @@ class Forecast(domain.Entity):
     mean: float = 0
     std: float = 0
 
-    def init_day(self) -> None:
+    def init_day(self, day: domain.Day) -> None:
+        self.day = day
         self.models.clear()
 
     def update_required(self, portfolio_ver: domain.Version) -> bool:
