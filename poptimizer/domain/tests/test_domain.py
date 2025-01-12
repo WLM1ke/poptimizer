@@ -80,12 +80,12 @@ def test_after_start_date_validator(rows: list[_TestDayRow], *, err: bool) -> No
 )
 def test_sorted_tickers_validator(tickers: tuple[domain.Ticker, ...], *, err: bool) -> None:
     if not err:
-        assert tickers == domain.sorted_tickers_validator(tickers)
+        assert tickers == domain._sorted_tickers_validator(tickers)
 
         return
 
     with pytest.raises(ValueError, match="tickers are not sorted"):
-        domain.sorted_tickers_validator(tickers)
+        domain._sorted_tickers_validator(tickers)
 
 
 @pytest.mark.parametrize(
@@ -100,12 +100,12 @@ def test_sorted_tickers_validator(tickers: tuple[domain.Ticker, ...], *, err: bo
 )
 def test_sorted_days_validator(days: list[domain.Day], *, err: bool) -> None:
     if not err:
-        assert days == domain.sorted_days_validator(days)
+        assert days == domain._sorted_days_validator(days)
 
         return
 
     with pytest.raises(ValueError, match="days are not sorted"):
-        domain.sorted_days_validator(days)
+        domain._sorted_days_validator(days)
 
 
 class _TestTickerRow(BaseModel):

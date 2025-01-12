@@ -96,6 +96,7 @@ unfixable = [
     "ANN001",   # Missing type annotation for function argument
     "ANN201",   # Missing return type annotation for public function
     "S101",     # Use of `assert` detected
+    "SLF001",   # Private member accessed
     "PLR2004",  # Magic value used in comparison
 ]
 
