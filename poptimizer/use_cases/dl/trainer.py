@@ -127,7 +127,7 @@ class Trainer:
         batch_size: int,
     ) -> None:
         train_dl = data_loaders.train(data, batch_size)
-        optimizer = optim.AdamW(net.parameters())  # type: ignore[reportPrivateImportUsage]
+        optimizer = optim.NAdam(net.parameters())  # type: ignore[reportPrivateImportUsage]
 
         steps_per_epoch = len(train_dl)
         total_steps = 1 + int(steps_per_epoch * scheduler.epochs)
