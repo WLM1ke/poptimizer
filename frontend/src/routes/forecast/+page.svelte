@@ -31,7 +31,7 @@
 <Card
 	upper={`Date: ${forecast.day} ${status}`}
 	main={`Mean: ${formatPercent(forecast.mean)} / Std: ${formatPercent(forecast.std)}`}
-	lower={`Interval: ${forecast.forecast_days} day${forecast.forecast_days > 1 ? "s" : ""} / Risk tolerance: ${formatPercent(forecast.risk_tolerance)}`}
+	lower={`Interval: ${forecast.forecast_days} day${forecast.forecast_days > 1 ? "s" : ""} / Risk aversion: ${formatPercent(1 - forecast.risk_tolerance)}`}
 />
 <Table headers={["Ticker", "Mean", "Std", "Beta", "Gradient"]}>
 	{#snippet rows()}
