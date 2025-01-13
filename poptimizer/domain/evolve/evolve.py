@@ -59,7 +59,7 @@ class Model(domain.Entity):
         risk_tol = genes.risk.risk_tolerance
         history = genes.batch.history_days
 
-        return f"{self.__class__.__name__}(ver={self.ver}, risk_tol={risk_tol:.2%}, history={history:.2f})"
+        return f"{self.__class__.__name__}(ver={self.ver}, risk_aversion={1 - risk_tol:.2%}, history={history:.2f})"
 
     @computed_field
     def alfa(self) -> float:
