@@ -1,30 +1,9 @@
 from enum import StrEnum, auto, unique
 
 import pandas as pd
-import torch
-from pydantic import BaseModel, Field, FiniteFloat, field_validator
+from pydantic import Field, FiniteFloat, field_validator
 
 from poptimizer.domain import domain
-
-
-class Days(BaseModel):
-    history: int
-    forecast: int
-    test: int
-
-    @property
-    def minimal_returns_days(self) -> int:
-        return self.history + 2 * self.forecast + self.test - 1
-
-
-@unique
-class FeatTypes(StrEnum):
-    # Метки
-    LABEL = auto()
-    # Доходности для расчета ковариационной матрицы
-    RETURNS = auto()
-    # Численные признаки
-    NUMERICAL = auto()
 
 
 @unique
@@ -36,9 +15,6 @@ class NumFeat(StrEnum):
     DIVIDENDS = auto()
     RETURNS = auto()
     TURNOVER = auto()
-
-
-Batch = dict[FeatTypes, torch.Tensor]
 
 
 class Features(domain.Entity):

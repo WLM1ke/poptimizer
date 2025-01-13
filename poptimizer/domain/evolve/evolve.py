@@ -16,10 +16,10 @@ from pydantic import (
 
 from poptimizer import consts
 from poptimizer.domain import domain
-from poptimizer.domain.dl import features
+from poptimizer.domain.dl import datasets
 from poptimizer.domain.evolve import genetics, genotype
 
-_INITIAL_MINIMAL_RETURNS_DAYS: Final = features.Days(
+_INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.Days(
     history=consts.INITIAL_HISTORY_DAYS_END,
     forecast=consts.INITIAL_FORECAST_DAYS,
     test=consts.INITIAL_POPULATION,

@@ -35,15 +35,15 @@ class Builder:
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
         feats: Features,
-        days: features.Days,
-    ) -> list[datasets.OneTickerData]:
+        days: datasets.Days,
+    ) -> list[datasets.TickerData]:
         await self._update_cache(ctx, day, tickers)
 
         num_feat = {features.NumFeat(feat) for feat, on in feats if on}
 
         return [
-            datasets.OneTickerData(
-                feat,
+            datasets.TickerData(
+                feat.numerical,
                 days,
                 num_feat,
             )

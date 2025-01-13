@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from torch import optim
 
 from poptimizer import consts, errors
-from poptimizer.domain.dl import data_loaders, datasets, features, ledoit_wolf, risk
+from poptimizer.domain.dl import data_loaders, datasets, ledoit_wolf, risk
 from poptimizer.domain.dl.wave_net import backbone, wave_net
 from poptimizer.domain.evolve import evolve
 from poptimizer.use_cases import handler
@@ -83,7 +83,7 @@ class Trainer:
         start = time.monotonic()
 
         cfg = Cfg.model_validate(model.phenotype)
-        days = features.Days(
+        days = datasets.Days(
             history=cfg.batch.history_days,
             forecast=model.forecast_days,
             test=test_days,
@@ -109,7 +109,7 @@ class Trainer:
     def _run(
         self,
         model: evolve.Model,
-        data: list[datasets.OneTickerData],
+        data: list[datasets.TickerData],
         cfg: Cfg,
         forecast_days: int,
     ) -> None:
@@ -123,7 +123,7 @@ class Trainer:
         self,
         net: wave_net.Net,
         scheduler: Scheduler,
-        data: list[datasets.OneTickerData],
+        data: list[datasets.TickerData],
         batch_size: int,
     ) -> None:
         train_dl = data_loaders.train(data, batch_size)
@@ -138,7 +138,7 @@ class Trainer:
             total_steps=total_steps,
         )
 
-        self._log_net_stats(net, scheduler.epochs, train_dl)
+        self._log_net_stats(net, scheduler.epochs, len(train_dl.dataset))  # type: ignore[arg-type]
 
         avg_llh = RunningMean(steps_per_epoch)
         net.train()
@@ -157,7 +157,10 @@ class Trainer:
 
                 optimizer.zero_grad()
 
-                loss = -net.llh(self._batch_to_device(batch))
+                loss = -net.llh(
+                    batch.num_feat.to(self._device),
+                    batch.labels.to(self._device),
+                )
                 loss.backward()  # type: ignore[no-untyped-call]
                 optimizer.step()  # type: ignore[reportUnknownMemberType]
                 sch.step()
@@ -170,7 +173,7 @@ class Trainer:
         net: wave_net.Net,
         cfg: Cfg,
         forecast_days: int,
-        data: list[datasets.OneTickerData],
+        data: list[datasets.TickerData],
     ) -> list[float]:
         with torch.no_grad():
             net.eval()
@@ -181,12 +184,15 @@ class Trainer:
                 if self._stopping:
                     break
 
-                loss, mean, std = net.loss_and_forecast_mean_and_std(self._batch_to_device(batch))
+                loss, mean, std = net.loss_and_forecast_mean_and_std(
+                    batch.num_feat.to(self._device),
+                    batch.labels.to(self._device),
+                )
                 rez = risk.optimize(
                     mean,
                     std,
-                    batch[features.FeatTypes.LABEL].cpu().numpy() - 1,
-                    batch[features.FeatTypes.RETURNS].cpu().numpy(),
+                    batch.labels.numpy() - 1,
+                    batch.returns.numpy(),
                     cfg.risk,
                     forecast_days,
                 )
@@ -201,7 +207,7 @@ class Trainer:
         self,
         net: wave_net.Net,
         forecast_days: int,
-        data: list[datasets.OneTickerData],
+        data: list[datasets.TickerData],
     ) -> tuple[list[list[float]], list[list[float]]]:
         with torch.no_grad():
             net.eval()
@@ -210,31 +216,23 @@ class Trainer:
                 raise errors.UseCasesError("invalid forecast dataloader")
 
             batch = next(iter(forecast_dl))
-            mean, std = net.forecast_mean_and_std(self._batch_to_device(batch))
+            mean, std = net.forecast_mean_and_std(batch.num_feat.to(self._device))
 
             year_multiplier = consts.YEAR_IN_TRADING_DAYS / forecast_days
             mean *= year_multiplier
             std *= year_multiplier**0.5
 
-            total_ret = batch[features.FeatTypes.RETURNS].cpu().numpy()
+            total_ret = batch.returns.numpy()
             cov = std.T * ledoit_wolf.ledoit_wolf_cor(total_ret)[0] * std
 
         return cast(list[list[float]], mean.tolist()), cov.tolist()
 
-    def _log_net_stats(self, net: wave_net.Net, epochs: float, train_dl: data_loaders.DataLoader) -> None:
-        train_size = len(train_dl.dataset)  # type: ignore[arg-type]
-        self._lgr.info("Epochs - %.2f / Train size - %s", epochs, train_size)
+    def _log_net_stats(self, net: wave_net.Net, epochs: float, steps_per_epoch: int) -> None:
+        self._lgr.info("Epochs - %.2f / Train size - %s", epochs, steps_per_epoch)
 
         modules = sum(1 for _ in net.modules())
         model_params = sum(tensor.numel() for tensor in net.parameters())
         self._lgr.info("Layers / parameters - %d / %d", modules, model_params)
-
-    def _batch_to_device(self, batch: features.Batch) -> features.Batch:
-        device_batch: features.Batch = {}
-        for k, v in batch.items():
-            device_batch[k] = v.to(self._device)
-
-        return device_batch
 
     def _prepare_net(self, cfg: Cfg) -> wave_net.Net:
         return wave_net.Net(

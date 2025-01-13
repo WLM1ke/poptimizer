@@ -4,7 +4,6 @@ from numpy.typing import NDArray
 from torch.distributions import MixtureSameFamily
 
 from poptimizer import errors
-from poptimizer.domain.dl import features
 from poptimizer.domain.dl.wave_net import backbone, head, inputs
 
 
@@ -37,16 +36,14 @@ class Net(torch.nn.Module):
             mixture_size=cfg.mixture_size,
         )
 
-    def forward(self, batch: features.Batch) -> MixtureSameFamily:
-        norm_input = self._input(batch)
+    def forward(self, num_feat: torch.Tensor) -> MixtureSameFamily:
+        norm_input = self._input(num_feat)
         end = self._backbone(norm_input)
 
         return self._head(end)  # type: ignore[no-any-return]
 
-    def llh(self, batch: features.Batch) -> torch.Tensor:
-        dist = self(batch)
-
-        labels = batch[features.FeatTypes.LABEL]
+    def llh(self, num_feat: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+        dist = self(num_feat)
 
         try:
             return dist.log_prob(labels).mean()
@@ -54,13 +51,10 @@ class Net(torch.nn.Module):
             raise errors.DomainError("error in categorical distribution") from err
 
     def loss_and_forecast_mean_and_std(
-        self,
-        batch: features.Batch,
+        self, num_feat: torch.Tensor, labels: torch.Tensor
     ) -> tuple[float, NDArray[np.double], NDArray[np.double]]:
         """Minus Normal Log Likelihood and forecast means and vars."""
-        dist = self(batch)
-
-        labels = batch[features.FeatTypes.LABEL]
+        dist = self(num_feat)
 
         try:
             llh = dist.log_prob(labels).mean()
@@ -69,10 +63,7 @@ class Net(torch.nn.Module):
 
         return llh.item(), dist.mean.cpu().numpy() - 1, dist.variance.cpu().numpy() ** 0.5
 
-    def forecast_mean_and_std(
-        self,
-        batch: features.Batch,
-    ) -> tuple[NDArray[np.double], NDArray[np.double]]:
-        dist = self(batch)
+    def forecast_mean_and_std(self, num_feat: torch.Tensor) -> tuple[NDArray[np.double], NDArray[np.double]]:
+        dist = self(num_feat)
 
         return dist.mean.cpu().numpy() - 1, dist.variance.cpu().numpy() ** 0.5
