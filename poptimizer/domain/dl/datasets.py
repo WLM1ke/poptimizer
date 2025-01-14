@@ -12,72 +12,6 @@ from poptimizer import errors
 from poptimizer.domain.dl import features
 
 
-class TrainBatch(NamedTuple):
-    num_feat: torch.Tensor
-    labels: torch.Tensor
-
-
-class TickerTrainDataSet(data.Dataset[TrainBatch]):
-    def __init__(self, history_days: int, num_feat: torch.Tensor, labels: torch.Tensor) -> None:
-        self._history_days = history_days
-        self._num_feat = num_feat
-        self._labels = labels
-
-    def __len__(self) -> int:
-        return len(self._labels)
-
-    def __getitem__(self, start_day: int) -> TrainBatch:
-        return TrainBatch(
-            num_feat=self._num_feat[:, start_day : start_day + self._history_days],
-            labels=self._labels[start_day].reshape(-1),
-        )
-
-
-class TestBatch(NamedTuple):
-    num_feat: torch.Tensor
-    labels: torch.Tensor
-    returns: torch.Tensor
-
-
-class TickerTestDataSet(data.Dataset[TestBatch]):
-    def __init__(self, history_days: int, num_feat: torch.Tensor, labels: torch.Tensor, returns: torch.Tensor) -> None:
-        self._history_days = history_days
-        self._num_feat = num_feat
-        self._labels = labels
-        self._returns = returns
-
-    def __len__(self) -> int:
-        return len(self._labels)
-
-    def __getitem__(self, start_day: int) -> TestBatch:
-        return TestBatch(
-            num_feat=self._num_feat[:, start_day : start_day + self._history_days],
-            labels=self._labels[start_day].reshape(-1),
-            returns=self._returns[start_day : start_day + self._history_days],
-        )
-
-
-class ForecastBatch(NamedTuple):
-    num_feat: torch.Tensor
-    returns: torch.Tensor
-
-
-class TickerForecastDataSet(data.Dataset[ForecastBatch]):
-    def __init__(self, history_days: int, num_feat: torch.Tensor, returns: torch.Tensor) -> None:
-        self._history_days = history_days
-        self._num_feat = num_feat
-        self._returns = returns
-
-    def __len__(self) -> int:
-        return 1
-
-    def __getitem__(self, start_day: int) -> ForecastBatch:
-        return ForecastBatch(
-            num_feat=self._num_feat[:, start_day : start_day + self._history_days],
-            returns=self._returns[start_day : start_day + self._history_days],
-        )
-
-
 class Days(BaseModel):
     history: int
     forecast: int
@@ -88,6 +22,80 @@ class Days(BaseModel):
         return self.history + 2 * self.forecast + self.test - 1
 
 
+class TrainBatch(NamedTuple):
+    num_feat: torch.Tensor
+    labels: torch.Tensor
+
+
+class TickerTrainDataSet(data.Dataset[TrainBatch]):
+    def __init__(self, days: Days, num_feat: torch.Tensor, labels: torch.Tensor) -> None:
+        self._len = num_feat.shape[1] - (days.forecast + days.test - 1) - (days.history + days.forecast - 1)
+        self._history = days.history
+        self._num_feat = num_feat
+        self._labels = labels
+
+    def __len__(self) -> int:
+        return self._len
+
+    def __getitem__(self, n: int) -> TrainBatch:
+        return TrainBatch(
+            num_feat=self._num_feat[:, n : n + self._history],
+            labels=self._labels[n].reshape(-1),
+        )
+
+
+class TestBatch(NamedTuple):
+    num_feat: torch.Tensor
+    labels: torch.Tensor
+    returns: torch.Tensor
+
+
+class TickerTestDataSet(data.Dataset[TestBatch]):
+    def __init__(self, days: Days, num_feat: torch.Tensor, labels: torch.Tensor, returns: torch.Tensor) -> None:
+        self._len = days.test
+        self._start = num_feat.shape[1] - (days.history + days.forecast + days.test - 1)
+        self._history = days.history
+        self._num_feat = num_feat
+        self._labels = labels
+        self._returns = returns
+
+    def __len__(self) -> int:
+        return self._len
+
+    def __getitem__(self, n: int) -> TestBatch:
+        start = self._start + n
+
+        return TestBatch(
+            num_feat=self._num_feat[:, start : start + self._history],
+            labels=self._labels[start].reshape(-1),
+            returns=self._returns[start : start + self._history],
+        )
+
+
+class ForecastBatch(NamedTuple):
+    num_feat: torch.Tensor
+    returns: torch.Tensor
+
+
+class TickerForecastDataSet(data.Dataset[ForecastBatch]):
+    def __init__(self, days: Days, num_feat: torch.Tensor, returns: torch.Tensor) -> None:
+        self._start = num_feat.shape[1] - days.history
+        self._history = days.history
+        self._num_feat = num_feat
+        self._returns = returns
+
+    def __len__(self) -> int:
+        return 1
+
+    def __getitem__(self, n: int) -> ForecastBatch:
+        start = self._start + n
+
+        return ForecastBatch(
+            num_feat=self._num_feat[:, start : start + self._history],
+            returns=self._returns[start : start + self._history],
+        )
+
+
 class TickerData:
     def __init__(
         self,
@@ -95,11 +103,7 @@ class TickerData:
         days: Days,
         num_feat_selected: set[features.NumFeat],
     ) -> None:
-        self._history_days = days.history
-        self._test_days = days.test
-        self._forecast_days = days.forecast
-        self._all_days = len(num_feat)
-        self._last_label = self._all_days - (self._history_days + self._forecast_days) + 1
+        self._days = days
 
         if not num_feat_selected:
             raise errors.DomainError("no features")
@@ -130,33 +134,23 @@ class TickerData:
         )
 
     def train_dataset(self) -> TickerTrainDataSet:
-        end = (
-            self._all_days
-            - (self._forecast_days + self._test_days - 1)
-            - (self._history_days + self._forecast_days - 1)
-        )
-
         return TickerTrainDataSet(
-            history_days=self._history_days,
-            num_feat=self._num_feat[:, : end + self._history_days],
-            labels=self._labels[:end],
+            days=self._days,
+            num_feat=self._num_feat,
+            labels=self._labels,
         )
 
     def test_dataset(self) -> TickerTestDataSet:
-        end = self._all_days - (self._history_days + self._forecast_days - 1)
-
         return TickerTestDataSet(
-            history_days=self._history_days,
-            num_feat=self._num_feat[:, end - self._test_days : end + self._history_days],
-            labels=self._labels[end - self._test_days : end],
-            returns=self._returns[end - self._test_days : end + self._history_days],
+            days=self._days,
+            num_feat=self._num_feat,
+            labels=self._labels,
+            returns=self._returns,
         )
 
     def forecast_dataset(self) -> TickerForecastDataSet:
-        start = self._all_days - self._history_days
-
         return TickerForecastDataSet(
-            history_days=self._history_days,
-            num_feat=self._num_feat[:, start : start + 1 + self._history_days],
-            returns=self._returns[start : start + 1 + self._history_days],
+            days=self._days,
+            num_feat=self._num_feat,
+            returns=self._returns,
         )
