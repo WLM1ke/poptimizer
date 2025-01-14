@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Final
 
 from pydantic import (
     AfterValidator,
@@ -11,6 +11,8 @@ from pydantic import (
 )
 
 from poptimizer.domain import domain
+
+_MINIMAL_FORECASTS_AMOUNT: Final = 4
 
 
 class Position(BaseModel):
@@ -48,7 +50,7 @@ class Forecast(domain.Entity):
         self.models.clear()
 
     def update_required(self, portfolio_ver: domain.Version) -> bool:
-        if len(self.models) <= 1:
+        if len(self.models) < _MINIMAL_FORECASTS_AMOUNT:
             return False
 
         if portfolio_ver > self.portfolio_ver:
