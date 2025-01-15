@@ -39,7 +39,8 @@ async def _build_features(ctx: handler.Ctx, ticker: domain.UID, index: pd.Dateti
 
     turnover_df = np.log1p(quotes_df[NumFeat.TURNOVER].fillna(0).iloc[1:])  # type: ignore[reportUnknownMemberType]
 
-    quotes_df = quotes_df[[NumFeat.OPEN, NumFeat.CLOSE, NumFeat.HIGH, NumFeat.LOW]].ffill()  # type: ignore[reportUnknownMemberType]
+    quotes_df[NumFeat.CLOSE] = quotes_df[NumFeat.CLOSE].ffill()  # type: ignore[reportUnknownMemberType]
+    quotes_df = quotes_df[[NumFeat.CLOSE, NumFeat.OPEN, NumFeat.HIGH, NumFeat.LOW]].ffill(axis=1)  # type: ignore[reportUnknownMemberType]
     close_prev = quotes_df[NumFeat.CLOSE].shift(1).iloc[1:]  # type: ignore[reportUnknownMemberType]
     quotes_df = quotes_df.iloc[1:]
 
