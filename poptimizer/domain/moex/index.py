@@ -1,10 +1,18 @@
 from datetime import date
-from typing import Annotated
+from typing import Annotated, Final
 
 from pydantic import AfterValidator, Field
 
 from poptimizer import errors
 from poptimizer.domain import domain
+
+RVI: Final = domain.UID("RVI")
+INDEXES: Final = (
+    domain.UID("MCFTRR"),
+    domain.UID("MEOGTRR"),
+    domain.UID("IMOEX"),
+    RVI,
+)
 
 
 class Row(domain.Row):

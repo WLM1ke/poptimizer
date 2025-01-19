@@ -1,6 +1,5 @@
 import asyncio
 from datetime import date
-from typing import Final
 
 import aiohttp
 import aiomoex
@@ -11,13 +10,6 @@ from poptimizer.domain import domain
 from poptimizer.domain.moex import index
 from poptimizer.use_cases import handler
 
-_INDEXES: Final = (
-    domain.UID("MCFTRR"),
-    domain.UID("MEOGTRR"),
-    domain.UID("IMOEX"),
-    domain.UID("RVI"),
-)
-
 
 class IndexesHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
@@ -25,7 +17,7 @@ class IndexesHandler:
 
     async def __call__(self, ctx: handler.Ctx, msg: handler.NewDataPublished) -> handler.IndexesUpdated:
         async with asyncio.TaskGroup() as tg:
-            for ticker in _INDEXES:
+            for ticker in index.INDEXES:
                 tg.create_task(self._update_one(ctx, msg.day, ticker))
 
         return handler.IndexesUpdated(day=msg.day)

@@ -27,7 +27,7 @@ class QuotesFeatHandler:
             for pos in port.positions:
                 tg.create_task(_build_features(ctx, domain.UID(pos.ticker), index))
 
-        return handler.QuotesFeatUpdated(day=msg.day)
+        return handler.QuotesFeatUpdated(trading_days=msg.trading_days)
 
 
 async def _build_features(ctx: handler.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> None:

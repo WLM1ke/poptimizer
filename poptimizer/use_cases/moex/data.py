@@ -47,12 +47,12 @@ class DataHandler:
     async def __call__(
         self,
         ctx: handler.Ctx,
-        msg: handler.AppStarted | handler.QuotesFeatUpdated | handler.ForecastsAnalyzed,
+        msg: handler.AppStarted | handler.IndexFeatUpdated | handler.ForecastsAnalyzed,
     ) -> handler.NewDataPublished | handler.DataChecked:
         match msg:
             case handler.AppStarted() | handler.ForecastsAnalyzed():
                 return await self._check(ctx)
-            case handler.QuotesFeatUpdated():
+            case handler.IndexFeatUpdated():
                 return await self._update(ctx, msg.day)
 
     async def _check(self, ctx: handler.Ctx) -> handler.NewDataPublished | handler.DataChecked:

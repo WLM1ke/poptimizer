@@ -65,6 +65,15 @@ class PortfolioUpdated(Event):
 
 
 class QuotesFeatUpdated(Event):
+    trading_days: domain.TradingDays = Field(repr=False)
+
+    @computed_field
+    @property
+    def day(self) -> domain.Day:
+        return self.trading_days[-1]
+
+
+class IndexFeatUpdated(Event):
     day: domain.Day
 
 

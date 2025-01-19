@@ -15,6 +15,10 @@ class NumFeat(StrEnum):
     DIVIDENDS = auto()
     RETURNS = auto()
     TURNOVER = auto()
+    MCFTRR = auto()
+    MEOGTRR = auto()
+    IMOEX = auto()
+    RVI = auto()
 
 
 class Features(domain.Entity):
@@ -25,10 +29,12 @@ class Features(domain.Entity):
         if not features:
             return features
 
-        keys = set(NumFeat)
+        keys = features[0].keys()
+        if not set(NumFeat).issuperset(keys):
+            raise ValueError("key are not numerical features")
 
         if any(row.keys() != keys for row in features):
-            raise ValueError("invalid numerical features")
+            raise ValueError("numerical features keys mismatch")
 
         return features
 
