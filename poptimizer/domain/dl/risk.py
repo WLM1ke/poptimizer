@@ -25,7 +25,7 @@ class OptimizationResult(BaseModel):
         return " / ".join(
             [
                 f"Alfa = {alfa:>8.2%}",
-                f"Ret = { self.ret:>8.2%}",
+                f"Ret = {self.ret:>8.2%}",
                 f"Avr = {self.avr:>8.2%}",
                 f"ERet = {self.e_ret:>7.2%}",
                 f"EStd = {self.e_std:>7.2%}",

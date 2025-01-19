@@ -37,6 +37,7 @@ tasks:
     desc: Lint
     cmds:
       - uv run lint-imports
+      - uv run ruff format {{.APP}} --check
       - uv run ruff check {{.APP}} --unsafe-fixes --exit-non-zero-on-fix
       - uv run pyright {{.APP}}
       - cd {{.FRONTEND}} && npm run lint && npm run check

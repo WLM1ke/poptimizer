@@ -17,11 +17,11 @@ class RequestErrorMiddleware:
         except (errors.AdapterError, errors.ControllersError) as err:
             self._lgr.warning("Can't handle request - %s", err)
 
-            raise web.HTTPInternalServerError(text=f"{err.__class__.__name__}: {",".join(err.args)}") from err
+            raise web.HTTPInternalServerError(text=f"{err.__class__.__name__}: {','.join(err.args)}") from err
         except (errors.DomainError, errors.UseCasesError) as err:
             self._lgr.warning("Can't handle request - %s", err)
 
-            raise web.HTTPBadRequest(text=f"{err.__class__.__name__}: {",".join(err.args)}") from err
+            raise web.HTTPBadRequest(text=f"{err.__class__.__name__}: {','.join(err.args)}") from err
         except ValidationError as err:
             self._lgr.warning("Can't handle request - %s", err)
             msg = ",".join(desc["msg"] for desc in err.errors())
