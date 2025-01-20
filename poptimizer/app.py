@@ -4,7 +4,7 @@ import contextlib
 import uvloop
 
 from poptimizer import config
-from poptimizer.adapters import http, logger, mongo
+from poptimizer.adapters import http_session, logger, mongo
 from poptimizer.controllers.bus import bus
 from poptimizer.controllers.server import server
 
@@ -14,7 +14,7 @@ async def _run() -> None:
     err: Exception | None = None
 
     async with contextlib.AsyncExitStack() as stack:
-        http_client = await stack.enter_async_context(http.client())
+        http_client = await stack.enter_async_context(http_session.client())
         mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo_db_uri, cfg.mongo_db_db))
 
         lgr = await stack.enter_async_context(
