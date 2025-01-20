@@ -1,3 +1,5 @@
+[![Test](https://github.com/WLM1ke/poptimizer/actions/workflows/test.yml/badge.svg)](https://github.com/WLM1ke/poptimizer/actions/workflows/test.yml)
+
 # Оптимизация долгосрочного портфеля акций
 
 ## Установка
