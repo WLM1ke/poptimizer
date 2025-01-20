@@ -175,39 +175,40 @@ class EvolutionHandler:
             case evolve.State.EVAL_NEW_BASE_MODEL:
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
-                self._lgr.info(f"New base Model(alfa={model.alfa:.2%})")
+                self._lgr.info(f"New base {model.stats}")
             case evolve.State.EVAL_MODEL:
                 if self._should_delete(evolution, model):
                     evolution.state = evolve.State.EVAL_MODEL
                     await ctx.delete(model)
-                    self._lgr.info(f"Model(alfa={model.alfa:.2%}) deleted - low metrics")
+                    self._lgr.info(f"{model.stats} deleted - low metrics")
 
                     return handler.ModelDeleted(day=evolution.day, portfolio_ver=evolution.portfolio_ver, uid=model.uid)
 
                 evolution.new_base(model)
-                self._lgr.info(f"New base Model(alfa={model.alfa:.2%})")
+                self._lgr.info(f"New base {model.stats}")
                 evolution.state = evolve.State.CREATE_NEW_MODEL
             case evolve.State.CREATE_NEW_MODEL:
                 if self._should_delete(evolution, model):
                     evolution.state = evolve.State.EVAL_MODEL
                     await ctx.delete(model)
-                    self._lgr.info(f"Model(alfa={model.alfa:.2%}) deleted - low metrics")
+                    self._lgr.info(f"{model.stats} deleted - low metrics")
 
                     return handler.ModelDeleted(day=evolution.day, portfolio_ver=evolution.portfolio_ver, uid=model.uid)
 
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
-                self._lgr.info(f"New base Model(alfa={model.alfa:.2%})")
+                self._lgr.info(f"New base {model.stats}")
 
                 if await ctx.count_models() > evolution.test_days:
-                    evolution.delta_critical = 0
+                    evolution.alfa_delta_critical = 0
+                    evolution.llh_delta_critical = 0
                     evolution.test_days += 1
                     self._lgr.warning("Test days increased - %d", evolution.test_days)
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 self._change_t_critical(evolution, model)
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
-                self._lgr.info(f"Current base Model(alfa={model.alfa:.2%}) reevaluated")
+                self._lgr.info(f"Current base {model.stats} reevaluated")
 
         return handler.ModelEvaluated(day=evolution.day, portfolio_ver=evolution.portfolio_ver, uid=model.uid)
 
@@ -216,19 +217,32 @@ class EvolutionHandler:
         evolution: evolve.Evolution,
         model: evolve.Model,
     ) -> bool:
-        delta = _delta(model.alfas, evolution.alfas)
-        adj_delta_critical = evolution.adj_delta_critical(model.duration)
-
-        sign = ">"
         delete = False
 
-        if delta < adj_delta_critical:
+        alfa_delta = _delta(model.alfas, evolution.alfas)
+        adj_alfa_delta_critical = evolution.adj_alfa_delta_critical(model.duration)
+        sign = ">"
+
+        if alfa_delta < adj_alfa_delta_critical:
             delete = True
-            if delta < adj_delta_critical:
-                sign = "<"
+            sign = "<"
+
         self._lgr.info(
-            f"Delta({delta:.2%}) {sign} adj-delta-critical({adj_delta_critical:.2%}), "
-            f"delta-critical({evolution.delta_critical:.2%})",
+            f"Alfa: delta({alfa_delta:.2%}) {sign} adj-delta-critical({adj_alfa_delta_critical:.2%}), "
+            f"delta-critical({evolution.alfa_delta_critical:.2%})",
+        )
+
+        llh_delta = _delta(model.llh, evolution.llh)
+        adj_llh_delta_critical = evolution.adj_llh_delta_critical(model.duration)
+        sign = ">"
+
+        if llh_delta < adj_llh_delta_critical:
+            delete = True
+            sign = "<"
+
+        self._lgr.info(
+            f"LLH: delta({llh_delta:.2f}) {sign} adj-delta-critical({adj_llh_delta_critical:.2f}), "
+            f"delta-critical({evolution.llh_delta_critical:.2f})",
         )
 
         return delete
@@ -238,23 +252,46 @@ class EvolutionHandler:
         evolution: evolve.Evolution,
         model: evolve.Model,
     ) -> None:
-        delta = _delta(model.alfas, evolution.alfas)
-        adj_delta_critical = evolution.adj_delta_critical(model.duration)
-        old_delta_critical = evolution.delta_critical
+        alfa_delta = _delta(model.alfas, evolution.alfas)
+        adj_alfa_delta_critical = evolution.adj_alfa_delta_critical(model.duration)
+        old_alfa_delta_critical = evolution.alfa_delta_critical
 
-        sign_alfa = ">"
+        sign = ">"
 
-        match delta < adj_delta_critical:
+        match alfa_delta < adj_alfa_delta_critical:
             case True:
-                if delta < adj_delta_critical:
-                    sign_alfa = "<"
-                evolution.delta_critical -= (1 - consts.P_VALUE) / evolution.test_days
+                sign = "<"
+                evolution.alfa_delta_critical -= (1 - consts.P_VALUE / 2) / evolution.test_days
             case False:
-                evolution.delta_critical = min(0, evolution.delta_critical + consts.P_VALUE / evolution.test_days)
+                evolution.alfa_delta_critical = min(
+                    0, evolution.alfa_delta_critical + consts.P_VALUE / 2 / evolution.test_days
+                )
 
         self._lgr.info(
-            f"Delta({delta:.2%}) {sign_alfa} adj-delta-critical({adj_delta_critical:.2%}), "
-            f"changing delta-critical({old_delta_critical:.2%}) -> delta-critical({evolution.delta_critical:.2%})"
+            f"Alfa: delta({alfa_delta:.2%}) {sign} adj-delta-critical({adj_alfa_delta_critical:.2%}), "
+            f"changing delta-critical({old_alfa_delta_critical:.2%}) "
+            f"-> delta-critical({evolution.alfa_delta_critical:.2%})"
+        )
+
+        llh_delta = _delta(model.llh, evolution.llh)
+        adj_llh_delta_critical = evolution.adj_llh_delta_critical(model.duration)
+        old_llh_delta_critical = evolution.llh_delta_critical
+
+        sign = ">"
+
+        match llh_delta < adj_llh_delta_critical:
+            case True:
+                sign = "<"
+                evolution.llh_delta_critical -= (1 - consts.P_VALUE / 2) / evolution.test_days
+            case False:
+                evolution.llh_delta_critical = min(
+                    0, evolution.llh_delta_critical + consts.P_VALUE / 2 / evolution.test_days
+                )
+
+        self._lgr.info(
+            f"LLH: delta({llh_delta:.2f}) {sign} adj-delta-critical({adj_llh_delta_critical:.2f}), "
+            f"changing delta-critical({old_llh_delta_critical:.2f}) "
+            f"-> delta-critical({evolution.llh_delta_critical:.2f})"
         )
 
 

@@ -116,7 +116,7 @@ class Trainer:
         net = self._prepare_net(cfg)
         self._train(net, cfg.scheduler, data, cfg.batch.size)
 
-        model.alfas = self._test(net, cfg, forecast_days, data)
+        model.alfas, model.llh = self._test(net, cfg, forecast_days, data)
         model.mean, model.cov = self._forecast(net, forecast_days, data)
 
     def _train(
@@ -174,11 +174,12 @@ class Trainer:
         cfg: Cfg,
         forecast_days: int,
         data: list[datasets.TickerData],
-    ) -> list[float]:
+    ) -> tuple[list[float], list[float]]:
         with torch.no_grad():
             net.eval()
 
             alfas: list[float] = []
+            llh: list[float] = []
 
             for batch in data_loaders.test(data):
                 if self._stopping:
@@ -200,8 +201,9 @@ class Trainer:
                 self._lgr.info("%s / LLH = %8.5f", rez, loss)
 
                 alfas.append(rez.ret - rez.avr)
+                llh.append(loss)
 
-        return alfas
+        return alfas, llh
 
     def _forecast(
         self,

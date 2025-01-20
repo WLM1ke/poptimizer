@@ -32,12 +32,16 @@ class Model(domain.Entity):
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
     duration: float = 0
     alfas: list[FiniteFloat] = Field(default_factory=list)
+    llh: list[FiniteFloat] = Field(default_factory=list)
     mean: list[list[FiniteFloat]] = Field(default_factory=list)
     cov: list[list[FiniteFloat]] = Field(default_factory=list)
     risk_tolerance: FiniteFloat = Field(default=0, ge=0, le=1)
 
     @model_validator(mode="after")
     def _match_length(self) -> Self:
+        if len(self.llh) != len(self.alfas):
+            raise ValueError("alfas and llh mismatch")
+
         n = len(self.tickers)
 
         if len(self.mean) != n:
@@ -63,10 +67,11 @@ class Model(domain.Entity):
 
     @computed_field
     def alfa(self) -> float:
-        if not self.alfas:
-            return 0
+        return statistics.mean(self.alfas or [0])
 
-        return statistics.mean(self.alfas)
+    @property
+    def stats(self) -> str:
+        return f"Model(alfa={self.alfa:.2%}, llh={statistics.mean(self.llh or [0]):.2f})"
 
     @property
     def phenotype(self) -> genetics.Phenotype:
@@ -94,11 +99,20 @@ class Evolution(domain.Entity):
     state: State = State.EVAL_NEW_BASE_MODEL
     step: PositiveInt = 1
     base_model_uid: domain.UID = domain.UID("")
-    alfas: list[float] = Field(default_factory=list)
+    alfas: list[FiniteFloat] = Field(default_factory=list)
+    llh: list[FiniteFloat] = Field(default_factory=list)
     duration: NonNegativeFloat = 0
     test_days: int = Field(default=2, ge=2)
-    delta_critical: NonPositiveFloat = 0
+    alfa_delta_critical: NonPositiveFloat = 0
+    llh_delta_critical: NonPositiveFloat = 0
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
+
+    @model_validator(mode="after")
+    def _match_length(self) -> Self:
+        if len(self.llh) != len(self.alfas):
+            raise ValueError("alfas and llh mismatch")
+
+        return self
 
     def init_new_day(self, day: domain.Day) -> None:
         self.day = day
@@ -118,10 +132,14 @@ class Evolution(domain.Entity):
         self.tickers = tickers
         self.forecast_days = forecast_days
 
-    def adj_delta_critical(self, duration: NonNegativeFloat) -> float:
-        return self.delta_critical * min(1, self.duration / duration)
+    def adj_alfa_delta_critical(self, duration: NonNegativeFloat) -> float:
+        return self.alfa_delta_critical * min(1, self.duration / duration)
+
+    def adj_llh_delta_critical(self, duration: NonNegativeFloat) -> float:
+        return self.llh_delta_critical * min(1, self.duration / duration)
 
     def new_base(self, model: Model) -> None:
         self.base_model_uid = model.uid
         self.alfas = model.alfas
+        self.llh = model.llh
         self.duration = model.duration
