@@ -117,7 +117,7 @@ class Scheduler(genetics.Chromosome):
     epochs: Annotated[
         float,
         genetics.gene_range(lower=0),
-    ] = genetics.random_default_range(1, 1.1)
+    ] = genetics.random_default_range(1, 2)
     max_lr: Annotated[
         float,
         genetics.gene_range(lower=0),
