@@ -75,7 +75,7 @@ class Model(domain.Entity):
 
     @property
     def stats(self) -> str:
-        return f"Model(alfa={self.alfa_mean:.2%}, llh={self.llh_mean:.2f})"
+        return f"Model(alfa={self.alfa_mean:.2%}, llh={self.llh_mean:.4f})"
 
     @property
     def phenotype(self) -> genetics.Phenotype:

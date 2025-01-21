@@ -241,8 +241,8 @@ class EvolutionHandler:
             sign = "<"
 
         self._lgr.info(
-            f"LLH: delta({llh_delta:.2f}) {sign} adj-delta-critical({adj_llh_delta_critical:.2f}), "
-            f"delta-critical({evolution.llh_delta_critical:.2f})",
+            f"LLH: delta({llh_delta:.4f}) {sign} adj-delta-critical({adj_llh_delta_critical:.4f}), "
+            f"delta-critical({evolution.llh_delta_critical:.4f})",
         )
 
         return delete
@@ -289,9 +289,9 @@ class EvolutionHandler:
                 )
 
         self._lgr.info(
-            f"LLH: delta({llh_delta:.2f}) {sign} adj-delta-critical({adj_llh_delta_critical:.2f}), "
-            f"changing delta-critical({old_llh_delta_critical:.2f}) "
-            f"-> delta-critical({evolution.llh_delta_critical:.2f})"
+            f"LLH: delta({llh_delta:.4f}) {sign} adj-delta-critical({adj_llh_delta_critical:.4f}), "
+            f"changing delta-critical({old_llh_delta_critical:.4f}) "
+            f"-> delta-critical({evolution.llh_delta_critical:.4f})"
         )
 
 
