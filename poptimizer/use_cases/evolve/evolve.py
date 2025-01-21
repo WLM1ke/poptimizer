@@ -200,8 +200,8 @@ class EvolutionHandler:
                 self._lgr.info(f"New base {model.stats}")
 
                 if await ctx.count_models() > evolution.test_days:
-                    evolution.alfa_delta_critical = 0
-                    evolution.llh_delta_critical = 0
+                    evolution.alfa_delta_critical *= 1 - 1 / evolution.test_days
+                    evolution.llh_delta_critical *= 1 - 1 / evolution.test_days
                     evolution.test_days += 1
                     self._lgr.warning("Test days increased - %d", evolution.test_days)
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
