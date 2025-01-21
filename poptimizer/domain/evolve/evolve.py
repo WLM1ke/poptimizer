@@ -31,7 +31,7 @@ class Model(domain.Entity):
     forecast_days: PositiveInt = 1
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
     duration: float = 0
-    alfas: list[FiniteFloat] = Field(default_factory=list)
+    alfa: list[FiniteFloat] = Field(default_factory=list)
     llh: list[FiniteFloat] = Field(default_factory=list)
     mean: list[list[FiniteFloat]] = Field(default_factory=list)
     cov: list[list[FiniteFloat]] = Field(default_factory=list)
@@ -39,8 +39,8 @@ class Model(domain.Entity):
 
     @model_validator(mode="after")
     def _match_length(self) -> Self:
-        if len(self.llh) != len(self.alfas):
-            raise ValueError("alfas and llh mismatch")
+        if len(self.llh) != len(self.alfa):
+            raise ValueError("alfa and llh mismatch")
 
         n = len(self.tickers)
 
@@ -66,12 +66,16 @@ class Model(domain.Entity):
         return f"{self.__class__.__name__}(ver={self.ver}, risk_aversion={1 - risk_tol:.2%}, history={history:.2f})"
 
     @computed_field
-    def alfa(self) -> float:
-        return statistics.mean(self.alfas or [0])
+    def alfa_mean(self) -> float:
+        return statistics.mean(self.alfa or [0])
+
+    @computed_field
+    def llh_mean(self) -> float:
+        return statistics.mean(self.llh or [0])
 
     @property
     def stats(self) -> str:
-        return f"Model(alfa={self.alfa:.2%}, llh={statistics.mean(self.llh or [0]):.2f})"
+        return f"Model(alfa={self.alfa_mean:.2%}, llh={self.llh_mean:.2f})"
 
     @property
     def phenotype(self) -> genetics.Phenotype:
@@ -99,7 +103,7 @@ class Evolution(domain.Entity):
     state: State = State.EVAL_NEW_BASE_MODEL
     step: PositiveInt = 1
     base_model_uid: domain.UID = domain.UID("")
-    alfas: list[FiniteFloat] = Field(default_factory=list)
+    alfa: list[FiniteFloat] = Field(default_factory=list)
     llh: list[FiniteFloat] = Field(default_factory=list)
     duration: NonNegativeFloat = 0
     test_days: int = Field(default=2, ge=2)
@@ -109,7 +113,7 @@ class Evolution(domain.Entity):
 
     @model_validator(mode="after")
     def _match_length(self) -> Self:
-        if len(self.llh) != len(self.alfas):
+        if len(self.llh) != len(self.alfa):
             raise ValueError("alfas and llh mismatch")
 
         return self
@@ -140,6 +144,6 @@ class Evolution(domain.Entity):
 
     def new_base(self, model: Model) -> None:
         self.base_model_uid = model.uid
-        self.alfas = model.alfas
+        self.alfa = model.alfa
         self.llh = model.llh
         self.duration = model.duration

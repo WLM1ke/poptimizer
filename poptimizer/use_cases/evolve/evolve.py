@@ -219,7 +219,7 @@ class EvolutionHandler:
     ) -> bool:
         delete = False
 
-        alfa_delta = _delta(model.alfas, evolution.alfas)
+        alfa_delta = _delta(model.alfa, evolution.alfa)
         adj_alfa_delta_critical = evolution.adj_alfa_delta_critical(model.duration)
         sign = ">"
 
@@ -252,7 +252,7 @@ class EvolutionHandler:
         evolution: evolve.Evolution,
         model: evolve.Model,
     ) -> None:
-        alfa_delta = _delta(model.alfas, evolution.alfas)
+        alfa_delta = _delta(model.alfa, evolution.alfa)
         adj_alfa_delta_critical = evolution.adj_alfa_delta_critical(model.duration)
         old_alfa_delta_critical = evolution.alfa_delta_critical
 

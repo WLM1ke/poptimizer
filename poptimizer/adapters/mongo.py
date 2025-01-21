@@ -50,10 +50,16 @@ class Repo:
                     "ver": pymongo.ASCENDING,
                 },
                 {
-                    "alfa": pymongo.ASCENDING,
+                    "alfa_mean": pymongo.ASCENDING,
                 },
                 {
-                    "alfa": pymongo.DESCENDING,
+                    "alfa_mean": pymongo.DESCENDING,
+                },
+                {
+                    "llh_mean": pymongo.ASCENDING,
+                },
+                {
+                    "llh_mean": pymongo.DESCENDING,
                 },
             ]
         )
@@ -62,7 +68,8 @@ class Repo:
                 "$project": {
                     "day": True,
                     "ver": True,
-                    "alfa": True,
+                    "alfa_mean": True,
+                    "llh_mean": True,
                 },
             },
             {"$sort": order},
