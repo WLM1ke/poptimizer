@@ -148,7 +148,7 @@ class EvolutionHandler:
         err: BaseExceptionGroup[errors.DomainError],
     ) -> None:
         await ctx.delete(model)
-        self._lgr.warning("Model deleted - %s...", err.exceptions[0])
+        self._lgr.info("Model deleted - %s...", err.exceptions[0])
 
         minimal_returns_days = _extract_minimal_returns_days(err)
         if minimal_returns_days is not None and evolution.state is not evolve.State.CREATE_NEW_MODEL:
