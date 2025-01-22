@@ -1,5 +1,7 @@
 from typing import Annotated
 
+from pydantic import PlainSerializer
+
 from poptimizer import consts
 from poptimizer.domain.evolve import genetics
 
@@ -114,14 +116,46 @@ class Optimizer(genetics.Chromosome): ...
 
 
 class Scheduler(genetics.Chromosome):
-    epochs: Annotated[
-        float,
-        genetics.gene_range(lower=0),
-    ] = genetics.random_default_range(1, 2)
     max_lr: Annotated[
         float,
         genetics.gene_range(lower=0),
     ] = genetics.random_default_range(0.001, 0.01)
+    epochs: Annotated[
+        float,
+        genetics.gene_range(lower=0),
+    ] = genetics.random_default_range(1, 2)
+    pct_start: Annotated[
+        float,
+        genetics.gene_range(lower=0, upper=1),
+    ] = genetics.random_default_range(0.299, 0.301)
+    anneal_strategy: Annotated[
+        float,
+        PlainSerializer(lambda x: {True: "linear", False: "cos"}[x > 0]),
+    ] = genetics.random_default_range(-1, 1)
+    cycle_momentum: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
+    base_momentum: Annotated[
+        float,
+        genetics.gene_range(lower=0, upper=1),
+    ] = genetics.random_default_range(0.849, 0.851)
+    max_momentum: Annotated[
+        float,
+        genetics.gene_range(lower=0, upper=1),
+    ] = genetics.random_default_range(0.949, 0.951)
+    div_factor: Annotated[
+        float,
+        genetics.gene_range(lower=1),
+    ] = genetics.random_default_range(24.9, 25.1)
+    final_div_factor: Annotated[
+        float,
+        genetics.gene_range(lower=1),
+    ] = genetics.random_default_range(9999, 10001)
+    three_phase: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
 
 
 class Risk(genetics.Chromosome):

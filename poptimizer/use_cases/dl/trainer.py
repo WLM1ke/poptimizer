@@ -32,8 +32,16 @@ class Optimizer(BaseModel): ...
 
 
 class Scheduler(BaseModel):
+    max_lr: float
     epochs: float
-    max_lr: float = 1e-3
+    pct_start: float
+    anneal_strategy: Literal["linear", "cos"]
+    cycle_momentum: bool
+    base_momentum: float
+    max_momentum: float
+    div_factor: float
+    final_div_factor: float
+    three_phase: bool
 
 
 class Cfg(BaseModel):
@@ -136,6 +144,14 @@ class Trainer:
             optimizer,
             max_lr=scheduler.max_lr,
             total_steps=total_steps,
+            pct_start=scheduler.pct_start,
+            anneal_strategy=scheduler.anneal_strategy,
+            cycle_momentum=scheduler.cycle_momentum,
+            base_momentum=scheduler.base_momentum,
+            max_momentum=scheduler.max_momentum,
+            div_factor=scheduler.div_factor,
+            final_div_factor=scheduler.final_div_factor,
+            three_phase=scheduler.three_phase,
         )
 
         self._log_net_stats(net, scheduler.epochs, len(train_dl.dataset))  # type: ignore[arg-type]
@@ -198,7 +214,7 @@ class Trainer:
                     forecast_days,
                 )
 
-                self._lgr.info("%s / LLH = %8.5f", rez, loss)
+                self._lgr.info("%s / LLH = %7.4f", rez, loss)
 
                 alfa.append(rez.ret - rez.avr)
                 llh.append(loss)
