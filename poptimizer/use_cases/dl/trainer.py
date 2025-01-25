@@ -28,7 +28,14 @@ class Batch(BaseModel):
         return sum(on for _, on in self.feats)
 
 
-class Optimizer(BaseModel): ...
+class Optimizer(BaseModel):
+    lr: float
+    beta1: float
+    beta2: float
+    eps: float
+    weight_decay: float
+    momentum_decay: float
+    decoupled_weight_decay: bool
 
 
 class Scheduler(BaseModel):
@@ -122,7 +129,7 @@ class Trainer:
         forecast_days: int,
     ) -> None:
         net = self._prepare_net(cfg)
-        self._train(net, cfg.scheduler, data, cfg.batch.size)
+        self._train(net, cfg.optimizer, cfg.scheduler, data, cfg.batch.size)
 
         model.alfa, model.llh = self._test(net, cfg, forecast_days, data)
         model.mean, model.cov = self._forecast(net, forecast_days, data)
@@ -130,18 +137,27 @@ class Trainer:
     def _train(
         self,
         net: wave_net.Net,
+        optimizer: Optimizer,
         scheduler: Scheduler,
         data: list[datasets.TickerData],
         batch_size: int,
     ) -> None:
         train_dl = data_loaders.train(data, batch_size)
-        optimizer = optim.NAdam(net.parameters())  # type: ignore[reportPrivateImportUsage]
+        opt = optim.NAdam(
+            net.parameters(),
+            lr=optimizer.lr,
+            betas=(optimizer.beta1, optimizer.beta2),
+            eps=optimizer.eps,
+            weight_decay=optimizer.weight_decay,
+            momentum_decay=optimizer.momentum_decay,
+            decoupled_weight_decay=optimizer.decoupled_weight_decay,
+        )
 
         steps_per_epoch = len(train_dl)
         total_steps = 1 + int(steps_per_epoch * scheduler.epochs)
 
         sch = optim.lr_scheduler.OneCycleLR(  # type: ignore[attr-defined]
-            optimizer,
+            opt,
             max_lr=scheduler.max_lr,
             total_steps=total_steps,
             pct_start=scheduler.pct_start,
@@ -171,14 +187,14 @@ class Trainer:
                 if self._stopping:
                     return
 
-                optimizer.zero_grad()
+                opt.zero_grad()
 
                 loss = -net.llh(
                     batch.num_feat.to(self._device),
                     batch.labels.to(self._device),
                 )
                 loss.backward()  # type: ignore[no-untyped-call]
-                optimizer.step()  # type: ignore[reportUnknownMemberType]
+                opt.step()  # type: ignore[reportUnknownMemberType]
                 sch.step()
 
                 avg_llh.append(-loss.item())

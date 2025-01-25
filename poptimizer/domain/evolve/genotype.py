@@ -112,7 +112,35 @@ class Net(genetics.Chromosome):
     ] = genetics.random_default_range(2, 4)
 
 
-class Optimizer(genetics.Chromosome): ...
+class Optimizer(genetics.Chromosome):
+    lr: Annotated[
+        float,
+        genetics.gene_range(lower=0),
+    ] = genetics.random_default_range(0.0019, 0.0021)
+    beta1: Annotated[
+        float,
+        genetics.gene_range(lower=0, upper=1),
+    ] = genetics.random_default_range(0.89, 0.91)
+    beta2: Annotated[
+        float,
+        genetics.gene_range(lower=0, upper=1),
+    ] = genetics.random_default_range(0.9989, 0.9991)
+    eps: Annotated[
+        float,
+        genetics.gene_range(lower=0),
+    ] = genetics.random_default_range(1.0e-9, 1.0e-7)
+    weight_decay: Annotated[
+        float,
+        genetics.gene_range(lower=0),
+    ] = genetics.random_default_range(0, 0.01)
+    momentum_decay: Annotated[
+        float,
+        genetics.gene_range(lower=0),
+    ] = genetics.random_default_range(0.00399, 0.00401)
+    decoupled_weight_decay: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
 
 
 class Scheduler(genetics.Chromosome):
