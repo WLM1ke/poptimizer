@@ -33,8 +33,11 @@ async def _load_indexes(ctx: handler.Ctx, df_index: pd.DatetimeIndex) -> list[di
         index_table = await task
         index_df = pd.DataFrame(task.result().model_dump()["df"]).set_index("day").reindex(df_index).ffill()  # type: ignore[reportUnknownMemberType]
 
-        if index_table.uid != index.RVI:
-            index_df: pd.DataFrame = np.log1p(index_df.pct_change())  # type: ignore[reportUnknownMemberType]
+        match index_table.uid:
+            case index.RVI:
+                index_df = index_df / 100
+            case _:
+                index_df: pd.DataFrame = np.log1p(index_df.pct_change())  # type: ignore[reportUnknownMemberType]
 
         indexes.append(index_df)
 
