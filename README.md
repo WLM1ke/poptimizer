@@ -1,4 +1,4 @@
-# <picture><img src="frontend/static/favicon.ico" alt="MDN" height="32px"/></picture> Оптимизация долгосрочного портфеля акций
+# <picture><img src="frontend/static/favicon.ico" height="32px"/></picture> Оптимизация долгосрочного портфеля акций
 
 [![Test](https://github.com/WLM1ke/poptimizer/actions/workflows/test.yml/badge.svg)](https://github.com/WLM1ke/poptimizer/actions/workflows/test.yml)
 
