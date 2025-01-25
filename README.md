@@ -1,6 +1,6 @@
-[![Test](https://github.com/WLM1ke/poptimizer/actions/workflows/test.yml/badge.svg)](https://github.com/WLM1ke/poptimizer/actions/workflows/test.yml)
+# <picture><img src="frontend/static/favicon.ico" alt="MDN" height="32px"/></picture> Оптимизация долгосрочного портфеля акций
 
-# Оптимизация долгосрочного портфеля акций
+[![Test](https://github.com/WLM1ke/poptimizer/actions/workflows/test.yml/badge.svg)](https://github.com/WLM1ke/poptimizer/actions/workflows/test.yml)
 
 ## Установка
 
