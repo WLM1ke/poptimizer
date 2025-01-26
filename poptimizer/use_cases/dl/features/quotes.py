@@ -51,7 +51,7 @@ async def _build_features(ctx: handler.Ctx, ticker: domain.UID, index: pd.Dateti
     quotes_df[NumFeat.TURNOVER] = turnover_df  # type: ignore[reportUnknownMemberType]
 
     feat = await ctx.get_for_update(Features, quotes_table.uid)
-    feat.update(quotes_table.day, quotes_df)  # type: ignore[reportUnknownMemberType]
+    feat.update_numerical(quotes_table.day, quotes_df)  # type: ignore[reportUnknownMemberType]
 
 
 async def _prepare_div(ctx: handler.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> pd.Series[float]:
