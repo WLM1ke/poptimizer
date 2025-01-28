@@ -158,8 +158,8 @@ class ForecastHandler:
                     std=median_std[n],
                     beta=median_betas[n],
                     grad=median_grads[n],
-                    grad_lower=cast(float, median_grads_lower[n]),
-                    grad_upper=cast(float, median_grads_upper[n]),
+                    grad_lower=np.nan_to_num(cast(float, median_grads_lower[n]), nan=-np.inf),
+                    grad_upper=np.nan_to_num(cast(float, median_grads_upper[n]), nan=np.inf),
                 )
             )
 

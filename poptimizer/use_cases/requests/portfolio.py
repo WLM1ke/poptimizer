@@ -1,11 +1,14 @@
+import sys
 from datetime import date
-from typing import Self
+from typing import Final, Self
 
 from pydantic import BaseModel, NonNegativeInt, PositiveFloat, PositiveInt
 
 from poptimizer.domain import domain
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
+
+_MAX_FLOAT: Final = sys.float_info.max
 
 
 class GetPortfolio(handler.DTO): ...
@@ -61,6 +64,13 @@ class Position(handler.DTO):
 class GetForecast(handler.DTO): ...
 
 
+def _remove_inf_grad(pos: forecasts.Position) -> forecasts.Position:
+    pos.grad_upper = min(_MAX_FLOAT, pos.grad_upper)
+    pos.grad_lower = max(-_MAX_FLOAT, pos.grad_lower)
+
+    return pos
+
+
 class Forecast(handler.DTO):
     day: date
     portfolio_ver: int
@@ -78,7 +88,7 @@ class Forecast(handler.DTO):
             portfolio_ver=forecast.portfolio_ver,
             mean=forecast.mean,
             std=forecast.std,
-            positions=forecast.positions,
+            positions=[_remove_inf_grad(pos) for pos in forecast.positions],
             forecasts_count=forecast.forecasts_count,
             forecast_days=forecast.forecast_days,
             risk_tolerance=forecast.risk_tolerance,
