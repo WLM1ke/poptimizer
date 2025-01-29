@@ -199,7 +199,7 @@ class EvolutionHandler:
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"New base {model.stats}")
 
-                if await ctx.count_models() > evolution.test_days:
+                if model.alfa_mean < 0:
                     evolution.alfa_delta_critical *= 1 - 1 / evolution.test_days
                     evolution.llh_delta_critical *= 1 - 1 / evolution.test_days
                     evolution.test_days += 1
