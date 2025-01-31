@@ -20,11 +20,17 @@ tasks:
       - cd {{.FRONTEND}} && npm install && npm run build
 
   update:
-    desc: Upgrade tools and dependencies
+    desc: Update tools and dependencies
     cmds:
       - brew upgrade {{.TOOLS}}
       - uv sync --upgrade
       - cd {{.FRONTEND}} && npm update --save --save-dev
+
+  update_ver:
+    desc: Update POptimizer version and rebuild frontend
+    cmds:
+      - git pull
+      - task: build
 
   format:
     desc: Format
@@ -50,9 +56,6 @@ tasks:
   build:
     desc: Build frontend
     cmds:
-      - task: format
-      - task: lint
-      - task: test
       - cd {{.FRONTEND}} && npm run build
 
   dev:
