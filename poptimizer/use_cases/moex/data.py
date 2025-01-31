@@ -78,7 +78,7 @@ class DataHandler:
             table = await ctx.get_for_update(trading_day.TradingDay)
             table.portfolio_ver = port.ver
 
-            self._lgr.warning("New portfolio version %s", table.portfolio_ver)
+            self._lgr.info("New portfolio version %s", table.portfolio_ver)
 
         return handler.DataChecked(
             day=table.day,
@@ -106,7 +106,7 @@ class DataHandler:
     async def _update(self, ctx: handler.Ctx, last_trading_day: domain.Day) -> handler.DataChecked:
         table = await ctx.get_for_update(trading_day.TradingDay)
         table.update_last_trading_day(last_trading_day)
-        self._lgr.warning("Moex data updated for %s", last_trading_day)
+        self._lgr.info("Moex data updated for %s", last_trading_day)
 
         return await self._check_portfolio_ver(ctx, table)
 
