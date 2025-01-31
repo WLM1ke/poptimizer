@@ -77,6 +77,10 @@ class IndexFeatUpdated(Event):
     day: domain.Day
 
 
+class SecFeatUpdated(Event):
+    day: domain.Day
+
+
 class DivStatusUpdated(Event):
     day: domain.Day
 
