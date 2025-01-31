@@ -8,9 +8,15 @@
 
 - установить пакетный менеджер [Homebrew](https://brew.sh) _(если еще не установлен)_
 - установить [Task](https://taskfile.dev/installation/#homebrew)
+- клонировать POptimizer
+
+```bash
+git clone https://github.com/WLM1ke/poptimizer.git
+```
+
 - создать Telegram [бота](https://core.telegram.org/bots/features#creating-a-new-bot) и запомните его токен _(опционально для важных служебных сообщений)_
 - узнать свой [chat id](https://gist.github.com/nafiesl/4ad622f344cd1dc3bb1ecbe468ff9f8a#get-chat-id-for-a-private-chat) _(опционально для важных служебных сообщений)_
-- заполнить `.env.template` и переименовать его в `.env` _(опционально при использование Telegram и нестандартных настроек)_
+- создать `.env` и заполнить на основе `.env.template` _(опционально при использование Telegram и нестандартных настроек)_
 - запустить команду установки необходимых инструментов
 
 ```bash
