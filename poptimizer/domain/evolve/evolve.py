@@ -66,10 +66,12 @@ class Model(domain.Entity):
         return f"{self.__class__.__name__}(ver={self.ver}, risk_aversion={1 - risk_tol:.2%}, history={history:.2f})"
 
     @computed_field
+    @property
     def alfa_mean(self) -> float:
         return statistics.mean(self.alfa or [0])
 
     @computed_field
+    @property
     def llh_mean(self) -> float:
         return statistics.mean(self.llh or [0])
 
