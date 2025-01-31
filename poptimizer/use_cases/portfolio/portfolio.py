@@ -20,7 +20,7 @@ class PortfolioHandler:
         old_value = port.value
         old_forecast_days = port.forecast_days
 
-        sec_cache = await self._prepare_sec_cache(ctx, msg.day, port.forecast_days)
+        sec_cache = await self._prepare_sec_cache(ctx, msg.day)
         min_turnover = _calc_min_turnover(port, sec_cache)
 
         self._update_existing_positions(port, sec_cache, min_turnover)
@@ -41,7 +41,6 @@ class PortfolioHandler:
         self,
         ctx: handler.Ctx,
         update_day: domain.Day,
-        forecast_days: int,
     ) -> dict[domain.Ticker, portfolio.Position]:
         async with asyncio.TaskGroup() as tg:
             sec_task = tg.create_task(ctx.get(securities.Securities))
@@ -58,7 +57,7 @@ class PortfolioHandler:
                 ticker=sec.ticker,
                 lot=sec.lot,
                 price=quotes.result().df[-1].close,
-                turnover=statistics.median(quote.turnover for quote in quotes.result().df[-forecast_days:]),
+                turnover=statistics.median(quote.turnover for quote in quotes.result().df[-evolution.test_days :]),
             )
             for sec, quotes in zip(sec_table.df, quotes_tasks, strict=True)
             if len(quotes.result().df) > evolution.minimal_returns_days and quotes.result().df[-1].day == update_day
@@ -75,13 +74,13 @@ class PortfolioHandler:
         for position in port.positions:
             match sec_cache.pop(position.ticker, None):
                 case None if not position.accounts:
-                    self._lgr.warning("Not enough traded %s is removed", position.ticker)
+                    self._lgr.info("Not enough traded %s is removed", position.ticker)
                 case None:
                     position.turnover = 0
                     updated_positions.append(position)
                     self._lgr.warning("Not enough traded %s is not removed", position.ticker)
                 case new_position if new_position.turnover < min_turnover and not position.accounts:
-                    self._lgr.warning("Not liquid %s is removed", position.ticker)
+                    self._lgr.info("Not liquid %s is removed", position.ticker)
                 case new_position if new_position.turnover < min_turnover:
                     new_position.accounts = position.accounts
                     updated_positions.append(new_position)
@@ -103,7 +102,7 @@ class PortfolioHandler:
                 n, _ = port.find_position(position.ticker)
                 port.positions.insert(n, position)
                 if port.ver:
-                    self._lgr.warning("%s is added", ticker)
+                    self._lgr.info("%s is added", ticker)
 
 
 def _calc_min_turnover(
