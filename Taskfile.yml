@@ -29,7 +29,8 @@ tasks:
     desc: Update POptimizer version and rebuild frontend
     cmds:
       - rm -rf backup
-      - cp -r $(ls -A | grep -v .venv) backup
+      - mkdir backup
+      - cp -r $(ls -A | grep -v .venv .git) backup
       - git stash
       - git pull
       - task: lint
@@ -40,7 +41,7 @@ tasks:
   revert_ver:
     desc: Revert POptimizer to version form backup
     cmds:
-      - rm -rf $(ls -A | grep -v backup .venv)
+      - rm -rf $(ls -A | grep -v backup .venv .git)
       - cp -r backup/. . 
 
   run:
