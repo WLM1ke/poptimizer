@@ -17,20 +17,26 @@ tasks:
       - brew tap mongodb/brew
       - brew install {{.TOOLS}}
       - uv sync --frozen
-      - cd {{.FRONTEND}} && npm install && npm run build
+      - cd {{.FRONTEND}} && npm install
+      - task: build
 
-  update:
-    desc: Update tools and dependencies
+  mongo:
+    desc: Run MongoDB server service
     cmds:
-      - brew upgrade {{.TOOLS}}
-      - uv sync --upgrade
-      - cd {{.FRONTEND}} && npm update --save --save-dev
-
+      - brew services start mongodb-community
+      
   update_ver:
     desc: Update POptimizer version and rebuild frontend
     cmds:
       - git pull
+      - task: lint
+      - task: test
       - task: build
+
+  run:
+    desc: Run POptimizer
+    cmds:
+      - uv run {{.APP}}
 
   format:
     desc: Format
@@ -63,12 +69,9 @@ tasks:
     cmds:
       - cd {{.FRONTEND}} && npm run dev -- --open
 
-  run:
-    desc: Run POptimizer with .env file
+  update:
+    desc: Update tools and dependencies
     cmds:
-      - uv run {{.APP}}
-
-  mongo:
-    desc: Run MongoDB Server
-    cmds:
-      - brew services start mongodb-community
+      - brew upgrade {{.TOOLS}}
+      - uv sync --upgrade
+      - cd {{.FRONTEND}} && npm update --save --save-dev
