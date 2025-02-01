@@ -1,11 +1,12 @@
 import typer
 
-from poptimizer import app
+from poptimizer.cli import app, portfolio
 
 
 def main() -> None:
     cli = typer.Typer(pretty_exceptions_enable=False)
     cli.command()(app.run)
+    cli.command()(portfolio.export)
     cli()
 
 

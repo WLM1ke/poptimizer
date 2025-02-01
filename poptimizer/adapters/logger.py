@@ -34,7 +34,7 @@ class _TelegramHandler(logging.Handler):
         self._lgr = logging.getLogger(name=_TELEGRAM_LOGGER_NAME)
 
     def filter(self, record: logging.LogRecord) -> bool:
-        return record.name != _TELEGRAM_LOGGER_NAME and self._chat_id != ""
+        return record.name != _TELEGRAM_LOGGER_NAME
 
     def emit(self, record: logging.LogRecord) -> None:
         self._tg.create_task(self._emit(record.getMessage()))
@@ -97,24 +97,29 @@ class _ColorFormatter(logging.Formatter):
 
 @asynccontextmanager
 async def init(
-    http_client: aiohttp.ClientSession,
-    token: str,
-    chat_id: str,
+    http_client: aiohttp.ClientSession | None = None,
+    token: str = "",
+    chat_id: str = "",
 ) -> AsyncIterator[logging.Logger]:
     color_handler = logging.StreamHandler(sys.stdout)
     color_handler.setFormatter(_ColorFormatter())
+    handlers: list[logging.Handler] = [color_handler]
 
     tg = asyncio.TaskGroup()
-    telegram_handler = _TelegramHandler(
-        tg,
-        http_client,
-        token,
-        chat_id,
-    )
+
+    if http_client is not None and token != "" and chat_id != "":
+        handlers.append(
+            _TelegramHandler(
+                tg,
+                http_client,
+                token,
+                chat_id,
+            )
+        )
 
     logging.basicConfig(
         level=logging.INFO,
-        handlers=[color_handler, telegram_handler],
+        handlers=handlers,
     )
     logging.getLogger("pymongo").setLevel(logging.CRITICAL)
 

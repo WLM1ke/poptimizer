@@ -47,7 +47,12 @@ tasks:
   run:
     desc: Run POptimizer
     cmds:
-      - uv run {{.APP}}
+      - uv run {{.APP}} run
+
+  export:
+    desc: Export current portfolio
+    cmds:
+      - uv run {{.APP}} export
 
   format:
     desc: Format

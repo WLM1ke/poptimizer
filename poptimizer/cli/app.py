@@ -43,8 +43,8 @@ async def _run() -> None:
 
 
 def run() -> None:
-    """Запускает асинхронное приложение, которое может быть остановлено SIGINT.
+    """Run POptimizer.
 
-    Настройки передаются через .env файл.
+    Can't be stopped with Ctrl-C/SIGINT. Settings from .env.
     """
     uvloop.run(_run())
