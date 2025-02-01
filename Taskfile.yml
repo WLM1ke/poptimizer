@@ -37,6 +37,11 @@ tasks:
       - task: build
       - git stash pop
 
+  revert_ver:
+    desc: Revert POptimizer to version form backup
+    cmds:
+      - cp -r backup . 
+
   run:
     desc: Run POptimizer
     cmds:
