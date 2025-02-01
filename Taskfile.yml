@@ -28,10 +28,14 @@ tasks:
   update_ver:
     desc: Update POptimizer version and rebuild frontend
     cmds:
+      - rm -rf backup
+      - cp -r . backup
+      - git stash
       - git pull
       - task: lint
       - task: test
       - task: build
+      - git stash pop
 
   run:
     desc: Run POptimizer
