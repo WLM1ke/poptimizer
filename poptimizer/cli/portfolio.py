@@ -12,6 +12,7 @@ from poptimizer.domain.portfolio import portfolio
 
 _RUR: Final = "RUR"
 _POSITIONS: Final = "positions"
+_DEFAULT_OUT: Final = Path("portfolio") / "total.json"
 
 
 async def _run(out: Path) -> None:
@@ -45,7 +46,7 @@ async def _run(out: Path) -> None:
         raise err
 
 
-def export(out: Path = Path("portfolio") / "total.json") -> None:
+def export(out: Path = _DEFAULT_OUT) -> None:
     """Export current portfolio in json.
 
     Can't be stopped with Ctrl-C/SIGINT. MongoDB settings from .env.
