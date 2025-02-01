@@ -40,7 +40,8 @@ tasks:
   revert_ver:
     desc: Revert POptimizer to version form backup
     cmds:
-      - cp -r backup . 
+      - rm -rf $(ls -A | grep -v backup)
+      - cp -r backup/. . 
 
   run:
     desc: Run POptimizer
