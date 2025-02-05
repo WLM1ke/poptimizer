@@ -25,7 +25,7 @@
 - клонировать `POptimizer`
 
 ```bash
-git clone https://github.com/WLM1ke/poptimizer.git && cd poptimizer
+git clone --filter=blob:none https://github.com/WLM1ke/poptimizer.git && cd poptimizer
 ```
 
 - создать `.env` и заполнить на основе `.env.template` те строки, которые отличаются от настроек по умолчанию
