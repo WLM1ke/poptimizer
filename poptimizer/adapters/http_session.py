@@ -9,12 +9,12 @@ _HEADERS: Final = {
     "User-Agent": "POptimizer",
     "Connection": "keep-alive",
 }
-_ROS_STAT_CERTS: Final = Path(__file__).parent / "certs" / "_.rosstat.gov.ru.pem"
+_ROS_STAT_CERT: Final = Path(__file__).parent / "certs" / "_.rosstat.gov.ru.pem"
 
 
 def client(on_per_host: int = _MAX_ISS_CON) -> aiohttp.ClientSession:
     ctx = ssl.create_default_context()
-    ctx.load_verify_locations(_ROS_STAT_CERTS)
+    ctx.load_verify_locations(_ROS_STAT_CERT)
     return aiohttp.ClientSession(
         connector=aiohttp.TCPConnector(
             ssl_context=ctx,
