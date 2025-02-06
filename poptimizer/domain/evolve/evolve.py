@@ -123,7 +123,7 @@ class Evolution(domain.Entity):
     def init_new_day(self, day: domain.Day) -> None:
         self.day = day
         self.step = 1
-        self.test_days = max(2, int((self.test_days**0.5 - 1) ** 2))
+        self.test_days = max(2, self.test_days - 1)
         self.minimal_returns_days = max(1, self.minimal_returns_days - 1)
         self.state = State.EVAL_NEW_BASE_MODEL
 
