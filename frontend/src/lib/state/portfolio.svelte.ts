@@ -104,7 +104,7 @@ class PortfolioView {
 			.filter((pos) => pos.value !== 0)
 			.sort(portSortByValue.value ? compValue : compTickers)
 	);
-	positionsCount = $derived(portfolio.positions.length);
+	positionsCount = $derived(portfolio.positions.filter((pos) => Object.keys(pos.accounts).length ?? 0 > 0).length);
 	effectiveCount = $derived(
 		Math.round(
 			this.value - this.cash > 0
