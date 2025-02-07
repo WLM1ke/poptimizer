@@ -623,7 +623,6 @@ wheels = [
 
 [[package]]
 name = "poptimizer"
-version = "3.0.0a0"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },

@@ -2,6 +2,8 @@ from datetime import date
 from pathlib import Path
 from typing import Final
 
+__version__ = "3.0.0a1"
+
 ROOT: Final = Path(__file__).parents[1]
 
 # Дата, с которой собираются дивиденды
