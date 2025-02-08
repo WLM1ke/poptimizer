@@ -3,7 +3,6 @@ from poptimizer.domain import domain
 
 
 class TradingDay(domain.Entity):
-    portfolio_ver: domain.Version = domain.Version(0)
     last_check: domain.Day = consts.START_DAY
 
     def update_last_check(self, day: domain.Day) -> None:

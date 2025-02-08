@@ -32,17 +32,19 @@ class ForecastHandler:
             case handler.ModelEvaluated():
                 forecast.models.add(msg.uid)
 
-        if forecast.update_required(msg.portfolio_ver):
-            await self._update(ctx, forecast)
+        port = await ctx.get(portfolio.Portfolio)
 
-        return handler.ForecastsAnalyzed(day=forecast.day, portfolio_ver=forecast.portfolio_ver)
+        if forecast.update_required(port.ver):
+            await self._update(ctx, forecast, port)
+
+        return handler.ForecastsAnalyzed(day=forecast.day)
 
     async def _update(
         self,
         ctx: handler.Ctx,
         forecast: forecasts.Forecast,
+        port: portfolio.Portfolio,
     ) -> None:
-        port = await ctx.get(portfolio.Portfolio)
         positions = port.normalized_positions
         port_tickers = tuple(pos.ticker for pos in positions)
 

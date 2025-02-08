@@ -99,7 +99,6 @@ class State(StrEnum):
 
 
 class Evolution(domain.Entity):
-    portfolio_ver: domain.Version = domain.Version(0)
     tickers: domain.Tickers = Field(default_factory=tuple)
     forecast_days: PositiveInt = 1
     state: State = State.EVAL_NEW_BASE_MODEL
@@ -120,25 +119,19 @@ class Evolution(domain.Entity):
 
         return self
 
-    def init_new_day(self, day: domain.Day) -> None:
+    def init_new_day(
+        self,
+        day: domain.Day,
+        tickers: domain.Tickers,
+        forecast_days: int,
+    ) -> None:
         self.day = day
+        self.tickers = tickers
+        self.forecast_days = forecast_days
         self.step = 1
         self.test_days = max(2, self.test_days - 1)
         self.minimal_returns_days = max(1, self.minimal_returns_days - 1)
         self.state = State.EVAL_NEW_BASE_MODEL
-
-    def update_portfolio_ver(
-        self,
-        portfolio_ver: domain.Version,
-        tickers: domain.Tickers,
-        forecast_days: int,
-    ) -> None:
-        if self.tickers != tickers or self.forecast_days != forecast_days:
-            self.state = State.EVAL_NEW_BASE_MODEL
-
-        self.portfolio_ver = portfolio_ver
-        self.tickers = tickers
-        self.forecast_days = forecast_days
 
     def adj_alfa_delta_critical(self, duration: NonNegativeFloat) -> float:
         return self.alfa_delta_critical * min(1, self.duration / duration)

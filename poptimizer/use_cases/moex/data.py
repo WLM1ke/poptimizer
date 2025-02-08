@@ -10,7 +10,6 @@ from pydantic import BaseModel, Field, field_validator
 from poptimizer import errors
 from poptimizer.domain import domain
 from poptimizer.domain.moex import trading_day
-from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
 # Часовой пояс MOEX
@@ -60,7 +59,7 @@ class DataHandler:
 
         new_last_check = _last_day()
         if table.last_check >= new_last_check:
-            return await self._check_portfolio_ver(ctx, table)
+            return handler.DataChecked(day=table.day)
 
         last_day = await self._get_last_trading_day_from_moex()
 
@@ -68,22 +67,9 @@ class DataHandler:
             table = await ctx.get_for_update(trading_day.TradingDay)
             table.last_check = new_last_check
 
-            return await self._check_portfolio_ver(ctx, table)
+            return handler.DataChecked(day=table.day)
 
         return handler.NewDataPublished(day=last_day)
-
-    async def _check_portfolio_ver(self, ctx: handler.Ctx, table: trading_day.TradingDay) -> handler.DataChecked:
-        port = await ctx.get(portfolio.Portfolio)
-        if port.ver > table.portfolio_ver:
-            table = await ctx.get_for_update(trading_day.TradingDay)
-            table.portfolio_ver = port.ver
-
-            self._lgr.info("New portfolio version %s", table.portfolio_ver)
-
-        return handler.DataChecked(
-            day=table.day,
-            portfolio_ver=table.portfolio_ver,
-        )
 
     async def _get_last_trading_day_from_moex(self) -> domain.Day:
         try:
@@ -108,7 +94,7 @@ class DataHandler:
         table.update_last_trading_day(last_trading_day)
         self._lgr.info("Moex data updated for %s", last_trading_day)
 
-        return await self._check_portfolio_ver(ctx, table)
+        return handler.DataChecked(day=table.day)
 
 
 def _last_day() -> date:

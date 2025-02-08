@@ -87,21 +87,17 @@ class DivStatusUpdated(Event):
 
 class DataChecked(Event):
     day: domain.Day
-    portfolio_ver: domain.Version
 
 
 class ModelDeleted(Event):
     day: domain.Day
-    portfolio_ver: domain.Version
     uid: domain.UID
 
 
 class ModelEvaluated(Event):
     day: domain.Day
-    portfolio_ver: domain.Version
     uid: domain.UID
 
 
 class ForecastsAnalyzed(Event):
     day: domain.Day
-    portfolio_ver: domain.Version

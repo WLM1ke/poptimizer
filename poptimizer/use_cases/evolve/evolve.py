@@ -72,7 +72,7 @@ class EvolutionHandler:
         except* errors.DomainError as err:
             await self._delete_model_on_error(ctx, evolution, model, err)
 
-            event = handler.ModelDeleted(day=evolution.day, portfolio_ver=evolution.portfolio_ver, uid=model.uid)
+            event = handler.ModelDeleted(day=evolution.day, uid=model.uid)
         else:
             return await self._eval_model(ctx, evolution, model)
 
@@ -91,12 +91,12 @@ class EvolutionHandler:
             case True:
                 evolution.step += 1
             case False:
-                evolution.init_new_day(msg.day)
-
-        if evolution.portfolio_ver < msg.portfolio_ver:
-            port = await ctx.get(portfolio.Portfolio)
-            tickers = tuple(pos.ticker for pos in port.positions)
-            evolution.update_portfolio_ver(port.ver, tickers, port.forecast_days)
+                port = await ctx.get(portfolio.Portfolio)
+                evolution.init_new_day(
+                    msg.day,
+                    tuple(pos.ticker for pos in port.positions),
+                    port.forecast_days,
+                )
 
         return evolution
 
@@ -182,7 +182,7 @@ class EvolutionHandler:
                     await ctx.delete(model)
                     self._lgr.info(f"{model.stats} deleted - low metrics")
 
-                    return handler.ModelDeleted(day=evolution.day, portfolio_ver=evolution.portfolio_ver, uid=model.uid)
+                    return handler.ModelDeleted(day=evolution.day, uid=model.uid)
 
                 evolution.new_base(model)
                 self._lgr.info(f"New base {model.stats}")
@@ -193,7 +193,7 @@ class EvolutionHandler:
                     await ctx.delete(model)
                     self._lgr.info(f"{model.stats} deleted - low metrics")
 
-                    return handler.ModelDeleted(day=evolution.day, portfolio_ver=evolution.portfolio_ver, uid=model.uid)
+                    return handler.ModelDeleted(day=evolution.day, uid=model.uid)
 
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
@@ -210,7 +210,7 @@ class EvolutionHandler:
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"Current base {model.stats} reevaluated")
 
-        return handler.ModelEvaluated(day=evolution.day, portfolio_ver=evolution.portfolio_ver, uid=model.uid)
+        return handler.ModelEvaluated(day=evolution.day, uid=model.uid)
 
     def _should_delete(
         self,
