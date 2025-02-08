@@ -48,3 +48,7 @@ def run() -> None:
     Can't be stopped with Ctrl-C/SIGINT. Settings from .env.
     """
     uvloop.run(_run())
+
+
+if __name__ == "__main__":
+    run()
