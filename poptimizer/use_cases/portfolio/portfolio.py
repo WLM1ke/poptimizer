@@ -16,6 +16,9 @@ class PortfolioHandler:
     async def __call__(self, ctx: handler.Ctx, msg: handler.QuotesUpdated) -> handler.PortfolioUpdated:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
+        if port.day == msg.day:
+            return handler.PortfolioUpdated(trading_days=msg.trading_days)
+
         old_day = port.day
         old_value = port.value
         old_forecast_days = port.forecast_days
