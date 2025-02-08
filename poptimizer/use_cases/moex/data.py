@@ -7,7 +7,7 @@ import aiohttp
 import aiomoex
 from pydantic import BaseModel, Field, field_validator
 
-from poptimizer import errors
+from poptimizer import consts, errors
 from poptimizer.domain import domain
 from poptimizer.domain.moex import trading_day
 from poptimizer.use_cases import handler
@@ -56,18 +56,22 @@ class DataHandler:
 
     async def _check(self, ctx: handler.Ctx) -> handler.NewDataPublished | handler.DataChecked:
         table = await ctx.get(trading_day.TradingDay)
+        current_poptimizer_ver = table.poptimizer_ver == consts.__version__
 
         new_last_check = _last_day()
-        if table.last_check >= new_last_check:
+        if current_poptimizer_ver and table.last_check >= new_last_check:
             return handler.DataChecked(day=table.day)
 
         last_day = await self._get_last_trading_day_from_moex()
 
-        if table.day >= last_day:
+        if current_poptimizer_ver and table.day >= last_day:
             table = await ctx.get_for_update(trading_day.TradingDay)
             table.last_check = new_last_check
 
             return handler.DataChecked(day=table.day)
+
+        if not current_poptimizer_ver:
+            self._lgr.warning("POptimizer version updated to %s - rebuilding data", consts.__version__)
 
         return handler.NewDataPublished(day=last_day)
 
@@ -91,8 +95,8 @@ class DataHandler:
 
     async def _update(self, ctx: handler.Ctx, last_trading_day: domain.Day) -> handler.DataChecked:
         table = await ctx.get_for_update(trading_day.TradingDay)
-        table.update_last_trading_day(last_trading_day)
-        self._lgr.info("Moex data updated for %s", last_trading_day)
+        table.update_last_trading_day(last_trading_day, consts.__version__)
+        self._lgr.info("Data updated for %s", last_trading_day)
 
         return handler.DataChecked(day=table.day)
 
