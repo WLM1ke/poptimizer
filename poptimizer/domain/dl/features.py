@@ -25,9 +25,6 @@ class NumFeat(StrEnum):
 @unique
 class EmbeddingFeat(StrEnum):
     ticker = auto()
-    board = auto()
-    type = auto()
-    instrument = auto()
 
 
 class EmbeddingFeatValue(BaseModel):
