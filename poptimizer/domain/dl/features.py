@@ -27,7 +27,7 @@ class EmbeddingFeat(StrEnum):
     ticker = auto()
 
 
-class EmbeddingFeatValue(BaseModel):
+class EmbeddingFeatDesc(BaseModel):
     value: NonNegativeInt
     size: int = Field(ge=2)
 
@@ -41,7 +41,7 @@ class EmbeddingFeatValue(BaseModel):
 
 class Features(domain.Entity):
     numerical: list[dict[NumFeat, FiniteFloat]] = Field(default_factory=list)
-    embedding: dict[EmbeddingFeat, EmbeddingFeatValue] = Field(default_factory=dict)
+    embedding: dict[EmbeddingFeat, EmbeddingFeatDesc] = Field(default_factory=dict)
 
     @field_validator("numerical")
     def _numerical_match_labels(
@@ -63,8 +63,8 @@ class Features(domain.Entity):
     @field_validator("embedding")
     def _embedding_match_labels(
         cls,
-        embedding: dict[EmbeddingFeat, EmbeddingFeatValue],
-    ) -> dict[EmbeddingFeat, EmbeddingFeatValue]:
+        embedding: dict[EmbeddingFeat, EmbeddingFeatDesc],
+    ) -> dict[EmbeddingFeat, EmbeddingFeatDesc]:
         if embedding and embedding.keys() != set(EmbeddingFeat):
             raise ValueError("key are not embedding features")
 

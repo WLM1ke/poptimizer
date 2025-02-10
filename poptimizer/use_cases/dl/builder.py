@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from poptimizer import consts
+from poptimizer import consts, errors
 from poptimizer.domain import domain
 from poptimizer.domain.dl import datasets, features
 
@@ -28,6 +28,7 @@ class Builder:
         self._day = consts.START_DAY
         self._tickers: tuple[domain.Ticker, ...] = ()
         self._cache: list[features.Features] = []
+        self._embedding_sizes: dict[features.EmbeddingFeat, int] = {}
 
     async def build(
         self,
@@ -66,3 +67,10 @@ class Builder:
             tasks = [tg.create_task(ctx.get(features.Features, domain.UID(ticker))) for ticker in tickers]
 
         self._cache = [await task for task in tasks]
+
+        first_embedding = self._cache[0].embedding
+        self._embedding_sizes = {feat: desc.size for feat, desc in first_embedding.items()}
+        for n in range(1, len(self._cache)):
+            embedding = self._cache[n].embedding
+            if {feat: desc.size for feat, desc in embedding.items()} != self._embedding_sizes:
+                raise errors.UseCasesError("unequal embeddings sizes")
