@@ -6,7 +6,7 @@ from poptimizer import consts
 from poptimizer.domain.evolve import genetics
 
 
-class Features(genetics.Chromosome):
+class NumFeatures(genetics.Chromosome):
     open: Annotated[
         float,
         genetics.bool_phenotype(),
@@ -53,13 +53,21 @@ class Features(genetics.Chromosome):
     ] = genetics.random_default_range(-1, 1)
 
 
+class EmbFeatures(genetics.Chromosome):
+    ticker: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
+
+
 class Batch(genetics.Chromosome):
     size: Annotated[
         float,
         genetics.gene_range(lower=1),
         genetics.int_phenotype(),
     ] = genetics.random_default_range(512, 513)
-    feats: Features = genetics.random_chromosome(Features)
+    num_feats: NumFeatures = genetics.random_chromosome(NumFeatures)
+    emb_feats: EmbFeatures = genetics.random_chromosome(EmbFeatures)
     history_days: Annotated[
         float,
         genetics.gene_range(lower=2),
