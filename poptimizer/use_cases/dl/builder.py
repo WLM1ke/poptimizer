@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from poptimizer.use_cases import handler
 
 
-class Features(BaseModel):
+class NumFeatures(BaseModel):
     open: bool
     close: bool
     high: bool
@@ -21,6 +21,14 @@ class Features(BaseModel):
     dividends: bool
     returns: bool
     turnover: bool
+    mcftrr: bool
+    meogtrr: bool
+    imoex: bool
+    rvi: bool
+
+
+class EmbFeatures(BaseModel):
+    ticker: bool
 
 
 class Builder:
@@ -35,12 +43,13 @@ class Builder:
         ctx: handler.Ctx,
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
-        feats: Features,
+        num_feats: NumFeatures,
+        emb_feats: EmbFeatures,
         days: datasets.Days,
     ) -> list[datasets.TickerData]:
         await self._update_cache(ctx, day, tickers)
 
-        num_feat = {features.NumFeat(feat) for feat, on in feats if on}
+        num_feat = {features.NumFeat(feat) for feat, on in num_feats if on}
 
         return [
             datasets.TickerData(

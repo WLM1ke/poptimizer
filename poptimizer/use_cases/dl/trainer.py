@@ -20,12 +20,13 @@ from poptimizer.use_cases.dl import builder
 
 class Batch(BaseModel):
     size: int
-    feats: builder.Features
+    num_feats: builder.NumFeatures
+    emb_feats: builder.EmbFeatures
     history_days: int
 
     @property
     def num_feat_count(self) -> int:
-        return sum(on for _, on in self.feats)
+        return sum(on for _, on in self.num_feats)
 
 
 class Optimizer(BaseModel):
@@ -103,7 +104,14 @@ class Trainer:
             forecast=model.forecast_days,
             test=test_days,
         )
-        data = await self._builder.build(ctx, model.day, model.tickers, cfg.batch.feats, days)
+        data = await self._builder.build(
+            ctx,
+            model.day,
+            model.tickers,
+            cfg.batch.num_feats,
+            cfg.batch.emb_feats,
+            days,
+        )
 
         try:
             await asyncio.to_thread(
