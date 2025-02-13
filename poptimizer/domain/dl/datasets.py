@@ -24,14 +24,16 @@ class Days(BaseModel):
 
 class TrainBatch(NamedTuple):
     num_feat: torch.Tensor
+    emb_feat: torch.Tensor
     labels: torch.Tensor
 
 
 class TickerTrainDataSet(data.Dataset[TrainBatch]):
-    def __init__(self, days: Days, num_feat: torch.Tensor, labels: torch.Tensor) -> None:
+    def __init__(self, days: Days, num_feat: torch.Tensor, emb_feat: torch.Tensor, labels: torch.Tensor) -> None:
         self._len = num_feat.shape[1] - (days.forecast + days.test - 1) - (days.history + days.forecast - 1)
         self._history = days.history
         self._num_feat = num_feat
+        self._emb_feat = emb_feat
         self._labels = labels
 
     def __len__(self) -> int:
@@ -40,22 +42,27 @@ class TickerTrainDataSet(data.Dataset[TrainBatch]):
     def __getitem__(self, n: int) -> TrainBatch:
         return TrainBatch(
             num_feat=self._num_feat[:, n : n + self._history],
+            emb_feat=self._emb_feat,
             labels=self._labels[n].reshape(-1),
         )
 
 
 class TestBatch(NamedTuple):
     num_feat: torch.Tensor
+    emb_feat: torch.Tensor
     labels: torch.Tensor
     returns: torch.Tensor
 
 
 class TickerTestDataSet(data.Dataset[TestBatch]):
-    def __init__(self, days: Days, num_feat: torch.Tensor, labels: torch.Tensor, returns: torch.Tensor) -> None:
+    def __init__(
+        self, days: Days, num_feat: torch.Tensor, emb_feat: torch.Tensor, labels: torch.Tensor, returns: torch.Tensor
+    ) -> None:
         self._len = days.test
         self._start = num_feat.shape[1] - (days.history + days.forecast + days.test - 1)
         self._history = days.history
         self._num_feat = num_feat
+        self._emb_feat = emb_feat
         self._labels = labels
         self._returns = returns
 
@@ -67,6 +74,7 @@ class TickerTestDataSet(data.Dataset[TestBatch]):
 
         return TestBatch(
             num_feat=self._num_feat[:, start : start + self._history],
+            emb_feat=self._emb_feat,
             labels=self._labels[start].reshape(-1),
             returns=self._returns[start : start + self._history],
         )
@@ -74,14 +82,16 @@ class TickerTestDataSet(data.Dataset[TestBatch]):
 
 class ForecastBatch(NamedTuple):
     num_feat: torch.Tensor
+    emb_feat: torch.Tensor
     returns: torch.Tensor
 
 
 class TickerForecastDataSet(data.Dataset[ForecastBatch]):
-    def __init__(self, days: Days, num_feat: torch.Tensor, returns: torch.Tensor) -> None:
+    def __init__(self, days: Days, num_feat: torch.Tensor, emb_feat: torch.Tensor, returns: torch.Tensor) -> None:
         self._start = num_feat.shape[1] - days.history
         self._history = days.history
         self._num_feat = num_feat
+        self._emb_feat = emb_feat
         self._returns = returns
 
     def __len__(self) -> int:
@@ -92,6 +102,7 @@ class TickerForecastDataSet(data.Dataset[ForecastBatch]):
 
         return ForecastBatch(
             num_feat=self._num_feat[:, start : start + self._history],
+            emb_feat=self._emb_feat,
             returns=self._returns[start : start + self._history],
         )
 
@@ -118,6 +129,8 @@ class TickerData:
             all_feat_df[num_feat_selected].to_numpy(np.float32),  # type: ignore[reportUnknownMemberType]
         ).T
 
+        self._emb_feat = torch.tensor(emb_feat, dtype=torch.long)
+
         self._labels = torch.from_numpy(  # type: ignore[reportUnknownMemberType]
             all_feat_df[features.NumFeat.RETURNS]
             .rolling(days.forecast)  # type: ignore[reportUnknownMemberType]
@@ -138,6 +151,7 @@ class TickerData:
         return TickerTrainDataSet(
             days=self._days,
             num_feat=self._num_feat,
+            emb_feat=self._emb_feat,
             labels=self._labels,
         )
 
@@ -145,6 +159,7 @@ class TickerData:
         return TickerTestDataSet(
             days=self._days,
             num_feat=self._num_feat,
+            emb_feat=self._emb_feat,
             labels=self._labels,
             returns=self._returns,
         )
@@ -153,5 +168,6 @@ class TickerData:
         return TickerForecastDataSet(
             days=self._days,
             num_feat=self._num_feat,
+            emb_feat=self._emb_feat,
             returns=self._returns,
         )
