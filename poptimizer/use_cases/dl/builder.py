@@ -36,7 +36,7 @@ class Builder:
         self._day = consts.START_DAY
         self._tickers: tuple[domain.Ticker, ...] = ()
         self._cache: list[features.Features] = []
-        self._embedding_sizes: dict[features.EmbeddingFeat, int] = {}
+        self._embedding_sizes: dict[features.EmbFeat, int] = {}
 
     async def build(
         self,
@@ -46,19 +46,20 @@ class Builder:
         num_feats: NumFeatures,
         emb_feats: EmbFeatures,
         days: datasets.Days,
-    ) -> list[datasets.TickerData]:
+    ) -> tuple[list[datasets.TickerData], list[int]]:
         await self._update_cache(ctx, day, tickers)
 
-        num_feat = {features.NumFeat(feat) for feat, on in num_feats if on}
+        emb_feat_selected = sorted(features.EmbFeat(feat) for feat, on in emb_feats if on)
 
         return [
             datasets.TickerData(
-                feat.numerical,
                 days,
-                num_feat,
+                feat.numerical,
+                sorted(features.NumFeat(feat) for feat, on in num_feats if on),
+                [feat.embedding[selected].value for selected in emb_feat_selected],
             )
             for feat in self._cache
-        ]
+        ], [self._embedding_sizes[feat] for feat in emb_feat_selected]
 
     async def _update_cache(
         self,

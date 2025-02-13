@@ -99,9 +99,10 @@ class TickerForecastDataSet(data.Dataset[ForecastBatch]):
 class TickerData:
     def __init__(
         self,
-        num_feat: list[dict[features.NumFeat, FiniteFloat]],
         days: Days,
-        num_feat_selected: set[features.NumFeat],
+        num_feat: list[dict[features.NumFeat, FiniteFloat]],
+        num_feat_selected: list[features.NumFeat],
+        emb_feat: list[int],
     ) -> None:
         self._days = days
 
@@ -114,7 +115,7 @@ class TickerData:
         all_feat_df = pd.DataFrame(num_feat)
 
         self._num_feat = torch.from_numpy(  # type: ignore[reportUnknownMemberType]
-            all_feat_df[sorted(num_feat_selected)].to_numpy(np.float32),  # type: ignore[reportUnknownMemberType]
+            all_feat_df[num_feat_selected].to_numpy(np.float32),  # type: ignore[reportUnknownMemberType]
         ).T
 
         self._labels = torch.from_numpy(  # type: ignore[reportUnknownMemberType]
