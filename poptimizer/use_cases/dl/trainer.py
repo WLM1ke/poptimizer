@@ -104,7 +104,7 @@ class Trainer:
             forecast=model.forecast_days,
             test=test_days,
         )
-        data = await self._builder.build(
+        data, emb_size = await self._builder.build(
             ctx,
             model.day,
             model.tickers,
@@ -118,6 +118,7 @@ class Trainer:
                 self._run,
                 model,
                 data,
+                emb_size,
                 cfg,
                 model.forecast_days,
             )
@@ -133,10 +134,11 @@ class Trainer:
         self,
         model: evolve.Model,
         data: list[datasets.TickerData],
+        emb_size: list[int],
         cfg: Cfg,
         forecast_days: int,
     ) -> None:
-        net = self._prepare_net(cfg)
+        net = self._prepare_net(cfg, emb_size)
         self._train(net, cfg.optimizer, cfg.scheduler, data, cfg.batch.size)
 
         model.alfa, model.llh = self._test(net, cfg, forecast_days, data)
@@ -199,6 +201,7 @@ class Trainer:
 
                 loss = -net.llh(
                     batch.num_feat.to(self._device),
+                    batch.emb_feat.to(self._device),
                     batch.labels.to(self._device),
                 )
                 loss.backward()  # type: ignore[no-untyped-call]
@@ -227,6 +230,7 @@ class Trainer:
 
                 loss, mean, std = net.loss_and_forecast_mean_and_std(
                     batch.num_feat.to(self._device),
+                    batch.emb_feat.to(self._device),
                     batch.labels.to(self._device),
                 )
                 rez = risk.optimize(
@@ -258,7 +262,10 @@ class Trainer:
                 raise errors.UseCasesError("invalid forecast dataloader")
 
             batch = next(iter(forecast_dl))
-            mean, std = net.forecast_mean_and_std(batch.num_feat.to(self._device))
+            mean, std = net.forecast_mean_and_std(
+                batch.num_feat.to(self._device),
+                batch.emb_feat.to(self._device),
+            )
 
             year_multiplier = consts.YEAR_IN_TRADING_DAYS / forecast_days
             mean *= year_multiplier
@@ -276,9 +283,10 @@ class Trainer:
         model_params = sum(tensor.numel() for tensor in net.parameters())
         self._lgr.info("Layers / parameters - %d / %d", modules, model_params)
 
-    def _prepare_net(self, cfg: Cfg) -> wave_net.Net:
+    def _prepare_net(self, cfg: Cfg, emb_size: list[int]) -> wave_net.Net:
         return wave_net.Net(
             cfg=cfg.net,
             num_feat_count=cfg.batch.num_feat_count,
+            emb_size=emb_size,
             history_days=cfg.batch.history_days,
         ).to(self._device)
