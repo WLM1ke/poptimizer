@@ -108,7 +108,8 @@ class PortfolioView {
 	effectiveCount = $derived(
 		Math.round(
 			this.value - this.cash > 0
-				? 1 / Object.values(this.positions).reduce((acc, { weight }) => acc + weight * weight, 0)
+				? (1 / Object.values(this.positions).reduce((acc, { weight }) => acc + weight * weight, 0)) *
+						Math.pow(1 - this.cash / this.value, 2)
 				: 0
 		)
 	);
