@@ -31,6 +31,17 @@ class EmbFeatures(BaseModel):
     ticker: bool
 
 
+class Batch(BaseModel):
+    size: int
+    num_feats: NumFeatures
+    emb_feats: EmbFeatures
+    history_days: int
+
+    @property
+    def num_feat_count(self) -> int:
+        return sum(on for _, on in self.num_feats)
+
+
 class Builder:
     def __init__(self) -> None:
         self._day = consts.START_DAY
@@ -43,19 +54,18 @@ class Builder:
         ctx: handler.Ctx,
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
-        num_feats: NumFeatures,
-        emb_feats: EmbFeatures,
         days: datasets.Days,
+        batch: Batch,
     ) -> tuple[list[datasets.TickerData], list[int]]:
         await self._update_cache(ctx, day, tickers)
 
-        emb_feat_selected = sorted(features.EmbFeat(feat) for feat, on in emb_feats if on)
+        emb_feat_selected = sorted(features.EmbFeat(feat) for feat, on in batch.emb_feats if on)
 
         return [
             datasets.TickerData(
                 days,
                 feat.numerical,
-                sorted(features.NumFeat(feat) for feat, on in num_feats if on),
+                sorted(features.NumFeat(feat) for feat, on in batch.num_feats if on),
                 [feat.embedding[selected].value for selected in emb_feat_selected],
             )
             for feat in self._cache

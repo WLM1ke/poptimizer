@@ -18,17 +18,6 @@ from poptimizer.use_cases import handler
 from poptimizer.use_cases.dl import builder
 
 
-class Batch(BaseModel):
-    size: int
-    num_feats: builder.NumFeatures
-    emb_feats: builder.EmbFeatures
-    history_days: int
-
-    @property
-    def num_feat_count(self) -> int:
-        return sum(on for _, on in self.num_feats)
-
-
 class Optimizer(BaseModel):
     lr: float
     beta1: float
@@ -53,7 +42,7 @@ class Scheduler(BaseModel):
 
 
 class Cfg(BaseModel):
-    batch: Batch
+    batch: builder.Batch
     net: backbone.Cfg
     optimizer: Optimizer
     scheduler: Scheduler
@@ -108,9 +97,8 @@ class Trainer:
             ctx,
             model.day,
             model.tickers,
-            cfg.batch.num_feats,
-            cfg.batch.emb_feats,
             days,
+            cfg.batch,
         )
 
         try:
