@@ -2,7 +2,7 @@ from poptimizer.domain.evolve import genotype
 from poptimizer.use_cases.dl import trainer
 
 
-def _check_keys(phenotype, cfg):
+def _check_keys(phenotype, cfg) -> None:
     for k, v in phenotype.items():
         assert k in cfg
 

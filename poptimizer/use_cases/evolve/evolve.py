@@ -62,10 +62,17 @@ class EvolutionHandler:
         ctx: Ctx,
         msg: handler.DataChecked,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
-        await self._init_evolution(ctx)
+        count = await self._init_evolution(ctx)
         evolution = await self._init_step(ctx, msg)
         model = await self._get_model(ctx, evolution)
-        self._lgr.info("Day %s step %d: %s - %s", evolution.day, evolution.step, evolution.state, model)
+        self._lgr.info(
+            "Day %s step %d models %d: %s - %s",
+            evolution.day,
+            evolution.step,
+            count,
+            evolution.state,
+            model,
+        )
 
         try:
             await self._update_model_metrics(ctx, evolution, model)
@@ -78,11 +85,15 @@ class EvolutionHandler:
 
         return event
 
-    async def _init_evolution(self, ctx: Ctx) -> None:
-        if not await ctx.count_models():
-            self._lgr.info("Creating initial models")
-            for _ in range(consts.INITIAL_POPULATION):
-                await ctx.get_for_update(evolve.Model, _random_uid())
+    async def _init_evolution(self, ctx: Ctx) -> int:
+        if count := await ctx.count_models():
+            return count
+
+        self._lgr.info("Creating initial models")
+        for _ in range(consts.INITIAL_POPULATION):
+            await ctx.get_for_update(evolve.Model, _random_uid())
+
+        return consts.INITIAL_POPULATION
 
     async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> evolve.Evolution:
         evolution = await ctx.get_for_update(evolve.Evolution)
