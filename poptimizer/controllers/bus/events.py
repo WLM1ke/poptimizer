@@ -5,7 +5,7 @@ from poptimizer.use_cases import cpi
 from poptimizer.use_cases.div import div, reestry, status
 from poptimizer.use_cases.dl.features import index as index_features
 from poptimizer.use_cases.dl.features import quotes as quotes_features
-from poptimizer.use_cases.dl.features import tickers as tickers_features
+from poptimizer.use_cases.dl.features import securities as tickers_features
 from poptimizer.use_cases.evolve import evolve
 from poptimizer.use_cases.moex import data, index, quotes, securities, usd
 from poptimizer.use_cases.portfolio import forecasts, portfolio
@@ -25,7 +25,7 @@ def register_handlers(
     bus.register_event_handler(portfolio.PortfolioHandler(), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(quotes_features.QuotesFeatHandler(), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(index_features.IndexesFeatHandler(), msg.IndefiniteRetryPolicy)
-    bus.register_event_handler(tickers_features.TickersFeatHandler(), msg.IndefiniteRetryPolicy)
+    bus.register_event_handler(tickers_features.SecFeatHandler(), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(status.DivStatusHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(reestry.ReestryHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(evolve.EvolutionHandler(), msg.IndefiniteRetryPolicy)

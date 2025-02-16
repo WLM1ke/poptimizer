@@ -25,6 +25,7 @@ class NumFeat(StrEnum):
 @unique
 class EmbFeat(StrEnum):
     ticker = auto()
+    ticker_type = auto()
 
 
 class EmbeddingFeatDesc(BaseModel):
@@ -52,23 +53,10 @@ class Features(domain.Entity):
             return numerical
 
         keys = numerical[0].keys()
-        if not set(NumFeat).issuperset(keys):
-            raise ValueError("key are not numerical features")
-
         if any(row.keys() != keys for row in numerical):
             raise ValueError("numerical features keys mismatch")
 
         return numerical
-
-    @field_validator("embedding")
-    def _embedding_match_labels(
-        cls,
-        embedding: dict[EmbFeat, EmbeddingFeatDesc],
-    ) -> dict[EmbFeat, EmbeddingFeatDesc]:
-        if embedding and embedding.keys() != set(EmbFeat):
-            raise ValueError("key are not embedding features")
-
-        return embedding
 
     def _check_new_day(self, day: domain.Day) -> None:
         if self.day != day:

@@ -77,7 +77,7 @@ class IndexFeatUpdated(Event):
     day: domain.Day
 
 
-class TickersFeatUpdated(Event):
+class SecFeatUpdated(Event):
     day: domain.Day
 
 
