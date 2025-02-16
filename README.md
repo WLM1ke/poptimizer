@@ -17,7 +17,7 @@
 
 `POptimizer` может отправлять оповещения об ошибках, ключевых событиях в работе, изменении стоимости портфеля и рекомендациях по его оптимизации в `Telegram`. Этот функционал опционален, а для его настройки может потребоваться:
 
-- создать `Telegram` [бота](https://core.telegram.org/bots/features#creating-a-new-bot) и запомните его токен
+- создать `Telegram` [бота](https://core.telegram.org/bots/features#creating-a-new-bot) и запомнить его токен
 - узнать свой [chat_id](https://gist.github.com/nafiesl/4ad622f344cd1dc3bb1ecbe468ff9f8a#get-chat-id-for-a-private-chat)
 
 ### Установка и настройка
