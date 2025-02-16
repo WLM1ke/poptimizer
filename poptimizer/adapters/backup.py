@@ -3,6 +3,7 @@ from typing import Final
 
 import aiofiles
 import bson
+import pymongo
 from pymongo.errors import PyMongoError
 
 from poptimizer import consts, errors
@@ -50,7 +51,7 @@ class BackupHandler:
         _DUMP.parent.mkdir(parents=True, exist_ok=True)
 
         async with aiofiles.open(_DUMP, "bw") as backup_file:
-            async for batch in self._collection.find_raw_batches():  # type: ignore[reportUnknownMemberType]
+            async for batch in self._collection.find_raw_batches(sort={"_id": pymongo.ASCENDING}):  # type: ignore[reportUnknownMemberType]
                 await backup_file.write(batch)  # type: ignore[reportUnknownMemberType]
 
         self._lgr.info("Collection %s dumped", self._collection.name)
