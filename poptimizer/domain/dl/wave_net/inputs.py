@@ -16,6 +16,7 @@ class Net(torch.nn.Module):
         *,
         num_feat_count: int,
         emb_size: list[int],
+        emb_seq_size: list[int],
         use_bn: bool,
         residual_channels: int,
     ) -> None:
@@ -39,10 +40,17 @@ class Net(torch.nn.Module):
         for size in emb_size:
             self._emb_list.append(nn.Embedding(num_embeddings=size, embedding_dim=residual_channels))
 
-    def forward(self, num_feat: torch.Tensor, emb_feat: torch.Tensor) -> torch.Tensor:
+        self._emb_seq_list = nn.ModuleList()
+        for size in emb_seq_size:
+            self._emb_seq_list.append(nn.Embedding(num_embeddings=size, embedding_dim=residual_channels))
+
+    def forward(self, num_feat: torch.Tensor, emb_feat: torch.Tensor, emb_seq_feat: torch.Tensor) -> torch.Tensor:
         output = self._output(self._bn(num_feat))
 
         for n, layer in enumerate(self._emb_list):
             output = output + layer(emb_feat[:, n]).unsqueeze(2)
+
+        for n, layer in enumerate(self._emb_seq_list):
+            output = output + layer(emb_seq_feat[:, n, :]).permute((0, 2, 1))
 
         return output

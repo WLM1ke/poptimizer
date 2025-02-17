@@ -190,6 +190,7 @@ class Trainer:
                 loss = -net.llh(
                     batch.num_feat.to(self._device),
                     batch.emb_feat.to(self._device),
+                    batch.emb_seq_feat.to(self._device),
                     batch.labels.to(self._device),
                 )
                 loss.backward()  # type: ignore[no-untyped-call]
@@ -219,6 +220,7 @@ class Trainer:
                 loss, mean, std = net.loss_and_forecast_mean_and_std(
                     batch.num_feat.to(self._device),
                     batch.emb_feat.to(self._device),
+                    batch.emb_seq_feat.to(self._device),
                     batch.labels.to(self._device),
                 )
                 rez = risk.optimize(
@@ -253,6 +255,7 @@ class Trainer:
             mean, std = net.forecast_mean_and_std(
                 batch.num_feat.to(self._device),
                 batch.emb_feat.to(self._device),
+                batch.emb_seq_feat.to(self._device),
             )
 
             year_multiplier = consts.YEAR_IN_TRADING_DAYS / forecast_days
@@ -272,9 +275,14 @@ class Trainer:
         self._lgr.info("Layers / parameters - %d / %d", modules, model_params)
 
     def _prepare_net(self, cfg: Cfg, emb_size: list[int]) -> wave_net.Net:
+        emb_seq_size = []
+        if cfg.batch.use_lag_feat:
+            emb_seq_size = [cfg.batch.history_days]
+
         return wave_net.Net(
             cfg=cfg.net,
+            history_days=cfg.batch.history_days,
             num_feat_count=cfg.batch.num_feat_count,
             emb_size=emb_size,
-            history_days=cfg.batch.history_days,
+            emb_seq_size=emb_seq_size,
         ).to(self._device)
