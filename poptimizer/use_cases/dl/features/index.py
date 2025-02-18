@@ -20,7 +20,7 @@ class IndexesFeatHandler:
             for pos in port.positions:
                 tg.create_task(_add_indexes_features(ctx, domain.UID(pos.ticker), indexes))
 
-        return handler.IndexFeatUpdated(day=msg.day)
+        return handler.IndexFeatUpdated(trading_days=msg.trading_days)
 
 
 async def _load_indexes(ctx: handler.Ctx, df_index: pd.DatetimeIndex) -> list[dict[features.NumFeat, FiniteFloat]]:

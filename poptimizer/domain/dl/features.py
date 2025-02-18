@@ -40,9 +40,27 @@ class EmbeddingFeatDesc(BaseModel):
         return self
 
 
+@unique
+class EmbSeqFeat(StrEnum):
+    year_day = auto()
+
+
+class EmbeddingSeqFeatDesc(BaseModel):
+    sequence: list[NonNegativeInt]
+    size: int = Field(ge=2)
+
+    @model_validator(mode="after")
+    def _value_less_than_size(self) -> Self:
+        if any(value >= self.size for value in self.sequence):
+            raise ValueError("embedding value not less size")
+
+        return self
+
+
 class Features(domain.Entity):
     numerical: list[dict[NumFeat, FiniteFloat]] = Field(default_factory=list)
     embedding: dict[EmbFeat, EmbeddingFeatDesc] = Field(default_factory=dict)
+    embedding_seq: dict[EmbSeqFeat, EmbeddingSeqFeatDesc] = Field(default_factory=dict)
 
     @field_validator("numerical")
     def _numerical_match_labels(
@@ -58,11 +76,24 @@ class Features(domain.Entity):
 
         return numerical
 
+    @model_validator(mode="after")
+    def _embedding_seq_len_match_numerical(self) -> Self:
+        if not self.embedding_seq:
+            return self
+
+        num_len = len(self.numerical)
+        for desc in self.embedding_seq.values():
+            if len(desc.sequence) != num_len:
+                raise ValueError("embedding sequence length mismatch")
+
+        return self
+
     def _check_new_day(self, day: domain.Day) -> None:
         if self.day != day:
             self.day = day
             self.numerical.clear()
             self.embedding.clear()
+            self.embedding_seq.clear()
 
     def update_numerical(self, day: domain.Day, num_feat_df: pd.DataFrame) -> None:
         self._check_new_day(day)
