@@ -16,7 +16,7 @@ def make_days():
 
 def test_no_features_error(days) -> None:
     with pytest.raises(errors.DomainError, match="no features"):
-        datasets.TickerData(days, [], [], [])
+        datasets.TickerData(days, [], [], [], lag_feat=False)
 
 
 def test_short_history_error(days) -> None:
@@ -33,6 +33,7 @@ def test_short_history_error(days) -> None:
             ],
             [features.NumFeat.OPEN, features.NumFeat.CLOSE],
             [],
+            lag_feat=False,
         )
 
 
@@ -50,6 +51,7 @@ def make_one_ticker_data(days):
         ],
         [features.NumFeat.OPEN, features.NumFeat.CLOSE],
         [],
+        lag_feat=False,
     )
 
 
@@ -194,6 +196,7 @@ def make_second_ticker_data(days):
         ],
         [features.NumFeat.CLOSE, features.NumFeat.OPEN],
         [],
+        lag_feat=False,
     )
 
 
