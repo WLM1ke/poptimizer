@@ -93,7 +93,7 @@ class Trainer:
             forecast=model.forecast_days,
             test=test_days,
         )
-        data, emb_size = await self._builder.build(
+        data, emb_size, emb_seq_size = await self._builder.build(
             ctx,
             model.day,
             model.tickers,
@@ -107,6 +107,7 @@ class Trainer:
                 model,
                 data,
                 emb_size,
+                emb_seq_size,
                 cfg,
                 model.forecast_days,
             )
@@ -118,15 +119,16 @@ class Trainer:
         model.risk_tolerance = cfg.risk.risk_tolerance
         model.duration = time.monotonic() - start
 
-    def _run(
+    def _run(  # noqa: PLR0913
         self,
         model: evolve.Model,
         data: list[datasets.TickerData],
         emb_size: list[int],
+        emb_seq_size: list[int],
         cfg: Cfg,
         forecast_days: int,
     ) -> None:
-        net = self._prepare_net(cfg, emb_size)
+        net = self._prepare_net(cfg, emb_size, emb_seq_size)
         self._train(net, cfg.optimizer, cfg.scheduler, data, cfg.batch.size)
 
         model.alfa, model.llh = self._test(net, cfg, forecast_days, data)
@@ -274,11 +276,7 @@ class Trainer:
         model_params = sum(tensor.numel() for tensor in net.parameters())
         self._lgr.info("Layers / parameters - %d / %d", modules, model_params)
 
-    def _prepare_net(self, cfg: Cfg, emb_size: list[int]) -> wave_net.Net:
-        emb_seq_size = []
-        if cfg.batch.use_lag_feat:
-            emb_seq_size = [cfg.batch.history_days]
-
+    def _prepare_net(self, cfg: Cfg, emb_size: list[int], emb_seq_size: list[int]) -> wave_net.Net:
         return wave_net.Net(
             cfg=cfg.net,
             history_days=cfg.batch.history_days,

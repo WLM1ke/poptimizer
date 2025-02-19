@@ -24,8 +24,8 @@ class NumFeat(StrEnum):
 
 @unique
 class EmbFeat(StrEnum):
-    ticker = auto()
-    ticker_type = auto()
+    TICKER = auto()
+    TICKER_TYPE = auto()
 
 
 class EmbeddingFeatDesc(BaseModel):
@@ -42,7 +42,7 @@ class EmbeddingFeatDesc(BaseModel):
 
 @unique
 class EmbSeqFeat(StrEnum):
-    year_day = auto()
+    YEAR_DAY = auto()
 
 
 class EmbeddingSeqFeatDesc(BaseModel):

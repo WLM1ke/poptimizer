@@ -30,12 +30,13 @@ class TrainBatch(NamedTuple):
 
 
 class TickerTrainDataSet(data.Dataset[TrainBatch]):
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         days: Days,
         num_feat: torch.Tensor,
         emb_feat: torch.Tensor,
         emb_seq_feat: torch.Tensor,
+        lag_feat: torch.Tensor | None,
         labels: torch.Tensor,
     ) -> None:
         self._len = num_feat.shape[1] - (days.forecast + days.test - 1) - (days.history + days.forecast - 1)
@@ -43,16 +44,23 @@ class TickerTrainDataSet(data.Dataset[TrainBatch]):
         self._num_feat = num_feat
         self._emb_feat = emb_feat
         self._emb_seq_feat = emb_seq_feat
+        self._lag_feat = lag_feat
         self._labels = labels
 
     def __len__(self) -> int:
         return self._len
 
     def __getitem__(self, n: int) -> TrainBatch:
+        emb_seq_feat = torch.tensor([], dtype=torch.long)
+        if len(self._emb_seq_feat):
+            emb_seq_feat = self._emb_seq_feat[:, n : n + self._history]
+        if self._lag_feat is not None:
+            emb_seq_feat = torch.cat((emb_seq_feat, self._lag_feat), dim=0)
+
         return TrainBatch(
             num_feat=self._num_feat[:, n : n + self._history],
             emb_feat=self._emb_feat,
-            emb_seq_feat=self._emb_seq_feat,
+            emb_seq_feat=emb_seq_feat,
             labels=self._labels[n].reshape(-1),
         )
 
@@ -72,6 +80,7 @@ class TickerTestDataSet(data.Dataset[TestBatch]):
         num_feat: torch.Tensor,
         emb_feat: torch.Tensor,
         emb_seq_feat: torch.Tensor,
+        lag_feat: torch.Tensor | None,
         labels: torch.Tensor,
         returns: torch.Tensor,
     ) -> None:
@@ -81,6 +90,7 @@ class TickerTestDataSet(data.Dataset[TestBatch]):
         self._num_feat = num_feat
         self._emb_feat = emb_feat
         self._emb_seq_feat = emb_seq_feat
+        self._lag_feat = lag_feat
         self._labels = labels
         self._returns = returns
 
@@ -90,10 +100,16 @@ class TickerTestDataSet(data.Dataset[TestBatch]):
     def __getitem__(self, n: int) -> TestBatch:
         start = self._start + n
 
+        emb_seq_feat = torch.tensor([], dtype=torch.long)
+        if len(self._emb_seq_feat):
+            emb_seq_feat = self._emb_seq_feat[:, start : start + self._history]
+        if self._lag_feat is not None:
+            emb_seq_feat = torch.cat((emb_seq_feat, self._lag_feat), dim=0)
+
         return TestBatch(
             num_feat=self._num_feat[:, start : start + self._history],
             emb_feat=self._emb_feat,
-            emb_seq_feat=self._emb_seq_feat,
+            emb_seq_feat=emb_seq_feat,
             labels=self._labels[start].reshape(-1),
             returns=self._returns[start : start + self._history],
         )
@@ -107,12 +123,13 @@ class ForecastBatch(NamedTuple):
 
 
 class TickerForecastDataSet(data.Dataset[ForecastBatch]):
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         days: Days,
         num_feat: torch.Tensor,
         emb_feat: torch.Tensor,
         emb_seq_feat: torch.Tensor,
+        lag_feat: torch.Tensor | None,
         returns: torch.Tensor,
     ) -> None:
         self._start = num_feat.shape[1] - days.history
@@ -120,6 +137,7 @@ class TickerForecastDataSet(data.Dataset[ForecastBatch]):
         self._num_feat = num_feat
         self._emb_feat = emb_feat
         self._emb_seq_feat = emb_seq_feat
+        self._lag_feat = lag_feat
         self._returns = returns
 
     def __len__(self) -> int:
@@ -128,22 +146,29 @@ class TickerForecastDataSet(data.Dataset[ForecastBatch]):
     def __getitem__(self, n: int) -> ForecastBatch:
         start = self._start + n
 
+        emb_seq_feat = torch.tensor([], dtype=torch.long)
+        if len(self._emb_seq_feat):
+            emb_seq_feat = self._emb_seq_feat[:, start : start + self._history]
+        if self._lag_feat is not None:
+            emb_seq_feat = torch.cat((emb_seq_feat, self._lag_feat), dim=0)
+
         return ForecastBatch(
             num_feat=self._num_feat[:, start : start + self._history],
             emb_feat=self._emb_feat,
-            emb_seq_feat=self._emb_seq_feat,
+            emb_seq_feat=emb_seq_feat,
             returns=self._returns[start : start + self._history],
         )
 
 
 class TickerData:
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
+        *,
         days: Days,
         num_feat: list[dict[features.NumFeat, FiniteFloat]],
         num_feat_selected: list[features.NumFeat],
         emb_feat: list[int],
-        *,
+        emb_seq_feat: list[list[int]],
         lag_feat: bool,
     ) -> None:
         self._days = days
@@ -161,9 +186,10 @@ class TickerData:
         ).T
 
         self._emb_feat = torch.tensor(emb_feat, dtype=torch.long)
-        self._emb_seq_feat = torch.tensor([], dtype=torch.long)
+        self._emb_seq_feat = torch.tensor(emb_seq_feat, dtype=torch.long)
+        self._lag_feat = None
         if lag_feat:
-            self._emb_seq_feat = torch.tensor([list(reversed(range(days.history)))], dtype=torch.long)
+            self._lag_feat = torch.tensor([list(reversed(range(days.history)))], dtype=torch.long)
 
         self._labels = torch.from_numpy(  # type: ignore[reportUnknownMemberType]
             all_feat_df[features.NumFeat.RETURNS]
@@ -187,6 +213,7 @@ class TickerData:
             num_feat=self._num_feat,
             emb_feat=self._emb_feat,
             emb_seq_feat=self._emb_seq_feat,
+            lag_feat=self._lag_feat,
             labels=self._labels,
         )
 
@@ -196,6 +223,7 @@ class TickerData:
             num_feat=self._num_feat,
             emb_feat=self._emb_feat,
             emb_seq_feat=self._emb_seq_feat,
+            lag_feat=self._lag_feat,
             labels=self._labels,
             returns=self._returns,
         )
@@ -206,5 +234,6 @@ class TickerData:
             num_feat=self._num_feat,
             emb_feat=self._emb_feat,
             emb_seq_feat=self._emb_seq_feat,
+            lag_feat=self._lag_feat,
             returns=self._returns,
         )

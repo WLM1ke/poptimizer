@@ -64,6 +64,13 @@ class EmbFeatures(genetics.Chromosome):
     ] = genetics.random_default_range(-1, 1)
 
 
+class EmbSeqFeatures(genetics.Chromosome):
+    year_day: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
+
+
 class Batch(genetics.Chromosome):
     size: Annotated[
         float,
@@ -72,6 +79,7 @@ class Batch(genetics.Chromosome):
     ] = genetics.random_default_range(512, 513)
     num_feats: NumFeatures = genetics.random_chromosome(NumFeatures)
     emb_feats: EmbFeatures = genetics.random_chromosome(EmbFeatures)
+    emb_seq_feats: EmbSeqFeatures = genetics.random_chromosome(EmbSeqFeatures)
     use_lag_feat: Annotated[
         float,
         genetics.bool_phenotype(),

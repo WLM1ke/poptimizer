@@ -20,7 +20,7 @@ class YearDayFeatHandler:
 async def _create_year_day_feat(ctx: handler.Ctx, ticker: domain.UID, trading_days: domain.TradingDays) -> None:
     feat = await ctx.get_for_update(Features, ticker)
 
-    feat.embedding_seq[EmbSeqFeat.year_day] = EmbeddingSeqFeatDesc(
+    feat.embedding_seq[EmbSeqFeat.YEAR_DAY] = EmbeddingSeqFeatDesc(
         sequence=[trading_days[-n].timetuple().tm_yday for n in reversed(range(1, len(feat.numerical) + 1))],
         size=366,
     )

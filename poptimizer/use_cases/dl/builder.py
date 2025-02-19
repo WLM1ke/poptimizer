@@ -32,10 +32,15 @@ class EmbFeatures(BaseModel):
     ticker_type: bool
 
 
+class EmbSeqFeatures(BaseModel):
+    year_day: bool
+
+
 class Batch(BaseModel):
     size: int
     num_feats: NumFeatures
     emb_feats: EmbFeatures
+    emb_seq_feats: EmbSeqFeatures
     use_lag_feat: bool
     history_days: int
 
@@ -50,6 +55,7 @@ class Builder:
         self._tickers: tuple[domain.Ticker, ...] = ()
         self._cache: list[features.Features] = []
         self._embedding_sizes: dict[features.EmbFeat, int] = {}
+        self._embedding_seq_sizes: dict[features.EmbSeqFeat, int] = {}
 
     async def build(
         self,
@@ -58,21 +64,30 @@ class Builder:
         tickers: tuple[domain.Ticker, ...],
         days: datasets.Days,
         batch: Batch,
-    ) -> tuple[list[datasets.TickerData], list[int]]:
+    ) -> tuple[list[datasets.TickerData], list[int], list[int]]:
         await self._update_cache(ctx, day, tickers)
 
         emb_feat_selected = sorted(features.EmbFeat(feat) for feat, on in batch.emb_feats if on)
+        emb_seq_feat_selected = sorted(features.EmbSeqFeat(feat) for feat, on in batch.emb_seq_feats if on)
+        emb_seq_feat_size = [self._embedding_seq_sizes[feat] for feat in emb_seq_feat_selected]
+        if batch.use_lag_feat:
+            emb_seq_feat_size.append(days.history)
 
-        return [
-            datasets.TickerData(
-                days,
-                feat.numerical,
-                sorted(features.NumFeat(feat) for feat, on in batch.num_feats if on),
-                [feat.embedding[selected].value for selected in emb_feat_selected],
-                lag_feat=batch.use_lag_feat,
-            )
-            for feat in self._cache
-        ], [self._embedding_sizes[feat] for feat in emb_feat_selected]
+        return (
+            [
+                datasets.TickerData(
+                    days=days,
+                    num_feat=feat.numerical,
+                    num_feat_selected=sorted(features.NumFeat(feat) for feat, on in batch.num_feats if on),
+                    emb_feat=[feat.embedding[selected].value for selected in emb_feat_selected],
+                    emb_seq_feat=[feat.embedding_seq[selected].sequence for selected in emb_seq_feat_selected],
+                    lag_feat=batch.use_lag_feat,
+                )
+                for feat in self._cache
+            ],
+            [self._embedding_sizes[feat] for feat in emb_feat_selected],
+            emb_seq_feat_size,
+        )
 
     async def _update_cache(
         self,
@@ -97,3 +112,10 @@ class Builder:
             embedding = self._cache[n].embedding
             if {feat: desc.size for feat, desc in embedding.items()} != self._embedding_sizes:
                 raise errors.UseCasesError("unequal embeddings sizes")
+
+        first_embedding_seq = self._cache[0].embedding_seq
+        self._embedding_seq_sizes = {feat: desc.size for feat, desc in first_embedding_seq.items()}
+        for n in range(1, len(self._cache)):
+            embedding_seq = self._cache[n].embedding_seq
+            if {feat: desc.size for feat, desc in embedding_seq.items()} != self._embedding_seq_sizes:
+                raise errors.UseCasesError("unequal embeddings seq sizes")
