@@ -169,13 +169,20 @@ class ForecastHandler:
 
         bye_grad, bye_ticker = max((pos.grad_lower, pos.ticker) for pos in forecast.positions)
         sell_grad, sell_ticker = min((pos.grad_upper, pos.ticker) for pos in forecast.positions if pos.weight)
-        if bye_grad > sell_grad:
-            self._lgr.warning(
-                "New %d forecasts update - sell %s and buy %s",
-                forecast.forecasts_count,
-                sell_ticker,
-                bye_ticker,
-            )
+
+        match bye_grad > sell_grad:
+            case True:
+                self._lgr.warning(
+                    "New %d forecasts update - sell %s and buy %s",
+                    forecast.forecasts_count,
+                    sell_ticker,
+                    bye_ticker,
+                )
+            case False:
+                self._lgr.warning(
+                    "New %d forecasts update - portfolio is close to optimal optimization is not required",
+                    forecast.forecasts_count,
+                )
 
 
 def _median(*args: tuple[NDArray[np.double], ...]) -> list[NDArray[np.double]]:
