@@ -2,6 +2,8 @@
 
 [![Test](https://github.com/WLM1ke/poptimizer/actions/workflows/test.yml/badge.svg)](https://github.com/WLM1ke/poptimizer/actions/workflows/test.yml)
 
+Программа находится в стадии бета-тестирования. Весь функционал [версии 2](https://github.com/WLM1ke/poptimizer/tree/version_2) перенесен. Сам постепенно переезжаю на использование этой версии
+
 ## Установка
 
 Установка описана для `MacOS` с использованием `Homebrew` и `Task`. Готов принять PR с описанием установки для `Linux` или `Windows`
