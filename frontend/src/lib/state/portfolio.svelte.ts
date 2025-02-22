@@ -1,6 +1,6 @@
 import { del, get, post } from "$lib/request";
 import { error, redirect } from "@sveltejs/kit";
-import { accHideZeroPositions, accSortByValue, portSortByValue } from "./settings.svelte";
+import { accHideZeroPositions, portSortByValue } from "./settings.svelte";
 import { alerts } from "./alerts.svelte";
 
 interface Positions {
@@ -146,7 +146,7 @@ export class AccountView {
 				};
 			})
 			.filter((pos) => pos.value !== 0 || !accHideZeroPositions.value)
-			.sort(accSortByValue.value ? compValue : compTickers)
+			.sort(compTickers)
 	);
 	posCount = $derived(portfolio.positions.filter((pos) => pos.accounts[this.name] ?? 0 > 0).length);
 	posTotal = $derived(portfolio.positions.length);

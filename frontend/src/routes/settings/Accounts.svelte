@@ -6,7 +6,7 @@
 	import Switch from "$lib/components/Switch.svelte";
 	import { flip } from "svelte/animate";
 	import { accounts } from "$lib/state/portfolio.svelte";
-	import { accHideZeroPositions, accSortByValue } from "$lib/state/settings.svelte";
+	import { accHideZeroPositions } from "$lib/state/settings.svelte";
 
 	let newAccount = $state("");
 	let inputRef: HTMLElement;
@@ -14,6 +14,11 @@
 
 <section>
 	<H2 text="Accounts" />
+	<ul class="pt-2">
+		<li>
+			<Switch label="hide zero positions" checked={accHideZeroPositions.value} onchange={accHideZeroPositions.toggle} />
+		</li>
+	</ul>
 	<ul class="max-w-max">
 		{#each accounts.accounts as account (account)}
 			<li transition:scale animate:flip class="flex items-center justify-between gap-2 pt-2">
@@ -47,14 +52,6 @@
 			>
 				<Add />
 			</button>
-		</li>
-	</ul>
-	<ul class="pt-2">
-		<li>
-			<Switch label="sort value descending" checked={accSortByValue.value} onchange={accSortByValue.toggle} />
-		</li>
-		<li>
-			<Switch label="hide zero positions" checked={accHideZeroPositions.value} onchange={accHideZeroPositions.toggle} />
 		</li>
 	</ul>
 </section>

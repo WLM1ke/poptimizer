@@ -44,7 +44,6 @@ export const theme = new PersistentTheme();
 
 export const portSortByValue = new PersistentToggle("portfolio_sort_by_value", true);
 
-export const accSortByValue = new PersistentToggle("accounts_sort_by_value", false);
 export const accHideZeroPositions = new PersistentToggle("accounts_hide_zero_positions", false);
 
 let loaded = false;
@@ -56,7 +55,6 @@ export const loadSettingsFromLocalStorage = () => {
 
 	theme.loadFromLocalStorage();
 	portSortByValue.loadFromLocalStorage();
-	accSortByValue.loadFromLocalStorage();
 	accHideZeroPositions.loadFromLocalStorage();
 
 	loaded = true;
