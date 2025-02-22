@@ -16,14 +16,21 @@ def make_days():
 
 def test_no_features_error(days) -> None:
     with pytest.raises(errors.DomainError, match="no features"):
-        datasets.TickerData(days, [], [], [], lag_feat=False)
+        datasets.TickerData(
+            days=days,
+            num_feat=[],
+            num_feat_selected=[],
+            emb_feat=[],
+            emb_seq_feat=[],
+            lag_feat=False,
+        )
 
 
 def test_short_history_error(days) -> None:
     with pytest.raises(errors.TooShortHistoryError):
         datasets.TickerData(
-            days,
-            [
+            days=days,
+            num_feat=[
                 {
                     features.NumFeat.RETURNS: i,
                     features.NumFeat.OPEN: i + 1,
@@ -31,8 +38,9 @@ def test_short_history_error(days) -> None:
                 }
                 for i in range(9)
             ],
-            [features.NumFeat.OPEN, features.NumFeat.CLOSE],
-            [],
+            num_feat_selected=[features.NumFeat.OPEN, features.NumFeat.CLOSE],
+            emb_feat=[],
+            emb_seq_feat=[],
             lag_feat=False,
         )
 
@@ -40,8 +48,8 @@ def test_short_history_error(days) -> None:
 @pytest.fixture(name="one_ticker_data")
 def make_one_ticker_data(days):
     return datasets.TickerData(
-        days,
-        [
+        days=days,
+        num_feat=[
             {
                 features.NumFeat.RETURNS: float(i),
                 features.NumFeat.OPEN: float(i + 1),
@@ -49,8 +57,9 @@ def make_one_ticker_data(days):
             }
             for i in range(11)
         ],
-        [features.NumFeat.OPEN, features.NumFeat.CLOSE],
-        [],
+        num_feat_selected=[features.NumFeat.OPEN, features.NumFeat.CLOSE],
+        emb_feat=[],
+        emb_seq_feat=[],
         lag_feat=False,
     )
 
@@ -185,8 +194,8 @@ def test_train_data_loader(one_ticker_data) -> None:
 @pytest.fixture(name="second_ticker_data")
 def make_second_ticker_data(days):
     return datasets.TickerData(
-        days,
-        [
+        days=days,
+        num_feat=[
             {
                 features.NumFeat.RETURNS: float(i),
                 features.NumFeat.OPEN: float(i + 1),
@@ -194,8 +203,9 @@ def make_second_ticker_data(days):
             }
             for i in range(12)
         ],
-        [features.NumFeat.CLOSE, features.NumFeat.OPEN],
-        [],
+        num_feat_selected=[features.NumFeat.CLOSE, features.NumFeat.OPEN],
+        emb_feat=[],
+        emb_seq_feat=[],
         lag_feat=False,
     )
 
