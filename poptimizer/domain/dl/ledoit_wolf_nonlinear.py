@@ -3,7 +3,7 @@ from numpy.typing import NDArray
 
 
 def qis(returns: NDArray[np.double], k: int = 1) -> NDArray[np.double]:
-    """Non linear shrinkage of covariance matrix.
+    """Quadratic Shrinkage Estimator.
 
     The estimator keeps the eigenvectors of the sample covariance matrix and applies shrinkage
     to the inverse sample eigenvalues.
@@ -74,7 +74,7 @@ def qis(returns: NDArray[np.double], k: int = 1) -> NDArray[np.double]:
 
 
 def analytical_shrinkage(returns: NDArray[np.double], k: int = 1) -> NDArray[np.double]:
-    """Non linear shrinkage of covariance matrix.
+    """Analytical Nonlinear Shrinkage Estimator.
 
     This nonlinear shrinkage estimator explores connection between nonlinear shrinkage and
     nonparametric estimation of the Hilbert transform of the sample spectral density.
