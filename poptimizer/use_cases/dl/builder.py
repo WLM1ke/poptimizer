@@ -25,6 +25,7 @@ class NumFeatures(BaseModel):
     meogtrr: bool
     imoex: bool
     rvi: bool
+    rugbitr1y: bool
 
 
 class EmbFeatures(BaseModel):

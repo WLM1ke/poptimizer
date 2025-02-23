@@ -20,6 +20,7 @@ class NumFeat(StrEnum):
     MEOGTRR = auto()
     IMOEX = auto()
     RVI = auto()
+    RUGBITR1Y = auto()
 
 
 @unique

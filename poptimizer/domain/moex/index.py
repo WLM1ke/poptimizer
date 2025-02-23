@@ -12,6 +12,7 @@ INDEXES: Final = (
     domain.UID("MEOGTRR"),
     domain.UID("IMOEX"),
     RVI,
+    domain.UID("RUGBITR1Y"),
 )
 
 
