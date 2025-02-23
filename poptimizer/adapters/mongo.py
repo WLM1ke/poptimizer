@@ -115,6 +115,19 @@ class Repo:
 
         return self._create_entity(t_entity, doc)
 
+    async def get_all[E: domain.Entity](
+        self,
+        t_entity: type[E],
+    ) -> AsyncIterator[E]:
+        collection_name = adapter.get_component_name(t_entity)
+        db = self._db[collection_name]
+
+        try:
+            async for doc in db.find({}):
+                yield self._create_entity(t_entity, doc)
+        except PyMongoError as err:
+            raise errors.AdapterError("can't load entities from {collection_name}") from err
+
     async def _load(self, collection_name: str, uid: domain.UID) -> MongoDocument | None:
         collection = self._db[collection_name]
 
