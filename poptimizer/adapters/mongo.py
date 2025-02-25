@@ -47,18 +47,18 @@ class Repo:
             [
                 {
                     "day": pymongo.ASCENDING,
+                    "ver": pymongo.ASCENDING,
+                },
+                {
                     "alfa_mean": pymongo.ASCENDING,
                 },
                 {
-                    "day": pymongo.ASCENDING,
                     "alfa_mean": pymongo.DESCENDING,
                 },
                 {
-                    "day": pymongo.ASCENDING,
                     "llh_mean": pymongo.ASCENDING,
                 },
                 {
-                    "day": pymongo.ASCENDING,
                     "llh_mean": pymongo.DESCENDING,
                 },
             ]
