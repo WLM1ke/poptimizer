@@ -48,8 +48,5 @@ async def _run(out: Path) -> None:
 
 
 def export(out: Path = _DEFAULT_OUT) -> None:
-    """Export current portfolio to json.
-
-    Can't be stopped with Ctrl-C/SIGINT. MongoDB settings from .env.
-    """
+    """Export current portfolio to json."""
     uvloop.run(_run(out))
