@@ -43,26 +43,11 @@ class Repo:
         collection_name = adapter.get_component_name(evolve.Model)
         collection = self._db[collection_name]
 
-        order = random.choice(  # noqa: S311
-            [
-                {
-                    "day": pymongo.ASCENDING,
-                    "ver": pymongo.ASCENDING,
-                },
-                {
-                    "alfa_mean": pymongo.ASCENDING,
-                },
-                {
-                    "alfa_mean": pymongo.DESCENDING,
-                },
-                {
-                    "llh_mean": pymongo.ASCENDING,
-                },
-                {
-                    "llh_mean": pymongo.DESCENDING,
-                },
-            ]
-        )
+        order = {
+            "day": random.choice([pymongo.ASCENDING, pymongo.DESCENDING]),  # noqa: S311
+            random.choice(["alfa_mean", "llh_mean"]): random.choice([pymongo.ASCENDING, pymongo.DESCENDING]),  # noqa: S311
+        }
+
         pipeline = [
             {
                 "$project": {
