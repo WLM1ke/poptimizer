@@ -52,7 +52,6 @@ class Repo:
             {
                 "$project": {
                     "day": True,
-                    "ver": True,
                     "alfa_mean": True,
                     "llh_mean": True,
                 },
