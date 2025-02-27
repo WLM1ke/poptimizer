@@ -1,7 +1,7 @@
 import typer
 
 from poptimizer import consts
-from poptimizer.cli import app, feat, portfolio
+from poptimizer.cli import app, feat, portfolio, report
 
 
 def _main() -> None:
@@ -13,6 +13,7 @@ def _main() -> None:
     cli.command()(app.run)
     cli.command()(portfolio.export)
     cli.command()(feat.stats)
+    cli.command()(report.income)
     cli()
 
 

@@ -24,8 +24,6 @@ async def _run(out: Path) -> None:
         lgr = await stack.enter_async_context(logger.init())
         repo = mongo.Repo(mongo_db)
 
-        lgr.info("Starting...")
-
         try:
             port = await repo.get(portfolio.Portfolio)
             positions = {pos.ticker: shares for pos in port.positions if (shares := sum(pos.accounts.values()))}

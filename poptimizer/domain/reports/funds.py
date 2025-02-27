@@ -4,29 +4,35 @@ from pydantic import AfterValidator, BaseModel, Field, NonNegativeFloat, Positiv
 
 from poptimizer.domain import domain
 
-Shareholder = NewType("Shareholder", str)
+Investor = NewType("Investor", str)
 
 
 class Row(BaseModel):
     day: domain.Day
     value: PositiveFloat
     dividends: NonNegativeFloat
-    inflows: dict[Shareholder, float]
-    shares: dict[Shareholder, NonNegativeFloat]
+    inflows: dict[Investor, float]
+    shares: dict[Investor, NonNegativeFloat]
 
     @model_validator(mode="after")
-    def _check_shareholders(self) -> Self:
+    def _check_investors(self) -> Self:
         if self.inflows.keys() - self.shares.keys():
-            raise ValueError("shareholders and inflows mismatch")
+            raise ValueError("investors and inflows mismatch")
 
         return self
 
     @field_validator("inflows")
-    def _non_zero_inflows(cls, inflows: dict[Shareholder, float]) -> dict[Shareholder, float]:
+    def _non_zero_inflows(cls, inflows: dict[Investor, float]) -> dict[Investor, float]:
         if any(inflow == 0 for inflow in inflows.values()):
             raise ValueError("inflows can't be zero")
 
         return inflows
+
+    def get_value(self, investor: Investor) -> float:
+        return self.shares.get(investor, 0) * self.value
+
+    def get_dividends(self, investor: Investor) -> float:
+        return self.shares.get(investor, 0) * self.dividends
 
 
 class Fund(domain.Entity):
@@ -38,7 +44,7 @@ class Fund(domain.Entity):
     def init(
         self,
         day: domain.Day,
-        inflows: dict[Shareholder, float],
+        inflows: dict[Investor, float],
     ) -> None:
         if any(inflow < 0 for inflow in inflows.values()):
             raise ValueError("initial inflows can't be negative")
@@ -61,7 +67,7 @@ class Fund(domain.Entity):
         day: domain.Day,
         value: float,
         dividends: float,
-        inflows: dict[Shareholder, float],
+        inflows: dict[Investor, float],
     ) -> None:
         if not self.rows:
             raise ValueError("fund is not initialized")

@@ -20,8 +20,6 @@ async def _run() -> None:
         mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo_db_uri, cfg.mongo_db_db))
         repo = mongo.Repo(mongo_db)
 
-        lgr.info("Starting...")
-
         try:
             count = 0
             history_days: list[int] = []
@@ -49,7 +47,6 @@ async def _run() -> None:
             for feature, feat_count in features.most_common():
                 lgr.info(f"Feature {feature} - {feat_count / count:.2%}")
 
-            lgr.info("Finished")
         except asyncio.CancelledError:
             lgr.info("Shutdown finished")
         except Exception as exc:  # noqa: BLE001
