@@ -1,18 +1,16 @@
 import asyncio
 import contextlib
-from typing import Final
 
 import uvloop
 
 from poptimizer import config
 from poptimizer.adapters import logger, mongo
-from poptimizer.domain import cpi
-from poptimizer.domain.reports import funds, simple
+from poptimizer.domain.moex import index
+from poptimizer.domain.reports import funds
+from poptimizer.domain.reports.risk import report
 
-_DEFAULT_INVESTOR: Final = funds.Investor("Mike")
 
-
-async def _run(investor: funds.Investor, months: int) -> None:
+async def _run(months: int) -> None:
     cfg = config.Cfg()
     err: Exception | None = None
 
@@ -21,12 +19,13 @@ async def _run(investor: funds.Investor, months: int) -> None:
         lgr = await stack.enter_async_context(logger.init())
         repo = mongo.Repo(mongo_db)
 
-        lgr.info("CPI-adjusted report for %s", investor)
+        lgr.info("Risk-return analysis for %dM", months)
 
         try:
             fund = await repo.get(funds.Fund)
-            cpi_table = await repo.get(cpi.CPI)
-            rows = simple.income(fund, cpi_table, months, investor)
+            index_table = await repo.get(index.Index, index.MCFTRR)
+            rf_table = await repo.get(index.Index, index.RUGBITR1Y)
+            rows = report(fund, index_table, rf_table, months)
 
             for row in rows:
                 lgr.info(row)
@@ -40,6 +39,6 @@ async def _run(investor: funds.Investor, months: int) -> None:
         raise err
 
 
-def income(investor: str, months: int) -> None:
-    """CPI-adjusted income report."""
-    uvloop.run(_run(funds.Investor(investor), months))
+def risk(months: int) -> None:
+    """Risk-return analysis."""
+    uvloop.run(_run(months))

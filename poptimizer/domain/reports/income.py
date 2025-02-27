@@ -12,7 +12,7 @@ _ROWS_PARAMS: Final = [
 ]
 
 
-def income(
+def report(
     fund: funds.Fund,
     cpi_table: cpi.CPI,
     months: int,
@@ -37,8 +37,9 @@ def income(
     dividends /= months
 
     label_align = len(str(months)) + 1
-    div_align = len(f"{round(params[0][0] * dividends, -3):_.0f}")
-    income_align = len(f"{round(params[0][0] * income, -3):_.0f}")
+    max_factor = params[0][0]
+    div_align = len(f"{round(max_factor * dividends, -3):_.0f}")
+    income_align = len(f"{round(max_factor * income, -3):_.0f}")
 
     return [
         f"{label:<{label_align}}: Dividends = {round(dividends * factor, -3):>{div_align}_.0f} "

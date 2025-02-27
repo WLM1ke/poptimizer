@@ -34,6 +34,10 @@ class Row(BaseModel):
     def get_dividends(self, investor: Investor) -> float:
         return self.shares.get(investor, 0) * self.dividends
 
+    @property
+    def pre_inflow_value(self) -> float:
+        return self.value - sum(self.inflows.values())
+
 
 class Fund(domain.Entity):
     rows: Annotated[
@@ -58,7 +62,7 @@ class Fund(domain.Entity):
                 value=all_inflows,
                 dividends=0,
                 inflows=inflows,
-                shares={shareholder: inflow / all_inflows for shareholder, inflow in inflows.items()},
+                shares={investor: inflow / all_inflows for investor, inflow in inflows.items()},
             )
         ]
 
@@ -81,10 +85,10 @@ class Fund(domain.Entity):
             raise ValueError("fund must be not updated in the same month")
 
         prev_value_share = 1 - sum(inflows.values()) / value
-        all_shareholders = last_row.shares.keys() | inflows.keys()
+        all_investors = last_row.shares.keys() | inflows.keys()
         shares = {
-            shareholder: last_row.shares.get(shareholder, 0) * prev_value_share + inflows.get(shareholder, 0) / value
-            for shareholder in all_shareholders
+            investors: last_row.shares.get(investors, 0) * prev_value_share + inflows.get(investors, 0) / value
+            for investors in all_investors
         }
 
         self.day = day
