@@ -9,8 +9,8 @@ AllTickersData = list[datasets.TickerData]
 
 
 def train(all_data: AllTickersData, batch_size: int) -> data.DataLoader[datasets.TrainBatch]:
-    return data.DataLoader(
-        dataset=data.ConcatDataset(ticker.train_dataset() for ticker in all_data),
+    return data.DataLoader(  # type: ignore[reportUnknownMemberType]
+        dataset=data.ConcatDataset(ticker.train_dataset() for ticker in all_data),  # type: ignore[reportUnknownMemberType]
         batch_size=batch_size,
         shuffle=True,
         drop_last=False,
@@ -45,16 +45,16 @@ class _DaysSampler(data.Sampler[list[int]]):
 def test(all_data: AllTickersData) -> data.DataLoader[datasets.TestBatch]:
     test_dataset = [ticker.test_dataset() for ticker in all_data]
 
-    return data.DataLoader(
-        dataset=data.ConcatDataset(test_dataset),
+    return data.DataLoader(  # type: ignore[reportUnknownMemberType]
+        dataset=data.ConcatDataset(test_dataset),  # type: ignore[reportUnknownMemberType]
         batch_sampler=_DaysSampler(test_dataset),
         drop_last=False,
     )
 
 
 def forecast(all_data: AllTickersData) -> data.DataLoader[datasets.ForecastBatch]:
-    return data.DataLoader(
-        dataset=data.ConcatDataset(ticker.forecast_dataset() for ticker in all_data),
+    return data.DataLoader(  # type: ignore[reportUnknownMemberType]
+        dataset=data.ConcatDataset(ticker.forecast_dataset() for ticker in all_data),  # type: ignore[reportUnknownMemberType]
         batch_size=len(all_data),
         shuffle=False,
         drop_last=False,
