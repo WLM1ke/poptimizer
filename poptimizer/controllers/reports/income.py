@@ -1,8 +1,10 @@
+import logging
 from typing import Final
 
 from poptimizer import errors
+from poptimizer.adapters import mongo
 from poptimizer.domain import cpi
-from poptimizer.domain.reports import funds
+from poptimizer.domain.funds import funds
 
 _WEEK_IN_MONTH: Final = 365.25 / 7 / 12
 _ROWS_PARAMS: Final = [
@@ -12,12 +14,16 @@ _ROWS_PARAMS: Final = [
 ]
 
 
-def report(
-    fund: funds.Fund,
-    cpi_table: cpi.CPI,
-    months: int,
+async def report(
+    repo: mongo.Repo,
     investor: funds.Investor,
-) -> list[str]:
+    months: int,
+) -> None:
+    lgr = logging.getLogger()
+
+    fund = await repo.get(funds.Fund)
+    cpi_table = await repo.get(cpi.CPI)
+
     if len(fund.rows) <= months or len(cpi_table.df) <= months:
         raise errors.DomainError("too many months")
 
@@ -41,8 +47,9 @@ def report(
     div_align = len(f"{round(max_factor * dividends, -3):_.0f}")
     income_align = len(f"{round(max_factor * income, -3):_.0f}")
 
-    return [
-        f"{label:<{label_align}}: Dividends = {round(dividends * factor, -3):>{div_align}_.0f} "
-        f"/ Income = {round(income * factor, -3):>{income_align}_.0f}"
-        for factor, label in params
-    ]
+    lgr.info("CPI-adjusted report for %s", investor)
+    for factor, label in params:
+        lgr.info(
+            f"{label:<{label_align}}: Dividends = {round(dividends * factor, -3):>{div_align}_.0f} "
+            f"/ Income = {round(income * factor, -3):>{income_align}_.0f}"
+        )

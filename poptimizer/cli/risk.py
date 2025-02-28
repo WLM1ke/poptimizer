@@ -5,9 +5,7 @@ import uvloop
 
 from poptimizer import config
 from poptimizer.adapters import logger, mongo
-from poptimizer.domain.moex import index
-from poptimizer.domain.reports import funds
-from poptimizer.domain.reports.risk import report
+from poptimizer.controllers.reports.risk import report
 
 
 async def _run(months: int) -> None:
@@ -19,16 +17,8 @@ async def _run(months: int) -> None:
         lgr = await stack.enter_async_context(logger.init())
         repo = mongo.Repo(mongo_db)
 
-        lgr.info("Risk-return analysis for %dM", months)
-
         try:
-            fund = await repo.get(funds.Fund)
-            index_table = await repo.get(index.Index, index.MCFTRR)
-            rf_table = await repo.get(index.Index, index.RUGBITR1Y)
-            rows = report(fund, index_table, rf_table, months)
-
-            for row in rows:
-                lgr.info(row)
+            await report(repo, months)
         except asyncio.CancelledError:
             lgr.info("Stopped")
         except Exception as exc:  # noqa: BLE001

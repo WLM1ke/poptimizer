@@ -5,23 +5,23 @@ import uvloop
 
 from poptimizer import config
 from poptimizer.adapters import logger, mongo
-from poptimizer.controllers.reports.income import report
-from poptimizer.domain.funds import funds
+from poptimizer.controllers.reports.stats import report
 
 
-async def _run(investor: funds.Investor, months: int) -> None:
+async def _run() -> None:
     cfg = config.Cfg()
     err: Exception | None = None
 
     async with contextlib.AsyncExitStack() as stack:
-        mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo_db_uri, cfg.mongo_db_db))
         lgr = await stack.enter_async_context(logger.init())
+
+        mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo_db_uri, cfg.mongo_db_db))
         repo = mongo.Repo(mongo_db)
 
         try:
-            await report(repo, investor, months)
+            await report(repo)
         except asyncio.CancelledError:
-            lgr.info("Stopped")
+            lgr.info("Shutdown finished")
         except Exception as exc:  # noqa: BLE001
             lgr.warning("Shutdown abnormally: %r", exc)
             err = exc
@@ -30,6 +30,10 @@ async def _run(investor: funds.Investor, months: int) -> None:
         raise err
 
 
-def income(investor: str, months: int) -> None:
-    """CPI-adjusted income report."""
-    uvloop.run(_run(funds.Investor(investor), months))
+def stats() -> None:
+    """Features genotype statistics."""
+    uvloop.run(_run())
+
+
+if __name__ == "__main__":
+    stats()
