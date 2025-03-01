@@ -74,7 +74,7 @@ class Portfolio(domain.Entity):
 
     @property
     def forecast_days(self) -> int:
-        return round(self.trading_interval)
+        return int(self.trading_interval)
 
     def update_forecast_days(self, trading_days: list[domain.Day]) -> None:
         old_day = self.day
@@ -87,7 +87,7 @@ class Portfolio(domain.Entity):
             if day <= old_day:
                 break
 
-            self.trading_interval = self.trading_interval + 1 / self.trading_interval - self.traded
+            self.trading_interval = self.trading_interval + 1 / int(self.trading_interval) - self.traded
             self.traded = False
 
     def create_acount(self, name: domain.AccName) -> None:
