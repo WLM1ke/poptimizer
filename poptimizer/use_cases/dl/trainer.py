@@ -209,7 +209,7 @@ class Trainer:
         forecast_days: int,
         data: list[datasets.TickerData],
     ) -> tuple[list[float], list[float]]:
-        with torch.no_grad():
+        with torch.inference_mode():
             net.eval()
 
             alfa: list[float] = []
@@ -247,7 +247,7 @@ class Trainer:
         forecast_days: int,
         data: list[datasets.TickerData],
     ) -> tuple[list[list[float]], list[list[float]]]:
-        with torch.no_grad():
+        with torch.inference_mode():
             net.eval()
             forecast_dl = data_loaders.forecast(data)
             if len(forecast_dl) != 1:
