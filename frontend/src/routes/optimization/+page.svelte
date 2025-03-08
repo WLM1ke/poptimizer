@@ -83,7 +83,7 @@
 					<PercentCell value={position.grad_upper} />
 					<PercentCell value={position.priority} />
 					<TextCell text="Sell" center />
-					<TextCell text={position.accounts} center />
+					<TextCell text={position.accounts} center fixedWidth={false} />
 				{/snippet}
 			</TableRow>
 		{/each}
