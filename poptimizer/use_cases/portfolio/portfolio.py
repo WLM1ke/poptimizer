@@ -88,6 +88,12 @@ class PortfolioHandler:
                     new_position.accounts = position.accounts
                     updated_positions.append(new_position)
                     self._lgr.warning("Not liquid %s is not removed", position.ticker)
+                case new_position if new_position in port.exclude and not position.accounts:
+                    self._lgr.info("%s from exclude list is removed", new_position.ticker)
+                case new_position if new_position in port.exclude:
+                    new_position.accounts = position.accounts
+                    updated_positions.append(new_position)
+                    self._lgr.warning("%s from exclude list is not removed", position.ticker)
                 case new_position:
                     new_position.accounts = position.accounts
                     updated_positions.append(new_position)
@@ -101,7 +107,7 @@ class PortfolioHandler:
         min_turnover: float,
     ) -> None:
         for ticker, position in sec_cache.items():
-            if position.turnover > min_turnover:
+            if position.turnover > min_turnover and ticker not in port.exclude:
                 n, _ = port.find_position(position.ticker)
                 port.positions.insert(n, position)
                 if port.ver:

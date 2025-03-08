@@ -61,6 +61,21 @@ class Position(handler.DTO):
     amount: NonNegativeInt
 
 
+class GetExcludeTickers(handler.DTO): ...
+
+
+class ExcludeTickers(handler.DTO):
+    tickers: list[domain.Ticker]
+
+
+class ExcludeTicker(handler.DTO):
+    ticker: domain.Ticker
+
+
+class NotExcludeTicker(handler.DTO):
+    ticker: domain.Ticker
+
+
 class GetForecast(handler.DTO): ...
 
 
@@ -121,6 +136,25 @@ class PortfolioHandler:
         port.update_position(msg.account, msg.ticker, msg.amount)
 
         return Portfolio.from_updated_portfolio(port)
+
+    async def get_exclude_ticker(self, ctx: handler.Ctx, msg: GetExcludeTickers) -> ExcludeTickers:  # noqa: ARG002
+        port = await ctx.get(portfolio.Portfolio)
+
+        return ExcludeTickers(tickers=sorted(port.exclude))
+
+    async def exclude_ticker(self, ctx: handler.Ctx, msg: ExcludeTicker) -> ExcludeTickers:
+        port = await ctx.get_for_update(portfolio.Portfolio)
+
+        port.exclude_ticker(msg.ticker)
+
+        return ExcludeTickers(tickers=sorted(port.exclude))
+
+    async def not_exclude_ticker(self, ctx: handler.Ctx, msg: NotExcludeTicker) -> ExcludeTickers:
+        port = await ctx.get_for_update(portfolio.Portfolio)
+
+        port.not_exclude_ticker(msg.ticker)
+
+        return ExcludeTickers(tickers=sorted(port.exclude))
 
     async def get_forecast(self, ctx: handler.Ctx, msg: GetForecast) -> Forecast:  # noqa: ARG002
         forecast = await ctx.get(forecasts.Forecast)

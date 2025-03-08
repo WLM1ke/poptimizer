@@ -49,6 +49,7 @@ class Portfolio(domain.Entity):
         list[Position],
         AfterValidator(domain.sorted_with_ticker_field_validator),
     ] = Field(default_factory=list)
+    exclude: set[domain.Ticker] = Field(default_factory=set)
 
     @model_validator(mode="after")
     def _positions_have_know_accounts(self) -> Self:
@@ -185,3 +186,16 @@ class Portfolio(domain.Entity):
         values = [pos.price * sum(pos.accounts.values()) for pos in self.positions]
 
         return sum(values) + sum(self.cash.values())
+
+    def exclude_ticker(self, ticker: domain.Ticker) -> None:
+        _, pos = self.find_position(ticker)
+        if pos is None:
+            raise errors.DomainError(f"ticker {ticker} is not in portfolio")
+
+        self.exclude.add(ticker)
+
+    def not_exclude_ticker(self, ticker: domain.Ticker) -> None:
+        if ticker not in self.exclude:
+            raise errors.DomainError(f"ticker {ticker} is not excluded")
+
+        self.exclude.remove(ticker)
