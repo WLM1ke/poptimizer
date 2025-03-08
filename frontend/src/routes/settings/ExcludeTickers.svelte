@@ -3,27 +3,20 @@
 	import Delete from "$lib/icons/Delete.svelte";
 	import Add from "$lib/icons/Add.svelte";
 	import { scale } from "svelte/transition";
-	import Switch from "$lib/components/Switch.svelte";
 	import { flip } from "svelte/animate";
-	import { accounts } from "$lib/state/portfolio.svelte";
-	import { accHideZeroPositions } from "$lib/state/settings.svelte";
+	import { excludeTickers } from "$lib/state/portfolio.svelte";
 
-	let newAccount = $state("");
+	let ticker = $state("");
 	let inputRef: HTMLElement;
 </script>
 
 <section class="mt-4">
-	<H2 text="Accounts" />
-	<ul class="pt-2">
-		<li>
-			<Switch label="hide zero positions" checked={accHideZeroPositions.value} onchange={accHideZeroPositions.toggle} />
-		</li>
-	</ul>
+	<H2 text="Exclude Tickers" />
 	<ul class="max-w-max">
-		{#each accounts.accounts as account (account)}
+		{#each excludeTickers.tickers as ticker (ticker)}
 			<li transition:scale animate:flip class="flex items-center justify-between gap-2 pt-2">
-				{account}
-				<button onclick={() => accounts.remove(account)} class="hover:text-link-hover">
+				{ticker}
+				<button onclick={() => excludeTickers.notExclude(ticker)} class="hover:text-link-hover">
 					<Delete />
 				</button>
 			</li>
@@ -33,20 +26,20 @@
 				bind:this={inputRef}
 				onkeydown={(event) => {
 					if (event.key === "Enter") {
-						accounts.create(newAccount);
-						newAccount = "";
+						excludeTickers.exclude(ticker);
+						ticker = "";
 					}
 				}}
 				class="rounded-md border border-bg-accent bg-bg-main p-1"
-				bind:value={newAccount}
+				bind:value={ticker}
 				type="text"
-				placeholder="Enter account title"
+				placeholder="Enter ticker to exclude"
 			/>
 			<button
 				onclick={() => {
-					accounts.create(newAccount);
+					excludeTickers.exclude(ticker);
 					inputRef.focus();
-					newAccount = "";
+					ticker = "";
 				}}
 				class="hover:text-link-hover"
 			>

@@ -33,6 +33,7 @@ class Portfolio(handler.DTO):
     account_names: list[domain.AccName]
     cash: portfolio.AccountData
     positions: list[portfolio.Position]
+    exclude: list[domain.Ticker]
 
     @classmethod
     def from_portfolio(cls, port: portfolio.Portfolio) -> Self:
@@ -42,6 +43,7 @@ class Portfolio(handler.DTO):
             account_names=sorted(port.account_names),
             cash=port.cash,
             positions=port.positions,
+            exclude=sorted(port.exclude),
         )
 
     @classmethod
@@ -52,6 +54,7 @@ class Portfolio(handler.DTO):
             account_names=sorted(port.account_names),
             cash=port.cash,
             positions=port.positions,
+            exclude=sorted(port.exclude),
         )
 
 
@@ -59,13 +62,6 @@ class Position(handler.DTO):
     account: domain.AccName
     ticker: domain.Ticker
     amount: NonNegativeInt
-
-
-class GetExcludeTickers(handler.DTO): ...
-
-
-class ExcludeTickers(handler.DTO):
-    tickers: list[domain.Ticker]
 
 
 class ExcludeTicker(handler.DTO):
@@ -137,24 +133,19 @@ class PortfolioHandler:
 
         return Portfolio.from_updated_portfolio(port)
 
-    async def get_exclude_ticker(self, ctx: handler.Ctx, msg: GetExcludeTickers) -> ExcludeTickers:  # noqa: ARG002
-        port = await ctx.get(portfolio.Portfolio)
-
-        return ExcludeTickers(tickers=sorted(port.exclude))
-
-    async def exclude_ticker(self, ctx: handler.Ctx, msg: ExcludeTicker) -> ExcludeTickers:
+    async def exclude_ticker(self, ctx: handler.Ctx, msg: ExcludeTicker) -> Portfolio:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
         port.exclude_ticker(msg.ticker)
 
-        return ExcludeTickers(tickers=sorted(port.exclude))
+        return Portfolio.from_updated_portfolio(port)
 
-    async def not_exclude_ticker(self, ctx: handler.Ctx, msg: NotExcludeTicker) -> ExcludeTickers:
+    async def not_exclude_ticker(self, ctx: handler.Ctx, msg: NotExcludeTicker) -> Portfolio:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
         port.not_exclude_ticker(msg.ticker)
 
-        return ExcludeTickers(tickers=sorted(port.exclude))
+        return Portfolio.from_updated_portfolio(port)
 
     async def get_forecast(self, ctx: handler.Ctx, msg: GetForecast) -> Forecast:  # noqa: ARG002
         forecast = await ctx.get(forecasts.Forecast)

@@ -49,7 +49,13 @@ class Portfolio(domain.Entity):
         list[Position],
         AfterValidator(domain.sorted_with_ticker_field_validator),
     ] = Field(default_factory=list)
-    exclude: set[domain.Ticker] = Field(default_factory=set)
+    exclude: Annotated[
+        set[domain.Ticker],
+        PlainSerializer(
+            list,
+            return_type=list,
+        ),
+    ] = Field(default_factory=set)
 
     @model_validator(mode="after")
     def _positions_have_know_accounts(self) -> Self:

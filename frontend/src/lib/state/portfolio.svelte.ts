@@ -1,4 +1,4 @@
-import { del, get, post } from "$lib/request";
+import { del, get, post, put } from "$lib/request";
 import { error, redirect } from "@sveltejs/kit";
 import { accHideZeroPositions, portSortByValue } from "./settings.svelte";
 import { alerts } from "./alerts.svelte";
@@ -16,9 +16,10 @@ interface Portfolio {
 	account_names: string[];
 	cash: Record<string, number>;
 	positions: Positions[];
+	exclude: string[];
 }
 
-let portfolio = $state<Portfolio>({ day: "", ver: -1, account_names: [], cash: {}, positions: [] });
+let portfolio = $state<Portfolio>({ day: "", ver: -1, account_names: [], cash: {}, positions: [], exclude: [] });
 let redirected = false;
 
 export const loadPortfolio = async (fetchFn: typeof fetch) => {
@@ -56,6 +57,26 @@ class Accounts {
 }
 
 export const accounts = new Accounts();
+
+class ExcludeTickers {
+	tickers = $derived(portfolio.exclude);
+
+	exclude = async (ticker: string) => {
+		const port = await put(fetch, `/api/exclude/${ticker.toUpperCase()}`);
+		if (port !== undefined) {
+			portfolio = port;
+		}
+	};
+
+	notExclude = async (ticker: string) => {
+		const port = await del(fetch, `/api/exclude/${ticker.toUpperCase()}`);
+		if (port !== undefined) {
+			portfolio = port;
+		}
+	};
+}
+
+export const excludeTickers = new ExcludeTickers();
 
 interface CompPosition {
 	ticker: string;

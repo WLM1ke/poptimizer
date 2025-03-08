@@ -16,7 +16,6 @@ class Handlers:
         app.add_routes([web.post("/portfolio/{account}", self.create_acount)])
         app.add_routes([web.delete("/portfolio/{account}", self.remove_acount)])
         app.add_routes([web.post("/portfolio/{account}/{ticker}", self.update_position)])
-        app.add_routes([web.get("/exclude", self.get_exclude_tickers)])
         app.add_routes([web.put("/exclude/{ticker}", self.exclude_ticker)])
         app.add_routes([web.delete("/exclude/{ticker}", self.not_exclude_ticker)])
         app.add_routes([web.get("/forecast", self.get_forecast)])
@@ -43,11 +42,6 @@ class Handlers:
         port = await self._bus.request(portfolio.Position.model_validate(await request.json() | request.match_info))
 
         return web.json_response(text=port.model_dump_json())
-
-    async def get_exclude_tickers(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
-        tickers = await self._bus.request(portfolio.GetExcludeTickers())
-
-        return web.json_response(text=tickers.model_dump_json())
 
     async def exclude_ticker(self, request: web.Request) -> web.StreamResponse:
         tickers = await self._bus.request(portfolio.ExcludeTicker.model_validate(request.match_info))

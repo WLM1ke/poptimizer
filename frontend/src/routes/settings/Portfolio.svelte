@@ -6,7 +6,7 @@
 	import { portSortByValue } from "$lib/state/settings.svelte";
 </script>
 
-<section class="mt-4">
+<section>
 	<H2 text="Portfolio" />
 	<ul class="pt-2">
 		<li>
