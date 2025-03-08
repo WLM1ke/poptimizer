@@ -49,11 +49,6 @@ tasks:
     cmds:
       - uv run {{.APP}} run
 
-  export:
-    desc: Export current portfolio
-    cmds:
-      - uv run {{.APP}} export
-
   format:
     desc: Format
     cmds:
