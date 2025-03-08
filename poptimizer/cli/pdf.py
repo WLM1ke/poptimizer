@@ -1,4 +1,3 @@
-import asyncio
 import contextlib
 from datetime import date, datetime
 from typing import Annotated, Final
@@ -8,10 +7,27 @@ import uvloop
 
 from poptimizer import config
 from poptimizer.adapters import logger, mongo
+from poptimizer.cli import safe
 from poptimizer.domain.funds import funds
 from poptimizer.reports.pdf.pdf import report
 
 _AMOUNT_SEP: Final = ":"
+
+
+async def _report(
+    repo: mongo.Repo,
+    day: date,
+    dividends: float,
+    raw_inflows: list[str],
+) -> None:
+    inflows = [inflow.split(_AMOUNT_SEP) for inflow in raw_inflows]
+
+    await report(
+        repo,
+        day,
+        dividends,
+        {funds.Investor(investor): float(value) for investor, value in inflows},
+    )
 
 
 async def _run(
@@ -20,7 +36,6 @@ async def _run(
     raw_inflows: list[str],
 ) -> None:
     cfg = config.Cfg()
-    err: Exception | None = None
 
     async with contextlib.AsyncExitStack() as stack:
         lgr = await stack.enter_async_context(logger.init())
@@ -28,23 +43,7 @@ async def _run(
         mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo_db_uri, cfg.mongo_db_db))
         repo = mongo.Repo(mongo_db)
 
-        try:
-            inflows = [inflow.split(_AMOUNT_SEP) for inflow in raw_inflows]
-
-            await report(
-                repo,
-                day,
-                dividends,
-                {funds.Investor(investor): float(value) for investor, value in inflows},
-            )
-        except asyncio.CancelledError:
-            lgr.info("Shutdown finished")
-        except Exception as exc:  # noqa: BLE001
-            lgr.warning("Shutdown abnormally: %r", exc)
-            err = exc
-
-    if err:
-        raise err
+        await safe.run(lgr, _report(repo, day, dividends, raw_inflows))
 
 
 def pdf(
