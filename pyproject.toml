@@ -27,6 +27,9 @@ dependencies = [
     "torch>=2.6.0",
     "tqdm>=4.66.5",
     "pymongo>=4.10.1",
+    "reportlab>=4.3.1",
+    "matplotlib>=3.10.1",
+    "numpy>=2.2.3",
 ]
 
 [dependency-groups]

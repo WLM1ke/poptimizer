@@ -31,12 +31,28 @@ class Row(BaseModel):
     def get_value(self, investor: Investor) -> float:
         return self.shares.get(investor, 0) * self.value
 
+    def get_pre_inflow_value(self, investor: Investor) -> float:
+        return self.shares.get(investor, 0) * self.value - self.inflows.get(investor, 0)
+
+    def get_inflow(self, investor: Investor) -> float:
+        return self.inflows.get(investor, 0)
+
+    def get_share(self, investor: Investor) -> float:
+        return self.shares.get(investor, 0)
+
+    def get_pre_inflow_share(self, investor: Investor) -> float:
+        return (self.shares.get(investor, 0) * self.value - self.get_inflow(investor)) / self.pre_inflow_value
+
     def get_dividends(self, investor: Investor) -> float:
         return self.shares.get(investor, 0) * self.dividends
 
     @property
     def pre_inflow_value(self) -> float:
         return self.value - sum(self.inflows.values())
+
+    @property
+    def inflow(self) -> float:
+        return sum(self.inflows.values())
 
 
 class Fund(domain.Entity):
@@ -90,6 +106,8 @@ class Fund(domain.Entity):
             investors: last_row.shares.get(investors, 0) * prev_value_share + inflows.get(investors, 0) / value
             for investors in all_investors
         }
+        all_shares = sum(shares.values())
+        shares = {investor: share / all_shares for investor, share in shares.items()}
 
         self.day = day
         self.rows.append(

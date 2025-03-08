@@ -29,3 +29,6 @@ wheels/
 
 # Previous version backup
 /backup
+
+# PDF reports
+/reports
