@@ -1,11 +1,13 @@
 import asyncio
 import contextlib
+from typing import Annotated
 
+import typer
 import uvloop
 
 from poptimizer import config
 from poptimizer.adapters import logger, mongo
-from poptimizer.controllers.reports.risk import report
+from poptimizer.reports.risk import report
 
 
 async def _run(months: int) -> None:
@@ -29,6 +31,11 @@ async def _run(months: int) -> None:
         raise err
 
 
-def risk(months: int) -> None:
-    """Risk-return analysis."""
+def risk(
+    months: Annotated[
+        int,
+        typer.Argument(help="Last months to report", show_default=False, min=2),
+    ],
+) -> None:
+    """Print fund risk-return report for last months."""
     uvloop.run(_run(months))

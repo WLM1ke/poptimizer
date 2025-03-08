@@ -5,7 +5,7 @@ import uvloop
 
 from poptimizer import config
 from poptimizer.adapters import logger, mongo
-from poptimizer.controllers.reports.stats import report
+from poptimizer.reports.stats import report
 
 
 async def _run() -> None:
@@ -31,5 +31,5 @@ async def _run() -> None:
 
 
 def stats() -> None:
-    """Evolution statistics."""
+    """Print current evolution statistics."""
     uvloop.run(_run())

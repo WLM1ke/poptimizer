@@ -1,12 +1,14 @@
 import asyncio
 import contextlib
+from typing import Annotated
 
+import typer
 import uvloop
 
 from poptimizer import config
 from poptimizer.adapters import logger, mongo
-from poptimizer.controllers.reports.income import report
 from poptimizer.domain.funds import funds
+from poptimizer.reports.income import report
 
 
 async def _run(investor: funds.Investor, months: int) -> None:
@@ -30,6 +32,15 @@ async def _run(investor: funds.Investor, months: int) -> None:
         raise err
 
 
-def income(investor: str, months: int) -> None:
-    """CPI-adjusted income report."""
+def income(
+    investor: Annotated[
+        str,
+        typer.Argument(help="Investor name", show_default=False),
+    ],
+    months: Annotated[
+        int,
+        typer.Argument(help="Last months to report", show_default=False, min=1),
+    ],
+) -> None:
+    """Print CPI-adjusted income report."""
     uvloop.run(_run(funds.Investor(investor), months))

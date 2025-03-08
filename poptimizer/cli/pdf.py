@@ -1,19 +1,23 @@
 import asyncio
 import contextlib
-from datetime import date
+from datetime import date, datetime
+from typing import Annotated, Final
 
+import typer
 import uvloop
 
 from poptimizer import config
 from poptimizer.adapters import logger, mongo
-from poptimizer.controllers.reports.pdf import pdf
 from poptimizer.domain.funds import funds
+from poptimizer.reports.pdf.pdf import report
+
+_AMOUNT_SEP: Final = ":"
 
 
 async def _run(
     day: date,
     dividends: float,
-    inflows: dict[str, float],
+    raw_inflows: list[str],
 ) -> None:
     cfg = config.Cfg()
     err: Exception | None = None
@@ -25,11 +29,13 @@ async def _run(
         repo = mongo.Repo(mongo_db)
 
         try:
-            await pdf.report(
+            inflows = [inflow.split(_AMOUNT_SEP) for inflow in raw_inflows]
+
+            await report(
                 repo,
                 day,
                 dividends,
-                {funds.Investor(investor): value for investor, value in inflows.items()},
+                {funds.Investor(investor): float(value) for investor, value in inflows},
             )
         except asyncio.CancelledError:
             lgr.info("Shutdown finished")
@@ -41,14 +47,33 @@ async def _run(
         raise err
 
 
-def report(
-    day: date,
-    dividends: float,
-    inflows: dict[str, float],
+def pdf(
+    day: Annotated[
+        datetime,
+        typer.Argument(
+            help="Day of new fund statistics and report",
+            formats=["%Y-%m-%d"],
+            show_default=False,
+        ),
+    ],
+    inflows: Annotated[
+        list[str],
+        typer.Option(
+            "--inflows",
+            "-i",
+            help="Fund inflows from last report date for investors formatted as <investor>:<value>",
+            default_factory=list,
+            show_default=False,
+        ),
+    ],
+    dividends: Annotated[
+        float,
+        typer.Option(
+            "--dividends",
+            "-d",
+            help="Dividends from last report date",
+        ),
+    ] = 0,
 ) -> None:
-    """Fund pdf report for 5 years."""
-    uvloop.run(_run(day, dividends, inflows))
-
-
-if __name__ == "__main__":
-    report(date(2025, 3, 5), 0.0, {"Mike": -1_000_000})
+    """Add data to fund statistics and create pdf report for last 5 years."""
+    uvloop.run(_run(day.date(), dividends, inflows))

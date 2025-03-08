@@ -7,12 +7,12 @@ from reportlab.pdfgen.canvas import Canvas
 
 from poptimizer import consts
 from poptimizer.adapters import mongo
-from poptimizer.controllers.reports import risk
-from poptimizer.controllers.reports.pdf import lower, middle, style, upper
 from poptimizer.domain import domain
 from poptimizer.domain.funds import funds
 from poptimizer.domain.moex import quotes
 from poptimizer.domain.portfolio import portfolio
+from poptimizer.reports import risk
+from poptimizer.reports.pdf import lower, middle, style, upper
 
 _PATH: Final = consts.ROOT / "reports"
 _REPORT_MONTHS: Final = 60

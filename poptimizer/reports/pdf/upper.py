@@ -3,8 +3,8 @@ from typing import Final
 from reportlab import platypus
 from reportlab.pdfgen.canvas import Canvas
 
-from poptimizer.controllers.reports.pdf import style
 from poptimizer.domain.funds import funds
+from poptimizer.reports.pdf import style
 
 _LEFT_PART_OF_BLOCK: Final = 2 / 3
 

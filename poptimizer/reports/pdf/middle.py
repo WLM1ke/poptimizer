@@ -7,8 +7,8 @@ from reportlab import platypus
 from reportlab.lib.units import inch
 from reportlab.pdfgen.canvas import Canvas
 
-from poptimizer.controllers.reports import risk
-from poptimizer.controllers.reports.pdf import style
+from poptimizer.reports import risk
+from poptimizer.reports.pdf import style
 
 _LEFT_PART_OF_BLOCK: Final = 1 / 3
 _DPI: Final = 300
