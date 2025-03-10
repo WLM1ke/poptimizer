@@ -88,9 +88,9 @@ class PortfolioHandler:
                     new_position.accounts = position.accounts
                     updated_positions.append(new_position)
                     self._lgr.warning("Not liquid %s is not removed", position.ticker)
-                case new_position if new_position in port.exclude and not position.accounts:
+                case new_position if new_position.ticker in port.exclude and not position.accounts:
                     self._lgr.info("%s from exclude list is removed", new_position.ticker)
-                case new_position if new_position in port.exclude:
+                case new_position if new_position.ticker in port.exclude:
                     new_position.accounts = position.accounts
                     updated_positions.append(new_position)
                     self._lgr.warning("%s from exclude list is not removed", position.ticker)
