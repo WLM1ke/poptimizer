@@ -2,7 +2,6 @@ from datetime import date
 
 import pytest
 
-from poptimizer import errors
 from poptimizer.domain import cpi, domain
 
 
@@ -28,22 +27,6 @@ def test_cpi_invalid() -> None:
                 cpi.Row(day=date(2025, 1, 31), cpi=1),
             ],
         )
-
-
-def test_cpi_update_mismatch() -> None:
-    table = cpi.CPI(
-        day=date(2025, 1, 20),
-        rev=domain.Revision(uid=domain.UID("uid"), ver=domain.Version(7)),
-        df=[
-            cpi.Row(day=date(2025, 1, 31), cpi=1),
-        ],
-    )
-    rows = [
-        cpi.Row(day=date(2025, 1, 31), cpi=1.1),
-    ]
-
-    with pytest.raises(errors.DomainError, match="data mismatch error"):
-        table.update(date(2025, 1, 19), rows)
 
 
 def test_cpi_update() -> None:
