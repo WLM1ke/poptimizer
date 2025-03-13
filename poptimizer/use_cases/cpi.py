@@ -1,6 +1,5 @@
 import io
-import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Final, cast
 
 import aiohttp
@@ -11,21 +10,18 @@ from poptimizer import errors
 from poptimizer.domain import cpi
 from poptimizer.use_cases import handler
 
-_PRICES_PAGE: Final = "https://rosstat.gov.ru/statistics/price"
-_RE_FILE: Final = re.compile(r"/[iI]pc[\-_]mes[\-_][0-9]{1,2}-[0-9]{4}.xlsx")
-_URL_TMPL: Final = "https://rosstat.gov.ru/storage/mediabank/{}"
-_SHEET_NAME: Final = "01"
+_URL: Final = "https://www.cbr.ru/Content/Document/File/108632/indicators_cpd.xlsx"
+_SHEET_NAME: Final = "Лист1"
+_FIRST_DATE_CELL: Final = "B1"
+_FIRST_DATE_VALUE: Final = date(year=2002, month=1, day=1)
+_VALUE_HEADER_CELL: Final = "A2"
+_VALUE_HEADER_VALUE: Final = "Все товары и услуги"
 
-_FIRST_MONTH_CELL: Final = "A6"
-_FIRST_MONTH_VALUE: Final = "январь"
-_FIRST_YEAR_CELL: Final = "B4"
-_FIRST_YEAR_VALUE: Final = 1991
-
-_MIN_ROW: Final = 6
-_MAX_ROW: Final = 17
+_MIN_ROW: Final = 1
+_MAX_ROW: Final = 2
 _MIN_COL: Final = 2
 
-_JANUARY_LAST_DAY: Final = 31
+_MAX_MONTH_DAYS: Final = 31
 
 
 class CPIHandler:
@@ -45,18 +41,7 @@ class CPIHandler:
         table.update(msg.day, row)
 
     async def _download(self) -> io.BytesIO:
-        async with self._http_session.get(_PRICES_PAGE) as resp:
-            if not resp.ok:
-                raise errors.UseCasesError(f"bad CPI respond status {resp.reason}")
-
-            html = await resp.text()
-
-        if (file_name := _RE_FILE.search(html)) is None:
-            raise errors.UseCasesError("can't find file with CPI")
-
-        cpi_url = _URL_TMPL.format(file_name.group(0))
-
-        async with self._http_session.get(cpi_url) as resp:
+        async with self._http_session.get(_URL) as resp:
             if not resp.ok:
                 raise errors.UseCasesError(f"bad CPI respond status {resp.reason}")
 
@@ -69,32 +54,26 @@ def _parse_rows(xlsx: io.BytesIO) -> list[cpi.Row]:
 
     _validate_data_position(ws)
 
-    day = date(year=_FIRST_YEAR_VALUE, month=1, day=_JANUARY_LAST_DAY)
     rows: list[cpi.Row] = []
 
     for row in ws.iter_cols(min_row=_MIN_ROW, max_row=_MAX_ROW, min_col=_MIN_COL, values_only=True):
-        for cell in row:
-            match cell:
-                case float() | int():
-                    rows.append(cpi.Row(day=day, cpi=cell / 100))
-                case None:
-                    return rows
-                case _:
-                    raise errors.UseCasesError(f"strange CPI value {cell}")
-
-            day = _get_next_month_end(day)
+        day, value = row
+        try:
+            rows.append(cpi.Row(day=_month_end(cast(datetime, day).date()), cpi=1 + cast(float, value) / 100))
+        except ValueError as err:
+            raise errors.UseCasesError("bad CPI data") from err
 
     return rows
 
 
 def _validate_data_position(ws: worksheet.Worksheet) -> None:
-    if (first_year := ws[_FIRST_YEAR_CELL].value) != _FIRST_YEAR_VALUE:
-        raise errors.UseCasesError(f"first year {first_year}")
-    if (first_month := ws[_FIRST_MONTH_CELL].value) != _FIRST_MONTH_VALUE:
-        raise errors.UseCasesError(f"wrong first month {first_month}")
+    if (first_date := ws[_FIRST_DATE_CELL].value.date()) != _FIRST_DATE_VALUE:
+        raise errors.UseCasesError(f"first date {first_date}")
+    if (header := ws[_VALUE_HEADER_CELL].value) != _VALUE_HEADER_VALUE:
+        raise errors.UseCasesError(f"wrong header {header}")
 
 
-def _get_next_month_end(day: date) -> date:
-    skip_month = day + timedelta(days=_JANUARY_LAST_DAY + 1)
+def _month_end(day: date) -> date:
+    skip_month = day.replace(day=1) + timedelta(days=_MAX_MONTH_DAYS)
 
     return skip_month - timedelta(days=skip_month.day)

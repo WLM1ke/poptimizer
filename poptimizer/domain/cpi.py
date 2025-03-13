@@ -3,7 +3,6 @@ from typing import Annotated, Final
 
 from pydantic import AfterValidator, Field, field_validator
 
-from poptimizer import errors
 from poptimizer.domain import domain
 
 _MINIMUM_MONTHLY_CPI: Final = 0.99
@@ -29,8 +28,4 @@ class CPI(domain.Entity):
 
     def update(self, update_day: domain.Day, rows: list[Row]) -> None:
         self.day = update_day
-
-        if self.df != rows[: len(self.df)]:
-            raise errors.DomainError("data mismatch error")
-
         self.df = rows
