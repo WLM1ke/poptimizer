@@ -50,7 +50,7 @@ class CPIHandler:
 
 def _parse_rows(xlsx: io.BytesIO) -> list[cpi.Row]:
     wb = excel.load_workbook(xlsx)
-    ws = cast(worksheet.Worksheet, wb[_SHEET_NAME])
+    ws = cast("worksheet.Worksheet", wb[_SHEET_NAME])
 
     _validate_data_position(ws)
 
@@ -59,7 +59,7 @@ def _parse_rows(xlsx: io.BytesIO) -> list[cpi.Row]:
     for row in ws.iter_cols(min_row=_MIN_ROW, max_row=_MAX_ROW, min_col=_MIN_COL, values_only=True):
         day, value = row
         try:
-            rows.append(cpi.Row(day=_month_end(cast(datetime, day).date()), cpi=1 + cast(float, value) / 100))
+            rows.append(cpi.Row(day=_month_end(cast("datetime", day).date()), cpi=1 + cast("float", value) / 100))
         except ValueError as err:
             raise errors.UseCasesError("bad CPI data") from err
 

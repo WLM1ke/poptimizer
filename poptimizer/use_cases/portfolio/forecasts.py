@@ -160,8 +160,8 @@ class ForecastHandler:
                     std=median_std[n],
                     beta=median_betas[n],
                     grad=median_grads[n],
-                    grad_lower=np.nan_to_num(cast(float, median_grads_lower[n]), nan=-np.inf),
-                    grad_upper=np.nan_to_num(cast(float, median_grads_upper[n]), nan=np.inf),
+                    grad_lower=np.nan_to_num(cast("float", median_grads_lower[n]), nan=-np.inf),
+                    grad_upper=np.nan_to_num(cast("float", median_grads_upper[n]), nan=np.inf),
                 )
             )
 
@@ -187,4 +187,4 @@ class ForecastHandler:
 
 
 def _median(*args: tuple[NDArray[np.double], ...]) -> list[NDArray[np.double]]:
-    return [cast(NDArray[np.double], np.median(sample)) for sample in args]
+    return [cast("NDArray[np.double]", np.median(sample)) for sample in args]
