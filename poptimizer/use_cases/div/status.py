@@ -18,7 +18,7 @@ from poptimizer.use_cases import handler
 _URL: Final = "https://web.moex.com/moex-web-icdb-api/api/v1/export/register-closing-dates/csv?separator=1&language=1"
 _LOOK_BACK_DAYS: Final = 14
 _DATE_FMT: Final = "%m/%d/%Y %H:%M:%S"
-_RE_TICKER = re.compile(r", ([A-Z]+-[A-Z]+|[A-Z]+) \[")
+_RE_TICKER: Final = re.compile(r",\s([A-Z]|[A-Z]{4}|[A-Z]{4}P|[A-Z][0-9])\s\[")
 
 
 class DivStatusHandler:
