@@ -36,7 +36,7 @@ class NormalizedPosition(BaseModel):
 
 class Portfolio(domain.Entity):
     trading_interval: float = Field(consts.INITIAL_FORECAST_DAYS, ge=1)
-    traded: bool = False
+    sold: NonNegativeInt = 0
     account_names: Annotated[
         set[domain.AccName],
         PlainSerializer(
@@ -94,8 +94,10 @@ class Portfolio(domain.Entity):
             if day <= old_day:
                 break
 
-            self.trading_interval = self.trading_interval + 1 / int(self.trading_interval) - self.traded
-            self.traded = False
+            self.trading_interval = self.trading_interval + 1 / int(self.trading_interval)
+            if self.sold:
+                self.trading_interval -= self.sold / sum(1 for pos in self.positions if pos.accounts if pos.accounts)
+                self.sold = 0
 
     def create_acount(self, name: domain.AccName) -> None:
         if name in self.account_names:
@@ -163,7 +165,7 @@ class Portfolio(domain.Entity):
                     position.accounts.pop(acc_name)
 
                 if not position.accounts:
-                    self.traded = True
+                    self.sold += 1
 
     def normalized_turnover(self) -> list[float]:
         values = [position.price * sum(position.accounts.values()) for position in self.positions]
