@@ -15,9 +15,9 @@ from poptimizer.use_cases import handler
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
 
-# Торги заканчиваются в 24.00, но данные публикуются 00.45
-_END_HOUR: Final = 0
-_END_MINUTE: Final = 45
+# Торги заканчиваются в 24.00, но данные публикуются 01.00
+_END_HOUR: Final = 1
+_END_MINUTE: Final = 0
 
 
 class _Row(domain.Row):
