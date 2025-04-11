@@ -103,6 +103,7 @@ class Portfolio(domain.Entity):
             self.trading_interval = self.trading_interval + 1 / int(self.trading_interval)
             if self.sold:
                 self.trading_interval -= self.sold / pos_count
+                self.trading_interval = max(1, self.trading_interval)
                 self.sold = 0
 
     def create_acount(self, name: domain.AccName) -> None:
