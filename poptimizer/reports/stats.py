@@ -1,6 +1,7 @@
 import logging
 import statistics
 from collections import Counter
+from datetime import timedelta
 from typing import Any
 
 from poptimizer.adapters import mongo
@@ -22,6 +23,7 @@ async def report(repo: mongo.Repo) -> None:
     count = 0
     risk_aversion: list[float] = []
     history_days: list[int] = []
+    duration: list[float] = []
     features: Counter[str] = Counter()
 
     async for model in repo.get_all(evolve.Model):
@@ -33,12 +35,20 @@ async def report(repo: mongo.Repo) -> None:
         risk_aversion.append(1 - phenotype["risk"]["risk_tolerance"])
         batch = phenotype["batch"]
         history_days.append(batch["history_days"])
+        duration.append(model.duration)
         features.update({"use_lag_feat": batch["use_lag_feat"]})
         features.update(batch["num_feats"])
         features.update(batch["emb_feats"])
         features.update(batch["emb_seq_feats"])
 
     data.append(("Model count", count))
+    data.append(
+        (
+            "Duration",
+            f"{timedelta(seconds=round(min(duration)))} - "
+            f"{timedelta(seconds=round(statistics.median(duration)))} - {timedelta(seconds=round(max(duration)))}",
+        )
+    )
     data.append(
         (
             "Risk aversion",
