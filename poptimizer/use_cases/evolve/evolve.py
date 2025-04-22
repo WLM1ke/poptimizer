@@ -149,7 +149,7 @@ class EvolutionHandler:
         model.forecast_days = evolution.forecast_days
 
         tr = trainer.Trainer(self._builder)
-        await tr.update_model_metrics(ctx, model, evolution.test_days)
+        await tr.update_model_metrics(ctx, model, int(evolution.test_days))
 
     async def _delete_model_on_error(
         self,
@@ -210,18 +210,29 @@ class EvolutionHandler:
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"New base {model.stats}")
 
-                if model.alfa_mean < 0:
-                    evolution.alfa_delta_critical *= 1 - 1 / evolution.test_days
-                    evolution.llh_delta_critical *= 1 - 1 / evolution.test_days
-                    evolution.test_days += 1
-                    self._lgr.warning("Test days increased - %d", evolution.test_days)
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 self._change_t_critical(evolution, model)
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"Current base {model.stats} reevaluated")
 
+        self._update_test_days(evolution, model)
+
         return handler.ModelEvaluated(day=evolution.day, uid=model.uid)
+
+    def _update_test_days(self, evolution: evolve.Evolution, model: evolve.Model) -> None:
+        old_test_days = int(evolution.test_days)
+
+        match model.alfa_mean < 0:
+            case True:
+                evolution.alfa_delta_critical *= 1 - 1 / evolution.test_days
+                evolution.llh_delta_critical *= 1 - 1 / evolution.test_days
+                evolution.test_days += 1 - consts.P_VALUE
+            case False:
+                evolution.test_days = max(1, evolution.test_days - consts.P_VALUE)
+
+        if old_test_days != (new_test_days := int(evolution.test_days)):
+            self._lgr.warning("Test days changed - %d -> %d", old_test_days, new_test_days)
 
     def _should_delete(
         self,

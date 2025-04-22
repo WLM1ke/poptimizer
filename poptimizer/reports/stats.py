@@ -15,7 +15,7 @@ async def report(repo: mongo.Repo) -> None:
     data: list[tuple[str, Any]] = [
         ("Tickers", len(evolution.tickers)),
         ("Forecast days", evolution.forecast_days),
-        ("Test days", evolution.test_days),
+        ("Test days", int(evolution.test_days)),
         ("Min return days", evolution.minimal_returns_days),
     ]
 
