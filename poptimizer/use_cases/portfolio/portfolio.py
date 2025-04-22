@@ -60,7 +60,9 @@ class PortfolioHandler:
                 ticker=sec.ticker,
                 lot=sec.lot,
                 price=quotes.result().df[-1].close,
-                turnover=statistics.median(quote.turnover for quote in quotes.result().df[-evolution.test_days :]),
+                turnover=statistics.median(
+                    quote.turnover for quote in quotes.result().df[-int(evolution.minimal_returns_days) :]
+                ),
             )
             for sec, quotes in zip(sec_table.df, quotes_tasks, strict=True)
             if len(quotes.result().df) > evolution.minimal_returns_days and quotes.result().df[-1].day == update_day
