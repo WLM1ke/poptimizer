@@ -7,12 +7,13 @@ from poptimizer import errors
 from poptimizer.domain import domain
 
 RVI: Final = domain.UID("RVI")
+IMOEX: Final = domain.UID("IMOEX")
 MCFTRR: Final = domain.UID("MCFTRR")
 RUGBITR1Y: Final = domain.UID("RUGBITR1Y")
 INDEXES: Final = (
     MCFTRR,
     domain.UID("MEOGTRR"),
-    domain.UID("IMOEX"),
+    IMOEX,
     RVI,
     RUGBITR1Y,
 )

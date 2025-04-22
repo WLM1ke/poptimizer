@@ -5,7 +5,7 @@ import aiohttp
 import aiomoex
 from pydantic import TypeAdapter
 
-from poptimizer import errors
+from poptimizer import consts, errors
 from poptimizer.domain import domain
 from poptimizer.domain.moex import index
 from poptimizer.use_cases import handler
@@ -15,12 +15,14 @@ class IndexesHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.NewDataPublished) -> handler.IndexesUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.QuotesUpdated) -> handler.IndexesUpdated:
         async with asyncio.TaskGroup() as tg:
             for ticker in index.INDEXES:
                 tg.create_task(self._update_one(ctx, msg.day, ticker))
 
-        return handler.IndexesUpdated(day=msg.day)
+        imoex = await ctx.get(index.Index, index.IMOEX)
+
+        return handler.IndexesUpdated(trading_days=[row.day for row in imoex.df if row.day >= consts.START_DAY])
 
     async def _update_one(self, ctx: handler.Ctx, update_day: domain.Day, ticker: domain.UID) -> None:
         table = await ctx.get_for_update(index.Index, ticker)

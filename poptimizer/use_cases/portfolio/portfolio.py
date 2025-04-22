@@ -13,7 +13,7 @@ class PortfolioHandler:
     def __init__(self) -> None:
         self._lgr = logging.getLogger()
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.QuotesUpdated) -> handler.PortfolioUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.IndexesUpdated) -> handler.PortfolioUpdated:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
         if port.day == msg.day:

@@ -29,7 +29,7 @@ class SecuritiesHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.IndexesUpdated) -> handler.SecuritiesUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.NewDataPublished) -> handler.SecuritiesUpdated:
         table = await ctx.get_for_update(securities.Securities)
 
         try:

@@ -35,10 +35,6 @@ class NewDataPublished(Event):
     day: domain.Day
 
 
-class IndexesUpdated(Event):
-    day: domain.Day
-
-
 class SecuritiesUpdated(Event):
     day: domain.Day
 
@@ -48,6 +44,10 @@ class DivUpdated(Event):
 
 
 class QuotesUpdated(Event):
+    day: domain.Day
+
+
+class IndexesUpdated(Event):
     trading_days: domain.TradingDays = Field(repr=False)
 
     @property
