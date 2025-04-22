@@ -90,8 +90,8 @@ class Portfolio(domain.Entity):
         if not self.ver:
             old_day = self.day
 
-        pos_count = sum(1 for pos in self.positions if pos.accounts if pos.accounts)
-        if not pos_count:
+        avg_sold_per_day = sum(1 for pos in self.positions if pos.accounts if pos.accounts) / int(self.trading_interval)
+        if not avg_sold_per_day:
             self.sold = 0
 
             return
@@ -100,11 +100,9 @@ class Portfolio(domain.Entity):
             if day <= old_day:
                 break
 
-            self.trading_interval = self.trading_interval + 1 / int(self.trading_interval)
-            if self.sold:
-                self.trading_interval -= self.sold / pos_count
-                self.trading_interval = max(1, self.trading_interval)
-                self.sold = 0
+            self.trading_interval += 1 - self.sold / avg_sold_per_day
+            self.trading_interval = max(1, self.trading_interval)
+            self.sold = 0
 
     def create_acount(self, name: domain.AccName) -> None:
         if name in self.account_names:
