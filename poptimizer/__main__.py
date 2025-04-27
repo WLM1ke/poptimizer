@@ -1,7 +1,7 @@
 import typer
 
 from poptimizer import consts
-from poptimizer.cli import app, income, pdf, portfolio, risk, stats
+from poptimizer.cli import app, income, pdf, risk, stats
 
 
 def _main() -> None:
@@ -11,7 +11,6 @@ def _main() -> None:
         help=f"POptimizer {consts.__version__} - portfolio optimizer for MOEX shares and ETFs.",
     )
     cli.command()(app.run)
-    cli.command()(portfolio.export)
     cli.command()(stats.stats)
     cli.command()(income.income)
     cli.command()(risk.risk)
