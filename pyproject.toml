@@ -34,7 +34,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "import-linter>=2.1",
     "pyright>=1.1.400",
     "pytest>=8.3.2",
     "pytest-cov>=5.0.0",
@@ -109,16 +108,3 @@ unfixable = [
 
 [tool.ruff.lint.pep8-naming]
 classmethod-decorators = ["pydantic.field_validator", "pydantic.root_validator"]
-
-[tool.importlinter]
-root_package = "poptimizer"
-
-[[tool.importlinter.contracts]]
-name = "Layered"
-type = "layers"
-layers = [
-    "poptimizer.controllers",
-    "poptimizer.adapters",
-    "poptimizer.use_cases",
-    "poptimizer.domain",
-]
