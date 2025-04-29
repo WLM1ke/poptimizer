@@ -59,9 +59,11 @@ class EmbeddingSeqFeatDesc(BaseModel):
 
 
 class Features(domain.Entity):
-    numerical: list[dict[NumFeat, FiniteFloat]] = Field(default_factory=list)
-    embedding: dict[EmbFeat, EmbeddingFeatDesc] = Field(default_factory=dict)
-    embedding_seq: dict[EmbSeqFeat, EmbeddingSeqFeatDesc] = Field(default_factory=dict)
+    numerical: list[dict[NumFeat, FiniteFloat]] = Field(default_factory=list[dict[NumFeat, FiniteFloat]])
+    embedding: dict[EmbFeat, EmbeddingFeatDesc] = Field(default_factory=dict[EmbFeat, EmbeddingFeatDesc])
+    embedding_seq: dict[EmbSeqFeat, EmbeddingSeqFeatDesc] = Field(
+        default_factory=dict[EmbSeqFeat, EmbeddingSeqFeatDesc]
+    )
 
     @field_validator("numerical")
     def _numerical_match_labels(

@@ -25,7 +25,7 @@ class Position(BaseModel):
     lot: PositiveInt
     price: PositiveFloat
     turnover: NonNegativeFloat
-    accounts: AccountData = Field(default_factory=dict)
+    accounts: AccountData = Field(default_factory=dict[domain.AccName, int])
 
 
 class NormalizedPosition(BaseModel):
@@ -43,19 +43,19 @@ class Portfolio(domain.Entity):
             list,
             return_type=list,
         ),
-    ] = Field(default_factory=set)
-    cash: AccountData = Field(default_factory=dict)
+    ] = Field(default_factory=set[domain.AccName])
+    cash: AccountData = Field(default_factory=dict[domain.AccName, int])
     positions: Annotated[
         list[Position],
         AfterValidator(domain.sorted_with_ticker_field_validator),
-    ] = Field(default_factory=list)
+    ] = Field(default_factory=list[Position])
     exclude: Annotated[
         set[domain.Ticker],
         PlainSerializer(
             list,
             return_type=list,
         ),
-    ] = Field(default_factory=set)
+    ] = Field(default_factory=set[domain.Ticker])
 
     @model_validator(mode="after")
     def _positions_have_know_accounts(self) -> Self:

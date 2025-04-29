@@ -33,14 +33,14 @@ class Forecast(domain.Entity):
             list,
             return_type=list,
         ),
-    ] = Field(default_factory=set)
+    ] = Field(default_factory=set[domain.UID])
     portfolio_ver: domain.Version = domain.Version(0)
     forecast_days: PositiveInt = 1
     forecasts_count: PositiveInt = 1
     positions: Annotated[
         list[Position],
         AfterValidator(domain.sorted_with_ticker_field_validator),
-    ] = Field(default_factory=list)
+    ] = Field(default_factory=list[Position])
     risk_tolerance: float = Field(0, ge=0, le=1)
     mean: float = 0
     std: float = 0

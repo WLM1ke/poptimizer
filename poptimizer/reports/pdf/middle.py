@@ -20,14 +20,14 @@ def _prepare_returns_data(returns: pd.DataFrame) -> list[list[str]]:
 
     returns = returns.sort_index(ascending=False)  # type: ignore[reportUnknownMemberType]
 
-    portfolio: pd.Series[float] = returns[risk.PORTFOLIO]
-    portfolio = portfolio.iloc[0] / portfolio - 1
+    portfolio: pd.Series[float] = returns[risk.PORTFOLIO]  # type: ignore[reportUnknownMemberType]
+    portfolio = portfolio.iloc[0] / portfolio - 1  # type: ignore[reportUnknownMemberType]
 
-    market: pd.Series[float] = returns[risk.MOEX]
-    market = market.iloc[0] / market - 1
+    market: pd.Series[float] = returns[risk.MOEX]  # type: ignore[reportUnknownMemberType]
+    market = market.iloc[0] / market - 1  # type: ignore[reportUnknownMemberType]
 
-    rf: pd.Series[float] = returns[risk.RF]
-    rf = rf.iloc[0] / rf - 1
+    rf: pd.Series[float] = returns[risk.RF]  # type: ignore[reportUnknownMemberType]
+    rf = rf.iloc[0] / rf - 1  # type: ignore[reportUnknownMemberType]
 
     table_data.append(
         [
