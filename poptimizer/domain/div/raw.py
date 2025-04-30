@@ -1,28 +1,39 @@
 import bisect
 import itertools
+from typing import Annotated
 
-from pydantic import Field, field_validator
+from pydantic import AfterValidator, Field, PositiveFloat
 
 from poptimizer.domain import domain
 
 
 class Row(domain.Row):
     day: domain.Day
-    dividend: float = Field(gt=0)
+    dividend: PositiveFloat
 
     def to_tuple(self) -> tuple[domain.Day, float]:
         return self.day, self.dividend
 
 
+def _sorted_by_date_and_div(df: list[Row]) -> list[Row]:
+    day_pairs = itertools.pairwise(row.to_tuple() for row in df)
+
+    if not all(day <= next_ for day, next_ in day_pairs):
+        raise ValueError("raw dividends are not sorted")
+
+    return df
+
+
 class DivRaw(domain.Entity):
-    df: list[Row] = Field(default_factory=list[Row])
+    df: Annotated[
+        list[Row],
+        AfterValidator(_sorted_by_date_and_div),
+        AfterValidator(domain.after_start_date_validator),
+    ] = Field(default_factory=list[Row])
 
     def update(self, update_day: domain.Day, rows: list[Row]) -> None:
         self.day = update_day
-
-        rows.sort(key=lambda row: row.to_tuple())
-
-        self.df = rows
+        self.df = sorted(rows, key=lambda row: row.to_tuple())
 
     def has_day(self, day: domain.Day) -> bool:
         pos = bisect.bisect_left(self.df, day, key=lambda row: row.day)
@@ -37,12 +48,3 @@ class DivRaw(domain.Entity):
         )
 
         return pos != len(self.df) and row == self.df[pos]
-
-    @field_validator("df")
-    def _sorted_by_date_and_div(cls, df: list[Row]) -> list[Row]:
-        day_pairs = itertools.pairwise(row.to_tuple() for row in df)
-
-        if not all(day <= next_ for day, next_ in day_pairs):
-            raise ValueError("raw dividends are not sorted")
-
-        return df
