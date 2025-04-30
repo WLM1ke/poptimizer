@@ -1,13 +1,13 @@
 from typing import Annotated
 
-from pydantic import AfterValidator, Field
+from pydantic import AfterValidator, Field, PositiveFloat
 
 from poptimizer.domain import domain
 
 
 class Row(domain.Row):
     day: domain.Day
-    dividend: float = Field(gt=0)
+    dividend: PositiveFloat
 
 
 class Dividends(domain.Entity):
