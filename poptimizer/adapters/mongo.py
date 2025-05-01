@@ -43,12 +43,11 @@ class Repo:
         collection_name = adapter.get_component_name(evolve.Model)
         collection = self._db[collection_name]
 
-        day_order = random.choice([pymongo.ASCENDING, pymongo.DESCENDING])  # noqa: S311
         key = random.choice(["alfa_mean", "llh_mean", "duration"])  # noqa: S311
         key_order = random.choice([pymongo.ASCENDING, pymongo.DESCENDING])  # noqa: S311
 
         key_order = {
-            "day": day_order,
+            "day": pymongo.ASCENDING,
             key: key_order,
         }
 

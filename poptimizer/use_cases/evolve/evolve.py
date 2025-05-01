@@ -89,11 +89,10 @@ class EvolutionHandler:
         if count := await ctx.count_models():
             return count
 
-        self._lgr.info("Creating initial models")
-        for _ in range(consts.INITIAL_POPULATION):
-            await ctx.get_for_update(evolve.Model, _random_uid())
+        self._lgr.info("Creating start models")
+        await ctx.get_for_update(evolve.Model, _random_uid())
 
-        return consts.INITIAL_POPULATION
+        return 1
 
     async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> evolve.Evolution:
         evolution = await ctx.get_for_update(evolve.Evolution)
@@ -120,9 +119,14 @@ class EvolutionHandler:
                 if model.uid == evolution.base_model_uid:
                     evolution.state = evolve.State.REEVAL_CURRENT_BASE_MODEL
 
+                if model.day < evolution.day:
+                    evolution.state = evolve.State.EVAL_OUTDATE_MODEL
+
                 return model
+            case evolve.State.EVAL_OUTDATE_MODEL:
+                raise errors.UseCasesError(f"can't be in {evolution.state} state")
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
-                raise errors.UseCasesError(f"can't be in {evolve.State.REEVAL_CURRENT_BASE_MODEL} state")
+                raise errors.UseCasesError(f"can't be in {evolution.state} state")
             case evolve.State.CREATE_NEW_MODEL:
                 model = await ctx.get(evolve.Model, evolution.base_model_uid)
 
@@ -171,6 +175,8 @@ class EvolutionHandler:
                 ...
             case evolve.State.EVAL_MODEL:
                 ...
+            case evolve.State.EVAL_OUTDATE_MODEL:
+                evolution.state = evolve.State.EVAL_MODEL
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 evolution.state = evolve.State.EVAL_NEW_BASE_MODEL
             case evolve.State.CREATE_NEW_MODEL:
@@ -185,7 +191,7 @@ class EvolutionHandler:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
                 evolution.new_base(model)
-                evolution.state = evolve.State.CREATE_NEW_MODEL
+                evolution.state = evolve.State.EVAL_MODEL
                 self._lgr.info(f"New base {model.stats}")
             case evolve.State.EVAL_MODEL:
                 if self._should_delete(evolution, model):
@@ -198,6 +204,17 @@ class EvolutionHandler:
                 evolution.new_base(model)
                 self._lgr.info(f"New base {model.stats}")
                 evolution.state = evolve.State.CREATE_NEW_MODEL
+            case evolve.State.EVAL_OUTDATE_MODEL:
+                if self._should_delete(evolution, model):
+                    evolution.state = evolve.State.EVAL_NEW_BASE_MODEL
+                    await ctx.delete(model)
+                    self._lgr.info(f"{model.stats} deleted - low metrics")
+
+                    return handler.ModelDeleted(day=evolution.day, uid=model.uid)
+
+                evolution.new_base(model)
+                self._lgr.info(f"New base {model.stats}")
+                evolution.state = evolve.State.EVAL_MODEL
             case evolve.State.CREATE_NEW_MODEL:
                 if self._should_delete(evolution, model):
                     evolution.state = evolve.State.EVAL_MODEL
@@ -209,7 +226,6 @@ class EvolutionHandler:
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"New base {model.stats}")
-
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 self._change_t_critical(evolution, model)
                 evolution.new_base(model)

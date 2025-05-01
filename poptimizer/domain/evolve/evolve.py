@@ -94,6 +94,7 @@ class Model(domain.Entity):
 class State(StrEnum):
     EVAL_NEW_BASE_MODEL = "evaluating new base model"
     EVAL_MODEL = "evaluating model"
+    EVAL_OUTDATE_MODEL = "evaluating outdated model"
     REEVAL_CURRENT_BASE_MODEL = "reevaluating current base model"
     CREATE_NEW_MODEL = "creating new model"
 
