@@ -57,6 +57,7 @@ class Repo:
                     "day": True,
                     "alfa_mean": True,
                     "llh_mean": True,
+                    "duration": True,
                 },
             },
             {"$sort": key_order},
