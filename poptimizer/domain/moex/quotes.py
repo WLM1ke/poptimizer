@@ -27,7 +27,6 @@ class Quotes(domain.Entity):
         self.day = update_day
 
         if not self.df:
-            rows.sort(key=lambda row: row.day)
             self.df = rows
 
             return
