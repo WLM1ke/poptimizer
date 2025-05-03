@@ -243,9 +243,9 @@ class EvolutionHandler:
             case True:
                 evolution.alfa_delta_critical *= 1 - 1 / evolution.test_days
                 evolution.llh_delta_critical *= 1 - 1 / evolution.test_days
-                evolution.test_days += 1 - consts.P_VALUE
+                evolution.test_days += 1
             case False:
-                evolution.test_days = max(1, evolution.test_days - consts.P_VALUE)
+                evolution.test_days = max(1, evolution.test_days - consts.P_VALUE / (1 - consts.P_VALUE))
 
         if old_test_days != (new_test_days := int(evolution.test_days)):
             self._lgr.warning("Test days changed - %d -> %d", old_test_days, new_test_days)
