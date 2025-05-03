@@ -40,15 +40,16 @@ def test_row_invalid():
         with pytest.raises(ValueError, match="greater than 0"):
             quotes.Row.model_validate(data)
 
+    data = {
+        "begin": "2025-01-27",
+        "open": 1.0,
+        "close": 1.0,
+        "high": 1.0,
+        "low": 1.0,
+        "value": -1.0,
+    }
+
     with pytest.raises(ValueError, match="greater than or equal to 0"):
-        data = {
-            "begin": "2025-01-27",
-            "open": 1.0,
-            "close": 1.0,
-            "high": 1.0,
-            "low": 1.0,
-            "value": -1.0,
-        }
         quotes.Row.model_validate(data)
 
 
