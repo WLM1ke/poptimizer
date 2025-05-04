@@ -35,6 +35,7 @@ class EmbFeatures(BaseModel):
 
 class EmbSeqFeatures(BaseModel):
     year_day: bool
+    week_day: bool
 
 
 class Batch(BaseModel):

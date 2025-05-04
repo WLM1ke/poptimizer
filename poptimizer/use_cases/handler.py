@@ -82,7 +82,7 @@ class IndexFeatUpdated(Event):
         return self.trading_days[-1]
 
 
-class YearDayFeatUpdated(Event):
+class DayFeatUpdated(Event):
     day: domain.Day
 
 

@@ -8,7 +8,7 @@ from poptimizer.use_cases import handler
 
 
 class SecFeatHandler:
-    async def __call__(self, ctx: handler.Ctx, msg: handler.YearDayFeatUpdated) -> handler.SecFeatUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.DayFeatUpdated) -> handler.SecFeatUpdated:
         async with asyncio.TaskGroup() as tg:
             sec_task = tg.create_task(ctx.get(securities.Securities))
             port = await ctx.get(portfolio.Portfolio)
