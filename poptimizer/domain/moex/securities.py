@@ -1,6 +1,6 @@
 from typing import Annotated, Final
 
-from pydantic import AfterValidator, Field
+from pydantic import AfterValidator, Field, PositiveInt
 
 from poptimizer.domain import domain
 
@@ -11,7 +11,7 @@ _PREFERRED_SUFFIX: Final = "P"
 
 class Row(domain.Row):
     ticker: domain.Ticker = Field(alias="SECID")
-    lot: int = Field(alias="LOTSIZE")
+    lot: PositiveInt = Field(alias="LOTSIZE")
     isin: str = Field(alias="ISIN")
     board: str = Field(alias="BOARDID")
     type: str = Field(alias="SECTYPE")
@@ -42,6 +42,4 @@ class Securities(domain.Entity):
     def update(self, update_day: domain.Day, rows: list[Row]) -> None:
         self.day = update_day
 
-        rows.sort(key=lambda sec: sec.ticker)
-
-        self.df = rows
+        self.df = sorted(rows, key=lambda sec: sec.ticker)
