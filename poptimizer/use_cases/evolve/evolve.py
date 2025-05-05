@@ -119,6 +119,12 @@ class EvolutionHandler:
                 if model.uid == evolution.base_model_uid:
                     evolution.state = evolve.State.REEVAL_CURRENT_BASE_MODEL
 
+                if model.ver == 0:
+                    await ctx.delete(model)
+                    self._lgr.info("Untrained model deleted")
+
+                    return await self._get_model(ctx, evolution)
+
                 if model.day < evolution.day:
                     evolution.state = evolve.State.EVAL_OUTDATE_MODEL
 
