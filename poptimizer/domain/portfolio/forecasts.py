@@ -42,8 +42,8 @@ class Forecast(domain.Entity):
         AfterValidator(domain.sorted_with_ticker_field_validator),
     ] = Field(default_factory=list[Position])
     risk_tolerance: float = Field(0, ge=0, le=1)
-    mean: float = 0
-    std: float = 0
+    mean: FiniteFloat = 0
+    std: NonNegativeFloat = 0
 
     def init_day(self, day: domain.Day) -> None:
         self.day = day
