@@ -134,7 +134,7 @@ class Evolution(domain.Entity):
         self.state = State.EVAL_NEW_BASE_MODEL
 
     def adj_alfa_delta_critical(self, duration: NonNegativeFloat) -> float:
-        return self.alfa_delta_critical * min(1, self.duration / duration)
+        return self.alfa_delta_critical * min(1, self.duration / duration) ** 0.5
 
     def adj_llh_delta_critical(self, duration: NonNegativeFloat) -> float:
         return self.llh_delta_critical * min(1, self.duration / duration)
