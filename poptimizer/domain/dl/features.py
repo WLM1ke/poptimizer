@@ -45,6 +45,7 @@ class EmbeddingFeatDesc(BaseModel):
 class EmbSeqFeat(StrEnum):
     YEAR_DAY = auto()
     WEEK_DAY = auto()
+    MONTH_DAY = auto()
 
 
 class EmbeddingSeqFeatDesc(BaseModel):

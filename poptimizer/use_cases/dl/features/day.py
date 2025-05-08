@@ -20,11 +20,15 @@ class DayFeatHandler:
 async def _create_day_feats(ctx: handler.Ctx, ticker: domain.UID, trading_days: domain.TradingDays) -> None:
     feat = await ctx.get_for_update(Features, ticker)
 
-    feat.embedding_seq[EmbSeqFeat.YEAR_DAY] = EmbeddingSeqFeatDesc(
-        sequence=[trading_days[-n].timetuple().tm_yday for n in reversed(range(1, len(feat.numerical) + 1))],
-        size=366,
-    )
     feat.embedding_seq[EmbSeqFeat.WEEK_DAY] = EmbeddingSeqFeatDesc(
         sequence=[trading_days[-n].timetuple().tm_wday for n in reversed(range(1, len(feat.numerical) + 1))],
+        size=7,
+    )
+    feat.embedding_seq[EmbSeqFeat.MONTH_DAY] = EmbeddingSeqFeatDesc(
+        sequence=[trading_days[-n].timetuple().tm_mday - 1 for n in reversed(range(1, len(feat.numerical) + 1))],
+        size=31,
+    )
+    feat.embedding_seq[EmbSeqFeat.YEAR_DAY] = EmbeddingSeqFeatDesc(
+        sequence=[trading_days[-n].timetuple().tm_yday for n in reversed(range(1, len(feat.numerical) + 1))],
         size=366,
     )
