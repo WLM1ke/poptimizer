@@ -28,6 +28,10 @@ async def _create_day_feats(ctx: handler.Ctx, ticker: domain.UID, trading_days: 
         sequence=[trading_days[-n].timetuple().tm_mday - 1 for n in reversed(range(1, len(feat.numerical) + 1))],
         size=31,
     )
+    feat.embedding_seq[EmbSeqFeat.MONTH] = EmbeddingSeqFeatDesc(
+        sequence=[trading_days[-n].timetuple().tm_mon - 1 for n in reversed(range(1, len(feat.numerical) + 1))],
+        size=12,
+    )
     feat.embedding_seq[EmbSeqFeat.YEAR_DAY] = EmbeddingSeqFeatDesc(
         sequence=[trading_days[-n].timetuple().tm_yday for n in reversed(range(1, len(feat.numerical) + 1))],
         size=366,

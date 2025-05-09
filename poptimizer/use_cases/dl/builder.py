@@ -36,6 +36,7 @@ class EmbFeatures(BaseModel):
 class EmbSeqFeatures(BaseModel):
     week_day: bool
     month_day: bool
+    month: bool
     year_day: bool
 
 

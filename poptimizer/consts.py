@@ -2,7 +2,7 @@ from datetime import date
 from pathlib import Path
 from typing import Final
 
-__version__ = "3.0.0b3"
+__version__ = "3.0.0b4"
 
 ROOT: Final = Path(__file__).parents[1]
 
