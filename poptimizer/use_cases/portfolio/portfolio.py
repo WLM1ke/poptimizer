@@ -19,21 +19,19 @@ class PortfolioHandler:
         if port.day == msg.day:
             return handler.PortfolioUpdated(trading_days=msg.trading_days)
 
-        old_day = port.day
-        old_value = port.value
         old_forecast_days = port.forecast_days
-
-        sec_cache = await self._prepare_sec_cache(ctx, msg.day)
-        min_turnover = _calc_min_turnover(port, sec_cache)
-
-        self._update_existing_positions(port, sec_cache, min_turnover)
-        self._add_new_liquid(port, sec_cache, min_turnover)
         port.update_forecast_days(msg.trading_days)
-
         if old_forecast_days != port.forecast_days:
             self._lgr.warning("Forecast days changed - %d -> %d", old_forecast_days, port.forecast_days)
 
-        if old_value and old_day != port.day:
+        old_value = port.value
+
+        sec_cache = await self._prepare_sec_cache(ctx, msg.day, port.forecast_days)
+        min_turnover = _calc_min_turnover(port, sec_cache)
+        self._update_existing_positions(port, sec_cache, min_turnover)
+        self._add_new_liquid(port, sec_cache, min_turnover)
+
+        if old_value:
             new_value = port.value
             change = new_value / old_value - 1
             self._lgr.warning(f"Portfolio value changed {change:.2%} - {old_value:_.0f} -> {new_value:_.0f}")
@@ -44,6 +42,7 @@ class PortfolioHandler:
         self,
         ctx: handler.Ctx,
         update_day: domain.Day,
+        turnover_days: int,
     ) -> dict[domain.Ticker, portfolio.Position]:
         async with asyncio.TaskGroup() as tg:
             sec_task = tg.create_task(ctx.get(securities.Securities))
@@ -60,9 +59,7 @@ class PortfolioHandler:
                 ticker=sec.ticker,
                 lot=sec.lot,
                 price=quotes.result().df[-1].close,
-                turnover=statistics.median(
-                    quote.turnover for quote in quotes.result().df[-int(evolution.minimal_returns_days) :]
-                ),
+                turnover=statistics.median(quote.turnover for quote in quotes.result().df[-turnover_days:]),
             )
             for sec, quotes in zip(sec_table.df, quotes_tasks, strict=True)
             if len(quotes.result().df) > evolution.minimal_returns_days and quotes.result().df[-1].day == update_day
