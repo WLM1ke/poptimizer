@@ -1,7 +1,7 @@
 import typer
 
 from poptimizer import consts
-from poptimizer.cli import app, income, pdf, risk, stats
+from poptimizer.cli import app, income, pdf, risk, stats, div
 
 
 def _main() -> None:
@@ -15,6 +15,7 @@ def _main() -> None:
     cli.command()(income.income)
     cli.command()(risk.risk)
     cli.command()(pdf.pdf)
+    cli.command()(div.div)
     cli()
 
 

@@ -28,7 +28,7 @@ class BackupHandler:
         match len(all_docs):
             case 0:
                 try:
-                    await self._restore()
+                    await self.restore()
                 except PyMongoError as err:
                     raise errors.AdapterError("can't restore raw dividends") from err
             case _:
@@ -37,7 +37,7 @@ class BackupHandler:
                 except PyMongoError as err:
                     raise errors.AdapterError("can't backup raw dividends") from err
 
-    async def _restore(self) -> None:
+    async def restore(self) -> None:
         if not _DUMP.exists():
             raise errors.AdapterError(f"can't restore raw dividends from {_DUMP}")
 

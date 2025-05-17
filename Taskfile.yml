@@ -35,6 +35,11 @@ tasks:
       - git pull
       - task: build
 
+  update_div:
+    desc: Update dividends from backup
+    cmds:
+      - uv run {{.APP}} div
+
   revert_ver:
     desc: Revert POptimizer to version form backup
     cmds:
