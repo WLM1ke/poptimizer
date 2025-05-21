@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import warnings
 
 import uvloop
 
@@ -15,6 +16,9 @@ async def _run() -> None:
     err: Exception | None = None
 
     async with contextlib.AsyncExitStack() as stack:
+        stack.enter_context(warnings.catch_warnings())
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+
         http_client = await stack.enter_async_context(http_session.client())
         mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo_db_uri, cfg.mongo_db_db))
 
