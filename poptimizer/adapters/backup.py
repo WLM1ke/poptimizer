@@ -41,7 +41,7 @@ class BackupHandler:
         if not _DUMP.exists():
             raise errors.AdapterError(f"can't restore raw dividends from {_DUMP}")
 
-        async with aiofiles.open(_DUMP) as backup_file:
+        async with aiofiles.open(_DUMP) as backup_file:  # type: ignore[reportUnknownMemberType]
             json_data = await backup_file.read()
 
         try:
@@ -58,7 +58,7 @@ class BackupHandler:
     async def _backup(self, all_docs: list[dict[str, Any]]) -> None:
         _DUMP.parent.mkdir(parents=True, exist_ok=True)
 
-        async with aiofiles.open(_DUMP, "w") as backup_file:
+        async with aiofiles.open(_DUMP, "w") as backup_file:  # type: ignore[reportUnknownMemberType]
             await backup_file.write(json.dumps(all_docs, indent=2, sort_keys=True))
 
         self._lgr.info("Raw dividends back up finished")
