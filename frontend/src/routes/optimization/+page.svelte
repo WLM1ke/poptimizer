@@ -10,12 +10,14 @@
 	let forecast = $derived(data);
 	let status = $derived(portfolioView.ver != forecast.portfolio_ver ? "outdate" : "");
 	let optimization = $derived.by(() => {
-		const maxLower = Math.max(...forecast.positions.map((pos) => pos.grad_lower));
+		const maxLower = Math.max(
+			...forecast.positions.filter((pos) => !(pos.ticker in portfolioView.illiquid)).map((pos) => pos.grad_lower)
+		);
 		const minUpper = Math.min(...forecast.positions.map((pos) => (pos.weight > 0 ? pos.grad_upper : Infinity)));
 		const breakEven = Math.min(maxLower, (maxLower + minUpper) / 2);
 
 		const buy = forecast.positions
-			.filter((pos) => pos.grad_lower >= breakEven)
+			.filter((pos) => pos.grad_lower >= breakEven && !(pos.ticker in portfolioView.illiquid))
 			.map(({ weight, ticker, grad_lower, grad_upper }) => {
 				return { weight, ticker, grad_lower, grad_upper, priority: grad_lower - breakEven };
 			});

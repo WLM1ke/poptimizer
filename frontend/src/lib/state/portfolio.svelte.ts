@@ -17,9 +17,18 @@ interface Portfolio {
 	cash: Record<string, number>;
 	positions: Positions[];
 	exclude: string[];
+	illiquid: string[];
 }
 
-let portfolio = $state<Portfolio>({ day: "", ver: -1, account_names: [], cash: {}, positions: [], exclude: [] });
+let portfolio = $state<Portfolio>({
+	day: "",
+	ver: -1,
+	account_names: [],
+	cash: {},
+	positions: [],
+	exclude: [],
+	illiquid: []
+});
 let redirected = false;
 
 export const loadPortfolio = async (fetchFn: typeof fetch) => {
@@ -133,6 +142,13 @@ class PortfolioView {
 						Math.pow(1 - this.cash / this.value, 2)
 				: 0
 		)
+	);
+	illiquid = $derived(
+		portfolio.illiquid.reduce((acc: Record<string, boolean>, ticker) => {
+			acc[ticker] = true;
+
+			return acc;
+		}, {})
 	);
 }
 

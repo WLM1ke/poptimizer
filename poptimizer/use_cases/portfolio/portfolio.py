@@ -28,6 +28,7 @@ class PortfolioHandler:
 
         sec_cache = await self._prepare_sec_cache(ctx, msg.day, port.forecast_days)
         min_turnover = _calc_min_turnover(port, sec_cache)
+        port.illiquid.clear()
         self._update_existing_positions(port, sec_cache, min_turnover)
         self._add_new_liquid(port, sec_cache, min_turnover)
 
@@ -80,18 +81,21 @@ class PortfolioHandler:
                 case None:
                     position.turnover = 0
                     updated_positions.append(position)
+                    port.illiquid.add(position.ticker)
                     self._lgr.warning("Not enough traded %s is not removed", position.ticker)
                 case new_position if new_position.turnover < min_turnover and not position.accounts:
                     self._lgr.info("Not liquid %s is removed", position.ticker)
                 case new_position if new_position.turnover < min_turnover:
                     new_position.accounts = position.accounts
                     updated_positions.append(new_position)
+                    port.illiquid.add(position.ticker)
                     self._lgr.warning("Not liquid %s is not removed", position.ticker)
                 case new_position if new_position.ticker in port.exclude and not position.accounts:
                     self._lgr.info("%s from exclude list is removed", new_position.ticker)
                 case new_position if new_position.ticker in port.exclude:
                     new_position.accounts = position.accounts
                     updated_positions.append(new_position)
+                    port.illiquid.add(position.ticker)
                     self._lgr.warning("%s from exclude list is not removed", position.ticker)
                 case new_position:
                     new_position.accounts = position.accounts

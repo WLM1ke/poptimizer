@@ -56,6 +56,13 @@ class Portfolio(domain.Entity):
             return_type=list,
         ),
     ] = Field(default_factory=set[domain.Ticker])
+    illiquid: Annotated[
+        set[domain.Ticker],
+        PlainSerializer(
+            list,
+            return_type=list,
+        ),
+    ] = Field(default_factory=set[domain.Ticker])
 
     @model_validator(mode="after")
     def _positions_have_know_accounts(self) -> Self:

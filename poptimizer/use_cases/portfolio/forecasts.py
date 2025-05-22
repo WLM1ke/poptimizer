@@ -68,6 +68,8 @@ class ForecastHandler:
 
         await asyncio.to_thread(self._update_forecast, forecast, models, positions)
 
+        self._send_new_recommendation(forecast, port)
+
     def _update_forecast(
         self,
         forecast: forecasts.Forecast,
@@ -167,7 +169,10 @@ class ForecastHandler:
 
         forecast.risk_tolerance = median_risk_tol.item()  # type: ignore[reportUnknownMemberType]
 
-        buy_grad, buy_ticker = max((pos.grad_lower, pos.ticker) for pos in forecast.positions)
+    def _send_new_recommendation(self, forecast: forecasts.Forecast, port: portfolio.Portfolio) -> None:
+        buy_grad, buy_ticker = max(
+            (pos.grad_lower, pos.ticker) for pos in forecast.positions if pos.ticker not in port.illiquid
+        )
         sell_grad, sell_ticker = min((pos.grad_upper, pos.ticker) for pos in forecast.positions if pos.weight)
 
         match buy_grad > sell_grad:

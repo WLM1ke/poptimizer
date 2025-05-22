@@ -34,6 +34,7 @@ class Portfolio(handler.DTO):
     cash: portfolio.AccountData
     positions: list[portfolio.Position]
     exclude: list[domain.Ticker]
+    illiquid: list[domain.Ticker]
 
     @classmethod
     def from_portfolio(cls, port: portfolio.Portfolio) -> Self:
@@ -44,6 +45,7 @@ class Portfolio(handler.DTO):
             cash=port.cash,
             positions=port.positions,
             exclude=sorted(port.exclude),
+            illiquid=sorted(port.illiquid),
         )
 
     @classmethod
@@ -55,6 +57,7 @@ class Portfolio(handler.DTO):
             cash=port.cash,
             positions=port.positions,
             exclude=sorted(port.exclude),
+            illiquid=sorted(port.illiquid),
         )
 
 
