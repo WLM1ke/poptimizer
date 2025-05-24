@@ -1,9 +1,10 @@
 import logging
 import operator
 import statistics
-from typing import Final, Protocol
+from typing import Final, Protocol, Self
 
 import bson
+from pydantic import BaseModel, FiniteFloat, PositiveInt
 
 from poptimizer import consts, errors
 from poptimizer.domain import domain
@@ -52,6 +53,22 @@ class Ctx(Protocol):
     async def sample_models(self, n: int) -> list[evolve.Model]: ...
 
 
+class Result(BaseModel):
+    day: domain.Day
+    alfa: list[FiniteFloat]
+    llh: list[FiniteFloat]
+    models_count: PositiveInt
+
+    @classmethod
+    def from_model(cls, model: evolve.Model, models_count: int) -> Self:
+        return cls(
+            day=model.day,
+            alfa=model.alfa,
+            llh=model.llh,
+            models_count=models_count,
+        )
+
+
 class EvolutionHandler:
     def __init__(self) -> None:
         self._lgr = logging.getLogger()
@@ -74,6 +91,8 @@ class EvolutionHandler:
             model,
         )
 
+        old_result = Result.from_model(model, count)
+
         try:
             await self._update_model_metrics(ctx, evolution, model)
         except* errors.DomainError as err:
@@ -81,7 +100,7 @@ class EvolutionHandler:
 
             event = handler.ModelDeleted(day=evolution.day, uid=model.uid)
         else:
-            return await self._eval_model(ctx, evolution, model)
+            return await self._eval_model(ctx, evolution, model, old_result)
 
         return event
 
@@ -193,6 +212,7 @@ class EvolutionHandler:
         ctx: Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
+        old_result: Result,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
@@ -233,12 +253,12 @@ class EvolutionHandler:
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"New base {model.stats}")
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
-                self._change_t_critical(evolution, model)
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"Current base {model.stats} reevaluated")
 
         self._update_test_days(evolution, model)
+        self._change_t_critical(evolution, model, old_result)
 
         return handler.ModelEvaluated(day=evolution.day, uid=model.uid)
 
@@ -247,8 +267,6 @@ class EvolutionHandler:
 
         match model.alfa_mean < 0:
             case True:
-                evolution.alfa_delta_critical *= 1 - 1 / evolution.test_days
-                evolution.llh_delta_critical *= 1 - 1 / evolution.test_days
                 evolution.test_days += 1
             case False:
                 evolution.test_days = max(1, evolution.test_days - consts.P_VALUE / (1 - consts.P_VALUE))
@@ -295,46 +313,46 @@ class EvolutionHandler:
         self,
         evolution: evolve.Evolution,
         model: evolve.Model,
+        old_result: Result,
     ) -> None:
-        alfa_delta = _delta(model.alfa, evolution.alfa)
-        adj_alfa_delta_critical = evolution.adj_alfa_delta_critical(model.duration)
+        if model.day != old_result.day:
+            return
+
+        alfa_delta = _delta(model.alfa, old_result.alfa)
         old_alfa_delta_critical = evolution.alfa_delta_critical
 
         sign = ">"
 
-        match alfa_delta < adj_alfa_delta_critical:
+        match alfa_delta < old_alfa_delta_critical:
             case True:
                 sign = "<"
-                evolution.alfa_delta_critical -= (1 - consts.P_VALUE / 2) / evolution.test_days
+                evolution.alfa_delta_critical -= abs(alfa_delta) * (1 - consts.P_VALUE / 2) / old_result.models_count
             case False:
                 evolution.alfa_delta_critical = min(
-                    0, evolution.alfa_delta_critical + consts.P_VALUE / 2 / evolution.test_days
+                    0, evolution.alfa_delta_critical + abs(alfa_delta) * consts.P_VALUE / 2 / old_result.models_count
                 )
 
         self._lgr.info(
-            f"Alfa: delta({alfa_delta:.2%}) {sign} adj-delta-critical({adj_alfa_delta_critical:.2%}), "
-            f"changing delta-critical({old_alfa_delta_critical:.2%}) "
+            f"Alfa change: delta({alfa_delta:.2%}) {sign} delta-critical({old_alfa_delta_critical:.2%}) "
             f"-> delta-critical({evolution.alfa_delta_critical:.2%})"
         )
 
-        llh_delta = _delta(model.llh, evolution.llh)
-        adj_llh_delta_critical = evolution.adj_llh_delta_critical(model.duration)
+        llh_delta = _delta(model.llh, old_result.llh)
         old_llh_delta_critical = evolution.llh_delta_critical
 
         sign = ">"
 
-        match llh_delta < adj_llh_delta_critical:
+        match llh_delta < old_llh_delta_critical:
             case True:
                 sign = "<"
-                evolution.llh_delta_critical -= (1 - consts.P_VALUE / 2) / evolution.test_days
+                evolution.llh_delta_critical -= abs(llh_delta) * (1 - consts.P_VALUE / 2) / old_result.models_count
             case False:
                 evolution.llh_delta_critical = min(
-                    0, evolution.llh_delta_critical + consts.P_VALUE / 2 / evolution.test_days
+                    0, evolution.llh_delta_critical + abs(llh_delta) * consts.P_VALUE / 2 / old_result.models_count
                 )
 
         self._lgr.info(
-            f"LLH: delta({llh_delta:.4f}) {sign} adj-delta-critical({adj_llh_delta_critical:.4f}), "
-            f"changing delta-critical({old_llh_delta_critical:.4f}) "
+            f"LLH change: delta({llh_delta:.4f}) {sign} delta-critical({old_llh_delta_critical:.4f}) "
             f"-> delta-critical({evolution.llh_delta_critical:.4f})"
         )
 
