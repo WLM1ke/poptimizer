@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import traceback
 from collections import defaultdict
 from collections.abc import Iterable
 from datetime import timedelta
@@ -173,6 +174,7 @@ class Bus:
                 attempt,
                 err.exceptions[0],
             )
+            traceback.print_exception(err)
 
             if not await policy.try_again():
                 return

@@ -1,3 +1,4 @@
+from enum import StrEnum, auto
 from typing import Annotated, Final
 
 from pydantic import AfterValidator, Field, PositiveInt
@@ -9,6 +10,20 @@ _PREFERRED_TYPE: Final = "2"
 _PREFERRED_SUFFIX: Final = "P"
 
 
+class IndustryIndex(StrEnum):
+    UNKNOWN = auto()
+    MOEXOG = auto()
+    MOEXEU = auto()
+    MOEXTL = auto()
+    MOEXMM = auto()
+    MOEXFN = auto()
+    MOEXCN = auto()
+    MOEXCH = auto()
+    MOEXTN = auto()
+    MOEXIT = auto()
+    MOEXRE = auto()
+
+
 class Row(domain.Row):
     ticker: domain.Ticker = Field(alias="SECID")
     lot: PositiveInt = Field(alias="LOTSIZE")
@@ -16,6 +31,7 @@ class Row(domain.Row):
     board: str = Field(alias="BOARDID")
     type: str = Field(alias="SECTYPE")
     instrument: str = Field(alias="INSTRID")
+    industry: IndustryIndex = IndustryIndex.UNKNOWN
 
     @property
     def is_share(self) -> bool:
