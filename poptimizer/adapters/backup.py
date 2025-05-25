@@ -12,6 +12,7 @@ from poptimizer.domain.div import raw
 from poptimizer.use_cases import handler
 
 _DUMP: Final = consts.ROOT / "dump" / "dividends.json"
+_DF_KEY: Final = "df"
 
 
 class BackupHandler:
@@ -58,7 +59,23 @@ class BackupHandler:
     async def _backup(self, all_docs: list[dict[str, Any]]) -> None:
         _DUMP.parent.mkdir(parents=True, exist_ok=True)
 
+        all_docs = [
+            normalized
+            for doc in sorted(all_docs, key=lambda doc: doc[mongo.REV][mongo.UID])
+            if (normalized := _normalized_doc(doc))
+        ]
+
         async with aiofiles.open(_DUMP, "w") as backup_file:  # type: ignore[reportUnknownMemberType]
             await backup_file.write(json.dumps(all_docs, indent=2, sort_keys=True))
 
         self._lgr.info("Raw dividends back up finished")
+
+
+def _normalized_doc(doc: dict[str, Any]) -> dict[str, Any] | None:
+    if not doc[_DF_KEY]:
+        return None
+
+    doc[mongo.REV][mongo.VER] = 0
+    doc[mongo.DAY] = doc[_DF_KEY][-1][mongo.DAY]
+
+    return doc

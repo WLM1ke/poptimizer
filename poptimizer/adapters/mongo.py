@@ -15,10 +15,10 @@ from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
 
 _MONGO_ID: Final = "_id"
-_REV: Final = "rev"
-_VER: Final = "ver"
-_UID: Final = "uid"
-_DAY: Final = "day"
+REV: Final = "rev"
+VER: Final = "ver"
+UID: Final = "uid"
+DAY: Final = "day"
 
 type MongoDocument = dict[str, Any]
 type MongoClient = pymongo.AsyncMongoClient[MongoDocument]
@@ -127,8 +127,8 @@ class Repo:
     async def _create_new(self, collection_name: str, uid: domain.UID) -> MongoDocument | None:
         doc = {
             _MONGO_ID: uid,
-            _VER: 0,
-            _DAY: datetime.datetime(*consts.START_DAY.timetuple()[:3]),
+            VER: 0,
+            DAY: datetime.datetime(*consts.START_DAY.timetuple()[:3]),
         }
 
         collection = self._db[collection_name]
@@ -142,9 +142,9 @@ class Repo:
 
     def _create_entity[E: domain.Entity](self, t_entity: type[E], doc: Any) -> E:
         uid = doc.pop(_MONGO_ID)
-        doc[_REV] = {
-            _UID: uid,
-            _VER: doc.pop(_VER),
+        doc[REV] = {
+            UID: uid,
+            VER: doc.pop(VER),
         }
 
         try:
@@ -157,12 +157,12 @@ class Repo:
         collection_name = adapter.get_component_name(entity)
 
         doc = entity.model_dump()
-        doc.pop(_REV)
+        doc.pop(REV)
 
         try:
             updated = await self._db[collection_name].find_one_and_update(
-                {_MONGO_ID: entity.uid, _VER: entity.ver, _DAY: {"$lte": doc[_DAY]}},
-                {"$inc": {_VER: 1}, "$set": doc},
+                {_MONGO_ID: entity.uid, VER: entity.ver, DAY: {"$lte": doc[DAY]}},
+                {"$inc": {VER: 1}, "$set": doc},
                 projection={_MONGO_ID: False},
             )
         except PyMongoError as err:
