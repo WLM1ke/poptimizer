@@ -66,6 +66,10 @@ class EmbFeatures(genetics.Chromosome):
         float,
         genetics.bool_phenotype(),
     ] = genetics.random_default_range(-1, 1)
+    sector: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
 
 
 class EmbSeqFeatures(genetics.Chromosome):

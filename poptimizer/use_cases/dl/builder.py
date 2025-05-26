@@ -31,6 +31,7 @@ class NumFeatures(BaseModel):
 class EmbFeatures(BaseModel):
     ticker: bool
     ticker_type: bool
+    sector: bool
 
 
 class EmbSeqFeatures(BaseModel):

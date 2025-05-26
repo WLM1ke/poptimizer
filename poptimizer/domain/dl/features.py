@@ -27,6 +27,7 @@ class NumFeat(StrEnum):
 class EmbFeat(StrEnum):
     TICKER = auto()
     TICKER_TYPE = auto()
+    SECTOR = auto()
 
 
 class EmbeddingFeatDesc(BaseModel):

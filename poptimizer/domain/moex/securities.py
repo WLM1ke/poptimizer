@@ -10,8 +10,8 @@ _PREFERRED_TYPE: Final = "2"
 _PREFERRED_SUFFIX: Final = "P"
 
 
-class IndustryIndex(StrEnum):
-    UNKNOWN = auto()
+class Sector(StrEnum):
+    OTHER = auto()
     MOEXOG = auto()
     MOEXEU = auto()
     MOEXTL = auto()
@@ -31,7 +31,7 @@ class Row(domain.Row):
     board: str = Field(alias="BOARDID")
     type: str = Field(alias="SECTYPE")
     instrument: str = Field(alias="INSTRID")
-    industry: IndustryIndex = IndustryIndex.UNKNOWN
+    sector: Sector = Sector.OTHER
 
     @property
     def is_share(self) -> bool:

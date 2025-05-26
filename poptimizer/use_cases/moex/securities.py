@@ -26,12 +26,12 @@ _COLUMNS: Final = (
 )
 
 
-class _IndustryRow(BaseModel):
+class _SectorRow(BaseModel):
     ticker: domain.Ticker
     till: domain.Day
 
 
-type _Cache = dict[domain.Ticker, tuple[securities.IndustryIndex, domain.Day]]
+type _Cache = dict[domain.Ticker, tuple[securities.Sector, domain.Day]]
 
 
 class SecuritiesHandler:
@@ -42,58 +42,58 @@ class SecuritiesHandler:
         table = await ctx.get_for_update(securities.Securities)
 
         try:
-            industry_cache, rows = await self._get_industry_cash_rows()
+            sector_cache, rows = await self._get_sector_cash_rows()
         except (TimeoutError, aiohttp.ClientError) as err:
-            raise errors.UseCasesError("industry index composition MOEX ISS error") from err
+            raise errors.UseCasesError("sector index MOEX ISS error") from err
 
         for row in rows:
-            row.industry, _ = industry_cache.get(row.ticker, (securities.IndustryIndex.UNKNOWN, consts.START_DAY))
+            row.sector, _ = sector_cache.get(row.ticker, (securities.Sector.OTHER, consts.START_DAY))
 
         table.update(msg.day, rows)
 
         return handler.SecuritiesUpdated(day=msg.day)
 
-    async def _get_industry_cash_rows(
+    async def _get_sector_cash_rows(
         self,
     ) -> tuple[_Cache, list[securities.Row]]:
         async with asyncio.TaskGroup() as tg:
-            industry_cache = tg.create_task(self._prepare_industry_cache())
+            sector_cache = tg.create_task(self._prepare_sector_cache())
             rows = tg.create_task(self._download_rows())
 
-        return await industry_cache, await rows
+        return await sector_cache, await rows
 
-    async def _prepare_industry_cache(self) -> _Cache:
+    async def _prepare_sector_cache(self) -> _Cache:
         cache: _Cache = {}
 
         async with asyncio.TaskGroup() as tg:
-            for index in securities.IndustryIndex:
-                if index == securities.IndustryIndex.UNKNOWN:
+            for sector in securities.Sector:
+                if sector == securities.Sector.OTHER:
                     continue
 
-                tg.create_task(self._update_industry_cache(cache, index))
+                tg.create_task(self._update_sector_cache(cache, sector))
 
         return cache
 
-    async def _update_industry_cache(
+    async def _update_sector_cache(
         self,
         cache: _Cache,
-        index: securities.IndustryIndex,
+        sector: securities.Sector,
     ) -> None:
-        json = await aiomoex.get_index_tickers(self._http_client, index)
+        json = await aiomoex.get_index_tickers(self._http_client, sector)
 
         try:
-            tickers = TypeAdapter(list[_IndustryRow]).validate_python(json)
+            tickers = TypeAdapter(list[_SectorRow]).validate_python(json)
         except ValueError as err:
-            raise errors.UseCasesError("invalid index composition data") from err
+            raise errors.UseCasesError("invalid sector index data") from err
 
         if not tickers:
-            raise errors.UseCasesError(f"no securities in industry {index.name}")
+            raise errors.UseCasesError(f"no securities in sector {sector.name} index")
 
         for ticker in tickers:
-            _, day = cache.get(ticker.ticker, (securities.IndustryIndex.UNKNOWN, consts.START_DAY))
+            _, day = cache.get(ticker.ticker, (securities.Sector.OTHER, consts.START_DAY))
 
             if ticker.till > day:
-                cache[ticker.ticker] = (index, ticker.till)
+                cache[ticker.ticker] = (sector, ticker.till)
 
     async def _download_rows(self) -> list[securities.Row]:
         tasks: list[asyncio.Task[list[dict[str, Any]]]] = []
