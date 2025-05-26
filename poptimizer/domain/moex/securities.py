@@ -11,6 +11,7 @@ _PREFERRED_SUFFIX: Final = "P"
 
 
 class Sector(StrEnum):
+    ETF = auto()
     OTHER = auto()
     MOEXOG = auto()
     MOEXEU = auto()
@@ -22,6 +23,9 @@ class Sector(StrEnum):
     MOEXTN = auto()
     MOEXIT = auto()
     MOEXRE = auto()
+
+    def is_index(self) -> bool:
+        return self.value not in (Sector.ETF, Sector.OTHER)
 
 
 class Row(domain.Row):

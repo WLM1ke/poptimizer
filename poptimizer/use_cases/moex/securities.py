@@ -11,9 +11,11 @@ from poptimizer.domain import domain
 from poptimizer.domain.moex import securities
 from poptimizer.use_cases import handler
 
+_ETF_BOARDS: Final = "TQTF"
+
 _MARKETS_BOARDS: Final = (
     ("shares", "TQBR"),
-    ("shares", "TQTF"),
+    ("shares", _ETF_BOARDS),
 )
 
 _COLUMNS: Final = (
@@ -47,6 +49,11 @@ class SecuritiesHandler:
             raise errors.UseCasesError("sector index MOEX ISS error") from err
 
         for row in rows:
+            if row.board == _ETF_BOARDS:
+                row.sector = securities.Sector.ETF
+
+                continue
+
             row.sector, _ = sector_cache.get(row.ticker, (securities.Sector.OTHER, consts.START_DAY))
 
         table.update(msg.day, rows)
@@ -67,10 +74,8 @@ class SecuritiesHandler:
 
         async with asyncio.TaskGroup() as tg:
             for sector in securities.Sector:
-                if sector == securities.Sector.OTHER:
-                    continue
-
-                tg.create_task(self._update_sector_cache(cache, sector))
+                if sector.is_index():
+                    tg.create_task(self._update_sector_cache(cache, sector))
 
         return cache
 
