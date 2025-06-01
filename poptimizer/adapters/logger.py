@@ -6,7 +6,7 @@ import types
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from copy import copy
-from typing import Final, Literal
+from typing import Final, Literal, cast
 
 import aiohttp
 
@@ -125,3 +125,10 @@ async def init(
 
     async with tg:
         yield logging.getLogger()
+
+
+def get_root_error(exc: Exception) -> Exception:
+    while isinstance(exc, ExceptionGroup):
+        exc = cast("Exception", exc.exceptions[0])
+
+    return exc

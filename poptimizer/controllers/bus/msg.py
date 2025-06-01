@@ -13,7 +13,7 @@ from typing import (
 )
 
 from poptimizer import errors
-from poptimizer.adapters import adapter, mongo
+from poptimizer.adapters import adapter, logger, mongo
 from poptimizer.controllers.bus import uow
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
@@ -163,18 +163,10 @@ class Bus:
         msg: Event,
         policy: Policy,
     ) -> None:
-        attempt = 0
+        attempt = 1
 
-        while err := await self._handle_event_safe(handler, msg):
+        while await self._handle_event_safe(handler, msg, attempt):
             attempt += 1
-            self._lgr.warning(
-                "%s can't handle %r in %d attempt with %s, ...",
-                adapter.get_component_name(handler),
-                msg,
-                attempt,
-                err.exceptions[0],
-            )
-            traceback.print_exception(err)
 
             if not await policy.try_again():
                 return
@@ -189,13 +181,24 @@ class Bus:
         self,
         handler: EventHandler[Any],
         msg: Event,
-    ) -> BaseExceptionGroup[errors.POError] | None:
-        error: BaseExceptionGroup[errors.POError] | None = None
+        attempt: int,
+    ) -> bool:
+        retry = False
+
         try:
             async with uow.UOW(self._repo) as ctx:
                 result = await handler(ctx, msg)
         except* errors.POError as err:
-            error = err
+            self._lgr.warning(
+                "%s can't handle %r in %d attempt: %s",
+                adapter.get_component_name(handler),
+                msg,
+                attempt,
+                logger.get_root_error(err),
+            )
+            traceback.print_exception(err, colorize=True)  # type: ignore[reportCallIssue]
+
+            retry = True
         else:
             match result:
                 case None:
@@ -208,7 +211,7 @@ class Bus:
             for event in events:
                 self.publish(event)
 
-        return error
+        return retry
 
     async def request(self, msg: DTO) -> DTO:
         name = adapter.get_component_name(msg)
