@@ -1,7 +1,14 @@
 import asyncio
 import contextlib
+import multiprocessing as mp
+import signal
+import sys
 import warnings
+from datetime import timedelta
+from types import FrameType
+from typing import Any, Final
 
+import torch
 import uvloop
 
 from poptimizer import config
@@ -10,10 +17,22 @@ from poptimizer.cli import safe
 from poptimizer.controllers.bus import bus
 from poptimizer.controllers.server import server
 
+_RESTART_DURATION: Final = timedelta(hours=12)
 
-async def _run() -> None:
+
+class _SignalHandler:
+    def __init__(self, task: asyncio.Task[Any]) -> None:
+        self._task = task
+
+    def __call__(self, sig: int, frame: FrameType | None) -> None:  # noqa: ARG002
+        self._task.cancel()
+
+
+async def _run(duration: timedelta | None = None) -> int:
+    if duration and (main_task := asyncio.current_task()):
+        signal.signal(signal.SIGTERM, _SignalHandler(main_task))
+
     cfg = config.Cfg()
-    err: Exception | None = None
 
     async with contextlib.AsyncExitStack() as stack:
         stack.enter_context(warnings.catch_warnings())
@@ -33,16 +52,57 @@ async def _run() -> None:
         msg_bus = bus.build(http_client, mongo_db)
         http_server = server.build(msg_bus, cfg.server_url)
 
-        try:
-            await safe.run(lgr, msg_bus.run(), http_server.run())
-        except asyncio.CancelledError:
-            lgr.info("Shutdown finished")
-        except Exception as exc:  # noqa: BLE001
-            lgr.warning("Shutdown abnormally: %r", exc)
-            err = exc
+        if duration:
+            await stack.enter_async_context(asyncio.timeout(duration.total_seconds()))
+            lgr.warning("Starting to run for %s", duration)
 
-    if err:
-        raise err
+        return await safe.run(lgr, msg_bus.run(), http_server.run())
+
+    return 1
+
+
+def _run_in_uvloop() -> int:
+    with asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner:
+        try:
+            return runner.run(_run(_RESTART_DURATION))
+        except asyncio.CancelledError:
+            return 0
+
+
+def _run_in_process() -> int:
+    stopping = False
+
+    while True:
+        process = mp.Process(target=_run_in_uvloop, daemon=True)
+        process.start()
+
+        try:
+            process.join()
+        except KeyboardInterrupt:
+            if process.pid:
+                stopping = True
+                process.terminate()
+                process.join()
+
+        exitcode = process.exitcode
+        process.close()
+
+        match exitcode:
+            case 0 if stopping:
+                return 0
+            case 0:
+                continue
+            case _:
+                return 1
+
+
+def _maybe_run_in_process() -> None:
+    """Crutch for torch MPS-backend memory leak."""
+    match torch.backends.mps.is_available():
+        case True:
+            sys.exit(_run_in_process())
+        case False:
+            sys.exit(uvloop.run(_run()))
 
 
 def run() -> None:
@@ -50,4 +110,4 @@ def run() -> None:
 
     Can be stopped with Ctrl-C/SIGINT. Settings from .env.
     """
-    uvloop.run(_run())
+    _maybe_run_in_process()
