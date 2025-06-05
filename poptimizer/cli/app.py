@@ -17,7 +17,7 @@ from poptimizer.cli import safe
 from poptimizer.controllers.bus import bus
 from poptimizer.controllers.server import server
 
-_RESTART_DURATION: Final = timedelta(hours=12)
+_RESTART_DURATION: Final = timedelta(hours=11)
 
 
 class _SignalHandler:
