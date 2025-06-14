@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 import aiohttp
 
 from poptimizer.controllers.bus import msg
@@ -12,11 +14,8 @@ from poptimizer.use_cases.moex import data, index, quotes, securities, usd
 from poptimizer.use_cases.portfolio import forecasts, portfolio
 
 
-def register_handlers(
-    bus: msg.Bus,
-    http_client: aiohttp.ClientSession,
-) -> None:
-    bus.register_event_handler(data.DataHandler(http_client), msg.IndefiniteRetryPolicy)
+def register_handlers(bus: msg.Bus, http_client: aiohttp.ClientSession, stop_fn: Callable[[], bool] | None) -> None:
+    bus.register_event_handler(data.DataHandler(http_client, stop_fn), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(cpi.CPIHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(usd.USDHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(index.IndexesHandler(http_client), msg.IndefiniteRetryPolicy)

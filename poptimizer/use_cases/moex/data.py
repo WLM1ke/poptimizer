@@ -1,16 +1,20 @@
 import logging
 import zoneinfo
+from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from typing import Final
 
 import aiohttp
 import aiomoex
+import psutil
 from pydantic import BaseModel, Field, field_validator
 
 from poptimizer import consts, errors
 from poptimizer.domain import domain
 from poptimizer.domain.moex import trading_day
 from poptimizer.use_cases import handler
+
+_MEMORY_PERCENTAGE_THRESHOLD: Final = 100
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -39,15 +43,22 @@ class _Payload(BaseModel):
 
 
 class DataHandler:
-    def __init__(self, http_client: aiohttp.ClientSession) -> None:
+    def __init__(self, http_client: aiohttp.ClientSession, stop_fn: Callable[[], bool] | None) -> None:
         self._lgr = logging.getLogger()
         self._http_client = http_client
+        self._stop_fn = stop_fn
+        self._proc = psutil.Process()
 
     async def __call__(
         self,
         ctx: handler.Ctx,
         msg: handler.AppStarted | handler.SecFeatUpdated | handler.ForecastsAnalyzed,
-    ) -> handler.NewDataPublished | handler.DataChecked:
+    ) -> handler.NewDataPublished | handler.DataChecked | None:
+        if self._stop_fn and (usage := self._proc.memory_percent()) > _MEMORY_PERCENTAGE_THRESHOLD:
+            self._lgr.warning("Stopping due to high memory usage - %.2f%%", usage)
+
+            self._stop_fn()
+
         match msg:
             case handler.AppStarted() | handler.ForecastsAnalyzed():
                 return await self._check(ctx)
