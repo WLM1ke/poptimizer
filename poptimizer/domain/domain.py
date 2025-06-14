@@ -33,6 +33,10 @@ Day = Annotated[
 Ticker = NewType("Ticker", str)
 CashTicker: Final = Ticker("CASH")
 
+Sector = NewType("Sector", str)
+OtherShare: Final = Sector("Other share")
+OtherETF: Final = Sector("Other ETF")
+
 AccName = NewType("AccName", str)
 
 

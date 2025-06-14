@@ -54,9 +54,7 @@ def _prepare_sectors(
 ) -> tuple[dict[domain.UID, int], int]:
     sectors_cache = {row.ticker: row.sector for row in sec.df}
 
-    ticker_sector = {
-        domain.UID(pos.ticker): sectors_cache.get(pos.ticker, securities.Sector.OTHER) for pos in port.positions
-    }
+    ticker_sector = {domain.UID(pos.ticker): sectors_cache[pos.ticker] for pos in port.positions}
     sectors_number = {sec_type: n for n, sec_type in enumerate(sorted(set(ticker_sector.values())))}
 
     return (

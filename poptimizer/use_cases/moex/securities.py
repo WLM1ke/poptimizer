@@ -4,7 +4,7 @@ from typing import Any, Final
 
 import aiohttp
 import aiomoex
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, Field, TypeAdapter
 
 from poptimizer import consts, errors
 from poptimizer.domain import domain
@@ -27,13 +27,29 @@ _COLUMNS: Final = (
     "INSTRID",
 )
 
+_ETF_URL: Final = "https://rusetfs.com/api/v1/screener"
 
-class _SectorRow(BaseModel):
+
+class _IndexSectorRow(BaseModel):
     ticker: domain.Ticker
     till: domain.Day
 
 
-type _Cache = dict[domain.Ticker, tuple[securities.Sector, domain.Day]]
+class _NamedAttr(BaseModel):
+    name: str
+
+
+class _ETFSectorRow(BaseModel):
+    ticker: domain.Ticker
+    sub_class: _NamedAttr = Field(alias="assetSubClass")
+    currency: _NamedAttr = Field(alias="currency")
+
+    @property
+    def sector(self) -> domain.Sector:
+        return domain.Sector(f"{self.sub_class.name} - {self.currency.name}")
+
+
+type _Cache = dict[domain.Ticker, tuple[domain.Sector, domain.Day]]
 
 
 class SecuritiesHandler:
@@ -49,12 +65,11 @@ class SecuritiesHandler:
             raise errors.UseCasesError("sector index MOEX ISS error") from err
 
         for row in rows:
+            default_sector = domain.OtherShare
             if row.board == _ETF_BOARDS:
-                row.sector = securities.Sector.ETF
+                default_sector = domain.OtherETF
 
-                continue
-
-            row.sector, _ = sector_cache.get(row.ticker, (securities.Sector.OTHER, consts.START_DAY))
+            row.sector, _ = sector_cache.get(row.ticker, (default_sector, consts.START_DAY))
 
         table.update(msg.day, rows)
 
@@ -73,29 +88,42 @@ class SecuritiesHandler:
         cache: _Cache = {}
 
         async with asyncio.TaskGroup() as tg:
-            for sector in securities.Sector:
-                if sector.is_index():
-                    tg.create_task(self._update_sector_cache(cache, sector))
+            for sector in securities.SectorIndex:
+                tg.create_task(self._update_sector_cache(cache, sector))
+
+            async with self._http_client.get(_ETF_URL) as resp:
+                if not resp.ok:
+                    raise errors.UseCasesError(f"bad etf description respond {resp.reason}")
+
+                try:
+                    etf_desc = TypeAdapter(list[_ETFSectorRow]).validate_python(await resp.json())
+                except ValueError as err:
+                    raise errors.UseCasesError("invalid etf description data") from err
+
+        for desc in etf_desc:
+            cache[desc.ticker] = (desc.sector, consts.START_DAY)
 
         return cache
 
     async def _update_sector_cache(
         self,
         cache: _Cache,
-        sector: securities.Sector,
+        index: securities.SectorIndex,
     ) -> None:
-        json = await aiomoex.get_index_tickers(self._http_client, sector)
+        json = await aiomoex.get_index_tickers(self._http_client, index)
 
         try:
-            tickers = TypeAdapter(list[_SectorRow]).validate_python(json)
+            tickers = TypeAdapter(list[_IndexSectorRow]).validate_python(json)
         except ValueError as err:
             raise errors.UseCasesError("invalid sector index data") from err
 
         if not tickers:
-            raise errors.UseCasesError(f"no securities in sector {sector.name} index")
+            raise errors.UseCasesError(f"no securities in sector {index.name} index")
+
+        sector = domain.Sector(index.name)
 
         for ticker in tickers:
-            _, day = cache.get(ticker.ticker, (securities.Sector.OTHER, consts.START_DAY))
+            _, day = cache.get(ticker.ticker, (domain.OtherShare, consts.START_DAY))
 
             if ticker.till > day:
                 cache[ticker.ticker] = (sector, ticker.till)

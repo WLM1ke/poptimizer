@@ -10,9 +10,7 @@ _PREFERRED_TYPE: Final = "2"
 _PREFERRED_SUFFIX: Final = "P"
 
 
-class Sector(StrEnum):
-    ETF = auto()
-    OTHER = auto()
+class SectorIndex(StrEnum):
     MOEXOG = auto()
     MOEXEU = auto()
     MOEXTL = auto()
@@ -24,9 +22,6 @@ class Sector(StrEnum):
     MOEXIT = auto()
     MOEXRE = auto()
 
-    def is_index(self) -> bool:
-        return self.value not in (Sector.ETF, Sector.OTHER)
-
 
 class Row(domain.Row):
     ticker: domain.Ticker = Field(alias="SECID")
@@ -35,7 +30,7 @@ class Row(domain.Row):
     board: str = Field(alias="BOARDID")
     type: str = Field(alias="SECTYPE")
     instrument: str = Field(alias="INSTRID")
-    sector: Sector = Sector.OTHER
+    sector: domain.Sector = domain.OtherShare
 
     @property
     def is_share(self) -> bool:
