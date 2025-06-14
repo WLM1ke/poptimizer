@@ -1,13 +1,16 @@
 import asyncio
 import contextlib
+import logging
 import multiprocessing as mp
 import signal
 import sys
 import warnings
+from collections.abc import Callable
 from datetime import timedelta
 from types import FrameType
 from typing import Any, Final
 
+import psutil
 import torch
 import uvloop
 
@@ -17,7 +20,8 @@ from poptimizer.cli import safe
 from poptimizer.controllers.bus import bus
 from poptimizer.controllers.server import server
 
-_RESTART_DURATION: Final = timedelta(hours=8)
+_MEMORY_PERCENTAGE_THRESHOLD: Final = 100
+_CHECK_PERIOD: Final = timedelta(hours=1)
 
 
 class _SignalHandler:
@@ -28,8 +32,8 @@ class _SignalHandler:
         self._task.cancel()
 
 
-async def _run(duration: timedelta | None = None) -> int:
-    if duration and (main_task := asyncio.current_task()):
+async def _run(*, check_memory: bool = False) -> int:
+    if check_memory and (main_task := asyncio.current_task()):
         signal.signal(signal.SIGTERM, _SignalHandler(main_task))
 
     cfg = config.Cfg()
@@ -52,19 +56,32 @@ async def _run(duration: timedelta | None = None) -> int:
         msg_bus = bus.build(http_client, mongo_db)
         http_server = server.build(msg_bus, cfg.server_url)
 
-        if duration:
-            await stack.enter_async_context(asyncio.timeout(duration.total_seconds()))
-            lgr.warning("Starting to run for %s", duration)
+        coro = [msg_bus.run(), http_server.run()]
+        if check_memory:
+            timeout = await stack.enter_async_context(asyncio.Timeout(None))
+            coro.append(_memory_checker(lgr, timeout.reschedule))
 
-        return await safe.run(lgr, msg_bus.run(), http_server.run())
+        return await safe.run(lgr, *coro)
 
     return 1
+
+
+async def _memory_checker(lgr: logging.Logger, stop_fn: Callable[[float], None]) -> None:
+    proc = psutil.Process()
+
+    while (usage := proc.memory_percent()) < _MEMORY_PERCENTAGE_THRESHOLD:
+        lgr.info("Memory usage - %.2f%%", usage)
+
+        await asyncio.sleep(_CHECK_PERIOD.total_seconds())
+
+    lgr.warning("Stopping due to high memory usage - %.2f%%", usage)
+    stop_fn(asyncio.get_running_loop().time())
 
 
 def _run_in_uvloop() -> int:
     with asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner:
         try:
-            return runner.run(_run(_RESTART_DURATION))
+            return runner.run(_run(check_memory=True))
         except asyncio.CancelledError:
             return 0
 
