@@ -14,7 +14,7 @@ from poptimizer.domain import domain
 from poptimizer.domain.moex import trading_day
 from poptimizer.use_cases import handler
 
-_MEMORY_PERCENTAGE_THRESHOLD: Final = 100
+_MEMORY_PERCENTAGE_THRESHOLD: Final = 75
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -47,17 +47,19 @@ class DataHandler:
         self._lgr = logging.getLogger()
         self._http_client = http_client
         self._stop_fn = stop_fn
-        self._proc = psutil.Process()
 
     async def __call__(
         self,
         ctx: handler.Ctx,
         msg: handler.AppStarted | handler.SecFeatUpdated | handler.ForecastsAnalyzed,
     ) -> handler.NewDataPublished | handler.DataChecked | None:
-        if self._stop_fn and (usage := self._proc.memory_percent()) > _MEMORY_PERCENTAGE_THRESHOLD:
-            self._lgr.warning("Stopping due to high memory usage - %.2f%%", usage)
-
-            self._stop_fn()
+        if self._stop_fn:
+            match (usage := psutil.virtual_memory().percent) > _MEMORY_PERCENTAGE_THRESHOLD:
+                case True:
+                    self._lgr.warning("Stopping due to high memory usage - %.2f%%", usage)
+                    self._stop_fn()
+                case False:
+                    self._lgr.info("Memory usage - %.2f%%", usage)
 
         match msg:
             case handler.AppStarted() | handler.ForecastsAnalyzed():
