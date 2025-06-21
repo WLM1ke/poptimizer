@@ -3,7 +3,6 @@ import contextlib
 import multiprocessing as mp
 import signal
 import sys
-import warnings
 from types import FrameType
 from typing import TYPE_CHECKING, Any
 
@@ -37,9 +36,6 @@ async def _run(*, check_memory: bool = False) -> int:
     cfg = config.Cfg()
 
     async with contextlib.AsyncExitStack() as stack:
-        stack.enter_context(warnings.catch_warnings())
-        warnings.simplefilter("ignore", category=RuntimeWarning)
-
         http_client = await stack.enter_async_context(http_session.client())
         mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo_db_uri, cfg.mongo_db_db))
 
