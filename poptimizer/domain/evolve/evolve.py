@@ -133,14 +133,20 @@ class Evolution(domain.Entity):
         self.minimal_returns_days = max(1, self.minimal_returns_days - 1)
         self.state = State.EVAL_NEW_BASE_MODEL
 
-    def adj_alfa_delta_critical(self, duration: NonNegativeFloat) -> float:
-        return self.alfa_delta_critical * self._duration_adj(duration)
+    def adj_alfa_delta_critical(self, duration: NonNegativeFloat | None = None) -> float:
+        if duration is None:
+            duration = self.duration
 
-    def adj_llh_delta_critical(self, duration: NonNegativeFloat) -> float:
-        return self.llh_delta_critical * self._duration_adj(duration)
+        return self.alfa_delta_critical * self._adj(duration)
 
-    def _duration_adj(self, duration: NonNegativeFloat) -> NonNegativeFloat:
-        return min(1, self.duration / duration) ** 0.5
+    def adj_llh_delta_critical(self, duration: NonNegativeFloat | None = None) -> float:
+        if duration is None:
+            duration = self.duration
+
+        return self.llh_delta_critical * self._adj(duration)
+
+    def _adj(self, duration: NonNegativeFloat) -> NonNegativeFloat:
+        return (min(1, self.duration / duration) / self.test_days) ** 0.5
 
     def new_base(self, model: Model) -> None:
         self.base_model_uid = model.uid
