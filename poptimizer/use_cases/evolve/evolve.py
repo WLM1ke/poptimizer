@@ -255,8 +255,8 @@ class EvolutionHandler:
                 evolution.state = evolve.State.CREATE_NEW_MODEL
                 self._lgr.info(f"Current base {model.stats} reevaluated")
 
-        self._update_test_days(evolution, model)
         self._change_t_critical(evolution, model, old_result)
+        self._update_test_days(evolution, model)
 
         return handler.ModelEvaluated(day=evolution.day, uid=model.uid)
 
@@ -324,11 +324,11 @@ class EvolutionHandler:
         match alfa_delta < old_alfa_delta_critical:
             case True:
                 sign = "<"
-                evolution.alfa_delta_critical -= abs(alfa_delta) * (1 - consts.P_VALUE / 2)
+                evolution.alfa_delta_critical -= (1 - consts.P_VALUE / 2) / evolution.step
             case False:
                 evolution.alfa_delta_critical = min(
                     0,
-                    evolution.alfa_delta_critical + abs(alfa_delta) * consts.P_VALUE / 2,
+                    evolution.alfa_delta_critical + consts.P_VALUE / 2 / evolution.step,
                 )
 
         self._lgr.info(
@@ -344,10 +344,10 @@ class EvolutionHandler:
         match llh_delta < old_llh_delta_critical:
             case True:
                 sign = "<"
-                evolution.llh_delta_critical -= abs(llh_delta) * (1 - consts.P_VALUE / 2)
+                evolution.llh_delta_critical -= (1 - consts.P_VALUE / 2) / evolution.step
             case False:
                 evolution.llh_delta_critical = min(
-                    0, evolution.llh_delta_critical + abs(llh_delta) * consts.P_VALUE / 2
+                    0, evolution.llh_delta_critical + consts.P_VALUE / 2 / evolution.step
                 )
 
         self._lgr.info(
