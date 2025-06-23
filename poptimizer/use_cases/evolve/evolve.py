@@ -14,6 +14,7 @@ from poptimizer.use_cases import handler
 from poptimizer.use_cases.dl import builder, trainer
 
 _PARENT_COUNT: Final = 2
+_CRITICAL_FACTOR: Final = 0.01
 
 
 def _random_uid() -> domain.UID:
@@ -326,10 +327,10 @@ class EvolutionHandler:
         match alfa_delta < old_alfa_delta_critical:
             case True:
                 sign = "<"
-                evolution.alfa_delta_critical -= abs(alfa_delta) * (1 - consts.P_VALUE / 2) / old_result.models_count
+                evolution.alfa_delta_critical -= (1 - consts.P_VALUE / 2) * _CRITICAL_FACTOR
             case False:
                 evolution.alfa_delta_critical = min(
-                    0, evolution.alfa_delta_critical + abs(alfa_delta) * consts.P_VALUE / 2 / old_result.models_count
+                    0, evolution.alfa_delta_critical + consts.P_VALUE / 2 * _CRITICAL_FACTOR
                 )
 
         self._lgr.info(
@@ -345,10 +346,10 @@ class EvolutionHandler:
         match llh_delta < old_llh_delta_critical:
             case True:
                 sign = "<"
-                evolution.llh_delta_critical -= abs(llh_delta) * (1 - consts.P_VALUE / 2) / old_result.models_count
+                evolution.llh_delta_critical -= (1 - consts.P_VALUE / 2) * _CRITICAL_FACTOR
             case False:
                 evolution.llh_delta_critical = min(
-                    0, evolution.llh_delta_critical + abs(llh_delta) * consts.P_VALUE / 2 / old_result.models_count
+                    0, evolution.llh_delta_critical + consts.P_VALUE / 2 * _CRITICAL_FACTOR
                 )
 
         self._lgr.info(
