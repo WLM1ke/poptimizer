@@ -1,5 +1,4 @@
 import datetime
-import random
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, Final
@@ -43,24 +42,19 @@ class Repo:
         collection_name = adapter.get_component_name(evolve.Model)
         collection = self._db[collection_name]
 
-        key = random.choice(["alfa_mean", "llh_mean", "duration"])  # noqa: S311
-        key_order = random.choice([pymongo.ASCENDING, pymongo.DESCENDING])  # noqa: S311
-
-        key_order = {
-            "day": pymongo.ASCENDING,
-            key: key_order,
-        }
-
         pipeline = [
             {
                 "$project": {
                     "day": True,
-                    "alfa_mean": True,
-                    "llh_mean": True,
-                    "duration": True,
+                    "duration_total": True,
                 },
             },
-            {"$sort": key_order},
+            {
+                "$sort": {
+                    "day": pymongo.ASCENDING,
+                    "duration_total": pymongo.ASCENDING,
+                },
+            },
             {"$limit": 1},
         ]
 

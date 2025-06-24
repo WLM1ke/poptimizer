@@ -165,6 +165,7 @@ class EvolutionHandler:
 
         child = await ctx.get_for_update(evolve.Model, _random_uid())
         child.genes = model.make_child_genes(parents[0], parents[1], 1 / model.ver)
+        child.duration_total = model.duration_total
 
         return child
 
@@ -283,30 +284,24 @@ class EvolutionHandler:
         delete = False
 
         alfa_delta = _delta(model.alfa, evolution.alfa)
-        adj_alfa_delta_critical = evolution.adj_alfa_delta_critical(model.duration)
+        alfa_delta_critical = evolution.alfa_delta_critical
         sign = ">"
 
-        if alfa_delta < adj_alfa_delta_critical:
+        if alfa_delta < alfa_delta_critical:
             delete = True
             sign = "<"
 
-        self._lgr.info(
-            f"Alfa: delta({alfa_delta:.2%}) {sign} adj-delta-critical({adj_alfa_delta_critical:.2%}), "
-            f"delta-critical({evolution.alfa_delta_critical:.2%})",
-        )
+        self._lgr.info(f"Alfa: delta({alfa_delta:.2%}) {sign} delta-critical({alfa_delta_critical:.2%})")
 
         llh_delta = _delta(model.llh, evolution.llh)
-        adj_llh_delta_critical = evolution.adj_llh_delta_critical(model.duration)
+        llh_delta_critical = evolution.llh_delta_critical
         sign = ">"
 
-        if llh_delta < adj_llh_delta_critical:
+        if llh_delta < llh_delta_critical:
             delete = True
             sign = "<"
 
-        self._lgr.info(
-            f"LLH: delta({llh_delta:.4f}) {sign} adj-delta-critical({adj_llh_delta_critical:.4f}), "
-            f"delta-critical({evolution.llh_delta_critical:.4f})",
-        )
+        self._lgr.info(f"LLH: delta({llh_delta:.4f}) {sign} delta-critical({llh_delta_critical:.4f})")
 
         return delete
 

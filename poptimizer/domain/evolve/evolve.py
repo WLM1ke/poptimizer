@@ -7,7 +7,7 @@ from typing import Final, Self
 from pydantic import (
     Field,
     FiniteFloat,
-    NonNegativeFloat,
+    NonNegativeInt,
     NonPositiveFloat,
     PositiveInt,
     computed_field,
@@ -31,6 +31,7 @@ class Model(domain.Entity):
     forecast_days: PositiveInt = 1
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
     duration: float = 0
+    duration_total: NonNegativeInt = 0
     alfa: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
     llh: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
     mean: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
@@ -107,7 +108,6 @@ class Evolution(domain.Entity):
     base_model_uid: domain.UID = domain.UID("")
     alfa: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
     llh: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
-    duration: NonNegativeFloat = 0
     test_days: float = Field(default=2, ge=1)
     alfa_delta_critical: NonPositiveFloat = 0
     llh_delta_critical: NonPositiveFloat = 0
@@ -133,17 +133,7 @@ class Evolution(domain.Entity):
         self.minimal_returns_days = max(1, self.minimal_returns_days - 1)
         self.state = State.EVAL_NEW_BASE_MODEL
 
-    def adj_alfa_delta_critical(self, duration: NonNegativeFloat) -> float:
-        return self.alfa_delta_critical * self._duration_adj(duration)
-
-    def adj_llh_delta_critical(self, duration: NonNegativeFloat) -> float:
-        return self.llh_delta_critical * self._duration_adj(duration)
-
-    def _duration_adj(self, duration: NonNegativeFloat) -> NonNegativeFloat:
-        return min(1, self.duration / duration) ** 0.5
-
     def new_base(self, model: Model) -> None:
         self.base_model_uid = model.uid
         self.alfa = model.alfa
         self.llh = model.llh
-        self.duration = model.duration

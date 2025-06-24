@@ -118,6 +118,7 @@ class Trainer:
 
         model.risk_tolerance = cfg.risk.risk_tolerance
         model.duration = time.monotonic() - start
+        model.duration_total += int(1 + model.duration**0.5)
 
     def _run(  # noqa: PLR0913
         self,
