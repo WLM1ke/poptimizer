@@ -55,12 +55,12 @@ async def _run(*, check_memory: bool = False) -> int:
     return 1
 
 
-def _run_in_uvloop() -> int:
-    with asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner:
-        try:
-            return runner.run(_run(check_memory=True))
-        except asyncio.CancelledError:
-            return 0
+def _run_in_uvloop() -> None:
+    with (
+        asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner,
+        contextlib.suppress(asyncio.CancelledError),
+    ):
+        sys.exit(runner.run(_run(check_memory=True)))
 
 
 def _run_in_process() -> int:
