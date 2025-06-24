@@ -89,36 +89,45 @@ class SecuritiesHandler:
 
         async with asyncio.TaskGroup() as tg:
             for sector in securities.SectorIndex:
-                tg.create_task(self._update_sector_cache(cache, sector))
+                tg.create_task(self._update_shares_sector_cache(cache, sector))
 
-            async with self._http_client.get(_ETF_URL) as resp:
-                if not resp.ok:
-                    raise errors.UseCasesError(f"bad etf description respond {resp.reason}")
+            try:
+                await self._update_etf_sector_cache(cache)
+            except (TimeoutError, aiohttp.ClientError) as err:
+                raise errors.UseCasesError("can't download etf description") from err
 
-                try:
-                    etf_desc = TypeAdapter(list[_ETFSectorRow]).validate_python(await resp.json())
-                except ValueError as err:
-                    raise errors.UseCasesError("invalid etf description data") from err
+        return cache
+
+    async def _update_etf_sector_cache(self, cache: _Cache) -> None:
+        async with self._http_client.get(_ETF_URL) as resp:
+            if not resp.ok:
+                raise errors.UseCasesError(f"bad etf description respond {resp.reason}")
+
+            try:
+                etf_desc = TypeAdapter(list[_ETFSectorRow]).validate_python(await resp.json())
+            except ValueError as err:
+                raise errors.UseCasesError("invalid etf description data") from err
 
         for desc in etf_desc:
             cache[desc.ticker] = (desc.sector, consts.START_DAY)
 
-        return cache
-
-    async def _update_sector_cache(
+    async def _update_shares_sector_cache(
         self,
         cache: _Cache,
         index: securities.SectorIndex,
     ) -> None:
-        json = await aiomoex.get_index_tickers(self._http_client, index)
+        try:
+            json = await aiomoex.get_index_tickers(self._http_client, index)
+        except (TimeoutError, aiohttp.ClientError) as err:
+            raise errors.UseCasesError(f"can't download {index.name} data") from err
 
         try:
             tickers = TypeAdapter(list[_IndexSectorRow]).validate_python(json)
         except ValueError as err:
-            raise errors.UseCasesError("invalid sector index data") from err
+            raise errors.UseCasesError(f"invalid {index.name} data") from err
 
         if not tickers:
-            raise errors.UseCasesError(f"no securities in sector {index.name} index")
+            raise errors.UseCasesError(f"no securities in {index.name} index")
 
         sector = domain.Sector(index.name)
 
@@ -133,14 +142,7 @@ class SecuritiesHandler:
 
         async with asyncio.TaskGroup() as tg:
             for market, board in _MARKETS_BOARDS:
-                task = tg.create_task(
-                    aiomoex.get_board_securities(
-                        self._http_client,
-                        market=market,
-                        board=board,
-                        columns=_COLUMNS,
-                    ),
-                )
+                task = tg.create_task(self._download_board_rows(market, board))
                 tasks.append(task)
 
         json = list(itertools.chain.from_iterable([await task for task in tasks]))
@@ -149,3 +151,14 @@ class SecuritiesHandler:
             return TypeAdapter(list[securities.Row]).validate_python(json)
         except ValueError as err:
             raise errors.UseCasesError("invalid securities data") from err
+
+    async def _download_board_rows(self, market: str, board: str) -> list[dict[str, Any]]:
+        try:
+            return await aiomoex.get_board_securities(
+                self._http_client,
+                market=market,
+                board=board,
+                columns=_COLUMNS,
+            )
+        except (TimeoutError, aiohttp.ClientError) as err:
+            raise errors.UseCasesError(f"can't download {market} {board} data") from err
