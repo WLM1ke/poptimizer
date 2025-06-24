@@ -47,7 +47,7 @@ class ReestryHandler:
 
         try:
             url = await self._find_url(row.ticker_base)
-        except errors.UseCasesError as err:
+        except (TimeoutError, aiohttp.ClientError, errors.UseCasesError) as err:
             self._lgr.warning("can't find url for %s - %s", row.ticker, err)
 
             return

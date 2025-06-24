@@ -27,7 +27,7 @@ def register_handlers(bus: msg.Bus, http_client: aiohttp.ClientSession, stop_fn:
     bus.register_event_handler(index_features.IndexesFeatHandler(), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(day_features.DayFeatHandler(), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(tickers_features.SecFeatHandler(), msg.IndefiniteRetryPolicy)
-    # bus.register_event_handler(status.DivStatusHandler(http_client), msg.IgnoreErrorsPolicy)
+    bus.register_event_handler(status.DivStatusHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(reestry.ReestryHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(evolve.EvolutionHandler(), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(forecasts.ForecastHandler(), msg.IndefiniteRetryPolicy)
