@@ -5,7 +5,7 @@ import aiohttp
 import aiomoex
 from pydantic import TypeAdapter
 
-from poptimizer import consts, errors
+from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.moex import index
 from poptimizer.use_cases import handler
@@ -38,7 +38,7 @@ class IndexesHandler:
         start_day: date | None,
         update_day: date,
     ) -> list[index.Row]:
-        try:
+        async with handler.wrap_http_err(f"{ticker} MOEX ISS error"):
             json = await aiomoex.get_market_history(
                 session=self._http_client,
                 start=start_day and str(start_day),
@@ -50,10 +50,6 @@ class IndexesHandler:
                 ),
                 market="index",
             )
-        except (TimeoutError, aiohttp.ClientError) as err:
-            raise errors.UseCasesError(f"{ticker} MOEX ISS error") from err
 
-        try:
+        with handler.wrap_validation_err(f"invalid {ticker} data"):
             return TypeAdapter(list[index.Row]).validate_python(json)
-        except ValueError as err:
-            raise errors.UseCasesError(f"invalid {ticker} data") from err

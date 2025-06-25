@@ -31,17 +31,16 @@ class CPIHandler:
     async def __call__(self, ctx: handler.Ctx, msg: handler.NewDataPublished) -> None:
         table = await ctx.get_for_update(cpi.CPI)
 
-        try:
-            xlsx_file = await self._download()
-        except (TimeoutError, aiohttp.ClientError) as err:
-            raise errors.UseCasesError("CPI download") from err
-
+        xlsx_file = await self._download()
         row = _parse_rows(xlsx_file)
 
         table.update(msg.day, row)
 
     async def _download(self) -> io.BytesIO:
-        async with self._http_session.get(_URL) as resp:
+        async with (
+            handler.wrap_http_err("can't download CPI data"),
+            self._http_session.get(_URL) as resp,
+        ):
             if not resp.ok:
                 raise errors.UseCasesError(f"bad CPI respond status {resp.reason}")
 
@@ -58,10 +57,9 @@ def _parse_rows(xlsx: io.BytesIO) -> list[cpi.Row]:
 
     for row in ws.iter_cols(min_row=_MIN_ROW, max_row=_MAX_ROW, min_col=_MIN_COL, values_only=True):
         day, value = row
-        try:
+
+        with handler.wrap_validation_err("invalid CPI data"):
             rows.append(cpi.Row(day=_month_end(cast("datetime", day).date()), cpi=1 + cast("float", value) / 100))
-        except ValueError as err:
-            raise errors.UseCasesError("bad CPI data") from err
 
     return rows
 

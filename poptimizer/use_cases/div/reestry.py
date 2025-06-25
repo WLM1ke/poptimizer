@@ -38,41 +38,35 @@ class ReestryHandler:
         self,
         ctx: handler.Ctx,
         update_day: domain.Day,
-        row: status.Row,
+        status_row: status.Row,
     ) -> None:
-        table = await ctx.get_for_update(reestry.DivReestry, domain.UID(row.ticker))
+        table = await ctx.get_for_update(reestry.DivReestry, domain.UID(status_row.ticker))
 
-        if table.has_day(row.day):
+        if table.has_day(status_row.day):
             return
 
         try:
-            url = await self._find_url(row.ticker_base)
-        except (TimeoutError, aiohttp.ClientError, errors.UseCasesError) as err:
-            self._lgr.warning("can't find url for %s - %s", row.ticker, err)
+            rows = await self._prepare_rows(ctx, status_row)
+        except errors.UseCasesError as err:
+            self._lgr.warning("can't prepare dividend for %s - %s", status_row.ticker, err)
 
             return
 
-        try:
-            html_page = await self._load_html(url, row.ticker)
-        except (TimeoutError, aiohttp.ClientError, errors.UseCasesError) as err:
-            self._lgr.warning("can't load dividends for %s - %s", row.ticker, err)
+        table.update(update_day, rows)
 
-            return
-
+    async def _prepare_rows(self, ctx: handler.Ctx, row: status.Row) -> list[raw.Row]:
+        url = await self._find_url(row.ticker_base)
+        html_page = await self._load_html(url, row.ticker)
         quotes_table = await ctx.get(quotes.Quotes, domain.UID(row.ticker))
         usd_table = await ctx.get(usd.USD)
 
-        try:
-            raw_rows = _parse(html_page, 1 + row.preferred, usd_table, quotes_table.df[0].day)
-        except errors.UseCasesError as err:
-            self._lgr.warning("can't parse dividends for %s - %s", row.ticker, err)
-
-            return
-
-        table.update(update_day, raw_rows)
+        return _parse(html_page, 1 + row.preferred, usd_table, quotes_table.df[0].day)
 
     async def _find_url(self, ticker_base: str) -> str:
-        async with self._http_client.get(_URL) as resp:
+        async with (
+            handler.wrap_http_err(f"can't find url for {ticker_base}"),
+            self._http_client.get(_URL) as resp,
+        ):
             if not resp.ok:
                 raise errors.UseCasesError(f"bad respond status {resp.reason}")
 
@@ -88,7 +82,10 @@ class ReestryHandler:
         raise errors.UseCasesError(f"{ticker_base} dividends not found")
 
     async def _load_html(self, url: str, ticker: domain.Ticker) -> str:
-        async with self._http_client.get(url) as resp:
+        async with (
+            handler.wrap_http_err(f"can't load dividends for {ticker}"),
+            self._http_client.get(url) as resp,
+        ):
             if not resp.ok:
                 raise errors.UseCasesError(f"{ticker} bad respond status {resp.reason}")
 

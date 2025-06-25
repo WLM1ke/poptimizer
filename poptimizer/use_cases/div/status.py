@@ -29,11 +29,7 @@ class DivStatusHandler:
     async def __call__(self, ctx: handler.Ctx, msg: handler.PortfolioUpdated) -> handler.DivStatusUpdated:
         table = await ctx.get_for_update(status.DivStatus)
 
-        try:
-            csv_file = await self._download()
-        except (TimeoutError, aiohttp.ClientError) as err:
-            raise errors.UseCasesError("dividends status error") from err
-
+        csv_file = await self._download()
         parsed_rows = self._parse(csv_file)
 
         sec_table = await ctx.get(securities.Securities)
@@ -45,7 +41,10 @@ class DivStatusHandler:
         return handler.DivStatusUpdated(day=msg.day)
 
     async def _download(self) -> TextIO:
-        async with self._http_client.get(_URL) as resp:
+        async with (
+            handler.wrap_http_err("can't load dividends status"),
+            self._http_client.get(_URL) as resp,
+        ):
             if not resp.ok:
                 raise errors.UseCasesError(f"bad dividends status respond {resp.reason}")
 

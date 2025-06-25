@@ -4,7 +4,6 @@ import aiohttp
 import aiomoex
 from pydantic import TypeAdapter
 
-from poptimizer import errors
 from poptimizer.domain.moex import usd
 from poptimizer.use_cases import handler
 
@@ -26,7 +25,7 @@ class USDHandler:
         start_day: date | None,
         update_day: date,
     ) -> list[usd.Row]:
-        try:
+        async with handler.wrap_http_err("USD MOEX ISS error"):
             json = await aiomoex.get_market_candles(
                 session=self._session,
                 start=start_day and str(start_day),
@@ -36,10 +35,6 @@ class USDHandler:
                 market="selt",
                 engine="currency",
             )
-        except (TimeoutError, aiohttp.ClientError) as err:
-            raise errors.UseCasesError("USD MOEX ISS error") from err
 
-        try:
+        with handler.wrap_validation_err("invalid USD data"):
             return TypeAdapter(list[usd.Row]).validate_python(json)
-        except ValueError as err:
-            raise errors.UseCasesError("invalid usd data") from err

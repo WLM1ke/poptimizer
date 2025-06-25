@@ -9,7 +9,7 @@ import aiomoex
 import psutil
 from pydantic import BaseModel, Field, field_validator
 
-from poptimizer import consts, errors
+from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.moex import trading_day
 from poptimizer.use_cases import handler
@@ -89,22 +89,16 @@ class DataHandler:
         return handler.NewDataPublished(day=last_day)
 
     async def _get_last_trading_day_from_moex(self) -> domain.Day:
-        try:
+        async with handler.wrap_http_err("trading day MOEX ISS error"):
             json = await aiomoex.get_board_dates(
                 self._http_client,
                 board="TQBR",
                 market="shares",
                 engine="stock",
             )
-        except (TimeoutError, aiohttp.ClientError) as err:
-            raise errors.UseCasesError("trading day MOEX ISS error") from err
 
-        try:
-            payload = _Payload.model_validate({"df": json})
-        except ValueError as err:
-            raise errors.UseCasesError("invalid trading day data") from err
-
-        return payload.last_day()
+        with handler.wrap_validation_err("invalid trading day data"):
+            return _Payload.model_validate({"df": json}).last_day()
 
     async def _update(self, ctx: handler.Ctx, last_trading_day: domain.Day) -> handler.DataChecked:
         table = await ctx.get_for_update(trading_day.TradingDay)

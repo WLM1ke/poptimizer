@@ -1,7 +1,11 @@
+from collections.abc import AsyncIterator, Iterator
+from contextlib import asynccontextmanager, contextmanager
 from typing import Protocol
 
-from pydantic import BaseModel, Field, computed_field
+import aiohttp
+from pydantic import BaseModel, Field, ValidationError, computed_field
 
+from poptimizer import errors
 from poptimizer.domain import domain
 
 
@@ -110,3 +114,19 @@ class ModelEvaluated(Event):
 
 class ForecastsAnalyzed(Event):
     day: domain.Day
+
+
+@asynccontextmanager
+async def wrap_http_err(msg: str) -> AsyncIterator[None]:
+    try:
+        yield
+    except (TimeoutError, aiohttp.ClientError) as err:
+        raise errors.UseCasesError(msg) from err
+
+
+@contextmanager
+def wrap_validation_err(msg: str) -> Iterator[None]:
+    try:
+        yield
+    except ValidationError as err:
+        raise errors.UseCasesError(msg) from err
