@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import statistics
 from enum import StrEnum
-from typing import Final, Self
+from typing import Final, Self, cast
 
 from pydantic import (
+    BaseModel,
     Field,
     FiniteFloat,
     NonNegativeInt,
@@ -13,12 +14,14 @@ from pydantic import (
     computed_field,
     model_validator,
 )
+from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
 from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.dl import datasets
 from poptimizer.domain.evolve import genetics, genotype
 
+_LOAD_FACTOR: Final = 1000
 _INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.Days(
     history=consts.INITIAL_HISTORY_DAYS_END,
     forecast=consts.INITIAL_FORECAST_DAYS,
@@ -26,14 +29,59 @@ _INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.Days(
 ).minimal_returns_days
 
 
+class Stats(BaseModel):
+    count: NonNegativeInt = 0
+    sum: FiniteFloat = 0
+    sum_squares: FiniteFloat = 0
+
+    def add(self, *value: FiniteFloat) -> None:
+        self.count += len(value)
+        self.sum += sum(value)
+        self.sum_squares += sum(x**2 for x in value)
+
+    @computed_field
+    @property
+    def mean(self) -> FiniteFloat:
+        if self.count == 0:
+            return 0
+
+        return self.sum / self.count
+
+    @computed_field
+    @property
+    def std(self) -> FiniteFloat:
+        if self.count == 0:
+            return 0
+
+        return ((self.sum_squares - self.mean**2 * self.count) / (self.count - 1)) ** 0.5
+
+    @computed_field
+    @property
+    def t_value(self) -> FiniteFloat:
+        if self.count == 0:
+            return 0
+
+        return self.mean / self.std * self.count**0.5
+
+    @computed_field
+    @property
+    def cdf(self) -> FiniteFloat:
+        if self.count == 0:
+            return 0.5
+
+        return cast("float", stats.t.cdf(self.t_value, self.count - 1))  # type: ignore[reportUnknownMemberType]
+
+
 class Model(domain.Entity):
     tickers: domain.Tickers = Field(default_factory=tuple)
     forecast_days: PositiveInt = 1
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
     duration: float = 0
-    duration_total: NonNegativeInt = 0
+    train_load: NonNegativeInt = 0
     alfa: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
+    alfa_diff: Stats = Field(default_factory=Stats)
     llh: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
+    llh_diff: Stats = Field(default_factory=Stats)
     mean: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
     cov: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
     risk_tolerance: FiniteFloat = Field(default=0, ge=0, le=1)
@@ -65,6 +113,10 @@ class Model(domain.Entity):
         history = genes.batch.history_days
 
         return f"{self.__class__.__name__}(ver={self.ver}, risk_aversion={1 - risk_tol:.2%}, history={history:.2f})"
+
+    def set_duration(self, duration: float) -> None:
+        self.duration = duration
+        self.train_load += int(_LOAD_FACTOR * duration**0.5)
 
     @computed_field
     @property

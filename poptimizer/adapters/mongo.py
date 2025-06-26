@@ -46,13 +46,13 @@ class Repo:
             {
                 "$project": {
                     "day": True,
-                    "duration_total": True,
+                    "train_load": True,
                 },
             },
             {
                 "$sort": {
                     "day": pymongo.ASCENDING,
-                    "duration_total": pymongo.ASCENDING,
+                    "train_load": pymongo.ASCENDING,
                 },
             },
             {"$limit": 1},

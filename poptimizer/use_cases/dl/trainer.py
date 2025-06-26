@@ -117,8 +117,7 @@ class Trainer:
             raise
 
         model.risk_tolerance = cfg.risk.risk_tolerance
-        model.duration = time.monotonic() - start
-        model.duration_total += int(1000 * model.duration**0.5)
+        model.set_duration(time.monotonic() - start)
 
     def _run(  # noqa: PLR0913
         self,

@@ -165,7 +165,7 @@ class EvolutionHandler:
 
         child = await ctx.get_for_update(evolve.Model, _random_uid())
         child.genes = model.make_child_genes(parents[0], parents[1], 1 / model.ver)
-        child.duration_total = model.duration_total
+        child.train_load = model.train_load
 
         return child
 
