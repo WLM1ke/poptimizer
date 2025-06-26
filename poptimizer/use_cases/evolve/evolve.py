@@ -220,44 +220,44 @@ class EvolutionHandler:
             case evolve.State.EVAL_NEW_BASE_MODEL:
                 evolution.new_base(model)
                 evolution.state = evolve.State.EVAL_MODEL
-                self._lgr.info(f"New base {model.stats}")
+                self._lgr.info(f"New base {model.stats} {model.diff_stats}")
             case evolve.State.EVAL_MODEL:
                 if self._should_delete(evolution, model):
                     evolution.state = evolve.State.EVAL_NEW_BASE_MODEL
                     await ctx.delete(model)
-                    self._lgr.info(f"{model.stats} deleted - low metrics")
+                    self._lgr.info(f"{model.stats} {model.diff_stats} deleted - low metrics")
 
                     return handler.ModelDeleted(day=evolution.day, uid=model.uid)
 
                 evolution.new_base(model)
-                self._lgr.info(f"New base {model.stats}")
+                self._lgr.info(f"New base {model.stats} {model.diff_stats}")
                 evolution.state = evolve.State.CREATE_NEW_MODEL
             case evolve.State.EVAL_OUTDATE_MODEL:
                 if self._should_delete(evolution, model):
                     evolution.state = evolve.State.EVAL_NEW_BASE_MODEL
                     await ctx.delete(model)
-                    self._lgr.info(f"{model.stats} deleted - low metrics")
+                    self._lgr.info(f"{model.stats} {model.diff_stats} deleted - low metrics")
 
                     return handler.ModelDeleted(day=evolution.day, uid=model.uid)
 
                 evolution.new_base(model)
-                self._lgr.info(f"New base {model.stats}")
+                self._lgr.info(f"New base {model.stats} {model.diff_stats}")
                 evolution.state = evolve.State.EVAL_MODEL
             case evolve.State.CREATE_NEW_MODEL:
                 if self._should_delete(evolution, model):
                     evolution.state = evolve.State.EVAL_MODEL
                     await ctx.delete(model)
-                    self._lgr.info(f"{model.stats} deleted - low metrics")
+                    self._lgr.info(f"{model.stats} {model.diff_stats} deleted - low metrics")
 
                     return handler.ModelDeleted(day=evolution.day, uid=model.uid)
 
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
-                self._lgr.info(f"New base {model.stats}")
+                self._lgr.info(f"New base {model.stats} {model.diff_stats}")
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
-                self._lgr.info(f"Current base {model.stats} reevaluated")
+                self._lgr.info(f"Current base {model.stats} {model.diff_stats} reevaluated")
 
         self._update_test_days(evolution, model)
         self._change_t_critical(evolution, model, old_result)
@@ -284,6 +284,7 @@ class EvolutionHandler:
         delete = False
 
         alfa_delta = _delta(model.alfa, evolution.alfa)
+        model.alfa_diff.add(alfa_delta)
         alfa_delta_critical = evolution.alfa_delta_critical
         sign = ">"
 
@@ -294,6 +295,7 @@ class EvolutionHandler:
         self._lgr.info(f"Alfa: delta({alfa_delta:.2%}) {sign} delta-critical({alfa_delta_critical:.2%})")
 
         llh_delta = _delta(model.llh, evolution.llh)
+        model.llh_diff.add(llh_delta)
         llh_delta_critical = evolution.llh_delta_critical
         sign = ">"
 

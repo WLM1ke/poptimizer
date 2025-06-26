@@ -50,7 +50,7 @@ class Stats(BaseModel):
     @computed_field
     @property
     def std(self) -> FiniteFloat:
-        if self.count == 0:
+        if self.count <= 1:
             return 0
 
         return ((self.sum_squares - self.mean**2 * self.count) / (self.count - 1)) ** 0.5
@@ -58,7 +58,7 @@ class Stats(BaseModel):
     @computed_field
     @property
     def t_value(self) -> FiniteFloat:
-        if self.count == 0:
+        if self.std == 0:
             return 0
 
         return self.mean / self.std * self.count**0.5
@@ -66,7 +66,7 @@ class Stats(BaseModel):
     @computed_field
     @property
     def cdf(self) -> FiniteFloat:
-        if self.count == 0:
+        if self.count <= 1:
             return 0.5
 
         return cast("float", stats.t.cdf(self.t_value, self.count - 1))  # type: ignore[reportUnknownMemberType]
@@ -131,6 +131,10 @@ class Model(domain.Entity):
     @property
     def stats(self) -> str:
         return f"Model(alfa={self.alfa_mean:.2%}, llh={self.llh_mean:.4f})"
+
+    @property
+    def diff_stats(self) -> str:
+        return f"alfa_cdf={self.alfa_diff.cdf:.2%}, llh_cdf={self.llh_diff.cdf:.2%}"
 
     @property
     def phenotype(self) -> genetics.Phenotype:
