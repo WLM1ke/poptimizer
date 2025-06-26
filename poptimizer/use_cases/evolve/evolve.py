@@ -223,7 +223,7 @@ class EvolutionHandler:
                 self._lgr.info(f"New base {model.stats}")
             case evolve.State.EVAL_MODEL:
                 if self._should_delete(evolution, model):
-                    evolution.state = evolve.State.EVAL_MODEL
+                    evolution.state = evolve.State.EVAL_NEW_BASE_MODEL
                     await ctx.delete(model)
                     self._lgr.info(f"{model.stats} deleted - low metrics")
 
