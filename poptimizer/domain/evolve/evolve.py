@@ -30,46 +30,18 @@ _INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.Days(
 
 
 class Stats(BaseModel):
-    count: NonNegativeInt = 0
-    sum: FiniteFloat = 0
-    sum_squares: FiniteFloat = 0
+    alfa: PositiveInt = 1
+    beta: PositiveInt = 1
 
     def add(self, *value: FiniteFloat) -> None:
-        self.count += len(value)
-        self.sum += sum(value)
-        self.sum_squares += sum(x**2 for x in value)
+        wins = sum(1 for x in value if x > 0)
+        self.alfa += wins
+        self.beta += len(value) - wins
 
     @computed_field
     @property
-    def mean(self) -> FiniteFloat:
-        if self.count == 0:
-            return 0
-
-        return self.sum / self.count
-
-    @computed_field
-    @property
-    def std(self) -> FiniteFloat:
-        if self.count <= 1:
-            return 0
-
-        return ((self.sum_squares - self.mean**2 * self.count) / (self.count - 1)) ** 0.5
-
-    @computed_field
-    @property
-    def t_value(self) -> FiniteFloat:
-        if self.std == 0:
-            return 0
-
-        return self.mean / self.std * self.count**0.5
-
-    @computed_field
-    @property
-    def cdf(self) -> FiniteFloat:
-        if self.count <= 1:
-            return 0.5
-
-        return cast("float", stats.t.cdf(self.t_value, self.count - 1))  # type: ignore[reportUnknownMemberType]
+    def p(self) -> FiniteFloat:
+        return cast("float", stats.beta(self.alfa, self.beta).sf(0.5))  # type: ignore[reportUnknownMemberType]
 
 
 class Model(domain.Entity):
@@ -134,7 +106,7 @@ class Model(domain.Entity):
 
     @property
     def diff_stats(self) -> str:
-        return f"alfa_cdf={self.alfa_diff.cdf:.2%}, llh_cdf={self.llh_diff.cdf:.2%}"
+        return f"alfa_p={self.alfa_diff.p:.2%}, llh_p={self.llh_diff.p:.2%}"
 
     @property
     def phenotype(self) -> genetics.Phenotype:
