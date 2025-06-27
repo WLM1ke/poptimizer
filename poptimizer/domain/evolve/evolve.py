@@ -8,6 +8,7 @@ from pydantic import (
     BaseModel,
     Field,
     FiniteFloat,
+    NonNegativeFloat,
     NonNegativeInt,
     NonPositiveFloat,
     PositiveInt,
@@ -21,7 +22,6 @@ from poptimizer.domain import domain
 from poptimizer.domain.dl import datasets
 from poptimizer.domain.evolve import genetics, genotype
 
-_LOAD_FACTOR: Final = 1000
 _INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.Days(
     history=consts.INITIAL_HISTORY_DAYS_END,
     forecast=consts.INITIAL_FORECAST_DAYS,
@@ -86,10 +86,6 @@ class Model(domain.Entity):
 
         return f"{self.__class__.__name__}(ver={self.ver}, risk_aversion={1 - risk_tol:.2%}, history={history:.2f})"
 
-    def set_duration(self, duration: float) -> None:
-        self.duration = duration
-        self.train_load += int(_LOAD_FACTOR * duration**0.5)
-
     @computed_field
     @property
     def alfa_mean(self) -> float:
@@ -140,6 +136,7 @@ class Evolution(domain.Entity):
     alfa_delta_critical: NonPositiveFloat = 0
     llh_delta_critical: NonPositiveFloat = 0
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
+    load_factor: NonNegativeFloat = 0
 
     @model_validator(mode="after")
     def _match_length(self) -> Self:
