@@ -10,7 +10,6 @@ from pydantic import (
     FiniteFloat,
     NonNegativeFloat,
     NonNegativeInt,
-    NonPositiveFloat,
     PositiveInt,
     computed_field,
     model_validator,
@@ -33,7 +32,7 @@ class Stats(BaseModel):
     alfa: PositiveInt = 1
     beta: PositiveInt = 1
 
-    def add(self, *value: FiniteFloat) -> None:
+    def add(self, value: list[float]) -> None:
         wins = sum(1 for x in value if x > 0)
         self.alfa += wins
         self.beta += len(value) - wins
@@ -133,8 +132,6 @@ class Evolution(domain.Entity):
     alfa: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
     llh: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
     test_days: float = Field(default=2, ge=1)
-    alfa_delta_critical: NonPositiveFloat = 0
-    llh_delta_critical: NonPositiveFloat = 0
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
     load_factor: NonNegativeFloat = 0
 

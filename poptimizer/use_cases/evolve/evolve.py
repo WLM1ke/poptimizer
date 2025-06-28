@@ -1,6 +1,5 @@
 import logging
 import operator
-import statistics
 from typing import Final, Protocol, Self
 
 import bson
@@ -92,8 +91,6 @@ class EvolutionHandler:
             model,
         )
 
-        old_result = Result.from_model(model, count)
-
         try:
             await self._update_model_metrics(ctx, evolution, model)
         except* errors.DomainError as err:
@@ -101,7 +98,7 @@ class EvolutionHandler:
 
             event = handler.ModelDeleted(day=evolution.day, uid=model.uid)
         else:
-            return await self._eval_model(ctx, evolution, model, old_result)
+            return await self._eval_model(ctx, evolution, model)
 
         return event
 
@@ -181,6 +178,7 @@ class EvolutionHandler:
 
         tr = trainer.Trainer(self._builder)
         await tr.update_model_metrics(ctx, model, int(evolution.test_days))
+        self._lgr.info(f"{model.stats}")
 
     async def _delete_model_on_error(
         self,
@@ -214,59 +212,44 @@ class EvolutionHandler:
         ctx: Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
-        old_result: Result,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
-                evolution.new_base(model)
                 evolution.state = evolve.State.EVAL_MODEL
-                self._lgr.info(f"New base {model.stats} {model.diff_stats}")
             case evolve.State.EVAL_MODEL:
-                if self._should_delete(evolution, model):
-                    evolution.state = evolve.State.EVAL_NEW_BASE_MODEL
-                    await ctx.delete(model)
-                    self._lgr.info(f"{model.stats} {model.diff_stats} deleted - low metrics")
+                if await self._should_delete(ctx, evolution, model):
+                    evolution.state = evolve.State.EVAL_MODEL
 
                     return handler.ModelDeleted(day=evolution.day, uid=model.uid)
 
-                evolution.new_base(model)
-                self._lgr.info(f"New base {model.stats} {model.diff_stats}")
                 evolution.state = evolve.State.CREATE_NEW_MODEL
             case evolve.State.EVAL_OUTDATE_MODEL:
-                if self._should_delete(evolution, model):
-                    evolution.state = evolve.State.EVAL_NEW_BASE_MODEL
-                    await ctx.delete(model)
-                    self._lgr.info(f"{model.stats} {model.diff_stats} deleted - low metrics")
+                if await self._should_delete(ctx, evolution, model):
+                    evolution.state = evolve.State.EVAL_MODEL
 
                     return handler.ModelDeleted(day=evolution.day, uid=model.uid)
 
-                evolution.new_base(model)
-                self._lgr.info(f"New base {model.stats} {model.diff_stats}")
                 evolution.state = evolve.State.EVAL_MODEL
             case evolve.State.CREATE_NEW_MODEL:
-                if self._should_delete(evolution, model):
+                if await self._should_delete(ctx, evolution, model):
                     evolution.state = evolve.State.EVAL_MODEL
-                    await ctx.delete(model)
-                    self._lgr.info(f"{model.stats} {model.diff_stats} deleted - low metrics")
 
                     return handler.ModelDeleted(day=evolution.day, uid=model.uid)
 
-                evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
-                self._lgr.info(f"New base {model.stats} {model.diff_stats}")
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
-                evolution.new_base(model)
                 evolution.state = evolve.State.CREATE_NEW_MODEL
-                self._lgr.info(f"Current base {model.stats} {model.diff_stats} reevaluated")
 
+        evolution.new_base(model)
         self._update_test_days(evolution, model)
-        self._change_t_critical(evolution, model, old_result)
+        self._update_train_load(evolution, model)
 
+        return handler.ModelEvaluated(day=evolution.day, uid=model.uid)
+
+    def _update_train_load(self, evolution: evolve.Evolution, model: evolve.Model) -> None:
         base_load = model.duration**0.5 * (1 - abs(model.alfa_diff.p - 0.5) + abs(model.llh_diff.p - 0.5))
         evolution.load_factor = max(evolution.load_factor, 1 / base_load)
         model.train_load += round(base_load * evolution.load_factor)
-
-        return handler.ModelEvaluated(day=evolution.day, uid=model.uid)
 
     def _update_test_days(self, evolution: evolve.Evolution, model: evolve.Model) -> None:
         old_test_days = int(evolution.test_days)
@@ -280,84 +263,53 @@ class EvolutionHandler:
         if old_test_days != (new_test_days := int(evolution.test_days)):
             self._lgr.warning("Test days changed - %d -> %d", old_test_days, new_test_days)
 
-    def _should_delete(
+    async def _should_delete(
         self,
+        ctx: Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
     ) -> bool:
-        delete = False
+        old_alfa_p = model.alfa_diff.p
+        model.alfa_diff.add(_delta(model.alfa, evolution.alfa))
+        self._lgr.info(f"Alfa quality: {old_alfa_p:.2%} -> {model.alfa_diff.p:.2%}")
 
-        alfa_delta = _delta(model.alfa, evolution.alfa)
-        model.alfa_diff.add(alfa_delta)
-        alfa_delta_critical = evolution.alfa_delta_critical
-        sign = ">"
+        old_llh_p = model.llh_diff.p
+        model.llh_diff.add(_delta(model.llh, evolution.llh))
+        self._lgr.info(f"LLH quality: {old_llh_p:.2%} -> {model.llh_diff.p:.2%}")
 
-        if alfa_delta < alfa_delta_critical:
-            delete = True
-            sign = "<"
+        if evolution.state is evolve.State.CREATE_NEW_MODEL:
+            if model.alfa_diff.p < 1 / 2:
+                self._lgr.info("Deleted - new model with low alfa quality")
+                await ctx.delete(model)
 
-        self._lgr.info(f"Alfa: delta({alfa_delta:.2%}) {sign} delta-critical({alfa_delta_critical:.2%})")
+                return True
 
-        llh_delta = _delta(model.llh, evolution.llh)
-        model.llh_diff.add(llh_delta)
-        llh_delta_critical = evolution.llh_delta_critical
-        sign = ">"
+            if model.llh_diff.p < 1 / 2:
+                self._lgr.info("Deleted - new model with low llh quality")
+                await ctx.delete(model)
 
-        if llh_delta < llh_delta_critical:
-            delete = True
-            sign = "<"
+                return True
 
-        self._lgr.info(f"LLH: delta({llh_delta:.4f}) {sign} delta-critical({llh_delta_critical:.4f})")
+        if model.alfa_diff.p < consts.P_VALUE:
+            self._lgr.info("Deleted - very low alfa quality")
+            await ctx.delete(model)
 
-        return delete
+            return True
 
-    def _change_t_critical(
-        self,
-        evolution: evolve.Evolution,
-        model: evolve.Model,
-        old_result: Result,
-    ) -> None:
-        if model.day != old_result.day:
-            return
+        if model.llh_diff.p < consts.P_VALUE:
+            self._lgr.info("Deleted - very low llh quality")
+            await ctx.delete(model)
 
-        alfa_delta = _delta(model.alfa, old_result.alfa)
-        old_alfa_delta_critical = evolution.alfa_delta_critical
+            return True
 
-        sign = ">"
+        if (model.alfa_diff.p < 1 / 2) and (model.llh_diff.p < 1 / 2):
+            self._lgr.info("Deleted - low quality")
+            await ctx.delete(model)
 
-        match alfa_delta < old_alfa_delta_critical:
-            case True:
-                sign = "<"
-                evolution.alfa_delta_critical -= (1 - consts.P_VALUE / 2) * _CRITICAL_FACTOR
-            case False:
-                evolution.alfa_delta_critical = min(
-                    0, evolution.alfa_delta_critical + consts.P_VALUE / 2 * _CRITICAL_FACTOR
-                )
+            return True
 
-        self._lgr.info(
-            f"Alfa change: delta({alfa_delta:.2%}) {sign} delta-critical({old_alfa_delta_critical:.2%}) "
-            f"-> delta-critical({evolution.alfa_delta_critical:.2%})"
-        )
-
-        llh_delta = _delta(model.llh, old_result.llh)
-        old_llh_delta_critical = evolution.llh_delta_critical
-
-        sign = ">"
-
-        match llh_delta < old_llh_delta_critical:
-            case True:
-                sign = "<"
-                evolution.llh_delta_critical -= (1 - consts.P_VALUE / 2) * _CRITICAL_FACTOR
-            case False:
-                evolution.llh_delta_critical = min(
-                    0, evolution.llh_delta_critical + consts.P_VALUE / 2 * _CRITICAL_FACTOR
-                )
-
-        self._lgr.info(
-            f"LLH change: delta({llh_delta:.4f}) {sign} delta-critical({old_llh_delta_critical:.4f}) "
-            f"-> delta-critical({evolution.llh_delta_critical:.4f})"
-        )
+        return False
 
 
-def _delta(target: list[float], base: list[float]) -> float:
-    return statistics.mean(map(operator.sub, target, base))
+def _delta(target: list[float], base: list[float]) -> list[float]:
+    return list(map(operator.sub, target, base))
