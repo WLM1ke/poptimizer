@@ -278,31 +278,31 @@ class EvolutionHandler:
         self._lgr.info(f"LLH quality: {old_llh_p:.2%} -> {model.llh_diff.p:.2%}")
 
         if evolution.state is evolve.State.CREATE_NEW_MODEL:
-            if model.alfa_diff.p < 1 / 2:
+            if model.alfa_diff.p <= 1 / 2:
                 self._lgr.info("Deleted - new model with low alfa quality")
                 await ctx.delete(model)
 
                 return True
 
-            if model.llh_diff.p < 1 / 2:
+            if model.llh_diff.p <= 1 / 2:
                 self._lgr.info("Deleted - new model with low llh quality")
                 await ctx.delete(model)
 
                 return True
 
-        if model.alfa_diff.p < consts.P_VALUE:
+        if model.alfa_diff.p <= consts.P_VALUE:
             self._lgr.info("Deleted - very low alfa quality")
             await ctx.delete(model)
 
             return True
 
-        if model.llh_diff.p < consts.P_VALUE:
+        if model.llh_diff.p <= consts.P_VALUE:
             self._lgr.info("Deleted - very low llh quality")
             await ctx.delete(model)
 
             return True
 
-        if (model.alfa_diff.p < 1 / 2) and (model.llh_diff.p < 1 / 2):
+        if (model.alfa_diff.p <= 1 / 2) and (model.llh_diff.p <= 1 / 2):
             self._lgr.info("Deleted - low quality")
             await ctx.delete(model)
 
