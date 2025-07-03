@@ -302,12 +302,6 @@ class EvolutionHandler:
 
             return True
 
-        if (model.alfa_diff.p <= 1 / 2) and (model.llh_diff.p <= 1 / 2):
-            self._lgr.info("Deleted - low quality")
-            await ctx.delete(model)
-
-            return True
-
         return False
 
 
