@@ -254,14 +254,9 @@ class EvolutionHandler:
     def _update_test_days(self, evolution: evolve.Evolution, model: evolve.Model) -> None:
         old_test_days = int(evolution.test_days)
 
-        match model.alfa_mean < 0:
-            case True:
-                evolution.test_days += 1
-            case False:
-                evolution.test_days = max(1, evolution.test_days - consts.P_VALUE / (1 - consts.P_VALUE))
-
-        if old_test_days != (new_test_days := int(evolution.test_days)):
-            self._lgr.warning("Test days changed - %d -> %d", old_test_days, new_test_days)
+        if model.alfa_mean < 0:
+            evolution.test_days += 1
+            self._lgr.warning("Test days changed - %d -> %d", old_test_days, evolution.test_days)
 
     async def _should_delete(
         self,
