@@ -153,7 +153,7 @@ class Evolution(domain.Entity):
         self.forecast_days = forecast_days
         self.step = 1
         self.minimal_returns_days = max(1, self.minimal_returns_days - 1)
-        self.test_days = max(1, self.test_days - 1)
+        self.test_days = max(1, int(self.test_days) - 1)
         self.state = State.EVAL_NEW_BASE_MODEL
 
     def new_base(self, model: Model) -> None:
