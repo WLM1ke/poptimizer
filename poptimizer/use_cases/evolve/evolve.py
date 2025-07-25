@@ -13,7 +13,6 @@ from poptimizer.use_cases import handler
 from poptimizer.use_cases.dl import builder, trainer
 
 _PARENT_COUNT: Final = 2
-_CRITICAL_FACTOR: Final = 0.01
 
 
 def _random_uid() -> domain.UID:
@@ -103,13 +102,22 @@ class EvolutionHandler:
         return event
 
     async def _init_evolution(self, ctx: Ctx) -> int:
-        if count := await ctx.count_models():
-            return count
+        if not (count := await ctx.count_models()):
+            self._lgr.info("Creating start models")
+            await ctx.get_for_update(evolve.Model, _random_uid())
 
-        self._lgr.info("Creating start models")
-        await ctx.get_for_update(evolve.Model, _random_uid())
+            return 1
 
-        return 1
+        while count > 1:
+            model = await ctx.next_model_for_update()
+            if model.train_load:
+                break
+
+            await ctx.delete(model)
+            self._lgr.info("Untrained model deleted")
+            count -= 1
+
+        return count
 
     async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> evolve.Evolution:
         evolution = await ctx.get_for_update(evolve.Evolution)
@@ -135,12 +143,6 @@ class EvolutionHandler:
                 model = await ctx.next_model_for_update()
                 if model.uid == evolution.base_model_uid:
                     evolution.state = evolve.State.REEVAL_CURRENT_BASE_MODEL
-
-                if model.ver == 0:
-                    await ctx.delete(model)
-                    self._lgr.info("Untrained model deleted")
-
-                    return await self._get_model(ctx, evolution)
 
                 if model.day < evolution.day:
                     evolution.state = evolve.State.EVAL_OUTDATE_MODEL
