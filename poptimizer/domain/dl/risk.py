@@ -60,7 +60,7 @@ def optimize(  # noqa: PLR0913
             pos=int(1 / (weights**2).sum()),
             weight_max=weights.max(),
         )
-    except ValidationError as err:
+    except (ValidationError, ValueError) as err:
         raise errors.DomainError("invalid optimization result") from err
 
 
