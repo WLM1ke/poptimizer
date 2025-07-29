@@ -80,7 +80,7 @@ class EvolutionHandler:
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
         count = await self._init_evolution(ctx)
         evolution = await self._init_step(ctx, msg)
-        model = await self._get_model(ctx, evolution)
+        model = await self._get_model(ctx, evolution, count)
         self._lgr.info(
             "Day %s step %d models %d: %s - %s",
             evolution.day,
@@ -102,22 +102,13 @@ class EvolutionHandler:
         return event
 
     async def _init_evolution(self, ctx: Ctx) -> int:
-        if not (count := await ctx.count_models()):
-            self._lgr.info("Creating start models")
-            await ctx.get_for_update(evolve.Model, _random_uid())
+        if count := await ctx.count_models():
+            return count
 
-            return 1
+        self._lgr.info("Creating start models")
+        await ctx.get_for_update(evolve.Model, _random_uid())
 
-        while count > 1:
-            model = await ctx.next_model_for_update()
-            if model.train_load:
-                break
-
-            await ctx.delete(model)
-            self._lgr.info("Untrained model deleted")
-            count -= 1
-
-        return count
+        return 1
 
     async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> evolve.Evolution:
         evolution = await ctx.get_for_update(evolve.Evolution)
@@ -135,12 +126,17 @@ class EvolutionHandler:
 
         return evolution
 
-    async def _get_model(self, ctx: Ctx, evolution: evolve.Evolution) -> evolve.Model:
+    async def _get_model(self, ctx: Ctx, evolution: evolve.Evolution, count: int) -> evolve.Model:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
-                return await ctx.next_model_for_update()
+                return await self._get_next_model(ctx, count)
             case evolve.State.EVAL_MODEL:
-                model = await ctx.next_model_for_update()
+                if count == 1:
+                    evolution.state = evolve.State.CREATE_NEW_MODEL
+
+                    return await self._get_model(ctx, evolution, count)
+
+                model = await self._get_next_model(ctx, count)
                 if model.uid == evolution.base_model_uid:
                     evolution.state = evolve.State.REEVAL_CURRENT_BASE_MODEL
 
@@ -156,6 +152,17 @@ class EvolutionHandler:
                 model = await ctx.get(evolve.Model, evolution.base_model_uid)
 
                 return await self._make_child(ctx, model)
+
+    async def _get_next_model(self, ctx: Ctx, count: int) -> evolve.Model:
+        while True:
+            model = await ctx.next_model_for_update()
+
+            if count == 1 or model.train_load:
+                return model
+
+            await ctx.delete(model)
+            self._lgr.info("Untrained model deleted")
+            count -= 1
 
     async def _make_child(self, ctx: Ctx, model: evolve.Model) -> evolve.Model:
         parents = await ctx.sample_models(_PARENT_COUNT)
@@ -274,26 +281,13 @@ class EvolutionHandler:
         model.llh_diff.add(_delta(model.llh, evolution.llh))
         self._lgr.info(f"LLH quality: {old_llh_p:.2%} -> {model.llh_diff.p:.2%}")
 
-        if evolution.state is evolve.State.CREATE_NEW_MODEL:
-            if model.alfa_diff.p < 1 / 2:
-                self._lgr.info("Deleted - new model with low alfa quality")
-                await ctx.delete(model)
-
-                return True
-
-            if model.llh_diff.p < 1 / 2:
-                self._lgr.info("Deleted - new model with low llh quality")
-                await ctx.delete(model)
-
-                return True
-
-        if model.alfa_diff.p < consts.P_VALUE:
+        if model.alfa_diff.p < consts.P_VALUE / 2:
             self._lgr.info("Deleted - very low alfa quality")
             await ctx.delete(model)
 
             return True
 
-        if model.llh_diff.p < consts.P_VALUE:
+        if model.llh_diff.p < consts.P_VALUE / 2:
             self._lgr.info("Deleted - very low llh quality")
             await ctx.delete(model)
 
