@@ -56,7 +56,7 @@ class DataHandler:
         if self._stop_fn:
             match (usage := psutil.virtual_memory().percent) > _MEMORY_PERCENTAGE_THRESHOLD:
                 case True:
-                    self._lgr.warning("Stopping due to high memory usage - %.2f%%", usage)
+                    self._lgr.info("Stopping due to high memory usage - %.2f%%", usage)
                     self._stop_fn()
                 case False:
                     self._lgr.info("Memory usage - %.2f%%", usage)
