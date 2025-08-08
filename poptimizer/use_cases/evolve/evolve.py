@@ -256,7 +256,7 @@ class EvolutionHandler:
         return handler.ModelEvaluated(day=evolution.day, uid=model.uid)
 
     def _update_train_load(self, evolution: evolve.Evolution, model: evolve.Model) -> None:
-        base_load = model.duration**0.5 * (1 - abs(model.alfa_diff.p - 0.5) + abs(model.llh_diff.p - 0.5))
+        base_load = model.duration**0.5
         evolution.load_factor = max(evolution.load_factor, 1 / base_load)
         model.train_load += round(base_load * evolution.load_factor)
 
