@@ -131,7 +131,7 @@ class Evolution(domain.Entity):
     base_model_uid: domain.UID = domain.UID("")
     alfa: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
     llh: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
-    test_days: float = Field(default=2, ge=1)
+    test_days: float = Field(default=1, ge=1)
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
     load_factor: NonNegativeFloat = 0
 
@@ -153,7 +153,6 @@ class Evolution(domain.Entity):
         self.forecast_days = forecast_days
         self.step = 1
         self.minimal_returns_days = max(1, self.minimal_returns_days - 1)
-        self.test_days = max(1, int(self.test_days) - 1)
         self.state = State.EVAL_NEW_BASE_MODEL
 
     def new_base(self, model: Model) -> None:

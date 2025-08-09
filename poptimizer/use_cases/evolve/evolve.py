@@ -79,7 +79,7 @@ class EvolutionHandler:
         msg: handler.DataChecked,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
         count = await self._init_evolution(ctx)
-        evolution = await self._init_step(ctx, msg)
+        evolution = await self._init_step(ctx, msg, count)
         model = await self._get_model(ctx, evolution, count)
         self._lgr.info(
             "Day %s step %d models %d: %s - %s",
@@ -110,8 +110,17 @@ class EvolutionHandler:
 
         return 1
 
-    async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> evolve.Evolution:
+    async def _init_step(self, ctx: Ctx, msg: handler.DataChecked, count: int) -> evolve.Evolution:
         evolution = await ctx.get_for_update(evolve.Evolution)
+
+        old_test_days = int(evolution.test_days)
+        evolution.test_days = max(1, evolution.test_days - 1 / count)
+        if old_test_days != int(evolution.test_days):
+            self._lgr.warning(
+                "Test days decreased after one generation evolution - %d -> %d",
+                old_test_days,
+                int(evolution.test_days),
+            )
 
         match evolution.day == msg.day:
             case True:
@@ -265,7 +274,11 @@ class EvolutionHandler:
 
         if model.alfa_mean < 0:
             evolution.test_days += 1
-            self._lgr.warning("Test days changed - %d -> %d", old_test_days, evolution.test_days)
+            self._lgr.warning(
+                "Test days increased due to negative alfa - %d -> %d",
+                old_test_days,
+                int(evolution.test_days),
+            )
 
     async def _should_delete(
         self,
