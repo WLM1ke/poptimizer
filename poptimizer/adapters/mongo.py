@@ -1,4 +1,5 @@
 import datetime
+import random
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, Final
@@ -38,24 +39,30 @@ class Repo:
     def __init__(self, mongo_db: MongoDatabase) -> None:
         self._db = mongo_db
 
-    async def next_model(self) -> evolve.Model:
+    async def next_model(self, alfa: float, llh: float) -> evolve.Model:
         collection_name = adapter.get_component_name(evolve.Model)
         collection = self._db[collection_name]
 
+        selector = random.choice((["$alfa_mean", alfa], ["$llh_mean", llh]))  # noqa: S311
+
         pipeline = [
             {
-                "$project": {
-                    "day": True,
-                    "train_load": True,
-                },
+                "$addFields": {"diff": {"$abs": {"$subtract": selector}}},
             },
             {
                 "$sort": {
                     "day": pymongo.ASCENDING,
-                    "train_load": pymongo.ASCENDING,
+                    "diff": pymongo.DESCENDING,
                 },
             },
-            {"$limit": 1},
+            {
+                "$limit": 1,
+            },
+            {
+                "$project": {
+                    "_id": 1,
+                }
+            },
         ]
 
         try:

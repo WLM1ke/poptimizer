@@ -1,5 +1,6 @@
 import logging
 import operator
+import statistics
 from typing import Final, Protocol, Self
 
 import bson
@@ -47,7 +48,7 @@ class Ctx(Protocol):
 
     async def count_models(self) -> int: ...
 
-    async def next_model_for_update(self) -> evolve.Model: ...
+    async def next_model_for_update(self, alfa: float, llh: float) -> evolve.Model: ...
 
     async def sample_models(self, n: int) -> list[evolve.Model]: ...
 
@@ -78,8 +79,7 @@ class EvolutionHandler:
         ctx: Ctx,
         msg: handler.DataChecked,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
-        count = await self._init_evolution(ctx)
-        evolution = await self._init_step(ctx, msg, count)
+        evolution, count = await self._init_step(ctx, msg)
         model = await self._get_model(ctx, evolution, count)
         self._lgr.info(
             "Day %s step %d models %d: %s - %s",
@@ -110,8 +110,15 @@ class EvolutionHandler:
 
         return 1
 
-    async def _init_step(self, ctx: Ctx, msg: handler.DataChecked, count: int) -> evolve.Evolution:
+    async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> tuple[evolve.Evolution, int]:
         evolution = await ctx.get_for_update(evolve.Evolution)
+
+        if not (count := await ctx.count_models()):
+            self._lgr.info("Creating start models")
+            uid = _random_uid()
+            await ctx.get_for_update(evolve.Model, uid)
+            evolution.base_model_uid = uid
+            count = 1
 
         old_test_days = int(evolution.test_days)
         evolution.test_days = max(1, evolution.test_days - 1 / count)
@@ -133,19 +140,19 @@ class EvolutionHandler:
                     port.forecast_days,
                 )
 
-        return evolution
+        return evolution, count
 
     async def _get_model(self, ctx: Ctx, evolution: evolve.Evolution, count: int) -> evolve.Model:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
-                return await self._get_next_model(ctx, count)
+                return await ctx.next_model_for_update(statistics.mean(evolution.alfa), statistics.mean(evolution.llh))
             case evolve.State.EVAL_MODEL:
                 if count == 1:
                     evolution.state = evolve.State.CREATE_NEW_MODEL
 
                     return await self._get_model(ctx, evolution, count)
 
-                model = await self._get_next_model(ctx, count)
+                model = await ctx.next_model_for_update(statistics.mean(evolution.alfa), statistics.mean(evolution.llh))
                 if model.uid == evolution.base_model_uid:
                     evolution.state = evolve.State.REEVAL_CURRENT_BASE_MODEL
 
@@ -156,22 +163,11 @@ class EvolutionHandler:
             case evolve.State.EVAL_OUTDATE_MODEL:
                 raise errors.UseCasesError(f"can't be in {evolution.state} state")
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
-                raise errors.UseCasesError(f"can't be in {evolution.state} state")
+                return await ctx.get_for_update(evolve.Model, evolution.base_model_uid)
             case evolve.State.CREATE_NEW_MODEL:
                 model = await ctx.get(evolve.Model, evolution.base_model_uid)
 
                 return await self._make_child(ctx, model)
-
-    async def _get_next_model(self, ctx: Ctx, count: int) -> evolve.Model:
-        while True:
-            model = await ctx.next_model_for_update()
-
-            if count == 1 or model.train_load:
-                return model
-
-            await ctx.delete(model)
-            self._lgr.info("Untrained model deleted")
-            count -= 1
 
     async def _make_child(self, ctx: Ctx, model: evolve.Model) -> evolve.Model:
         parents = await ctx.sample_models(_PARENT_COUNT)
@@ -180,7 +176,6 @@ class EvolutionHandler:
 
         child = await ctx.get_for_update(evolve.Model, _random_uid())
         child.genes = model.make_child_genes(parents[0], parents[1], 1 / model.ver)
-        child.train_load = model.train_load
 
         return child
 
@@ -260,14 +255,8 @@ class EvolutionHandler:
 
         evolution.new_base(model)
         self._update_test_days(evolution, model)
-        self._update_train_load(evolution, model)
 
         return handler.ModelEvaluated(day=evolution.day, uid=model.uid)
-
-    def _update_train_load(self, evolution: evolve.Evolution, model: evolve.Model) -> None:
-        base_load = model.duration**0.5
-        evolution.load_factor = max(evolution.load_factor, 1 / base_load)
-        model.train_load += round(base_load * evolution.load_factor)
 
     def _update_test_days(self, evolution: evolve.Evolution, model: evolve.Model) -> None:
         old_test_days = int(evolution.test_days)
