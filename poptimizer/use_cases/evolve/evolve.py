@@ -249,7 +249,7 @@ class EvolutionHandler:
 
                     return handler.ModelDeleted(day=evolution.day, uid=model.uid)
 
-                evolution.state = evolve.State.CREATE_NEW_MODEL
+                evolution.state = evolve.State.EVAL_MODEL
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 evolution.state = evolve.State.CREATE_NEW_MODEL
 
