@@ -249,7 +249,7 @@ class EvolutionHandler:
 
                     return handler.ModelDeleted(day=evolution.day, uid=model.uid)
 
-                evolution.state = evolve.State.EVAL_MODEL
+                evolution.state = evolve.State.CREATE_NEW_MODEL
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 evolution.state = evolve.State.CREATE_NEW_MODEL
 
@@ -261,13 +261,14 @@ class EvolutionHandler:
     def _update_test_days(self, evolution: evolve.Evolution, model: evolve.Model) -> None:
         old_test_days = int(evolution.test_days)
 
-        if model.alfa_mean < 0:
-            evolution.test_days += 1
-            self._lgr.warning(
-                "Test days increased due to negative alfa - %d -> %d",
-                old_test_days,
-                int(evolution.test_days),
-            )
+        match model.alfa_mean < 0:
+            case True:
+                evolution.test_days += 1
+            case False:
+                evolution.test_days = max(1, evolution.test_days - consts.P_VALUE / (1 - consts.P_VALUE))
+
+        if old_test_days != (new_test_days := int(evolution.test_days)):
+            self._lgr.info("Test days changed - %d -> %d", old_test_days, new_test_days)
 
     async def _should_delete(
         self,
