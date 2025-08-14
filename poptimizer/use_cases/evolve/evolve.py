@@ -120,15 +120,6 @@ class EvolutionHandler:
             evolution.base_model_uid = uid
             count = 1
 
-        old_test_days = int(evolution.test_days)
-        evolution.test_days = max(1, evolution.test_days - 1 / count)
-        if old_test_days != int(evolution.test_days):
-            self._lgr.warning(
-                "Test days decreased after one generation evolution - %d -> %d",
-                old_test_days,
-                int(evolution.test_days),
-            )
-
         match evolution.day == msg.day:
             case True:
                 evolution.step += 1
