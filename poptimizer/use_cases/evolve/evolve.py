@@ -101,15 +101,6 @@ class EvolutionHandler:
 
         return event
 
-    async def _init_evolution(self, ctx: Ctx) -> int:
-        if count := await ctx.count_models():
-            return count
-
-        self._lgr.info("Creating start models")
-        await ctx.get_for_update(evolve.Model, _random_uid())
-
-        return 1
-
     async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> tuple[evolve.Evolution, int]:
         evolution = await ctx.get_for_update(evolve.Evolution)
 
@@ -118,6 +109,7 @@ class EvolutionHandler:
             uid = _random_uid()
             await ctx.get_for_update(evolve.Model, uid)
             evolution.base_model_uid = uid
+            evolution.test_days = 1
             count = 1
 
         match evolution.day == msg.day:
