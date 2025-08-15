@@ -80,7 +80,7 @@ class EvolutionHandler:
         msg: handler.DataChecked,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
         evolution, count = await self._init_step(ctx, msg)
-        model = await self._get_model(ctx, evolution, count)
+        model = await self._get_model(ctx, evolution)
         self._lgr.info(
             "Day %s step %d models %d: %s - %s",
             evolution.day,
@@ -125,7 +125,7 @@ class EvolutionHandler:
 
         return evolution, count
 
-    async def _get_model(self, ctx: Ctx, evolution: evolve.Evolution, count: int) -> evolve.Model:
+    async def _get_model(self, ctx: Ctx, evolution: evolve.Evolution) -> evolve.Model:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
                 return await ctx.next_model_for_update(statistics.mean(evolution.alfa), statistics.mean(evolution.llh))
