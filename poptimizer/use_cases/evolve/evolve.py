@@ -130,11 +130,6 @@ class EvolutionHandler:
             case evolve.State.EVAL_NEW_BASE_MODEL:
                 return await ctx.next_model_for_update(statistics.mean(evolution.alfa), statistics.mean(evolution.llh))
             case evolve.State.EVAL_MODEL:
-                if count == 1:
-                    evolution.state = evolve.State.CREATE_NEW_MODEL
-
-                    return await self._get_model(ctx, evolution, count)
-
                 model = await ctx.next_model_for_update(statistics.mean(evolution.alfa), statistics.mean(evolution.llh))
                 if model.uid == evolution.base_model_uid:
                     evolution.state = evolve.State.REEVAL_CURRENT_BASE_MODEL
