@@ -1,5 +1,4 @@
 import datetime
-import random
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, Final
@@ -43,16 +42,21 @@ class Repo:
         collection_name = adapter.get_component_name(evolve.Model)
         collection = self._db[collection_name]
 
-        selector = random.choice((["$alfa_mean", alfa], ["$llh_mean", llh]))  # noqa: S311
-
         pipeline = [
             {
-                "$addFields": {"diff": {"$abs": {"$subtract": selector}}},
+                "$addFields": {
+                    "product": {
+                        "$multiply": [
+                            {"$subtract": ["$alfa_mean", alfa]},
+                            {"$subtract": ["$llh_mean", llh]},
+                        ],
+                    },
+                },
             },
             {
                 "$sort": {
                     "day": pymongo.ASCENDING,
-                    "diff": pymongo.DESCENDING,
+                    "product": pymongo.DESCENDING,
                 },
             },
             {
