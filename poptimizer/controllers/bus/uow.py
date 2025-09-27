@@ -94,9 +94,9 @@ class UOW:
     async def count_models(self) -> int:
         return await self._repo.count_models()
 
-    async def next_model_for_update(self, alfa: float, llh: float) -> evolve.Model:
+    async def next_model_for_update(self, uid: domain.UID) -> evolve.Model:
         async with self._identity_map as identity_map:
-            entity = await self._repo.next_model(alfa, llh)
+            entity = await self._repo.next_model(uid)
 
             if loaded := identity_map.get(evolve.Model, entity.uid):
                 return loaded

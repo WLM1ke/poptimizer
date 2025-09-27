@@ -38,43 +38,45 @@ class Repo:
     def __init__(self, mongo_db: MongoDatabase) -> None:
         self._db = mongo_db
 
-    async def next_model(self, alfa: float, llh: float) -> evolve.Model:
+    async def next_model(self, uid: domain.UID) -> evolve.Model:
         collection_name = adapter.get_component_name(evolve.Model)
         collection = self._db[collection_name]
 
-        pipeline = [
-            {
-                "$addFields": {
-                    "product": {
-                        "$multiply": [
-                            {"$subtract": ["$alfa_mean", alfa]},
-                            {"$subtract": ["$llh_mean", llh]},
-                        ],
-                    },
-                },
-            },
-            {
-                "$sort": {
-                    "day": pymongo.ASCENDING,
-                    "product": pymongo.DESCENDING,
-                },
-            },
-            {
-                "$limit": 1,
-            },
-            {
-                "$project": {
-                    "_id": 1,
-                }
-            },
-        ]
+        docs = [doc async for doc in collection.find({}, projection=["_id", "day", "llh_mean", "alfa_mean"])]
+        docs.sort(key=lambda x: x.get("alfa_mean", -float("inf")))
 
-        try:
-            doc = await anext(await collection.aggregate(pipeline))
-        except (PyMongoError, StopAsyncIteration) as err:
-            raise errors.AdapterError("can't load next organism") from err
+        for i, doc in enumerate(docs):
+            doc["rank"] = i
 
-        return await self.get(evolve.Model, domain.UID(doc["_id"]))
+        docs.sort(key=lambda x: x.get("llh_mean", -float("inf")))
+        target_i = -1
+        max_rank = -1
+        max_rank_i = -1
+
+        for i, doc in enumerate(docs):
+            doc["rank"] += i
+
+            if doc["rank"] > max_rank:
+                max_rank = doc["rank"]
+                max_rank_i = i
+
+            if doc["_id"] == uid:
+                target_i = i
+
+        if target_i == -1:
+            target_i = max_rank_i
+
+        target_rank = docs[target_i]["rank"]
+        min_day = docs[target_i]["day"]
+        max_dev = 0
+        max_dev_i = target_i
+
+        for i, doc in enumerate(docs):
+            if (doc["day"], -abs(doc["rank"] - target_rank)) < (min_day, -max_dev):
+                max_dev = abs(doc["rank"] - target_rank)
+                max_dev_i = i
+
+        return await self.get(evolve.Model, domain.UID(docs[max_dev_i]["_id"]))
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         collection_name = adapter.get_component_name(evolve.Model)

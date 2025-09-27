@@ -1,6 +1,5 @@
 import logging
 import operator
-import statistics
 from typing import Final, Protocol, Self
 
 import bson
@@ -48,7 +47,7 @@ class Ctx(Protocol):
 
     async def count_models(self) -> int: ...
 
-    async def next_model_for_update(self, alfa: float, llh: float) -> evolve.Model: ...
+    async def next_model_for_update(self, uid: domain.UID) -> evolve.Model: ...
 
     async def sample_models(self, n: int) -> list[evolve.Model]: ...
 
@@ -128,9 +127,9 @@ class EvolutionHandler:
     async def _get_model(self, ctx: Ctx, evolution: evolve.Evolution) -> evolve.Model:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
-                return await ctx.next_model_for_update(statistics.mean(evolution.alfa), statistics.mean(evolution.llh))
+                return await ctx.next_model_for_update(evolution.base_model_uid)
             case evolve.State.EVAL_MODEL:
-                model = await ctx.next_model_for_update(statistics.mean(evolution.alfa), statistics.mean(evolution.llh))
+                model = await ctx.next_model_for_update(evolution.base_model_uid)
                 if model.uid == evolution.base_model_uid:
                     evolution.state = evolve.State.REEVAL_CURRENT_BASE_MODEL
 
