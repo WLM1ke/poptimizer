@@ -2,12 +2,12 @@ from datetime import date
 from pathlib import Path
 from typing import Final
 
-__version__ = "3.0.0b8"
+__version__ = "3.0.0b9"
 
 ROOT: Final = Path(__file__).parents[1]
 
 # Дата, с которой собираются дивиденды
-START_DAY: Final = date(2015, 1, 1)
+START_DAY: Final = date(2017, 1, 1)
 P_VALUE: Final = 0.05
 COSTS: Final = 0.04 / 100
 IMPACT_COSTS_SCALE: Final = 1.5

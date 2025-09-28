@@ -1,5 +1,5 @@
 import asyncio
-from datetime import date
+from datetime import date, timedelta
 
 import aiohttp
 import aiomoex
@@ -27,8 +27,15 @@ class IndexesHandler:
     async def _update_one(self, ctx: handler.Ctx, update_day: domain.Day, ticker: domain.UID) -> None:
         table = await ctx.get_for_update(index.Index, ticker)
 
+        if ticker == index.IMOEX:
+            ticker = index.IMOEX2
+
         start_day = table.last_row_date()
         rows = await self._download(ticker, start_day, update_day)
+
+        if start_day is None and ticker == index.IMOEX2:
+            first_rows = await self._download(index.IMOEX, None, rows[0].day - timedelta(days=1))
+            rows = first_rows + rows
 
         table.update(update_day, rows)
 
@@ -39,16 +46,14 @@ class IndexesHandler:
         update_day: date,
     ) -> list[index.Row]:
         async with handler.wrap_http_err(f"{ticker} MOEX ISS error"):
-            json = await aiomoex.get_market_history(
+            json = await aiomoex.get_market_candles(
                 session=self._http_client,
                 start=start_day and str(start_day),
                 end=str(update_day),
+                interval=24,
                 security=ticker,
-                columns=(
-                    "TRADEDATE",
-                    "CLOSE",
-                ),
                 market="index",
+                engine="stock",
             )
 
         with handler.wrap_validation_err(f"invalid {ticker} data"):

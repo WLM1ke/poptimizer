@@ -183,7 +183,16 @@ class Repo:
         try:
             result = await collection.delete_one({_MONGO_ID: entity.uid})
         except PyMongoError as err:
-            raise errors.AdapterError("can't sample organisms") from err
+            raise errors.AdapterError("can't delete organisms") from err
 
         if result.deleted_count != 1:
             raise errors.AdapterError(f"can't delete {collection_name}.{entity.uid}")
+
+    async def drop(self, entity_type: type[domain.Entity]) -> None:
+        collection_name = adapter.get_component_name(entity_type)
+        collection = self._db[collection_name]
+
+        try:
+            await collection.drop()
+        except PyMongoError as err:
+            raise errors.AdapterError("can't delete {collection_name}") from err

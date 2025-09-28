@@ -17,11 +17,12 @@ INDEXES: Final = (
     RVI,
     RUGBITR1Y,
 )
+IMOEX2: Final = domain.UID("IMOEX2")
 
 
 class Row(domain.Row):
-    day: domain.Day = Field(alias="TRADEDATE")
-    close: float = Field(alias="CLOSE", gt=0)
+    day: domain.Day = Field(alias="begin")
+    close: float = Field(alias="close", gt=0)
 
 
 class Index(domain.Entity):

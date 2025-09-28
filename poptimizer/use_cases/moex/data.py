@@ -7,11 +7,11 @@ from typing import Final
 import aiohttp
 import aiomoex
 import psutil
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 from poptimizer import consts
 from poptimizer.domain import domain
-from poptimizer.domain.moex import trading_day
+from poptimizer.domain.moex import index, trading_day
 from poptimizer.use_cases import handler
 
 _MEMORY_PERCENTAGE_THRESHOLD: Final = 75
@@ -23,23 +23,23 @@ _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
 _END_HOUR: Final = 1
 _END_MINUTE: Final = 0
 
+_DAY_CANDLE_INTERVAL: Final = 24
+
 
 class _Row(domain.Row):
-    day: domain.Day = Field(alias="till")
+    day: datetime = Field(alias="end")
+    interval: int = Field(alias="interval")
 
 
 class _Payload(BaseModel):
     df: list[_Row]
 
     def last_day(self) -> domain.Day:
-        return self.df[0].day
+        for row in self.df:
+            if row.interval == _DAY_CANDLE_INTERVAL:
+                return row.day.date()
 
-    @field_validator("df")
-    def _must_be_one_row(cls, df: list[_Row]) -> list[_Row]:
-        if (count := len(df)) != 1:
-            raise ValueError(f"wrong rows count {count}")
-
-        return df
+        raise ValueError("no day candles data")
 
 
 class DataHandler:
@@ -75,7 +75,7 @@ class DataHandler:
         if current_poptimizer_ver and table.last_check >= new_last_check:
             return handler.DataChecked(day=table.day)
 
-        last_day = await self._get_last_trading_day_from_moex()
+        last_day = min(new_last_check, await self._get_last_trading_day_from_moex())
 
         if current_poptimizer_ver and table.day >= last_day:
             table = await ctx.get_for_update(trading_day.TradingDay)
@@ -90,11 +90,10 @@ class DataHandler:
 
     async def _get_last_trading_day_from_moex(self) -> domain.Day:
         async with handler.wrap_http_err("trading day MOEX ISS error"):
-            json = await aiomoex.get_board_dates(
+            json = await aiomoex.get_market_candle_borders(
                 self._http_client,
-                board="TQBR",
-                market="shares",
-                engine="stock",
+                security=index.IMOEX2,
+                market="index",
             )
 
         with handler.wrap_validation_err("invalid trading day data"):

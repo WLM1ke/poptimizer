@@ -8,7 +8,9 @@ from pymongo.errors import PyMongoError
 
 from poptimizer import consts, errors
 from poptimizer.adapters import mongo
-from poptimizer.domain.div import raw
+from poptimizer.domain import domain
+from poptimizer.domain.div import div, raw
+from poptimizer.domain.moex import index, quotes
 from poptimizer.use_cases import handler
 
 _DUMP: Final = consts.ROOT / "dump" / "dividends.json"
@@ -21,6 +23,15 @@ class BackupHandler:
         self._mongo_repo = mongo_repo
 
     async def __call__(self, ctx: handler.Ctx, msg: handler.AppStarted) -> None:  # noqa: ARG002
+        try:
+            await ctx.get(quotes.Quotes, domain.UID("MOEX"))
+        except errors.AdapterError:
+            self._lgr.warning("Dropping quotes and index data due to new format")
+            await self._mongo_repo.drop(quotes.Quotes)
+            await self._mongo_repo.drop(index.Index)
+            await self._mongo_repo.drop(raw.DivRaw)
+            await self._mongo_repo.drop(div.Dividends)
+
         try:
             all_docs = [div.model_dump(mode="json") async for div in self._mongo_repo.get_all(raw.DivRaw)]
         except PyMongoError as err:
