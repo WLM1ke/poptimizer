@@ -47,7 +47,7 @@ class Ctx(Protocol):
 
     async def count_models(self) -> int: ...
 
-    async def next_model_for_update(self, uid: domain.UID) -> evolve.Model: ...
+    async def next_model_for_update(self, uid: domain.UID) -> tuple[evolve.Model, bool]: ...
 
     async def sample_models(self, n: int) -> list[evolve.Model]: ...
 
@@ -79,7 +79,7 @@ class EvolutionHandler:
         msg: handler.DataChecked,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
         evolution, count = await self._init_step(ctx, msg)
-        model = await self._get_model(ctx, evolution)
+        model, good = await self._get_model(ctx, evolution)
         self._lgr.info(
             "Day %s step %d models %d: %s - %s",
             evolution.day,
@@ -96,7 +96,7 @@ class EvolutionHandler:
 
             event = handler.ModelDeleted(day=evolution.day, uid=model.uid)
         else:
-            return await self._eval_model(ctx, evolution, model)
+            return await self._eval_model(ctx, evolution, model, good=good)
 
         return event
 
@@ -124,27 +124,27 @@ class EvolutionHandler:
 
         return evolution, count
 
-    async def _get_model(self, ctx: Ctx, evolution: evolve.Evolution) -> evolve.Model:
+    async def _get_model(self, ctx: Ctx, evolution: evolve.Evolution) -> tuple[evolve.Model, bool]:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
                 return await ctx.next_model_for_update(evolution.base_model_uid)
             case evolve.State.EVAL_MODEL:
-                model = await ctx.next_model_for_update(evolution.base_model_uid)
+                model, good = await ctx.next_model_for_update(evolution.base_model_uid)
                 if model.uid == evolution.base_model_uid:
                     evolution.state = evolve.State.REEVAL_CURRENT_BASE_MODEL
 
                 if model.day < evolution.day:
                     evolution.state = evolve.State.EVAL_OUTDATE_MODEL
 
-                return model
+                return model, good
             case evolve.State.EVAL_OUTDATE_MODEL:
                 raise errors.UseCasesError(f"can't be in {evolution.state} state")
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
-                return await ctx.get_for_update(evolve.Model, evolution.base_model_uid)
+                return await ctx.get_for_update(evolve.Model, evolution.base_model_uid), True
             case evolve.State.CREATE_NEW_MODEL:
                 model = await ctx.get(evolve.Model, evolution.base_model_uid)
 
-                return await self._make_child(ctx, model)
+                return await self._make_child(ctx, model), True
 
     async def _make_child(self, ctx: Ctx, model: evolve.Model) -> evolve.Model:
         parents = await ctx.sample_models(_PARENT_COUNT)
@@ -202,6 +202,8 @@ class EvolutionHandler:
         ctx: Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
+        *,
+        good: bool,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
@@ -212,7 +214,8 @@ class EvolutionHandler:
 
                     return handler.ModelDeleted(day=evolution.day, uid=model.uid)
 
-                evolution.state = evolve.State.CREATE_NEW_MODEL
+                if good:
+                    evolution.state = evolve.State.CREATE_NEW_MODEL
             case evolve.State.EVAL_OUTDATE_MODEL:
                 if await self._should_delete(ctx, evolution, model):
                     evolution.state = evolve.State.EVAL_MODEL

@@ -39,7 +39,7 @@ class Repo:
     def __init__(self, mongo_db: MongoDatabase) -> None:
         self._db = mongo_db
 
-    async def next_model(self, uid: domain.UID) -> evolve.Model:
+    async def next_model(self, uid: domain.UID) -> tuple[evolve.Model, bool]:
         collection_name = adapter.get_component_name(evolve.Model)
         collection = self._db[collection_name]
 
@@ -69,13 +69,12 @@ class Repo:
         for i, doc in enumerate(docs):
             diff = (doc.get("alfa_mean", alfa_m) - alfa_m) / alfa_std
             diff += (doc.get("llh_mean", llh_m) - llh_m) / llh_std
-            diff = abs(diff - target_diff)
 
-            if (doc["day"], -diff) < (min_day, -max_diff):
+            if (doc["day"], -abs(diff - target_diff)) < (min_day, -abs(max_diff - target_diff)):
                 max_diff = diff
                 selected = i
 
-        return await self.get(evolve.Model, domain.UID(docs[selected]["_id"]))
+        return await self.get(evolve.Model, domain.UID(docs[selected]["_id"])), max_diff >= 0
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         collection_name = adapter.get_component_name(evolve.Model)

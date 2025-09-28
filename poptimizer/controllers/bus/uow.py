@@ -94,16 +94,14 @@ class UOW:
     async def count_models(self) -> int:
         return await self._repo.count_models()
 
-    async def next_model_for_update(self, uid: domain.UID) -> evolve.Model:
+    async def next_model_for_update(self, uid: domain.UID) -> tuple[evolve.Model, bool]:
         async with self._identity_map as identity_map:
-            entity = await self._repo.next_model(uid)
+            entity, good = await self._repo.next_model(uid)
 
-            if loaded := identity_map.get(evolve.Model, entity.uid):
-                return loaded
+            if not identity_map.get(evolve.Model, entity.uid):
+                identity_map.save(entity)
 
-            identity_map.save(entity)
-
-            return entity
+            return entity, good
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         return await self._repo.sample_models(n)
