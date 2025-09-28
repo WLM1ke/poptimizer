@@ -1,4 +1,5 @@
 import datetime
+import statistics
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, Final
@@ -42,41 +43,39 @@ class Repo:
         collection_name = adapter.get_component_name(evolve.Model)
         collection = self._db[collection_name]
 
-        docs = [doc async for doc in collection.find({}, projection=["_id", "day", "llh_mean", "alfa_mean"])]
-        docs.sort(key=lambda x: x.get("alfa_mean", -float("inf")))
-
-        for i, doc in enumerate(docs):
-            doc["rank"] = i
-
-        docs.sort(key=lambda x: x.get("llh_mean", -float("inf")))
+        docs: list[dict[str, Any]] = []
         target_i = -1
-        max_rank = -1
-        max_rank_i = -1
 
-        for i, doc in enumerate(docs):
-            doc["rank"] += i
-
-            if doc["rank"] > max_rank:
-                max_rank = doc["rank"]
-                max_rank_i = i
-
+        async for doc in collection.find({}, projection=["_id", "day", "llh_mean", "alfa_mean"]):
+            docs.append(doc)
             if doc["_id"] == uid:
-                target_i = i
+                target_i = len(docs) - 1
 
-        if target_i == -1:
-            target_i = max_rank_i
+        alfa_m = statistics.mean([alfa for doc in docs if (alfa := doc.get("alfa_mean"))])
+        llh_m = statistics.mean([llh for doc in docs if (llh := doc.get("llh_mean"))])
 
-        target_rank = docs[target_i]["rank"]
-        min_day = docs[target_i]["day"]
-        max_dev = 0
-        max_dev_i = target_i
+        alfa_std = statistics.stdev([alfa for doc in docs if (alfa := doc.get("alfa_mean"))])
+        llh_std = statistics.stdev([llh for doc in docs if (llh := doc.get("llh_mean"))])
+
+        target_diff = 0
+        if target_i != -1:
+            target_diff = (docs[target_i].get("alfa_mean", alfa_m) - alfa_m) / alfa_std
+            target_diff += (docs[target_i].get("llh_mean", llh_m) - llh_m) / llh_std
+
+        selected = 0
+        max_diff = 0
+        min_day = docs[0]["day"]
 
         for i, doc in enumerate(docs):
-            if (doc["day"], -abs(doc["rank"] - target_rank)) < (min_day, -max_dev):
-                max_dev = abs(doc["rank"] - target_rank)
-                max_dev_i = i
+            diff = (doc.get("alfa_mean", alfa_m) - alfa_m) / alfa_std
+            diff += (doc.get("llh_mean", llh_m) - llh_m) / llh_std
+            diff = abs(diff - target_diff)
 
-        return await self.get(evolve.Model, domain.UID(docs[max_dev_i]["_id"]))
+            if (doc["day"], -diff) < (min_day, -max_diff):
+                max_diff = diff
+                selected = i
+
+        return await self.get(evolve.Model, domain.UID(docs[selected]["_id"]))
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         collection_name = adapter.get_component_name(evolve.Model)
