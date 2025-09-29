@@ -45,12 +45,12 @@ class Repo:
 
         docs = [doc async for doc in collection.find({}, projection=["_id", "day", "llh_mean", "alfa_mean"])]
 
-        docs.sort(key=lambda doc: doc["llh_mean"])
+        docs.sort(key=lambda doc: doc.get("llh_mean", 0))
 
         for i, doc in enumerate(docs):
             doc["rank"] = i
 
-        docs.sort(key=lambda doc: doc["alfa_mean"])
+        docs.sort(key=lambda doc: doc.get("alfa_mean", 0))
         target_rank = 0
 
         for i, doc in enumerate(docs):
