@@ -26,7 +26,7 @@ class PortfolioHandler:
 
         old_value = port.value
 
-        sec_cache = await self._prepare_sec_cache(ctx, msg.day, port.forecast_days)
+        sec_cache = await self._prepare_sec_cache(ctx, port.forecast_days)
         min_turnover = _calc_min_turnover(port, sec_cache)
         port.illiquid.clear()
         self._update_existing_positions(port, sec_cache, min_turnover)
@@ -42,7 +42,6 @@ class PortfolioHandler:
     async def _prepare_sec_cache(
         self,
         ctx: handler.Ctx,
-        update_day: domain.Day,
         turnover_days: int,
     ) -> dict[domain.Ticker, portfolio.Position]:
         async with asyncio.TaskGroup() as tg:
@@ -63,7 +62,7 @@ class PortfolioHandler:
                 turnover=statistics.median(quote.turnover for quote in quotes.result().df[-turnover_days:]),
             )
             for sec, quotes in zip(sec_table.df, quotes_tasks, strict=True)
-            if len(quotes.result().df) > evolution.minimal_returns_days and quotes.result().df[-1].day == update_day
+            if len(quotes.result().df) > evolution.minimal_returns_days
         }
 
     def _update_existing_positions(
