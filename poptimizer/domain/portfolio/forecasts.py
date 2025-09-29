@@ -56,4 +56,4 @@ class Forecast(domain.Entity):
         if portfolio_ver > self.portfolio_ver:
             return True
 
-        return len(self.models) ** 0.5 - self.forecasts_count**0.5 >= 1
+        return abs(len(self.models) ** 0.5 - self.forecasts_count**0.5) >= 1
