@@ -48,7 +48,11 @@ class DivUpdated(Event):
 
 
 class QuotesUpdated(Event):
-    day: domain.Day
+    trading_days: domain.TradingDays = Field(repr=False)
+
+    @property
+    def day(self) -> domain.Day:
+        return self.trading_days[-1]
 
 
 class IndexesUpdated(Event):

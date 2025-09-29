@@ -5,7 +5,6 @@ import aiohttp
 import aiomoex
 from pydantic import TypeAdapter
 
-from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.moex import index
 from poptimizer.use_cases import handler
@@ -20,9 +19,7 @@ class IndexesHandler:
             for ticker in index.INDEXES:
                 tg.create_task(self._update_one(ctx, msg.day, ticker))
 
-        imoex = await ctx.get(index.Index, index.IMOEX)
-
-        return handler.IndexesUpdated(trading_days=[row.day for row in imoex.df if row.day >= consts.START_DAY])
+        return handler.IndexesUpdated(trading_days=msg.trading_days)
 
     async def _update_one(self, ctx: handler.Ctx, update_day: domain.Day, ticker: domain.UID) -> None:
         table = await ctx.get_for_update(index.Index, ticker)
