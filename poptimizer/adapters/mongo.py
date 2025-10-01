@@ -45,16 +45,16 @@ class Repo:
 
         docs = [doc async for doc in collection.find({}, projection=["_id", "day", "llh_mean", "alfa_mean"])]
 
-        docs.sort(key=lambda doc: doc.get("llh_mean", 0))
+        docs.sort(key=lambda doc: doc.get("llh_mean", 0), reverse=True)
 
         for i, doc in enumerate(docs):
-            doc["rank"] = i
+            doc["rank"] = i**2
 
-        docs.sort(key=lambda doc: doc.get("alfa_mean", 0))
+        docs.sort(key=lambda doc: doc.get("alfa_mean", 0), reverse=True)
         target_rank = 0
 
         for i, doc in enumerate(docs):
-            doc["rank"] = min(doc["rank"], i)
+            doc["rank"] += i**2
 
             if doc["_id"] == uid:
                 target_rank = doc["rank"]
@@ -74,7 +74,7 @@ class Repo:
                 rank = doc["rank"]
                 day = doc["day"]
 
-        return await self.get(evolve.Model, domain.UID(random.choice(ids))), rank != 0  # noqa: S311
+        return await self.get(evolve.Model, domain.UID(random.choice(ids))), rank >= target_rank  # noqa: S311
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         collection_name = adapter.get_component_name(evolve.Model)
