@@ -67,7 +67,7 @@ def ledoit_wolf_cor(
     centered = tot_ret - tot_ret.mean(axis=0)
     std = tot_ret.std(axis=0, ddof=0)
     if std.min() == 0:
-        raise errors.DomainError("constant quotes")
+        raise errors.DomainError(f"constant quotes for ticker {np.argmin(std)} in portfolio")
 
     normalized = centered / tot_ret.std(axis=0, ddof=0)
 
