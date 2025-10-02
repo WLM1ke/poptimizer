@@ -168,7 +168,7 @@ class EvolutionHandler:
 
         tr = trainer.Trainer(self._builder)
         await tr.update_model_metrics(ctx, model, int(evolution.test_days))
-        self._lgr.info(f"{model.stats}")
+        self._lgr.info(f"{model}")
 
     async def _delete_model_on_error(
         self,

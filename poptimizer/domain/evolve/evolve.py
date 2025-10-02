@@ -81,7 +81,10 @@ class Model(domain.Entity):
         risk_tol = genes.risk.risk_tolerance
         history = genes.batch.history_days
 
-        return f"{self.__class__.__name__}(ver={self.ver}, risk_aversion={1 - risk_tol:.2%}, history={history:.2f})"
+        return (
+            f"{self.__class__.__name__}(ver={self.ver}, risk_aversion={1 - risk_tol:.2%}, history={history:.2f}, "
+            f"alfa={self.alfa_mean:.2%}, llh={self.llh_mean:.4f})"
+        )
 
     @computed_field
     @property
@@ -92,10 +95,6 @@ class Model(domain.Entity):
     @property
     def llh_mean(self) -> float:
         return statistics.mean(self.llh or [0])
-
-    @property
-    def stats(self) -> str:
-        return f"Model(alfa={self.alfa_mean:.2%}, llh={self.llh_mean:.4f})"
 
     @property
     def diff_stats(self) -> str:
