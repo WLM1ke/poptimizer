@@ -23,7 +23,7 @@ class PortfolioHandler:
 
         old_value = port.value
 
-        sec_cache = await self._prepare_sec_cache(ctx, port.forecast_days)
+        sec_cache = await self._prepare_sec_cache(ctx, set(msg.trading_days[-port.forecast_days :]))
         min_turnover = _calc_min_turnover(port, sec_cache)
         port.illiquid.clear()
         self._update_existing_positions(port, sec_cache, min_turnover)
@@ -39,7 +39,7 @@ class PortfolioHandler:
     async def _prepare_sec_cache(
         self,
         ctx: handler.Ctx,
-        turnover_days: int,
+        turnover_days: set[domain.Day],
     ) -> dict[domain.Ticker, portfolio.Position]:
         async with asyncio.TaskGroup() as tg:
             sec_task = tg.create_task(ctx.get(securities.Securities))
@@ -51,16 +51,27 @@ class PortfolioHandler:
         async with asyncio.TaskGroup() as tg:
             quotes_tasks = [tg.create_task(ctx.get(quotes.Quotes, domain.UID(sec.ticker))) for sec in sec_table.df]
 
-        return {
-            sec.ticker: portfolio.Position(
+        cache: dict[domain.Ticker, portfolio.Position] = {}
+
+        for sec, quotes_task in zip(sec_table.df, quotes_tasks, strict=True):
+            df = quotes_task.result().df
+
+            if len(df) < evolution.minimal_returns_days:
+                continue
+
+            turnover = [row.turnover for row in df[-len(turnover_days) :] if row.day in turnover_days]
+
+            if not turnover:
+                continue
+
+            cache[sec.ticker] = portfolio.Position(
                 ticker=sec.ticker,
                 lot=sec.lot,
-                price=quotes.result().df[-1].close,
-                turnover=statistics.median(quote.turnover for quote in quotes.result().df[-turnover_days:]),
+                price=df[-1].close,
+                turnover=statistics.median(turnover),
             )
-            for sec, quotes in zip(sec_table.df, quotes_tasks, strict=True)
-            if len(quotes.result().df) > evolution.minimal_returns_days
-        }
+
+        return cache
 
     def _update_existing_positions(
         self,
