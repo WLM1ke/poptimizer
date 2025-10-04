@@ -10,8 +10,8 @@ from poptimizer.domain.moex import index
 def test_row_parse():
     assert index.Row(day=date(2025, 1, 27), close=1) == index.Row.model_validate(
         {
-            "TRADEDATE": "2025-01-27",
-            "CLOSE": 1,
+            "begin": "2025-01-27",
+            "close": 1,
         }
     )
 
@@ -20,8 +20,8 @@ def test_row_invalid():
     with pytest.raises(ValueError, match="Input should be greater than 0"):
         assert index.Row.model_validate(
             {
-                "TRADEDATE": "2025-01-27",
-                "CLOSE": -1,
+                "begin": "2025-01-27",
+                "close": -1,
             }
         )
 
