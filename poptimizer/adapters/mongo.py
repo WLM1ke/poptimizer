@@ -67,6 +67,13 @@ class Repo:
         if len(docs) == 1:
             return await self.get(evolve.Model, domain.UID(docs[0]["_id"])), False
 
+        return await self._farthest_from_target(docs, target)
+
+    async def _farthest_from_target(
+        self,
+        docs: list[MongoDocument],
+        target: MongoDocument,
+    ) -> tuple[evolve.Model, bool]:
         min_llh = docs[0]
         max_llh = docs[0]
         min_alfa = docs[0]
