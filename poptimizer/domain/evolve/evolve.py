@@ -47,6 +47,7 @@ class Model(domain.Entity):
     forecast_days: PositiveInt = 1
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
     duration: float = 0
+    ret: FiniteFloat = 0
     alfa: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
     alfa_diff: Stats = Field(default_factory=Stats)
     llh: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
@@ -83,7 +84,7 @@ class Model(domain.Entity):
 
         return (
             f"{self.__class__.__name__}(ver={self.ver}, risk_aversion={1 - risk_tol:.2%}, history={history:.2f}, "
-            f"alfa={self.alfa_mean:.2%}, llh={self.llh_mean:.4f})"
+            f"ret={self.ret:.2%}, alfa={self.alfa_mean:.2%}, llh={self.llh_mean:.4f})"
         )
 
     @computed_field

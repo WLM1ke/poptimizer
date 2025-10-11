@@ -84,7 +84,7 @@ class Trainer:
         ctx: handler.Ctx,
         model: evolve.Model,
         test_days: int,
-    ) -> float:
+    ) -> None:
         start = time.monotonic()
 
         cfg = Cfg.model_validate(model.phenotype)
@@ -102,7 +102,7 @@ class Trainer:
         )
 
         try:
-            ret = await asyncio.to_thread(
+            await asyncio.to_thread(
                 self._run,
                 model,
                 data,
@@ -119,8 +119,6 @@ class Trainer:
         model.risk_tolerance = cfg.risk.risk_tolerance
         model.duration = time.monotonic() - start
 
-        return ret
-
     def _run(  # noqa: PLR0913
         self,
         model: evolve.Model,
@@ -129,14 +127,12 @@ class Trainer:
         emb_seq_size: list[int],
         cfg: Cfg,
         forecast_days: int,
-    ) -> float:
+    ) -> None:
         net = self._prepare_net(cfg, emb_size, emb_seq_size)
         self._train(net, cfg.optimizer, cfg.scheduler, data, cfg.batch.size)
 
-        model.alfa, model.llh, ret = self._test(net, cfg, forecast_days, data)
+        model.alfa, model.llh, model.ret = self._test(net, cfg, forecast_days, data)
         model.mean, model.cov = self._forecast(net, forecast_days, data)
-
-        return ret
 
     def _train(
         self,
