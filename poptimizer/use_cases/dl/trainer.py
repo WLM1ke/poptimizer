@@ -84,7 +84,7 @@ class Trainer:
         ctx: handler.Ctx,
         model: evolve.Model,
         test_days: int,
-    ) -> None:
+    ) -> float:
         start = time.monotonic()
 
         cfg = Cfg.model_validate(model.phenotype)
@@ -102,7 +102,7 @@ class Trainer:
         )
 
         try:
-            await asyncio.to_thread(
+            ret = await asyncio.to_thread(
                 self._run,
                 model,
                 data,
@@ -119,6 +119,8 @@ class Trainer:
         model.risk_tolerance = cfg.risk.risk_tolerance
         model.duration = time.monotonic() - start
 
+        return ret
+
     def _run(  # noqa: PLR0913
         self,
         model: evolve.Model,
@@ -127,12 +129,14 @@ class Trainer:
         emb_seq_size: list[int],
         cfg: Cfg,
         forecast_days: int,
-    ) -> None:
+    ) -> float:
         net = self._prepare_net(cfg, emb_size, emb_seq_size)
         self._train(net, cfg.optimizer, cfg.scheduler, data, cfg.batch.size)
 
-        model.alfa, model.llh = self._test(net, cfg, forecast_days, data)
+        model.alfa, model.llh, ret = self._test(net, cfg, forecast_days, data)
         model.mean, model.cov = self._forecast(net, forecast_days, data)
+
+        return ret
 
     def _train(
         self,
@@ -208,12 +212,13 @@ class Trainer:
         cfg: Cfg,
         forecast_days: int,
         data: list[datasets.TickerData],
-    ) -> tuple[list[float], list[float]]:
+    ) -> tuple[list[float], list[float], float]:
         with torch.inference_mode():
             net.eval()
 
             alfa: list[float] = []
             llh: list[float] = []
+            ret = 0
 
             for batch in data_loaders.test(data):
                 if self._stopping:
@@ -238,8 +243,9 @@ class Trainer:
 
                 alfa.append(rez.ret - rez.avr)
                 llh.append(loss)
+                ret += rez.ret
 
-        return alfa, llh
+        return alfa, llh, ret / len(alfa)
 
     def _forecast(
         self,

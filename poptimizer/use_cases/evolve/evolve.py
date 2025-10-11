@@ -90,13 +90,13 @@ class EvolutionHandler:
         )
 
         try:
-            await self._update_model_metrics(ctx, evolution, model)
+            ret = await self._update_model_metrics(ctx, evolution, model)
         except* errors.DomainError as err:
             await self._delete_model_on_error(ctx, evolution, model, err)
 
             event = handler.ModelDeleted(day=evolution.day, uid=model.uid)
         else:
-            return await self._eval_model(ctx, evolution, model, good=good)
+            return await self._eval_model(ctx, evolution, model, ret, good=good)
 
         return event
 
@@ -161,14 +161,16 @@ class EvolutionHandler:
         ctx: Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
-    ) -> None:
+    ) -> float:
         model.day = evolution.day
         model.tickers = evolution.tickers
         model.forecast_days = evolution.forecast_days
 
         tr = trainer.Trainer(self._builder)
-        await tr.update_model_metrics(ctx, model, int(evolution.test_days))
+        ret = await tr.update_model_metrics(ctx, model, int(evolution.test_days))
         self._lgr.info(f"{model}")
+
+        return ret
 
     async def _delete_model_on_error(
         self,
@@ -202,6 +204,7 @@ class EvolutionHandler:
         ctx: Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
+        ret: float,
         *,
         good: bool,
     ) -> handler.ModelDeleted | handler.ModelEvaluated:
@@ -234,15 +237,17 @@ class EvolutionHandler:
                 evolution.state = evolve.State.CREATE_NEW_MODEL
 
         evolution.new_base(model)
-        self._update_test_days(evolution, model)
+        self._update_test_days(evolution, model, ret)
 
         return handler.ModelEvaluated(day=evolution.day, uid=model.uid)
 
-    def _update_test_days(self, evolution: evolve.Evolution, model: evolve.Model) -> None:
+    def _update_test_days(self, evolution: evolve.Evolution, model: evolve.Model, ret: float) -> None:
         old_test_days = int(evolution.test_days)
 
         match model.alfa_mean < 0:
             case True:
+                evolution.test_days += 1
+            case False if ret < 0:
                 evolution.test_days += 1
             case False:
                 evolution.test_days = max(1, evolution.test_days - consts.P_VALUE / (1 - consts.P_VALUE))
