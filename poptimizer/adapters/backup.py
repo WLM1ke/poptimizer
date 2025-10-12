@@ -58,7 +58,7 @@ class BackupHandler:
             await self._mongo_repo.drop(div.Dividends)
 
         # 2025-10-12
-        if current_ver < "3.0.0b12":
+        if len(current_ver) < len("3.0.0b12") or current_ver < "3.0.0b12":
             self._lgr.warning("Dropping features data due to new format")
             await self._mongo_repo.drop(features.Features)
 
