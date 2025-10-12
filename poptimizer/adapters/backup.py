@@ -8,10 +8,9 @@ from pymongo.errors import PyMongoError
 
 from poptimizer import consts, errors
 from poptimizer.adapters import mongo
-from poptimizer.domain import domain
 from poptimizer.domain.div import div, raw
 from poptimizer.domain.dl import features
-from poptimizer.domain.moex import index, quotes
+from poptimizer.domain.moex import index, quotes, trading_day
 from poptimizer.use_cases import handler
 
 _DUMP: Final = consts.ROOT / "dump" / "dividends.json"
@@ -24,20 +23,7 @@ class BackupHandler:
         self._mongo_repo = mongo_repo
 
     async def __call__(self, ctx: handler.Ctx, msg: handler.AppStarted) -> None:  # noqa: ARG002
-        try:
-            await ctx.get(quotes.Quotes, domain.UID("MOEX"))
-        except errors.AdapterError:
-            self._lgr.warning("Dropping quotes and index data due to new format")
-            await self._mongo_repo.drop(quotes.Quotes)
-            await self._mongo_repo.drop(index.Index)
-            await self._mongo_repo.drop(raw.DivRaw)
-            await self._mongo_repo.drop(div.Dividends)
-
-        try:
-            await ctx.get(features.Features, domain.UID("MOEX"))
-        except errors.AdapterError:
-            self._lgr.warning("Dropping features data due to new format")
-            await self._mongo_repo.drop(features.Features)
+        await self._migrate(ctx)
 
         try:
             all_docs = [div.model_dump(mode="json") async for div in self._mongo_repo.get_all(raw.DivRaw)]
@@ -55,6 +41,26 @@ class BackupHandler:
                     await self._backup(all_docs)
                 except PyMongoError as err:
                     raise errors.AdapterError("can't backup raw dividends") from err
+
+    async def _migrate(self, ctx: handler.Ctx) -> None:
+        day = await ctx.get(trading_day.TradingDay)
+        current_ver = day.poptimizer_ver
+
+        if current_ver == consts.__version__:
+            return
+
+        # 2025-09-29
+        if len(current_ver) < len("3.0.0b10"):
+            self._lgr.warning("Dropping quotes, index and div data due to new format")
+            await self._mongo_repo.drop(quotes.Quotes)
+            await self._mongo_repo.drop(index.Index)
+            await self._mongo_repo.drop(raw.DivRaw)
+            await self._mongo_repo.drop(div.Dividends)
+
+        # 2025-10-12
+        if current_ver < "3.0.0b12":
+            self._lgr.warning("Dropping features data due to new format")
+            await self._mongo_repo.drop(features.Features)
 
     async def restore(self) -> None:
         if not _DUMP.exists():

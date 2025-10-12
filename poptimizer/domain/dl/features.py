@@ -16,7 +16,7 @@ class NumFeat(StrEnum):
     DIVIDENDS = auto()
     RETURNS = auto()
     TURNOVER = auto()
-    MCFTRR = auto()
+    MCF2TRR = auto()
     MEOGTRR = auto()
     IMOEX2 = auto()
     RVI = auto()

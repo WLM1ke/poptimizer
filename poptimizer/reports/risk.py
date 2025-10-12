@@ -17,7 +17,7 @@ _WIDTH: Final = len(PORTFOLIO)
 
 async def prepare_cum_returns(repo: mongo.Repo, months: int) -> pd.DataFrame:
     fund = await repo.get(funds.Fund)
-    index_table = await repo.get(index.Index, index.MCFTRR)
+    index_table = await repo.get(index.Index, index.MCF2TRR)
     rf_table = await repo.get(index.Index, index.RUGBITR1Y)
 
     if len(fund.rows) <= months:
