@@ -24,14 +24,11 @@ class IndexesHandler:
     async def _update_one(self, ctx: handler.Ctx, update_day: domain.Day, ticker: domain.UID) -> None:
         table = await ctx.get_for_update(index.Index, ticker)
 
-        if ticker == index.IMOEX:
-            ticker = index.IMOEX2
-
         start_day = table.last_row_date()
         rows = await self._download(ticker, start_day, update_day)
 
-        if start_day is None and ticker == index.IMOEX2:
-            first_rows = await self._download(index.IMOEX, None, rows[0].day - timedelta(days=1))
+        if start_day is None and (old_ticker := index.INDEXES[ticker]) is not None:
+            first_rows = await self._download(old_ticker, None, rows[0].day - timedelta(days=1))
             rows = first_rows + rows
 
         table.update(update_day, rows)

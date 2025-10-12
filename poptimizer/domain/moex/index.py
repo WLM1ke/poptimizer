@@ -8,16 +8,16 @@ from poptimizer.domain import domain
 
 RVI: Final = domain.UID("RVI")
 IMOEX: Final = domain.UID("IMOEX")
+IMOEX2: Final = domain.UID("IMOEX2")
 MCFTRR: Final = domain.UID("MCFTRR")
 RUGBITR1Y: Final = domain.UID("RUGBITR1Y")
-INDEXES: Final = (
-    MCFTRR,
-    domain.UID("MEOGTRR"),
-    IMOEX,
-    RVI,
-    RUGBITR1Y,
-)
-IMOEX2: Final = domain.UID("IMOEX2")
+INDEXES: Final = {
+    MCFTRR: None,
+    domain.UID("MEOGTRR"): None,
+    IMOEX2: IMOEX,
+    RVI: None,
+    RUGBITR1Y: None,
+}
 
 
 class Row(domain.Row):

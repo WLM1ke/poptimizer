@@ -18,7 +18,7 @@ class NumFeat(StrEnum):
     TURNOVER = auto()
     MCFTRR = auto()
     MEOGTRR = auto()
-    IMOEX = auto()
+    IMOEX2 = auto()
     RVI = auto()
     RUGBITR1Y = auto()
 

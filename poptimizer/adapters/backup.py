@@ -10,6 +10,7 @@ from poptimizer import consts, errors
 from poptimizer.adapters import mongo
 from poptimizer.domain import domain
 from poptimizer.domain.div import div, raw
+from poptimizer.domain.dl import features
 from poptimizer.domain.moex import index, quotes
 from poptimizer.use_cases import handler
 
@@ -31,6 +32,12 @@ class BackupHandler:
             await self._mongo_repo.drop(index.Index)
             await self._mongo_repo.drop(raw.DivRaw)
             await self._mongo_repo.drop(div.Dividends)
+
+        try:
+            await ctx.get(features.Features, domain.UID("MOEX"))
+        except errors.AdapterError:
+            self._lgr.warning("Dropping features data due to new format")
+            await self._mongo_repo.drop(features.Features)
 
         try:
             all_docs = [div.model_dump(mode="json") async for div in self._mongo_repo.get_all(raw.DivRaw)]
