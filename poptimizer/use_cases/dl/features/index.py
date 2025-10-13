@@ -31,7 +31,9 @@ async def _load_indexes(ctx: handler.Ctx, df_index: pd.DatetimeIndex) -> list[di
 
     for task in tasks:
         index_table = await task
-        index_df = pd.DataFrame(task.result().model_dump()["df"]).set_index("day").reindex(df_index).ffill()  # type: ignore[reportUnknownMemberType]
+        index_df = pd.DataFrame(index_table.model_dump()["df"]).set_index("day")
+        combined_index = index_df.index.union(df_index, sort=True)
+        index_df = index_df.reindex(combined_index).ffill().loc[df_index]
 
         match index_table.uid:
             case index.RVI:

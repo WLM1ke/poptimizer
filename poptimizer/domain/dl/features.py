@@ -21,6 +21,7 @@ class NumFeat(StrEnum):
     IMOEX2 = auto()
     RVI = auto()
     RUGBITR1Y = auto()
+    MREDC = auto()
 
 
 @unique

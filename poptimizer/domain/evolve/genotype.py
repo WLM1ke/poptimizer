@@ -55,6 +55,10 @@ class NumFeatures(genetics.Chromosome):
         float,
         genetics.bool_phenotype(),
     ] = genetics.random_default_range(-1, 1)
+    mredc: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
 
 
 class EmbFeatures(genetics.Chromosome):

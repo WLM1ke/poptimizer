@@ -16,6 +16,7 @@ INDEXES: Final = {
     IMOEX2: domain.UID("IMOEX"),
     RVI: None,
     RUGBITR1Y: None,
+    domain.UID("MREDC"): None,
 }
 
 
