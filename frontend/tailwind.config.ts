@@ -1,4 +1,4 @@
-import defaultTheme from "tailwindcss/defaultTheme";
+import { fontFamily } from "tailwindcss/defaultTheme";
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -7,26 +7,26 @@ export default {
 		extend: {
 			colors: {
 				link: {
-					base: "rgb(var(--link) / <alpha-value>)",
-					hover: "rgb(var(--link-hover) / <alpha-value>)"
+					base: "rgb(var(--link))",
+					hover: "rgb(var(--link-hover))"
 				},
 				text: {
-					main: "rgb(var(--text-main) / <alpha-value>)",
-					muted: "rgb(var(--text-muted) / <alpha-value>)",
-					info: "rgb(var(--text-info) / <alpha-value>)",
-					alert: "rgb(var(--text-alert) / <alpha-value>)"
+					main: "rgb(var(--text-main))",
+					muted: "rgb(var(--text-muted))",
+					info: "rgb(var(--text-info))",
+					alert: "rgb(var(--text-alert))"
 				},
 				bg: {
-					main: "rgb(var(--bg-main) / <alpha-value>)",
-					medium: "rgb(var(--bg-medium) / <alpha-value>)",
-					accent: "rgb(var(--bg-accent) / <alpha-value>)",
-					sidebar: "rgb(var(--bg-sidebar) / <alpha-value>)",
-					info: "rgb(var(--bg-info) / <alpha-value>)",
-					alert: "rgb(var(--bg-alert) / <alpha-value>)"
+					main: "rgb(var(--bg-main))",
+					medium: "rgb(var(--bg-medium))",
+					accent: "rgb(var(--bg-accent))",
+					sidebar: "rgb(var(--bg-sidebar))",
+					info: "rgb(var(--bg-info))",
+					alert: "rgb(var(--bg-alert))"
 				},
 				bdr: {
-					info: "rgb(var(--bdr-info) / <alpha-value>)",
-					alert: "rgb(var(--bdr-alert) / <alpha-value>)"
+					info: "rgb(var(--bdr-info))",
+					alert: "rgb(var(--bdr-alert))"
 				}
 			},
 			gridTemplateColumns: {
@@ -36,7 +36,7 @@ export default {
 				layout: "min-content auto"
 			},
 			fontFamily: {
-				logo: ["Roboto Condensed", ...defaultTheme.fontFamily.sans]
+				logo: ["Roboto Condensed", ...fontFamily.sans]
 			}
 		}
 	},
