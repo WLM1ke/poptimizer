@@ -213,6 +213,7 @@ class Portfolio(domain.Entity):
             raise errors.DomainError(f"ticker {ticker} is not in portfolio")
 
         self.exclude.add(ticker)
+        self.illiquid.add(ticker)
 
     def not_exclude_ticker(self, ticker: domain.Ticker) -> None:
         if ticker not in self.exclude:
