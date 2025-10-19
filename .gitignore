@@ -32,3 +32,6 @@ wheels/
 
 # PDF reports
 /reports
+
+# Qwen
+/.qwen
