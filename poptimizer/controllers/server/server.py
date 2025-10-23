@@ -4,6 +4,7 @@ from aiohttp import web
 
 from poptimizer.controllers.bus import msg
 from poptimizer.controllers.server import api, frontend, http_server, middleware
+from poptimizer.views.web import portfolio
 
 if TYPE_CHECKING:
     from pydantic import HttpUrl
@@ -17,6 +18,7 @@ def build(
     api.Handlers(sub_app, bus)
 
     app = web.Application(middlewares=[middleware.RequestErrorMiddleware()])
+    portfolio.Handlers(app)
     app.add_subapp("/api/", sub_app)
     frontend.Handlers(app)
 
