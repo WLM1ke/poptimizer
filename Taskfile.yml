@@ -15,7 +15,7 @@ tasks:
     desc: Setup venv, install tools and dependencies
     cmds:
       - brew tap mongodb/brew
-      - brew install {{.TOOLS}}
+      - brew reinstall {{.TOOLS}}
       - uv sync --frozen
       - cd {{.FRONTEND}} && npm install
       - task: build
