@@ -1,21 +1,3 @@
-:root {
-  --font-family: ui-sans-serif,
-    system-ui,
-    sans-serif,
-    'Apple Color Emoji',
-    'Segoe UI Emoji',
-    'Segoe UI Symbol',
-    'Noto Color Emoji';
-  --mono-font-family: ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    Monaco,
-    Consolas,
-    'Liberation Mono',
-    'Courier New',
-    monospace;
-}
-
 /*
   1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)
   2. Remove default margins and padding
@@ -386,4 +368,18 @@ input:where([type='button'], [type='reset'], [type='submit']),
 
 [hidden]:where(:not([hidden='until-found'])) {
   display: none !important;
+}
+
+/*
+  Disables the default up/down arrow controls.
+*/
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
 }

@@ -1,0 +1,80 @@
+@media (prefers-color-scheme: light) {
+    body {
+        --text-main: var(--grey-900);
+        --text-muted: var(--grey-500);
+        --bg-main: var(--white);
+        --bg-medium: var(--grey-100);
+        --bg-accent: var(--grey-200);
+        --bg-sidebar: var(--white);
+
+        --text-info: var(--blue-800);
+        --bg-info: var(--blue-50);
+        --bdr-info: var(--blue-300);
+
+        --text-alert: var(--red-800);
+        --bg-alert: var(--red-50);
+        --bdr-alert: var(--red-300);
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        --text-main: var(--white);
+        --text-muted: var(--grey-400);
+        --bg-main: var(--grey-900);
+        --bg-medium: var(--grey-700);
+        --bg-accent: var(--grey-800);
+        --bg-sidebar: var(--grey-800);
+
+        --text-info: var(--blue-400);
+        --bg-info: var(--grey-800);
+        --bdr-info: var(--blue-800);
+
+        --text-alert: var(--red-400);
+        --bg-alert: var(--grey-800);
+        --bdr-alert: var(--red-800);
+    }
+}
+
+body[data-theme="light"] {
+    --text-main: var(--grey-900);
+    --text-muted: var(--grey-500);
+    --bg-main: var(--white);
+    --bg-medium: var(--grey-100);
+    --bg-accent: var(--grey-200);
+    --bg-sidebar: var(--white);
+
+    --text-info: var(--blue-800);
+    --bg-info: var(--blue-50);
+    --bdr-info: var(--blue-300);
+
+    --text-alert: var(--red-800);
+    --bg-alert: var(--red-50);
+    --bdr-alert: var(--red-300);
+}
+
+body[data-theme="dark"] {
+    --text-main: var(--white);
+    --text-muted: var(--grey-400);
+    --bg-main: var(--grey-900);
+    --bg-medium: var(--grey-700);
+    --bg-accent: var(--grey-800);
+    --bg-sidebar: var(--grey-800);
+
+    --text-info: var(--blue-400);
+    --bg-info: var(--grey-800);
+    --bdr-info: var(--blue-800);
+
+    --text-alert: var(--red-400);
+    --bg-alert: var(--grey-800);
+    --bdr-alert: var(--red-800);
+}
+
+
+body {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: rgb(var(--bg-main));
+    color: rgb(var(--text-main));       
+}
