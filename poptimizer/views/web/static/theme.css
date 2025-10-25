@@ -1,80 +1,69 @@
-@media (prefers-color-scheme: light) {
-    body {
-        --text-main: var(--grey-900);
-        --text-muted: var(--grey-500);
-        --bg-main: var(--white);
-        --bg-medium: var(--grey-100);
-        --bg-accent: var(--grey-200);
-        --bg-sidebar: var(--white);
+:root {
+    --text-main: rgb(var(--grey-900));
+    --text-muted: rgb(var(--grey-500));
+    --bg-main: rgb(var(--white));
+    --bg-medium: rgb(var(--grey-100));
+    --bg-accent: rgb(var(--grey-200));
+    --bg-sidebar: rgb(var(--white));
 
-        --text-info: var(--blue-800);
-        --bg-info: var(--blue-50);
-        --bdr-info: var(--blue-300);
+    --text-info: rgb(var(--blue-800));
+    --bg-info: rgb(var(--blue-50));
+    --bdr-info: rgb(var(--blue-300));
 
-        --text-alert: var(--red-800);
-        --bg-alert: var(--red-50);
-        --bdr-alert: var(--red-300);
-    }
+    --text-alert: rgb(var(--red-800));
+    --bg-alert: rgb(var(--red-50));
+    --bdr-alert: rgb(var(--red-300));
 }
 
 @media (prefers-color-scheme: dark) {
-    body {
-        --text-main: var(--white);
-        --text-muted: var(--grey-400);
-        --bg-main: var(--grey-900);
-        --bg-medium: var(--grey-700);
-        --bg-accent: var(--grey-800);
-        --bg-sidebar: var(--grey-800);
+    :root {
+        --text-main: rgb(var(--white));
+        --text-muted: rgb(var(--grey-400));
+        --bg-main: rgb(var(--grey-900));
+        --bg-medium: rgb(var(--grey-700));
+        --bg-accent: rgb(var(--grey-800));
+        --bg-sidebar: rgb(var(--grey-800));
 
-        --text-info: var(--blue-400);
-        --bg-info: var(--grey-800);
-        --bdr-info: var(--blue-800);
+        --text-info: rgb(var(--blue-400));
+        --bg-info: rgb(var(--grey-800));
+        --bdr-info: rgb(var(--blue-800));
 
-        --text-alert: var(--red-400);
-        --bg-alert: var(--grey-800);
-        --bdr-alert: var(--red-800);
+        --text-alert: rgb(var(--red-400));
+        --bg-alert: rgb(var(--grey-800));
+        --bdr-alert: rgb(var(--red-800));
     }
 }
 
-body[data-theme="light"] {
-    --text-main: var(--grey-900);
-    --text-muted: var(--grey-500);
-    --bg-main: var(--white);
-    --bg-medium: var(--grey-100);
-    --bg-accent: var(--grey-200);
-    --bg-sidebar: var(--white);
+[data-theme="light"] {
+    --text-main: rgb(var(--grey-900));
+    --text-muted: rgb(var(--grey-500));
+    --bg-main: rgb(var(--white));
+    --bg-medium: rgb(var(--grey-100));
+    --bg-accent: rgb(var(--grey-200));
+    --bg-sidebar: rgb(var(--white));
 
-    --text-info: var(--blue-800);
-    --bg-info: var(--blue-50);
-    --bdr-info: var(--blue-300);
+    --text-info: rgb(var(--blue-800));
+    --bg-info: rgb(var(--blue-50));
+    --bdr-info: rgb(var(--blue-300));
 
-    --text-alert: var(--red-800);
-    --bg-alert: var(--red-50);
-    --bdr-alert: var(--red-300);
+    --text-alert: rgb(var(--red-800));
+    --bg-alert: rgb(var(--red-50));
+    --bdr-alert: rgb(var(--red-300));
 }
 
-body[data-theme="dark"] {
-    --text-main: var(--white);
-    --text-muted: var(--grey-400);
-    --bg-main: var(--grey-900);
-    --bg-medium: var(--grey-700);
-    --bg-accent: var(--grey-800);
-    --bg-sidebar: var(--grey-800);
+[data-theme="dark"] {
+    --text-main: rgb(var(--white));
+    --text-muted: rgb(var(--grey-400));
+    --bg-main: rgb(var(--grey-900));
+    --bg-medium: rgb(var(--grey-700));
+    --bg-accent: rgb(var(--grey-800));
+    --bg-sidebar: rgb(var(--grey-800));
 
-    --text-info: var(--blue-400);
-    --bg-info: var(--grey-800);
-    --bdr-info: var(--blue-800);
+    --text-info: rgb(var(--blue-400));
+    --bg-info: rgb(var(--grey-800));
+    --bdr-info: rgb(var(--blue-800));
 
-    --text-alert: var(--red-400);
-    --bg-alert: var(--grey-800);
-    --bdr-alert: var(--red-800);
-}
-
-
-body {
-    scroll-behavior: smooth;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    background-color: rgb(var(--bg-main));
-    color: rgb(var(--text-main));       
+    --text-alert: rgb(var(--red-400));
+    --bg-alert: rgb(var(--grey-800));
+    --bdr-alert: rgb(var(--red-800));
 }
