@@ -60,4 +60,18 @@ class IndexesHandler:
             )
 
         with handler.wrap_validation_err(f"invalid {ticker} data"):
-            return TypeAdapter(list[index.Row]).validate_python(json)
+            return _deduplicate_rows(TypeAdapter(list[index.Row]).validate_python(json))
+
+
+def _deduplicate_rows(rows: list[index.Row]) -> list[index.Row]:
+    prev_row: index.Row | None = None
+    rows_deduplicated: list[index.Row] = []
+
+    for row in rows:
+        if row == prev_row:
+            continue
+
+        rows_deduplicated.append(row)
+        prev_row = row
+
+    return rows_deduplicated

@@ -27,6 +27,7 @@ class NumFeatures(BaseModel):
     rvi: bool
     rugbitr1y: bool
     mredc: bool
+    rtsusdcur: bool
 
 
 class EmbFeatures(BaseModel):
