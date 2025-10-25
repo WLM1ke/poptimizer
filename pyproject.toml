@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 path = "poptimizer/consts.py"
-pattern = "__version__ = \"(?P<version>[0-9]+[.][0-9]+[.][0-9]+b[0-9]+)\""
+pattern = "__version__ = \"(?P<version>[0-9]+[.][0-9]+[.][0-9]+)\""
 
 [project]
 name = "poptimizer"
