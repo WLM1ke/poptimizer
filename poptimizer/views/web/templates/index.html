@@ -127,7 +127,7 @@
                         </a>
                     </li>
                     <li class="nav__item">
-                        {% include 'theme_' + layout.theme + '.html' %}
+                        {% include 'theme/' + layout.theme + '.html' %}
                     </li>
                     <li class="nav__item">
                         <a href="https://github.com/WLM1ke/poptimizer" class="nav__item-link" title="Go to GitHub"
@@ -145,7 +145,7 @@
         <header>
             <h1>{{ layout.title }}</h1>
         </header>
-        {% include layout.main_template %}
+        {% include 'main/' + layout.main_template %}
     </body>
 
 </html>

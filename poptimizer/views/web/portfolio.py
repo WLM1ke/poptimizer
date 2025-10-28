@@ -41,7 +41,7 @@ class Handlers:
 
     async def portfolio(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
         layout = LayoutModel(
-            main_template="main_portfolio.html",
+            main_template="portfolio.html",
             title="Portfolio",
             theme=Theme.SYSTEM,
             accounts=[AccName("Account1"), AccName("Account2")],
@@ -52,7 +52,7 @@ class Handlers:
 
     async def account(self, request: web.Request) -> web.StreamResponse:
         layout = LayoutModel(
-            main_template="main_account.html",
+            main_template="account.html",
             title=request.match_info["account"],
             theme=Theme.SYSTEM,
             accounts=[AccName("Account1"), AccName("Account2")],
@@ -63,7 +63,7 @@ class Handlers:
 
     async def forecast(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
         layout = LayoutModel(
-            main_template="main_forecast.html",
+            main_template="forecast.html",
             title="Forecast",
             theme=Theme.SYSTEM,
             accounts=[AccName("Account1"), AccName("Account2")],
@@ -74,7 +74,7 @@ class Handlers:
 
     async def optimization(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
         layout = LayoutModel(
-            main_template="main_optimization.html",
+            main_template="optimization.html",
             title="Optimization",
             theme=Theme.SYSTEM,
             accounts=[AccName("Account1"), AccName("Account2")],
@@ -85,7 +85,7 @@ class Handlers:
 
     async def dividends(self, request: web.Request) -> web.StreamResponse:
         layout = LayoutModel(
-            main_template="main_dividends.html",
+            main_template="dividends.html",
             title=request.match_info["ticker"],
             theme=Theme.SYSTEM,
             accounts=[AccName("Account1"), AccName("Account2")],
@@ -96,7 +96,7 @@ class Handlers:
 
     async def settings(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
         layout = LayoutModel(
-            main_template="main_settings.html",
+            main_template="settings.html",
             title="Settings",
             theme=Theme.SYSTEM,
             accounts=[AccName("Account1"), AccName("Account2")],
@@ -116,7 +116,7 @@ class Handlers:
         if theme not in Theme:
             return web.HTTPNotFound(text=f"Invalid theme - {theme}")
 
-        html = self._env.get_template(f"theme_{theme}.html").render()
+        html = self._env.get_template(f"theme/{theme}.html").render()
 
         return web.Response(text=html, content_type="text/html")
 
