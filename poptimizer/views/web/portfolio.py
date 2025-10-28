@@ -16,6 +16,7 @@ class LayoutModel(BaseModel):
     main_template: str
     title: str
     theme: Theme
+    accounts: list[str]
 
 
 class Handlers:
@@ -39,6 +40,7 @@ class Handlers:
             main_template="main_portfolio.html",
             title="Portfolio",
             theme=Theme.SYSTEM,
+            accounts=["Account1", "Account2"],
         )
 
         return await self._render_template(layout)
@@ -48,6 +50,7 @@ class Handlers:
             main_template="main_account.html",
             title=request.match_info["account"],
             theme=Theme.SYSTEM,
+            accounts=["Account1", "Account2"],
         )
 
         return await self._render_template(layout)
@@ -57,6 +60,7 @@ class Handlers:
             main_template="main_forecast.html",
             title="Forecast",
             theme=Theme.SYSTEM,
+            accounts=["Account1", "Account2"],
         )
 
         return await self._render_template(layout)
@@ -66,6 +70,7 @@ class Handlers:
             main_template="main_optimization.html",
             title="Optimization",
             theme=Theme.SYSTEM,
+            accounts=["Account1", "Account2"],
         )
 
         return await self._render_template(layout)
@@ -75,6 +80,7 @@ class Handlers:
             main_template="main_dividends.html",
             title=request.match_info["ticker"],
             theme=Theme.SYSTEM,
+            accounts=["Account1", "Account2"],
         )
 
         return await self._render_template(layout)
@@ -84,6 +90,7 @@ class Handlers:
             main_template="main_settings.html",
             title="Settings",
             theme=Theme.SYSTEM,
+            accounts=["Account1", "Account2"],
         )
 
         return await self._render_template(layout)
