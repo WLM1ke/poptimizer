@@ -40,9 +40,8 @@ class Handlers:
             title="Portfolio",
             theme=Theme.SYSTEM,
         )
-        html_content = self._page.render(layout=layout)
 
-        return web.Response(text=html_content, content_type="text/html")
+        return await self._render_template(layout)
 
     async def account(self, request: web.Request) -> web.StreamResponse:
         layout = LayoutModel(
@@ -50,9 +49,8 @@ class Handlers:
             title=request.match_info["account"],
             theme=Theme.SYSTEM,
         )
-        html_content = self._page.render(layout=layout)
 
-        return web.Response(text=html_content, content_type="text/html")
+        return await self._render_template(layout)
 
     async def forecast(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
         layout = LayoutModel(
@@ -60,9 +58,8 @@ class Handlers:
             title="Forecast",
             theme=Theme.SYSTEM,
         )
-        html_content = self._page.render(layout=layout)
 
-        return web.Response(text=html_content, content_type="text/html")
+        return await self._render_template(layout)
 
     async def optimization(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
         layout = LayoutModel(
@@ -70,9 +67,8 @@ class Handlers:
             title="Optimization",
             theme=Theme.SYSTEM,
         )
-        html_content = self._page.render(layout=layout)
 
-        return web.Response(text=html_content, content_type="text/html")
+        return await self._render_template(layout)
 
     async def dividends(self, request: web.Request) -> web.StreamResponse:
         layout = LayoutModel(
@@ -80,9 +76,8 @@ class Handlers:
             title=request.match_info["ticker"],
             theme=Theme.SYSTEM,
         )
-        html_content = self._page.render(layout=layout)
 
-        return web.Response(text=html_content, content_type="text/html")
+        return await self._render_template(layout)
 
     async def settings(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
         layout = LayoutModel(
@@ -90,6 +85,10 @@ class Handlers:
             title="Settings",
             theme=Theme.SYSTEM,
         )
+
+        return await self._render_template(layout)
+
+    async def _render_template(self, layout: LayoutModel) -> web.StreamResponse:
         html_content = self._page.render(layout=layout)
 
         return web.Response(text=html_content, content_type="text/html")
