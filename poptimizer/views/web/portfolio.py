@@ -5,6 +5,8 @@ from aiohttp import web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import BaseModel
 
+from poptimizer.domain.domain import AccName, Ticker
+
 
 class Theme(StrEnum):
     SYSTEM = auto()
@@ -16,7 +18,8 @@ class LayoutModel(BaseModel):
     main_template: str
     title: str
     theme: Theme
-    accounts: list[str]
+    accounts: list[AccName]
+    dividends: list[Ticker] = []
 
 
 class Handlers:
@@ -40,7 +43,8 @@ class Handlers:
             main_template="main_portfolio.html",
             title="Portfolio",
             theme=Theme.SYSTEM,
-            accounts=["Account1", "Account2"],
+            accounts=[AccName("Account1"), AccName("Account2")],
+            dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
         return await self._render_template(layout)
@@ -50,7 +54,8 @@ class Handlers:
             main_template="main_account.html",
             title=request.match_info["account"],
             theme=Theme.SYSTEM,
-            accounts=["Account1", "Account2"],
+            accounts=[AccName("Account1"), AccName("Account2")],
+            dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
         return await self._render_template(layout)
@@ -60,7 +65,8 @@ class Handlers:
             main_template="main_forecast.html",
             title="Forecast",
             theme=Theme.SYSTEM,
-            accounts=["Account1", "Account2"],
+            accounts=[AccName("Account1"), AccName("Account2")],
+            dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
         return await self._render_template(layout)
@@ -70,7 +76,8 @@ class Handlers:
             main_template="main_optimization.html",
             title="Optimization",
             theme=Theme.SYSTEM,
-            accounts=["Account1", "Account2"],
+            accounts=[AccName("Account1"), AccName("Account2")],
+            dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
         return await self._render_template(layout)
@@ -80,7 +87,8 @@ class Handlers:
             main_template="main_dividends.html",
             title=request.match_info["ticker"],
             theme=Theme.SYSTEM,
-            accounts=["Account1", "Account2"],
+            accounts=[AccName("Account1"), AccName("Account2")],
+            dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
         return await self._render_template(layout)
@@ -90,7 +98,8 @@ class Handlers:
             main_template="main_settings.html",
             title="Settings",
             theme=Theme.SYSTEM,
-            accounts=["Account1", "Account2"],
+            accounts=[AccName("Account1"), AccName("Account2")],
+            dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
         return await self._render_template(layout)
