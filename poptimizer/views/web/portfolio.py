@@ -1,7 +1,21 @@
+from enum import StrEnum, auto
 from pathlib import Path
 
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from pydantic import BaseModel
+
+
+class Theme(StrEnum):
+    SYSTEM = auto()
+    LIGHT = auto()
+    DARK = auto()
+
+
+class LayoutModel(BaseModel):
+    main_template: str
+    title: str
+    theme: Theme
 
 
 class Handlers:
@@ -21,50 +35,62 @@ class Handlers:
         app.add_routes([web.get("/static/{file_name}", self.static_file)])
 
     async def portfolio(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
-        html_content = self._page.render(
+        layout = LayoutModel(
             main_template="main_portfolio.html",
             title="Portfolio",
+            theme=Theme.SYSTEM,
         )
+        html_content = self._page.render(layout=layout)
 
         return web.Response(text=html_content, content_type="text/html")
 
     async def account(self, request: web.Request) -> web.StreamResponse:
-        html_content = self._page.render(
+        layout = LayoutModel(
             main_template="main_account.html",
             title=request.match_info["account"],
+            theme=Theme.SYSTEM,
         )
+        html_content = self._page.render(layout=layout)
 
         return web.Response(text=html_content, content_type="text/html")
 
     async def forecast(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
-        html_content = self._page.render(
+        layout = LayoutModel(
             main_template="main_forecast.html",
             title="Forecast",
+            theme=Theme.SYSTEM,
         )
+        html_content = self._page.render(layout=layout)
 
         return web.Response(text=html_content, content_type="text/html")
 
     async def optimization(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
-        html_content = self._page.render(
+        layout = LayoutModel(
             main_template="main_optimization.html",
             title="Optimization",
+            theme=Theme.SYSTEM,
         )
+        html_content = self._page.render(layout=layout)
 
         return web.Response(text=html_content, content_type="text/html")
 
     async def dividends(self, request: web.Request) -> web.StreamResponse:
-        html_content = self._page.render(
+        layout = LayoutModel(
             main_template="main_dividends.html",
             title=request.match_info["ticker"],
+            theme=Theme.SYSTEM,
         )
+        html_content = self._page.render(layout=layout)
 
         return web.Response(text=html_content, content_type="text/html")
 
     async def settings(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
-        html_content = self._page.render(
+        layout = LayoutModel(
             main_template="main_settings.html",
             title="Settings",
+            theme=Theme.SYSTEM,
         )
+        html_content = self._page.render(layout=layout)
 
         return web.Response(text=html_content, content_type="text/html")
 

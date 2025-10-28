@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="POptimizer — MOEX shares and ETFs portfolio optimization">
 
-        <title>POptimizer - {{ title }}</title>
+        <title>POptimizer - {{ layout.title }}</title>
 
         <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
         <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
@@ -173,9 +173,9 @@
             </nav>
         </aside>
         <header>
-            <h1>{{ title }}</h1>
+            <h1>{{ layout.title }}</h1>
         </header>
-        {% include main_template %}
+        {% include layout.main_template %}
     </body>
 
 </html>
