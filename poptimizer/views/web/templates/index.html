@@ -11,7 +11,8 @@
         <link rel="icon" href="/static/images/favicon.svg" type="image/svg+xml">
         <link rel="icon" href="/static/images/favicon.ico" type="image/x-icon">
 
-        <link rel="preload" href="/static/fonts/roboto-condensed-latin-500.woff2" as="font" type="font/woff2" crossorigin>
+        <link rel="preload" href="/static/fonts/roboto-condensed-latin-500.woff2" as="font" type="font/woff2"
+            crossorigin>
 
         <link rel="stylesheet" href="/static/css/variables.css">
         <link rel="stylesheet" href="/static/css/preflight.css">
@@ -19,6 +20,7 @@
         <link rel="stylesheet" href="/static/css/style.css">
 
         <script src="/static/js/htmx.min.js"></script>
+        <script src="/static/js/htmx-config.js"></script>
         <script src="/static/js/preload.min.js"></script>
     </head>
 
@@ -125,23 +127,7 @@
                         </a>
                     </li>
                     <li class="nav__item">
-                        <a href="/theme" class="nav__item-link" title="Color theme">
-                            <svg viewBox="0 0 16 16">
-                                <path fill-rule="evenodd"
-                                    d="M12 3H4a1.5 1.5 0 0 0-1.5 1.5v4A1.5 1.5 0 0 0 4 10h8a1.5 1.5 0 0 0 1.5-1.5v-4A1.5 1.5 0 0 0 12 3ZM4 1.5a3 3 0 0 0-3 3v4a3 3 0 0 0 3 3h3.25V13h-2.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-2.5v-1.5H12a3 3 0 0 0 3-3v-4a3 3 0 0 0-3-3H4Z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            <svg viewBox="0 0 16 16">
-                                <path fill-rule="evenodd"
-                                    d="M8 3a.75.75 0 0 1-.75-.75V.75a.75.75 0 1 1 1.5 0v1.5A.75.75 0 0 1 8 3Zm0 7.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-.75 3.25a.75.75 0 0 0 1.5 0v-1.5a.75.75 0 0 0-1.5 0v1.5ZM13 8a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 13 8ZM.75 7.25a.75.75 0 1 0 0 1.5h1.5a.75.75 0 0 0 0-1.5H.75Zm10.786-2.786a.75.75 0 0 1 0-1.06l1.06-1.06a.75.75 0 0 1 1.06 1.06l-1.06 1.06a.75.75 0 0 1-1.06 0Zm-9.193 8.132a.75.75 0 0 0 1.06 1.06l1.062-1.06a.75.75 0 0 0-1.061-1.06l-1.06 1.06Zm9.193-1.06a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06a.75.75 0 0 1 0-1.06ZM3.404 2.343a.75.75 0 0 0-1.06 1.06l1.06 1.061a.75.75 0 1 0 1.06-1.06l-1.06-1.06Z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            <svg viewBox="0 0 16 16">
-                                <path fill-rule="evenodd"
-                                    d="M8 13.5a5.5 5.5 0 0 0 2.263-10.514 5.5 5.5 0 0 1-7.278 7.278A5.501 5.501 0 0 0 8 13.5ZM1.045 8.795a7.001 7.001 0 1 0 7.75-7.75l-.028-.003A7.078 7.078 0 0 0 8 1c-.527 0-.59.842-.185 1.18a4.02 4.02 0 0 1 .342.322A4 4 0 1 1 2.18 7.814C1.842 7.41 1 7.474 1 8a7.078 7.078 0 0 0 .045.794Z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </a>
+                        {% include 'theme_' + layout.theme + '.html' %}
                     </li>
                     <li class="nav__item">
                         <a href="https://github.com/WLM1ke/poptimizer" class="nav__item-link" title="Go to GitHub"
