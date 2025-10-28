@@ -36,7 +36,7 @@ class Handlers:
         app.add_routes([web.get("/dividends/{ticker}", self.dividends)])
         app.add_routes([web.get("/settings", self.settings)])
 
-        app.add_routes([web.get("/static/{file_name}", self.static_file)])
+        app.add_routes([web.get("/static/{path:.*}", self.static_file)])
 
     async def portfolio(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
         layout = LayoutModel(
@@ -110,4 +110,4 @@ class Handlers:
         return web.Response(text=html_content, content_type="text/html")
 
     async def static_file(self, request: web.Request) -> web.StreamResponse:
-        return web.FileResponse(Path(__file__).parent / "static" / request.match_info["file_name"])
+        return web.FileResponse(Path(__file__).parent / "static" / request.match_info["path"])
