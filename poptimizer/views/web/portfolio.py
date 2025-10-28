@@ -11,12 +11,12 @@ class Handlers:
             autoescape=select_autoescape(["html"]),
         ).get_template("index.html")
 
-        app.add_routes([web.get("/new", self.portfolio)])
-        app.add_routes([web.get("/new/accounts/{account}", self.account)])
-        app.add_routes([web.get("/new/forecast", self.forecast)])
-        app.add_routes([web.get("/new/optimization", self.optimization)])
-        app.add_routes([web.get("/new/dividends/{ticker}", self.dividends)])
-        app.add_routes([web.get("/new/settings", self.settings)])
+        app.add_routes([web.get("/", self.portfolio)])
+        app.add_routes([web.get("/accounts/{account}", self.account)])
+        app.add_routes([web.get("/forecast", self.forecast)])
+        app.add_routes([web.get("/optimization", self.optimization)])
+        app.add_routes([web.get("/dividends/{ticker}", self.dividends)])
+        app.add_routes([web.get("/settings", self.settings)])
 
         app.add_routes([web.get("/static/{file_name}", self.static_file)])
 
