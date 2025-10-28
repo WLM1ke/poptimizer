@@ -57,7 +57,6 @@ tasks:
     cmds:
       - uv run ruff format {{.APP}}
       - uv run ruff check {{.APP}} --unsafe-fixes --exit-zero
-      - cd {{.FRONTEND}} && npm run format
 
   lint:
     desc: Lint
@@ -65,17 +64,11 @@ tasks:
       - uv run ruff format {{.APP}} --check
       - uv run ruff check {{.APP}} --unsafe-fixes --exit-non-zero-on-fix
       - uv run pyright {{.APP}}
-      - cd {{.FRONTEND}} && npm run lint && npm run check
 
   test:
     desc: Test
     cmds:
       - uv run pytest {{.APP}} --cov={{.APP}}
-
-  build:
-    desc: Build frontend
-    cmds:
-      - cd {{.FRONTEND}} && npm run build
 
   dev:
     desc: Develop frontend
@@ -87,4 +80,3 @@ tasks:
     cmds:
       - brew upgrade {{.TOOLS}}
       - uv sync --upgrade
-      - cd {{.FRONTEND}} && npm update --save --save-dev
