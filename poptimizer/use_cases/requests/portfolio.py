@@ -109,7 +109,7 @@ class Forecast(handler.DTO):
         )
 
 
-class PortfolioHandler:
+class Handler:
     async def get_portfolio(self, ctx: handler.Ctx, msg: GetPortfolio) -> Portfolio:  # noqa: ARG002
         port = await ctx.get(portfolio.Portfolio)
 

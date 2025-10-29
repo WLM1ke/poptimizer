@@ -55,7 +55,7 @@ class UpdateDividends(handler.DTO):
     dividends: list[raw.Row]
 
 
-class DividendsHandler:
+class Handler:
     async def get_div_tickers(self, ctx: handler.Ctx, msg: GetDivTickers) -> DivTickers:  # noqa: ARG002
         table = await ctx.get(status.DivStatus)
 

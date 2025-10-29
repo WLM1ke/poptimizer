@@ -1,29 +1,26 @@
-from enum import StrEnum, auto
 from pathlib import Path
 
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
+from poptimizer.controllers.bus import msg
 from poptimizer.domain.domain import AccName, Ticker
-
-
-class Theme(StrEnum):
-    SYSTEM = auto()
-    LIGHT = auto()
-    DARK = auto()
+from poptimizer.domain.settings import Theme
+from poptimizer.use_cases.requests import settings as settings_requests
 
 
 class LayoutModel(BaseModel):
-    main_template: str = ""
-    title: str = ""
-    theme: Theme = Theme.SYSTEM
-    accounts: list[AccName] = Field(default_factory=list[AccName])
-    dividends: list[Ticker] = Field(default_factory=list[Ticker])
+    main_template: str
+    title: str
+    theme: Theme
+    accounts: list[AccName]
+    dividends: list[Ticker]
 
 
 class Handlers:
-    def __init__(self, app: web.Application) -> None:
+    def __init__(self, app: web.Application, bus: msg.Bus) -> None:
+        self._bus = bus
         self._env = Environment(
             loader=FileSystemLoader(Path(__file__).parent / "templates"),
             autoescape=select_autoescape(["html"]),
@@ -40,10 +37,12 @@ class Handlers:
         app.add_routes([web.get("/static/{path:.*}", self.static_file)])
 
     async def portfolio(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
+        theme_dto = await self._bus.request(settings_requests.GetTheme())
+
         layout = LayoutModel(
             main_template="portfolio.html",
             title="Portfolio",
-            theme=Theme.SYSTEM,
+            theme=theme_dto.theme,
             accounts=[AccName("Account1"), AccName("Account2")],
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
@@ -51,10 +50,11 @@ class Handlers:
         return await self._render_page(layout)
 
     async def account(self, request: web.Request) -> web.StreamResponse:
+        theme_dto = await self._bus.request(settings_requests.GetTheme())  # type: ignore[assignment]
         layout = LayoutModel(
             main_template="account.html",
             title=request.match_info["account"],
-            theme=Theme.SYSTEM,
+            theme=theme_dto.theme,  # type: ignore[attr-defined]
             accounts=[AccName("Account1"), AccName("Account2")],
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
@@ -62,10 +62,11 @@ class Handlers:
         return await self._render_page(layout)
 
     async def forecast(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
+        theme_dto = await self._bus.request(settings_requests.GetTheme())
         layout = LayoutModel(
             main_template="forecast.html",
             title="Forecast",
-            theme=Theme.SYSTEM,
+            theme=theme_dto.theme,
             accounts=[AccName("Account1"), AccName("Account2")],
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
@@ -73,10 +74,11 @@ class Handlers:
         return await self._render_page(layout)
 
     async def optimization(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
+        theme_dto = await self._bus.request(settings_requests.GetTheme())
         layout = LayoutModel(
             main_template="optimization.html",
             title="Optimization",
-            theme=Theme.SYSTEM,
+            theme=theme_dto.theme,
             accounts=[AccName("Account1"), AccName("Account2")],
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
@@ -84,10 +86,11 @@ class Handlers:
         return await self._render_page(layout)
 
     async def dividends(self, request: web.Request) -> web.StreamResponse:
+        theme_dto = await self._bus.request(settings_requests.GetTheme())
         layout = LayoutModel(
             main_template="dividends.html",
             title=request.match_info["ticker"],
-            theme=Theme.SYSTEM,
+            theme=theme_dto.theme,
             accounts=[AccName("Account1"), AccName("Account2")],
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
@@ -95,10 +98,11 @@ class Handlers:
         return await self._render_page(layout)
 
     async def settings(self, request: web.Request) -> web.StreamResponse:  # noqa: ARG002
+        theme_dto = await self._bus.request(settings_requests.GetTheme())
         layout = LayoutModel(
             main_template="settings.html",
             title="Settings",
-            theme=Theme.SYSTEM,
+            theme=theme_dto.theme,
             accounts=[AccName("Account1"), AccName("Account2")],
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
@@ -115,6 +119,8 @@ class Handlers:
 
         if theme not in Theme:
             return web.HTTPNotFound(text=f"Invalid theme - {theme}")
+
+        await self._bus.request(settings_requests.UpdateTheme(theme=Theme(theme)))
 
         html = self._env.get_template(f"theme/{theme}.html").render()
 
