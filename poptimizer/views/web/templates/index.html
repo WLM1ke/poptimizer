@@ -126,7 +126,7 @@
                             </svg>
                         </a>
                     </li>
-                    <li class="nav__item">
+                    <li class="nav__item" hx-on:htmx:after-settle="setTheme(event)">
                         {% include 'theme/' + layout.theme + '.html' %}
                     </li>
                     <li class="nav__item">
