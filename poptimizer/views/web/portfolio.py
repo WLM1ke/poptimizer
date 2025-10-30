@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from aiohttp import web
@@ -124,7 +125,11 @@ class Handlers:
 
         html = self._env.get_template(f"theme/{theme}.html").render()
 
-        return web.Response(text=html, content_type="text/html")
+        return web.Response(
+            text=html,
+            content_type="text/html",
+            headers={"HX-Trigger-After-Settle": json.dumps({"po:theme": {"target": "body", "theme": f"{theme}"}})},
+        )
 
     async def static_file(self, request: web.Request) -> web.StreamResponse:
         file_path = Path(__file__).parent / "static" / request.match_info["path"]

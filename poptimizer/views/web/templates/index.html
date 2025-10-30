@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="{{ layout.theme }}">
+<html lang="en">
 
     <head>
         <meta charset="UTF-8">
@@ -24,7 +24,7 @@
         <script src="/static/js/preload.min.js"></script>
     </head>
 
-    <body>
+    <body hx-on:po:theme="setTheme(event)" data-theme="{{ layout.theme }}">
         <aside hx-ext="preload" preload="mouseover">
             <nav class="nav">
                 <ul class="nav__block">
@@ -126,7 +126,7 @@
                             </svg>
                         </a>
                     </li>
-                    <li class="nav__item" hx-on:htmx:after-settle="setTheme(event)">
+                    <li class="nav__item">
                         {% include 'theme/' + layout.theme + '.html' %}
                     </li>
                     <li class="nav__item">

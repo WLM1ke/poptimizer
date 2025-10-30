@@ -34,7 +34,7 @@
     }
 }
 
-[data-theme="light"] {
+body[data-theme="light"] {
     --text-main: rgb(var(--grey-900));
     --text-muted: rgb(var(--grey-500));
     --bg-main: rgb(var(--white));
@@ -51,7 +51,7 @@
     --bdr-alert: rgb(var(--red-300));
 }
 
-[data-theme="dark"] {
+body[data-theme="dark"] {
     --text-main: rgb(var(--white));
     --text-muted: rgb(var(--grey-400));
     --bg-main: rgb(var(--grey-900));
