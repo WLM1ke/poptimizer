@@ -11,5 +11,5 @@ class TradingDay(domain.Entity):
 
     def update_last_trading_day(self, day: domain.Day, poptimizer_ver: str) -> None:
         self.day = day
-        self.last_check = day
+        self.last_check = max(self.last_check, day)
         self.poptimizer_ver = poptimizer_ver
