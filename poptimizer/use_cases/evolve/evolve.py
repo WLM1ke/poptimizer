@@ -31,6 +31,7 @@ def _extract_minimal_returns_days(err_group: BaseExceptionGroup[errors.DomainErr
 
 
 class Ctx(Protocol):
+    def publish(self, msg: handler.Event) -> None: ...
     async def get[E: domain.Entity](
         self,
         t_entity: type[E],
@@ -77,7 +78,7 @@ class EvolutionHandler:
         self,
         ctx: Ctx,
         msg: handler.DataChecked,
-    ) -> handler.ModelDeleted | handler.ModelEvaluated:
+    ) -> None:
         evolution, count = await self._init_step(ctx, msg)
         model, good = await self._get_model(ctx, evolution)
         self._lgr.info(
@@ -94,11 +95,9 @@ class EvolutionHandler:
         except* errors.DomainError as err:
             await self._delete_model_on_error(ctx, evolution, model, err)
 
-            event = handler.ModelDeleted(day=evolution.day, uid=model.uid)
+            ctx.publish(handler.ModelDeleted(day=evolution.day, uid=model.uid))
         else:
-            return await self._eval_model(ctx, evolution, model, good=good)
-
-        return event
+            ctx.publish(await self._eval_model(ctx, evolution, model, good=good))
 
     async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> tuple[evolve.Evolution, int]:
         evolution = await ctx.get_for_update(evolve.Evolution)

@@ -1,13 +1,13 @@
 import asyncio
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from types import TracebackType
-from typing import Protocol, Self
+from typing import Self
 
 from poptimizer import errors
 from poptimizer.adapters import adapter, mongo
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
-from poptimizer.use_cases import handler
+from poptimizer.use_cases.handler import Event
 
 
 class _IdentityMap:
@@ -52,14 +52,17 @@ class _IdentityMap:
         self._seen.pop((entity.__class__, entity.uid), None)
 
 
-class Bus(Protocol):
-    def publish(self, msg: handler.Msg) -> None: ...
-
-
 class UOW:
     def __init__(self, repo: mongo.Repo) -> None:
         self._repo = repo
         self._identity_map = _IdentityMap()
+        self._events: list[Event] = []
+
+    def publish(self, msg: Event) -> None:
+        self._events.append(msg)
+
+    def events(self) -> Iterable[Event]:
+        yield from self._events
 
     async def get[E: domain.Entity](
         self,

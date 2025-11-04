@@ -9,16 +9,11 @@ from poptimizer import errors
 from poptimizer.domain import domain
 
 
-class Msg(BaseModel): ...
-
-
-class Event(Msg): ...
-
-
-class DTO(Msg): ...
+class Event(BaseModel): ...
 
 
 class Ctx(Protocol):
+    def publish(self, msg: Event) -> None: ...
     async def get[E: domain.Entity](
         self,
         t_entity: type[E],

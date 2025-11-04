@@ -27,7 +27,7 @@ class DivStatusHandler:
         self._lgr = logging.getLogger()
         self._http_client = http_client
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.PortfolioUpdated) -> handler.DivStatusUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.PortfolioUpdated) -> None:
         table = await ctx.get_for_update(status.DivStatus)
 
         csv_file = await self._download()
@@ -39,7 +39,7 @@ class DivStatusHandler:
 
         table.update(msg.day, [row async for row in self._filter_missed(ctx, status_gen)])
 
-        return handler.DivStatusUpdated(day=msg.day)
+        ctx.publish(handler.DivStatusUpdated(day=msg.day))
 
     async def _download(self) -> TextIO:
         async with (

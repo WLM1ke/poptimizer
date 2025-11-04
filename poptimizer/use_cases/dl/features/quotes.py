@@ -19,7 +19,7 @@ _T_PLUS_1_START: Final = datetime(2023, 7, 31)
 
 
 class QuotesFeatHandler:
-    async def __call__(self, ctx: handler.Ctx, msg: handler.PortfolioUpdated) -> handler.QuotesFeatUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.PortfolioUpdated) -> None:
         index = pd.DatetimeIndex(msg.trading_days)
         port = await ctx.get(portfolio.Portfolio)
 
@@ -27,7 +27,7 @@ class QuotesFeatHandler:
             for pos in port.positions:
                 tg.create_task(_build_features(ctx, domain.UID(pos.ticker), index))
 
-        return handler.QuotesFeatUpdated(trading_days=msg.trading_days)
+        ctx.publish(handler.QuotesFeatUpdated(trading_days=msg.trading_days))
 
 
 async def _build_features(ctx: handler.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> None:

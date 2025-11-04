@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import logging
 import traceback
 from collections import defaultdict
@@ -17,13 +18,15 @@ from poptimizer.adapters import adapter, logger, mongo
 from poptimizer.controllers.bus import uow
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
-from poptimizer.use_cases.handler import DTO, AppStarted, Event
+from poptimizer.use_cases.handler import AppStarted, Event
 
 _DEFAULT_FIRST_RETRY: Final = timedelta(seconds=30)
 _DEFAULT_BACKOFF_FACTOR: Final = 2
 
 
 class Ctx(Protocol):
+    def publish(self, msg: Event) -> None: ...
+
     async def get[E: domain.Entity](
         self,
         t_entity: type[E],
@@ -45,18 +48,19 @@ class Ctx(Protocol):
     async def sample_models(self, n: int) -> list[evolve.Model]: ...
 
 
-class RequestHandler[D: DTO, E: Event](Protocol):
-    async def __call__(self, ctx: Ctx, msg: D) -> tuple[D, E] | D: ...
-
-
 class EventHandler[E: Event](Protocol):
-    async def __call__(self, ctx: Ctx, msg: E) -> Iterable[E] | E | None: ...
+    async def __call__(self, ctx: Ctx, msg: E) -> None: ...
 
 
-type Handler = RequestHandler[Any, Any] | EventHandler[Any]
+class RequestHandler[Req: Any, Resp: Any](Protocol):
+    async def __call__(self, ctx: Ctx, req: Req) -> Resp: ...
 
 
-def _handler_types(handler: Handler) -> Iterable[adapter.Component]:
+class WrappedRequestHandler[Req: Any, Resp: Any](Protocol):
+    async def __call__(self, req: Req) -> Resp: ...
+
+
+def _handler_types(handler: EventHandler[Any]) -> Iterable[adapter.Component]:
     if not (msg_type := get_type_hints(handler.__call__).get("msg")):
         msg_type = get_type_hints(handler)["msg"]
 
@@ -104,7 +108,6 @@ class Bus:
         self._repo = repo
         self._tg = asyncio.TaskGroup()
         self._event_handlers: dict[adapter.Component, list[tuple[EventHandler[Any], type[Policy]]]] = defaultdict(list)
-        self._request_handlers: dict[adapter.Component, RequestHandler[Any, Any]] = {}
 
     def register_event_handler(
         self,
@@ -118,21 +121,6 @@ class Bus:
                 adapter.get_component_name(handler),
                 msg_name,
                 adapter.get_component_name(policy_type),
-            )
-
-    def register_request_handler(
-        self,
-        handler: RequestHandler[Any, Any],
-    ) -> None:
-        for msg_name in _handler_types(handler):
-            if msg_name in self._request_handlers:
-                raise errors.ControllersError(f"not unique request handler for {msg_name}")
-
-            self._request_handlers[msg_name] = handler
-            self._lgr.info(
-                "%s was registered as request handler for %s",
-                adapter.get_component_name(handler),
-                msg_name,
             )
 
     async def run(self) -> None:
@@ -183,11 +171,13 @@ class Bus:
         msg: Event,
         attempt: int,
     ) -> bool:
-        retry = False
-
         try:
             async with uow.UOW(self._repo) as ctx:
-                result = await handler(ctx, msg)
+                await handler(ctx, msg)
+
+                for event in ctx.events():
+                    self.publish(event)
+
         except* errors.POError as err:
             self._lgr.warning(
                 "%s can't handle %r in %d attempt: %s",
@@ -197,46 +187,23 @@ class Bus:
                 logger.get_root_error(err),
             )
             traceback.print_exception(err, colorize=True)  # type: ignore[reportCallIssue]
-
-            retry = True
         else:
-            match result:
-                case None:
-                    events = []
-                case Event():
-                    events = [result]
-                case _:
-                    events = result
+            return False
 
-            for event in events:
-                self.publish(event)
+        return True
 
-        return retry
-
-    async def request(self, msg: DTO) -> DTO:
-        name = adapter.get_component_name(msg)
-        self._lgr.info("%r published", msg)
-
-        handler = self._request_handlers.get(name)
-        if handler is None:
-            raise errors.ControllersError(f"No request handler for {name}")
-
-        return await self._handle_request(handler, msg)
-
-    async def _handle_request(
+    def wrap[Req: Any, Resp: Any](
         self,
-        handler: RequestHandler[Any, Any],
-        msg: DTO,
-    ) -> DTO:
-        async with uow.UOW(self._repo) as ctx:
-            result = await handler(ctx, msg)
+        handler: RequestHandler[Req, Resp],
+    ) -> WrappedRequestHandler[Req, Resp]:
+        @functools.wraps(handler)
+        async def wrapped(req: Req) -> Resp:
+            async with uow.UOW(self._repo) as ctx:
+                resp = await handler(ctx, req)
 
-        match result:
-            case DTO():
-                return result
-            case (DTO() as dto, Event() as event):
-                self.publish(event)
+                for event in ctx.events():
+                    self.publish(event)
 
-                return dto
-            case _:
-                raise errors.ControllersError(f"Invalid request handler result {adapter.get_component_name(handler)}")
+                return resp
+
+        return wrapped

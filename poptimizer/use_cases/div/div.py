@@ -10,14 +10,14 @@ from poptimizer.use_cases import handler
 
 
 class DivHandler:
-    async def __call__(self, ctx: handler.Ctx, msg: handler.SecuritiesUpdated) -> handler.DivUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.SecuritiesUpdated) -> None:
         sec_table = await ctx.get(securities.Securities)
 
         async with asyncio.TaskGroup() as tg:
             for sec in sec_table.df:
                 tg.create_task(self._update_one(ctx, msg.day, domain.UID(sec.ticker)))
 
-        return handler.DivUpdated(day=msg.day)
+        ctx.publish(handler.DivUpdated(day=msg.day))
 
     async def _update_one(
         self,

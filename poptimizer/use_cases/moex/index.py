@@ -21,12 +21,12 @@ class IndexesHandler:
         self._http_client = http_client
         self._lgr = logging.getLogger()
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.QuotesUpdated) -> handler.IndexesUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.QuotesUpdated) -> None:
         async with asyncio.TaskGroup() as tg:
             for ticker in index.INDEXES:
                 tg.create_task(self._update_one(ctx, msg.day, ticker))
 
-        return handler.IndexesUpdated(trading_days=msg.trading_days)
+        ctx.publish(handler.IndexesUpdated(trading_days=msg.trading_days))
 
     async def _update_one(self, ctx: handler.Ctx, update_day: domain.Day, ticker: domain.UID) -> None:
         table = await ctx.get_for_update(index.Index, ticker)

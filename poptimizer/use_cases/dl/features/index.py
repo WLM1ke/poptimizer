@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class IndexesFeatHandler:
-    async def __call__(self, ctx: handler.Ctx, msg: handler.QuotesFeatUpdated) -> handler.IndexFeatUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.QuotesFeatUpdated) -> None:
         indexes = await _load_indexes(ctx, pd.DatetimeIndex(msg.trading_days))
         port = await ctx.get(portfolio.Portfolio)
 
@@ -23,7 +23,7 @@ class IndexesFeatHandler:
             for pos in port.positions:
                 tg.create_task(_add_indexes_features(ctx, domain.UID(pos.ticker), indexes))
 
-        return handler.IndexFeatUpdated(trading_days=msg.trading_days)
+        ctx.publish(handler.IndexFeatUpdated(trading_days=msg.trading_days))
 
 
 async def _load_indexes(ctx: handler.Ctx, df_index: pd.DatetimeIndex) -> list[dict[features.NumFeat, FiniteFloat]]:

@@ -21,7 +21,7 @@ class ForecastHandler:
         self,
         ctx: handler.Ctx,
         msg: handler.ModelDeleted | handler.ModelEvaluated,
-    ) -> handler.ForecastsAnalyzed | None:
+    ) -> None:
         forecast = await ctx.get_for_update(forecasts.Forecast)
         if forecast.day < msg.day:
             forecast.init_day(msg.day)
@@ -37,7 +37,7 @@ class ForecastHandler:
         if forecast.update_required(port.ver):
             await self._update(ctx, forecast, port)
 
-        return handler.ForecastsAnalyzed(day=forecast.day)
+        ctx.publish(handler.ForecastsAnalyzed(day=forecast.day))
 
     async def _update(
         self,

@@ -7,14 +7,14 @@ from poptimizer.use_cases import handler
 
 
 class DayFeatHandler:
-    async def __call__(self, ctx: handler.Ctx, msg: handler.IndexFeatUpdated) -> handler.DayFeatUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.IndexFeatUpdated) -> None:
         async with asyncio.TaskGroup() as tg:
             port = await ctx.get(portfolio.Portfolio)
 
             for pos in port.positions:
                 tg.create_task(_create_day_feats(ctx, domain.UID(pos.ticker), msg.trading_days))
 
-        return handler.DayFeatUpdated(day=msg.day)
+        ctx.publish(handler.DayFeatUpdated(day=msg.day))
 
 
 async def _create_day_feats(ctx: handler.Ctx, ticker: domain.UID, trading_days: domain.TradingDays) -> None:

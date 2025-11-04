@@ -58,7 +58,7 @@ class SecuritiesHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.NewDataPublished) -> handler.SecuritiesUpdated:
+    async def __call__(self, ctx: handler.Ctx, msg: handler.NewDataPublished) -> None:
         table = await ctx.get_for_update(securities.Securities)
 
         sector_cache, rows = await self._get_sector_cash_rows()
@@ -72,7 +72,7 @@ class SecuritiesHandler:
 
         table.update(msg.day, rows)
 
-        return handler.SecuritiesUpdated(day=msg.day)
+        ctx.publish(handler.SecuritiesUpdated(day=msg.day))
 
     async def _get_sector_cash_rows(
         self,

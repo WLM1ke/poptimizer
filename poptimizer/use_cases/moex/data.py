@@ -54,7 +54,7 @@ class DataHandler:
         self,
         ctx: handler.Ctx,
         msg: handler.AppStarted | handler.SecFeatUpdated | handler.ForecastsAnalyzed,
-    ) -> handler.NewDataPublished | handler.DataChecked | None:
+    ) -> None:
         if self._stop_fn:
             match (usage := psutil.virtual_memory().percent) > _MEMORY_PERCENTAGE_THRESHOLD:
                 case True:
@@ -65,9 +65,9 @@ class DataHandler:
 
         match msg:
             case handler.AppStarted() | handler.ForecastsAnalyzed():
-                return await self._check(ctx)
+                ctx.publish(await self._check(ctx))
             case handler.SecFeatUpdated():
-                return await self._update(ctx, msg.day)
+                ctx.publish(await self._update(ctx, msg.day))
 
     async def _check(self, ctx: handler.Ctx) -> handler.NewDataPublished | handler.DataChecked:
         table = await ctx.get(trading_day.TradingDay)
