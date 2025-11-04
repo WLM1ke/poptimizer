@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from poptimizer.controllers.bus import msg
 from poptimizer.domain.domain import AccName, Ticker
+from poptimizer.domain.portfolio import portfolio
 from poptimizer.domain.settings import Settings, Theme
 from poptimizer.use_cases import handler
 
@@ -53,16 +54,6 @@ class Handlers:
         app.add_routes([web.get("/static/{path:.*}", self.static_file)])
 
     async def portfolio(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
-        settings = await ctx.get(Settings)
-
-        layout = Layout(
-            title="Portfolio",
-            path=req.path,
-            theme=settings.theme,
-            accounts=[AccName("Account1"), AccName("Account2")],
-            dividends=[Ticker("AKMB"), Ticker("GAZP")],
-        )
-
         main = Portfolio(
             template="portfolio.html",
             card=Card(
@@ -72,85 +63,82 @@ class Handlers:
             ),
         )
 
-        return await self._render_page(layout, main, is_boosted=_is_boosted(req))
+        return await self._render_page(
+            ctx,
+            "Portfolio",
+            req,
+            main,
+        )
 
     async def account(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
-        settings = await ctx.get(Settings)
-
-        layout = Layout(
-            title=req.match_info["account"],
-            path=req.path,
-            theme=settings.theme,
-            accounts=[AccName("Account1"), AccName("Account2")],
-            dividends=[Ticker("AKMB"), Ticker("GAZP")],
-        )
-
         main = Main(template="account.html")
 
-        return await self._render_page(layout, main, is_boosted=_is_boosted(req))
+        return await self._render_page(
+            ctx,
+            req.match_info["account"],
+            req,
+            main,
+        )
 
     async def forecast(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
-        settings = await ctx.get(Settings)
-
-        layout = Layout(
-            title="Forecast",
-            path=req.path,
-            theme=settings.theme,
-            accounts=[AccName("Account1"), AccName("Account2")],
-            dividends=[Ticker("AKMB"), Ticker("GAZP")],
-        )
-
         main = Main(template="forecast.html")
 
-        return await self._render_page(layout, main, is_boosted=_is_boosted(req))
+        return await self._render_page(
+            ctx,
+            "Forecast",
+            req,
+            main,
+        )
 
     async def optimization(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
-        settings = await ctx.get(Settings)
-
-        layout = Layout(
-            title="Optimization",
-            path=req.path,
-            theme=settings.theme,
-            accounts=[AccName("Account1"), AccName("Account2")],
-            dividends=[Ticker("AKMB"), Ticker("GAZP")],
-        )
-
         main = Main(template="optimization.html")
 
-        return await self._render_page(layout, main, is_boosted=_is_boosted(req))
+        return await self._render_page(
+            ctx,
+            "Optimization",
+            req,
+            main,
+        )
 
     async def dividends(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
-        settings = await ctx.get(Settings)
-
-        layout = Layout(
-            title=req.match_info["ticker"],
-            path=req.path,
-            theme=settings.theme,
-            accounts=[AccName("Account1"), AccName("Account2")],
-            dividends=[Ticker("AKMB"), Ticker("GAZP")],
-        )
-
         main = Main(template="dividends.html")
 
-        return await self._render_page(layout, main, is_boosted=_is_boosted(req))
+        return await self._render_page(
+            ctx,
+            req.match_info["ticker"],
+            req,
+            main,
+        )
 
     async def settings(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+        main = Main(template="settings.html")
+
+        return await self._render_page(
+            ctx,
+            "Settings",
+            req,
+            main,
+        )
+
+    async def _render_page(
+        self,
+        ctx: handler.Ctx,
+        title: str,
+        req: web.Request,
+        main: Any,
+    ) -> web.StreamResponse:
         settings = await ctx.get(Settings)
+        port = await ctx.get(portfolio.Portfolio)
 
         layout = Layout(
-            title="Settings",
+            title=title,
             path=req.path,
             theme=settings.theme,
-            accounts=[AccName("Account1"), AccName("Account2")],
+            accounts=sorted(port.account_names),
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
-        main = Main(template="settings.html")
-
-        return await self._render_page(layout, main, is_boosted=_is_boosted(req))
-
-    async def _render_page(self, layout: Layout, main: Any, *, is_boosted: bool) -> web.StreamResponse:
-        match is_boosted:
+        match req.headers.get("HX-Boosted") == "true":
             case True:
                 template = "body.html"
                 headers = prepare_event_header("set_title")
@@ -185,10 +173,6 @@ class Handlers:
         file_path = Path(__file__).parent / "static" / req.match_info["path"]
 
         return web.FileResponse(file_path)
-
-
-def _is_boosted(req: web.Request) -> bool:
-    return req.headers.get("HX-Boosted") == "true"
 
 
 def prepare_event_header(cmd: str, **kwargs: Any) -> dict[str, str]:
