@@ -12,13 +12,27 @@ from poptimizer.domain.settings import Settings, Theme
 from poptimizer.use_cases import handler
 
 
-class LayoutModel(BaseModel):
-    main_template: str
+class Layout(BaseModel):
     title: str
     path: str
     theme: Theme
     accounts: list[AccName]
     dividends: list[Ticker]
+
+
+class Main(BaseModel):
+    template: str
+
+
+class Card(BaseModel):
+    upper: str
+    main: str
+    lower: str
+
+
+class Portfolio(BaseModel):
+    template: str
+    card: Card
 
 
 class Handlers:
@@ -41,8 +55,7 @@ class Handlers:
     async def portfolio(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         settings = await ctx.get(Settings)
 
-        layout = LayoutModel(
-            main_template="portfolio.html",
+        layout = Layout(
             title="Portfolio",
             path=req.path,
             theme=settings.theme,
@@ -50,13 +63,21 @@ class Handlers:
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
-        return await self._render_page(layout, req)
+        main = Portfolio(
+            template="portfolio.html",
+            card=Card(
+                upper="Date: 2025-11-03",
+                main="Buy tickets: 38 / Sell tickets: 6",
+                lower="Forecasts: 676 / Breakeven: -1,1 %",
+            ),
+        )
+
+        return await self._render_page(layout, main, is_boosted=_is_boosted(req))
 
     async def account(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         settings = await ctx.get(Settings)
 
-        layout = LayoutModel(
-            main_template="account.html",
+        layout = Layout(
             title=req.match_info["account"],
             path=req.path,
             theme=settings.theme,
@@ -64,13 +85,14 @@ class Handlers:
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
-        return await self._render_page(layout, req)
+        main = Main(template="account.html")
+
+        return await self._render_page(layout, main, is_boosted=_is_boosted(req))
 
     async def forecast(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         settings = await ctx.get(Settings)
 
-        layout = LayoutModel(
-            main_template="forecast.html",
+        layout = Layout(
             title="Forecast",
             path=req.path,
             theme=settings.theme,
@@ -78,13 +100,14 @@ class Handlers:
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
-        return await self._render_page(layout, req)
+        main = Main(template="forecast.html")
+
+        return await self._render_page(layout, main, is_boosted=_is_boosted(req))
 
     async def optimization(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         settings = await ctx.get(Settings)
 
-        layout = LayoutModel(
-            main_template="optimization.html",
+        layout = Layout(
             title="Optimization",
             path=req.path,
             theme=settings.theme,
@@ -92,13 +115,14 @@ class Handlers:
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
-        return await self._render_page(layout, req)
+        main = Main(template="optimization.html")
+
+        return await self._render_page(layout, main, is_boosted=_is_boosted(req))
 
     async def dividends(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         settings = await ctx.get(Settings)
 
-        layout = LayoutModel(
-            main_template="dividends.html",
+        layout = Layout(
             title=req.match_info["ticker"],
             path=req.path,
             theme=settings.theme,
@@ -106,13 +130,14 @@ class Handlers:
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
-        return await self._render_page(layout, req)
+        main = Main(template="dividends.html")
+
+        return await self._render_page(layout, main, is_boosted=_is_boosted(req))
 
     async def settings(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         settings = await ctx.get(Settings)
 
-        layout = LayoutModel(
-            main_template="settings.html",
+        layout = Layout(
             title="Settings",
             path=req.path,
             theme=settings.theme,
@@ -120,18 +145,21 @@ class Handlers:
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
-        return await self._render_page(layout, req)
+        main = Main(template="settings.html")
 
-    async def _render_page(self, layout: LayoutModel, req: web.Request) -> web.StreamResponse:
-        template = "index.html"
-        headers = {}
+        return await self._render_page(layout, main, is_boosted=_is_boosted(req))
 
-        if req.headers.get("HX-Boosted") == "true":
-            template = "body.html"
-            headers = prepare_event_header("set_title")
+    async def _render_page(self, layout: Layout, main: Any, *, is_boosted: bool) -> web.StreamResponse:
+        match is_boosted:
+            case True:
+                template = "body.html"
+                headers = prepare_event_header("set_title")
+            case False:
+                template = "index.html"
+                headers = {}
 
         return web.Response(
-            text=self._env.get_template(template).render(layout=layout),
+            text=self._env.get_template(template).render(layout=layout, main=main),
             content_type="text/html",
             headers=headers,
         )
@@ -157,6 +185,10 @@ class Handlers:
         file_path = Path(__file__).parent / "static" / req.match_info["path"]
 
         return web.FileResponse(file_path)
+
+
+def _is_boosted(req: web.Request) -> bool:
+    return req.headers.get("HX-Boosted") == "true"
 
 
 def prepare_event_header(cmd: str, **kwargs: Any) -> dict[str, str]:

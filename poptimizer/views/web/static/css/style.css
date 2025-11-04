@@ -38,7 +38,8 @@ main {
 }
 
 
-h1 {
+h1,
+h2 {
     font-size: 1.25rem;
     line-height: 1.75rem;
     font-weight: var(--font-weight-header);
@@ -118,4 +119,18 @@ svg {
 
 .nav__icon {
     fill: var(--text-muted);
+}
+
+
+.card {
+    background-color: var(--bg-accent);
+    width: 24rem;
+    padding: var(--padding-large);
+    border-radius: var(--padding);
+}
+
+
+.card--muted {
+    color: var(--text-muted);
+    font-style: italic;
 }
