@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Any
 
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -50,7 +51,7 @@ class Handlers:
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
-        return await self._render_page(layout)
+        return await self._render_page(layout, request)
 
     async def account(self, request: web.Request) -> web.StreamResponse:
         theme_dto = await self._bus.request(settings_requests.GetTheme())  # type: ignore[assignment]
@@ -63,7 +64,7 @@ class Handlers:
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
-        return await self._render_page(layout)
+        return await self._render_page(layout, request)
 
     async def forecast(self, request: web.Request) -> web.StreamResponse:
         theme_dto = await self._bus.request(settings_requests.GetTheme())
@@ -76,7 +77,7 @@ class Handlers:
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
-        return await self._render_page(layout)
+        return await self._render_page(layout, request)
 
     async def optimization(self, request: web.Request) -> web.StreamResponse:
         theme_dto = await self._bus.request(settings_requests.GetTheme())
@@ -89,7 +90,7 @@ class Handlers:
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
-        return await self._render_page(layout)
+        return await self._render_page(layout, request)
 
     async def dividends(self, request: web.Request) -> web.StreamResponse:
         theme_dto = await self._bus.request(settings_requests.GetTheme())
@@ -102,24 +103,34 @@ class Handlers:
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
-        return await self._render_page(layout)
+        return await self._render_page(layout, request)
 
     async def settings(self, request: web.Request) -> web.StreamResponse:
         theme_dto = await self._bus.request(settings_requests.GetTheme())
         layout = LayoutModel(
             main_template="settings.html",
             title="Settings",
+            path=request.path,
             theme=theme_dto.theme,
             accounts=[AccName("Account1"), AccName("Account2")],
             dividends=[Ticker("AKMB"), Ticker("GAZP")],
         )
 
-        return await self._render_page(layout)
+        return await self._render_page(layout, request)
 
-    async def _render_page(self, layout: LayoutModel) -> web.StreamResponse:
-        html = self._env.get_template("index.html").render(layout=layout)
+    async def _render_page(self, layout: LayoutModel, request: web.Request) -> web.StreamResponse:
+        template = "index.html"
+        headers = {}
 
-        return web.Response(text=html, content_type="text/html")
+        if request.headers.get("HX-Boosted") == "true":
+            template = "body.html"
+            headers = prepare_event_header("set_title")
+
+        return web.Response(
+            text=self._env.get_template(template).render(layout=layout),
+            content_type="text/html",
+            headers=headers,
+        )
 
     async def theme_handler(self, request: web.Request) -> web.StreamResponse:
         theme = request.match_info["theme"]
@@ -134,10 +145,16 @@ class Handlers:
         return web.Response(
             text=html,
             content_type="text/html",
-            headers={"HX-Trigger-After-Settle": json.dumps({"po:theme": {"target": "body", "theme": f"{theme}"}})},
+            headers=prepare_event_header("set_theme", theme=theme),
         )
 
     async def static_file(self, request: web.Request) -> web.StreamResponse:
         file_path = Path(__file__).parent / "static" / request.match_info["path"]
 
         return web.FileResponse(file_path)
+
+
+def prepare_event_header(cmd: str, **kwargs: Any) -> dict[str, str]:
+    payload = {"po:cmd": {"target": "body", "cmd": cmd, "args": kwargs}}
+
+    return {"HX-Trigger-After-Settle": json.dumps(payload)}
