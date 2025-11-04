@@ -7,6 +7,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import BaseModel
 
 from poptimizer.controllers.bus import msg
+from poptimizer.domain.div import status
 from poptimizer.domain.domain import AccName, Ticker
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.domain.settings import Settings, Theme
@@ -129,13 +130,14 @@ class Handlers:
     ) -> web.StreamResponse:
         settings = await ctx.get(Settings)
         port = await ctx.get(portfolio.Portfolio)
+        div = await ctx.get(status.DivStatus)
 
         layout = Layout(
             title=title,
             path=req.path,
             theme=settings.theme,
             accounts=sorted(port.account_names),
-            dividends=[Ticker("AKMB"), Ticker("GAZP")],
+            dividends=sorted({row.ticker for row in div.df}),
         )
 
         match req.headers.get("HX-Boosted") == "true":
