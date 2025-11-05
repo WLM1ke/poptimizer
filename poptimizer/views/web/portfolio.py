@@ -1,3 +1,4 @@
+import asyncio
 import json
 from pathlib import Path
 from typing import Any
@@ -128,16 +129,17 @@ class Handlers:
         req: web.Request,
         main: Any,
     ) -> web.StreamResponse:
-        settings = await ctx.get(Settings)
-        port = await ctx.get(portfolio.Portfolio)
-        div = await ctx.get(status.DivStatus)
+        async with asyncio.TaskGroup() as tg:
+            settings = tg.create_task(ctx.get(Settings))
+            port = tg.create_task(ctx.get(portfolio.Portfolio))
+            div = tg.create_task(ctx.get(status.DivStatus))
 
         layout = Layout(
             title=title,
             path=req.path,
-            theme=settings.theme,
-            accounts=sorted(port.account_names),
-            dividends=sorted({row.ticker for row in div.df}),
+            theme=settings.result().theme,
+            accounts=sorted(port.result().account_names),
+            dividends=sorted({row.ticker for row in div.result().df}),
         )
 
         match req.headers.get("HX-Boosted") == "true":
