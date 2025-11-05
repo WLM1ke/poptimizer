@@ -27,6 +27,10 @@ class Position(BaseModel):
     turnover: NonNegativeFloat
     accounts: AccountData = Field(default_factory=dict[domain.AccName, int])
 
+    @property
+    def value(self) -> float:
+        return self.price * sum(self.accounts.values())
+
 
 class NormalizedPosition(BaseModel):
     ticker: domain.Ticker
@@ -202,10 +206,27 @@ class Portfolio(domain.Entity):
         ]
 
     @property
+    def cash_value(self) -> float:
+        return sum(self.cash.values())
+
+    @property
     def value(self) -> float:
         values = [pos.price * sum(pos.accounts.values()) for pos in self.positions]
 
-        return sum(values) + sum(self.cash.values())
+        return sum(values) + self.cash_value
+
+    @property
+    def open_position(self) -> int:
+        return sum(len(pos.accounts) > 0 for pos in self.positions)
+
+    @property
+    def effective_positions(self) -> float:
+        positions_value = self.value - self.cash_value
+
+        if not positions_value:
+            return 0
+
+        return positions_value**2 / sum(pos.value**2 for pos in self.positions)
 
     def exclude_ticker(self, ticker: domain.Ticker) -> None:
         _, pos = self.find_position(ticker)

@@ -56,12 +56,14 @@ class Handlers:
         app.add_routes([web.get("/static/{path:.*}", self.static_file)])
 
     async def portfolio(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+        port = await ctx.get(portfolio.Portfolio)
+
         main = Portfolio(
             template="portfolio.html",
             card=Card(
-                upper="Date: 2025-11-03",
-                main="Buy tickets: 38 / Sell tickets: 6",
-                lower="Forecasts: 676 / Breakeven: -1,1 %",
+                upper=f"Date: {port.day}",
+                main=f"Value: {_format_float(port.value, 0)} ₽",
+                lower=f"Positions: {port.open_position} / Effective: {_format_float(port.effective_positions, 0)}",
             ),
         )
 
@@ -145,7 +147,7 @@ class Handlers:
         match req.headers.get("HX-Boosted") == "true":
             case True:
                 template = "body.html"
-                headers = prepare_event_header("set_title")
+                headers = _prepare_event_header("set_title")
             case False:
                 template = "index.html"
                 headers = {}
@@ -170,7 +172,7 @@ class Handlers:
         return web.Response(
             text=html,
             content_type="text/html",
-            headers=prepare_event_header("set_theme", theme=theme),
+            headers=_prepare_event_header("set_theme", theme=theme),
         )
 
     async def static_file(self, req: web.Request) -> web.StreamResponse:
@@ -179,7 +181,11 @@ class Handlers:
         return web.FileResponse(file_path)
 
 
-def prepare_event_header(cmd: str, **kwargs: Any) -> dict[str, str]:
+def _prepare_event_header(cmd: str, **kwargs: Any) -> dict[str, str]:
     payload = {"po:cmd": {"target": "body", "cmd": cmd, "args": kwargs}}
 
     return {"HX-Trigger-After-Settle": json.dumps(payload)}
+
+
+def _format_float(number: float, decimals: int) -> str:
+    return f"{number:_.{decimals}f}".replace("_", " ").replace(".", ",")
