@@ -121,7 +121,6 @@ svg {
     fill: var(--text-muted);
 }
 
-
 .card {
     background-color: var(--bg-accent);
     width: 24rem;
@@ -129,8 +128,28 @@ svg {
     border-radius: var(--padding);
 }
 
-
 .card--muted {
     color: var(--text-muted);
     font-style: italic;
+}
+
+.table {
+    margin-top: var(--padding);
+    font-family: var(--mono-font);
+}
+
+.table__header-cell {
+    padding: var(--padding);
+    font-family: var(--font);
+}
+
+.table__label-cell {
+    padding: var(--padding);
+    width: 8rem
+}
+
+.table__data-cell {
+    padding: var(--padding);
+    text-align: right;
+    width: 8rem
 }

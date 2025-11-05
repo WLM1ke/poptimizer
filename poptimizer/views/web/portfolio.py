@@ -8,6 +8,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import BaseModel
 
 from poptimizer.controllers.bus import msg
+from poptimizer.domain import domain
 from poptimizer.domain.div import status
 from poptimizer.domain.domain import AccName, Ticker
 from poptimizer.domain.portfolio import portfolio
@@ -33,9 +34,20 @@ class Card(BaseModel):
     lower: str
 
 
+class Position(BaseModel):
+    ticker: domain.Ticker
+    shares: int
+    lot: int
+    price: float
+    value: float
+
+
 class Portfolio(BaseModel):
     template: str
     card: Card
+    value: float
+    cash: int
+    positions: list[Position]
 
 
 class Handlers:
@@ -58,13 +70,29 @@ class Handlers:
     async def portfolio(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         port = await ctx.get(portfolio.Portfolio)
 
+        value = port.value
+        positions = [
+            Position(
+                ticker=position.ticker,
+                shares=position.shares,
+                lot=position.lot,
+                price=position.price,
+                value=position.value,
+            )
+            for position in port.positions
+            if position.shares > 0
+        ]
+
         main = Portfolio(
             template="portfolio.html",
             card=Card(
                 upper=f"Date: {port.day}",
-                main=f"Value: {_format_float(port.value, 0)} ₽",
+                main=f"Value: {_format_float(value, 0)} ₽",
                 lower=f"Positions: {port.open_position} / Effective: {_format_float(port.effective_positions, 0)}",
             ),
+            value=value,
+            cash=port.cash_value,
+            positions=sorted(positions, key=lambda x: x.value, reverse=True),
         )
 
         return await self._render_page(
@@ -153,7 +181,12 @@ class Handlers:
                 headers = {}
 
         return web.Response(
-            text=self._env.get_template(template).render(layout=layout, main=main),
+            text=self._env.get_template(template).render(
+                layout=layout,
+                main=main,
+                format_float=_format_float,
+                format_percent=_format_percent,
+            ),
             content_type="text/html",
             headers=headers,
         )
@@ -187,5 +220,15 @@ def _prepare_event_header(cmd: str, **kwargs: Any) -> dict[str, str]:
     return {"HX-Trigger-After-Settle": json.dumps(payload)}
 
 
-def _format_float(number: float, decimals: int) -> str:
-    return f"{number:_.{decimals}f}".replace("_", " ").replace(".", ",")
+def _format_float(number: float, decimals: int | None = None) -> str:
+    match decimals:
+        case None:
+            rez = f"{number:_}"
+        case _:
+            rez = f"{number:_.{decimals}f}"
+
+    return rez.replace("_", " ").replace(".", ",")
+
+
+def _format_percent(number: float) -> str:
+    return f"{number:_.1%}".replace("_", " ").replace(".", ",")

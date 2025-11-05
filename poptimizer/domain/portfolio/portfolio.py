@@ -28,8 +28,12 @@ class Position(BaseModel):
     accounts: AccountData = Field(default_factory=dict[domain.AccName, int])
 
     @property
+    def shares(self) -> int:
+        return sum(self.accounts.values())
+
+    @property
     def value(self) -> float:
-        return self.price * sum(self.accounts.values())
+        return self.price * self.shares
 
 
 class NormalizedPosition(BaseModel):
@@ -206,7 +210,7 @@ class Portfolio(domain.Entity):
         ]
 
     @property
-    def cash_value(self) -> float:
+    def cash_value(self) -> int:
         return sum(self.cash.values())
 
     @property

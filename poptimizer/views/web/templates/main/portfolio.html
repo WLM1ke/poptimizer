@@ -1,3 +1,60 @@
 <main>
     {% include 'components/card.html' %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th class="table__header-cell">
+                    Ticker
+                </th>
+                <th class="table__header-cell">
+                    Shares
+                </th>
+                <th class="table__header-cell">
+                    Price
+                </th>
+                <th class="table__header-cell">
+                    Value
+                </th>
+                <th class="table__header-cell">
+                    Weight
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="table__label-cell">
+                    Cash
+                </td>
+                <td class="table__data-cell">
+                    {{ format_float(main.cash) }}
+                </td>
+                <td class="table__data-cell">
+                </td>
+                <td class="table__data-cell">
+                </td>
+                <td class="table__data-cell">
+                    {{ format_percent(main.cash / main.value) }}
+                </td>
+            </tr>
+            {% for pos in main.positions %}
+            <tr>
+                <td class="table__label-cell">
+                    {{ pos.ticker }}
+                </td>
+                <td class="table__data-cell">
+                    {{ format_float(pos.shares) }}
+                </td>
+                <td class="table__data-cell">
+                    {{ format_float(pos.price) }}
+                </td>
+                <td class="table__data-cell">
+                    {{ format_float(pos.value, 0) }}
+                </td>
+                <td class="table__data-cell">
+                    {{ format_percent(pos.value / main.value) }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </main>
