@@ -16,7 +16,7 @@ _LEFT_PART_OF_BLOCK = 1 / 3
 
 
 def _prepare_positions_data(port: portfolio.Portfolio) -> list[tuple[str, float, float]]:
-    value = port.value
+    value = port.value()
 
     values = sorted(
         ((str(pos.ticker), pos.price * sum(pos.accounts.values())) for pos in port.positions),

@@ -91,4 +91,6 @@
   --padding: 0.5rem;
   --padding-small: 0.25rem;
   --padding-large: 1rem;
+
+  --block-width: 8rem;
 }

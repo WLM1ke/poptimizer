@@ -26,7 +26,7 @@ class PortfolioHandler:
         if old_forecast_days != port.forecast_days:
             self._lgr.warning("Forecast days changed - %d -> %d", old_forecast_days, port.forecast_days)
 
-        old_value = port.value
+        old_value = port.value()
 
         sec_cache = await self._prepare_sec_cache(ctx, set(msg.trading_days[-port.forecast_days :]))
         min_turnover = _calc_min_turnover(port, sec_cache)
@@ -35,7 +35,7 @@ class PortfolioHandler:
         self._add_new_liquid(port, sec_cache, min_turnover)
 
         if old_value:
-            new_value = port.value
+            new_value = port.value()
             change = new_value / old_value - 1
             self._lgr.warning(f"Portfolio value changed {change:.2%} - {old_value:_.0f} -> {new_value:_.0f}")
 

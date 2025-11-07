@@ -123,7 +123,7 @@ svg {
 
 .card {
     background-color: var(--bg-accent);
-    width: 24rem;
+    width: calc(var(--block-width) * 3);
     padding: var(--padding-large);
     border-radius: var(--padding);
 }
@@ -145,11 +145,21 @@ svg {
 
 .table__label-cell {
     padding: var(--padding);
-    width: 8rem
+    width: var(--block-width);
 }
 
 .table__data-cell {
     padding: var(--padding);
     text-align: right;
-    width: 8rem
+    width: var(--block-width);
+}
+
+.table__input {
+    padding: var(--padding-small);
+    text-align: right;
+    width: var(--block-width);
+    border-width: 1px;
+    border-radius: var(--padding);
+    border-color: var(--bg-accent);
+    background-color: var(--bg-main);
 }

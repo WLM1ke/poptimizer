@@ -54,7 +54,7 @@ async def _update_fund(
         case 0:
             fund.init(day=day, inflows=inflows)
         case _:
-            fund.update(day=day, value=port.value, dividends=dividends, inflows=inflows)
+            fund.update(day=day, value=port.value(), dividends=dividends, inflows=inflows)
 
     await repo.save(fund)
 

@@ -27,13 +27,14 @@ class Position(BaseModel):
     turnover: NonNegativeFloat
     accounts: AccountData = Field(default_factory=dict[domain.AccName, int])
 
-    @property
-    def shares(self) -> int:
-        return sum(self.accounts.values())
+    def quantity(self, account: domain.AccName | None = None) -> int:
+        if account is None:
+            return sum(self.accounts.values())
 
-    @property
-    def value(self) -> float:
-        return self.price * self.shares
+        return self.accounts.get(account, 0)
+
+    def value(self, account: domain.AccName | None = None) -> float:
+        return self.price * self.quantity(account)
 
 
 class NormalizedPosition(BaseModel):
@@ -160,14 +161,14 @@ class Portfolio(domain.Entity):
 
                 return True
 
-    def update_position(self, acc_name: domain.AccName, ticker: domain.Ticker, amount: NonNegativeInt) -> None:
+    def update_position(self, acc_name: domain.AccName, ticker: domain.Ticker, quantity: NonNegativeInt) -> None:
         if acc_name not in self.account_names:
             raise errors.DomainError(f"account {acc_name} doesn't exist")
 
         if ticker == domain.CashTicker:
-            self.cash[acc_name] = amount
+            self.cash[acc_name] = quantity
 
-            if not amount:
+            if not quantity:
                 self.cash.pop(acc_name)
 
             return
@@ -176,61 +177,64 @@ class Portfolio(domain.Entity):
             case (_, None):
                 raise errors.DomainError(f"ticker {ticker} doesn't exist")
             case (_, position):
-                if amount % (lot := position.lot):
-                    raise errors.DomainError(f"amount {amount} must be multiple of {lot}")
+                if quantity % (lot := position.lot):
+                    raise errors.DomainError(f"quantity {quantity} must be multiple of {lot}")
 
-                position.accounts[acc_name] = amount
+                position.accounts[acc_name] = quantity
 
-                if not amount:
+                if not quantity:
                     position.accounts.pop(acc_name)
 
                 if not position.accounts:
                     self.sold += 1
 
     def normalized_turnover(self) -> list[float]:
-        values = [position.price * sum(position.accounts.values()) for position in self.positions]
-        port_value = sum(values) + sum(self.cash.values())
+        values = self.value()
 
-        return [position.turnover / port_value for position in self.positions]
+        return [position.turnover / values for position in self.positions]
 
     @property
     def normalized_positions(self) -> list[NormalizedPosition]:
-        values = [pos.price * sum(pos.accounts.values()) for pos in self.positions]
-        port_value = sum(values) + sum(self.cash.values())
+        port_value = self.value()
+
         if not port_value:
             port_value = 1
 
         return [
             NormalizedPosition(
                 ticker=pos.ticker,
-                weight=value / port_value,
+                weight=pos.value() / port_value,
                 norm_turnover=pos.turnover / port_value,
             )
-            for pos, value in zip(self.positions, values, strict=True)
+            for pos in self.positions
         ]
 
-    @property
-    def cash_value(self) -> int:
-        return sum(self.cash.values())
+    def cash_value(self, account: domain.AccName | None = None) -> int:
+        if account is None:
+            return sum(self.cash.values())
 
-    @property
-    def value(self) -> float:
-        values = [pos.price * sum(pos.accounts.values()) for pos in self.positions]
+        return self.cash.get(account, 0)
 
-        return sum(values) + self.cash_value
+    def value(self, account: domain.AccName | None = None) -> float:
+        if account is None:
+            return sum(pos.price * sum(pos.accounts.values()) for pos in self.positions) + self.cash_value()
 
-    @property
-    def open_position(self) -> int:
-        return sum(len(pos.accounts) > 0 for pos in self.positions)
+        return sum(pos.price * pos.accounts.get(account, 0) for pos in self.positions) + self.cash_value(account)
+
+    def open_positions(self, account: domain.AccName | None = None) -> int:
+        if account is None:
+            return sum(len(pos.accounts) > 0 for pos in self.positions)
+
+        return sum(pos.accounts.get(account, 0) > 0 for pos in self.positions)
 
     @property
     def effective_positions(self) -> float:
-        positions_value = self.value - self.cash_value
+        positions_value = self.value() - self.cash_value()
 
         if not positions_value:
             return 0
 
-        return positions_value**2 / sum(pos.value**2 for pos in self.positions)
+        return positions_value**2 / sum(pos.value() ** 2 for pos in self.positions)
 
     def exclude_ticker(self, ticker: domain.Ticker) -> None:
         _, pos = self.find_position(ticker)

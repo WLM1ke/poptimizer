@@ -1,4 +1,79 @@
-<main>
-    <h2>Account {{ layout.title }}</h2>
-    <p>Account {{ layout.title }} page content</p>
-</main>
+{% include 'components/card.html' %}
+<table class="table">
+    <thead>
+        <tr>
+            <th class="table__header-cell">
+                Ticker
+            </th>
+            <th class="table__header-cell">
+                Quantity
+            </th>
+            <th class="table__header-cell">
+                Lot
+            </th>
+            <th class="table__header-cell">
+                Price
+            </th>
+            <th class="table__header-cell">
+                Value
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="table__label-cell">
+                Cash
+            </td>
+            <td>
+                <input
+                    hx-patch="/accounts/{{ main.account }}/CASH"
+                    hx-target="main"
+                    hx-swap="morph:innerHTML"
+                    class="table__input"
+                    name="quantity"
+                    value="{{ main.cash }}"
+                    type="number"
+                    min="0"
+                    step="1"
+                >
+            </td>
+            <td class="table__data-cell">
+            </td>
+            <td class="table__data-cell">
+            </td>
+            <td class="table__data-cell">
+                {{ format_float(main.cash) }}
+            </td>
+        </tr>
+        {% for pos in main.positions %}
+        <tr>
+            <td class="table__label-cell">
+                {{ pos.ticker }}
+            </td>
+            <td>
+                <input
+                    hx-patch="/accounts/{{ main.account }}/{{ pos.ticker }}"
+                    hx-target="main"
+                    hx-swap="morph:innerHTML"
+                    class="table__input"
+                    name="quantity"
+                    value="{{ pos.quantity }}"
+                    type="number"
+                    min="0"
+                    step="{{ pos.lot }}"
+                >
+                </input>
+            </td>
+            <td class="table__data-cell">
+                {{ format_float(pos.lot, 0) }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_float(pos.price) }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_float(pos.value, 0) }}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
