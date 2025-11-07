@@ -2,6 +2,7 @@ import pytest
 import torch
 
 from poptimizer import errors
+from poptimizer.domain import domain
 from poptimizer.domain.dl import data_loaders, datasets, features
 
 
@@ -17,6 +18,7 @@ def make_days():
 def test_no_features_error(days) -> None:
     with pytest.raises(errors.DomainError, match="no features"):
         datasets.TickerData(
+            ticker=domain.Ticker("GAZP"),
             days=days,
             num_feat=[],
             num_feat_selected=[],
@@ -29,6 +31,7 @@ def test_no_features_error(days) -> None:
 def test_short_history_error(days) -> None:
     with pytest.raises(errors.TooShortHistoryError):
         datasets.TickerData(
+            ticker=domain.Ticker("GAZP"),
             days=days,
             num_feat=[
                 {
@@ -48,6 +51,7 @@ def test_short_history_error(days) -> None:
 @pytest.fixture(name="one_ticker_data")
 def make_one_ticker_data(days):
     return datasets.TickerData(
+        ticker=domain.Ticker("GAZP"),
         days=days,
         num_feat=[
             {
@@ -194,6 +198,7 @@ def test_train_data_loader(one_ticker_data) -> None:
 @pytest.fixture(name="second_ticker_data")
 def make_second_ticker_data(days):
     return datasets.TickerData(
+        ticker=domain.Ticker("GAZP"),
         days=days,
         num_feat=[
             {

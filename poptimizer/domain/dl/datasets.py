@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -10,6 +10,9 @@ from torch.utils import data
 
 from poptimizer import errors
 from poptimizer.domain.dl import features
+
+if TYPE_CHECKING:
+    from poptimizer.domain import domain
 
 
 class Days(BaseModel):
@@ -164,6 +167,7 @@ class TickerData:
     def __init__(  # noqa: PLR0913
         self,
         *,
+        ticker: domain.Ticker,
         days: Days,
         num_feat: list[dict[features.NumFeat, FiniteFloat]],
         num_feat_selected: list[features.NumFeat],
@@ -177,7 +181,7 @@ class TickerData:
             raise errors.DomainError("no features")
 
         if len(num_feat) < days.minimal_returns_days:
-            raise errors.TooShortHistoryError(days.minimal_returns_days)
+            raise errors.TooShortHistoryError(ticker, days.minimal_returns_days)
 
         all_feat_df = pd.DataFrame(num_feat)
 

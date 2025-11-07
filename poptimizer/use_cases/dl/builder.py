@@ -85,6 +85,7 @@ class Builder:
         return (
             [
                 datasets.TickerData(
+                    ticker=ticker,
                     days=days,
                     num_feat=feat.numerical,
                     num_feat_selected=sorted(features.NumFeat(feat) for feat, on in batch.num_feats if on),
@@ -92,7 +93,7 @@ class Builder:
                     emb_seq_feat=[feat.embedding_seq[selected].sequence for selected in emb_seq_feat_selected],
                     lag_feat=batch.use_lag_feat,
                 )
-                for feat in self._cache
+                for ticker, feat in zip(tickers, self._cache, strict=True)
             ],
             [self._embedding_sizes[feat] for feat in emb_feat_selected],
             emb_seq_feat_size,
