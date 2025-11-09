@@ -1,12 +1,15 @@
 import asyncio
+import http
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
-from aiohttp import web
+from aiohttp import typedefs, web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
+from poptimizer import errors
 from poptimizer.controllers.bus import msg
 from poptimizer.domain import domain
 from poptimizer.domain.div import status
@@ -53,10 +56,14 @@ class Portfolio(BaseModel):
 
 class Handlers:
     def __init__(self, app: web.Application, bus: msg.Bus) -> None:
+        self._lgr = logging.getLogger()
+        self._bus = bus
         self._env = Environment(
             loader=FileSystemLoader(Path(__file__).parent / "templates"),
             autoescape=select_autoescape(["html"]),
         )
+
+        app.middlewares.append(self._alerts_middleware)
 
         app.add_routes([web.get("/", bus.wrap(self.portfolio))])
         app.add_routes([web.get("/accounts/{account}", bus.wrap(self.account))])
@@ -239,12 +246,39 @@ class Handlers:
         settings = await ctx.get_for_update(Settings)
         settings.update_theme(Theme(theme))
 
-        html = self._env.get_template(f"theme/{theme}.html").render()
-
         return web.Response(
-            text=html,
+            text=self._env.get_template(f"theme/{theme}.html").render(),
             content_type="text/html",
             headers=_prepare_event_header("set_theme", theme=theme),
+        )
+
+    @web.middleware
+    async def _alerts_middleware(
+        self,
+        request: web.Request,
+        handler: typedefs.Handler,
+    ) -> web.StreamResponse:
+        try:
+            return await handler(request)
+        except (errors.AdapterError, errors.ControllersError) as err:
+            self._lgr.warning("Can't handle request - %s", err)
+
+            return self._alert(http.HTTPStatus.INTERNAL_SERVER_ERROR, f"{err.__class__.__name__}: {','.join(err.args)}")
+        except (errors.DomainError, errors.UseCasesError) as err:
+            self._lgr.warning("Can't handle request - %s", err)
+
+            return self._alert(http.HTTPStatus.BAD_REQUEST, f"{err.__class__.__name__}: {','.join(err.args)}")
+        except ValidationError as err:
+            self._lgr.warning("Can't handle request - %s", err)
+            msg = ",".join(desc["msg"] for desc in err.errors())
+
+            return self._alert(http.HTTPStatus.BAD_REQUEST, f"{err.__class__.__name__}: {msg}")
+
+    def _alert(self, code: int, alert: str) -> web.Response:
+        return web.Response(
+            status=code,
+            text=self._env.get_template("components/alert.html").render(alert=alert),
+            content_type="text/html",
         )
 
     async def static_file(self, req: web.Request) -> web.StreamResponse:

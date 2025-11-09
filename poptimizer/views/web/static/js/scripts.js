@@ -1,3 +1,9 @@
+htmx.config.responseHandling = [
+  { code: "204", swap: false },
+  { code: "[23]..", swap: true },
+  { code: "[45]..", swap: true, error: false, target: ".alerts", swapOverride: "afterbegin" },
+];
+
 function handleCmd(event) {
   const cmd = event?.detail?.cmd;
   const args = event?.detail?.args;

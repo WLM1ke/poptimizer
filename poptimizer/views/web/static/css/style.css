@@ -163,3 +163,23 @@ svg {
     border-color: var(--bg-accent);
     background-color: var(--bg-main);
 }
+
+.alerts {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    padding: var(--padding);
+}
+
+.alerts__item {
+    display: flex;
+    align-items: center;
+    gap: var(--padding-small);
+    margin: var(--padding);
+    padding: var(--padding);
+    border-radius: var(--padding);
+    border-width: 1px;
+    border-color: var(--bdr-alert);
+    color: var(--text-alert);
+    background-color: var(--bg-alert);
+}
