@@ -159,7 +159,7 @@ task run
 
 ## Техническая информация
 
-Frontend сделан на `TypeScript` и `SvelteKit`, а Backend на `asyncio` `Python`, в том числе:
+Frontend сделан на `htmx`, а Backend на `asyncio` `Python`, в том числе:
 
 - HTTP клиент и сервер `aiohttp`
 - хранение данных `async` `PyMongo`
