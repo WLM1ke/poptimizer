@@ -11,9 +11,9 @@ name = "poptimizer"
 dynamic = ["version"]
 description = "Portfolio optimization"
 readme = "README.md"
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.14"
 dependencies = [
-    "aiohttp>=3.12.7",
+    "aiohttp>=3.13.2",
     "pydantic>=2.11.1",
     "pydantic-settings>=2.7.1",
     "typer>=0.16.0",
