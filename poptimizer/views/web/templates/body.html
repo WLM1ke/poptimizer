@@ -194,8 +194,12 @@
 <header>
     <h1>{{ layout.title }}</h1>
 </header>
-<main>
+<main
+    {% if layout.poll %}
+    hx-get="{{ layout.path }}"
+    hx-trigger="load delay:10s"
+    hx-target="body"
+    {% endif %}
+>
     {% include 'main/' + main.template %}
-    <ol class="alerts">
-    </ol>
 </main>

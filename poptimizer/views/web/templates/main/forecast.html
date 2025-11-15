@@ -1,2 +1,43 @@
-<h2>Forecast</h2>
-<p>Forecast page content</p>
+{% include 'components/card.html' %}
+<table class="table">
+    <thead>
+        <tr>
+            <th class="table__header-cell">
+                Ticker
+            </th>
+            <th class="table__header-cell">
+                Mean
+            </th>
+            <th class="table__header-cell">
+                Std
+            </th>
+            <th class="table__header-cell">
+                Beta
+            </th>
+            <th class="table__header-cell">
+                Gradient
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pos in main.positions %}
+        <tr>
+            <td class="table__label-cell">
+                {{ pos.ticker }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_percent(pos.mean) }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_percent(pos.std) }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_float(pos.beta, 2) }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_percent(pos.grad) }}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

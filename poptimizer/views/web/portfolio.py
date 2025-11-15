@@ -14,7 +14,7 @@ from poptimizer.controllers.bus import msg
 from poptimizer.domain import domain
 from poptimizer.domain.div import status
 from poptimizer.domain.domain import AccName, Ticker
-from poptimizer.domain.portfolio import portfolio
+from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.domain.settings import Settings, Theme
 from poptimizer.use_cases import handler
 
@@ -22,6 +22,7 @@ from poptimizer.use_cases import handler
 class Layout(BaseModel):
     title: str
     path: str
+    poll: bool
     theme: Theme
     accounts: list[AccName]
     dividends: list[Ticker]
@@ -52,6 +53,12 @@ class Portfolio(BaseModel):
     value: float
     cash: int
     positions: list[Position]
+
+
+class Forecasts(BaseModel):
+    template: str
+    card: Card
+    positions: list[forecasts.Position]
 
 
 class Handlers:
@@ -159,13 +166,38 @@ class Handlers:
         )
 
     async def forecast(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
-        main = Main(template="forecast.html")
+        async with asyncio.TaskGroup() as tg:
+            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
+            forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
+
+        forecast = forecasts_task.result()
+
+        outdated = ""
+        poll = False
+
+        if port_task.result().ver != forecast.portfolio_ver:
+            outdated = "outdated"
+            poll = True
+
+        main = Forecasts(
+            template="forecast.html",
+            card=Card(
+                upper=f"Date: {forecast.day} {outdated}",
+                main=(f"Mean: {_format_percent(forecast.mean)} / Std: {_format_percent(forecast.std)}"),
+                lower=(
+                    f"Interval: {forecast.forecast_days} days / "
+                    f"Risk aversion: {_format_percent(1 - forecast.risk_tolerance)} %"
+                ),
+            ),
+            positions=forecast.positions,
+        )
 
         return await self._render_page(
             ctx,
             "Forecast",
             req,
             main,
+            poll=poll,
         )
 
     async def optimization(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
@@ -204,6 +236,8 @@ class Handlers:
         title: str,
         req: web.Request,
         main: Any,
+        *,
+        poll: bool = False,
     ) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
             settings_task = tg.create_task(ctx.get(Settings))
@@ -213,12 +247,13 @@ class Handlers:
         layout = Layout(
             title=title,
             path=req.path,
+            poll=poll,
             theme=settings_task.result().theme,
             accounts=sorted(port_task.result().account_names),
             dividends=sorted({row.ticker for row in div_task.result().df}),
         )
 
-        match req.headers.get("HX-Boosted") == "true":
+        match req.headers.get("HX-Request") == "true":
             case True:
                 template = "body.html"
                 headers = _prepare_event_header("set_title")
@@ -338,4 +373,4 @@ def _format_float(number: float, decimals: int | None = None) -> str:
 
 
 def _format_percent(number: float) -> str:
-    return f"{number:_.1%}".replace("_", " ").replace(".", ",")
+    return f"{_format_float(number * 100, 1)} %"
