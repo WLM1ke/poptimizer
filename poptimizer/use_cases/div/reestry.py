@@ -4,9 +4,8 @@ import logging
 import re
 from collections.abc import Iterable
 from datetime import date, datetime
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
-import aiohttp
 from lxml import html
 
 from poptimizer import errors
@@ -14,6 +13,9 @@ from poptimizer.domain import domain
 from poptimizer.domain.div import raw, reestry, status
 from poptimizer.domain.moex import quotes, usd
 from poptimizer.use_cases import handler
+
+if TYPE_CHECKING:
+    import aiohttp
 
 _URL: Final = "https://закрытияреестров.рф/_/"
 

@@ -90,6 +90,8 @@ ignore = [
     "RUF001", # Ambiguous-unicode-character-string - russian
     "RUF002", # Ambiguous-unicode-character-docstring - russian
     "RUF003", # Ambiguous-unicode-character-comment - russian
+    "TC001",  # Move application import into a type-checking block - needed for typer and bus logic
+    "TC003",  # Move standard library import into a type-checking block - needed for typer and bus logic
     "TRY003", # Avoid specifying long messages outside the exception class - don't like many exceptions
 ]
 

@@ -1,14 +1,16 @@
 import io
 from datetime import date, datetime, timedelta
-from typing import Final, cast
+from typing import TYPE_CHECKING, Final, cast
 
-import aiohttp
 from openpyxl.reader import excel
-from openpyxl.worksheet import worksheet
 
 from poptimizer import errors
 from poptimizer.domain import cpi
 from poptimizer.use_cases import handler
+
+if TYPE_CHECKING:
+    import aiohttp
+    from openpyxl.worksheet import worksheet
 
 _URL: Final = "https://www.cbr.ru/Content/Document/File/108632/indicators_cpd.xlsx"
 _SHEET_NAME: Final = "Лист1"

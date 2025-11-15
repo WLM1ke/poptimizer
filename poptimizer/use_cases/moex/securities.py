@@ -1,8 +1,7 @@
 import asyncio
 import itertools
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
-import aiohttp
 import aiomoex
 from pydantic import BaseModel, Field, TypeAdapter
 
@@ -10,6 +9,9 @@ from poptimizer import consts, errors
 from poptimizer.domain import domain
 from poptimizer.domain.moex import securities
 from poptimizer.use_cases import handler
+
+if TYPE_CHECKING:
+    import aiohttp
 
 _ETF_BOARDS: Final = "TQTF"
 

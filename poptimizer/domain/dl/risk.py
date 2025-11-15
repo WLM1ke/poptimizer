@@ -1,10 +1,14 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 import scipy  # type: ignore[reportMissingTypeStubs]
-from numpy.typing import NDArray
 from pydantic import BaseModel, FiniteFloat, ValidationError
 
 from poptimizer import consts, errors
 from poptimizer.domain.dl import ledoit_wolf
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 
 class Cfg(BaseModel):

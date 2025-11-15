@@ -1,15 +1,17 @@
 import asyncio
 import logging
 from datetime import date, timedelta
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
-import aiohttp
 import aiomoex
 from pydantic import TypeAdapter
 
 from poptimizer.domain import domain
 from poptimizer.domain.moex import index
 from poptimizer.use_cases import handler
+
+if TYPE_CHECKING:
+    import aiohttp
 
 _MAX_INDEX_LAG: Final = timedelta(days=7)
 

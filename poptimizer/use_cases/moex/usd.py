@@ -1,11 +1,14 @@
 from datetime import date
+from typing import TYPE_CHECKING
 
-import aiohttp
 import aiomoex
 from pydantic import TypeAdapter
 
 from poptimizer.domain.moex import usd
 from poptimizer.use_cases import handler
+
+if TYPE_CHECKING:
+    import aiohttp
 
 
 class USDHandler:

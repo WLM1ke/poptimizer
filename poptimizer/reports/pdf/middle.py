@@ -1,14 +1,16 @@
 import io
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import matplotlib.pyplot as plt
-import pandas as pd
 from reportlab import platypus
 from reportlab.lib.units import inch
-from reportlab.pdfgen.canvas import Canvas
 
 from poptimizer.reports import risk
 from poptimizer.reports.pdf import style
+
+if TYPE_CHECKING:
+    import pandas as pd
+    from reportlab.pdfgen.canvas import Canvas
 
 _LEFT_PART_OF_BLOCK: Final = 1 / 3
 _DPI: Final = 300

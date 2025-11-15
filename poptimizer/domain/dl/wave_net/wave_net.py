@@ -1,10 +1,14 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 import torch
-from numpy.typing import NDArray
-from torch.distributions import MixtureSameFamily
 
 from poptimizer import errors
 from poptimizer.domain.dl.wave_net import backbone, head, inputs
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+    from torch.distributions import MixtureSameFamily
 
 
 class Net(torch.nn.Module):

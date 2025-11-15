@@ -1,14 +1,17 @@
 import asyncio
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
-from pydantic import FiniteFloat
 
 from poptimizer.domain import domain
 from poptimizer.domain.dl import features
 from poptimizer.domain.moex import index
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
+
+if TYPE_CHECKING:
+    from pydantic import FiniteFloat
 
 
 class IndexesFeatHandler:

@@ -1,7 +1,11 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
-from numpy.typing import NDArray
 
 from poptimizer import errors
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 
 def shrinkage(returns: NDArray[np.double]) -> tuple[NDArray[np.double], float, float]:

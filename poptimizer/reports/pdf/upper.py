@@ -1,10 +1,12 @@
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from reportlab import platypus
-from reportlab.pdfgen.canvas import Canvas
 
 from poptimizer.domain.funds import funds
 from poptimizer.reports.pdf import style
+
+if TYPE_CHECKING:
+    from reportlab.pdfgen.canvas import Canvas
 
 _LEFT_PART_OF_BLOCK: Final = 2 / 3
 

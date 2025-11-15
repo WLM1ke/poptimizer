@@ -2,9 +2,8 @@ import logging
 import zoneinfo
 from collections.abc import Callable
 from datetime import date, datetime, timedelta
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
-import aiohttp
 import aiomoex
 import psutil
 from pydantic import BaseModel, Field
@@ -13,6 +12,9 @@ from poptimizer import consts
 from poptimizer.domain import domain
 from poptimizer.domain.moex import index, trading_day
 from poptimizer.use_cases import handler
+
+if TYPE_CHECKING:
+    import aiohttp
 
 _MEMORY_PERCENTAGE_THRESHOLD: Final = 75
 

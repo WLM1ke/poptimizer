@@ -1,9 +1,11 @@
 from collections.abc import Callable
-
-import aiohttp
+from typing import TYPE_CHECKING
 
 from poptimizer.adapters import backup, mongo
 from poptimizer.controllers.bus import events, msg, requests
+
+if TYPE_CHECKING:
+    import aiohttp
 
 
 def build(

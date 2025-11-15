@@ -1,13 +1,15 @@
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from pydantic import BaseModel
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
-from reportlab.pdfgen.canvas import Canvas
 
 from poptimizer.domain import domain
+
+if TYPE_CHECKING:
+    from reportlab.pdfgen.canvas import Canvas
 
 PAGE_SIZE: Final = A4
 MARGIN: Final = cm

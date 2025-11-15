@@ -1,9 +1,11 @@
 import asyncio
 import logging
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from aiohttp import abc, web
-from pydantic import HttpUrl
+
+if TYPE_CHECKING:
+    from pydantic import HttpUrl
 
 _KILOBYTE: Final = 2**10
 

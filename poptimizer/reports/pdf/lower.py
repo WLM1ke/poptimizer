@@ -1,13 +1,15 @@
 from io import BytesIO
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import matplotlib.pyplot as plt
 from reportlab import platypus
 from reportlab.lib.units import inch
-from reportlab.pdfgen.canvas import Canvas
 
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.reports.pdf import style
+
+if TYPE_CHECKING:
+    from reportlab.pdfgen.canvas import Canvas
 
 _MAX_POSITIONS: Final = 9
 _LEFT_PART_OF_BLOCK = 1 / 3

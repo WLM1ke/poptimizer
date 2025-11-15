@@ -1,16 +1,18 @@
 import asyncio
 import logging
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 from numpy import random
-from numpy.typing import NDArray
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
 from poptimizer import consts
 from poptimizer.domain.evolve import evolve
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 
 class ForecastHandler:

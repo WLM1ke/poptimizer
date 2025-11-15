@@ -1,6 +1,5 @@
 from collections.abc import Callable
-
-import aiohttp
+from typing import TYPE_CHECKING
 
 from poptimizer.controllers.bus import msg
 from poptimizer.use_cases import cpi
@@ -12,6 +11,9 @@ from poptimizer.use_cases.dl.features import securities as tickers_features
 from poptimizer.use_cases.evolve import evolve
 from poptimizer.use_cases.moex import data, index, quotes, securities, usd
 from poptimizer.use_cases.portfolio import forecasts, portfolio
+
+if TYPE_CHECKING:
+    import aiohttp
 
 
 def register_handlers(bus: msg.Bus, http_client: aiohttp.ClientSession, stop_fn: Callable[[], bool] | None) -> None:

@@ -4,9 +4,7 @@ import logging
 import re
 from collections.abc import AsyncIterator, Iterable
 from datetime import date, datetime, timedelta
-from typing import Final, TextIO
-
-import aiohttp
+from typing import TYPE_CHECKING, Final, TextIO
 
 from poptimizer import errors
 from poptimizer.domain import domain
@@ -14,6 +12,9 @@ from poptimizer.domain.div import raw, status
 from poptimizer.domain.moex import securities
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
+
+if TYPE_CHECKING:
+    import aiohttp
 
 _URL: Final = "https://web.moex.com/moex-web-icdb-api/api/v1/export/register-closing-dates/csv?separator=1&language=1"
 _LOOK_BACK_DAYS: Final = 14

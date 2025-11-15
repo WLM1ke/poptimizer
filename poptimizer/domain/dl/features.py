@@ -1,10 +1,12 @@
 from enum import StrEnum, auto, unique
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
-import pandas as pd
 from pydantic import BaseModel, Field, FiniteFloat, NonNegativeInt, field_validator, model_validator
 
 from poptimizer.domain import domain
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 @unique
