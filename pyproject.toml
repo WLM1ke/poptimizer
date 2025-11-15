@@ -46,7 +46,7 @@ dev = [
 
 [tool.pyright]
 verboseOutput = true
-pythonVersion = "3.13"
+pythonVersion = "3.14"
 typeCheckingMode = "strict"
 exclude = ["**/tests/*"]
 
