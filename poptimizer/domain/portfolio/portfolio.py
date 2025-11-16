@@ -41,6 +41,7 @@ class NormalizedPosition(BaseModel):
     ticker: domain.Ticker
     weight: float = Field(ge=0, le=1)
     norm_turnover: NonNegativeFloat
+    accounts: list[domain.AccName]
 
 
 class Portfolio(domain.Entity):
@@ -205,6 +206,7 @@ class Portfolio(domain.Entity):
                 ticker=pos.ticker,
                 weight=pos.value() / port_value,
                 norm_turnover=pos.turnover / port_value,
+                accounts=sorted(pos.accounts),
             )
             for pos in self.positions
         ]

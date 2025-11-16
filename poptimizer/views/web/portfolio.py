@@ -48,17 +48,33 @@ class Position(BaseModel):
 
 class Portfolio(BaseModel):
     template: str
-    account: AccName | None = None
     card: Card
     value: float
     cash: int
     positions: list[Position]
 
 
-class Forecasts(BaseModel):
+class Account(BaseModel):
+    template: str
+    account: AccName
+    card: Card
+    value: float
+    cash: int
+    positions: list[Position]
+
+
+class Forecast(BaseModel):
     template: str
     card: Card
     positions: list[forecasts.Position]
+
+
+class Optimize(BaseModel):
+    template: str
+    card: Card
+    breakeven: float
+    buy: list[forecasts.Position]
+    sell: list[forecasts.Position]
 
 
 class Handlers:
@@ -179,7 +195,7 @@ class Handlers:
             outdated = "outdated"
             poll = True
 
-        main = Forecasts(
+        main = Forecast(
             template="forecast.html",
             card=Card(
                 upper=f"Date: {forecast.day} {outdated}",
@@ -201,13 +217,39 @@ class Handlers:
         )
 
     async def optimization(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
-        main = Main(template="optimization.html")
+        async with asyncio.TaskGroup() as tg:
+            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
+            forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
+
+        forecast = forecasts_task.result()
+
+        outdated = ""
+        poll = False
+
+        if port_task.result().ver != forecast.portfolio_ver:
+            outdated = "outdated"
+            poll = True
+
+        breakeven, buy, sell = forecast.buy_sell()
+
+        main = Optimize(
+            template="optimization.html",
+            card=Card(
+                upper=f"Date: {forecast.day} {outdated}",
+                main=(f"Buy tickets: {len(buy)} / Sell tickets: {len(sell)}"),
+                lower=(f"Forecasts: {forecast.forecasts_count}"),
+            ),
+            breakeven=breakeven,
+            buy=buy,
+            sell=sell,
+        )
 
         return await self._render_page(
             ctx,
             "Optimization",
             req,
             main,
+            poll=poll,
         )
 
     async def dividends(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
@@ -327,7 +369,7 @@ def _prepare_account(
     account: domain.AccName,
     *,
     hide_zero_positions: bool,
-) -> Portfolio:
+) -> Account:
     value = portfolio.value(account)
 
     positions = [
@@ -342,7 +384,7 @@ def _prepare_account(
         if position.quantity(account) > 0 or not hide_zero_positions
     ]
 
-    return Portfolio(
+    return Account(
         template="account.html",
         account=account,
         card=Card(

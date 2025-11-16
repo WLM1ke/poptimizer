@@ -1,2 +1,79 @@
-<h2>Optimization</h2>
-<p>Optimization page content</p>
+{% include 'components/card.html' %}
+<table class="table">
+    <thead>
+        <tr>
+            <th class="table__header-cell">
+                Ticker
+            </th>
+            <th class="table__header-cell">
+                Weight
+            </th>
+            <th class="table__header-cell">
+                Lower bound
+            </th>
+            <th class="table__header-cell">
+                Upper bound
+            </th>
+            <th class="table__header-cell">
+                Priority
+            </th>
+            <th class="table__header-cell">
+                Signal
+            </th>
+            <th class="table__header-cell">
+
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pos in main.buy %}
+        <tr>
+            <td class="table__label-cell">
+                {{ pos.ticker }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_percent(pos.weight) }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_percent(pos.grad_lower) }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_percent(pos.grad_upper) }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_percent(pos.grad_lower - main.breakeven) }}
+            </td>
+            <td class="table__text-cell">
+                Buy
+            </td>
+            <td class="table__note-cell">
+            </td>
+        </tr>
+        {% endfor %}
+        {% for pos in main.sell %}
+        <tr>
+            <td class="table__label-cell">
+                {{ pos.ticker }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_percent(pos.weight) }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_percent(pos.grad_lower) }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_percent(pos.grad_upper) }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_percent(pos.grad_upper - main.breakeven) }}
+            </td>
+            <td class="table__text-cell">
+                Sell
+            </td>
+            <td class="table__note-cell">
+                {{ pos.accounts | join(', ') }}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

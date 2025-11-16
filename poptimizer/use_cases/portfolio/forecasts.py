@@ -64,6 +64,7 @@ class ForecastHandler:
         forecast.day = port.day
         forecast.portfolio_ver = port.ver
         forecast.forecast_days = port.forecast_days
+        forecast.illiquid = port.illiquid
         forecast.forecasts_count = len(models)
 
         await asyncio.to_thread(self._update_forecast, forecast, models, positions)
@@ -164,30 +165,28 @@ class ForecastHandler:
                     grad=median_grads[n],
                     grad_lower=np.nan_to_num(cast("float", median_grads_lower[n]), nan=-np.inf),
                     grad_upper=np.nan_to_num(cast("float", median_grads_upper[n]), nan=np.inf),
+                    accounts=sorted(pos.accounts),
                 )
             )
 
         forecast.risk_tolerance = median_risk_tol.item()  # type: ignore[reportUnknownMemberType]
 
     def _send_new_recommendation(self, forecast: forecasts.Forecast, port: portfolio.Portfolio) -> None:
-        buy_grad, buy_ticker = max(
-            (pos.grad_lower, pos.ticker) for pos in forecast.positions if pos.ticker not in port.illiquid
-        )
-        sell_grad, sell_ticker = min((pos.grad_upper, pos.ticker) for pos in forecast.positions if pos.weight)
+        _, buy, sell = forecast.buy_sell()
 
-        match buy_grad > sell_grad:
-            case True:
+        match not sell:
+            case False:
                 self._lgr.warning(
                     "New %d forecasts update - sell %s and buy %s",
                     forecast.forecasts_count,
-                    sell_ticker,
-                    buy_ticker,
+                    sell[-1].ticker,
+                    buy[0].ticker,
                 )
-            case False:
+            case True:
                 self._lgr.warning(
                     "New %d forecasts update - portfolio is close to optimal, allocate free cash to %s",
                     forecast.forecasts_count,
-                    buy_ticker,
+                    buy[0].ticker,
                 )
 
 

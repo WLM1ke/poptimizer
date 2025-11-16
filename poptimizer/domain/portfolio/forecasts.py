@@ -24,6 +24,7 @@ class Position(BaseModel):
     grad: FiniteFloat
     grad_lower: float
     grad_upper: float
+    accounts: list[domain.AccName]
 
 
 class Forecast(domain.Entity):
@@ -44,6 +45,13 @@ class Forecast(domain.Entity):
     risk_tolerance: float = Field(0, ge=0, le=1)
     mean: FiniteFloat = 0
     std: NonNegativeFloat = 0
+    illiquid: Annotated[
+        set[domain.Ticker],
+        PlainSerializer(
+            list,
+            return_type=list,
+        ),
+    ] = Field(default_factory=set[domain.Ticker])
 
     def init_day(self, day: domain.Day) -> None:
         self.day = day
@@ -57,3 +65,23 @@ class Forecast(domain.Entity):
             return True
 
         return abs(len(self.models) ** 0.5 - self.forecasts_count**0.5) >= 1
+
+    def buy_sell(self) -> tuple[float, list[Position], list[Position]]:
+        lower_grad = max(pos.grad_lower for pos in self.positions if pos.ticker not in self.illiquid)
+        upper_grad = min(pos.grad_upper for pos in self.positions if pos.accounts)
+
+        breakeven = min(lower_grad, (lower_grad + upper_grad) / 2)
+
+        return (
+            breakeven,
+            sorted(
+                (pos for pos in self.positions if pos.grad_lower >= breakeven and pos.ticker not in self.illiquid),
+                key=lambda pos: pos.grad_lower,
+                reverse=True,
+            ),
+            sorted(
+                (pos for pos in self.positions if pos.grad_upper < breakeven and pos.accounts),
+                key=lambda pos: pos.grad_upper,
+                reverse=True,
+            ),
+        )

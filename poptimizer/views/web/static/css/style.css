@@ -154,6 +154,17 @@ svg {
     width: var(--block-width);
 }
 
+.table__text-cell {
+    padding: var(--padding);
+    text-align: center;
+    width: var(--block-width);
+}
+
+.table__note-cell {
+    padding: var(--padding);
+    text-align: center;
+}
+
 .table__input {
     padding: var(--padding-small);
     text-align: right;
