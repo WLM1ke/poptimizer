@@ -28,6 +28,7 @@ header {
     border-bottom-width: 1px;
     border-bottom-color: var(--bg-accent);
     padding: var(--padding);
+    padding-left: var(--padding-large);
     display: flex;
     align-items: center;
 }
@@ -35,6 +36,7 @@ header {
 main {
     overflow: scroll;
     padding: var(--padding);
+    padding-left: var(--padding-large);
 }
 
 
