@@ -1,6 +1,7 @@
 <button
     hx-put="/theme/light"
     hx-swap="outerHTML"
+    hx-on:htmx:load="setTheme('system')"
     class="nav__item"
     title="System Theme"
 >

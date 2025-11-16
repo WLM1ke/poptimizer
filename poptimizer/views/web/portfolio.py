@@ -1,6 +1,5 @@
 import asyncio
 import http
-import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -298,10 +297,8 @@ class Handlers:
         match req.headers.get("HX-Request") == "true":
             case True:
                 template = "body.html"
-                headers = _prepare_event_header("set_title")
             case False:
                 template = "index.html"
-                headers = {}
 
         return web.Response(
             text=self._env.get_template(template).render(
@@ -311,7 +308,6 @@ class Handlers:
                 format_percent=_format_percent,
             ),
             content_type="text/html",
-            headers=headers,
         )
 
     async def theme_handler(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
@@ -326,7 +322,6 @@ class Handlers:
         return web.Response(
             text=self._env.get_template(f"theme/{theme}.html").render(),
             content_type="text/html",
-            headers=_prepare_event_header("set_theme", theme=theme),
         )
 
     @web.middleware
@@ -396,12 +391,6 @@ def _prepare_account(
         cash=portfolio.cash_value(),
         positions=positions,
     )
-
-
-def _prepare_event_header(cmd: str, **kwargs: Any) -> dict[str, str]:
-    payload = {"po:cmd": {"target": "body", "cmd": cmd, "args": kwargs}}
-
-    return {"HX-Trigger-After-Settle": json.dumps(payload)}
 
 
 def _format_float(number: float, decimals: int | None = None) -> str:

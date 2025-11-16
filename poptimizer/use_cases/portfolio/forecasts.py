@@ -69,7 +69,7 @@ class ForecastHandler:
 
         await asyncio.to_thread(self._update_forecast, forecast, models, positions)
 
-        self._send_new_recommendation(forecast, port)
+        self._send_new_recommendation(forecast)
 
     def _update_forecast(
         self,
@@ -165,13 +165,13 @@ class ForecastHandler:
                     grad=median_grads[n],
                     grad_lower=np.nan_to_num(cast("float", median_grads_lower[n]), nan=-np.inf),
                     grad_upper=np.nan_to_num(cast("float", median_grads_upper[n]), nan=np.inf),
-                    accounts=sorted(pos.accounts),
+                    accounts=pos.accounts,
                 )
             )
 
         forecast.risk_tolerance = median_risk_tol.item()  # type: ignore[reportUnknownMemberType]
 
-    def _send_new_recommendation(self, forecast: forecasts.Forecast, port: portfolio.Portfolio) -> None:
+    def _send_new_recommendation(self, forecast: forecasts.Forecast) -> None:
         _, buy, sell = forecast.buy_sell()
 
         match not sell:

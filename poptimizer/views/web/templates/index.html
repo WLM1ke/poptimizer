@@ -52,13 +52,12 @@
 
         <script src="/static/js/htmx.min.js"></script>
         <script src="/static/js/idiomorph.min.js"></script>
-        <script src="/static/js/scripts.js"></script>
+        <script src="/static/js/settings.js"></script>
     </head>
 
     <body
-        hx-on:po:cmd="handleCmd(event)"
-        data-theme="{{ layout.theme }}"
         hx-ext="morph"
+        data-theme="{{ layout.theme }}"
     >
         {% include 'body.html' %}
         <ol class="alerts">
