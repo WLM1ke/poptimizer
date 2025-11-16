@@ -84,13 +84,14 @@ svg {
     padding-top: var(--padding);
 }
 
-.nav__item {
+.nav__item,
+.nav__item-no-hover {
     padding: var(--padding);
     border-radius: var(--padding);
-}
-
-.nav__item--no-padding-top {
-    padding-top: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--padding);
+    font-weight: var(--font-weight-accent);
 }
 
 .nav__item--selected,
@@ -98,19 +99,12 @@ svg {
     background-color: var(--bg-medium);
 }
 
-.nav__item--no-hover:hover {
-    background-color: var(--bg-sidebar);
+.nav__item--no-padding-top {
+    padding-top: 0;
 }
 
-.nav__item-link {
-    display: flex;
-    align-items: center;
-    gap: var(--padding);
-    font-weight: var(--font-weight-accent);
-}
-
-.nav__item-link--indented {
-    padding-left: var(--padding);
+.nav__item--indented {
+    padding-left: var(--padding-large);
 }
 
 .nav__logo {

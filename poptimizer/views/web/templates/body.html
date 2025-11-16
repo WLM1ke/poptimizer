@@ -1,10 +1,10 @@
 <aside hx-boost="true">
     <nav class="nav">
         <ul class="nav__block">
-            <li class="nav__item nav__item--no-hover nav__item--no-padding-top">
+            <li>
                 <a
+                    class="nav__item-no-hover nav__item--no-padding-top"
                     href="/"
-                    class="nav__item-link"
                 >
                     <svg
                         class="nav__logo"
@@ -38,10 +38,10 @@
                     <span class="logo">POptimizer</span>
                 </a>
             </li>
-            <li class="nav__item{% if layout.path == '/' %} nav__item nav__item--selected{% endif %}">
+            <li>
                 <a
+                    class="nav__item{% if layout.path == '/' %} nav__item--selected{% endif %}"
                     href="/"
-                    class="nav__item-link"
                 >
                     <svg
                         class="nav__icon"
@@ -57,10 +57,10 @@
                 </a>
             </li>
             {% for account in layout.accounts %}
-            <li class="nav__item{% if layout.path == '/accounts/' + account %} nav__item--selected{% endif %}">
+            <li>
                 <a
+                    class="nav__item nav__item--indented{% if layout.path == '/accounts/' + account %} nav__item--selected{% endif %}"
                     href="/accounts/{{ account }}"
-                    class="nav__item-link nav__item-link--indented"
                 >
                     <svg
                         class="nav__icon"
@@ -76,10 +76,10 @@
                 </a>
             </li>
             {% endfor %}
-            <li class="nav__item{% if layout.path == '/forecast' %} nav__item--selected{% endif %}">
+            <li>
                 <a
+                    class="nav__item{% if layout.path == '/forecast' %} nav__item--selected{% endif %}"
                     href="/forecast"
-                    class="nav__item-link"
                 >
                     <svg
                         class="nav__icon"
@@ -94,10 +94,10 @@
                     <span>Forecast</span>
                 </a>
             </li>
-            <li class="nav__item{% if layout.path == '/optimization' %} nav__item--selected{% endif %}">
+            <li>
                 <a
+                    class="nav__item{% if layout.path == '/optimization' %} nav__item--selected{% endif %}"
                     href="/optimization"
-                    class="nav__item-link"
                 >
                     <svg
                         class="nav__icon"
@@ -113,9 +113,10 @@
                 </a>
             </li>
         </ul>
+        {% if layout.dividends %}
         <ul class="nav__block nav__block--separator">
-            <li class="nav__item nav__item--no-hover">
-                <div class="nav__item-link">
+            <li>
+                <div class="nav__item-no-hover">
                     <svg
                         class="nav__icon"
                         viewBox="0 0 16 16"
@@ -130,10 +131,10 @@
                 </div>
             </li>
             {% for dividend in layout.dividends %}
-            <li class="nav__item{% if layout.path == '/dividends/' + dividend %} nav__item--selected{% endif %}">
+            <li>
                 <a
+                    class="nav__item nav__item--indented{% if layout.path == '/dividends/' + dividend %} nav__item--selected{% endif %}"
                     href="/dividends/{{ dividend }}"
-                    class="nav__item-link nav__item-link--indented"
                 >
                     <svg
                         class="nav__icon"
@@ -150,13 +151,14 @@
             </li>
             {% endfor %}
         </ul>
+        {% endif %}
     </nav>
     <nav>
         <ul class="nav__block nav__block--horizontal nav__block--separator">
-            <li class="nav__item">
+            <li>
                 <a
                     href="/settings"
-                    class="nav__item-link"
+                    class="nav__item"
                     title="Settings"
                 >
                     <svg viewBox="0 0 16 16">
@@ -168,13 +170,13 @@
                     </svg>
                 </a>
             </li>
-            <li class="nav__item">
+            <li>
                 {% include 'theme/' + layout.theme + '.html' %}
             </li>
-            <li class="nav__item">
+            <li>
                 <a
                     href="https://github.com/WLM1ke/poptimizer"
-                    class="nav__item-link"
+                    class="nav__item"
                     title="Go to GitHub"
                     target="_blank"
                     rel="noopener"
