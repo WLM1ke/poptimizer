@@ -28,6 +28,7 @@ tasks:
   update_ver:
     desc: Update POptimizer version and rebuild frontend
     cmds:
+      - brew upgrade {{.TOOLS}}
       - rm -rf backup
       - mkdir backup
       - cp -r $(ls -A | grep -vF -e .venv -e .git) backup
