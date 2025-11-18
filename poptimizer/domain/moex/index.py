@@ -17,6 +17,7 @@ INDEXES: Final = {
     RVI: None,
     RUGBITR1Y: None,
     domain.UID("RUGBITR10Y"): None,
+    domain.UID("RUCBITRL3"): None,
     domain.UID("MREDC"): None,
     domain.UID("RTSUSDCUR"): None,
 }
