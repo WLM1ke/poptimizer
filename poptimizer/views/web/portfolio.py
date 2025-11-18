@@ -6,7 +6,7 @@ from typing import Any
 
 from aiohttp import typedefs, web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from pydantic import BaseModel, TypeAdapter, ValidationError
+from pydantic import BaseModel, TypeAdapter
 
 from poptimizer import errors
 from poptimizer.controllers.bus import msg
@@ -330,21 +330,24 @@ class Handlers:
         request: web.Request,
         handler: typedefs.Handler,
     ) -> web.StreamResponse:
+        code = http.HTTPStatus.INTERNAL_SERVER_ERROR
+        error: Exception | None = None
+
         try:
             return await handler(request)
-        except (errors.AdapterError, errors.ControllersError) as err:
+        except* (errors.AdapterError, errors.ControllersError) as err:
             self._lgr.warning("Can't handle request - %s", err)
 
-            return self._alert(http.HTTPStatus.INTERNAL_SERVER_ERROR, f"{err.__class__.__name__}: {','.join(err.args)}")
-        except (errors.DomainError, errors.UseCasesError) as err:
+            code = http.HTTPStatus.INTERNAL_SERVER_ERROR
+            error = err.exceptions[0]
+
+        except* (errors.DomainError, errors.UseCasesError) as err:
             self._lgr.warning("Can't handle request - %s", err)
 
-            return self._alert(http.HTTPStatus.BAD_REQUEST, f"{err.__class__.__name__}: {','.join(err.args)}")
-        except ValidationError as err:
-            self._lgr.warning("Can't handle request - %s", err)
-            msg = ",".join(desc["msg"] for desc in err.errors())
+            code = http.HTTPStatus.BAD_REQUEST
+            error = err.exceptions[0]
 
-            return self._alert(http.HTTPStatus.BAD_REQUEST, f"{err.__class__.__name__}: {msg}")
+        return self._alert(code, f"{error}")
 
     def _alert(self, code: int, alert: str) -> web.Response:
         return web.Response(
