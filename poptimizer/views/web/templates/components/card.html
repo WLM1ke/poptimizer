@@ -1,11 +1,22 @@
 <section class="card">
-    <div class="card--muted">
+    <div>
         {{ main.card.upper }}
     </div>
-    <h2>
+    <h2 class="card__title">
         {{ main.card.main }}
     </h2>
-    <div class="card--muted">
-        {{ main.card.lower }}
-    </div>
+    <dl class="card__description">
+        <div>
+            <dt>{{ main.card.row1.label }}</dt>
+            <dd>{{ main.card.row1.value }}</dd>
+        </div>
+        <div>
+            <dt>{{ main.card.row2.label }}</dt>
+            <dd>{{ main.card.row2.value }}</dd>
+        </div>
+        <div>
+            <dt>{{ main.card.row3.label }}</dt>
+            <dd>{{ main.card.row3.value }}</dd>
+        </div>
+    </dl>
 </section>

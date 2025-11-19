@@ -122,11 +122,27 @@ svg {
     width: calc(var(--block-width) * 3);
     padding: var(--padding-large);
     border-radius: var(--padding);
-}
-
-.card--muted {
     color: var(--text-muted);
     font-style: italic;
+}
+
+.card__title {
+    color: var(--text-main);
+    font-style: normal;
+}
+
+.card__description {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+}
+
+.card__description>div {
+    display: contents;
+}
+
+.card__description dt::after {
+    content: ":";
 }
 
 .table {

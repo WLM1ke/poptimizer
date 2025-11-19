@@ -31,10 +31,17 @@ class Main(BaseModel):
     template: str
 
 
+class Row(BaseModel):
+    label: str
+    value: str
+
+
 class Card(BaseModel):
     upper: str
     main: str
-    lower: str
+    row1: Row
+    row2: Row
+    row3: Row
 
 
 class Position(BaseModel):
@@ -119,7 +126,9 @@ class Handlers:
             card=Card(
                 upper=f"Date: {port.day}",
                 main=f"Value: {_format_float(value, 0)} ₽",
-                lower=f"Positions: {port.open_positions()} / Effective: {_format_float(port.effective_positions, 0)}",
+                row1=Row(label="Effective positions", value=f"{_format_float(port.effective_positions, 0)}"),
+                row2=Row(label="Open positions", value=f"{port.open_positions()}"),
+                row3=Row(label="Total positions", value=f"{_format_float(len(port.positions), 0)}"),
             ),
             value=value,
             cash=port.cash_value(),
@@ -199,10 +208,9 @@ class Handlers:
             card=Card(
                 upper=f"Date: {forecast.day} {outdated}",
                 main=(f"Mean: {_format_percent(forecast.mean)} / Std: {_format_percent(forecast.std)}"),
-                lower=(
-                    f"Interval: {forecast.forecast_days} days / "
-                    f"Risk aversion: {_format_percent(1 - forecast.risk_tolerance)} %"
-                ),
+                row1=Row(label="Trading interval", value=f"{forecast.forecast_days} days"),
+                row2=Row(label="Risk aversion", value=f"{_format_percent(1 - forecast.risk_tolerance)}"),
+                row3=Row(label="Forecasts", value=f"{forecast.forecasts_count}"),
             ),
             positions=forecast.positions,
         )
@@ -236,7 +244,9 @@ class Handlers:
             card=Card(
                 upper=f"Date: {forecast.day} {outdated}",
                 main=(f"Buy tickets: {len(buy)} / Sell tickets: {len(sell)}"),
-                lower=(f"Forecasts: {forecast.forecasts_count}"),
+                row1=Row(label="Trading interval", value=f"{forecast.forecast_days} days"),
+                row2=Row(label="Risk aversion", value=f"{_format_percent(1 - forecast.risk_tolerance)}"),
+                row3=Row(label="Forecasts", value=f"{forecast.forecasts_count}"),
             ),
             breakeven=breakeven,
             buy=buy,
@@ -388,7 +398,9 @@ def _prepare_account(
         card=Card(
             upper=f"Date: {portfolio.day}",
             main=f"Value: {_format_float(value, 0)} ₽",
-            lower=f"Positions: {portfolio.open_positions(account)} / {len(portfolio.positions)}",
+            row1=Row(label="Share of portfolio", value=f"{_format_percent(value / portfolio.value())}"),
+            row2=Row(label="Open positions", value=f"{portfolio.open_positions(account)}"),
+            row3=Row(label="Total positions", value=f"{_format_float(len(portfolio.positions), 0)}"),
         ),
         value=value,
         cash=portfolio.cash_value(),
