@@ -172,6 +172,21 @@ svg {
     width: var(--block-width);
 }
 
+.table__muted-row {
+    color: var(--text-muted);
+}
+
+.table__icon-cell {
+    padding: var(--padding);
+    display: flex;
+    justify-content: center;
+    width: var(--block-width);
+}
+
+.table__icon-button:hover {
+    color: var(--link-hover);
+}
+
 .table__note-cell {
     padding: var(--padding);
     text-align: center;
@@ -182,9 +197,14 @@ svg {
     text-align: right;
     width: var(--block-width);
     border-width: 1px;
+    margin: 2px;
     border-radius: var(--padding);
     border-color: var(--bg-accent);
     background-color: var(--bg-main);
+}
+
+.table__input--text {
+    text-align: left;
 }
 
 .alerts {

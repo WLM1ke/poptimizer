@@ -13,6 +13,9 @@
     --text-alert: rgb(var(--red-800));
     --bg-alert: rgb(var(--red-50));
     --bdr-alert: rgb(var(--red-300));
+
+    --link: rgb(var(--blue-600));
+    --link-hover: rgb(var(--blue-700));
 }
 
 @media (prefers-color-scheme: dark) {

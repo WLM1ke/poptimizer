@@ -1,18 +1,19 @@
 import asyncio
 import http
 import logging
+from enum import StrEnum, auto
 from pathlib import Path
 from typing import Any
 
 from aiohttp import typedefs, web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 from poptimizer import errors
 from poptimizer.controllers.bus import msg
 from poptimizer.domain import domain
-from poptimizer.domain.div import status
-from poptimizer.domain.domain import AccName, Ticker
+from poptimizer.domain.div import raw, reestry, status
+from poptimizer.domain.domain import AccName, Ticker, date
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.domain.settings import Settings, Theme
 from poptimizer.use_cases import handler
@@ -83,6 +84,41 @@ class Optimize(BaseModel):
     sell: list[forecasts.Position]
 
 
+class DivStatus(StrEnum):
+    EXTRA = auto()
+    OK = auto()
+    MISSED = auto()
+
+
+class DivRow(BaseModel):
+    day: domain.Day
+    dividend: float = Field(gt=0)
+    status: DivStatus
+
+    def to_tuple(self) -> tuple[date, float]:
+        return self.day, self.dividend
+
+
+class Dividends(BaseModel):
+    template: str
+    ticker: domain.UID
+    dividends: list[DivRow]
+
+    @property
+    def day(self) -> domain.Day:
+        if len(self.dividends):
+            return self.dividends[-1].day
+
+        return date.today()
+
+    @property
+    def dividend(self) -> float:
+        if len(self.dividends):
+            return self.dividends[-1].dividend
+
+        return 1
+
+
 class Handlers:
     def __init__(self, app: web.Application, bus: msg.Bus) -> None:
         self._lgr = logging.getLogger()
@@ -100,6 +136,8 @@ class Handlers:
         app.add_routes([web.get("/forecast", bus.wrap(self.forecast))])
         app.add_routes([web.get("/optimization", bus.wrap(self.optimization))])
         app.add_routes([web.get("/dividends/{ticker}", bus.wrap(self.dividends))])
+        app.add_routes([web.post("/dividends/{ticker}/add", bus.wrap(self.dividend_add))])
+        app.add_routes([web.post("/dividends/{ticker}/remove", bus.wrap(self.dividend_remove))])
         app.add_routes([web.get("/settings", bus.wrap(self.settings))])
         app.add_routes([web.put("/theme/{theme}", bus.wrap(self.theme_handler))])
 
@@ -262,13 +300,105 @@ class Handlers:
         )
 
     async def dividends(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
-        main = Main(template="dividends.html")
+        ticker = domain.UID(req.match_info["ticker"])
+
+        async with asyncio.TaskGroup() as tg:
+            raw_task = tg.create_task(ctx.get(raw.DivRaw, ticker))
+            reestry_task = tg.create_task(ctx.get(reestry.DivReestry, ticker))
+
+        raw_div = await raw_task
+        reestry_div = await reestry_task
 
         return await self._render_page(
             ctx,
-            req.match_info["ticker"],
+            ticker,
             req,
-            main,
+            self._prepare_dividends(raw_div, reestry_div),
+        )
+
+    def _prepare_dividends(self, raw_div: raw.DivRaw, reestry_div: reestry.DivReestry) -> Dividends:
+        compare = [
+            DivRow(
+                day=row_source.day,
+                dividend=row_source.dividend,
+                status=DivStatus.MISSED,
+            )
+            for row_source in reestry_div.df
+            if not raw_div.has_row(raw.Row(day=row_source.day, dividend=row_source.dividend))
+        ]
+
+        for raw_row in raw_div.df:
+            row_status = DivStatus.EXTRA
+            if reestry_div.has_row(raw_row):
+                row_status = DivStatus.OK
+
+            compare.append(
+                DivRow(
+                    day=raw_row.day,
+                    dividend=raw_row.dividend,
+                    status=row_status,
+                ),
+            )
+
+        compare.sort(key=lambda compare: compare.to_tuple())
+
+        return Dividends(
+            template="dividends.html",
+            ticker=raw_div.uid,
+            dividends=compare,
+        )
+
+    async def dividend_add(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+        ticker = domain.UID(req.match_info["ticker"])
+
+        async with asyncio.TaskGroup() as tg:
+            raw_task = tg.create_task(ctx.get_for_update(raw.DivRaw, ticker))
+            reestry_task = tg.create_task(ctx.get(reestry.DivReestry, ticker))
+            status_task = tg.create_task(ctx.get_for_update(status.DivStatus))
+
+        raw_div = await raw_task
+        reestry_div = await reestry_task
+        status_div = await status_task
+
+        day = TypeAdapter(date).validate_python((await req.post()).get("day"))
+        dividend_str = TypeAdapter(str).validate_python((await req.post()).get("dividend"))
+        dividend = TypeAdapter(float).validate_python(dividend_str.replace(" ", "").replace(",", "."))
+
+        raw_div.add_row(raw.Row(day=day, dividend=dividend))
+        status_div.filter(raw_div)
+
+        return web.Response(
+            text=self._env.get_template("main/dividends.html").render(
+                main=self._prepare_dividends(raw_div, reestry_div),
+                format_float=_format_float,
+                format_percent=_format_percent,
+            ),
+            content_type="text/html",
+        )
+
+    async def dividend_remove(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+        ticker = domain.UID(req.match_info["ticker"])
+
+        async with asyncio.TaskGroup() as tg:
+            raw_task = tg.create_task(ctx.get_for_update(raw.DivRaw, ticker))
+            reestry_task = tg.create_task(ctx.get(reestry.DivReestry, ticker))
+
+        raw_div = await raw_task
+        reestry_div = await reestry_task
+
+        day = TypeAdapter(date).validate_python((await req.post()).get("day"))
+        dividend_str = TypeAdapter(str).validate_python((await req.post()).get("dividend"))
+        dividend = TypeAdapter(float).validate_python(dividend_str.replace(" ", "").replace(",", "."))
+
+        raw_div.remove_row(raw.Row(day=day, dividend=dividend))
+
+        return web.Response(
+            text=self._env.get_template("main/dividends.html").render(
+                main=self._prepare_dividends(raw_div, reestry_div),
+                format_float=_format_float,
+                format_percent=_format_percent,
+            ),
+            content_type="text/html",
         )
 
     async def settings(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
@@ -346,18 +476,26 @@ class Handlers:
         try:
             return await handler(request)
         except* (errors.AdapterError, errors.ControllersError) as err:
-            self._lgr.warning("Can't handle request - %s", err)
-
             code = http.HTTPStatus.INTERNAL_SERVER_ERROR
             error = err.exceptions[0]
 
-        except* (errors.DomainError, errors.UseCasesError) as err:
-            self._lgr.warning("Can't handle request - %s", err)
+        except* ValidationError as err:
+            code = http.HTTPStatus.BAD_REQUEST
+            error = errors.ControllersError(
+                _get_first_exception(err).errors()[0]["msg"],
+            )
 
+        except* (errors.DomainError, errors.UseCasesError) as err:
             code = http.HTTPStatus.BAD_REQUEST
             error = err.exceptions[0]
 
-        return self._alert(code, f"{error}")
+        except* web.HTTPNotFound as err:
+            code = http.HTTPStatus.NOT_FOUND
+            error = err.exceptions[0]
+
+        self._lgr.warning("Can't handle request - %s", error)
+
+        return self._alert(code, f"{error.__class__.__name__}: {error}")
 
     def _alert(self, code: int, alert: str) -> web.Response:
         return web.Response(
@@ -370,6 +508,13 @@ class Handlers:
         file_path = Path(__file__).parent / "static" / req.match_info["path"]
 
         return web.FileResponse(file_path)
+
+
+def _get_first_exception(exc: ExceptionGroup[ValidationError] | ValidationError) -> ValidationError:
+    if isinstance(exc, ValidationError):
+        return exc
+
+    return _get_first_exception(exc.exceptions[0])
 
 
 def _prepare_account(
@@ -410,8 +555,10 @@ def _prepare_account(
 
 def _format_float(number: float, decimals: int | None = None) -> str:
     match decimals:
-        case None:
+        case None if number % 1:
             rez = f"{number:_}"
+        case None:
+            rez = f"{int(number):_}"
         case _:
             rez = f"{number:_.{decimals}f}"
 

@@ -1,2 +1,106 @@
-<h2>Dividends {{ layout.title }}</h2>
-<p>Dividends for {{ layout.title }} page content</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th class="table__header-cell">
+                Day
+            </th>
+            <th class="table__header-cell">
+                Dividend
+            </th>
+            <th class="table__header-cell">
+                Status
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in main.dividends %}
+        <tr
+            {% if row.status == "missed" %}
+            class="table__muted-row"
+            {% endif %}
+        >
+            <td class="table__label-cell">
+                {{ row.day }}
+            </td>
+            <td class="table__data-cell">
+                {{ format_float(row.dividend) }}
+            </td>
+            {% if row.status == "ok" %}
+            <td class="table__text-cell">
+                OK
+            </td>
+            {% elif row.status == "extra" %}
+            <td class="table__icon-cell">
+                <button
+                    hx-post="/dividends/{{ main.ticker }}/remove"
+                    hx-vals='{"day":"{{ row.day }}","dividend":"{{ format_float(row.dividend) }}"}'
+                    hx-target="main"
+                    class="table__icon-button"
+                >
+                    <svg viewBox="0 0 16 16">
+                        <path
+                            fill-rule="evenodd"
+                            d="M9 2H7a.5.5 0 0 0-.5.5V3h3v-.5A.5.5 0 0 0 9 2Zm2 1v-.5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2V3H2.251a.75.75 0 0 0 0 1.5h.312l.317 7.625A3 3 0 0 0 5.878 15h4.245a3 3 0 0 0 2.997-2.875l.318-7.625h.312a.75.75 0 0 0 0-1.5H11Zm.936 1.5H4.064l.315 7.562A1.5 1.5 0 0 0 5.878 13.5h4.245a1.5 1.5 0 0 0 1.498-1.438l.315-7.562Zm-6.186 2v5a.75.75 0 0 0 1.5 0v-5a.75.75 0 0 0-1.5 0Zm3.75-.75a.75.75 0 0 1 .75.75v5a.75.75 0 0 1-1.5 0v-5a.75.75 0 0 1 .75-.75Z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                </button>
+            </td>
+            {% else %}
+            <td class="table__icon-cell">
+                <button
+                    hx-post="/dividends/{{ main.ticker }}/add"
+                    hx-vals='{"day":"{{ row.day }}","dividend":"{{ format_float(row.dividend) }}"}'
+                    hx-target="main"
+                    class="table__icon-button"
+                >
+                    <svg viewBox="0 0 16 16">
+                        <path
+                            fill-rule="evenodd"
+                            d="M13.5 8a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0ZM15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM8.75 5.5a.75.75 0 0 0-1.5 0v1.75H5.5a.75.75 0 0 0 0 1.5h1.75v1.75a.75.75 0 0 0 1.5 0V8.75h1.75a.75.75 0 0 0 0-1.5H8.75V5.5Z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                </button>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+        <tr class="table__muted-row">
+            <td>
+                <input
+                    class="table__input table__input--text"
+                    name="day"
+                    value="{{ main.day }}"
+                    type="text"
+                >
+                </input>
+            </td>
+            <td>
+                <input
+                    class="table__input"
+                    name="dividend"
+                    value="{{ format_float(main.dividend) }}"
+                    type="text"
+                >
+                </input>
+            </td>
+            <td class="table__icon-cell">
+                <button
+                    hx-post="/dividends/{{ main.ticker }}/add"
+                    hx-include="closest tr"
+                    hx-target="main"
+                    class="table__icon-button"
+                >
+                    <svg viewBox="0 0 16 16">
+                        <path
+                            fill-rule="evenodd"
+                            d="M13.5 8a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0ZM15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM8.75 5.5a.75.75 0 0 0-1.5 0v1.75H5.5a.75.75 0 0 0 0 1.5h1.75v1.75a.75.75 0 0 0 1.5 0V8.75h1.75a.75.75 0 0 0 0-1.5H8.75V5.5Z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                </button>
+            </td>
+        </tr>
+    </tbody>
+</table>
