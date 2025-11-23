@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import Any, Final
 
 import aiofiles
@@ -8,9 +9,9 @@ from pymongo.errors import PyMongoError
 
 from poptimizer import consts, errors
 from poptimizer.adapters import mongo
-from poptimizer.domain.div import div, raw
-from poptimizer.domain.dl import features
-from poptimizer.domain.moex import index, quotes, trading_day
+from poptimizer.domain.div import raw
+from poptimizer.domain.moex import trading_day
+from poptimizer.domain.portfolio import forecasts
 from poptimizer.use_cases import handler
 
 _DUMP: Final = consts.ROOT / "dump" / "dividends.json"
@@ -49,18 +50,10 @@ class BackupHandler:
         if current_ver == consts.__version__:
             return
 
-        # 2025-09-29
-        if "b" in current_ver and len(current_ver) < len("3.0.0b10"):
-            self._lgr.warning("Dropping quotes, index and div data due to new format")
-            await self._mongo_repo.drop(quotes.Quotes)
-            await self._mongo_repo.drop(index.Index)
-            await self._mongo_repo.drop(raw.DivRaw)
-            await self._mongo_repo.drop(div.Dividends)
-
-        # 2025-10-12
-        if "b" in current_ver and (len(current_ver) < len("3.0.0b12") or current_ver < "3.0.0b12"):
-            self._lgr.warning("Dropping features data due to new format")
-            await self._mongo_repo.drop(features.Features)
+        # 2025-11-23
+        if _normalized_ver(current_ver) < _normalized_ver("3.3.0"):
+            self._lgr.warning("Dropping forecasts data due to new format")
+            await self._mongo_repo.drop(forecasts.Forecast)
 
     async def restore(self) -> None:
         if not _DUMP.exists():
@@ -103,3 +96,11 @@ def _normalized_doc(doc: dict[str, Any]) -> dict[str, Any] | None:
     doc[mongo.DAY] = doc[_DF_KEY][-1][mongo.DAY]
 
     return doc
+
+
+def _normalized_ver(ver: str) -> tuple[int, int, int]:
+    result = re.match(r"(\d+)\.(\d+)\.(\d+)", ver)
+    if not result:
+        raise ValueError(f"Invalid version {ver}")
+
+    return int(result.group(1)), int(result.group(2)), int(result.group(3))
