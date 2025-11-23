@@ -4,6 +4,7 @@ import logging
 from enum import StrEnum, auto
 from pathlib import Path
 from typing import Any
+from urllib import parse
 
 from aiohttp import typedefs, web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -11,11 +12,10 @@ from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 from poptimizer import errors
 from poptimizer.controllers.bus import msg
-from poptimizer.domain import domain
+from poptimizer.domain import domain, settings
 from poptimizer.domain.div import raw, reestry, status
 from poptimizer.domain.domain import AccName, Ticker, date
 from poptimizer.domain.portfolio import forecasts, portfolio
-from poptimizer.domain.settings import Settings, Theme
 from poptimizer.use_cases import handler
 
 
@@ -23,13 +23,9 @@ class Layout(BaseModel):
     title: str
     path: str
     poll: bool
-    theme: Theme
+    theme: settings.Theme
     accounts: list[AccName]
     dividends: list[Ticker]
-
-
-class Main(BaseModel):
-    template: str
 
 
 class Row(BaseModel):
@@ -119,6 +115,13 @@ class Dividends(BaseModel):
         return 1
 
 
+class Settings(BaseModel):
+    template: str
+    hide_accounts_zero_positions: bool = Field(default=False)
+    accounts: list[AccName]
+    exclude: list[domain.Ticker]
+
+
 class Handlers:
     def __init__(self, app: web.Application, bus: msg.Bus) -> None:
         self._lgr = logging.getLogger()
@@ -130,16 +133,86 @@ class Handlers:
 
         app.middlewares.append(self._alerts_middleware)
 
-        app.add_routes([web.get("/", bus.wrap(self.portfolio))])
-        app.add_routes([web.get("/accounts/{account}", bus.wrap(self.account))])
-        app.add_routes([web.patch("/accounts/{account}/{ticker}", bus.wrap(self.update_position))])
-        app.add_routes([web.get("/forecast", bus.wrap(self.forecast))])
-        app.add_routes([web.get("/optimization", bus.wrap(self.optimization))])
-        app.add_routes([web.get("/dividends/{ticker}", bus.wrap(self.dividends))])
-        app.add_routes([web.post("/dividends/{ticker}/add", bus.wrap(self.dividend_add))])
-        app.add_routes([web.post("/dividends/{ticker}/remove", bus.wrap(self.dividend_remove))])
-        app.add_routes([web.get("/settings", bus.wrap(self.settings))])
-        app.add_routes([web.put("/theme/{theme}", bus.wrap(self.theme_handler))])
+        routes = (
+            (
+                web.get,
+                "/",
+                self.portfolio,
+            ),
+            (
+                web.get,
+                "/accounts/{account}",
+                self.account,
+            ),
+            (
+                web.patch,
+                "/accounts/{account}/{ticker}",
+                self.update_position,
+            ),
+            (
+                web.get,
+                "/forecast",
+                self.forecast,
+            ),
+            (
+                web.get,
+                "/optimization",
+                self.optimization,
+            ),
+            (
+                web.get,
+                "/dividends/{ticker}",
+                self.dividends,
+            ),
+            (
+                web.patch,
+                "/dividends/{ticker}/add",
+                self.dividend_add,
+            ),
+            (
+                web.patch,
+                "/dividends/{ticker}/remove",
+                self.dividend_remove,
+            ),
+            (
+                web.get,
+                "/settings",
+                self.settings,
+            ),
+            (
+                web.patch,
+                "/settings/hide_zero_positions",
+                self.hide_zero_positions,
+            ),
+            (
+                web.post,
+                "/accounts",
+                self.create_acount,
+            ),
+            (
+                web.delete,
+                "/accounts/{account}",
+                self.remove_acount,
+            ),
+            (
+                web.post,
+                "/exclude",
+                self.exclude_ticker,
+            ),
+            (
+                web.delete,
+                "/exclude/{ticker}",
+                self.not_exclude_ticker,
+            ),
+            (
+                web.patch,
+                "/theme/{theme}",
+                self.theme,
+            ),
+        )
+
+        for method, path, unwrapped_handler in routes:
+            app.add_routes([method(path, bus.wrap(unwrapped_handler))])
 
         app.add_routes([web.get("/static/{path:.*}", self.static_file)])
 
@@ -185,7 +258,7 @@ class Handlers:
 
         async with asyncio.TaskGroup() as tg:
             port_task = tg.create_task(ctx.get(portfolio.Portfolio))
-            settings_task = tg.create_task(ctx.get(Settings))
+            settings_task = tg.create_task(ctx.get(settings.Settings))
 
         main = _prepare_account(
             port_task.result(),
@@ -207,7 +280,7 @@ class Handlers:
 
         async with asyncio.TaskGroup() as tg:
             port_task = tg.create_task(ctx.get_for_update(portfolio.Portfolio))
-            settings_task = tg.create_task(ctx.get(Settings))
+            settings_task = tg.create_task(ctx.get(settings.Settings))
 
         port = port_task.result()
         port.update_position(account, ticker, quantity)
@@ -402,13 +475,128 @@ class Handlers:
         )
 
     async def settings(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
-        main = Main(template="settings.html")
+        async with asyncio.TaskGroup() as tg:
+            settings_task = tg.create_task(ctx.get(settings.Settings))
+            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
+
+        main = Settings(
+            template="settings.html",
+            hide_accounts_zero_positions=settings_task.result().hide_zero_positions,
+            accounts=sorted(port_task.result().account_names),
+            exclude=sorted(port_task.result().exclude),
+        )
 
         return await self._render_page(
             ctx,
             "Settings",
             req,
             main,
+        )
+
+    async def hide_zero_positions(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+        current_settings = await ctx.get_for_update(settings.Settings)
+
+        hide = (await req.post()).get("hide") is not None
+        current_settings.update_hide_zero_positions(hide=hide)
+
+        return web.Response(status=http.HTTPStatus.NO_CONTENT)
+
+    async def create_acount(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+        account = TypeAdapter(str).validate_python((await req.post()).get("account"))
+        if account != parse.quote(account):
+            raise errors.ControllersError("Invalid account name - use only english letters and numbers")
+
+        async with asyncio.TaskGroup() as tg:
+            settings_task = tg.create_task(ctx.get(settings.Settings))
+            port_task = tg.create_task(ctx.get_for_update(portfolio.Portfolio))
+
+        port_task.result().create_acount(domain.AccName(account))
+
+        main = Settings(
+            template="settings.html",
+            hide_accounts_zero_positions=settings_task.result().hide_zero_positions,
+            accounts=sorted(port_task.result().account_names),
+            exclude=sorted(port_task.result().exclude),
+        )
+
+        return await self._render_page(
+            ctx,
+            "Settings",
+            req,
+            main,
+        )
+
+    async def remove_acount(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+        account = domain.AccName(req.match_info["account"])
+
+        async with asyncio.TaskGroup() as tg:
+            settings_task = tg.create_task(ctx.get(settings.Settings))
+            port_task = tg.create_task(ctx.get_for_update(portfolio.Portfolio))
+
+        port_task.result().remove_acount(account)
+
+        main = Settings(
+            template="settings.html",
+            hide_accounts_zero_positions=settings_task.result().hide_zero_positions,
+            accounts=sorted(port_task.result().account_names),
+            exclude=sorted(port_task.result().exclude),
+        )
+
+        return await self._render_page(
+            ctx,
+            "Settings",
+            req,
+            main,
+        )
+
+    async def not_exclude_ticker(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+        ticker = TypeAdapter(str).validate_python(req.match_info["ticker"])
+
+        async with asyncio.TaskGroup() as tg:
+            settings_task = tg.create_task(ctx.get(settings.Settings))
+            port_task = tg.create_task(ctx.get_for_update(portfolio.Portfolio))
+
+        port_task.result().not_exclude_ticker(domain.Ticker(ticker.upper()))
+
+        main = Settings(
+            template="settings.html",
+            hide_accounts_zero_positions=settings_task.result().hide_zero_positions,
+            accounts=sorted(port_task.result().account_names),
+            exclude=sorted(port_task.result().exclude),
+        )
+
+        return web.Response(
+            text=self._env.get_template("main/settings.html").render(
+                main=main,
+                format_float=_format_float,
+                format_percent=_format_percent,
+            ),
+            content_type="text/html",
+        )
+
+    async def exclude_ticker(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+        ticker = TypeAdapter(str).validate_python((await req.post()).get("ticker"))
+
+        async with asyncio.TaskGroup() as tg:
+            settings_task = tg.create_task(ctx.get(settings.Settings))
+            port_task = tg.create_task(ctx.get_for_update(portfolio.Portfolio))
+
+        port_task.result().exclude_ticker(domain.Ticker(ticker.upper()))
+
+        main = Settings(
+            template="settings.html",
+            hide_accounts_zero_positions=settings_task.result().hide_zero_positions,
+            accounts=sorted(port_task.result().account_names),
+            exclude=sorted(port_task.result().exclude),
+        )
+
+        return web.Response(
+            text=self._env.get_template("main/settings.html").render(
+                main=main,
+                format_float=_format_float,
+                format_percent=_format_percent,
+            ),
+            content_type="text/html",
         )
 
     async def _render_page(
@@ -421,7 +609,7 @@ class Handlers:
         poll: bool = False,
     ) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
-            settings_task = tg.create_task(ctx.get(Settings))
+            settings_task = tg.create_task(ctx.get(settings.Settings))
             port_task = tg.create_task(ctx.get(portfolio.Portfolio))
             div_task = tg.create_task(ctx.get(status.DivStatus))
 
@@ -450,14 +638,14 @@ class Handlers:
             content_type="text/html",
         )
 
-    async def theme_handler(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def theme(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         theme = req.match_info["theme"]
 
-        if theme not in Theme:
+        if theme not in settings.Theme:
             return web.HTTPNotFound(text=f"Invalid theme - {theme}")
 
-        settings = await ctx.get_for_update(Settings)
-        settings.update_theme(Theme(theme))
+        current_settings = await ctx.get_for_update(settings.Settings)
+        current_settings.update_theme(settings.Theme(theme))
 
         return web.Response(
             text=self._env.get_template(f"theme/{theme}.html").render(),

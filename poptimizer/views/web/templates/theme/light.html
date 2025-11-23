@@ -1,5 +1,5 @@
 <button
-    hx-put="/theme/dark"
+    hx-patch="/theme/dark"
     hx-swap="outerHTML"
     hx-on:htmx:load="setTheme('light')"
     class="nav__item"

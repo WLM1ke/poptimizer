@@ -207,6 +207,93 @@ svg {
     text-align: left;
 }
 
+.settings-section {
+    padding-bottom: var(--padding);
+}
+
+.settings-section__header {
+    padding-bottom: var(--padding);
+}
+
+.switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.switch__checkbox {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.switch__track {
+    position: relative;
+    height: 1.5rem;
+    width: 2.75rem;
+    background-color: var(--bg-accent);
+    border-radius: 9999px;
+}
+
+.switch__track::after {
+    content: '';
+    position: absolute;
+    left: 0.125rem;
+    top: 0.125rem;
+    height: 1.25rem;
+    width: 1.25rem;
+    background-color: white;
+    border-radius: 9999px;
+    transition: all 0.3s ease;
+}
+
+.switch__checkbox:checked+.switch__track {
+    background-color: var(--link);
+}
+
+.switch__checkbox:checked+.switch__track::after {
+    transform: translateX(1.25rem);
+}
+
+.switch__label {
+    margin-left: 0.75rem;
+    color: var(--text-main);
+}
+
+.editable-list {
+    max-width: max-content;
+}
+
+.editable-list__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--padding);
+    padding-bottom: var(--padding);
+}
+
+.editable-list__input {
+    border-width: 1px;
+    border-radius: var(--padding);
+    border-color: var(--bg-accent);
+    background-color: var(--bg-main);
+    padding: var(--padding-small);
+}
+
+.editable-list__button:hover {
+    color: var(--link-hover);
+}
+
 .alerts {
     position: absolute;
     bottom: 0px;

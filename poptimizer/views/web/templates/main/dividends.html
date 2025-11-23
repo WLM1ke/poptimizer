@@ -32,7 +32,7 @@
             {% elif row.status == "extra" %}
             <td class="table__icon-cell">
                 <button
-                    hx-post="/dividends/{{ main.ticker }}/remove"
+                    hx-patch="/dividends/{{ main.ticker }}/remove"
                     hx-vals='{"day":"{{ row.day }}","dividend":"{{ format_float(row.dividend) }}"}'
                     hx-target="main"
                     class="table__icon-button"
@@ -49,7 +49,7 @@
             {% else %}
             <td class="table__icon-cell">
                 <button
-                    hx-post="/dividends/{{ main.ticker }}/add"
+                    hx-patch="/dividends/{{ main.ticker }}/add"
                     hx-vals='{"day":"{{ row.day }}","dividend":"{{ format_float(row.dividend) }}"}'
                     hx-target="main"
                     class="table__icon-button"
@@ -87,7 +87,7 @@
             </td>
             <td class="table__icon-cell">
                 <button
-                    hx-post="/dividends/{{ main.ticker }}/add"
+                    hx-patch="/dividends/{{ main.ticker }}/add"
                     hx-include="closest tr"
                     hx-target="main"
                     class="table__icon-button"
