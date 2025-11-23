@@ -736,7 +736,7 @@ def _prepare_account(
             row3=Row(label="Total positions", value=f"{_format_float(len(portfolio.positions), 0)}"),
         ),
         value=value,
-        cash=portfolio.cash_value(),
+        cash=portfolio.cash_value(account),
         positions=positions,
     )
 
