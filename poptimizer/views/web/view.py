@@ -122,57 +122,56 @@ class Settings(BaseModel):
     exclude: list[domain.Ticker]
 
 
-class Handlers:
-    def __init__(self, app: web.Application, bus: msg.Bus) -> None:
+class Provider:
+    def __init__(self, bus: msg.Bus) -> None:
         self._lgr = logging.getLogger()
+        self._app = web.Application(middlewares=[self._alerts_middleware])
         self._bus = bus
         self._env = Environment(
             loader=FileSystemLoader(Path(__file__).parent / "templates"),
             autoescape=select_autoescape(["html"]),
         )
 
-        app.middlewares.append(self._alerts_middleware)
-
         routes = (
             (
                 web.get,
                 "/",
-                self.portfolio,
+                self._portfolio,
             ),
             (
                 web.get,
                 "/accounts/{account}",
-                self.account,
+                self._account,
             ),
             (
                 web.patch,
                 "/accounts/{account}/{ticker}",
-                self.update_position,
+                self._update_position,
             ),
             (
                 web.get,
                 "/forecast",
-                self.forecast,
+                self._forecast,
             ),
             (
                 web.get,
                 "/optimization",
-                self.optimization,
+                self._optimization,
             ),
             (
                 web.get,
                 "/dividends/{ticker}",
-                self.dividends,
+                self._dividends,
             ),
             (
                 web.patch,
                 "/dividends/{ticker}/add",
-                self.dividend_add,
+                self._dividend_add,
             ),
             (
                 web.patch,
                 "/dividends/{ticker}/remove",
-                self.dividend_remove,
+                self._dividend_remove,
             ),
             (
                 web.get,
@@ -182,41 +181,44 @@ class Handlers:
             (
                 web.patch,
                 "/settings/hide_zero_positions",
-                self.hide_zero_positions,
+                self._hide_zero_positions,
             ),
             (
                 web.post,
                 "/accounts",
-                self.create_acount,
+                self._create_acount,
             ),
             (
                 web.delete,
                 "/accounts/{account}",
-                self.remove_acount,
+                self._remove_acount,
             ),
             (
                 web.post,
                 "/exclude",
-                self.exclude_ticker,
+                self._exclude_ticker,
             ),
             (
                 web.delete,
                 "/exclude/{ticker}",
-                self.not_exclude_ticker,
+                self._not_exclude_ticker,
             ),
             (
                 web.patch,
                 "/theme/{theme}",
-                self.theme,
+                self._theme,
             ),
         )
 
         for method, path, unwrapped_handler in routes:
-            app.add_routes([method(path, bus.wrap(unwrapped_handler))])
+            self._app.add_routes([method(path, bus.wrap(unwrapped_handler))])
 
-        app.add_routes([web.get("/{path:.*}", self.static_file)])
+        self._app.add_routes([web.get("/{path:.*}", self.static_file)])
 
-    async def portfolio(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    def __call__(self) -> web.Application:
+        return self._app
+
+    async def _portfolio(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         port = await ctx.get(portfolio.Portfolio)
 
         value = port.value()
@@ -253,7 +255,7 @@ class Handlers:
             main,
         )
 
-    async def account(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _account(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
 
         async with asyncio.TaskGroup() as tg:
@@ -273,7 +275,7 @@ class Handlers:
             main,
         )
 
-    async def update_position(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _update_position(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
         ticker = domain.Ticker(req.match_info["ticker"])
         quantity = TypeAdapter(int).validate_python((await req.post()).get("quantity"))
@@ -300,7 +302,7 @@ class Handlers:
             content_type="text/html",
         )
 
-    async def forecast(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _forecast(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
             port_task = tg.create_task(ctx.get(portfolio.Portfolio))
             forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
@@ -334,7 +336,7 @@ class Handlers:
             poll=poll,
         )
 
-    async def optimization(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _optimization(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
             port_task = tg.create_task(ctx.get(portfolio.Portfolio))
             forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
@@ -372,7 +374,7 @@ class Handlers:
             poll=poll,
         )
 
-    async def dividends(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _dividends(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = domain.UID(req.match_info["ticker"])
 
         async with asyncio.TaskGroup() as tg:
@@ -421,7 +423,7 @@ class Handlers:
             dividends=compare,
         )
 
-    async def dividend_add(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _dividend_add(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = domain.UID(req.match_info["ticker"])
 
         async with asyncio.TaskGroup() as tg:
@@ -449,7 +451,7 @@ class Handlers:
             content_type="text/html",
         )
 
-    async def dividend_remove(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _dividend_remove(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = domain.UID(req.match_info["ticker"])
 
         async with asyncio.TaskGroup() as tg:
@@ -493,7 +495,7 @@ class Handlers:
             main,
         )
 
-    async def hide_zero_positions(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _hide_zero_positions(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         current_settings = await ctx.get_for_update(settings.Settings)
 
         hide = (await req.post()).get("hide") is not None
@@ -501,7 +503,7 @@ class Handlers:
 
         return web.Response(status=http.HTTPStatus.NO_CONTENT)
 
-    async def create_acount(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _create_acount(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         account = TypeAdapter(str).validate_python((await req.post()).get("account"))
         if account != parse.quote(account):
             raise errors.ControllersError("Invalid account name - use only english letters and numbers")
@@ -526,7 +528,7 @@ class Handlers:
             main,
         )
 
-    async def remove_acount(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _remove_acount(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
 
         async with asyncio.TaskGroup() as tg:
@@ -549,7 +551,7 @@ class Handlers:
             main,
         )
 
-    async def not_exclude_ticker(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _not_exclude_ticker(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = TypeAdapter(str).validate_python(req.match_info["ticker"])
 
         async with asyncio.TaskGroup() as tg:
@@ -574,7 +576,7 @@ class Handlers:
             content_type="text/html",
         )
 
-    async def exclude_ticker(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _exclude_ticker(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = TypeAdapter(str).validate_python((await req.post()).get("ticker"))
 
         async with asyncio.TaskGroup() as tg:
@@ -638,7 +640,7 @@ class Handlers:
             content_type="text/html",
         )
 
-    async def theme(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _theme(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         theme = req.match_info["theme"]
 
         if theme not in settings.Theme:

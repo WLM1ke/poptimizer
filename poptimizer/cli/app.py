@@ -48,7 +48,7 @@ async def _run(*, check_memory: bool = False) -> int:
         )
 
         msg_bus = bus.build(http_client, mongo_db, cancel_fn)
-        http_server = server.build(msg_bus, cfg.server_url)
+        http_server = server.Server(cfg.server_url, msg_bus)
 
         return await safe.run(lgr, msg_bus.run(), http_server.run())
 
