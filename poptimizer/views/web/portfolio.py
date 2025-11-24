@@ -214,7 +214,7 @@ class Handlers:
         for method, path, unwrapped_handler in routes:
             app.add_routes([method(path, bus.wrap(unwrapped_handler))])
 
-        app.add_routes([web.get("/static/{path:.*}", self.static_file)])
+        app.add_routes([web.get("/{path:.*}", self.static_file)])
 
     async def portfolio(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         port = await ctx.get(portfolio.Portfolio)
