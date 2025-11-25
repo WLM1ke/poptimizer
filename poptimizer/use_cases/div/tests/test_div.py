@@ -24,7 +24,7 @@ _TEST_MSG_DATE = date(2023, 1, 1)
     ],
 )
 async def test_call_creates_tasks_for_each_security(securities_data):
-    mock_ctx = AsyncMock()
+    mock_ctx = Mock()
     mock_securities_table = Mock()
 
     securities_list = []
@@ -35,13 +35,16 @@ async def test_call_creates_tasks_for_each_security(securities_data):
 
     mock_securities_table.df = securities_list
     mock_ctx.get.return_value = mock_securities_table
+    mock_ctx.get = AsyncMock(return_value=mock_securities_table)
+    mock_ctx.get_for_update = AsyncMock()
+    mock_ctx.publish = Mock(return_value=None)
 
     handler_obj = div_handler.DivHandler()
     handler_obj._update_one = AsyncMock()
 
     msg = handler.SecuritiesUpdated(day=_TEST_MSG_DATE)
 
-    result = await handler_obj(mock_ctx, msg)
+    await handler_obj(mock_ctx, msg)
 
     mock_ctx.get.assert_called_once_with(securities_domain.Securities)
 
@@ -51,7 +54,7 @@ async def test_call_creates_tasks_for_each_security(securities_data):
     expected_calls = [mock.call(mock_ctx, _TEST_MSG_DATE, domain.UID(ticker)) for ticker in securities_data]
     handler_obj._update_one.assert_has_calls(expected_calls, any_order=True)
 
-    assert result == handler.DivUpdated(day=_TEST_MSG_DATE)
+    mock_ctx.publish.assert_called_once_with(handler.DivUpdated(day=_TEST_MSG_DATE))
 
 
 @pytest.mark.asyncio
