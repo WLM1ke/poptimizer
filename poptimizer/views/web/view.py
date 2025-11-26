@@ -213,7 +213,7 @@ class Provider:
         for method, path, unwrapped_handler in routes:
             self._app.add_routes([method(path, bus.wrap(unwrapped_handler))])
 
-        self._app.add_routes([web.get("/{path:.*}", self.static_file)])
+        self._app.add_routes([web.get("/{path:.*}", self._static_file)])
 
     def __call__(self) -> web.Application:
         return self._app
@@ -293,14 +293,7 @@ class Provider:
             hide_zero_positions=settings_task.result().hide_zero_positions,
         )
 
-        return web.Response(
-            text=self._env.get_template("main/account.html").render(
-                main=main,
-                format_float=_format_float,
-                format_percent=_format_percent,
-            ),
-            content_type="text/html",
-        )
+        return self._render_main("main/account.html", main)
 
     async def _forecast(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
@@ -388,39 +381,7 @@ class Provider:
             ctx,
             ticker,
             req,
-            self._prepare_dividends(raw_div, reestry_div),
-        )
-
-    def _prepare_dividends(self, raw_div: raw.DivRaw, reestry_div: reestry.DivReestry) -> Dividends:
-        compare = [
-            DivRow(
-                day=row_source.day,
-                dividend=row_source.dividend,
-                status=DivStatus.MISSED,
-            )
-            for row_source in reestry_div.df
-            if not raw_div.has_row(raw.Row(day=row_source.day, dividend=row_source.dividend))
-        ]
-
-        for raw_row in raw_div.df:
-            row_status = DivStatus.EXTRA
-            if reestry_div.has_row(raw_row):
-                row_status = DivStatus.OK
-
-            compare.append(
-                DivRow(
-                    day=raw_row.day,
-                    dividend=raw_row.dividend,
-                    status=row_status,
-                ),
-            )
-
-        compare.sort(key=lambda compare: compare.to_tuple())
-
-        return Dividends(
-            template="dividends.html",
-            ticker=raw_div.uid,
-            dividends=compare,
+            _prepare_dividends(raw_div, reestry_div),
         )
 
     async def _dividend_add(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
@@ -442,14 +403,7 @@ class Provider:
         raw_div.add_row(raw.Row(day=day, dividend=dividend))
         status_div.filter(raw_div)
 
-        return web.Response(
-            text=self._env.get_template("main/dividends.html").render(
-                main=self._prepare_dividends(raw_div, reestry_div),
-                format_float=_format_float,
-                format_percent=_format_percent,
-            ),
-            content_type="text/html",
-        )
+        return self._render_main("main/dividends.html", _prepare_dividends(raw_div, reestry_div))
 
     async def _dividend_remove(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = domain.UID(req.match_info["ticker"])
@@ -467,14 +421,7 @@ class Provider:
 
         raw_div.remove_row(raw.Row(day=day, dividend=dividend))
 
-        return web.Response(
-            text=self._env.get_template("main/dividends.html").render(
-                main=self._prepare_dividends(raw_div, reestry_div),
-                format_float=_format_float,
-                format_percent=_format_percent,
-            ),
-            content_type="text/html",
-        )
+        return self._render_main("main/dividends.html", _prepare_dividends(raw_div, reestry_div))
 
     async def settings(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
@@ -567,14 +514,7 @@ class Provider:
             exclude=sorted(port_task.result().exclude),
         )
 
-        return web.Response(
-            text=self._env.get_template("main/settings.html").render(
-                main=main,
-                format_float=_format_float,
-                format_percent=_format_percent,
-            ),
-            content_type="text/html",
-        )
+        return self._render_main("main/settings.html", main)
 
     async def _exclude_ticker(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = TypeAdapter(str).validate_python((await req.post()).get("ticker"))
@@ -592,12 +532,19 @@ class Provider:
             exclude=sorted(port_task.result().exclude),
         )
 
+        return self._render_main("main/settings.html", main)
+
+    async def _theme(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+        theme = req.match_info["theme"]
+
+        if theme not in settings.Theme:
+            return web.HTTPNotFound(text=f"Invalid theme - {theme}")
+
+        current_settings = await ctx.get_for_update(settings.Settings)
+        current_settings.update_theme(settings.Theme(theme))
+
         return web.Response(
-            text=self._env.get_template("main/settings.html").render(
-                main=main,
-                format_float=_format_float,
-                format_percent=_format_percent,
-            ),
+            text=self._env.get_template(f"theme/{theme}.html").render(),
             content_type="text/html",
         )
 
@@ -640,17 +587,17 @@ class Provider:
             content_type="text/html",
         )
 
-    async def _theme(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
-        theme = req.match_info["theme"]
-
-        if theme not in settings.Theme:
-            return web.HTTPNotFound(text=f"Invalid theme - {theme}")
-
-        current_settings = await ctx.get_for_update(settings.Settings)
-        current_settings.update_theme(settings.Theme(theme))
-
+    def _render_main(
+        self,
+        template: str,
+        main: Any,
+    ) -> web.StreamResponse:
         return web.Response(
-            text=self._env.get_template(f"theme/{theme}.html").render(),
+            text=self._env.get_template(template).render(
+                main=main,
+                format_float=_format_float,
+                format_percent=_format_percent,
+            ),
             content_type="text/html",
         )
 
@@ -685,19 +632,52 @@ class Provider:
 
         self._lgr.warning("Can't handle request - %s", error)
 
-        return self._alert(code, f"{error.__class__.__name__}: {error}")
+        return self._render_alert(code, f"{error.__class__.__name__}: {error}")
 
-    def _alert(self, code: int, alert: str) -> web.Response:
+    def _render_alert(self, code: int, alert: str) -> web.Response:
         return web.Response(
             status=code,
             text=self._env.get_template("components/alert.html").render(alert=alert),
             content_type="text/html",
         )
 
-    async def static_file(self, req: web.Request) -> web.StreamResponse:
+    async def _static_file(self, req: web.Request) -> web.StreamResponse:
         file_path = Path(__file__).parent / "static" / req.match_info["path"]
 
         return web.FileResponse(file_path)
+
+
+def _prepare_dividends(raw_div: raw.DivRaw, reestry_div: reestry.DivReestry) -> Dividends:
+    compare = [
+        DivRow(
+            day=row_source.day,
+            dividend=row_source.dividend,
+            status=DivStatus.MISSED,
+        )
+        for row_source in reestry_div.df
+        if not raw_div.has_row(raw.Row(day=row_source.day, dividend=row_source.dividend))
+    ]
+
+    for raw_row in raw_div.df:
+        row_status = DivStatus.EXTRA
+        if reestry_div.has_row(raw_row):
+            row_status = DivStatus.OK
+
+        compare.append(
+            DivRow(
+                day=raw_row.day,
+                dividend=raw_row.dividend,
+                status=row_status,
+            ),
+        )
+
+    compare.sort(key=lambda compare: compare.to_tuple())
+
+    return Dividends(
+        template="dividends.html",
+        ticker=raw_div.uid,
+        dividends=compare,
+    )
 
 
 def _get_first_exception(exc: ExceptionGroup[ValidationError] | ValidationError) -> ValidationError:
