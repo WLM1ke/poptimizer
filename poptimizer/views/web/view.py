@@ -145,6 +145,11 @@ class Provider:
             ),
             (
                 web.patch,
+                "/accounts/{account}",
+                self._account_toggle_positions,
+            ),
+            (
+                web.patch,
                 "/accounts/{account}/{ticker}",
                 self._update_position,
             ),
@@ -274,6 +279,24 @@ class Provider:
             req,
             main,
         )
+
+    async def _account_toggle_positions(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+        account = domain.AccName(req.match_info["account"])
+
+        async with asyncio.TaskGroup() as tg:
+            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
+            settings_task = tg.create_task(ctx.get_for_update(settings.Settings))
+
+        settings_result = settings_task.result()
+        settings_result.hide_zero_positions = not settings_result.hide_zero_positions
+
+        main = _prepare_account(
+            port_task.result(),
+            account,
+            hide_zero_positions=settings_result.hide_zero_positions,
+        )
+
+        return self._render_main("main/account.html", main)
 
     async def _update_position(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])

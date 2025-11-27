@@ -47,7 +47,13 @@
         </tr>
         {% for pos in main.positions %}
         <tr>
-            <td class="table__label-cell">
+            <td
+                hx-patch="/accounts/{{ main.account }}"
+                hx-target="main"
+                hx-swap="morph:innerHTML"
+                class="table__label-cell"
+                title="Click to toggle zero positions"
+            >
                 {{ pos.ticker }}
             </td>
             <td>
