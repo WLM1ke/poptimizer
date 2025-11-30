@@ -18,29 +18,16 @@ from poptimizer.domain.div import raw, reestry, status
 from poptimizer.domain.domain import AccName, Ticker, date
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
+from poptimizer.views.web import models
 
 _YEAR_IN_SECONDS: Final = int(timedelta(days=365).total_seconds())
-
-
-class Theme(StrEnum):
-    SYSTEM = auto()
-    LIGHT = auto()
-    DARK = auto()
-
-
-class Cookie(BaseModel):
-    theme: Theme = Theme.SYSTEM
-    hide_zero_positions: bool = False
-
-    def toggle_zero_positions(self) -> None:
-        self.hide_zero_positions = not self.hide_zero_positions
 
 
 class Layout(BaseModel):
     title: str
     selected_path: str
     poll: bool
-    theme: Theme
+    theme: models.Theme
     accounts: list[AccName]
     dividends: list[Ticker]
 
@@ -279,7 +266,7 @@ class Provider:
 
     async def _account(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
-        cookie = Cookie.model_validate(req.cookies)
+        cookie = models.Cookie.from_request(req)
 
         main = _prepare_account(
             await ctx.get(portfolio.Portfolio),
@@ -296,7 +283,7 @@ class Provider:
 
     async def _account_toggle_positions(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
-        cookie = Cookie.model_validate(req.cookies)
+        cookie = models.Cookie.from_request(req)
 
         cookie.toggle_zero_positions()
 
@@ -319,7 +306,7 @@ class Provider:
         main = _prepare_account(
             port,
             account,
-            hide_zero_positions=Cookie.model_validate(req.cookies).hide_zero_positions,
+            hide_zero_positions=models.Cookie.from_request(req).hide_zero_positions,
         )
 
         return self._render_main("main/account.html", main)
@@ -457,7 +444,7 @@ class Provider:
 
         main = Settings(
             template="settings.html",
-            hide_accounts_zero_positions=Cookie.model_validate(req.cookies).hide_zero_positions,
+            hide_accounts_zero_positions=models.Cookie.from_request(req).hide_zero_positions,
             accounts=sorted(port.account_names),
             exclude=sorted(port.exclude),
         )
@@ -470,7 +457,7 @@ class Provider:
         )
 
     async def _hide_zero_positions(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:  # noqa: ARG002
-        cookie = Cookie.model_validate(req.cookies)
+        cookie = models.Cookie.from_request(req)
         cookie.hide_zero_positions = (await req.post()).get("hide") is not None
 
         return _with_cookie(web.Response(status=http.HTTPStatus.NO_CONTENT), cookie)
@@ -480,7 +467,7 @@ class Provider:
         if account != parse.quote(account):
             raise errors.ControllersError("Invalid account name - use only english letters and numbers")
 
-        cookie = Cookie.model_validate(req.cookies)
+        cookie = models.Cookie.from_request(req)
 
         port = await ctx.get_for_update(portfolio.Portfolio)
         port.create_acount(domain.AccName(account))
@@ -501,7 +488,7 @@ class Provider:
 
     async def _remove_acount(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
-        cookie = Cookie.model_validate(req.cookies)
+        cookie = models.Cookie.from_request(req)
 
         port = await ctx.get_for_update(portfolio.Portfolio)
         port.remove_acount(account)
@@ -522,7 +509,7 @@ class Provider:
 
     async def _not_exclude_ticker(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = TypeAdapter(str).validate_python(req.match_info["ticker"])
-        cookie = Cookie.model_validate(req.cookies)
+        cookie = models.Cookie.from_request(req)
 
         port = await ctx.get_for_update(portfolio.Portfolio)
         port.not_exclude_ticker(domain.Ticker(ticker.upper()))
@@ -538,7 +525,7 @@ class Provider:
 
     async def _exclude_ticker(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = TypeAdapter(str).validate_python((await req.post()).get("ticker"))
-        cookie = Cookie.model_validate(req.cookies)
+        cookie = models.Cookie.from_request(req)
 
         port = await ctx.get_for_update(portfolio.Portfolio)
         port.exclude_ticker(domain.Ticker(ticker.upper()))
@@ -555,15 +542,15 @@ class Provider:
     async def _theme(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         theme = req.match_info["theme"]
 
-        if theme not in Theme:
+        if theme not in models.Theme:
             return web.HTTPNotFound(text=f"Invalid theme - {theme}")
 
-        cookie = Cookie.model_validate(req.cookies)
-        cookie.theme = Theme(theme)
+        cookie = models.Cookie.from_request(req)
+        cookie.theme = models.Theme(theme)
 
         return self._render_theme(cookie)
 
-    def _render_theme(self, cookie: Cookie) -> web.StreamResponse:
+    def _render_theme(self, cookie: models.Cookie) -> web.StreamResponse:
         return _with_cookie(
             web.Response(
                 text=self._env.get_template(f"theme/{cookie.theme}.html").render(),
@@ -581,7 +568,7 @@ class Provider:
         *,
         poll: bool = False,
     ) -> web.StreamResponse:
-        cookie = Cookie.model_validate(req.cookies)
+        cookie = models.Cookie.from_request(req)
 
         async with asyncio.TaskGroup() as tg:
             port_task = tg.create_task(ctx.get(portfolio.Portfolio))
@@ -616,7 +603,7 @@ class Provider:
         self,
         template: str,
         main: Any,
-        cookie: Cookie | None = None,
+        cookie: models.Cookie | None = None,
     ) -> web.StreamResponse:
         return _with_cookie(
             web.Response(
@@ -768,7 +755,7 @@ def _format_percent(number: float) -> str:
     return f"{_format_float(number * 100, 1)} %"
 
 
-def _with_cookie(resp: web.Response, cookie: Cookie | None) -> web.Response:
+def _with_cookie(resp: web.Response, cookie: models.Cookie | None) -> web.Response:
     if cookie:
         for name, value in cookie:
             resp.set_cookie(
