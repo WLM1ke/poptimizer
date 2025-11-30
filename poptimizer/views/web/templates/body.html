@@ -62,6 +62,7 @@
             {% for account in layout.accounts %}
             <li>
                 <a
+                    hx-swap="morph:innerHTML"
                     class="nav__item nav__item--indented{% if layout.path == '/accounts/' + account %} nav__item--selected{% endif %}"
                     href="/accounts/{{ account }}"
                 >
