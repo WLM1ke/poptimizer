@@ -1,9 +1,10 @@
 import asyncio
 import http
 import logging
+from datetime import timedelta
 from enum import StrEnum, auto
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 from urllib import parse
 
 from aiohttp import typedefs, web
@@ -12,18 +13,34 @@ from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 from poptimizer import errors
 from poptimizer.controllers.bus import msg
-from poptimizer.domain import domain, settings
+from poptimizer.domain import domain
 from poptimizer.domain.div import raw, reestry, status
 from poptimizer.domain.domain import AccName, Ticker, date
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
+
+_YEAR_IN_SECONDS: Final = int(timedelta(days=365).total_seconds())
+
+
+class Theme(StrEnum):
+    SYSTEM = auto()
+    LIGHT = auto()
+    DARK = auto()
+
+
+class CookieSettings(BaseModel):
+    theme: Theme = Theme.SYSTEM
+    hide_zero_positions: bool = False
+
+    def toggle_zero_positions(self) -> None:
+        self.hide_zero_positions = not self.hide_zero_positions
 
 
 class Layout(BaseModel):
     title: str
     path: str
     poll: bool
-    theme: settings.Theme
+    theme: Theme
     accounts: list[AccName]
     dividends: list[Ticker]
 
@@ -60,6 +77,7 @@ class Portfolio(BaseModel):
 class Account(BaseModel):
     template: str
     account: AccName
+    hide_zero_positions: bool
     card: Card
     value: float
     cash: int
@@ -262,15 +280,12 @@ class Provider:
 
     async def _account(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
-
-        async with asyncio.TaskGroup() as tg:
-            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
-            settings_task = tg.create_task(ctx.get(settings.Settings))
+        settings = CookieSettings.model_validate(req.cookies)
 
         main = _prepare_account(
-            port_task.result(),
+            await ctx.get(portfolio.Portfolio),
             account,
-            hide_zero_positions=settings_task.result().hide_zero_positions,
+            hide_zero_positions=settings.hide_zero_positions,
         )
 
         return await self._render_page(
@@ -282,38 +297,30 @@ class Provider:
 
     async def _account_toggle_positions(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
+        settings = CookieSettings.model_validate(req.cookies)
 
-        async with asyncio.TaskGroup() as tg:
-            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
-            settings_task = tg.create_task(ctx.get_for_update(settings.Settings))
-
-        settings_result = settings_task.result()
-        settings_result.hide_zero_positions = not settings_result.hide_zero_positions
+        settings.toggle_zero_positions()
 
         main = _prepare_account(
-            port_task.result(),
+            await ctx.get(portfolio.Portfolio),
             account,
-            hide_zero_positions=settings_result.hide_zero_positions,
+            hide_zero_positions=settings.hide_zero_positions,
         )
 
-        return self._render_main("main/account.html", main)
+        return self._render_main("main/account.html", main, settings)
 
     async def _update_position(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
         ticker = domain.Ticker(req.match_info["ticker"])
         quantity = TypeAdapter(int).validate_python((await req.post()).get("quantity"))
 
-        async with asyncio.TaskGroup() as tg:
-            port_task = tg.create_task(ctx.get_for_update(portfolio.Portfolio))
-            settings_task = tg.create_task(ctx.get(settings.Settings))
-
-        port = port_task.result()
+        port = await ctx.get_for_update(portfolio.Portfolio)
         port.update_position(account, ticker, quantity)
 
         main = _prepare_account(
             port,
             account,
-            hide_zero_positions=settings_task.result().hide_zero_positions,
+            hide_zero_positions=CookieSettings.model_validate(req.cookies).hide_zero_positions,
         )
 
         return self._render_main("main/account.html", main)
@@ -447,15 +454,13 @@ class Provider:
         return self._render_main("main/dividends.html", _prepare_dividends(raw_div, reestry_div))
 
     async def settings(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
-        async with asyncio.TaskGroup() as tg:
-            settings_task = tg.create_task(ctx.get(settings.Settings))
-            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
+        port = await ctx.get(portfolio.Portfolio)
 
         main = Settings(
             template="settings.html",
-            hide_accounts_zero_positions=settings_task.result().hide_zero_positions,
-            accounts=sorted(port_task.result().account_names),
-            exclude=sorted(port_task.result().exclude),
+            hide_accounts_zero_positions=CookieSettings.model_validate(req.cookies).hide_zero_positions,
+            accounts=sorted(port.account_names),
+            exclude=sorted(port.exclude),
         )
 
         return await self._render_page(
@@ -465,30 +470,27 @@ class Provider:
             main,
         )
 
-    async def _hide_zero_positions(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
-        current_settings = await ctx.get_for_update(settings.Settings)
+    async def _hide_zero_positions(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:  # noqa: ARG002
+        settings = CookieSettings.model_validate(req.cookies)
+        settings.hide_zero_positions = (await req.post()).get("hide") is not None
 
-        hide = (await req.post()).get("hide") is not None
-        current_settings.update_hide_zero_positions(hide=hide)
-
-        return web.Response(status=http.HTTPStatus.NO_CONTENT)
+        return _with_cookie(web.Response(status=http.HTTPStatus.NO_CONTENT), settings)
 
     async def _create_acount(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         account = TypeAdapter(str).validate_python((await req.post()).get("account"))
         if account != parse.quote(account):
             raise errors.ControllersError("Invalid account name - use only english letters and numbers")
 
-        async with asyncio.TaskGroup() as tg:
-            settings_task = tg.create_task(ctx.get(settings.Settings))
-            port_task = tg.create_task(ctx.get_for_update(portfolio.Portfolio))
+        settings = CookieSettings.model_validate(req.cookies)
 
-        port_task.result().create_acount(domain.AccName(account))
+        port = await ctx.get_for_update(portfolio.Portfolio)
+        port.create_acount(domain.AccName(account))
 
         main = Settings(
             template="settings.html",
-            hide_accounts_zero_positions=settings_task.result().hide_zero_positions,
-            accounts=sorted(port_task.result().account_names),
-            exclude=sorted(port_task.result().exclude),
+            hide_accounts_zero_positions=settings.hide_zero_positions,
+            accounts=sorted(port.account_names),
+            exclude=sorted(port.exclude),
         )
 
         return await self._render_page(
@@ -500,18 +502,16 @@ class Provider:
 
     async def _remove_acount(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
+        settings = CookieSettings.model_validate(req.cookies)
 
-        async with asyncio.TaskGroup() as tg:
-            settings_task = tg.create_task(ctx.get(settings.Settings))
-            port_task = tg.create_task(ctx.get_for_update(portfolio.Portfolio))
-
-        port_task.result().remove_acount(account)
+        port = await ctx.get_for_update(portfolio.Portfolio)
+        port.remove_acount(account)
 
         main = Settings(
             template="settings.html",
-            hide_accounts_zero_positions=settings_task.result().hide_zero_positions,
-            accounts=sorted(port_task.result().account_names),
-            exclude=sorted(port_task.result().exclude),
+            hide_accounts_zero_positions=settings.hide_zero_positions,
+            accounts=sorted(port.account_names),
+            exclude=sorted(port.exclude),
         )
 
         return await self._render_page(
@@ -523,36 +523,32 @@ class Provider:
 
     async def _not_exclude_ticker(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = TypeAdapter(str).validate_python(req.match_info["ticker"])
+        settings = CookieSettings.model_validate(req.cookies)
 
-        async with asyncio.TaskGroup() as tg:
-            settings_task = tg.create_task(ctx.get(settings.Settings))
-            port_task = tg.create_task(ctx.get_for_update(portfolio.Portfolio))
-
-        port_task.result().not_exclude_ticker(domain.Ticker(ticker.upper()))
+        port = await ctx.get_for_update(portfolio.Portfolio)
+        port.not_exclude_ticker(domain.Ticker(ticker.upper()))
 
         main = Settings(
             template="settings.html",
-            hide_accounts_zero_positions=settings_task.result().hide_zero_positions,
-            accounts=sorted(port_task.result().account_names),
-            exclude=sorted(port_task.result().exclude),
+            hide_accounts_zero_positions=settings.hide_zero_positions,
+            accounts=sorted(port.account_names),
+            exclude=sorted(port.exclude),
         )
 
         return self._render_main("main/settings.html", main)
 
     async def _exclude_ticker(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = TypeAdapter(str).validate_python((await req.post()).get("ticker"))
+        settings = CookieSettings.model_validate(req.cookies)
 
-        async with asyncio.TaskGroup() as tg:
-            settings_task = tg.create_task(ctx.get(settings.Settings))
-            port_task = tg.create_task(ctx.get_for_update(portfolio.Portfolio))
-
-        port_task.result().exclude_ticker(domain.Ticker(ticker.upper()))
+        port = await ctx.get_for_update(portfolio.Portfolio)
+        port.exclude_ticker(domain.Ticker(ticker.upper()))
 
         main = Settings(
             template="settings.html",
-            hide_accounts_zero_positions=settings_task.result().hide_zero_positions,
-            accounts=sorted(port_task.result().account_names),
-            exclude=sorted(port_task.result().exclude),
+            hide_accounts_zero_positions=settings.hide_zero_positions,
+            accounts=sorted(port.account_names),
+            exclude=sorted(port.exclude),
         )
 
         return self._render_main("main/settings.html", main)
@@ -560,15 +556,21 @@ class Provider:
     async def _theme(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         theme = req.match_info["theme"]
 
-        if theme not in settings.Theme:
+        if theme not in Theme:
             return web.HTTPNotFound(text=f"Invalid theme - {theme}")
 
-        current_settings = await ctx.get_for_update(settings.Settings)
-        current_settings.update_theme(settings.Theme(theme))
+        settings = CookieSettings.model_validate(req.cookies)
+        settings.theme = Theme(theme)
 
-        return web.Response(
-            text=self._env.get_template(f"theme/{theme}.html").render(),
-            content_type="text/html",
+        return self._render_theme(theme, settings)
+
+    def _render_theme(self, theme: str, cookie: CookieSettings) -> web.StreamResponse:
+        return _with_cookie(
+            web.Response(
+                text=self._env.get_template(f"theme/{theme}.html").render(),
+                content_type="text/html",
+            ),
+            cookie,
         )
 
     async def _render_page(
@@ -580,8 +582,9 @@ class Provider:
         *,
         poll: bool = False,
     ) -> web.StreamResponse:
+        settings = CookieSettings.model_validate(req.cookies)
+
         async with asyncio.TaskGroup() as tg:
-            settings_task = tg.create_task(ctx.get(settings.Settings))
             port_task = tg.create_task(ctx.get(portfolio.Portfolio))
             div_task = tg.create_task(ctx.get(status.DivStatus))
 
@@ -589,7 +592,7 @@ class Provider:
             title=title,
             path=req.path,
             poll=poll,
-            theme=settings_task.result().theme,
+            theme=settings.theme,
             accounts=sorted(port_task.result().account_names),
             dividends=sorted({row.ticker for row in div_task.result().df}),
         )
@@ -614,14 +617,18 @@ class Provider:
         self,
         template: str,
         main: Any,
+        cookie: CookieSettings | None = None,
     ) -> web.StreamResponse:
-        return web.Response(
-            text=self._env.get_template(template).render(
-                main=main,
-                format_float=_format_float,
-                format_percent=_format_percent,
+        return _with_cookie(
+            web.Response(
+                text=self._env.get_template(template).render(
+                    main=main,
+                    format_float=_format_float,
+                    format_percent=_format_percent,
+                ),
+                content_type="text/html",
             ),
-            content_type="text/html",
+            cookie,
         )
 
     @web.middleware
@@ -733,6 +740,7 @@ def _prepare_account(
     return Account(
         template="account.html",
         account=account,
+        hide_zero_positions=hide_zero_positions,
         card=Card(
             upper=f"Date: {portfolio.day}",
             main=f"Value: {_format_float(value, 0)} ₽",
@@ -760,3 +768,17 @@ def _format_float(number: float, decimals: int | None = None) -> str:
 
 def _format_percent(number: float) -> str:
     return f"{_format_float(number * 100, 1)} %"
+
+
+def _with_cookie(resp: web.Response, cookie: CookieSettings | None) -> web.Response:
+    if cookie:
+        for name, value in cookie:
+            resp.set_cookie(
+                name,
+                value,
+                max_age=_YEAR_IN_SECONDS,
+                httponly=True,
+                samesite="Lax",
+            )
+
+    return resp
