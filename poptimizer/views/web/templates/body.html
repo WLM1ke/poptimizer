@@ -43,7 +43,7 @@
             </li>
             <li>
                 <a
-                    class="nav__item{% if layout.path == '/' %} nav__item--selected{% endif %}"
+                    class="nav__item{% if layout.selected_path == '/' %} nav__item--selected{% endif %}"
                     href="/"
                 >
                     <svg
@@ -63,7 +63,7 @@
             <li>
                 <a
                     hx-swap="morph:innerHTML"
-                    class="nav__item nav__item--indented{% if layout.path == '/accounts/' + account %} nav__item--selected{% endif %}"
+                    class="nav__item nav__item--indented{% if layout.selected_path == '/accounts/' + account %} nav__item--selected{% endif %}"
                     href="/accounts/{{ account }}"
                 >
                     <svg
@@ -82,7 +82,7 @@
             {% endfor %}
             <li>
                 <a
-                    class="nav__item{% if layout.path == '/forecast' %} nav__item--selected{% endif %}"
+                    class="nav__item{% if layout.selected_path == '/forecast' %} nav__item--selected{% endif %}"
                     href="/forecast"
                 >
                     <svg
@@ -100,7 +100,7 @@
             </li>
             <li>
                 <a
-                    class="nav__item{% if layout.path == '/optimization' %} nav__item--selected{% endif %}"
+                    class="nav__item{% if layout.selected_path == '/optimization' %} nav__item--selected{% endif %}"
                     href="/optimization"
                 >
                     <svg
@@ -137,7 +137,7 @@
             {% for dividend in layout.dividends %}
             <li>
                 <a
-                    class="nav__item nav__item--indented{% if layout.path == '/dividends/' + dividend %} nav__item--selected{% endif %}"
+                    class="nav__item nav__item--indented{% if layout.selected_path == '/dividends/' + dividend %} nav__item--selected{% endif %}"
                     href="/dividends/{{ dividend }}"
                 >
                     <svg
@@ -202,7 +202,7 @@
 </header>
 <main
     {% if layout.poll %}
-    hx-get="{{ layout.path }}"
+    hx-get="{{ layout.selected_path }}"
     hx-trigger="every 10s"
     hx-target="body"
     hx-swap="morph:innerHTML"
