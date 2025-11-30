@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Final
 from aiohttp import abc, web
 
 from poptimizer.controllers.bus import msg
-from poptimizer.views.web import view
+from poptimizer.views.web import controller
 
 if TYPE_CHECKING:
     from pydantic import HttpUrl
@@ -40,7 +40,7 @@ def _content_length(response: web.StreamResponse) -> str:
 class Server:
     def __init__(self, url: HttpUrl, bus: msg.Bus) -> None:
         self._lgr = logging.getLogger()
-        self._app = view.Provider(bus)
+        self._app = controller.Provider(bus)
         self._url = url
 
     async def run(self) -> None:
