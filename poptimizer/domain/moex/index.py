@@ -12,6 +12,7 @@ MCF2TRR: Final = domain.UID("MCF2TRR")
 RUGBITR1Y: Final = domain.UID("RUGBITR1Y")
 INDEXES: Final = {
     MCF2TRR: domain.UID("MCFTRR"),
+    domain.UID("MEFNTRR"): None,
     domain.UID("MEOGTRR"): None,
     IMOEX2: domain.UID("IMOEX"),
     RVI: None,
