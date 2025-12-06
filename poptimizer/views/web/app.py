@@ -132,14 +132,16 @@ class Provider:
             if position.quantity() > 0
         ]
 
+        card = models.Card(
+            upper=f"Date: {port.day}",
+            main=f"Value: {view.format_float(value, 0)} ₽",
+            row1=models.Row(label="Effective positions", value=f"{view.format_float(port.effective_positions, 0)}"),
+            row2=models.Row(label="Open positions", value=f"{port.open_positions()}"),
+            row3=models.Row(label="Total positions", value=f"{view.format_float(len(port.positions), 0)}"),
+        )
+
         main = models.Portfolio(
-            card=models.Card(
-                upper=f"Date: {port.day}",
-                main=f"Value: {view.format_float(value, 0)} ₽",
-                row1=models.Row(label="Effective positions", value=f"{view.format_float(port.effective_positions, 0)}"),
-                row2=models.Row(label="Open positions", value=f"{port.open_positions()}"),
-                row3=models.Row(label="Total positions", value=f"{view.format_float(len(port.positions), 0)}"),
-            ),
+            card=card,
             value=value,
             cash=port.cash_value(),
             positions=sorted(positions, key=lambda x: x.value, reverse=True),
@@ -211,14 +213,16 @@ class Provider:
             outdated = "outdated"
             poll = True
 
+        card = models.Card(
+            upper=f"Date: {forecast.day} {outdated}",
+            main=(f"Mean: {view.format_percent(forecast.mean)} / Std: {view.format_percent(forecast.std)}"),
+            row1=models.Row(label="Trading interval", value=f"{forecast.forecast_days} days"),
+            row2=models.Row(label="Risk aversion", value=f"{view.format_percent(1 - forecast.risk_tolerance)}"),
+            row3=models.Row(label="Forecasts", value=f"{forecast.forecasts_count}"),
+        )
+
         main = models.Forecast(
-            card=models.Card(
-                upper=f"Date: {forecast.day} {outdated}",
-                main=(f"Mean: {view.format_percent(forecast.mean)} / Std: {view.format_percent(forecast.std)}"),
-                row1=models.Row(label="Trading interval", value=f"{forecast.forecast_days} days"),
-                row2=models.Row(label="Risk aversion", value=f"{view.format_percent(1 - forecast.risk_tolerance)}"),
-                row3=models.Row(label="Forecasts", value=f"{forecast.forecasts_count}"),
-            ),
+            card=card,
             positions=forecast.positions,
         )
 
@@ -245,14 +249,16 @@ class Provider:
 
         breakeven, buy, sell = forecast.buy_sell()
 
+        card = models.Card(
+            upper=f"Date: {forecast.day} {outdated}",
+            main=(f"Buy tickets: {len(buy)} / Sell tickets: {len(sell)}"),
+            row1=models.Row(label="Trading interval", value=f"{forecast.forecast_days} days"),
+            row2=models.Row(label="Risk aversion", value=f"{view.format_percent(1 - forecast.risk_tolerance)}"),
+            row3=models.Row(label="Forecasts", value=f"{forecast.forecasts_count}"),
+        )
+
         main = models.Optimize(
-            card=models.Card(
-                upper=f"Date: {forecast.day} {outdated}",
-                main=(f"Buy tickets: {len(buy)} / Sell tickets: {len(sell)}"),
-                row1=models.Row(label="Trading interval", value=f"{forecast.forecast_days} days"),
-                row2=models.Row(label="Risk aversion", value=f"{view.format_percent(1 - forecast.risk_tolerance)}"),
-                row3=models.Row(label="Forecasts", value=f"{forecast.forecasts_count}"),
-            ),
+            card=card,
             breakeven=breakeven,
             buy=buy,
             sell=sell,
@@ -272,13 +278,10 @@ class Provider:
             raw_task = tg.create_task(ctx.get(raw.DivRaw, ticker))
             reestry_task = tg.create_task(ctx.get(reestry.DivReestry, ticker))
 
-        raw_div = await raw_task
-        reestry_div = await reestry_task
-
         return await self._render_page(
             ctx,
             req,
-            _prepare_dividends(raw_div, reestry_div),
+            _prepare_dividends(await raw_task, await reestry_task),
         )
 
     async def _dividend_add(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
@@ -547,15 +550,17 @@ def _prepare_account(
         if position.quantity(account) > 0 or not hide_zero_positions
     ]
 
+    card = models.Card(
+        upper=f"Date: {portfolio.day}",
+        main=f"Value: {view.format_float(value, 0)} ₽",
+        row1=models.Row(label="Share of portfolio", value=f"{view.format_percent(value / portfolio.value())}"),
+        row2=models.Row(label="Open positions", value=f"{portfolio.open_positions(account)}"),
+        row3=models.Row(label="Total positions", value=f"{view.format_float(len(portfolio.positions), 0)}"),
+    )
+
     return models.Account(
         account=account,
-        card=models.Card(
-            upper=f"Date: {portfolio.day}",
-            main=f"Value: {view.format_float(value, 0)} ₽",
-            row1=models.Row(label="Share of portfolio", value=f"{view.format_percent(value / portfolio.value())}"),
-            row2=models.Row(label="Open positions", value=f"{portfolio.open_positions(account)}"),
-            row3=models.Row(label="Total positions", value=f"{view.format_float(len(portfolio.positions), 0)}"),
-        ),
+        card=card,
         value=value,
         cash=portfolio.cash_value(account),
         positions=positions,
