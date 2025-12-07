@@ -8,7 +8,6 @@ from numpy.typing import NDArray
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
 from poptimizer import consts
-from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
@@ -68,7 +67,7 @@ class ForecastHandler:
         forecast.illiquid = port.illiquid
         forecast.forecasts_count = len(models)
 
-        await asyncio.to_thread(self._update_forecast, forecast, models, positions, port.illiquid)
+        await asyncio.to_thread(self._update_forecast, forecast, models, positions)
 
         self._send_new_recommendation(forecast)
 
@@ -77,11 +76,10 @@ class ForecastHandler:
         forecast: forecasts.Forecast,
         models: list[evolve.Model],
         positions: list[portfolio.NormalizedPosition],
-        illiquid: set[domain.Ticker],
     ) -> None:
         weights = np.array([pos.weight for pos in positions]).reshape(-1, 1)
-        liquid = np.array([pos.ticker not in illiquid for pos in positions]).reshape(-1, 1)
         turnover = np.array([pos.norm_turnover for pos in positions]).reshape(-1, 1)
+        turnover_min_limited = np.maximum(turnover, np.max(weights))
 
         means: list[NDArray[np.double]] = []
         port_means: list[float] = []
@@ -125,8 +123,7 @@ class ForecastHandler:
                     consts.COSTS
                     + (std / consts.YEAR_IN_TRADING_DAYS**0.5)
                     * consts.IMPACT_COSTS_SCALE
-                    * (weights / turnover) ** 0.5
-                    * liquid
+                    * (weights / turnover_min_limited) ** 0.5
                 )
             )
 
