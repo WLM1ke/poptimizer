@@ -25,7 +25,7 @@ tasks:
   mongo_stop:
     desc: Run MongoDB server service
     cmds:
-      - brew services start mongodb-community
+      - brew services stop mongodb-community
 
   update_tools:
     desc: Update tools
