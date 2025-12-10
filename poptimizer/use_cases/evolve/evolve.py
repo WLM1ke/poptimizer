@@ -106,8 +106,7 @@ class EvolutionHandler:
             self._lgr.info("Creating start models")
             uid = _random_uid()
             await ctx.get_for_update(evolve.Model, uid)
-            evolution.base_model_uid = uid
-            evolution.test_days = 1
+            evolution.reset(uid)
             count = 1
 
         match evolution.day == msg.day:

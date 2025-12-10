@@ -140,6 +140,11 @@ class Evolution(domain.Entity):
 
         return self
 
+    def reset(self, uid: domain.UID) -> None:
+        self.base_model_uid = uid
+        self.test_days = 1
+        self.minimal_returns_days = _INITIAL_MINIMAL_RETURNS_DAYS
+
     def init_new_day(
         self,
         day: domain.Day,
