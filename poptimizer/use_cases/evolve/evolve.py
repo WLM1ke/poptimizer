@@ -180,12 +180,14 @@ class EvolutionHandler:
 
         minimal_returns_days = _extract_minimal_returns_days(err)
         if minimal_returns_days is not None and evolution.state is not evolve.State.CREATE_NEW_MODEL:
+            minimal_returns_days_old = evolution.minimal_returns_days
             evolution.minimal_returns_days = max(
                 evolution.minimal_returns_days
-                + (minimal_returns_days + evolution.test_days > evolution.minimal_returns_days),
+                + ((minimal_returns_days + evolution.test_days) > evolution.minimal_returns_days),
                 minimal_returns_days,
             )
-            self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
+            if evolution.minimal_returns_days > minimal_returns_days_old:
+                self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
 
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
