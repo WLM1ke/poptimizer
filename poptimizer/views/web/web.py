@@ -18,11 +18,10 @@ from poptimizer.use_cases import handler
 from poptimizer.views.web import models, view
 
 
-class Provider:
+class App(web.Application):
     def __init__(self, bus: msg.Bus) -> None:
+        super().__init__(middlewares=[self._alerts_middleware])
         self._lgr = logging.getLogger()
-        self._app = web.Application(middlewares=[self._alerts_middleware])
-        self._bus = bus
         self._render = view.View()
 
         routes = (
@@ -109,12 +108,9 @@ class Provider:
         )
 
         for method, path, unwrapped_handler in routes:
-            self._app.add_routes([method(path, bus.wrap(unwrapped_handler))])
+            self.add_routes([method(path, bus.wrap(unwrapped_handler))])
 
-        self._app.add_routes([web.get("/{path:.*}", self._static_file)])
-
-    def __call__(self) -> web.Application:
-        return self._app
+        self.add_routes([web.get("/{path:.*}", self._static_file)])
 
     async def _portfolio(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
         port = await ctx.get(portfolio.Portfolio)
