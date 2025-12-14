@@ -15,6 +15,7 @@ from poptimizer.domain.div import raw, reestry, status
 from poptimizer.domain.domain import date
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
+from poptimizer.views import utils
 from poptimizer.views.web import models, view
 
 
@@ -130,10 +131,10 @@ class App(web.Application):
 
         card = models.Card(
             upper=f"Date: {port.day}",
-            main=f"Value: {view.format_float(value, 0)} ₽",
-            row1=models.Row(label="Effective positions", value=f"{view.format_float(port.effective_positions, 0)}"),
+            main=f"Value: {utils.format_float(value, 0)} ₽",
+            row1=models.Row(label="Effective positions", value=f"{utils.format_float(port.effective_positions, 0)}"),
             row2=models.Row(label="Open positions", value=f"{port.open_positions()}"),
-            row3=models.Row(label="Total positions", value=f"{view.format_float(len(port.positions), 0)}"),
+            row3=models.Row(label="Total positions", value=f"{utils.format_float(len(port.positions), 0)}"),
         )
 
         main = models.Portfolio(
@@ -548,10 +549,10 @@ def _prepare_account(
 
     card = models.Card(
         upper=f"Date: {portfolio.day}",
-        main=f"Value: {view.format_float(value, 0)} ₽",
+        main=f"Value: {utils.format_float(value, 0)} ₽",
         row1=models.Row(label="Share of portfolio", value=f"{view.format_percent(value / portfolio.value())}"),
         row2=models.Row(label="Open positions", value=f"{portfolio.open_positions(account)}"),
-        row3=models.Row(label="Total positions", value=f"{view.format_float(len(portfolio.positions), 0)}"),
+        row3=models.Row(label="Total positions", value=f"{utils.format_float(len(portfolio.positions), 0)}"),
     )
 
     return models.Account(

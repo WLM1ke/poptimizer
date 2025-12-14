@@ -3,7 +3,7 @@ import functools
 import logging
 import traceback
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from datetime import timedelta
 from typing import (
     Any,
@@ -50,14 +50,6 @@ class Ctx(Protocol):
 
 class EventHandler[E: Event](Protocol):
     async def __call__(self, ctx: Ctx, msg: E) -> None: ...
-
-
-class RequestHandler[Req: Any, Resp: Any](Protocol):
-    async def __call__(self, ctx: Ctx, req: Req) -> Resp: ...
-
-
-class WrappedRequestHandler[Req: Any, Resp: Any](Protocol):
-    async def __call__(self, req: Req) -> Resp: ...
 
 
 def _handler_types(handler: EventHandler[Any]) -> Iterable[adapter.Component]:
@@ -194,8 +186,8 @@ class Bus:
 
     def wrap[Req: Any, Resp: Any](
         self,
-        handler: RequestHandler[Req, Resp],
-    ) -> WrappedRequestHandler[Req, Resp]:
+        handler: Callable[[Ctx, Req], Awaitable[Resp]],
+    ) -> Callable[[Req], Awaitable[Resp]]:
         @functools.wraps(handler)
         async def wrapped(req: Req) -> Resp:
             async with uow.UOW(self._repo) as ctx:

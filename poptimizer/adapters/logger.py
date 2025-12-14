@@ -23,7 +23,7 @@ class _TelegramHandler(logging.Handler):
         tg: asyncio.TaskGroup,
         http_client: aiohttp.ClientSession,
         token: str,
-        chat_id: str,
+        chat_id: int,
     ) -> None:
         super().__init__(logging.WARNING)
         self._tg = tg
@@ -52,7 +52,7 @@ class _TelegramHandler(logging.Handler):
         except (TimeoutError, aiohttp.ClientError) as err:
             self._lgr.warning("can't send Telegram message - %s", err)
 
-    async def _send(self, json: dict[str, str]) -> None:
+    async def _send(self, json: dict[str, str | int]) -> None:
         await self._wait_to_send()
 
         async with self._http_client.post(self._api_url, json=json) as resp:
@@ -99,7 +99,7 @@ class _ColorFormatter(logging.Formatter):
 async def init(
     http_client: aiohttp.ClientSession | None = None,
     token: str = "",
-    chat_id: str = "",
+    chat_id: int = 0,
 ) -> AsyncIterator[logging.Logger]:
     color_handler = logging.StreamHandler(sys.stdout)
     color_handler.setFormatter(_ColorFormatter())
@@ -107,7 +107,7 @@ async def init(
 
     tg = asyncio.TaskGroup()
 
-    if http_client is not None and token != "" and chat_id != "":
+    if http_client is not None and token != "" and chat_id != 0:
         handlers.append(
             _TelegramHandler(
                 tg,

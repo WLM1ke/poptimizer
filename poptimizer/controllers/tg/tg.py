@@ -9,7 +9,7 @@ from poptimizer.views.tg import tg
 
 
 class Bot:
-    def __init__(self, token: str, bus: msg.Bus, http_client: aiohttp.ClientSession) -> None:
+    def __init__(self, token: str, chat_id: int, bus: msg.Bus, http_client: aiohttp.ClientSession) -> None:
         self._lgr = logging.getLogger()
         match token:
             case "":
@@ -17,13 +17,15 @@ class Bot:
             case _:
                 self._bot = aiogram.Bot(token=token, client_session=http_client)
 
-        self._dp = tg.Dispatcher(bus)
+        self._dp = tg.Dispatcher(chat_id, bus)
 
     async def run(self) -> None:
         if self._bot is None:
             return
 
         self._lgr.info("Starting Telegram bot...")
+
+        await self._bot.set_my_commands(self._dp.bot_commands())
 
         try:
             await asyncio.shield(
