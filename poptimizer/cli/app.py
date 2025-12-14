@@ -14,6 +14,7 @@ from poptimizer.adapters import http_session, logger, mongo
 from poptimizer.cli import safe
 from poptimizer.controllers.bus import bus
 from poptimizer.controllers.server import server
+from poptimizer.controllers.tg import tg
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -49,8 +50,14 @@ async def _run(*, check_memory: bool = False) -> int:
 
         msg_bus = bus.build(http_client, mongo_db, cancel_fn)
         http_server = server.Server(cfg.server_url, msg_bus)
+        bot = tg.Bot(cfg.telegram_token, msg_bus, http_client)
 
-        return await safe.run(lgr, msg_bus.run(), http_server.run())
+        return await safe.run(
+            lgr,
+            msg_bus.run(),
+            http_server.run(),
+            bot.run(),
+        )
 
     return 1
 
