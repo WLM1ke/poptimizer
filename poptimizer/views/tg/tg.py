@@ -2,15 +2,20 @@ import logging
 from typing import Final
 
 import aiogram
-from aiogram.filters.command import Command, CommandStart
-from aiogram.types import BotCommand, Message
+from aiogram.filters.command import CommandStart
+from aiogram.types import KeyboardButton, Message, ReplyKeyboardMarkup
 
 from poptimizer.controllers.bus import msg
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 from poptimizer.views import utils
 
-_PORTFOLIO_VALUE_CMD: Final = BotCommand(command="value", description="Portfolio value")
+_PORTFOLIO_BTN: Final = KeyboardButton(text="Portfolio value")
+_MAIN_KEYBOARD: Final = ReplyKeyboardMarkup(
+    keyboard=[[_PORTFOLIO_BTN]],
+    resize_keyboard=True,
+    one_time_keyboard=False,
+)
 
 
 class Dispatcher(aiogram.Dispatcher):
@@ -26,7 +31,7 @@ class Dispatcher(aiogram.Dispatcher):
         self.message(CommandStart())(self._cmd_start)
 
         self.message(
-            Command(_PORTFOLIO_VALUE_CMD.command),
+            aiogram.F.text == _PORTFOLIO_BTN.text,
         )(bus.wrap(self._cmd_portfolio_value))
 
     async def _not_owner(self, message: Message) -> None:
@@ -34,15 +39,16 @@ class Dispatcher(aiogram.Dispatcher):
             "You are not owner\n\nCreate your own [POptimizer](https://github.com/WLM1ke/poptimizer) bot"
         )
 
-    def bot_commands(self) -> list[BotCommand]:
-        return [
-            _PORTFOLIO_VALUE_CMD,
-        ]
-
     async def _cmd_start(self, message: Message) -> None:
-        await message.answer("Welcome to POptimizer bot")
+        await message.answer(
+            "Welcome to POptimizer bot",
+            reply_markup=_MAIN_KEYBOARD,
+        )
 
     async def _cmd_portfolio_value(self, ctx: handler.Ctx, message: Message) -> None:
         port = await ctx.get(portfolio.Portfolio)
 
-        await message.answer(f"{utils.format_float(port.value(), 0)} ₽")
+        await message.answer(
+            f"{utils.format_float(port.value(), 0)} ₽",
+            reply_markup=_MAIN_KEYBOARD,
+        )
