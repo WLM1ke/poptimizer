@@ -3,6 +3,7 @@ import logging
 
 import aiogram
 import aiohttp
+from aiogram.enums import ParseMode
 
 from poptimizer.controllers.bus import msg
 from poptimizer.views.tg import tg
@@ -15,7 +16,7 @@ class Bot:
             case "":
                 self._bot = None
             case _:
-                self._bot = aiogram.Bot(token=token, client_session=http_client)
+                self._bot = aiogram.Bot(token=token, client_session=http_client, parse_mode=ParseMode.MARKDOWN_V2)
 
         self._dp = tg.Dispatcher(chat_id, bus)
 

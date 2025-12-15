@@ -31,8 +31,7 @@ class Dispatcher(aiogram.Dispatcher):
 
     async def _not_owner(self, message: Message) -> None:
         await message.answer(
-            "You are not owner\n\nCreate your own [POptimizer](https://github.com/WLM1ke/poptimizer) bot",
-            parse_mode="MarkdownV2",
+            "You are not owner\n\nCreate your own [POptimizer](https://github.com/WLM1ke/poptimizer) bot"
         )
 
     def bot_commands(self) -> list[BotCommand]:
