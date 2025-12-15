@@ -36,7 +36,7 @@ class Dispatcher(aiogram.Dispatcher):
         self.message(CommandStart())(self._start)
 
         btn_handlers = (
-            (_PORTFOLIO_BTN, self._portfolio_value),
+            (_PORTFOLIO_BTN, self._portfolio),
             (_OPTIMIZE_BTN, self._optimize),
         )
 
@@ -71,7 +71,7 @@ class Dispatcher(aiogram.Dispatcher):
             reply_markup=_MAIN_KEYBOARD,
         )
 
-    async def _portfolio_value(self, ctx: handler.Ctx, message: Message) -> None:
+    async def _portfolio(self, ctx: handler.Ctx, message: Message) -> None:
         port = await ctx.get(portfolio.Portfolio)
 
         await message.answer(
@@ -100,10 +100,11 @@ class Dispatcher(aiogram.Dispatcher):
                 reply_markup=_MAIN_KEYBOARD,
             )
 
-        await message.answer(
-            formatting.Bold("SELL").as_markdown(),
-            reply_markup=_MAIN_KEYBOARD,
-        )
+        if sell:
+            await message.answer(
+                formatting.Bold("SELL").as_markdown(),
+                reply_markup=_MAIN_KEYBOARD,
+            )
 
         for row in sell:
             msg = formatting.as_list(
