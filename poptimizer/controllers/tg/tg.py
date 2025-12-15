@@ -25,8 +25,6 @@ class Bot:
 
         self._lgr.info("Starting Telegram bot...")
 
-        await self._bot.set_my_commands(self._dp.bot_commands())
-
         try:
             await asyncio.shield(
                 self._dp.start_polling(  # pyright: ignore[reportUnknownMemberType]

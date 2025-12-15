@@ -19,15 +19,21 @@ class Dispatcher(aiogram.Dispatcher):
         self._lgr = logging.getLogger()
         self._chat_id = chat_id
 
+        self.message(
+            aiogram.F.from_user.id != self._chat_id,
+        )(self._not_owner)
+
         self.message(CommandStart())(self._cmd_start)
 
         self.message(
             Command(_PORTFOLIO_VALUE_CMD.command),
-            self._owner_filter,
         )(bus.wrap(self._cmd_portfolio_value))
 
-    async def _owner_filter(self, message: Message) -> bool:
-        return message.chat.id == self._chat_id
+    async def _not_owner(self, message: Message) -> None:
+        await message.answer(
+            "You are not owner\n\nCreate your own [POptimizer](https://github.com/WLM1ke/poptimizer) bot",
+            parse_mode="MarkdownV2",
+        )
 
     def bot_commands(self) -> list[BotCommand]:
         return [
@@ -35,17 +41,7 @@ class Dispatcher(aiogram.Dispatcher):
         ]
 
     async def _cmd_start(self, message: Message) -> None:
-        match await self._owner_filter(message):
-            case True:
-                await message.answer(
-                    "Welcome to [POptimizer](https://github.com/WLM1ke/poptimizer) bot",
-                    parse_mode="MarkdownV2",
-                )
-            case False:
-                await message.answer(
-                    "You are not owner of [POptimizer](https://github.com/WLM1ke/poptimizer) bot",
-                    parse_mode="MarkdownV2",
-                )
+        await message.answer("Welcome to POptimizer bot")
 
     async def _cmd_portfolio_value(self, ctx: handler.Ctx, message: Message) -> None:
         port = await ctx.get(portfolio.Portfolio)
