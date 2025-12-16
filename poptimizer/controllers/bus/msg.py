@@ -3,7 +3,7 @@ import functools
 import logging
 import traceback
 from collections import defaultdict
-from collections.abc import Awaitable, Callable, Iterable
+from collections.abc import Awaitable, Iterable
 from datetime import timedelta
 from typing import (
     Any,
@@ -89,6 +89,14 @@ class IndefiniteRetryPolicy:
         await asyncio.sleep(self._first_retry * self._backoff_factor ** (self._attempt - 1))
 
         return True
+
+
+class Handler[**Req, Resp](Protocol):
+    def __call__(self, ctx: Ctx, *args: Req.args, **kwargs: Req.kwargs) -> Awaitable[Resp]: ...
+
+
+class WrappedHandler[**Req, Resp](Protocol):
+    def __call__(self, *args: Req.args, **kwargs: Req.kwargs) -> Awaitable[Resp]: ...
 
 
 class Bus:
@@ -184,14 +192,14 @@ class Bus:
 
         return True
 
-    def wrap[Req: Any, Resp: Any](
+    def wrap[**Req, Resp](
         self,
-        handler: Callable[[Ctx, Req], Awaitable[Resp]],
-    ) -> Callable[[Req], Awaitable[Resp]]:
+        handler: Handler[Req, Resp],
+    ) -> WrappedHandler[Req, Resp]:
         @functools.wraps(handler)
-        async def wrapped(req: Req) -> Resp:
+        async def wrapped(*args: Req.args, **kwargs: Req.kwargs) -> Resp:
             async with uow.UOW(self._repo) as ctx:
-                resp = await handler(ctx, req)
+                resp = await handler(ctx, *args, **kwargs)
 
                 for event in ctx.events():
                     self.publish(event)
