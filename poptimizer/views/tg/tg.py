@@ -3,9 +3,8 @@ import logging
 from typing import Final
 
 import aiogram
-from aiogram.client.bot import InlineKeyboardMarkup
 from aiogram.filters.command import CommandStart
-from aiogram.types import InlineKeyboardButton, KeyboardButton, Message, ReplyKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, Message, ReplyKeyboardMarkup
 from aiogram.utils import formatting
 
 from poptimizer.controllers.bus import msg
@@ -13,7 +12,7 @@ from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
 from poptimizer.views import utils
 
-_LETTER_KEYBOARD_WIDTH: Final = 6
+_KEYBOARD_RATIO: Final = 1.5
 _LETTER_PREFIX: Final = "letter"
 _CASH: Final = "₽"
 _OPTIMIZE_BTN: Final = KeyboardButton(text="Portfolio optimization")
@@ -116,17 +115,21 @@ class Dispatcher(aiogram.Dispatcher):
     async def _edit(self, ctx: handler.Ctx, message: Message) -> None:
         port = await ctx.get(portfolio.Portfolio)
 
-        first_letter = [InlineKeyboardButton(text=_CASH, callback_data=f"{_LETTER_PREFIX}/{_CASH}")]
+        keys = [InlineKeyboardButton(text=_CASH, callback_data=f"{_LETTER_PREFIX}/{_CASH}")]
 
         for row in port.positions:
-            if (letter := row.ticker[0]) != first_letter[-1].text:
-                first_letter.append(InlineKeyboardButton(text=letter, callback_data=f"{_LETTER_PREFIX}/{letter}"))
-
-        inline_keyboard = [
-            list(k_row) for k_row in itertools.batched(first_letter, _LETTER_KEYBOARD_WIDTH, strict=False)
-        ]
+            if (letter := row.ticker[0]) != keys[-1].text:
+                keys.append(InlineKeyboardButton(text=letter, callback_data=f"{_LETTER_PREFIX}/{letter}"))
 
         await message.answer(
             "Choose the first letter of the ticker",
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_keyboard),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=_keyboard(keys)),
         )
+
+
+def _keyboard(keys: list[InlineKeyboardButton]) -> list[list[InlineKeyboardButton]]:
+    width, rest = divmod((len(keys) * _KEYBOARD_RATIO) ** 0.5, 1)
+    if rest:
+        width += 1
+
+    return [list(k_row) for k_row in itertools.batched(keys, int(width), strict=False)]
