@@ -15,8 +15,7 @@ _PORTFOLIO_BTN: Final = KeyboardButton(text="Portfolio")
 _OPTIMIZE_BTN: Final = KeyboardButton(text="Optimize")
 _MAIN_KEYBOARD: Final = ReplyKeyboardMarkup(
     keyboard=[
-        [_PORTFOLIO_BTN],
-        [_OPTIMIZE_BTN],
+        [_PORTFOLIO_BTN, _OPTIMIZE_BTN],
     ],
     resize_keyboard=True,
     one_time_keyboard=False,
@@ -76,7 +75,6 @@ class Dispatcher(aiogram.Dispatcher):
 
         await message.answer(
             f"Value: {utils.format_float(port.value(), 0)} ₽",
-            reply_markup=_MAIN_KEYBOARD,
         )
 
     async def _optimize(self, ctx: handler.Ctx, message: Message) -> None:
@@ -115,5 +113,4 @@ class Dispatcher(aiogram.Dispatcher):
             )
             await message.answer(
                 msg.as_markdown(),
-                reply_markup=_MAIN_KEYBOARD,
             )
