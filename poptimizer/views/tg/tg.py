@@ -1,9 +1,11 @@
+import itertools
 import logging
 from typing import Final
 
 import aiogram
+from aiogram.client.bot import InlineKeyboardMarkup
 from aiogram.filters.command import CommandStart
-from aiogram.types import KeyboardButton, Message, ReplyKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, KeyboardButton, Message, ReplyKeyboardMarkup
 from aiogram.utils import formatting
 
 from poptimizer.controllers.bus import msg
@@ -11,11 +13,14 @@ from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
 from poptimizer.views import utils
 
-_PORTFOLIO_BTN: Final = KeyboardButton(text="Portfolio")
-_OPTIMIZE_BTN: Final = KeyboardButton(text="Optimize")
+_LETTER_KEYBOARD_WIDTH: Final = 6
+_LETTER_PREFIX: Final = "letter"
+_CASH: Final = "₽"
+_OPTIMIZE_BTN: Final = KeyboardButton(text="Portfolio optimization")
+_EDIT_BTN: Final = KeyboardButton(text="Position edit")
 _MAIN_KEYBOARD: Final = ReplyKeyboardMarkup(
     keyboard=[
-        [_PORTFOLIO_BTN, _OPTIMIZE_BTN],
+        [_OPTIMIZE_BTN, _EDIT_BTN],
     ],
     resize_keyboard=True,
     one_time_keyboard=False,
@@ -35,8 +40,8 @@ class Dispatcher(aiogram.Dispatcher):
         self.message(CommandStart())(self._start)
 
         btn_handlers = (
-            (_PORTFOLIO_BTN, self._portfolio),
             (_OPTIMIZE_BTN, self._optimize),
+            (_EDIT_BTN, self._edit),
         )
 
         for btn, btn_handler in btn_handlers:
@@ -68,13 +73,6 @@ class Dispatcher(aiogram.Dispatcher):
         await message.answer(
             msg.as_markdown(),
             reply_markup=_MAIN_KEYBOARD,
-        )
-
-    async def _portfolio(self, ctx: handler.Ctx, message: Message) -> None:
-        port = await ctx.get(portfolio.Portfolio)
-
-        await message.answer(
-            f"Value: {utils.format_float(port.value(), 0)} ₽",
         )
 
     async def _optimize(self, ctx: handler.Ctx, message: Message) -> None:
@@ -114,3 +112,21 @@ class Dispatcher(aiogram.Dispatcher):
             await message.answer(
                 msg.as_markdown(),
             )
+
+    async def _edit(self, ctx: handler.Ctx, message: Message) -> None:
+        port = await ctx.get(portfolio.Portfolio)
+
+        first_letter = [InlineKeyboardButton(text=_CASH, callback_data=f"{_LETTER_PREFIX}/{_CASH}")]
+
+        for row in port.positions:
+            if (letter := row.ticker[0]) != first_letter[-1].text:
+                first_letter.append(InlineKeyboardButton(text=letter, callback_data=f"{_LETTER_PREFIX}/{letter}"))
+
+        inline_keyboard = [
+            list(k_row) for k_row in itertools.batched(first_letter, _LETTER_KEYBOARD_WIDTH, strict=False)
+        ]
+
+        await message.answer(
+            "Choose the first letter of the ticker",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_keyboard),
+        )
