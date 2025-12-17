@@ -3,6 +3,7 @@ import logging
 from typing import Final
 
 import aiogram
+from aiogram.client.bot import Bot
 from aiogram.filters.command import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -22,19 +23,23 @@ from poptimizer.use_cases import handler
 from poptimizer.views import utils
 
 _KEYBOARD_RATIO: Final = 1.5
-_KEYBOARD_MAX_WIDTH: Final = 5
+_KEYBOARD_TICKER_MAX_WIDTH: Final = 5
+
+_ACCOUNT_PREFIX: Final = "acc"
 _LETTER_PREFIX: Final = "letter"
 _TICKER_PREFIX: Final = "ticker"
-_ACCOUNT_PREFIX: Final = "acc"
+
 _CASH: Final = "₽"
 _OPTIMIZE_CMD: Final = BotCommand(command="optimize", description="Portfolio optimization")
 _EDIT_CMD: Final = BotCommand(command="edit", description="Position edit")
 
+_EDIT_CMD_MSG_ID: Final = "edit_msg_id"
+
 
 class MenuStates(StatesGroup):
+    choosing_account = State()
     choosing_letter = State()
     choosing_ticker = State()
-    choosing_account = State()
     entering_quantity = State()
 
 
@@ -58,9 +63,15 @@ class Dispatcher(aiogram.Dispatcher):
         for cmd, cmd_handler in cmd_handlers:
             self.message(Command(cmd.command))(bus.wrap(cmd_handler))
 
-        self.callback_query(MenuStates.choosing_letter, aiogram.F.data.startswith(_LETTER_PREFIX))(
-            bus.wrap(self._letter_cb)
+        cb_handlers = (
+            (MenuStates.choosing_account, _ACCOUNT_PREFIX, self._account_cb),
+            (MenuStates.choosing_letter, _LETTER_PREFIX, self._letter_cb),
         )
+
+        for state, prefix, cb_handler in cb_handlers:
+            self.callback_query(state, aiogram.F.data.startswith(prefix))(bus.wrap(cb_handler))
+
+        self.message()(_unknown_msg)
 
     def bot_commands(self) -> list[BotCommand]:
         return [
@@ -83,7 +94,7 @@ class Dispatcher(aiogram.Dispatcher):
 
         await message.answer(msg.as_markdown())
 
-    async def _start_cmd(self, message: Message, state: FSMContext) -> None:
+    async def _start_cmd(self, message: Message) -> None:
         msg = formatting.as_line(
             "Welcome to",
             formatting.Bold("POptimizer"),
@@ -92,7 +103,6 @@ class Dispatcher(aiogram.Dispatcher):
         )
 
         await message.answer(msg.as_markdown())
-        await state.clear()
 
     async def _optimize_cmd(self, ctx: handler.Ctx, message: Message, state: FSMContext) -> None:
         forecast = await ctx.get(forecasts.Forecast)
@@ -121,22 +131,52 @@ class Dispatcher(aiogram.Dispatcher):
             )
             await message.answer(msg.as_markdown())
 
-        await state.clear()
+    async def _edit_cmd(self, ctx: handler.Ctx, message: Message, state: FSMContext, bot: Bot) -> None:
+        await self._invalidate_old_edit_cmd(bot, state)
 
-    async def _edit_cmd(self, ctx: handler.Ctx, message: Message, state: FSMContext) -> None:
         port = await ctx.get(portfolio.Portfolio)
 
-        first_ticker_letters = [_CASH]
-
-        for row in port.positions:
-            if (first_letter := row.ticker[0]) != first_ticker_letters[-1]:
-                first_ticker_letters.append(first_letter)
-
-        await message.answer(
-            "Choose first letter of ticker to edit",
-            reply_markup=_keyboard(first_ticker_letters, _LETTER_PREFIX),
+        msg = await message.answer(
+            "Choose account",
+            reply_markup=_keyboard(sorted(port.account_names), _ACCOUNT_PREFIX),
         )
-        await state.set_state(MenuStates.choosing_letter)
+        await state.update_data({_EDIT_CMD_MSG_ID: msg.message_id})
+        await state.set_state(MenuStates.choosing_account)
+
+    async def _invalidate_old_edit_cmd(self, bot: Bot, state: FSMContext) -> None:
+        data = await state.get_data()
+        old_msg_id = data.get(_EDIT_CMD_MSG_ID)
+        await state.clear()
+
+        if old_msg_id:
+            await bot.edit_message_text(
+                chat_id=self._chat_id,
+                message_id=old_msg_id,
+                text="This message is outdated because you sent a new edit command",
+                reply_markup=None,
+            )
+
+    async def _account_cb(self, ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
+        match callback.data, callback.message:
+            case str(), Message():
+                await state.update_data(account=callback.data.split("/")[1])
+
+                port = await ctx.get(portfolio.Portfolio)
+                first_ticker_letters = [_CASH]
+
+                for row in port.positions:
+                    if (first_letter := row.ticker[0]) != first_ticker_letters[-1]:
+                        first_ticker_letters.append(first_letter)
+
+                await callback.message.edit_text(
+                    "Choose first letter of ticker",
+                    reply_markup=_keyboard(first_ticker_letters, _LETTER_PREFIX),
+                )
+                await state.set_state(MenuStates.choosing_letter)
+            case _, _:
+                ...
+
+        await callback.answer()
 
     async def _letter_cb(self, ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
         match callback.data, callback.message:
@@ -149,32 +189,41 @@ class Dispatcher(aiogram.Dispatcher):
 
                 match len(tickers):
                     case 1:
-                        port = await ctx.get(portfolio.Portfolio)
+                        await state.update_data(ticker=tickers[0])
+
+                        account = await state.get_value("account")
+
                         await callback.message.edit_text(
-                            f"Choose account for {tickers[0]} to edit",
-                            reply_markup=_keyboard(sorted(port.account_names), _ACCOUNT_PREFIX),
+                            f"Enter quantity of {tickers[0]} in {account} account",
+                            reply_markup=None,
                         )
-                        await state.set_state(MenuStates.choosing_account)
+
+                        await state.set_state(MenuStates.entering_quantity)
                     case _:
                         await callback.message.edit_text(
-                            "Choose ticker to edit",
-                            reply_markup=_keyboard(tickers, _TICKER_PREFIX),
+                            "Choose ticker",
+                            reply_markup=_keyboard(tickers, _TICKER_PREFIX, _KEYBOARD_TICKER_MAX_WIDTH),
                         )
-                        await state.set_state(MenuStates.choosing_letter)
-
-                await callback.answer()
+                        await state.set_state(MenuStates.choosing_ticker)
             case _, _:
                 ...
 
+        await callback.answer()
 
-def _keyboard[K: str](keys_text: list[K], prefix: str) -> InlineKeyboardMarkup:
+
+async def _unknown_msg(message: Message) -> None:
+    await message.answer(formatting.Text("Unknown command - use commands from menu").as_markdown())
+
+
+def _keyboard[K: str](keys_text: list[K], prefix: str, max_width: int | None = None) -> InlineKeyboardMarkup:
     width, rest = divmod((len(keys_text) * _KEYBOARD_RATIO) ** 0.5, 1)
     if rest:
         width += 1
 
-    width = min(_KEYBOARD_MAX_WIDTH, int(width))
+    if max_width:
+        width = min(max_width, width)
 
     keys = [InlineKeyboardButton(text=key, callback_data=f"{prefix}/{key}") for key in keys_text]
-    keyboard = [list(k_row) for k_row in itertools.batched(keys, width, strict=False)]
+    keyboard = [list(k_row) for k_row in itertools.batched(keys, int(width), strict=False)]
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
