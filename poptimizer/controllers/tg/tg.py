@@ -2,7 +2,6 @@ import asyncio
 import logging
 
 import aiogram
-import aiohttp
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
@@ -11,7 +10,7 @@ from poptimizer.views.tg import tg
 
 
 class Bot:
-    def __init__(self, token: str, chat_id: int, bus: msg.Bus, http_client: aiohttp.ClientSession) -> None:
+    def __init__(self, token: str, chat_id: int, bus: msg.Bus) -> None:
         self._lgr = logging.getLogger()
         match token:
             case "":
@@ -19,7 +18,6 @@ class Bot:
             case _:
                 self._bot = aiogram.Bot(
                     token=token,
-                    client_session=http_client,
                     default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN_V2),
                 )
 
