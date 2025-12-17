@@ -29,16 +29,17 @@ class Bot:
 
         self._lgr.info("Starting Telegram bot...")
 
-        await self._bot.set_my_commands(self._dp.bot_commands())
+        async with self._bot:
+            await self._bot.set_my_commands(self._dp.bot_commands())
 
-        try:
-            await asyncio.shield(
-                self._dp.start_polling(  # pyright: ignore[reportUnknownMemberType]
-                    self._bot,
-                    handle_signals=False,
-                    drop_pending_updates=True,
+            try:
+                await asyncio.shield(
+                    self._dp.start_polling(  # pyright: ignore[reportUnknownMemberType]
+                        self._bot,
+                        handle_signals=False,
+                        drop_pending_updates=True,
+                    )
                 )
-            )
-        except asyncio.CancelledError:
-            await self._dp.stop_polling()
-            self._lgr.info("Telegram bot shutdown finished")
+            except asyncio.CancelledError:
+                await self._dp.stop_polling()
+                self._lgr.info("Telegram bot shutdown finished")
