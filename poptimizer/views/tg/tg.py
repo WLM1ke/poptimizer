@@ -3,16 +3,15 @@ import logging
 from typing import Final
 
 import aiogram
-from aiogram.filters.command import CommandStart
+from aiogram.filters.command import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
+    BotCommand,
     CallbackQuery,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    KeyboardButton,
     Message,
-    ReplyKeyboardMarkup,
 )
 from aiogram.utils import formatting
 
@@ -28,15 +27,8 @@ _LETTER_PREFIX: Final = "letter"
 _TICKER_PREFIX: Final = "ticker"
 _ACCOUNT_PREFIX: Final = "acc"
 _CASH: Final = "₽"
-_OPTIMIZE_BTN: Final = KeyboardButton(text="Portfolio optimization")
-_EDIT_BTN: Final = KeyboardButton(text="Position edit")
-_MAIN_KEYBOARD: Final = ReplyKeyboardMarkup(
-    keyboard=[
-        [_OPTIMIZE_BTN, _EDIT_BTN],
-    ],
-    resize_keyboard=True,
-    one_time_keyboard=False,
-)
+_OPTIMIZE_CMD: Final = BotCommand(command="optimize", description="Portfolio optimization")
+_EDIT_CMD: Final = BotCommand(command="edit", description="Position edit")
 
 
 class MenuStates(StatesGroup):
@@ -58,17 +50,23 @@ class Dispatcher(aiogram.Dispatcher):
 
         self.message(CommandStart())(self._start_cmd)
 
-        btn_handlers = (
-            (_OPTIMIZE_BTN, self._optimize_btn),
-            (_EDIT_BTN, self._edit_btn),
+        cmd_handlers = (
+            (_EDIT_CMD, self._edit_cmd),
+            (_OPTIMIZE_CMD, self._optimize_cmd),
         )
 
-        for btn, btn_handler in btn_handlers:
-            self.message(aiogram.F.text == btn.text)(bus.wrap(btn_handler))
+        for cmd, cmd_handler in cmd_handlers:
+            self.message(Command(cmd.command))(bus.wrap(cmd_handler))
 
         self.callback_query(MenuStates.choosing_letter, aiogram.F.data.startswith(_LETTER_PREFIX))(
             bus.wrap(self._letter_cb)
         )
+
+    def bot_commands(self) -> list[BotCommand]:
+        return [
+            _EDIT_CMD,
+            _OPTIMIZE_CMD,
+        ]
 
     async def _not_owner(self, message: Message) -> None:
         formatting.TextLink("POptimizer", url="https://github.com/WLM1ke/poptimizer")
@@ -93,21 +91,15 @@ class Dispatcher(aiogram.Dispatcher):
             sep=" ",
         )
 
-        await message.answer(
-            msg.as_markdown(),
-            reply_markup=_MAIN_KEYBOARD,
-        )
+        await message.answer(msg.as_markdown())
         await state.clear()
 
-    async def _optimize_btn(self, ctx: handler.Ctx, message: Message, state: FSMContext) -> None:
+    async def _optimize_cmd(self, ctx: handler.Ctx, message: Message, state: FSMContext) -> None:
         forecast = await ctx.get(forecasts.Forecast)
 
         breakeven, buy, sell = forecast.buy_sell()
 
-        await message.answer(
-            formatting.Bold("BUY").as_markdown(),
-            reply_markup=_MAIN_KEYBOARD,
-        )
+        await message.answer(formatting.Bold("BUY").as_markdown())
 
         for row in buy:
             msg = formatting.as_list(
@@ -115,16 +107,10 @@ class Dispatcher(aiogram.Dispatcher):
                 f"Weight: {utils.format_percent(row.weight)}",
                 f"Priority: {utils.format_percent(row.grad_lower - breakeven)}",
             )
-            await message.answer(
-                msg.as_markdown(),
-                reply_markup=_MAIN_KEYBOARD,
-            )
+            await message.answer(msg.as_markdown())
 
         if sell:
-            await message.answer(
-                formatting.Bold("SELL").as_markdown(),
-                reply_markup=_MAIN_KEYBOARD,
-            )
+            await message.answer(formatting.Bold("SELL").as_markdown())
 
         for row in sell:
             msg = formatting.as_list(
@@ -133,12 +119,11 @@ class Dispatcher(aiogram.Dispatcher):
                 f"Priority: {utils.format_percent(row.grad_upper - breakeven)}",
                 f"Accounts: {', '.join(row.accounts)}",
             )
-            await message.answer(
-                msg.as_markdown(),
-            )
+            await message.answer(msg.as_markdown())
+
         await state.clear()
 
-    async def _edit_btn(self, ctx: handler.Ctx, message: Message, state: FSMContext) -> None:
+    async def _edit_cmd(self, ctx: handler.Ctx, message: Message, state: FSMContext) -> None:
         port = await ctx.get(portfolio.Portfolio)
 
         first_ticker_letters = [_CASH]
