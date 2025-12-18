@@ -67,21 +67,22 @@ class Forecast(domain.Entity):
         return abs(len(self.models) ** 0.5 - self.forecasts_count**0.5) >= 1
 
     def buy_sell(self) -> tuple[float, list[Position], list[Position]]:
-        lower_grad = max(pos.grad_lower for pos in self.positions if pos.ticker not in self.illiquid)
-        upper_grad = min(pos.grad_upper for pos in self.positions if pos.accounts)
-
-        breakeven = min(lower_grad, (lower_grad + upper_grad) / 2)
-
-        return (
-            breakeven,
-            sorted(
-                (pos for pos in self.positions if pos.grad_lower >= breakeven and pos.ticker not in self.illiquid),
-                key=lambda pos: pos.grad_lower,
-                reverse=True,
-            ),
-            sorted(
-                (pos for pos in self.positions if pos.grad_upper < breakeven and pos.accounts),
-                key=lambda pos: pos.grad_upper,
-                reverse=True,
-            ),
+        buy = sorted(
+            (pos for pos in self.positions if pos.ticker not in self.illiquid),
+            key=lambda pos: pos.grad_lower,
+            reverse=True,
         )
+        sell = sorted((pos for pos in self.positions if pos.accounts), key=lambda pos: pos.grad_upper)
+
+        for i, (b, s) in enumerate(zip(buy, sell, strict=False)):
+            if b.grad_lower < s.grad_upper:
+                if i == 0:
+                    break
+
+                sell = sell[i - 1 :: -1]
+                buy = buy[: i + (buy[i].grad_lower > sell[0].grad_upper)]
+                breakeven = (buy[-1].grad_lower + sell[0].grad_upper) / 2
+
+                return breakeven, buy, sell
+
+        return buy[0].grad_lower, buy[:1], []
