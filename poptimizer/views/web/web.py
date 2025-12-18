@@ -248,7 +248,7 @@ class App(web.Application):
 
         card = models.Card(
             upper=f"Date: {forecast.day} {outdated}",
-            main=(f"Buy tickets: {len(buy)} / Sell tickets: {len(sell)}"),
+            main=(f"Mean: {view.format_percent(forecast.mean)} / Std: {view.format_percent(forecast.std)}"),
             row1=models.Row(label="Trading interval", value=f"{forecast.forecast_days} days"),
             row2=models.Row(label="Risk aversion", value=f"{view.format_percent(1 - forecast.risk_tolerance)}"),
             row3=models.Row(label="Forecasts", value=f"{forecast.forecasts_count}"),
