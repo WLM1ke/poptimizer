@@ -1,5 +1,4 @@
 import itertools
-import logging
 from typing import Final, Self
 
 import aiogram
@@ -54,212 +53,211 @@ class EditData(BaseModel):
         await fsm_ctx.set_state(state)
 
 
-class Dispatcher(aiogram.Dispatcher):
-    def __init__(self, chat_id: int, bus: msg.Bus) -> None:
-        super().__init__()
-        self._lgr = logging.getLogger()
-        self._chat_id = chat_id
+def view(chat_id: int, bus: msg.Bus) -> tuple[aiogram.Dispatcher, list[BotCommand]]:
+    dp = aiogram.Dispatcher()
+    dp.message(
+        aiogram.F.from_user.id != chat_id,
+    )(_not_owner)
 
-        self.message(
-            aiogram.F.from_user.id != self._chat_id,
-        )(self._not_owner)
+    dp.message(CommandStart())(_start_cmd)
+    dp.message(Command(_EDIT_CMD))(bus.wrap(_edit_cmd))
+    dp.message(Command(_OPTIMIZE_CMD))(bus.wrap(_optimize_cmd))
 
-        self.message(CommandStart())(self._start_cmd)
-        self.message(Command(_EDIT_CMD))(bus.wrap(self._edit_cmd))
-        self.message(Command(_OPTIMIZE_CMD))(bus.wrap(self._optimize_cmd))
+    cb_handlers = (
+        (EditState.choosing_account, _account_cb),
+        (EditState.choosing_letter, _letter_cb),
+        (EditState.choosing_ticker, _ticker_cb),
+    )
 
-        cb_handlers = (
-            (EditState.choosing_account, self._account_cb),
-            (EditState.choosing_letter, self._letter_cb),
-            (EditState.choosing_ticker, self._ticker_cb),
-        )
+    for state, cb_handler in cb_handlers:
+        dp.callback_query(state)(bus.wrap(cb_handler))
 
-        for state, cb_handler in cb_handlers:
-            self.callback_query(state)(bus.wrap(cb_handler))
+    dp.message()(_unknown_msg)
 
-        self.message()(_unknown_msg)
+    return dp, [_EDIT_CMD, _OPTIMIZE_CMD]
 
-    def bot_commands(self) -> list[BotCommand]:
-        return [
-            _EDIT_CMD,
-            _OPTIMIZE_CMD,
-        ]
 
-    async def _not_owner(self, message: Message) -> None:
-        formatting.TextLink("POptimizer", url="https://github.com/WLM1ke/poptimizer")
-        msg = formatting.as_list(
-            formatting.Bold("You are not bot owner"),
-            formatting.as_line(
-                "Create your own",
-                formatting.TextLink("POptimizer", url="https://github.com/WLM1ke/poptimizer"),
-                "bot",
-                sep=" ",
-            ),
-            sep="\n\n",
-        )
-
-        await message.answer(msg.as_markdown())
-
-    async def _start_cmd(self, message: Message) -> None:
-        msg = formatting.as_line(
-            "Welcome to",
-            formatting.Bold("POptimizer"),
+async def _not_owner(message: Message) -> None:
+    formatting.TextLink("POptimizer", url="https://github.com/WLM1ke/poptimizer")
+    msg = formatting.as_list(
+        formatting.Bold("You are not bot owner"),
+        formatting.as_line(
+            "Create your own",
+            formatting.TextLink("POptimizer", url="https://github.com/WLM1ke/poptimizer"),
             "bot",
             sep=" ",
-        )
+        ),
+        sep="\n\n",
+    )
 
+    await message.answer(msg.as_markdown())
+
+
+async def _start_cmd(message: Message) -> None:
+    msg = formatting.as_line(
+        "Welcome to",
+        formatting.Bold("POptimizer"),
+        "bot",
+        sep=" ",
+    )
+
+    await message.answer(msg.as_markdown())
+
+
+async def _optimize_cmd(ctx: handler.Ctx, message: Message) -> None:
+    forecast = await ctx.get(forecasts.Forecast)
+
+    breakeven, buy, sell = forecast.buy_sell()
+
+    await message.answer(formatting.Bold("BUY").as_markdown())
+
+    for row in buy:
+        msg = formatting.as_list(
+            formatting.Bold(f"{row.ticker}"),
+            formatting.as_key_value("Weight", utils.format_percent(row.weight)),
+            formatting.as_key_value("Priority", utils.format_percent(row.grad_lower - breakeven)),
+        )
         await message.answer(msg.as_markdown())
 
-    async def _optimize_cmd(self, ctx: handler.Ctx, message: Message) -> None:
-        forecast = await ctx.get(forecasts.Forecast)
+    if sell:
+        await message.answer(formatting.Bold("SELL").as_markdown())
 
-        breakeven, buy, sell = forecast.buy_sell()
+    for row in sell:
+        msg = formatting.as_list(
+            formatting.Bold(f"{row.ticker}"),
+            formatting.as_key_value("Weight", utils.format_percent(row.weight)),
+            formatting.as_key_value("Priority", utils.format_percent(row.grad_upper - breakeven)),
+            formatting.as_key_value("Accounts", ", ".join(row.accounts)),
+        )
+        await message.answer(msg.as_markdown())
 
-        await message.answer(formatting.Bold("BUY").as_markdown())
 
-        for row in buy:
-            msg = formatting.as_list(
-                formatting.Bold(f"{row.ticker}"),
-                formatting.as_key_value("Weight", utils.format_percent(row.weight)),
-                formatting.as_key_value("Priority", utils.format_percent(row.grad_lower - breakeven)),
-            )
-            await message.answer(msg.as_markdown())
+async def _edit_cmd(ctx: handler.Ctx, message: Message, state: FSMContext, bot: Bot) -> None:
+    await _invalidate_old_edit_cmd(bot, message.chat.id, state)
+    port = await ctx.get(portfolio.Portfolio)
 
-        if sell:
-            await message.answer(formatting.Bold("SELL").as_markdown())
+    msg = await message.answer(
+        _prompt("Choose account").as_markdown(),
+        reply_markup=_keyboard(sorted(port.account_names)),
+    )
 
-        for row in sell:
-            msg = formatting.as_list(
-                formatting.Bold(f"{row.ticker}"),
-                formatting.as_key_value("Weight", utils.format_percent(row.weight)),
-                formatting.as_key_value("Priority", utils.format_percent(row.grad_upper - breakeven)),
-                formatting.as_key_value("Accounts", ", ".join(row.accounts)),
-            )
-            await message.answer(msg.as_markdown())
+    await EditData(msg_id=msg.message_id).update_state(state, EditState.choosing_account)
 
-    async def _edit_cmd(self, ctx: handler.Ctx, message: Message, state: FSMContext, bot: Bot) -> None:
-        await self._invalidate_old_edit_cmd(bot, state)
 
-        port = await ctx.get(portfolio.Portfolio)
+async def _invalidate_old_edit_cmd(bot: Bot, chat_id: int, state: FSMContext) -> None:
+    data = await EditData.from_state(state)
+    await state.clear()
 
-        msg = await message.answer(
-            _prompt("Choose account").as_markdown(),
-            reply_markup=_keyboard(sorted(port.account_names)),
+    if data.msg_id:
+        await bot.edit_message_text(
+            chat_id=chat_id,
+            message_id=data.msg_id,
+            text=formatting.Strikethrough("Old positions edit").as_markdown(),
+            reply_markup=None,
         )
 
-        await EditData(msg_id=msg.message_id).update_state(state, EditState.choosing_account)
 
-    async def _invalidate_old_edit_cmd(self, bot: Bot, state: FSMContext) -> None:
-        data = await EditData.from_state(state)
-        await state.clear()
+async def _account_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
+    match callback.data, callback.message:
+        case str(), Message():
+            data = await EditData.from_state(state)
+            data.account = domain.AccName(callback.data)
 
-        if data.msg_id:
-            await bot.edit_message_text(
-                chat_id=self._chat_id,
-                message_id=data.msg_id,
-                text=formatting.Strikethrough("Old positions edit").as_markdown(),
+            port = await ctx.get(portfolio.Portfolio)
+            first_ticker_letters = [_CASH]
+
+            for row in port.positions:
+                if (first_letter := row.ticker[0]) != first_ticker_letters[-1]:
+                    first_ticker_letters.append(first_letter)
+
+            await callback.message.edit_text(
+                formatting.as_list(
+                    formatting.as_key_value("Account", data.account),
+                    _prompt("Choose first letter of ticker"),
+                ).as_markdown(),
+                reply_markup=_keyboard(first_ticker_letters),
+            )
+            await data.update_state(state, EditState.choosing_letter)
+        case _, _:
+            ...
+
+    await callback.answer()
+
+
+async def _letter_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
+    match callback.data, callback.message:
+        case str(), Message():
+            data = await EditData.from_state(state)
+
+            port = await ctx.get(portfolio.Portfolio)
+            first_letter = callback.data
+
+            tickers = [row.ticker for row in port.positions if row.ticker.startswith(first_letter)]
+            tickers = tickers or [domain.CashTicker]
+
+            match len(tickers):
+                case 1:
+                    data.ticker = tickers[0]
+
+                    _, pos = port.find_position(data.ticker)
+                    quantity = port.cash_value(data.account)
+                    if pos is not None:
+                        quantity = pos.quantity(data.account)
+
+                    await callback.message.edit_text(
+                        formatting.as_list(
+                            formatting.as_key_value("Account", data.account),
+                            formatting.as_key_value("Ticker", data.ticker),
+                            formatting.as_key_value("Quantity", quantity),
+                            _prompt("Enter new quantity"),
+                        ).as_markdown(),
+                        reply_markup=None,
+                    )
+
+                    await data.update_state(state, EditState.entering_quantity)
+                case _:
+                    await callback.message.edit_text(
+                        formatting.as_list(
+                            formatting.as_key_value("Account", data.account),
+                            _prompt("Choose ticker"),
+                        ).as_markdown(),
+                        reply_markup=_keyboard(tickers, _KEYBOARD_TICKER_MAX_WIDTH),
+                    )
+                    await state.set_state(EditState.choosing_ticker)
+        case _, _:
+            ...
+
+    await callback.answer()
+
+
+async def _ticker_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
+    match callback.data, callback.message:
+        case str(), Message():
+            data = await EditData.from_state(state)
+
+            port = await ctx.get(portfolio.Portfolio)
+            data.ticker = domain.Ticker(callback.data)
+
+            _, pos = port.find_position(data.ticker)
+            quantity = port.cash_value(data.account)
+            if pos is not None:
+                quantity = pos.quantity(data.account)
+
+            await callback.message.edit_text(
+                formatting.as_list(
+                    formatting.as_key_value("Account", data.account),
+                    formatting.as_key_value("Ticker", data.ticker),
+                    formatting.as_key_value("Quantity", quantity),
+                    _prompt("Enter new quantity"),
+                ).as_markdown(),
                 reply_markup=None,
             )
 
-    async def _account_cb(self, ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
-        match callback.data, callback.message:
-            case str(), Message():
-                data = await EditData.from_state(state)
-                data.account = domain.AccName(callback.data)
+            await data.update_state(state, EditState.entering_quantity)
+        case _:
+            ...
 
-                port = await ctx.get(portfolio.Portfolio)
-                first_ticker_letters = [_CASH]
-
-                for row in port.positions:
-                    if (first_letter := row.ticker[0]) != first_ticker_letters[-1]:
-                        first_ticker_letters.append(first_letter)
-
-                await callback.message.edit_text(
-                    formatting.as_list(
-                        formatting.as_key_value("Account", data.account),
-                        _prompt("Choose first letter of ticker"),
-                    ).as_markdown(),
-                    reply_markup=_keyboard(first_ticker_letters),
-                )
-                await data.update_state(state, EditState.choosing_letter)
-            case _, _:
-                ...
-
-        await callback.answer()
-
-    async def _letter_cb(self, ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
-        match callback.data, callback.message:
-            case str(), Message():
-                data = await EditData.from_state(state)
-
-                port = await ctx.get(portfolio.Portfolio)
-                first_letter = callback.data
-
-                tickers = [row.ticker for row in port.positions if row.ticker.startswith(first_letter)]
-                tickers = tickers or [domain.CashTicker]
-
-                match len(tickers):
-                    case 1:
-                        data.ticker = tickers[0]
-
-                        _, pos = port.find_position(data.ticker)
-                        quantity = port.cash_value(data.account)
-                        if pos is not None:
-                            quantity = pos.quantity(data.account)
-
-                        await callback.message.edit_text(
-                            formatting.as_list(
-                                formatting.as_key_value("Account", data.account),
-                                formatting.as_key_value("Ticker", data.ticker),
-                                formatting.as_key_value("Quantity", quantity),
-                                _prompt("Enter new quantity"),
-                            ).as_markdown(),
-                            reply_markup=None,
-                        )
-
-                        await data.update_state(state, EditState.entering_quantity)
-                    case _:
-                        await callback.message.edit_text(
-                            formatting.as_list(
-                                formatting.as_key_value("Account", data.account),
-                                _prompt("Choose ticker"),
-                            ).as_markdown(),
-                            reply_markup=_keyboard(tickers, _KEYBOARD_TICKER_MAX_WIDTH),
-                        )
-                        await state.set_state(EditState.choosing_ticker)
-            case _, _:
-                ...
-
-        await callback.answer()
-
-    async def _ticker_cb(self, ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
-        match callback.data, callback.message:
-            case str(), Message():
-                data = await EditData.from_state(state)
-
-                port = await ctx.get(portfolio.Portfolio)
-                data.ticker = domain.Ticker(callback.data)
-
-                _, pos = port.find_position(data.ticker)
-                quantity = port.cash_value(data.account)
-                if pos is not None:
-                    quantity = pos.quantity(data.account)
-
-                await callback.message.edit_text(
-                    formatting.as_list(
-                        formatting.as_key_value("Account", data.account),
-                        formatting.as_key_value("Ticker", data.ticker),
-                        formatting.as_key_value("Quantity", quantity),
-                        _prompt("Enter new quantity"),
-                    ).as_markdown(),
-                    reply_markup=None,
-                )
-
-                await data.update_state(state, EditState.entering_quantity)
-            case _:
-                ...
-
-        await callback.answer()
+    await callback.answer()
 
 
 async def _unknown_msg(message: Message) -> None:

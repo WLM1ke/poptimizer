@@ -21,7 +21,7 @@ class Bot:
                     default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN_V2),
                 )
 
-        self._dp = tg.Dispatcher(chat_id, bus)
+        self._dp, self._commands = tg.view(chat_id, bus)
 
     async def run(self) -> None:
         if self._bot is None:
@@ -30,7 +30,7 @@ class Bot:
         self._lgr.info("Starting Telegram bot...")
 
         async with self._bot:
-            await self._bot.set_my_commands(self._dp.bot_commands())
+            await self._bot.set_my_commands(self._commands)
 
             try:
                 await asyncio.shield(
