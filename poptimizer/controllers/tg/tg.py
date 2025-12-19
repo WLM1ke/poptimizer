@@ -21,7 +21,7 @@ class Bot:
                     default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN_V2),
                 )
 
-        self._dp, self._commands = tg.view(chat_id, bus)
+        self._dp, self._commands = tg.dispatcher(chat_id, bus)
 
     async def run(self) -> None:
         if self._bot is None:
