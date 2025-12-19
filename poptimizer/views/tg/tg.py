@@ -26,10 +26,6 @@ from poptimizer.views import utils
 _KEYBOARD_RATIO: Final = 1.5
 _KEYBOARD_TICKER_MAX_WIDTH: Final = 5
 
-_ACCOUNT_PREFIX: Final = "acc"
-_LETTER_PREFIX: Final = "letter"
-_TICKER_PREFIX: Final = "ticker"
-
 _CASH: Final = "₽"
 _OPTIMIZE_CMD: Final = BotCommand(command="optimize", description="Portfolio optimization")
 _EDIT_CMD: Final = BotCommand(command="edit", description="Position edit")
@@ -69,22 +65,17 @@ class Dispatcher(aiogram.Dispatcher):
         )(self._not_owner)
 
         self.message(CommandStart())(self._start_cmd)
-
-        cmd_handlers = (
-            (_EDIT_CMD, self._edit_cmd),
-            (_OPTIMIZE_CMD, self._optimize_cmd),
-        )
-
-        for cmd, cmd_handler in cmd_handlers:
-            self.message(Command(cmd.command))(bus.wrap(cmd_handler))
+        self.message(Command(_EDIT_CMD))(bus.wrap(self._edit_cmd))
+        self.message(Command(_OPTIMIZE_CMD))(bus.wrap(self._optimize_cmd))
 
         cb_handlers = (
-            (EditState.choosing_account, _ACCOUNT_PREFIX, self._account_cb),
-            (EditState.choosing_letter, _LETTER_PREFIX, self._letter_cb),
+            (EditState.choosing_account, self._account_cb),
+            (EditState.choosing_letter, self._letter_cb),
+            (EditState.choosing_ticker, self._ticker_cb),
         )
 
-        for state, prefix, cb_handler in cb_handlers:
-            self.callback_query(state, aiogram.F.data.startswith(prefix))(bus.wrap(cb_handler))
+        for state, cb_handler in cb_handlers:
+            self.callback_query(state)(bus.wrap(cb_handler))
 
         self.message()(_unknown_msg)
 
@@ -153,7 +144,7 @@ class Dispatcher(aiogram.Dispatcher):
 
         msg = await message.answer(
             _prompt("Choose account").as_markdown(),
-            reply_markup=_keyboard(sorted(port.account_names), _ACCOUNT_PREFIX),
+            reply_markup=_keyboard(sorted(port.account_names)),
         )
 
         await EditData(msg_id=msg.message_id).update_state(state, EditState.choosing_account)
@@ -174,7 +165,7 @@ class Dispatcher(aiogram.Dispatcher):
         match callback.data, callback.message:
             case str(), Message():
                 data = await EditData.from_state(state)
-                data.account = domain.AccName(callback.data.split("/")[1])
+                data.account = domain.AccName(callback.data)
 
                 port = await ctx.get(portfolio.Portfolio)
                 first_ticker_letters = [_CASH]
@@ -188,7 +179,7 @@ class Dispatcher(aiogram.Dispatcher):
                         formatting.as_key_value("Account", data.account),
                         _prompt("Choose first letter of ticker"),
                     ).as_markdown(),
-                    reply_markup=_keyboard(first_ticker_letters, _LETTER_PREFIX),
+                    reply_markup=_keyboard(first_ticker_letters),
                 )
                 await data.update_state(state, EditState.choosing_letter)
             case _, _:
@@ -202,7 +193,7 @@ class Dispatcher(aiogram.Dispatcher):
                 data = await EditData.from_state(state)
 
                 port = await ctx.get(portfolio.Portfolio)
-                first_letter = callback.data.split("/")[1]
+                first_letter = callback.data
 
                 tickers = [row.ticker for row in port.positions if row.ticker.startswith(first_letter)]
                 tickers = tickers or [domain.CashTicker]
@@ -233,10 +224,39 @@ class Dispatcher(aiogram.Dispatcher):
                                 formatting.as_key_value("Account", data.account),
                                 _prompt("Choose ticker"),
                             ).as_markdown(),
-                            reply_markup=_keyboard(tickers, _TICKER_PREFIX, _KEYBOARD_TICKER_MAX_WIDTH),
+                            reply_markup=_keyboard(tickers, _KEYBOARD_TICKER_MAX_WIDTH),
                         )
                         await state.set_state(EditState.choosing_ticker)
             case _, _:
+                ...
+
+        await callback.answer()
+
+    async def _ticker_cb(self, ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
+        match callback.data, callback.message:
+            case str(), Message():
+                data = await EditData.from_state(state)
+
+                port = await ctx.get(portfolio.Portfolio)
+                data.ticker = domain.Ticker(callback.data)
+
+                _, pos = port.find_position(data.ticker)
+                quantity = port.cash_value(data.account)
+                if pos is not None:
+                    quantity = pos.quantity(data.account)
+
+                await callback.message.edit_text(
+                    formatting.as_list(
+                        formatting.as_key_value("Account", data.account),
+                        formatting.as_key_value("Ticker", data.ticker),
+                        formatting.as_key_value("Quantity", quantity),
+                        _prompt("Enter new quantity"),
+                    ).as_markdown(),
+                    reply_markup=None,
+                )
+
+                await data.update_state(state, EditState.entering_quantity)
+            case _:
                 ...
 
         await callback.answer()
@@ -246,7 +266,7 @@ async def _unknown_msg(message: Message) -> None:
     await message.answer(formatting.as_key_value("Unknown command", "use menu").as_markdown())
 
 
-def _keyboard[K: str](keys_text: list[K], prefix: str, max_width: int | None = None) -> InlineKeyboardMarkup:
+def _keyboard[K: str](keys_text: list[K], max_width: int | None = None) -> InlineKeyboardMarkup:
     width, rest = divmod((len(keys_text) * _KEYBOARD_RATIO) ** 0.5, 1)
     if rest:
         width += 1
@@ -254,7 +274,7 @@ def _keyboard[K: str](keys_text: list[K], prefix: str, max_width: int | None = N
     if max_width:
         width = min(max_width, width)
 
-    keys = [InlineKeyboardButton(text=key, callback_data=f"{prefix}/{key}") for key in keys_text]
+    keys = [InlineKeyboardButton(text=key, callback_data=f"{key}") for key in keys_text]
     keyboard = [list(k_row) for k_row in itertools.batched(keys, int(width), strict=False)]
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
