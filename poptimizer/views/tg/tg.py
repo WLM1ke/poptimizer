@@ -1,4 +1,6 @@
+import contextlib
 import itertools
+from collections.abc import AsyncIterator
 from typing import Final, Self
 
 import aiogram
@@ -157,107 +159,98 @@ async def _invalidate_old_edit_cmd(bot: Bot, chat_id: int, state: FSMContext) ->
         )
 
 
-async def _account_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
+@contextlib.asynccontextmanager
+async def _edit_cb_guard(callback: CallbackQuery, state: FSMContext) -> AsyncIterator[tuple[str, Message, EditData]]:
     match callback.data, callback.message:
         case str(), Message():
-            data = await EditData.from_state(state)
-            data.account = domain.AccName(callback.data)
-
-            port = await ctx.get(portfolio.Portfolio)
-            first_ticker_letters = [_CASH]
-
-            for row in port.positions:
-                if (first_letter := row.ticker[0]) != first_ticker_letters[-1]:
-                    first_ticker_letters.append(first_letter)
-
-            await callback.message.edit_text(
-                formatting.as_list(
-                    formatting.as_key_value("Account", data.account),
-                    _prompt("Choose first letter of ticker"),
-                ).as_markdown(),
-                reply_markup=_keyboard(first_ticker_letters),
-            )
-            await data.update_state(state, EditState.choosing_letter)
+            yield callback.data, callback.message, await EditData.from_state(state)
         case _, _:
             ...
 
     await callback.answer()
+
+
+async def _account_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
+    async with _edit_cb_guard(callback, state) as (cb_data, cb_msg, state_data):
+        state_data.account = domain.AccName(cb_data)
+
+        port = await ctx.get(portfolio.Portfolio)
+        first_ticker_letters = [_CASH]
+
+        for row in port.positions:
+            if (first_letter := row.ticker[0]) != first_ticker_letters[-1]:
+                first_ticker_letters.append(first_letter)
+
+        await cb_msg.edit_text(
+            formatting.as_list(
+                formatting.as_key_value("Account", state_data.account),
+                _prompt("Choose first letter of ticker"),
+            ).as_markdown(),
+            reply_markup=_keyboard(first_ticker_letters),
+        )
+
+        await state_data.update_state(state, EditState.choosing_letter)
 
 
 async def _letter_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
-    match callback.data, callback.message:
-        case str(), Message():
-            data = await EditData.from_state(state)
+    async with _edit_cb_guard(callback, state) as (cb_data, cb_msg, state_data):
+        port = await ctx.get(portfolio.Portfolio)
 
-            port = await ctx.get(portfolio.Portfolio)
-            first_letter = callback.data
+        tickers = [row.ticker for row in port.positions if row.ticker.startswith(cb_data)]
+        tickers = tickers or [domain.CashTicker]
 
-            tickers = [row.ticker for row in port.positions if row.ticker.startswith(first_letter)]
-            tickers = tickers or [domain.CashTicker]
+        match len(tickers):
+            case 1:
+                state_data.ticker = tickers[0]
 
-            match len(tickers):
-                case 1:
-                    data.ticker = tickers[0]
+                _, pos = port.find_position(state_data.ticker)
+                quantity = port.cash_value(state_data.account)
+                if pos is not None:
+                    quantity = pos.quantity(state_data.account)
 
-                    _, pos = port.find_position(data.ticker)
-                    quantity = port.cash_value(data.account)
-                    if pos is not None:
-                        quantity = pos.quantity(data.account)
+                await cb_msg.edit_text(
+                    formatting.as_list(
+                        formatting.as_key_value("Account", state_data.account),
+                        formatting.as_key_value("Ticker", state_data.ticker),
+                        formatting.as_key_value("Quantity", quantity),
+                        _prompt("Enter new quantity"),
+                    ).as_markdown(),
+                    reply_markup=None,
+                )
 
-                    await callback.message.edit_text(
-                        formatting.as_list(
-                            formatting.as_key_value("Account", data.account),
-                            formatting.as_key_value("Ticker", data.ticker),
-                            formatting.as_key_value("Quantity", quantity),
-                            _prompt("Enter new quantity"),
-                        ).as_markdown(),
-                        reply_markup=None,
-                    )
-
-                    await data.update_state(state, EditState.entering_quantity)
-                case _:
-                    await callback.message.edit_text(
-                        formatting.as_list(
-                            formatting.as_key_value("Account", data.account),
-                            _prompt("Choose ticker"),
-                        ).as_markdown(),
-                        reply_markup=_keyboard(tickers, _KEYBOARD_TICKER_MAX_WIDTH),
-                    )
-                    await state.set_state(EditState.choosing_ticker)
-        case _, _:
-            ...
-
-    await callback.answer()
+                await state_data.update_state(state, EditState.entering_quantity)
+            case _:
+                await cb_msg.edit_text(
+                    formatting.as_list(
+                        formatting.as_key_value("Account", state_data.account),
+                        _prompt("Choose ticker"),
+                    ).as_markdown(),
+                    reply_markup=_keyboard(tickers, _KEYBOARD_TICKER_MAX_WIDTH),
+                )
+                await state.set_state(EditState.choosing_ticker)
 
 
 async def _ticker_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
-    match callback.data, callback.message:
-        case str(), Message():
-            data = await EditData.from_state(state)
+    async with _edit_cb_guard(callback, state) as (cb_data, cb_msg, state_data):
+        port = await ctx.get(portfolio.Portfolio)
+        state_data.ticker = domain.Ticker(cb_data)
 
-            port = await ctx.get(portfolio.Portfolio)
-            data.ticker = domain.Ticker(callback.data)
+        _, pos = port.find_position(state_data.ticker)
+        quantity = port.cash_value(state_data.account)
+        if pos is not None:
+            quantity = pos.quantity(state_data.account)
 
-            _, pos = port.find_position(data.ticker)
-            quantity = port.cash_value(data.account)
-            if pos is not None:
-                quantity = pos.quantity(data.account)
+        await cb_msg.edit_text(
+            formatting.as_list(
+                formatting.as_key_value("Account", state_data.account),
+                formatting.as_key_value("Ticker", state_data.ticker),
+                formatting.as_key_value("Quantity", quantity),
+                _prompt("Enter new quantity"),
+            ).as_markdown(),
+            reply_markup=None,
+        )
 
-            await callback.message.edit_text(
-                formatting.as_list(
-                    formatting.as_key_value("Account", data.account),
-                    formatting.as_key_value("Ticker", data.ticker),
-                    formatting.as_key_value("Quantity", quantity),
-                    _prompt("Enter new quantity"),
-                ).as_markdown(),
-                reply_markup=None,
-            )
-
-            await data.update_state(state, EditState.entering_quantity)
-        case _:
-            ...
-
-    await callback.answer()
+        await state_data.update_state(state, EditState.entering_quantity)
 
 
 async def _unknown_msg(message: Message) -> None:
