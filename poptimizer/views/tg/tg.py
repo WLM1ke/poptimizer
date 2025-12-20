@@ -245,6 +245,7 @@ async def _quantity_msg(ctx: handler.Ctx, message: Message, state: FSMContext) -
         reply_markup=view.keyboard(_first_ticker_letters(port, with_escape=True)),
     )
     state_data.msg_id = send_msg.message_id
+    state_data.edited_tickers.append(state_data.ticker)
 
     await state_data.update_state(state, EditState.choosing_letter)
 

@@ -91,14 +91,6 @@ def edit_choose_first_letter(edit: model.Edit) -> str:
     ).as_markdown()
 
 
-def edit_escape(edit: model.Edit, value: float) -> str:
-    return formatting.as_list(
-        formatting.Bold(f"Value of account {edit.account} changed:\n"),
-        formatting.Text(f"{utils.format_float(edit.acc_value, 0)} ₽"),
-        formatting.Text(f"{utils.format_float(value, 0)} ₽"),
-    ).as_markdown()
-
-
 def edit_choose_ticker(edit: model.Edit) -> str:
     return formatting.as_list(
         formatting.as_key_value("Account", edit.account),
@@ -129,4 +121,14 @@ def new_quantity(edit: model.Edit) -> str:
         formatting.as_key_value("Quantity", edit.quantity),
         formatting.as_key_value("Value", utils.format_float(edit.value, 0)),
         _prompt("Choose first letter of next ticker"),
+    ).as_markdown()
+
+
+def edit_escape(edit: model.Edit, value: float) -> str:
+    return formatting.as_list(
+        formatting.as_key_value("Account", edit.account),
+        formatting.as_key_value("Edited tickers", ", ".join(edit.unique_edited_tickers)),
+        formatting.Bold("\nValue changed:"),
+        formatting.Text(f"{utils.format_float(edit.acc_value, 0)} ₽"),
+        formatting.Text(f"{utils.format_float(value, 0)} ₽"),
     ).as_markdown()
