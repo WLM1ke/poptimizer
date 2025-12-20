@@ -8,6 +8,7 @@ from aiogram.client.bot import Bot
 from aiogram.filters.command import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.storage.pymongo import PyMongoStorage
 from aiogram.types import (
     BotCommand,
     CallbackQuery,
@@ -15,22 +16,24 @@ from aiogram.types import (
 )
 
 from poptimizer import errors
+from poptimizer.adapters import mongo
 from poptimizer.controllers.bus import msg
 from poptimizer.domain import domain
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
 from poptimizer.views.tg import model, view
 
-_KEYBOARD_TICKER_MAX_WIDTH: Final = 5
+_FSM_MONGO_COLLECTION: Final = "TgFSM"
 
 
 _OPTIMIZE_CMD: Final = BotCommand(command="optimize", description="Portfolio optimization")
 _EDIT_CMD: Final = BotCommand(command="edit", description="Edit account")
 
+_KEYBOARD_TICKER_MAX_WIDTH: Final = 5
 _CASH_BTN: Final = "₽"
 _ESCAPE_BTN: Final = "␛"
 
-_RE_SPACES = re.compile(r"\s+")
+_RE_SPACES: Final = re.compile(r"\s+")
 
 
 class EditState(StatesGroup):
@@ -40,8 +43,13 @@ class EditState(StatesGroup):
     entering_quantity = State()
 
 
-def dispatcher(chat_id: int, bus: msg.Bus) -> tuple[aiogram.Dispatcher, list[BotCommand]]:
-    dp = aiogram.Dispatcher()
+def dispatcher(
+    chat_id: int,
+    mong_db: mongo.MongoDatabase,
+    bus: msg.Bus,
+) -> tuple[aiogram.Dispatcher, list[BotCommand]]:
+    storage = PyMongoStorage(mong_db.client, db_name=mong_db.name, collection_name=_FSM_MONGO_COLLECTION)
+    dp = aiogram.Dispatcher(storage=storage)
     dp.message(
         aiogram.F.from_user.id != chat_id,
     )(_not_owner)

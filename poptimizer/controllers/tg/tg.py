@@ -5,12 +5,13 @@ import aiogram
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
+from poptimizer.adapters import mongo
 from poptimizer.controllers.bus import msg
 from poptimizer.views.tg import tg
 
 
 class Bot:
-    def __init__(self, token: str, chat_id: int, bus: msg.Bus) -> None:
+    def __init__(self, token: str, chat_id: int, mong_db: mongo.MongoDatabase, bus: msg.Bus) -> None:
         self._lgr = logging.getLogger()
         match token:
             case "":
@@ -21,7 +22,7 @@ class Bot:
                     default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN_V2),
                 )
 
-        self._dp, self._commands = tg.dispatcher(chat_id, bus)
+        self._dp, self._commands = tg.dispatcher(chat_id, mong_db, bus)
 
     async def run(self) -> None:
         if self._bot is None:

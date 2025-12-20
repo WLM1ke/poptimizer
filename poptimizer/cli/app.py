@@ -50,7 +50,7 @@ async def _run(*, check_memory: bool = False) -> int:
 
         msg_bus = bus.build(http_client, mongo_db, cancel_fn)
         http_server = server.Server(cfg.server_url, msg_bus)
-        bot = tg.Bot(cfg.telegram_token, cfg.telegram_chat_id, msg_bus)
+        bot = tg.Bot(cfg.telegram_token, cfg.telegram_chat_id, mongo_db, msg_bus)
 
         return await safe.run(
             lgr,
