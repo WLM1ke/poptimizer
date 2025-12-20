@@ -1,4 +1,5 @@
 import contextlib
+import re
 from collections.abc import AsyncIterator
 from typing import Final
 
@@ -13,6 +14,7 @@ from aiogram.types import (
     Message,
 )
 
+from poptimizer import errors
 from poptimizer.controllers.bus import msg
 from poptimizer.domain import domain
 from poptimizer.domain.portfolio import forecasts, portfolio
@@ -21,9 +23,14 @@ from poptimizer.views.tg import model, view
 
 _KEYBOARD_TICKER_MAX_WIDTH: Final = 5
 
-_CASH: Final = "₽"
+
 _OPTIMIZE_CMD: Final = BotCommand(command="optimize", description="Portfolio optimization")
-_EDIT_CMD: Final = BotCommand(command="edit", description="Position edit")
+_EDIT_CMD: Final = BotCommand(command="edit", description="Edit account")
+
+_CASH_BTN: Final = "₽"
+_ESCAPE_BTN: Final = "␛"
+
+_RE_SPACES = re.compile(r"\s+")
 
 
 class EditState(StatesGroup):
@@ -43,14 +50,11 @@ def dispatcher(chat_id: int, bus: msg.Bus) -> tuple[aiogram.Dispatcher, list[Bot
     dp.message(Command(_EDIT_CMD))(bus.wrap(_edit_cmd))
     dp.message(Command(_OPTIMIZE_CMD))(bus.wrap(_optimize_cmd))
 
-    cb_handlers = (
-        (EditState.choosing_account, _account_cb),
-        (EditState.choosing_letter, _letter_cb),
-        (EditState.choosing_ticker, _ticker_cb),
-    )
+    dp.callback_query(EditState.choosing_account)(bus.wrap(_account_cb))
+    dp.callback_query(EditState.choosing_letter)(bus.wrap(_letter_cb))
+    dp.callback_query(EditState.choosing_ticker)(bus.wrap(_ticker_cb))
 
-    for state, cb_handler in cb_handlers:
-        dp.callback_query(state)(bus.wrap(cb_handler))
+    dp.message(EditState.entering_quantity)(bus.wrap(_quantity_msg))
 
     dp.message()(_unknown_msg)
 
@@ -75,34 +79,35 @@ async def _optimize_cmd(ctx: handler.Ctx, message: Message) -> None:
     for row in buy:
         await message.answer(view.optimize_buy_ticker(row, breakeven))
 
-    if sell:
-        await message.answer(view.optimize_sell_section())
+    if not sell:
+        return
+
+    await message.answer(view.optimize_sell_section())
 
     for row in sell:
         await message.answer(view.optimize_sell_ticker(row, breakeven))
 
 
 async def _edit_cmd(ctx: handler.Ctx, message: Message, state: FSMContext, bot: Bot) -> None:
-    await _clear_old_edit(bot, message.chat.id, state)
+    await _clear_old_keyboard(bot, message.chat.id, state)
     port = await ctx.get(portfolio.Portfolio)
 
-    msg = await message.answer(
+    send_msg = await message.answer(
         view.edit_choose_account(),
         reply_markup=view.keyboard(sorted(port.account_names)),
     )
 
-    await model.Edit(msg_id=msg.message_id).update_state(state, EditState.choosing_account)
+    await model.Edit(msg_id=send_msg.message_id).update_state(state, EditState.choosing_account)
 
 
-async def _clear_old_edit(bot: Bot, chat_id: int, state: FSMContext) -> None:
-    data = await model.edit(state)
+async def _clear_old_keyboard(bot: Bot, chat_id: int, state: FSMContext) -> None:
+    state_data = await model.edit(state)
     await state.clear()
 
-    if data.msg_id:
-        await bot.edit_message_text(
+    if state_data.msg_id:
+        await bot.edit_message_reply_markup(
             chat_id=chat_id,
-            message_id=data.msg_id,
-            text=view.edit_terminated(),
+            message_id=state_data.msg_id,
             reply_markup=None,
         )
 
@@ -118,23 +123,37 @@ async def _edit_cb_guard(callback: CallbackQuery, state: FSMContext) -> AsyncIte
     await callback.answer()
 
 
+def _first_ticker_letters(port: portfolio.Portfolio, *, with_escape: bool = False) -> list[str]:
+    first_ticker_letters = [_CASH_BTN]
+
+    for row in port.positions:
+        if (first_letter := row.ticker[0]) != first_ticker_letters[-1]:
+            first_ticker_letters.append(first_letter)
+
+    if with_escape:
+        first_ticker_letters.append(_ESCAPE_BTN)
+
+    return first_ticker_letters
+
+
 async def _account_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
     async with _edit_cb_guard(callback, state) as (cb_data, cb_msg, state_data):
-        state_data.account = domain.AccName(cb_data)
-
         port = await ctx.get(portfolio.Portfolio)
-        first_ticker_letters = [_CASH]
 
-        for row in port.positions:
-            if (first_letter := row.ticker[0]) != first_ticker_letters[-1]:
-                first_ticker_letters.append(first_letter)
+        state_data.account = domain.AccName(cb_data)
+        state_data.acc_value = port.value(state_data.account)
 
         await cb_msg.edit_text(
             view.edit_choose_first_letter(state_data),
-            reply_markup=view.keyboard(first_ticker_letters),
+            reply_markup=view.keyboard(_first_ticker_letters(port)),
         )
 
         await state_data.update_state(state, EditState.choosing_letter)
+
+
+async def _escape(state: FSMContext, cb_msg: Message, state_data: model.Edit, acc_value: float) -> None:
+    await cb_msg.edit_text(view.edit_escape(state_data, acc_value))
+    await state.clear()
 
 
 async def _letter_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
@@ -142,18 +161,29 @@ async def _letter_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContex
         port = await ctx.get(portfolio.Portfolio)
 
         tickers = [row.ticker for row in port.positions if row.ticker.startswith(cb_data)]
-        tickers = tickers or [domain.CashTicker]
 
-        match len(tickers):
-            case 1:
-                state_data.ticker = tickers[0]
+        match tickers:
+            case [] if cb_data == _CASH_BTN:
+                state_data.ticker = domain.CashTicker
+                state_data.quantity = port.cash_value(state_data.account)
+                state_data.msg_id = 0
 
-                _, pos = port.find_position(state_data.ticker)
-                quantity = port.cash_value(state_data.account)
-                if pos is not None:
-                    quantity = pos.quantity(state_data.account)
+                await cb_msg.edit_text(view.edit_enter_quantity(state_data))
+                await state_data.update_state(state, EditState.entering_quantity)
+            case []:
+                await _escape(state, cb_msg, state_data, port.value(state_data.account))
+            case [ticker]:
+                _, pos = port.find_position(ticker)
+                if pos is None:
+                    await _escape(state, cb_msg, state_data, port.value(state_data.account))
 
-                await cb_msg.edit_text(view.edit_enter_quantity(state_data, quantity))
+                    return
+
+                state_data.ticker = ticker
+                state_data.quantity = pos.quantity(state_data.account)
+                state_data.msg_id = 0
+
+                await cb_msg.edit_text(view.edit_enter_quantity(state_data))
                 await state_data.update_state(state, EditState.entering_quantity)
             case _:
                 await cb_msg.edit_text(
@@ -166,15 +196,57 @@ async def _letter_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContex
 async def _ticker_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
     async with _edit_cb_guard(callback, state) as (cb_data, cb_msg, state_data):
         port = await ctx.get(portfolio.Portfolio)
-        state_data.ticker = domain.Ticker(cb_data)
+        ticker = domain.Ticker(cb_data)
 
-        _, pos = port.find_position(state_data.ticker)
-        quantity = port.cash_value(state_data.account)
-        if pos is not None:
-            quantity = pos.quantity(state_data.account)
+        _, pos = port.find_position(ticker)
+        if pos is None:
+            await _escape(state, cb_msg, state_data, port.value(state_data.account))
 
-        await cb_msg.edit_text(view.edit_enter_quantity(state_data, quantity))
+            return
+
+        state_data.ticker = ticker
+        state_data.quantity = pos.quantity(state_data.account)
+        state_data.msg_id = 0
+
+        await cb_msg.edit_text(view.edit_enter_quantity(state_data))
         await state_data.update_state(state, EditState.entering_quantity)
+
+
+def _parse_quantity(message: Message) -> int:
+    quantity = message.text or ""
+
+    try:
+        return int(_RE_SPACES.sub("", quantity or ""))
+    except ValueError as err:
+        raise errors.ControllersError(f"quantity {quantity} should be number") from err
+
+
+async def _quantity_msg(ctx: handler.Ctx, message: Message, state: FSMContext) -> None:
+    state_data = await model.edit(state)
+    port = await ctx.get_for_update(portfolio.Portfolio)
+
+    try:
+        state_data.quantity = _parse_quantity(message)
+        port.update_position(state_data.account, state_data.ticker, state_data.quantity)
+    except (errors.ControllersError, errors.DomainError) as err:
+        await message.answer(view.edit_invalid_quantity(str(err)))
+
+        return
+
+    _, pos = port.find_position(state_data.ticker)
+    match pos:
+        case None:
+            state_data.value = port.cash_value(state_data.account)
+        case _:
+            state_data.value = pos.value(state_data.account)
+
+    send_msg = await message.answer(
+        view.new_quantity(state_data),
+        reply_markup=view.keyboard(_first_ticker_letters(port, with_escape=True)),
+    )
+    state_data.msg_id = send_msg.message_id
+
+    await state_data.update_state(state, EditState.choosing_letter)
 
 
 async def _unknown_msg(message: Message) -> None:

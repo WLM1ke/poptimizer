@@ -7,9 +7,11 @@ from poptimizer.domain import domain
 
 class Edit(BaseModel):
     msg_id: int = 0
-    value: float = 0
+    acc_value: float = 0
     account: domain.AccName = domain.AccName("")
     ticker: domain.Ticker = domain.Ticker("")
+    quantity: int = 0
+    value: float = 0
 
     async def update_state(self, fsm_ctx: FSMContext, state: State) -> None:
         await fsm_ctx.set_data(self.model_dump())
