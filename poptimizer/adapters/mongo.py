@@ -161,7 +161,7 @@ class Repo:
             async for doc in db.find({}):
                 yield self._create_entity(t_entity, doc)
         except PyMongoError as err:
-            raise errors.AdapterError("can't load entities from {collection_name}") from err
+            raise errors.AdapterError(f"can't load entities from {collection_name}") from err
 
     async def _load(self, collection_name: str, uid: domain.UID) -> MongoDocument | None:
         collection = self._db[collection_name]
@@ -169,7 +169,7 @@ class Repo:
         try:
             return await collection.find_one({_MONGO_ID: uid})
         except PyMongoError as err:
-            raise errors.AdapterError("can't load {collection_name}.{uid}") from err
+            raise errors.AdapterError(f"can't load {collection_name}.{uid}") from err
 
     async def _create_new(self, collection_name: str, uid: domain.UID) -> MongoDocument | None:
         doc = {
@@ -183,7 +183,7 @@ class Repo:
         try:
             await collection.insert_one(doc)
         except PyMongoError as err:
-            raise errors.AdapterError("can't create {collection_name}.{uid}") from err
+            raise errors.AdapterError(f"can't create {collection_name}.{uid}") from err
 
         return doc
 
@@ -237,4 +237,4 @@ class Repo:
         try:
             await collection.drop()
         except PyMongoError as err:
-            raise errors.AdapterError("can't delete {collection_name}") from err
+            raise errors.AdapterError(f"can't delete {collection_name}") from err
