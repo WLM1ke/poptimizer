@@ -37,31 +37,27 @@ def _content_length(response: web.StreamResponse) -> str:
     return f"{size:.0f}Tb"
 
 
-class Server:
-    def __init__(self, url: HttpUrl, bus: msg.Bus) -> None:
-        self._lgr = logging.getLogger()
-        self._app = App(bus)
-        self._url = url
+async def run(lgr: logging.Logger, url: HttpUrl, bus: msg.Bus) -> None:
+    runner = web.AppRunner(
+        App(bus),
+        handle_signals=False,
+        access_log_class=_AccessLogger,
+    )
 
-    async def run(self) -> None:
-        runner = web.AppRunner(
-            self._app,
-            handle_signals=False,
-            access_log_class=_AccessLogger,
-        )
-        await runner.setup()
-        site = web.TCPSite(
-            runner,
-            self._url.host,
-            self._url.port,
-        )
+    await runner.setup()
 
-        await site.start()
+    site = web.TCPSite(
+        runner,
+        url.host,
+        url.port,
+    )
 
-        self._lgr.info("Server started on %s - press CTRL+C to quit", self._url)
+    await site.start()
 
-        try:
-            await asyncio.Event().wait()
-        except asyncio.CancelledError:
-            await runner.cleanup()
-            self._lgr.info("Server shutdown finished")
+    lgr.info("Server started on %s - press CTRL+C to quit", url)
+
+    try:
+        await asyncio.Event().wait()
+    except asyncio.CancelledError:
+        await runner.cleanup()
+        lgr.info("Server shutdown finished")

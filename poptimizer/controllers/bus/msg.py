@@ -102,9 +102,10 @@ class WrappedHandler[**Req, Resp](Protocol):
 class Bus:
     def __init__(
         self,
+        lgr: logging.Logger,
         repo: mongo.Repo,
     ) -> None:
-        self._lgr = logging.getLogger()
+        self._lgr = lgr
         self._repo = repo
         self._tg = asyncio.TaskGroup()
         self._event_handlers: dict[adapter.Component, list[tuple[EventHandler[Any], type[Policy]]]] = defaultdict(list)

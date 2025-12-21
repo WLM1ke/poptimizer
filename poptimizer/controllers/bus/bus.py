@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -18,13 +19,13 @@ if TYPE_CHECKING:
 
 
 def build(
+    lgr: logging.Logger,
     http_client: aiohttp.ClientSession,
     mongo_db: mongo.MongoDatabase,
     stop_fn: Callable[[], bool] | None,
 ) -> msg.Bus:
     repo = mongo.Repo(mongo_db)
-
-    bus = msg.Bus(repo)
+    bus = msg.Bus(lgr, repo)
 
     bus.register_event_handler(backup.BackupHandler(repo), msg.IgnoreErrorsPolicy)
 

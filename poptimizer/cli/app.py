@@ -29,34 +29,26 @@ class _SignalHandler:
 
 
 async def _run(*, check_memory: bool = False) -> int:
-    cancel_fn: Callable[[], bool] | None = None
+    stop_fn: Callable[[], bool] | None = None
     if check_memory and (main_task := asyncio.current_task()):
         signal.signal(signal.SIGTERM, _SignalHandler(main_task))
-        cancel_fn = main_task.cancel
+        stop_fn = main_task.cancel
 
     cfg = config.Cfg()
 
     async with contextlib.AsyncExitStack() as stack:
         http_client = await stack.enter_async_context(http_session.client())
         mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo_db_uri, cfg.mongo_db_db))
+        tg_bot = await stack.enter_async_context(tg.Bot(cfg.telegram_token, cfg.telegram_chat_id))
+        lgr = await stack.enter_async_context(logger.init(tg_bot.send_message))
 
-        lgr = await stack.enter_async_context(
-            logger.init(
-                http_client,
-                cfg.telegram_token,
-                cfg.telegram_chat_id,
-            )
-        )
-
-        msg_bus = bus.build(http_client, mongo_db, cancel_fn)
-        http_server = server.Server(cfg.server_url, msg_bus)
-        bot = tg.Bot(cfg.telegram_token, cfg.telegram_chat_id, mongo_db, msg_bus)
+        msg_bus = bus.build(lgr, http_client, mongo_db, stop_fn)
 
         return await safe.run(
             lgr,
             msg_bus.run(),
-            http_server.run(),
-            bot.run(),
+            server.run(lgr, cfg.server_url, msg_bus),
+            tg_bot.run(lgr, mongo_db, msg_bus),
         )
 
     return 1
