@@ -35,13 +35,13 @@ def start_welcome() -> str:
     ).as_markdown()
 
 
-def not_owner() -> str:
+def not_owner(chat_id: int) -> str:
     return formatting.as_list(
         formatting.Bold("You are not bot owner\n"),
         formatting.as_line(
             "Create your own",
             formatting.TextLink("POptimizer", url="https://github.com/WLM1ke/poptimizer"),
-            "bot",
+            f"bot with chat id {chat_id}",
             sep=" ",
         ),
     ).as_markdown()

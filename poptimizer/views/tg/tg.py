@@ -50,9 +50,8 @@ def dispatcher(
 ) -> tuple[aiogram.Dispatcher, list[BotCommand]]:
     storage = PyMongoStorage(mong_db.client, db_name=mong_db.name, collection_name=_FSM_MONGO_COLLECTION)
     dp = aiogram.Dispatcher(storage=storage)
-    dp.message(
-        aiogram.F.from_user.id != chat_id,
-    )(_not_owner)
+
+    dp.message(aiogram.F.chat.id != chat_id)(_not_owner)
 
     dp.message(CommandStart())(_start_cmd)
     dp.message(Command(_EDIT_CMD))(bus.wrap(_edit_cmd))
@@ -70,7 +69,7 @@ def dispatcher(
 
 
 async def _not_owner(message: Message) -> None:
-    await message.answer(view.not_owner())
+    await message.answer(view.not_owner(message.chat.id))
 
 
 async def _start_cmd(message: Message) -> None:
