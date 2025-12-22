@@ -1,3 +1,4 @@
+# Rename to cfg.yaml and change values if needed
 tg:
   token: ""
   chat_id: 0

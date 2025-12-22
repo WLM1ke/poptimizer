@@ -227,6 +227,8 @@ class EvolutionHandler:
                     return handler.ModelDeleted(day=evolution.day, uid=model.uid)
 
                 evolution.state = evolve.State.EVAL_MODEL
+                if good:
+                    evolution.state = evolve.State.CREATE_NEW_MODEL
             case evolve.State.CREATE_NEW_MODEL:
                 if await self._should_delete(ctx, evolution, model):
                     evolution.state = evolve.State.REEVAL_CURRENT_BASE_MODEL
