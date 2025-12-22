@@ -8,9 +8,11 @@ from contextlib import asynccontextmanager
 from copy import copy
 from typing import Final, Literal, cast
 
+from aiogram import loggers
 from aiogram.exceptions import AiogramError
 
-_TELEGRAM_LOGGER_NAME: Final = "_telegram"
+_TELEGRAM_LOGGER_NAME: Final = "telegram"
+_IGNORE_LOGGER_NAMES: Final = (_TELEGRAM_LOGGER_NAME, loggers.dispatcher.name)
 _TELEGRAM_MAX_RPS: Final = 1
 
 _LOGGER_NAME_SIZE: Final = 11
@@ -29,7 +31,7 @@ class _TelegramHandler(logging.Handler):
         self._lgr = logging.getLogger(name=_TELEGRAM_LOGGER_NAME)
 
     def filter(self, record: logging.LogRecord) -> bool:
-        return record.name != _TELEGRAM_LOGGER_NAME
+        return record.name not in _IGNORE_LOGGER_NAMES
 
     def emit(self, record: logging.LogRecord) -> None:
         self._tg.create_task(self._emit(record.getMessage()))
