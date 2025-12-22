@@ -34,20 +34,24 @@ async def _run(*, check_memory: bool = False) -> int:
         signal.signal(signal.SIGTERM, _SignalHandler(main_task))
         stop_fn = main_task.cancel
 
+    cfg_path = config.migrate_cfg()
     cfg = config.Cfg()
 
     async with contextlib.AsyncExitStack() as stack:
         http_client = await stack.enter_async_context(http_session.client())
-        mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo_db_uri, cfg.mongo_db_db))
-        tg_bot = await stack.enter_async_context(tg.Bot(cfg.telegram_token, cfg.telegram_chat_id))
+        mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo.uri, cfg.mongo.db))
+        tg_bot = await stack.enter_async_context(tg.Bot(cfg.tg.token, cfg.tg.chat_id))
         lgr = await stack.enter_async_context(logger.init(tg_bot.send_message))
+
+        if cfg_path:
+            lgr.warning("Migrated to new config - %s", cfg_path)
 
         msg_bus = bus.build(lgr, http_client, mongo_db, stop_fn)
 
         return await safe.run(
             lgr,
             msg_bus.run(),
-            server.run(lgr, cfg.server_url, msg_bus),
+            server.run(lgr, cfg.server.url, msg_bus),
             tg_bot.run(lgr, mongo_db, msg_bus),
         )
 

@@ -35,3 +35,6 @@ wheels/
 
 # Qwen
 /.qwen
+
+# сап
+/cfg/cfg.yaml

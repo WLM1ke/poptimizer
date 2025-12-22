@@ -1,0 +1,8 @@
+tg:
+  token: ""
+  chat_id: 0
+mongo:
+  uri: "mongodb://localhost:27017"
+  db: "poptimizer"
+server:
+  url: "http://localhost:5000/"
