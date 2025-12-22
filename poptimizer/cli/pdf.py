@@ -40,7 +40,7 @@ async def _run(
     async with contextlib.AsyncExitStack() as stack:
         lgr = await stack.enter_async_context(logger.init())
 
-        mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo_db_uri, cfg.mongo_db_db))
+        mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo.uri, cfg.mongo.db))
         repo = mongo.Repo(mongo_db)
 
         await safe.run(lgr, _report(repo, day, dividends, raw_inflows))
