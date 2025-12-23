@@ -2,7 +2,7 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from poptimizer.adapters import backup, mongo
+from poptimizer.adapters import migrations, mongo
 from poptimizer.controllers.bus import msg
 from poptimizer.use_cases import cpi
 from poptimizer.use_cases.div import div, reestry, status
@@ -27,7 +27,7 @@ def build(
     repo = mongo.Repo(mongo_db)
     bus = msg.Bus(lgr, repo)
 
-    bus.register_event_handler(backup.BackupHandler(repo), msg.IgnoreErrorsPolicy)
+    bus.register_event_handler(migrations.MigrationsHandler(repo), msg.IgnoreErrorsPolicy)
 
     bus.register_event_handler(data.DataHandler(http_client, stop_fn), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(cpi.CPIHandler(http_client), msg.IgnoreErrorsPolicy)

@@ -30,6 +30,9 @@ class Ctx(Protocol):
 class AppStarted(Event): ...
 
 
+class MigrationFinished(Event): ...
+
+
 class NewDataPublished(Event):
     day: domain.Day
 

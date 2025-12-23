@@ -53,7 +53,7 @@ class DataHandler:
     async def __call__(
         self,
         ctx: handler.Ctx,
-        msg: handler.AppStarted | handler.SecFeatUpdated | handler.ForecastsAnalyzed,
+        msg: handler.MigrationFinished | handler.SecFeatUpdated | handler.ForecastsAnalyzed,
     ) -> None:
         if self._stop_fn:
             match (usage := psutil.virtual_memory().percent) > _MEMORY_PERCENTAGE_THRESHOLD:
@@ -64,7 +64,7 @@ class DataHandler:
                     self._lgr.info("Memory usage - %.2f%%", usage)
 
         match msg:
-            case handler.AppStarted() | handler.ForecastsAnalyzed():
+            case handler.MigrationFinished() | handler.ForecastsAnalyzed():
                 ctx.publish(await self._check(ctx))
             case handler.SecFeatUpdated():
                 ctx.publish(await self._update(ctx, msg.day))

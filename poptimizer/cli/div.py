@@ -3,7 +3,7 @@ import contextlib
 import uvloop
 
 from poptimizer import config
-from poptimizer.adapters import backup, logger, mongo
+from poptimizer.adapters import logger, migrations, mongo
 from poptimizer.cli import safe
 
 
@@ -15,9 +15,9 @@ async def _run() -> None:
 
         mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo.uri, cfg.mongo.db))
         repo = mongo.Repo(mongo_db)
-        backup.BackupHandler(repo)
+        migrations.MigrationsHandler(repo)
 
-        await safe.run(lgr, backup.BackupHandler(repo).restore())
+        await safe.run(lgr, migrations.MigrationsHandler(repo).restore())
 
 
 def div() -> None:

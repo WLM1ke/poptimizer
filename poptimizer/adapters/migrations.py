@@ -18,7 +18,7 @@ _DUMP: Final = consts.ROOT / "dump" / "dividends.json"
 _DF_KEY: Final = "df"
 
 
-class BackupHandler:
+class MigrationsHandler:
     def __init__(self, mongo_repo: mongo.Repo) -> None:
         self._lgr = logging.getLogger()
         self._mongo_repo = mongo_repo
@@ -42,6 +42,8 @@ class BackupHandler:
                     await self._backup(all_docs)
                 except PyMongoError as err:
                     raise errors.AdapterError("can't backup raw dividends") from err
+
+        ctx.publish(handler.MigrationFinished())
 
     async def _migrate(self, ctx: handler.Ctx) -> None:
         day = await ctx.get(trading_day.TradingDay)
