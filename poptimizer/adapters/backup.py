@@ -47,7 +47,7 @@ class BackupHandler:
         day = await ctx.get(trading_day.TradingDay)
         current_ver = day.poptimizer_ver
 
-        if current_ver == consts.__version__:
+        if not current_ver or current_ver == consts.__version__:
             return
 
         # 2025-11-23
