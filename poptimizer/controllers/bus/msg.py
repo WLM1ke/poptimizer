@@ -176,8 +176,8 @@ class Bus:
             async with uow.UOW(self._repo) as ctx:
                 await handler(ctx, msg)
 
-                for event in ctx.events():
-                    self.publish(event)
+            for event in ctx.events():
+                self.publish(event)
 
         except* errors.POError as err:
             self._lgr.warning(
@@ -202,9 +202,9 @@ class Bus:
             async with uow.UOW(self._repo) as ctx:
                 resp = await handler(ctx, *args, **kwargs)
 
-                for event in ctx.events():
-                    self.publish(event)
+            for event in ctx.events():
+                self.publish(event)
 
-                return resp
+            return resp
 
         return wrapped
