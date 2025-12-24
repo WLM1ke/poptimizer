@@ -550,7 +550,7 @@ def _prepare_account(
     card = models.Card(
         upper=f"Date: {portfolio.day}",
         main=f"Value: {utils.format_float(value, 0)} ₽",
-        row1=models.Row(label="Share of portfolio", value=f"{view.format_percent(value / portfolio.value())}"),
+        row1=models.Row(label="Share of portfolio", value=f"{view.format_percent(value / (portfolio.value() or 1))}"),
         row2=models.Row(label="Open positions", value=f"{portfolio.open_positions(account)}"),
         row3=models.Row(label="Total positions", value=f"{utils.format_float(len(portfolio.positions), 0)}"),
     )
