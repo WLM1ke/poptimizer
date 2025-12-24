@@ -1,36 +1,24 @@
 import contextlib
-from typing import Annotated
 
-import typer
-import uvloop
+from pydantic import Field
+from pydantic_settings import CliPositionalArg
 
-from poptimizer import config
 from poptimizer.adapters import logger, mongo
-from poptimizer.cli import safe
+from poptimizer.cli import config, safe
 from poptimizer.domain.funds import funds
 from poptimizer.reports.income import report
 
 
-async def _run(investor: funds.Investor, months: int) -> None:
-    cfg = config.Cfg()
-
-    async with contextlib.AsyncExitStack() as stack:
-        mongo_db = await stack.enter_async_context(mongo.db(cfg.mongo.uri, cfg.mongo.db))
-        lgr = await stack.enter_async_context(logger.init())
-        repo = mongo.Repo(mongo_db)
-
-        await safe.run(lgr, report(repo, investor, months))
-
-
-def income(
-    investor: Annotated[
-        str,
-        typer.Argument(help="Investor name", show_default=False),
-    ],
-    months: Annotated[
-        int,
-        typer.Argument(help="Last months to report", show_default=False, min=1),
-    ],
-) -> None:
+class Income(config.Cfg):
     """Print CPI-adjusted income report."""
-    uvloop.run(_run(funds.Investor(investor), months))
+
+    investor: CliPositionalArg[funds.Investor] = Field(description="Investor name")
+    months: CliPositionalArg[int] = Field(ge=1, description="Last months to report")
+
+    async def cli_cmd(self) -> None:
+        async with contextlib.AsyncExitStack() as stack:
+            mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
+            lgr = await stack.enter_async_context(logger.init())
+            repo = mongo.Repo(mongo_db)
+
+            await safe.run(lgr, report(repo, self.investor, self.months))

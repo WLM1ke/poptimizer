@@ -2,7 +2,13 @@ from pathlib import Path
 from typing import Final
 
 from pydantic import BaseModel, HttpUrl, MongoDsn
-from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict, YamlConfigSettingsSource
+from pydantic_settings import (
+    BaseSettings,
+    CliSuppress,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    YamlConfigSettingsSource,
+)
 
 from poptimizer import consts
 
@@ -47,9 +53,9 @@ class Mongo(BaseModel):
 
 
 class Cfg(BaseSettings):
-    tg: Telegram = Telegram()
-    server: Server = Server()
-    mongo: Mongo = Mongo()
+    tg: CliSuppress[Telegram] = Telegram()
+    server: CliSuppress[Server] = Server()
+    mongo: CliSuppress[Mongo] = Mongo()
 
     @classmethod
     def settings_customise_sources(
@@ -69,9 +75,9 @@ class Cfg(BaseSettings):
         )
 
 
-def migrate_cfg() -> str:
+def migrate_cfg() -> None:
     if _CFG_FILE.exists():
-        return ""
+        return
 
     _CFG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
@@ -89,5 +95,3 @@ def migrate_cfg() -> str:
         cfg_file.write(cfg_str)
 
     _ENV_FILE.unlink()
-
-    return str(_CFG_FILE)
