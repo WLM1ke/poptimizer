@@ -9,12 +9,12 @@ _HEADERS: Final = {
     "User-Agent": "POptimizer",
     "Connection": "keep-alive",
 }
-_CERTS: Final = Path(__file__).parent / "certs"
+_CERTS: Final = Path(__file__).parent / "certs" / "all_certs.pem"
 
 
 def client(on_per_host: int = _MAX_ISS_CON) -> aiohttp.ClientSession:
     ctx = ssl.create_default_context()
-    ctx.load_verify_locations(capath=_CERTS)
+    ctx.load_verify_locations(cafile=_CERTS)
     return aiohttp.ClientSession(
         connector=aiohttp.TCPConnector(
             ssl_context=ctx,

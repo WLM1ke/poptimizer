@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Final
 
-from pydantic import BaseModel, HttpUrl, MongoDsn
+from pydantic import BaseModel, Field, HttpUrl, MongoDsn
 from pydantic_settings import (
     BaseSettings,
     CliSuppress,
@@ -52,10 +52,25 @@ class Mongo(BaseModel):
     db: str = "poptimizer"
 
 
+class Account(BaseModel):
+    name: str
+    id: str
+
+
+class Agreement(BaseModel):
+    token: str
+    accounts: list[Account]
+
+
+class Brokers(BaseModel):
+    tinkoff: list[Agreement] = Field(default_factory=list[Agreement])
+
+
 class Cfg(BaseSettings):
     tg: CliSuppress[Telegram] = Telegram()
     server: CliSuppress[Server] = Server()
     mongo: CliSuppress[Mongo] = Mongo()
+    brokers: Brokers = Brokers()
 
     @classmethod
     def settings_customise_sources(

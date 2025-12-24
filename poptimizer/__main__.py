@@ -2,7 +2,7 @@ import sys
 
 from pydantic_settings import BaseSettings, CliApp, CliSubCommand
 
-from poptimizer.cli import app, config, div, income, metrics, pdf, risk, stats
+from poptimizer.cli import app, config, div, income, metrics, pdf, risk, stats, tinkoff
 
 
 class App(
@@ -21,6 +21,7 @@ class App(
     risk: CliSubCommand[risk.Risk]
     pdf: CliSubCommand[pdf.PDF]
     div: CliSubCommand[div.Div]
+    tinkoff: CliSubCommand[tinkoff.Tinkoff]
 
     def cli_cmd(self) -> None:
         CliApp.run_subcommand(self)
