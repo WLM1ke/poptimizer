@@ -6,6 +6,7 @@ from typing import Final, Self
 import aiogram
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramNetworkError
 from aiogram.utils import formatting
 
 from poptimizer.adapters import mongo
@@ -54,16 +55,21 @@ class Bot:
         lgr.info("Starting Telegram bot...")
 
         dp, commands = tg.dispatcher(self._chat_id, mong_db, bus)
-        await self._bot.set_my_commands(commands)
 
-        try:
-            await asyncio.shield(
-                dp.start_polling(  # pyright: ignore[reportUnknownMemberType]
-                    self._bot,
-                    handle_signals=False,
-                    drop_pending_updates=True,
+        while True:
+            try:
+                await self._bot.set_my_commands(commands)
+                await asyncio.shield(
+                    dp.start_polling(  # pyright: ignore[reportUnknownMemberType]
+                        self._bot,
+                        handle_signals=False,
+                        drop_pending_updates=True,
+                    )
                 )
-            )
-        except asyncio.CancelledError:
-            await dp.stop_polling()
-            lgr.info("Telegram bot shutdown finished")
+            except TelegramNetworkError as err:
+                lgr.warning("Telegram failed: %s", err)
+            except asyncio.CancelledError:
+                await dp.stop_polling()
+                lgr.info("Telegram bot shutdown finished")
+
+                return
