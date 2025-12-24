@@ -85,4 +85,7 @@ class Forecast(domain.Entity):
 
                 return breakeven, buy, sell
 
-        return buy[0].grad_lower, buy[:1], []
+        if buy:
+            return buy[0].grad_lower, buy[:1], []
+
+        return 0, [], []

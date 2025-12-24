@@ -33,7 +33,7 @@
                 {{ format_float(main.cash) }}
             </td>
             <td class="table__data-cell">
-                {{ format_percent(main.cash / main.value) }}
+                {{ format_percent(main.cash / (main.value or 1)) }}
             </td>
         </tr>
         {% for pos in main.positions %}
@@ -51,7 +51,7 @@
                 {{ format_float(pos.value, 0) }}
             </td>
             <td class="table__data-cell">
-                {{ format_percent(pos.value / main.value) }}
+                {{ format_percent(pos.value / (main.value or 1)) }}
             </td>
         </tr>
         {% endfor %}
