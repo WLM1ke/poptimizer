@@ -173,12 +173,7 @@ class Bus:
         attempt: int,
     ) -> bool:
         try:
-            async with uow.UOW(self._repo) as ctx:
-                await handler(ctx, msg)
-
-            for event in ctx.events():
-                self.publish(event)
-
+            await self.wrap(handler)(msg)
         except* errors.POError as err:
             self._lgr.warning(
                 "%s can't handle %r in %d attempt: %s",
