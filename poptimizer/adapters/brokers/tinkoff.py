@@ -97,6 +97,9 @@ class Client:
 
             return [acc for acc in acc_resp.accounts if acc.is_active()]
 
+    def updatable_accounts(self) -> list[domain.AccName]:
+        return list(self._accounts)
+
     async def get_positions(self, account_name: domain.AccName) -> Positions | None:
         account = self._accounts.get(account_name)
         if account is None:

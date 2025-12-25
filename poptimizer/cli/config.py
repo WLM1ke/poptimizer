@@ -60,8 +60,8 @@ class Mongo(BaseModel):
 
 class Account(BaseModel):
     token: str = Field(pattern=_ACCOUNT_TOKEN_RE)
-    name: str = Field(pattern=_ACCOUNT_NAME_RE)
-    id: domain.AccName = Field(pattern=_ACCOUNT_ID_RE)
+    name: domain.AccName = Field(pattern=_ACCOUNT_NAME_RE)
+    id: str = Field(pattern=_ACCOUNT_ID_RE)
 
 
 class Brokers(BaseModel):
