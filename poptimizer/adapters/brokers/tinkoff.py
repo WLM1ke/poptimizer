@@ -1,7 +1,9 @@
-from typing import Final, Protocol
+from typing import Final
 
 import aiohttp
 from pydantic import BaseModel
+
+from poptimizer.cli import config
 
 _URL_BASE: Final = "https://invest-public-api.tbank.ru/rest/tinkoff.public.invest.api.contract.v1"
 _GET_ACCOUNTS_URL: Final = f"{_URL_BASE}.UsersService/GetAccounts"
@@ -11,34 +13,23 @@ _ACTIVE_ACCOUNT: Final = "ACCOUNT_STATUS_OPEN"
 _ACCOUNT_TYPES_DESC: Final = {"ACCOUNT_TYPE_TINKOFF", "ACCOUNT_TYPE_TINKOFF_IIS"}
 
 
-class Account(Protocol):
-    name: str
-    id: str
-
-
-class Agreement(Protocol):
-    token: str
-    accounts: list[Account]
-
-
-class _Account(BaseModel):
+class Account(BaseModel):
     id: str
     type: str
     name: str
-    status: str
 
     def is_active(self) -> bool:
-        return self.status == _ACTIVE_ACCOUNT and self.type in _ACCOUNT_TYPES_DESC
+        return self.type in _ACCOUNT_TYPES_DESC
 
 
 class _AccountsResponse(BaseModel):
-    accounts: list[_Account]
+    accounts: list[Account]
 
 
 class Client:
-    def __init__(self, http_session: aiohttp.ClientSession, agreements: list[Agreement]) -> None:
+    def __init__(self, http_session: aiohttp.ClientSession, accounts: list[config.Account]) -> None:
         self._http_session = http_session
-        self._agreements = agreements
+        self._accounts = accounts
 
     def _headers(self, token: str) -> dict[str, str]:
         return {
@@ -51,7 +42,7 @@ class Client:
         async with self._http_session.post(
             _GET_ACCOUNTS_URL,
             headers=self._headers(token),
-            json={"status": "ACCOUNT_STATUS_UNSPECIFIED"},
+            json={"status": _ACTIVE_ACCOUNT},
         ) as resp:
             json = await resp.json()
 

@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Final
 
@@ -23,6 +24,10 @@ mongo:
   uri: "{mongo_db_uri}"
   db: "{mongo_db_db}"
 """
+
+_ACCOUNT_TOKEN_RE: Final = re.compile(r"^[A-Za-z0-9.]+$")
+_ACCOUNT_NAME_RE: Final = re.compile(r"^[A-Za-z0-9]+$")
+_ACCOUNT_ID_RE: Final = re.compile(r"^[0-9]+$")
 
 
 class _Cfg(BaseSettings):
@@ -53,24 +58,20 @@ class Mongo(BaseModel):
 
 
 class Account(BaseModel):
-    name: str
-    id: str
-
-
-class Agreement(BaseModel):
-    token: str
-    accounts: list[Account]
+    token: str = Field(pattern=_ACCOUNT_TOKEN_RE)
+    name: str = Field(pattern=_ACCOUNT_NAME_RE)
+    id: str = Field(pattern=_ACCOUNT_ID_RE)
 
 
 class Brokers(BaseModel):
-    tinkoff: list[Agreement] = Field(default_factory=list[Agreement])
+    tinkoff: list[Account] = Field(default_factory=list[Account])
 
 
 class Cfg(BaseSettings):
     tg: CliSuppress[Telegram] = Telegram()
     server: CliSuppress[Server] = Server()
     mongo: CliSuppress[Mongo] = Mongo()
-    brokers: Brokers = Brokers()
+    brokers: CliSuppress[Brokers] = Brokers()
 
     @classmethod
     def settings_customise_sources(
