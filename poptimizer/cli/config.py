@@ -12,6 +12,7 @@ from pydantic_settings import (
 )
 
 from poptimizer import consts
+from poptimizer.domain import domain
 
 _CFG_FILE: Final = consts.ROOT / "cfg" / "cfg.yaml"
 _ENV_FILE: Final = consts.ROOT / ".env"
@@ -60,7 +61,7 @@ class Mongo(BaseModel):
 class Account(BaseModel):
     token: str = Field(pattern=_ACCOUNT_TOKEN_RE)
     name: str = Field(pattern=_ACCOUNT_NAME_RE)
-    id: str = Field(pattern=_ACCOUNT_ID_RE)
+    id: domain.AccName = Field(pattern=_ACCOUNT_ID_RE)
 
 
 class Brokers(BaseModel):
