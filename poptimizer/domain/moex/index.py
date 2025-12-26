@@ -14,6 +14,7 @@ INDEXES: Final = {
     MCF2TRR: domain.UID("MCFTRR"),
     domain.UID("MEFNTRR"): None,
     domain.UID("MEOGTRR"): None,
+    domain.UID("MESMTRR"): None,
     IMOEX2: domain.UID("IMOEX"),
     RVI: None,
     RUGBITR1Y: None,

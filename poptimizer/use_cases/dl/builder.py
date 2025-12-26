@@ -24,6 +24,7 @@ class NumFeatures(BaseModel):
     mcf2trr: bool
     mefntrr: bool
     meogtrr: bool
+    mesmtrr: bool
     imoex2: bool
     rvi: bool
     rugbitr1y: bool
