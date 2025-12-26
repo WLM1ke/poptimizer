@@ -26,9 +26,9 @@ mongo:
   db: "{mongo_db_db}"
 """
 
-_ACCOUNT_TOKEN_RE: Final = re.compile(r"^[A-Za-z0-9._-]+$")
+_ACCOUNT_TOKEN_RE: Final = re.compile(r"^t[.][A-Za-z0-9._-]{86}$")
 _ACCOUNT_NAME_RE: Final = re.compile(r"^[A-Za-z0-9]+$")
-_ACCOUNT_ID_RE: Final = re.compile(r"^[0-9]+$")
+_ACCOUNT_ID_RE: Final = re.compile(r"^[0-9]{10}$")
 
 
 class _Cfg(BaseSettings):
