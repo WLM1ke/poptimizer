@@ -114,7 +114,7 @@ task run
 
 В программе реализовано автоматическое обновление позиций на счетах в `Tinkoff`. Для этого необходимо:
 
-- Создать [Read-only token](https://developer.tbank.ru/invest/intro/intro/token)
+- Создать [Read-only token](https://developer.tbank.ru/invest/intro/intro/token#получить-токен)
 - Выполнить команду для получения id счетов
 
 ```bash
