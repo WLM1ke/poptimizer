@@ -1,7 +1,8 @@
 import re
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
+import keyring
 from pydantic import BaseModel, Field, HttpUrl, MongoDsn
 from pydantic_settings import (
     BaseSettings,
@@ -14,6 +15,8 @@ from pydantic_settings import (
 from poptimizer import consts
 from poptimizer.domain import domain
 
+_KEYCHAIN_APP: Final = "poptimizer"
+_KEYCHAIN_PREFIX: Final = "keychain:"
 _CFG_FILE: Final = consts.ROOT / "cfg" / "cfg.yaml"
 _ENV_FILE: Final = consts.ROOT / ".env"
 _CFG_TEMPLATE: Final = """tg:
@@ -29,6 +32,30 @@ mongo:
 _ACCOUNT_TOKEN_RE: Final = re.compile(r"^t[.][A-Za-z0-9._-]{86}$")
 _ACCOUNT_NAME_RE: Final = re.compile(r"^[A-Za-z0-9]+$")
 _ACCOUNT_ID_RE: Final = re.compile(r"^[0-9]{10}$")
+
+
+class _KeychainYamlSource(YamlConfigSettingsSource):
+    def _replace_from_keychain(self, data: dict[str, Any] | list[Any] | str) -> Any:
+        match data:
+            case dict():
+                return {k: self._replace_from_keychain(v) for k, v in data.items()}
+            case list():
+                return [self._replace_from_keychain(i) for i in data]
+            case str() if data.startswith(_KEYCHAIN_PREFIX):
+                secret_key = data.replace(_KEYCHAIN_PREFIX, "", 1)
+                secret_value = keyring.get_password(_KEYCHAIN_APP, secret_key)
+
+                if secret_value is None:
+                    return data
+
+                return secret_value
+            case _:
+                return data
+
+    def __call__(self) -> dict[str, Any]:
+        yaml_data = super().__call__()
+
+        return self._replace_from_keychain(yaml_data)
 
 
 class _Cfg(BaseSettings):
@@ -84,11 +111,11 @@ class Cfg(BaseSettings):
         file_secret_settings: PydanticBaseSettingsSource,  # noqa: ARG003
     ) -> tuple[
         PydanticBaseSettingsSource,
-        YamlConfigSettingsSource,
+        _KeychainYamlSource,
     ]:
         return (
             init_settings,
-            YamlConfigSettingsSource(settings_cls, yaml_file=_CFG_FILE, yaml_file_encoding="utf-8"),
+            _KeychainYamlSource(settings_cls, yaml_file=_CFG_FILE, yaml_file_encoding="utf-8"),
         )
 
 
