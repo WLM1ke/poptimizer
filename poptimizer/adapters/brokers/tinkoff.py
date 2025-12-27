@@ -1,13 +1,14 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Annotated, Final, Literal
+from typing import Final
 
 import aiohttp
-from pydantic import BaseModel, BeforeValidator, ValidationError
+from pydantic import BaseModel, ValidationError
 
 from poptimizer import errors
 from poptimizer.cli import config
 from poptimizer.domain import domain
+from poptimizer.use_cases.portfolio import positions
 
 _URL_BASE: Final = "https://invest-public-api.tbank.ru/rest/tinkoff.public.invest.api.contract.v1"
 _GET_ACCOUNTS_URL: Final = f"{_URL_BASE}.UsersService/GetAccounts"
@@ -28,38 +29,6 @@ class Account(BaseModel):
 
 class _AccountsResponse(BaseModel):
     accounts: list[Account]
-
-
-def _str_to_int(v: str | int) -> int:
-    if isinstance(v, str):
-        return int(v)
-
-    return v
-
-
-type Int = Annotated[int, BeforeValidator(_str_to_int)]
-
-
-class Money(BaseModel):
-    currency: Literal["rub"]
-    units: Int
-    nano: int
-
-
-class Position(BaseModel):
-    ticker: str
-    # Бумаг после блокировки под заявки на продажу
-    balance: Int
-    # Бумаг заблокировано под заявки на продажу
-    blocked: Int
-
-
-class Positions(BaseModel):
-    # Денег после блокировки под заявки на покупку
-    money: list[Money]
-    # Денег заблокировано под заявки на покупку
-    blocked: list[Money]
-    securities: list[Position]
 
 
 @asynccontextmanager
@@ -97,13 +66,13 @@ class Client:
 
             return [acc for acc in acc_resp.accounts if acc.is_active()]
 
-    def updatable_accounts(self) -> list[domain.AccName]:
-        return list(self._accounts)
+    def updatable_accounts(self) -> set[domain.AccName]:
+        return set(self._accounts)
 
-    async def get_positions(self, account_name: domain.AccName) -> Positions | None:
+    async def get_positions(self, account_name: domain.AccName) -> positions.Positions:
         account = self._accounts.get(account_name)
         if account is None:
-            return None
+            raise errors.ControllersError(f"Account {account_name} not found")
 
         async with (
             _wrap_err("failed to get positions"),
@@ -115,4 +84,4 @@ class Client:
         ):
             json = await resp.json()
 
-            return Positions.model_validate(json)
+            return positions.Positions.model_validate(json)

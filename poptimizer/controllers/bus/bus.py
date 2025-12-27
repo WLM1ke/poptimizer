@@ -3,6 +3,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from poptimizer.adapters import migrations, mongo
+from poptimizer.adapters.brokers import tinkoff
 from poptimizer.controllers.bus import msg
 from poptimizer.use_cases import cpi
 from poptimizer.use_cases.div import div, reestry, status
@@ -12,7 +13,7 @@ from poptimizer.use_cases.dl.features import quotes as quotes_features
 from poptimizer.use_cases.dl.features import securities as tickers_features
 from poptimizer.use_cases.evolve import evolve
 from poptimizer.use_cases.moex import data, index, quotes, securities, usd
-from poptimizer.use_cases.portfolio import forecasts, portfolio
+from poptimizer.use_cases.portfolio import forecasts, portfolio, positions
 
 if TYPE_CHECKING:
     import aiohttp
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
 def build(
     lgr: logging.Logger,
     http_client: aiohttp.ClientSession,
+    tinkoff_client: tinkoff.Client,
     mongo_db: mongo.MongoDatabase,
     stop_fn: Callable[[], bool] | None,
 ) -> msg.Bus:
@@ -45,5 +47,6 @@ def build(
     bus.register_event_handler(reestry.ReestryHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(evolve.EvolutionHandler(), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(forecasts.ForecastHandler(), msg.IndefiniteRetryPolicy)
+    bus.register_event_handler(positions.PositionsHandler(tinkoff_client), msg.IgnoreErrorsPolicy)
 
     return bus

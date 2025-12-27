@@ -10,6 +10,7 @@ import torch
 import uvloop
 
 from poptimizer.adapters import http_session, logger, mongo
+from poptimizer.adapters.brokers import tinkoff
 from poptimizer.cli import config, safe
 from poptimizer.controllers.bus import bus
 from poptimizer.controllers.server import server
@@ -79,11 +80,12 @@ class Run(config.Cfg):
 
         async with contextlib.AsyncExitStack() as stack:
             http_client = await stack.enter_async_context(http_session.client())
+            tinkoff_client = tinkoff.Client(http_client, self.brokers.tinkoff)
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
             tg_bot = await stack.enter_async_context(tg.Bot(self.tg.token, self.tg.chat_id))
             lgr = await stack.enter_async_context(logger.init(tg_bot.send_message))
 
-            msg_bus = bus.build(lgr, http_client, mongo_db, stop_fn)
+            msg_bus = bus.build(lgr, http_client, tinkoff_client, mongo_db, stop_fn)
 
             return await safe.run(
                 lgr,
