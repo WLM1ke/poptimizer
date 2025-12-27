@@ -124,7 +124,7 @@ class Builder:
         for n in range(1, len(self._cache)):
             embedding = self._cache[n].embedding
             if {feat: desc.size for feat, desc in embedding.items()} != self._embedding_sizes:
-                raise errors.UseCasesError("unequal embeddings sizes")
+                raise errors.UseCasesError(f"unequal embeddings sizes for {tickers[n]}")
 
         first_embedding_seq = self._cache[0].embedding_seq
         self._embedding_seq_sizes = {feat: desc.size for feat, desc in first_embedding_seq.items()}
