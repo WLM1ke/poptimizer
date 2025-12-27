@@ -2,7 +2,7 @@ import sys
 
 from pydantic_settings import BaseSettings, CliApp, CliSubCommand
 
-from poptimizer.cli import app, config, div, income, metrics, pdf, risk, stats, tinkoff
+from poptimizer.cli import app, config, div, income, keychain, metrics, pdf, risk, stats, tinkoff
 
 
 class App(
@@ -14,6 +14,7 @@ class App(
 ):
     """POptimizer - portfolio optimizer for MOEX shares and ETFs."""
 
+    keychain: CliSubCommand[keychain.Keychain]
     run: CliSubCommand[app.Run]
     stats: CliSubCommand[stats.Stats]
     metrics: CliSubCommand[metrics.Metrics]

@@ -15,8 +15,8 @@ from pydantic_settings import (
 from poptimizer import consts
 from poptimizer.domain import domain
 
-_KEYCHAIN_APP: Final = "poptimizer"
-_KEYCHAIN_PREFIX: Final = "keychain:"
+KEYCHAIN_APP: Final = "poptimizer"
+KEYCHAIN_PREFIX: Final = "keychain:"
 _CFG_FILE: Final = consts.ROOT / "cfg" / "cfg.yaml"
 _ENV_FILE: Final = consts.ROOT / ".env"
 _CFG_TEMPLATE: Final = """tg:
@@ -41,9 +41,9 @@ class _KeychainYamlSource(YamlConfigSettingsSource):
                 return {k: self._replace_from_keychain(v) for k, v in data.items()}
             case list():
                 return [self._replace_from_keychain(i) for i in data]
-            case str() if data.startswith(_KEYCHAIN_PREFIX):
-                secret_key = data.replace(_KEYCHAIN_PREFIX, "", 1)
-                secret_value = keyring.get_password(_KEYCHAIN_APP, secret_key)
+            case str() if data.startswith(KEYCHAIN_PREFIX):
+                secret_key = data.replace(KEYCHAIN_PREFIX, "", 1)
+                secret_value = keyring.get_password(KEYCHAIN_APP, secret_key)
 
                 if secret_value is None:
                     return data
