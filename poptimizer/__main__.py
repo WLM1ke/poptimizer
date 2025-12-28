@@ -2,7 +2,7 @@ import sys
 
 from pydantic_settings import BaseSettings, CliApp, CliSubCommand
 
-from poptimizer.cli import app, config, div, income, keychain, metrics, pdf, risk, stats, tinkoff
+from poptimizer.cli import app, div, income, keychain, metrics, pdf, risk, stats, tinkoff
 
 
 class App(
@@ -29,5 +29,4 @@ class App(
 
 
 if __name__ == "__main__":
-    config.migrate_cfg()
     CliApp.run(App, cli_args=sys.argv[1:] or ["-h"])

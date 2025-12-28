@@ -8,7 +8,6 @@ from pydantic_settings import (
     BaseSettings,
     CliSuppress,
     PydanticBaseSettingsSource,
-    SettingsConfigDict,
     YamlConfigSettingsSource,
 )
 
@@ -17,21 +16,17 @@ from poptimizer.domain import domain
 
 KEYCHAIN_APP: Final = "poptimizer"
 KEYCHAIN_PREFIX: Final = "keychain:"
+
 _CFG_FILE: Final = consts.ROOT / "cfg" / "cfg.yaml"
-_ENV_FILE: Final = consts.ROOT / ".env"
-_CFG_TEMPLATE: Final = """tg:
-  token: "{token}"
-  chat_id: {chat_id}
-server:
-  url: "{server_url}"
-mongo:
-  uri: "{mongo_db_uri}"
-  db: "{mongo_db_db}"
-"""
 
 _ACCOUNT_TOKEN_RE: Final = re.compile(r"^t[.][A-Za-z0-9._-]{86}$")
 _ACCOUNT_NAME_RE: Final = re.compile(r"^[A-Za-z0-9]+$")
 _ACCOUNT_ID_RE: Final = re.compile(r"^[0-9]{10}$")
+
+
+def _ensure_config(file: Path) -> None:
+    file.parent.mkdir(parents=True, exist_ok=True)
+    file.touch()
 
 
 def _restrict_permissions_to_600(file: Path) -> None:
@@ -42,6 +37,7 @@ def _restrict_permissions_to_600(file: Path) -> None:
 
 class _KeychainYamlSource(YamlConfigSettingsSource):
     def __init__(self, settings_cls: type[BaseSettings], yaml_file: Path, yaml_file_encoding: str) -> None:
+        _ensure_config(yaml_file)
         _restrict_permissions_to_600(yaml_file)
         super().__init__(settings_cls, yaml_file, yaml_file_encoding)
 
@@ -66,19 +62,6 @@ class _KeychainYamlSource(YamlConfigSettingsSource):
         yaml_data = super().__call__()
 
         return self._replace_from_keychain(yaml_data)
-
-
-class _Cfg(BaseSettings):
-    telegram_token: str = ""
-    telegram_chat_id: int = 0
-    server_url: HttpUrl = HttpUrl("http://localhost:5000")
-    mongo_db_uri: MongoDsn = MongoDsn("mongodb://localhost:27017")
-    mongo_db_db: str = "poptimizer"
-
-    model_config = SettingsConfigDict(
-        env_file=Path(".env"),
-        env_file_encoding="utf-8",
-    )
 
 
 class Telegram(BaseModel):
@@ -127,25 +110,3 @@ class Cfg(BaseSettings):
             init_settings,
             _KeychainYamlSource(settings_cls, yaml_file=_CFG_FILE, yaml_file_encoding="utf-8"),
         )
-
-
-def migrate_cfg() -> None:
-    if _CFG_FILE.exists():
-        return
-
-    _CFG_FILE.parent.mkdir(parents=True, exist_ok=True)
-
-    cfg_v1 = _Cfg()
-
-    cfg_str = _CFG_TEMPLATE.format(
-        token=cfg_v1.telegram_token,
-        chat_id=cfg_v1.telegram_chat_id,
-        server_url=cfg_v1.server_url,
-        mongo_db_uri=cfg_v1.mongo_db_uri,
-        mongo_db_db=cfg_v1.mongo_db_db,
-    )
-
-    with _CFG_FILE.open("w", encoding="utf-8") as cfg_file:
-        cfg_file.write(cfg_str)
-
-    _ENV_FILE.unlink()
