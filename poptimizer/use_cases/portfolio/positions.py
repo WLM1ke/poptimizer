@@ -142,7 +142,7 @@ class PositionsHandler:
             port.update_position(acc_name, ticker, quantity_new)
 
             self._lgr.warning(
-                "Account %s updated with %s: %d -> %d",
+                "%s: %s %d -> %d",
                 acc_name,
                 ticker,
                 quantity_current,
