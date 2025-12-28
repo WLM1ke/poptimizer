@@ -131,7 +131,12 @@ class EvolutionHandler:
                 if model.uid == evolution.base_model_uid:
                     evolution.state = evolve.State.REEVAL_CURRENT_BASE_MODEL
 
+                if model.day < evolution.day:
+                    evolution.state = evolve.State.EVAL_OUTDATE_MODEL
+
                 return model, good
+            case evolve.State.EVAL_OUTDATE_MODEL:
+                raise errors.UseCasesError(f"can't be in {evolution.state} state")
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 return await ctx.get_for_update(evolve.Model, evolution.base_model_uid), True
             case evolve.State.CREATE_NEW_MODEL:
@@ -189,6 +194,8 @@ class EvolutionHandler:
                 ...
             case evolve.State.EVAL_MODEL:
                 ...
+            case evolve.State.EVAL_OUTDATE_MODEL:
+                evolution.state = evolve.State.EVAL_MODEL
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 evolution.state = evolve.State.EVAL_NEW_BASE_MODEL
             case evolve.State.CREATE_NEW_MODEL:
@@ -213,6 +220,13 @@ class EvolutionHandler:
 
                 if good:
                     evolution.state = evolve.State.CREATE_NEW_MODEL
+            case evolve.State.EVAL_OUTDATE_MODEL:
+                if await self._should_delete(ctx, evolution, model):
+                    evolution.state = evolve.State.CREATE_NEW_MODEL
+
+                    return handler.ModelDeleted(day=evolution.day, uid=model.uid)
+
+                evolution.state = evolve.State.EVAL_MODEL
             case evolve.State.CREATE_NEW_MODEL:
                 if await self._should_delete(ctx, evolution, model):
                     evolution.state = evolve.State.REEVAL_CURRENT_BASE_MODEL
