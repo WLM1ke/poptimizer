@@ -6,13 +6,13 @@ mongo:
 server:
   url: "http://localhost:5000/"
 tg:
-  token: ""
-  chat_id: 0
+  token: "keychain:YOUR_TG_TOKEN_KEY"
+  chat_id: YOUR_CHAT_ID
 brokers:
   tinkoff:
-    - token: "YOUR_TOKEN"
+    - token: "keychain:YOUR_TOKEN_KEY"
       name: "Acc1"
       id: "1234"
-    - token: "YOUR_TOKEN2"
+    - token: "keychain:YOUR_TOKEN2_KEY"
       name: "Acc2"
       id: "3456"
