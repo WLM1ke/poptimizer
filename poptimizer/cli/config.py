@@ -34,7 +34,17 @@ _ACCOUNT_NAME_RE: Final = re.compile(r"^[A-Za-z0-9]+$")
 _ACCOUNT_ID_RE: Final = re.compile(r"^[0-9]{10}$")
 
 
+def _restrict_permissions_to_600(file: Path) -> None:
+    current_mode = file.stat().st_mode
+    new_mode = (current_mode & 0o7000) | (current_mode & 0o600)
+    file.chmod(new_mode)
+
+
 class _KeychainYamlSource(YamlConfigSettingsSource):
+    def __init__(self, settings_cls: type[BaseSettings], yaml_file: Path, yaml_file_encoding: str) -> None:
+        _restrict_permissions_to_600(yaml_file)
+        super().__init__(settings_cls, yaml_file, yaml_file_encoding)
+
     def _replace_from_keychain(self, data: dict[str, Any] | list[Any] | str) -> Any:
         match data:
             case dict():
@@ -42,7 +52,7 @@ class _KeychainYamlSource(YamlConfigSettingsSource):
             case list():
                 return [self._replace_from_keychain(i) for i in data]
             case str() if data.startswith(KEYCHAIN_PREFIX):
-                secret_key = data.replace(KEYCHAIN_PREFIX, "", 1)
+                secret_key = data.removeprefix(KEYCHAIN_PREFIX)
                 secret_value = keyring.get_password(KEYCHAIN_APP, secret_key)
 
                 if secret_value is None:
