@@ -97,7 +97,7 @@ class EvolutionHandler:
 
             ctx.publish(handler.ModelDeleted(day=evolution.day, uid=model.uid))
         else:
-            ctx.publish(await self._eval_model(ctx, evolution, model, good=good))
+            ctx.publish(await self._eval_model(ctx, evolution, count, model, good=good))
 
     async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> tuple[evolve.Evolution, int]:
         evolution = await ctx.get_for_update(evolve.Evolution)
@@ -205,6 +205,7 @@ class EvolutionHandler:
         self,
         ctx: Ctx,
         evolution: evolve.Evolution,
+        count: int,
         model: evolve.Model,
         *,
         good: bool,
@@ -236,6 +237,9 @@ class EvolutionHandler:
                 evolution.state = evolve.State.EVAL_MODEL
             case evolve.State.REEVAL_CURRENT_BASE_MODEL:
                 evolution.state = evolve.State.EVAL_MODEL
+
+                if count == 1:
+                    evolution.state = evolve.State.CREATE_NEW_MODEL
 
         evolution.new_base(model)
         self._update_test_days(evolution, model)
