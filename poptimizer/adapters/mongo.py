@@ -46,12 +46,11 @@ class Repo:
         projection = ["_id", "day", "llh_mean", "alfa_mean"]
         docs = [doc async for doc in collection.find({}, projection=projection)]
 
-        key_count = len(projection)
         target: MongoDocument | None = None
         min_day = docs[0]["day"]
 
         for doc in docs:
-            if len(doc) != key_count:
+            if not doc.get("llh_mean") or not doc.get("alfa_mean"):
                 return await self.get(evolve.Model, domain.UID(doc["_id"])), True
 
             if doc["_id"] == uid:
