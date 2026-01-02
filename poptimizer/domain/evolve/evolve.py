@@ -20,7 +20,7 @@ from poptimizer.domain import domain
 from poptimizer.domain.dl import datasets
 from poptimizer.domain.evolve import genetics, genotype
 
-_INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.Days(
+INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.Days(
     history=consts.INITIAL_HISTORY_DAYS_END,
     forecast=consts.INITIAL_FORECAST_DAYS,
     test=consts.INITIAL_TEST_DAYS,
@@ -130,7 +130,7 @@ class Evolution(domain.Entity):
     alfa: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
     llh: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
     test_days: float = Field(default=1, ge=1)
-    minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
+    minimal_returns_days: int = INITIAL_MINIMAL_RETURNS_DAYS
     load_factor: NonNegativeFloat = 0
 
     @model_validator(mode="after")
@@ -140,10 +140,10 @@ class Evolution(domain.Entity):
 
         return self
 
-    def reset(self, uid: domain.UID) -> None:
-        self.base_model_uid = uid
+    def reset(self) -> None:
         self.test_days = 1
-        self.minimal_returns_days = _INITIAL_MINIMAL_RETURNS_DAYS
+        self.minimal_returns_days = INITIAL_MINIMAL_RETURNS_DAYS
+        self.state = State.EVAL_NEW_BASE_MODEL
 
     def init_new_day(
         self,

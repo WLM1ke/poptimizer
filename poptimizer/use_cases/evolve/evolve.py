@@ -102,12 +102,7 @@ class EvolutionHandler:
     async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> tuple[evolve.Evolution, int]:
         evolution = await ctx.get_for_update(evolve.Evolution)
 
-        if (count := await ctx.count_models()) < _PARENT_COUNT:
-            self._lgr.info("Creating start models")
-            uid = _random_uid()
-            await ctx.get_for_update(evolve.Model, uid)
-            evolution.reset(uid)
-            count += 1
+        count = await self._create_model(ctx, evolution)
 
         match evolution.day == msg.day:
             case True:
@@ -121,6 +116,18 @@ class EvolutionHandler:
                 )
 
         return evolution, count
+
+    async def _create_model(self, ctx: Ctx, evolution: evolve.Evolution) -> int:
+        if (count := await ctx.count_models()) >= _PARENT_COUNT:
+            return count
+
+        self._lgr.info("Creating start models")
+        evolution.reset()
+
+        for _ in range(evolve.INITIAL_MINIMAL_RETURNS_DAYS - count):
+            await ctx.get_for_update(evolve.Model, _random_uid())
+
+        return evolve.INITIAL_MINIMAL_RETURNS_DAYS
 
     async def _get_model(self, ctx: Ctx, evolution: evolve.Evolution) -> tuple[evolve.Model, bool]:
         match evolution.state:
