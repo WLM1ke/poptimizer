@@ -6,7 +6,7 @@ import types
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from copy import copy
-from typing import Final, Literal, cast
+from typing import Final, Literal
 
 from aiogram import loggers
 from aiogram.exceptions import AiogramError
@@ -98,10 +98,3 @@ async def init(
 
     async with tg:
         yield logging.getLogger()
-
-
-def get_root_error(exc: Exception) -> Exception:
-    while isinstance(exc, ExceptionGroup):
-        exc = cast("Exception", exc.exceptions[0])
-
-    return exc

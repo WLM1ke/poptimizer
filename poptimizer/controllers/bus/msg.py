@@ -14,7 +14,7 @@ from typing import (
 )
 
 from poptimizer import errors
-from poptimizer.adapters import adapter, logger, mongo
+from poptimizer.adapters import adapter, mongo
 from poptimizer.controllers.bus import uow
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
@@ -180,7 +180,7 @@ class Bus:
                 adapter.get_component_name(handler),
                 msg,
                 attempt,
-                logger.get_root_error(err),
+                adapter.get_root_error(err),
             )
             traceback.print_exception(err, colorize=True)  # type: ignore[reportCallIssue]
         else:
