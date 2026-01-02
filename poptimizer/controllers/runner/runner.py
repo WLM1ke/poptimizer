@@ -64,26 +64,65 @@ class ContextRunner[C]:
         last_delay = _FIRST_RETRY / _BACKOFF_FACTOR
 
         while True:
-            try:
-                async with self._uow_provider() as uow:
-                    output = await handler(uow, *args, **kwargs)
-            except* errors.POError as err:
-                tb.print_exception(err, colorize=True)  # type: ignore[reportCallIssue]
+            match await self._run_safe(handler, *args, **kwargs):
+                case Exception() as err:
+                    last_delay = await _next_delay(last_delay)
+                    self._lgr.warning(
+                        "%s failed: %s - retrying in %s",
+                        adapter.get_component_name(handler),
+                        err,
+                        last_delay,
+                    )
 
-                last_delay = await _next_delay(last_delay)
+                    await asyncio.sleep(last_delay.total_seconds())
+                case _ as output:
+                    self._lgr.info(
+                        "%s handled",
+                        adapter.get_component_name(handler),
+                    )
+
+                    return output
+
+    async def run_safe[**I, O](
+        self,
+        handler: Handler[C, I, O],
+        *args: I.args,
+        **kwargs: I.kwargs,
+    ) -> O | None:
+        match await self._run_safe(handler, *args, **kwargs):
+            case Exception() as err:
                 self._lgr.warning(
-                    "%s failed - retrying in %s",
+                    "%s failed: %s",
                     adapter.get_component_name(handler),
-                    last_delay,
+                    err,
                 )
-                await asyncio.sleep(last_delay.total_seconds())
-            else:
+
+                return None
+            case _ as output:
                 self._lgr.info(
-                    "%s finished",
+                    "%s handled",
                     adapter.get_component_name(handler),
                 )
 
                 return output
+
+    async def _run_safe[**I, O](
+        self,
+        handler: Handler[C, I, O],
+        *args: I.args,
+        **kwargs: I.kwargs,
+    ) -> O | Exception:
+        err_out: Exception = Exception()
+
+        try:
+            async with self._uow_provider() as uow:
+                return await handler(uow, *args, **kwargs)
+        except* errors.POError as err:
+            tb.print_exception(err, colorize=True)  # type: ignore[reportCallIssue]
+
+            err_out = err
+
+        return adapter.get_root_error(err_out)
 
 
 async def _next_delay(delay: timedelta) -> timedelta:
