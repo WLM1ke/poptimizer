@@ -39,7 +39,7 @@ tasks:
       - uv sync --upgrade
       - curl -o poptimizer/views/web/static/js/htmx.min.js https://cdn.jsdelivr.net/npm/htmx.org/dist/htmx.min.js
       - curl -o poptimizer/views/web/static/js/idiomorph.min.js https://cdn.jsdelivr.net/npm/idiomorph/dist/idiomorph-ext.min.js
-      
+
   update_ver:
     desc: Update POptimizer version
     deps: [update_tools]
@@ -59,7 +59,7 @@ tasks:
     desc: Revert POptimizer to version form backup
     cmds:
       - rm -rf $(ls -A | grep -vF -e backup -e .venv -e .git)
-      - cp -r backup/. . 
+      - cp -r backup/. .
 
   run:
     desc: Run POptimizer
