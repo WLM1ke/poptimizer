@@ -186,7 +186,7 @@ class TickerData:
         all_feat_df = pd.DataFrame(num_feat)
 
         self._num_feat = torch.from_numpy(  # type: ignore[reportUnknownMemberType]
-            all_feat_df[num_feat_selected].to_numpy(np.float32),  # type: ignore[reportUnknownMemberType]
+            all_feat_df[num_feat_selected].to_numpy(np.float32).copy(),  # type: ignore[reportUnknownMemberType]
         ).T
 
         self._emb_feat = torch.tensor(emb_feat, dtype=torch.long)
