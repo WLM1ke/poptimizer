@@ -23,6 +23,7 @@ class NumFeatures(BaseModel):
     turnover: bool
     mcf2trr: bool
     mefntrr: bool
+    memmtrr: bool
     meogtrr: bool
     mesmtrr: bool
     imoex2: bool

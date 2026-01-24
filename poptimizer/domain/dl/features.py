@@ -20,6 +20,7 @@ class NumFeat(StrEnum):
     TURNOVER = auto()
     MCF2TRR = auto()
     MEFNTRR = auto()
+    MEMMTRR = auto()
     MEOGTRR = auto()
     MESMTRR = auto()
     IMOEX2 = auto()
