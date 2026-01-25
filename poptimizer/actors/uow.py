@@ -5,11 +5,11 @@ import traceback as tb
 from collections.abc import Iterable, Iterator
 from datetime import timedelta
 from types import TracebackType
-from typing import Final, Self
+from typing import Final, Protocol, Self
 
 from poptimizer import errors
 from poptimizer.actors import actor
-from poptimizer.adapters import adapter, mongo
+from poptimizer.adapters import adapter
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
 
@@ -59,13 +59,26 @@ class _IdentityMap:
         self._seen.pop((entity.__class__, entity.uid), None)
 
 
+class _Repo(Protocol):
+    async def get[E: domain.Entity](
+        self,
+        t_entity: type[E],
+        uid: domain.UID | None = None,
+    ) -> E: ...
+    async def delete(self, entity: domain.Entity) -> None: ...
+    async def count_models(self) -> int: ...
+    async def next_model(self, uid: domain.UID) -> tuple[evolve.Model, bool]: ...
+    async def sample_models(self, n: int) -> list[evolve.Model]: ...
+    async def save(self, entity: domain.Entity) -> None: ...
+
+
 class UOW:
-    def __init__(self, repo: mongo.Repo) -> None:
+    def __init__(self, repo: _Repo) -> None:
         self._lgr = logging.getLogger(__name__)
         self._repo = repo
         self._identity_map = _IdentityMap()
+        self._outbox_current: list[tuple[actor.PID, actor.Message]] = []
         self._outbox: list[tuple[actor.PID, actor.Message]] = []
-        self._sub_outboxes: list[Iterable[tuple[actor.PID, actor.Message]]] = []
         self._running = False
 
     async def run_with_retry[**I, O](self, handler: actor.Handler[I, O], *args: I.args, **kwargs: I.kwargs) -> O:
@@ -73,7 +86,7 @@ class UOW:
             case True:
                 uow = UOW(self._repo)
                 output = await uow.run_with_retry(handler, *args, **kwargs)
-                self._sub_outboxes.append(uow.outbox())
+                self._outbox.extend(uow.outbox())
 
                 return output
             case False:
@@ -92,7 +105,7 @@ class UOW:
             match await self._run_safe(handler, *args, **kwargs):
                 case errors.POError() as err:
                     self._identity_map = _IdentityMap()
-                    self._outbox.clear()
+                    self._outbox_current.clear()
 
                     last_delay = await _next_delay(last_delay)
                     self._lgr.warning(
@@ -140,18 +153,18 @@ class UOW:
             for entity in self._identity_map:
                 tg.create_task(self._repo.save(entity))
 
+        self._outbox.extend(self._outbox_current)
+
         return output
 
     def send(self, pid: actor.PID, msg: actor.Message) -> None:
-        self._outbox.append((pid, msg))
+        self._outbox_current.append((pid, msg))
 
     def outbox(self) -> Iterable[tuple[actor.PID, actor.Message]]:
-        outboxes = [self._outbox, *self._sub_outboxes]
-        self._outbox.clear()
-        self._sub_outboxes.clear()
+        outbox = self._outbox
+        self._outboxes = []
 
-        for outbox in outboxes:
-            yield from outbox
+        yield from outbox
 
     async def get[E: domain.Entity](
         self,
