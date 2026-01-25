@@ -3,7 +3,7 @@ import logging
 import traceback
 from collections.abc import Coroutine
 
-from poptimizer.adapters import adapter
+from poptimizer import errors
 
 
 async def run(
@@ -17,7 +17,7 @@ async def run(
     except asyncio.CancelledError:
         lgr.info("Shutdown finished gracefully")
     except Exception as exc:  # noqa: BLE001
-        lgr.warning("Shutdown abnormally: %s", adapter.get_root_error(exc))
+        lgr.warning("Shutdown abnormally: %s", errors.get_root_error(exc))
         traceback.print_exception(exc, colorize=True)  # type: ignore[reportCallIssue]
 
         return 1

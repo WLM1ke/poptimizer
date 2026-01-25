@@ -42,12 +42,12 @@ class _Ctx(Protocol):
     async def sample_models(self, n: int) -> list[evolve.Model]: ...
 
 
-class _Handler[**I, O](Protocol):
+class Handler[**I, O](Protocol):
     async def __call__(self, ctx: _Ctx, *args: I.args, **kwargs: I.kwargs) -> O: ...
 
 
 class _UOW(Protocol):
-    async def run[**I, O](self, handler: _Handler[I, O], *args: I.args, **kwargs: I.kwargs) -> None: ...
+    async def run_with_retry[**I, O](self, handler: Handler[I, O], *args: I.args, **kwargs: I.kwargs) -> None: ...
     def outbox(self) -> Iterable[tuple[PID, Message]]: ...
 
 
@@ -123,7 +123,7 @@ class System:
         while True:
             uow = self._uow_factory()
 
-            await uow.run(self._run, actor, await inbox.get())
+            await uow.run_with_retry(self._run, actor, await inbox.get())
 
             for pid, out_msg in uow.outbox():
                 self._dispatcher.send(pid, out_msg)

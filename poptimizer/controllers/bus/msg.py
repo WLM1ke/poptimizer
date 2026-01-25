@@ -180,7 +180,7 @@ class Bus:
                 adapter.get_component_name(handler),
                 msg,
                 attempt,
-                adapter.get_root_error(err),
+                errors.get_root_poptimizer_error(err),
             )
             traceback.print_exception(err, colorize=True)  # type: ignore[reportCallIssue]
         else:

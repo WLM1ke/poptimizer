@@ -1,3 +1,5 @@
+from typing import cast
+
 from poptimizer.domain import domain
 
 
@@ -20,3 +22,17 @@ class AdapterError(POError): ...
 
 
 class ControllersError(POError): ...
+
+
+def get_root_poptimizer_error(exc: POError | ExceptionGroup[POError]) -> POError:
+    while not isinstance(exc, POError):
+        exc = exc.exceptions[0]
+
+    return exc
+
+
+def get_root_error(exc: Exception | ExceptionGroup[Exception]) -> Exception:
+    while isinstance(exc, ExceptionGroup):
+        exc = cast("Exception", exc.exceptions[0])
+
+    return exc
