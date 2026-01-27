@@ -73,8 +73,11 @@ class _IdentityMap:
     def delete(self, entity: domain.Entity) -> None:
         self._seen.pop((entity.__class__, entity.uid), None)
 
+    def clear(self) -> None:
+        self._seen.clear()
 
-class _Repo(Protocol):
+
+class Repo(Protocol):
     async def get[E: domain.Entity](
         self,
         t_entity: type[E],
@@ -88,7 +91,7 @@ class _Repo(Protocol):
 
 
 class UOW:
-    def __init__(self, repo: _Repo) -> None:
+    def __init__(self, repo: Repo) -> None:
         self._repo = repo
         self._identity_map = _IdentityMap()
 
@@ -151,18 +154,10 @@ class UOW:
 
         return models
 
-    async def __aenter__(self) -> Self:
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        traceback: TracebackType | None,
-    ) -> None:
-        if exc_value is not None:
-            return
-
+    async def save(self) -> None:
         async with asyncio.TaskGroup() as tg:
             for entity in self._identity_map:
                 tg.create_task(self._repo.save(entity))
+
+    def clear(self) -> None:
+        self._identity_map.clear()

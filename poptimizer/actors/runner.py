@@ -23,7 +23,7 @@ class _Tx[C](Protocol):
     ) -> None: ...
 
 
-class _Handler[C, **I, O](Protocol):
+class Handler[C, **I, O](Protocol):
     async def __call__(self, ctx: C, *args: I.args, **kwargs: I.kwargs) -> O: ...
 
 
@@ -33,7 +33,7 @@ class Runner:
 
     async def run_with_retry[C, **I, O](
         self,
-        handler: _Handler[C, I, O],
+        handler: Handler[C, I, O],
         tx: _Tx[C],
         *args: I.args,
         **kwargs: I.kwargs,
@@ -62,7 +62,7 @@ class Runner:
 
     async def _run_safe[C, **I, O](
         self,
-        handler: _Handler[C, I, O],
+        handler: Handler[C, I, O],
         tx: _Tx[C],
         *args: I.args,
         **kwargs: I.kwargs,
