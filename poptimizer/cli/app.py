@@ -9,8 +9,7 @@ from typing import TYPE_CHECKING, Any
 import torch
 import uvloop
 
-from poptimizer.adapters import http_session, logger, mongo
-from poptimizer.adapters.brokers import tinkoff
+from poptimizer.adapters import http_session, logger, mongo, tinkoff
 from poptimizer.cli import config, safe
 from poptimizer.controllers.bus import bus
 from poptimizer.controllers.server import server

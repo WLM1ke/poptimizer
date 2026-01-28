@@ -4,8 +4,7 @@ import logging
 from pydantic import BaseModel, Field
 from pydantic_settings import CliPositionalArg
 
-from poptimizer.adapters import http_session, logger
-from poptimizer.adapters.brokers import tinkoff
+from poptimizer.adapters import http_session, logger, tinkoff
 from poptimizer.cli import safe
 
 

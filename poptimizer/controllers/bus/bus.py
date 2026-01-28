@@ -2,8 +2,7 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from poptimizer.adapters import migrations, mongo
-from poptimizer.adapters.brokers import tinkoff
+from poptimizer.adapters import migrations, mongo, tinkoff
 from poptimizer.controllers.bus import msg
 from poptimizer.use_cases import cpi
 from poptimizer.use_cases.div import div, reestry, status
