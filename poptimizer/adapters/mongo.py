@@ -10,7 +10,7 @@ from pymongo.asynchronous import collection, database
 from pymongo.errors import PyMongoError
 
 from poptimizer import consts, errors
-from poptimizer.adapters import adapter
+from poptimizer.actors import actors
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
 
@@ -40,7 +40,7 @@ class Repo:
         self._db = mongo_db
 
     async def next_model(self, uid: domain.UID) -> tuple[evolve.Model, bool]:
-        collection_name = adapter.get_component_name(evolve.Model)
+        collection_name = actors.get_component_name(evolve.Model)
         collection = self._db[collection_name]
 
         projection = ["_id", "day", "llh_mean", "alfa_mean"]
@@ -118,7 +118,7 @@ class Repo:
         return await self.get(evolve.Model, domain.UID(selected[0]["_id"])), selected[1]
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
-        collection_name = adapter.get_component_name(evolve.Model)
+        collection_name = actors.get_component_name(evolve.Model)
         collection = self._db[collection_name]
         pipeline = [{"$sample": {"size": n}}]
 
@@ -128,7 +128,7 @@ class Repo:
             raise errors.AdapterError("can't sample organisms") from err
 
     async def count_models(self) -> int:
-        collection_name = adapter.get_component_name(evolve.Model)
+        collection_name = actors.get_component_name(evolve.Model)
         collection = self._db[collection_name]
 
         try:
@@ -141,7 +141,7 @@ class Repo:
         t_entity: type[E],
         uid: domain.UID | None = None,
     ) -> E:
-        collection_name = adapter.get_component_name(t_entity)
+        collection_name = actors.get_component_name(t_entity)
         uid = uid or domain.UID(collection_name)
 
         if (doc := await self._load(collection_name, uid)) is None:
@@ -153,7 +153,7 @@ class Repo:
         self,
         t_entity: type[E],
     ) -> AsyncIterator[E]:
-        collection_name = adapter.get_component_name(t_entity)
+        collection_name = actors.get_component_name(t_entity)
         db = self._db[collection_name]
 
         try:
@@ -196,11 +196,11 @@ class Repo:
         try:
             return t_entity.model_validate(doc)
         except ValidationError as err:
-            collection_name = adapter.get_component_name(t_entity)
+            collection_name = actors.get_component_name(t_entity)
             raise errors.AdapterError(f"can't create entity {collection_name}.{uid} {err}") from err
 
     async def save(self, entity: domain.Entity) -> None:
-        collection_name = adapter.get_component_name(entity)
+        collection_name = actors.get_component_name(entity)
 
         doc = entity.model_dump()
         doc.pop(REV)
@@ -218,7 +218,7 @@ class Repo:
             raise errors.AdapterError(f"wrong version {collection_name}.{entity.uid}")
 
     async def delete(self, entity: domain.Entity) -> None:
-        collection_name = adapter.get_component_name(entity)
+        collection_name = actors.get_component_name(entity)
         collection = self._db[collection_name]
 
         try:
@@ -230,7 +230,7 @@ class Repo:
             raise errors.AdapterError(f"can't delete {collection_name}.{entity.uid}")
 
     async def drop(self, entity_type: type[domain.Entity]) -> None:
-        collection_name = adapter.get_component_name(entity_type)
+        collection_name = actors.get_component_name(entity_type)
         collection = self._db[collection_name]
 
         try:

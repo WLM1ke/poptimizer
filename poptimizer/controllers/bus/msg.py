@@ -14,7 +14,8 @@ from typing import (
 )
 
 from poptimizer import errors
-from poptimizer.adapters import adapter, mongo
+from poptimizer.actors import actors
+from poptimizer.adapters import mongo
 from poptimizer.controllers.bus import uow
 from poptimizer.domain import domain
 from poptimizer.domain.evolve import evolve
@@ -52,7 +53,7 @@ class EventHandler[E: Event](Protocol):
     async def __call__(self, ctx: Ctx, msg: E) -> None: ...
 
 
-def _handler_types(handler: EventHandler[Any]) -> Iterable[adapter.Component]:
+def _handler_types(handler: EventHandler[Any]) -> Iterable[actors.Component]:
     if not (msg_type := get_type_hints(handler.__call__).get("msg")):
         msg_type = get_type_hints(handler)["msg"]
 
@@ -60,7 +61,7 @@ def _handler_types(handler: EventHandler[Any]) -> Iterable[adapter.Component]:
     if not msg_type_union:
         msg_type_union = (msg_type,)
 
-    return (adapter.get_component_name(msg_subtype) for msg_subtype in msg_type_union)
+    return (actors.get_component_name(msg_subtype) for msg_subtype in msg_type_union)
 
 
 class Policy(Protocol):
@@ -108,7 +109,7 @@ class Bus:
         self._lgr = lgr
         self._repo = repo
         self._tg = asyncio.TaskGroup()
-        self._event_handlers: dict[adapter.Component, list[tuple[EventHandler[Any], type[Policy]]]] = defaultdict(list)
+        self._event_handlers: dict[actors.Component, list[tuple[EventHandler[Any], type[Policy]]]] = defaultdict(list)
 
     def register_event_handler(
         self,
@@ -119,9 +120,9 @@ class Bus:
             self._event_handlers[msg_name].append((handler, policy_type))
             self._lgr.info(
                 "%s was registered as event handler for %s with %s",
-                adapter.get_component_name(handler),
+                actors.get_component_name(handler),
                 msg_name,
-                adapter.get_component_name(policy_type),
+                actors.get_component_name(policy_type),
             )
 
     async def run(self) -> None:
@@ -136,7 +137,7 @@ class Bus:
         self._tg.create_task(self._route_event(msg))
 
     async def _route_event(self, msg: Event) -> None:
-        name = adapter.get_component_name(msg)
+        name = actors.get_component_name(msg)
         self._lgr.info("%r published", msg)
 
         handlers = self._event_handlers.get(name)
@@ -162,7 +163,7 @@ class Bus:
 
         self._lgr.info(
             "%s handled %r",
-            adapter.get_component_name(handler),
+            actors.get_component_name(handler),
             msg,
         )
 
@@ -177,7 +178,7 @@ class Bus:
         except* errors.POError as err:
             self._lgr.warning(
                 "%s can't handle %r in %d attempt: %s",
-                adapter.get_component_name(handler),
+                actors.get_component_name(handler),
                 msg,
                 attempt,
                 errors.get_root_poptimizer_error(err),
