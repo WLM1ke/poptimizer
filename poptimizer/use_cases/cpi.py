@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Final, cast
 
 from openpyxl.reader import excel
 
-from poptimizer import errors
+from poptimizer.core import errors
 from poptimizer.domain import cpi
 from poptimizer.use_cases import handler
 

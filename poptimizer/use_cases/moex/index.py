@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Final
 import aiomoex
 from pydantic import TypeAdapter
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 from poptimizer.domain.moex import index
 from poptimizer.use_cases import handler
 

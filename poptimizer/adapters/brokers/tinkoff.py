@@ -5,9 +5,8 @@ from typing import Final
 import aiohttp
 from pydantic import BaseModel, ValidationError
 
-from poptimizer import errors
 from poptimizer.cli import config
-from poptimizer.domain import domain
+from poptimizer.core import domain, errors
 from poptimizer.use_cases.portfolio import positions
 
 _URL_BASE: Final = "https://invest-public-api.tbank.ru/rest/tinkoff.public.invest.api.contract.v1"

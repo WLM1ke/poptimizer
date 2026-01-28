@@ -3,8 +3,7 @@ from typing import Any, NewType, Protocol
 
 from pydantic import BaseModel
 
-from poptimizer.actors import run
-from poptimizer.domain import domain
+from poptimizer.core import domain
 from poptimizer.domain.evolve import evolve
 
 Component = NewType("Component", str)
@@ -29,10 +28,14 @@ class Message(BaseModel): ...
 class State(domain.Entity): ...
 
 
+class Handler[C, **I, O](Protocol):
+    async def __call__(self, ctx: C, *args: I.args, **kwargs: I.kwargs) -> O: ...
+
+
 class SubCtx(Protocol):
     async def run_with_retry[**I, O](
         self,
-        handler: run.Handler[SubCtx, I, O],
+        handler: Handler[SubCtx, I, O],
         *args: I.args,
         **kwargs: I.kwargs,
     ) -> O: ...

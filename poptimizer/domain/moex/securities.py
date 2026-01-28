@@ -3,7 +3,7 @@ from typing import Annotated, Final
 
 from pydantic import AfterValidator, Field, PositiveInt
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 
 _SHARES_BOARD: Final = "TQBR"
 _PREFERRED_TYPE: Final = "2"

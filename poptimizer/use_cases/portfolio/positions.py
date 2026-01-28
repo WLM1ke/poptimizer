@@ -6,7 +6,7 @@ from typing import Annotated, Final, Literal, Protocol
 from pydantic import BaseModel, Field
 from pydantic.functional_validators import BeforeValidator
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 

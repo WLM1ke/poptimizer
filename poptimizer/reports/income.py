@@ -1,8 +1,8 @@
 import logging
 from typing import Final
 
-from poptimizer import errors
 from poptimizer.adapters import mongo
+from poptimizer.core import errors
 from poptimizer.domain import cpi
 from poptimizer.domain.funds import funds
 

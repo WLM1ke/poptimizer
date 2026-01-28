@@ -7,8 +7,8 @@ import aiofiles
 from pydantic import ValidationError
 from pymongo.errors import PyMongoError
 
-from poptimizer import consts, errors
 from poptimizer.adapters import mongo
+from poptimizer.core import consts, errors
 from poptimizer.domain.div import raw
 from poptimizer.domain.moex import trading_day
 from poptimizer.domain.portfolio import forecasts

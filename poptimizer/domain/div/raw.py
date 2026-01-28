@@ -5,8 +5,7 @@ from typing import Annotated
 
 from pydantic import AfterValidator, Field, PositiveFloat
 
-from poptimizer import errors
-from poptimizer.domain import domain
+from poptimizer.core import domain, errors
 
 
 class Row(domain.Row):

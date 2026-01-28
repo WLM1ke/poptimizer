@@ -1,6 +1,6 @@
 import asyncio
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 from poptimizer.domain.dl.features import EmbeddingSeqFeatDesc, EmbSeqFeat, Features
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler

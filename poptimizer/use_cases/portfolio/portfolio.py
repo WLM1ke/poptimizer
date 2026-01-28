@@ -2,7 +2,7 @@ import asyncio
 import logging
 import statistics
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 from poptimizer.domain.evolve import evolve
 from poptimizer.domain.moex import quotes, securities
 from poptimizer.domain.portfolio import portfolio

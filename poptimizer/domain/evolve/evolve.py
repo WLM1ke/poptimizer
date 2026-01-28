@@ -15,8 +15,7 @@ from pydantic import (
 )
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
-from poptimizer import consts
-from poptimizer.domain import domain
+from poptimizer.core import consts, domain
 from poptimizer.domain.dl import datasets
 from poptimizer.domain.evolve import genetics, genotype
 

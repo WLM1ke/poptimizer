@@ -3,7 +3,7 @@ from typing import Annotated
 
 from pydantic import AfterValidator, Field
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 from poptimizer.domain.div import raw
 
 

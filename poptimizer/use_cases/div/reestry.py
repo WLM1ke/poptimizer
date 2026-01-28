@@ -8,8 +8,7 @@ from typing import TYPE_CHECKING, Final
 
 from lxml import html
 
-from poptimizer import errors
-from poptimizer.domain import domain
+from poptimizer.core import domain, errors
 from poptimizer.domain.div import raw, reestry, status
 from poptimizer.domain.moex import quotes, usd
 from poptimizer.use_cases import handler

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Self
 
 from pydantic import BaseModel, Field, FiniteFloat, NonNegativeInt, field_validator, model_validator
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 
 if TYPE_CHECKING:
     import pandas as pd

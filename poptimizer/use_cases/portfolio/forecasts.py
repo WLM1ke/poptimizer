@@ -7,7 +7,7 @@ from numpy import random
 from numpy.typing import NDArray
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
-from poptimizer import consts
+from poptimizer.core import consts
 from poptimizer.domain.evolve import evolve
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler

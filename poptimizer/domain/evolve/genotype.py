@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import PlainSerializer
 
-from poptimizer import consts
+from poptimizer.core import consts
 from poptimizer.domain.evolve import genetics
 
 

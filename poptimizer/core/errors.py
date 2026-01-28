@@ -1,6 +1,6 @@
 from typing import cast
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 
 
 class POError(Exception): ...

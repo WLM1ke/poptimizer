@@ -8,8 +8,7 @@ import aiomoex
 import psutil
 from pydantic import BaseModel, Field
 
-from poptimizer import consts
-from poptimizer.domain import domain
+from poptimizer.core import consts, domain
 from poptimizer.domain.moex import index, trading_day
 from poptimizer.use_cases import handler
 

@@ -2,7 +2,7 @@ import torch
 from pydantic import BaseModel
 from torch.distributions import Categorical, MixtureSameFamily
 
-from poptimizer import errors
+from poptimizer.core import errors
 
 
 class Cfg(BaseModel):

@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from poptimizer import errors
+from poptimizer.core import errors
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray

@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from poptimizer import consts, errors
-from poptimizer.domain import domain
+from poptimizer.core import consts, domain, errors
 from poptimizer.domain.dl import datasets, features
 
 if TYPE_CHECKING:

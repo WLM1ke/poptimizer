@@ -3,7 +3,8 @@ import logging
 from types import TracebackType
 from typing import Self, get_args, get_type_hints
 
-from poptimizer.actors import actors, run, tx, uow
+from poptimizer.actors import run, tx, uow
+from poptimizer.core import actors
 
 
 class _Dispatcher:

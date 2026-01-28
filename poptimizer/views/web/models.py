@@ -5,8 +5,8 @@ from typing import Self
 from aiohttp import web
 from pydantic import BaseModel, Field
 
-from poptimizer.domain import domain
-from poptimizer.domain.domain import AccName, Ticker
+from poptimizer.core import domain
+from poptimizer.core.domain import AccName, Ticker
 from poptimizer.domain.portfolio import forecasts
 
 

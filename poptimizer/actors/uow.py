@@ -3,9 +3,7 @@ from collections.abc import Iterator
 from types import TracebackType
 from typing import Protocol, Self
 
-from poptimizer import errors
-from poptimizer.actors import actors
-from poptimizer.domain import domain
+from poptimizer.core import actors, domain, errors
 from poptimizer.domain.evolve import evolve
 
 

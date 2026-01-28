@@ -5,7 +5,7 @@ from typing import Annotated, Final, NewType, Protocol
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, PlainSerializer
 
-from poptimizer import consts
+from poptimizer.core import consts
 
 UID = NewType("UID", str)
 Version = NewType("Version", int)

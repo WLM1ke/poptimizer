@@ -1,6 +1,6 @@
 import asyncio
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 from poptimizer.domain.dl.features import EmbeddingFeatDesc, EmbFeat, Features
 from poptimizer.domain.moex import securities
 from poptimizer.domain.portfolio import portfolio

@@ -2,7 +2,7 @@ from typing import Annotated, NewType, Self
 
 from pydantic import AfterValidator, BaseModel, Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 
 Investor = NewType("Investor", str)
 

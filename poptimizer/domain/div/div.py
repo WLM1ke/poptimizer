@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import AfterValidator, Field, PositiveFloat
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 
 
 class Row(domain.Row):

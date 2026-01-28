@@ -2,7 +2,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State
 from pydantic import BaseModel, Field
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 
 
 class Edit(BaseModel):

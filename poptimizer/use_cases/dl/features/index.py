@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 from poptimizer.domain.dl import features
 from poptimizer.domain.moex import index
 from poptimizer.domain.portfolio import portfolio

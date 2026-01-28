@@ -1,8 +1,8 @@
 from collections.abc import Callable
 from types import TracebackType
 
-from poptimizer.actors import actors, run, uow
-from poptimizer.domain import domain
+from poptimizer.actors import run, uow
+from poptimizer.core import actors, domain
 from poptimizer.domain.evolve import evolve
 
 
@@ -46,7 +46,7 @@ class Tx:
 
     async def run_with_retry[**I, O](
         self,
-        handler: run.Handler[actors.SubCtx, I, O],
+        handler: actors.Handler[actors.SubCtx, I, O],
         *args: I.args,
         **kwargs: I.kwargs,
     ) -> O:

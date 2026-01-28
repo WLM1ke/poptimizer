@@ -6,8 +6,7 @@ from datetime import timedelta
 from types import TracebackType
 from typing import Final, Protocol
 
-from poptimizer import errors
-from poptimizer.actors import actors
+from poptimizer.core import actors, errors
 
 _LOGGER: Final = logging.getLogger(__name__)
 _FIRST_RETRY: Final = timedelta(seconds=30)
@@ -24,12 +23,8 @@ class _Tx[C](Protocol):
     ) -> None: ...
 
 
-class Handler[C, **I, O](Protocol):
-    async def __call__(self, ctx: C, *args: I.args, **kwargs: I.kwargs) -> O: ...
-
-
 async def with_retry[C, **I, O](
-    handler: Handler[C, I, O],
+    handler: actors.Handler[C, I, O],
     tx: _Tx[C],
     *args: I.args,
     **kwargs: I.kwargs,
@@ -58,7 +53,7 @@ async def with_retry[C, **I, O](
 
 
 async def _run_safe[C, **I, O](
-    handler: Handler[C, I, O],
+    handler: actors.Handler[C, I, O],
     tx: _Tx[C],
     *args: I.args,
     **kwargs: I.kwargs,

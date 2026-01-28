@@ -3,7 +3,7 @@ import logging
 import traceback
 from collections.abc import Coroutine
 
-from poptimizer import errors
+from poptimizer.core import errors
 
 
 async def run(

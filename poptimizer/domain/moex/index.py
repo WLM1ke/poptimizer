@@ -3,8 +3,7 @@ from typing import Annotated, Final
 
 from pydantic import AfterValidator, Field
 
-from poptimizer import errors
-from poptimizer.domain import domain
+from poptimizer.core import domain, errors
 
 RVI: Final = domain.UID("RVI")
 IMOEX2: Final = domain.UID("IMOEX2")

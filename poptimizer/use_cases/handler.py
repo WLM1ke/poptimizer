@@ -5,8 +5,7 @@ from typing import Protocol
 import aiohttp
 from pydantic import BaseModel, Field, ValidationError, computed_field
 
-from poptimizer import errors
-from poptimizer.domain import domain
+from poptimizer.core import domain, errors
 
 
 class Event(BaseModel): ...

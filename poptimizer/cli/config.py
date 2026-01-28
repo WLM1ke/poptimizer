@@ -11,8 +11,7 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
 )
 
-from poptimizer import consts
-from poptimizer.domain import domain
+from poptimizer.core import consts, domain
 
 KEYCHAIN_APP: Final = "poptimizer"
 KEYCHAIN_PREFIX: Final = "keychain:"

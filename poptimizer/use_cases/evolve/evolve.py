@@ -5,8 +5,7 @@ from typing import Final, Protocol, Self
 import bson
 from pydantic import BaseModel, FiniteFloat, PositiveInt
 
-from poptimizer import consts, errors
-from poptimizer.domain import domain
+from poptimizer.core import consts, domain, errors
 from poptimizer.domain.evolve import evolve
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler

@@ -14,8 +14,7 @@ from pydantic import (
     model_validator,
 )
 
-from poptimizer import consts, errors
-from poptimizer.domain import domain
+from poptimizer.core import consts, domain, errors
 
 type AccountData = dict[domain.AccName, NonNegativeInt]
 

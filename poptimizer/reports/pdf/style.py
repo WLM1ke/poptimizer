@@ -6,7 +6,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
 
-from poptimizer.domain import domain
+from poptimizer.core import domain
 
 if TYPE_CHECKING:
     from reportlab.pdfgen.canvas import Canvas

@@ -6,8 +6,7 @@ from collections.abc import AsyncIterator, Iterable
 from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Final, TextIO
 
-from poptimizer import errors
-from poptimizer.domain import domain
+from poptimizer.core import domain, errors
 from poptimizer.domain.div import raw, status
 from poptimizer.domain.moex import securities
 from poptimizer.domain.portfolio import portfolio

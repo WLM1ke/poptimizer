@@ -13,11 +13,9 @@ from typing import (
     get_type_hints,
 )
 
-from poptimizer import errors
-from poptimizer.actors import actors
 from poptimizer.adapters import mongo
 from poptimizer.controllers.bus import uow
-from poptimizer.domain import domain
+from poptimizer.core import actors, domain, errors
 from poptimizer.domain.evolve import evolve
 from poptimizer.use_cases.handler import AppStarted, Event
 

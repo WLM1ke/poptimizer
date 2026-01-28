@@ -7,8 +7,7 @@ from typing import Final
 import numpy as np
 import pandas as pd
 
-from poptimizer import consts
-from poptimizer.domain import domain
+from poptimizer.core import consts, domain
 from poptimizer.domain.div import div
 from poptimizer.domain.dl.features import Features, NumFeat
 from poptimizer.domain.moex import quotes

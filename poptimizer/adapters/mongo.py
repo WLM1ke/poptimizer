@@ -9,9 +9,7 @@ from pydantic import MongoDsn, ValidationError
 from pymongo.asynchronous import collection, database
 from pymongo.errors import PyMongoError
 
-from poptimizer import consts, errors
-from poptimizer.actors import actors
-from poptimizer.domain import domain
+from poptimizer.core import actors, consts, domain, errors
 from poptimizer.domain.evolve import evolve
 
 _MONGO_ID: Final = "_id"

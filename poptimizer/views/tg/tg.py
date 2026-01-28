@@ -15,10 +15,9 @@ from aiogram.types import (
     Message,
 )
 
-from poptimizer import errors
 from poptimizer.adapters import mongo
 from poptimizer.controllers.bus import msg
-from poptimizer.domain import domain
+from poptimizer.core import domain, errors
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
 from poptimizer.views.tg import model, view

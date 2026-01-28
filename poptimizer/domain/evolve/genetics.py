@@ -6,7 +6,7 @@ from typing import Any, Self
 
 from pydantic import AfterValidator, BaseModel, Field, PlainSerializer
 
-from poptimizer import errors
+from poptimizer.core import errors
 
 type Genes = dict[str, float | Genes]
 type Phenotype = dict[str, Any]

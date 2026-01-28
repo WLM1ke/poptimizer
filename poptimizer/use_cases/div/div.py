@@ -2,8 +2,7 @@ import asyncio
 from collections.abc import Iterator
 from datetime import date
 
-from poptimizer import consts
-from poptimizer.domain import domain
+from poptimizer.core import consts, domain
 from poptimizer.domain.div import div, raw
 from poptimizer.domain.moex import securities
 from poptimizer.use_cases import handler

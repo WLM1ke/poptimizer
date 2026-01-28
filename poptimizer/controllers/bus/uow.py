@@ -3,10 +3,8 @@ from collections.abc import Iterable, Iterator
 from types import TracebackType
 from typing import Self
 
-from poptimizer import errors
-from poptimizer.actors import actors
 from poptimizer.adapters import mongo
-from poptimizer.domain import domain
+from poptimizer.core import actors, domain, errors
 from poptimizer.domain.evolve import evolve
 from poptimizer.use_cases.handler import Event
 

@@ -10,7 +10,7 @@ import tqdm
 from pydantic import BaseModel
 from torch import optim
 
-from poptimizer import consts, errors
+from poptimizer.core import consts, errors
 from poptimizer.domain.dl import data_loaders, datasets, ledoit_wolf, risk
 from poptimizer.domain.dl.wave_net import backbone, wave_net
 from poptimizer.domain.evolve import evolve

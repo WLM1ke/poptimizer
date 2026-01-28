@@ -8,11 +8,11 @@ import torch
 from pydantic import BaseModel, FiniteFloat
 from torch.utils import data
 
-from poptimizer import errors
+from poptimizer.core import errors
 from poptimizer.domain.dl import features
 
 if TYPE_CHECKING:
-    from poptimizer.domain import domain
+    from poptimizer.core import domain
 
 
 class Days(BaseModel):
