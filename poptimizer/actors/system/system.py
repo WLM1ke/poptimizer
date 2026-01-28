@@ -3,7 +3,7 @@ import logging
 from types import TracebackType
 from typing import Self, get_args, get_type_hints
 
-from poptimizer.actors import run, tx, uow
+from poptimizer.actors.system import run, tx, uow
 from poptimizer.core import actors
 
 
