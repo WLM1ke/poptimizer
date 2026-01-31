@@ -63,7 +63,7 @@ class _ColorFormatter(logging.Formatter):
 
     def __init__(
         self,
-        fmt: str = "{asctime} {levelname} {message}",
+        fmt: str = "{asctime} {levelname} {name}: {message}",
         datefmt: str = "%Y-%m-%d %H:%M:%S",
         style: Literal["%", "{", "$"] = "{",
     ) -> None:
@@ -72,7 +72,6 @@ class _ColorFormatter(logging.Formatter):
     def formatMessage(self, record: logging.LogRecord) -> str:  # noqa: N802
         record = copy(record)
         record.levelname = self.levels[record.levelno]
-        record.name = f"{record.name}:".ljust(_LOGGER_NAME_SIZE)
 
         return super().formatMessage(record)
 
@@ -97,4 +96,4 @@ async def init(
     logging.getLogger("pymongo").setLevel(logging.CRITICAL)
 
     async with tg:
-        yield logging.getLogger()
+        yield logging.getLogger("App")

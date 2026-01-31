@@ -4,7 +4,7 @@ from typing import Final
 
 __version__ = "3.7.0"
 
-ROOT: Final = Path(__file__).parents[1]
+ROOT: Final = Path(__file__).parents[2]
 
 # Дата, с которой собираются дивиденды
 START_DAY: Final = date(2017, 1, 1)

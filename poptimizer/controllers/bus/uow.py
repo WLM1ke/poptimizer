@@ -4,7 +4,7 @@ from types import TracebackType
 from typing import Self
 
 from poptimizer.adapters import mongo
-from poptimizer.core import actors, domain, errors
+from poptimizer.core import domain, errors
 from poptimizer.domain.evolve import evolve
 from poptimizer.use_cases.handler import Event
 
@@ -68,7 +68,7 @@ class UOW:
         t_entity: type[E],
         uid: domain.UID | None = None,
     ) -> E:
-        uid = uid or domain.UID(actors.get_component_name(t_entity))
+        uid = uid or domain.UID(t_entity.__name__)
         async with self._identity_map as identity_map:
             return identity_map.get(t_entity, uid) or await self._repo.get(t_entity, uid)
 
@@ -77,7 +77,7 @@ class UOW:
         t_entity: type[E],
         uid: domain.UID | None = None,
     ) -> E:
-        uid = uid or domain.UID(actors.get_component_name(t_entity))
+        uid = uid or domain.UID(t_entity.__name__)
         async with self._identity_map as identity_map:
             if loaded := identity_map.get(t_entity, uid):
                 return loaded

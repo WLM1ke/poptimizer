@@ -1,9 +1,9 @@
 import asyncio
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from types import TracebackType
 from typing import Protocol, Self
 
-from poptimizer.core import actors, domain, errors
+from poptimizer.core import domain, errors
 from poptimizer.domain.evolve import evolve
 
 
@@ -86,6 +86,8 @@ class Repo(Protocol):
     async def next_model(self, uid: domain.UID) -> tuple[evolve.Model, bool]: ...
     async def sample_models(self, n: int) -> list[evolve.Model]: ...
     async def save(self, entity: domain.Entity) -> None: ...
+    def get_all[E: domain.Entity](self, t_entity: type[E]) -> AsyncIterator[E]: ...
+    async def drop(self, entity_type: type[domain.Entity]) -> None: ...
 
 
 class UOW:
@@ -98,7 +100,7 @@ class UOW:
         t_entity: type[E],
         uid: domain.UID | None = None,
     ) -> E:
-        uid = uid or domain.UID(actors.get_component_name(t_entity))
+        uid = uid or domain.UID(t_entity.__name__)
 
         async with self._identity_map as identity_map:
             if loaded := identity_map.get(t_entity, uid):
@@ -114,7 +116,7 @@ class UOW:
         t_entity: type[E],
         uid: domain.UID | None = None,
     ) -> E:
-        uid = uid or domain.UID(actors.get_component_name(t_entity))
+        uid = uid or domain.UID(t_entity.__name__)
 
         async with self._identity_map as identity_map:
             if loaded := identity_map.get_for_update(t_entity, uid):
@@ -151,6 +153,15 @@ class UOW:
                     identity_map.save(model)
 
         return models
+
+    def get_all[E: domain.Entity](
+        self,
+        t_entity: type[E],
+    ) -> AsyncIterator[E]:
+        return self._repo.get_all(t_entity)
+
+    async def drop(self, entity_type: type[domain.Entity]) -> None:
+        await self._repo.drop(entity_type)
 
     async def save(self) -> None:
         async with asyncio.TaskGroup() as tg:

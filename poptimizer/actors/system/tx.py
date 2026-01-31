@@ -1,24 +1,32 @@
-from collections.abc import Callable
+import logging
+from collections.abc import AsyncIterator
 from types import TracebackType
+from typing import Protocol
 
 from poptimizer.actors.system import run, uow
 from poptimizer.core import actors, domain
 from poptimizer.domain.evolve import evolve
 
 
+class _Sender(Protocol):
+    def send(self, msg: actors.Message, aid: actors.AID) -> None: ...
+
+
 class Tx:
     def __init__(
         self,
+        lgr: logging.Logger,
         repo: uow.Repo,
-        sender: Callable[[actors.PID, actors.Message], None],
-        pid: actors.PID,
+        sender: _Sender,
+        aid: actors.AID,
     ) -> None:
+        self._lgr = lgr
         self._repo = repo
         self._sender = sender
-        self._pid = pid
+        self._aid = aid
 
         self._uow = uow.UOW(repo)
-        self._msgs: list[tuple[actors.PID, actors.Message]] = []
+        self._msgs: list[tuple[actors.Message, actors.AID]] = []
 
     async def __aenter__(self) -> actors.Ctx:
         self._uow.clear()
@@ -35,24 +43,21 @@ class Tx:
         if exc_type is None:
             await self._uow.save()
 
-            for pid, msg in self._msgs:
-                self._sender(pid, msg)
+            for msg, aid in self._msgs:
+                self._sender.send(msg, aid)
 
-    def send(self, pid: actors.PID, msg: actors.Message) -> None:
-        self._msgs.append((pid, msg))
-
-    def send_self(self, msg: actors.Message) -> None:
-        self._msgs.append((self._pid, msg))
+    def send(self, msg: actors.Message, aid: actors.AID | None = None) -> None:
+        self._msgs.append((msg, aid or self._aid))
 
     async def run_with_retry[**I, O](
         self,
-        handler: actors.Handler[actors.SubCtx, I, O],
+        handler: actors.Handler[actors.CoreCtx, I, O],
         *args: I.args,
         **kwargs: I.kwargs,
     ) -> O:
-        tx = Tx(self._repo, self._sender, self._pid)
+        tx = Tx(self._lgr, self._repo, self._sender, self._aid)
 
-        return await run.with_retry(handler, tx, *args, **kwargs)
+        return await run.with_retry(self._lgr, handler, tx, *args, **kwargs)
 
     async def get[E: domain.Entity](
         self,
@@ -79,3 +84,12 @@ class Tx:
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         return await self._uow.sample_models(n)
+
+    def get_all[E: domain.Entity](
+        self,
+        t_entity: type[E],
+    ) -> AsyncIterator[E]:
+        return self._uow.get_all(t_entity)
+
+    async def drop(self, entity_type: type[domain.Entity]) -> None:
+        await self._uow.drop(entity_type)

@@ -4,19 +4,17 @@ import multiprocessing as mp
 import signal
 import sys
 from types import FrameType
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import torch
 import uvloop
 
-from poptimizer.adapters import http_session, logger, mongo, tinkoff
-from poptimizer.cli import config, safe
-from poptimizer.controllers.bus import bus
-from poptimizer.controllers.server import server
+from poptimizer.actors import migrations
+from poptimizer.actors.system import system
+from poptimizer.adapters import logger, mongo
+from poptimizer.cli import config
 from poptimizer.controllers.tg import tg
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
+from poptimizer.core import consts, message
 
 
 class _SignalHandler:
@@ -72,25 +70,24 @@ class Run(config.Cfg):
             sys.exit(runner.run(self._run(check_memory=True)))
 
     async def _run(self, *, check_memory: bool = False) -> int:
-        stop_fn: Callable[[], bool] | None = None
         if check_memory and (main_task := asyncio.current_task()):
             signal.signal(signal.SIGTERM, _SignalHandler(main_task))
-            stop_fn = main_task.cancel
 
         async with contextlib.AsyncExitStack() as stack:
-            http_client = await stack.enter_async_context(http_session.client())
-            tinkoff_client = tinkoff.Client(http_client, self.brokers.tinkoff)
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
             tg_bot = await stack.enter_async_context(tg.Bot(self.tg.token, self.tg.chat_id))
-            lgr = await stack.enter_async_context(logger.init(tg_bot.send_message))
+            await stack.enter_async_context(logger.init(tg_bot.send_message))
 
-            msg_bus = bus.build(lgr, http_client, tinkoff_client, mongo_db, stop_fn)
+            repo = mongo.Repo(mongo_db)
+            actor_system = await stack.enter_async_context(system.System(repo))
+            aid = await actor_system.start(migrations.MigrationActor())
 
-            return await safe.run(
-                lgr,
-                msg_bus.run(),
-                server.run(lgr, self.server.url, msg_bus),
-                tg_bot.run(lgr, mongo_db, msg_bus),
+            actor_system.send(
+                message.AppStarted(
+                    version=consts.__version__,
+                    next_aid=aid,
+                ),
+                aid,
             )
 
         return 1

@@ -10,33 +10,32 @@ from poptimizer.core import actors
 class _Dispatcher:
     def __init__(self) -> None:
         self._lgr = logging.getLogger()
-        self._last_pid = 0
-        self._inboxes = dict[actors.PID, asyncio.Queue[actors.Message]()]()
+        self._last_aid = 0
+        self._inboxes = dict[actors.AID, asyncio.Queue[actors.Message]()]()
 
     def new_inbox[S: actors.State, M: actors.Message](
         self,
         actor: actors.Actor[S, M],
-    ) -> tuple[actors.PID, asyncio.Queue[actors.Message]]:
-        self._last_pid += 1
-        name = actors.get_component_name(actor)
+    ) -> tuple[actors.AID, asyncio.Queue[actors.Message]]:
+        self._last_aid += 1
+        name = actor.__class__.__name__
 
         inbox = asyncio.Queue[actors.Message]()
-        pid = actors.PID(f"{name}-{self._last_pid}")
-        self._inboxes[pid] = inbox
+        aid = actors.AID(f"{name}-{self._last_aid}")
+        self._inboxes[aid] = inbox
 
-        return pid, inbox
+        return aid, inbox
 
-    def send(self, pid: actors.PID, msg: actors.Message) -> None:
-        match inbox := self._inboxes.get(pid):
+    def send(self, msg: actors.Message, aid: actors.AID) -> None:
+        match inbox := self._inboxes.get(aid):
             case asyncio.Queue():
                 inbox.put_nowait(msg)
             case None:
-                self._lgr.warning("Unknown inbox %d", pid)
+                self._lgr.warning("Unknown inbox %d", aid)
 
 
 class System:
     def __init__(self, repo: uow.Repo) -> None:
-        self._lgr = logging.getLogger()
         self._repo = repo
         self._dispatcher = _Dispatcher()
         self._tg = asyncio.TaskGroup()
@@ -54,47 +53,63 @@ class System:
     ) -> None:
         return await self._tg.__aexit__(exc_type, exc_value, traceback)
 
-    async def run[S: actors.State, M: actors.Message](self, actor: actors.Actor[S, M]) -> actors.PID:
-        pid, inbox = self._dispatcher.new_inbox(actor)
+    async def start[S: actors.State, M: actors.Message](self, actor: actors.Actor[S, M]) -> actors.AID:
+        aid, inbox = self._dispatcher.new_inbox(actor)
 
-        self._tg.create_task(self._loop(actor, pid, inbox))
+        self._tg.create_task(self._loop(actor, aid, inbox))
 
-        return pid
+        return aid
+
+    def send(self, msg: actors.Message, aid: actors.AID) -> None:
+        self._dispatcher.send(msg, aid)
 
     async def _loop[S: actors.State, M: actors.Message](
         self,
         actor: actors.Actor[S, M],
-        pid: actors.PID,
+        aid: actors.AID,
         inbox: asyncio.Queue[actors.Message],
     ) -> None:
+        lgr = logging.getLogger(actor.__class__.__name__)
+
         while True:
-            await run.with_retry(
-                self._run,
-                tx.Tx(self._repo, self._dispatcher.send, pid),
-                actor,
-                pid,
-                await inbox.get(),
+            msg = await inbox.get()
+            state_type, msg_type = _actor_types(actor)
+
+            if not isinstance(msg, msg_type):
+                lgr.warning(
+                    "skipping %r",
+                    msg,
+                )
+
+                continue
+
+            lgr.info(
+                "handling %r",
+                msg,
             )
 
-    async def _run[S: actors.State, M: actors.Message](
-        self,
-        ctx: actors.Ctx,
-        actor: actors.Actor[S, M],
-        pid: actors.PID,
-        msg: actors.Message,
-    ) -> None:
-        state_type, msg_type = _actor_types(actor)
-        if not isinstance(msg, msg_type):
-            self._lgr.warning("Unknown inbox message %s for actor %s", msg, pid)
+            await run.with_retry(
+                lgr,
+                _run,
+                tx.Tx(lgr, self._repo, self._dispatcher, aid),
+                actor,
+                state_type,
+                msg,
+            )
 
-            return
 
-        state = await ctx.get_for_update(state_type)
-        await actor(ctx, state, msg)
+async def _run[S: actors.State, M: actors.Message](
+    ctx: actors.Ctx,
+    actor: actors.Actor[S, M],
+    state_type: type[S],
+    msg: M,
+) -> None:
+    state = await ctx.get_for_update(state_type)
+    await actor(ctx, state, msg)
 
 
 def _actor_types[S: actors.State, M: actors.Message](actor: actors.Actor[S, M]) -> tuple[type[S], tuple[type[M]]]:
-    type_hints = get_type_hints(actor)
+    type_hints = get_type_hints(actor.__call__)
 
     state_type = type_hints["state"]
 

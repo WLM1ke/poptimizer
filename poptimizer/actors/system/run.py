@@ -8,7 +8,6 @@ from typing import Final, Protocol
 
 from poptimizer.core import actors, errors
 
-_LOGGER: Final = logging.getLogger(__name__)
 _FIRST_RETRY: Final = timedelta(seconds=30)
 _BACKOFF_FACTOR: Final = 2
 
@@ -24,6 +23,7 @@ class _Tx[C](Protocol):
 
 
 async def with_retry[C, **I, O](
+    lrg: logging.Logger,
     handler: actors.Handler[C, I, O],
     tx: _Tx[C],
     *args: I.args,
@@ -35,20 +35,14 @@ async def with_retry[C, **I, O](
         match await _run_safe(handler, tx, *args, **kwargs):
             case errors.POError() as err:
                 last_delay = await _next_delay(last_delay)
-                _LOGGER.warning(
-                    "%s failed: %s - retrying in %s",
-                    actors.get_component_name(handler),
+                lrg.warning(
+                    "failed with %s - retrying in %s",
                     err,
                     last_delay,
                 )
 
                 await asyncio.sleep(last_delay.total_seconds())
             case _ as output:
-                _LOGGER.info(
-                    "%s handled",
-                    actors.get_component_name(handler),
-                )
-
                 return output
 
 
