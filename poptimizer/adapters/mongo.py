@@ -1,4 +1,3 @@
-import datetime
 import random
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -9,14 +8,13 @@ from pydantic import MongoDsn, ValidationError
 from pymongo.asynchronous import collection, database
 from pymongo.errors import PyMongoError
 
-from poptimizer.core import consts, domain, errors
+from poptimizer.core import domain, errors
 from poptimizer.domain.evolve import evolve
 
 _MONGO_ID: Final = "_id"
 REV: Final = "rev"
 VER: Final = "ver"
 UID: Final = "uid"
-DAY: Final = "day"
 
 type MongoDocument = dict[str, Any]
 type MongoClient = pymongo.AsyncMongoClient[MongoDocument]
@@ -172,7 +170,6 @@ class Repo:
         doc = {
             _MONGO_ID: uid,
             VER: 0,
-            DAY: datetime.datetime(*consts.START_DAY.timetuple()[:3]),
         }
 
         collection = self._db[collection_name]
@@ -205,7 +202,7 @@ class Repo:
 
         try:
             updated = await self._db[collection_name].find_one_and_update(
-                {_MONGO_ID: entity.uid, VER: entity.ver, DAY: {"$lte": doc[DAY]}},
+                {_MONGO_ID: entity.uid, VER: entity.ver},
                 {"$inc": {VER: 1}, "$set": doc},
                 projection={_MONGO_ID: False},
             )

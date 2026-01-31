@@ -14,7 +14,7 @@ _DUMP: Final = consts.ROOT / "dump" / "dividends.json"
 
 
 class MigrationState(actors.State):
-    last_version: str = ""
+    last_version: str = "0.0.0"
 
 
 class MigrationActor:
@@ -81,7 +81,7 @@ def _to_normalized_docs(div: raw.DivRaw) -> dict[str, Any] | None:
 
 
 def _normalized_ver(ver: str) -> tuple[int, int, int]:
-    result = re.match(r"(\d+)\.(\d+)\.(\d+)", ver or "0.0.0")
+    result = re.match(r"(\d+)\.(\d+)\.(\d+)", ver)
     if not result:
         raise errors.ControllersError(f"Invalid version {ver}")
 

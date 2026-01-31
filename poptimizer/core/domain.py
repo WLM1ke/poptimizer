@@ -48,7 +48,7 @@ class Currency(StrEnum):
 
 class Entity(BaseModel):
     rev: Revision
-    day: Day
+    day: Day = consts.START_DAY
 
     @property
     def uid(self) -> UID:
