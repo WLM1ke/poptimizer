@@ -5,8 +5,8 @@ from poptimizer.cli import config, safe
 from poptimizer.domain.div import raw
 
 
-class Div(config.Cfg):
-    """Delete dividends."""
+class Reset(config.Cfg):
+    """Delete dividends to reload from backup on next start."""
 
     async def cli_cmd(self) -> None:
         async with contextlib.AsyncExitStack() as stack:

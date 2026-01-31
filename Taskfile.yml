@@ -50,8 +50,8 @@ tasks:
       - git reset --hard
       - git pull
 
-  update_div:
-    desc: Update dividends from backup
+  reset_div:
+    desc: Reset dividends to reload from backup on next start
     cmds:
       - uv run {{.APP}} div
 
