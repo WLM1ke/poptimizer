@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterator
-from typing import NewType, Protocol
+from typing import Any, NewType, Protocol
 
 from pydantic import BaseModel
 
@@ -23,6 +23,8 @@ class Handler[C, **I, O](Protocol):
 
 
 class CoreCtx(Protocol):
+    def info(self, msg: str, *args: Any) -> None: ...
+    def warning(self, msg: str, *args: Any) -> None: ...
     async def run_with_retry[**I, O](
         self,
         handler: Handler[CoreCtx, I, O],

@@ -1,7 +1,7 @@
 import logging
 from collections.abc import AsyncIterator
 from types import TracebackType
-from typing import Protocol
+from typing import Any, Protocol
 
 from poptimizer.actors.system import run, uow
 from poptimizer.core import actors, domain
@@ -45,6 +45,12 @@ class Tx:
 
             for msg, aid in self._msgs:
                 self._sender.send(msg, aid)
+
+    def info(self, msg: str, *args: Any) -> None:
+        self._lgr.info(msg, *args)
+
+    def warning(self, msg: str, *args: Any) -> None:
+        self._lgr.warning(msg, *args)
 
     def send(self, msg: actors.Message, aid: actors.AID | None = None) -> None:
         self._msgs.append((msg, aid or self._aid))
