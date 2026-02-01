@@ -4,7 +4,7 @@ import logging
 from pydantic import BaseModel, Field
 from pydantic_settings import CliPositionalArg
 
-from poptimizer.adapters import http_session, logger, tinkoff
+from poptimizer.adapters import http, logger, tinkoff
 from poptimizer.cli import safe
 
 
@@ -16,7 +16,7 @@ class Tinkoff(BaseModel):
     async def cli_cmd(self) -> None:
         async with contextlib.AsyncExitStack() as stack:
             lgr = await stack.enter_async_context(logger.init())
-            http_client = await stack.enter_async_context(http_session.client())
+            http_client = await stack.enter_async_context(http.client())
             tinkoff_client = tinkoff.Client(http_client, [])
 
             await safe.run(lgr, self._run(lgr, tinkoff_client))

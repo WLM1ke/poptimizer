@@ -1,10 +1,9 @@
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from typing import Final
 
 import aiohttp
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
+from poptimizer.adapters.http import wrap_err
 from poptimizer.cli import config
 from poptimizer.core import domain, errors
 from poptimizer.use_cases.portfolio import positions
@@ -32,14 +31,6 @@ class _AccountsResponse(BaseModel):
     accounts: list[Account]
 
 
-@asynccontextmanager
-async def _wrap_err(msg: str) -> AsyncIterator[None]:
-    try:
-        yield
-    except (TimeoutError, aiohttp.ClientError, ValidationError) as err:
-        raise errors.ControllersError(msg) from err
-
-
 class Client:
     def __init__(self, http_session: aiohttp.ClientSession, accounts: list[config.Account]) -> None:
         self._http_session = http_session
@@ -54,7 +45,7 @@ class Client:
 
     async def get_accounts(self, token: str) -> list[Account]:
         async with (
-            _wrap_err("failed to get accounts"),
+            wrap_err("failed to get accounts"),
             self._http_session.post(
                 _GET_ACCOUNTS_URL,
                 headers=self._headers(token),
@@ -76,7 +67,7 @@ class Client:
             raise errors.ControllersError(f"Account {account_name} not found")
 
         async with (
-            _wrap_err("failed to get positions"),
+            wrap_err("failed to get positions"),
             self._http_session.post(
                 _GET_POSITIONS_URL,
                 headers=self._headers(account.token),
