@@ -12,9 +12,9 @@ from poptimizer.core import domain, errors
 from poptimizer.domain.evolve import evolve
 
 _MONGO_ID: Final = "_id"
-REV: Final = "rev"
-VER: Final = "ver"
-UID: Final = "uid"
+_REV: Final = "rev"
+_VER: Final = "ver"
+_UID: Final = "uid"
 
 type MongoDocument = dict[str, Any]
 type MongoClient = pymongo.AsyncMongoClient[MongoDocument]
@@ -169,7 +169,7 @@ class Repo:
     async def _create_new(self, collection_name: str, uid: domain.UID) -> MongoDocument | None:
         doc = {
             _MONGO_ID: uid,
-            VER: 0,
+            _VER: 0,
         }
 
         collection = self._db[collection_name]
@@ -183,9 +183,9 @@ class Repo:
 
     def _create_entity[E: domain.Entity](self, t_entity: type[E], doc: Any) -> E:
         uid = doc.pop(_MONGO_ID)
-        doc[REV] = {
-            UID: uid,
-            VER: doc.pop(VER),
+        doc[_REV] = {
+            _UID: uid,
+            _VER: doc.pop(_VER),
         }
 
         try:
@@ -198,18 +198,19 @@ class Repo:
         collection_name = entity.__class__.__name__
 
         doc = entity.model_dump()
-        doc.pop(REV)
+        doc.pop(_REV)
+        doc[_VER] += 1
 
         try:
-            updated = await self._db[collection_name].find_one_and_update(
-                {_MONGO_ID: entity.uid, VER: entity.ver},
-                {"$inc": {VER: 1}, "$set": doc},
+            replaced = await self._db[collection_name].find_one_and_replace(
+                {_MONGO_ID: entity.uid, _VER: entity.ver},
+                doc,
                 projection={_MONGO_ID: False},
             )
         except PyMongoError as err:
             raise errors.AdapterError("can't save entities") from err
 
-        if updated is None:  # type: ignore[reportUnnecessaryComparison]
+        if replaced is None:
             raise errors.AdapterError(f"wrong version {collection_name}.{entity.uid}")
 
     async def delete(self, entity: domain.Entity) -> None:
