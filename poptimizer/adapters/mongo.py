@@ -12,7 +12,6 @@ from poptimizer.core import domain, errors
 from poptimizer.domain.evolve import evolve
 
 _MONGO_ID: Final = "_id"
-_REV: Final = "rev"
 _VER: Final = "ver"
 _UID: Final = "uid"
 
@@ -140,8 +139,7 @@ class Repo:
         collection_name = t_entity.__name__
         uid = uid or domain.UID(collection_name)
 
-        if (doc := await self._load(collection_name, uid)) is None:
-            doc = await self._create_new(collection_name, uid)
+        doc = await self._load_or_create(collection_name, uid)
 
         return self._create_entity(t_entity, doc)
 
@@ -158,47 +156,39 @@ class Repo:
         except PyMongoError as err:
             raise errors.AdapterError(f"can't load entities from {collection_name}") from err
 
-    async def _load(self, collection_name: str, uid: domain.UID) -> MongoDocument | None:
+    async def _load_or_create(self, collection_name: str, uid: domain.UID) -> MongoDocument | None:
         collection = self._db[collection_name]
 
         try:
-            return await collection.find_one({_MONGO_ID: uid})
+            doc = await collection.find_one_and_update(
+                {_MONGO_ID: uid},
+                {
+                    "$setOnInsert": {
+                        _VER: 0,
+                    },
+                },
+                upsert=True,
+                return_document=pymongo.ReturnDocument.AFTER,
+            )
         except PyMongoError as err:
             raise errors.AdapterError(f"can't load {collection_name}.{uid}") from err
 
-    async def _create_new(self, collection_name: str, uid: domain.UID) -> MongoDocument | None:
-        doc = {
-            _MONGO_ID: uid,
-            _VER: 0,
-        }
-
-        collection = self._db[collection_name]
-
-        try:
-            await collection.insert_one(doc)
-        except PyMongoError as err:
-            raise errors.AdapterError(f"can't create {collection_name}.{uid}") from err
-
-        return doc
+        return doc and (doc | {_UID: uid})
 
     def _create_entity[E: domain.Entity](self, t_entity: type[E], doc: Any) -> E:
-        uid = doc.pop(_MONGO_ID)
-        doc[_REV] = {
-            _UID: uid,
-            _VER: doc.pop(_VER),
-        }
-
         try:
             return t_entity.model_validate(doc)
         except ValidationError as err:
             collection_name = t_entity.__name__
+            uid = doc.get(_MONGO_ID)
+
             raise errors.AdapterError(f"can't create entity {collection_name}.{uid} {err}") from err
 
     async def save(self, entity: domain.Entity) -> None:
         collection_name = entity.__class__.__name__
 
-        doc = entity.model_dump()
-        doc.pop(_REV)
+        doc = entity.model_dump(exclude={_UID})
+        doc[_MONGO_ID] = entity.uid
         doc[_VER] += 1
 
         try:

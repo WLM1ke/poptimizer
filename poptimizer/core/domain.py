@@ -11,11 +11,9 @@ UID = NewType("UID", str)
 Version = NewType("Version", int)
 
 
-class Revision(BaseModel):
+class Versioned(BaseModel):
     uid: UID
     ver: Version
-
-    model_config = ConfigDict(frozen=True)
 
 
 Day = Annotated[
@@ -46,17 +44,8 @@ class Currency(StrEnum):
     USD = auto()
 
 
-class Entity(BaseModel):
-    rev: Revision
+class Entity(Versioned):
     day: Day = consts.START_DAY
-
-    @property
-    def uid(self) -> UID:
-        return self.rev.uid
-
-    @property
-    def ver(self) -> Version:
-        return self.rev.ver
 
 
 class Row(BaseModel):
