@@ -1,0 +1,82 @@
+import json
+import re
+from typing import Any, Final
+
+import aiofiles
+from pydantic import ValidationError
+
+from poptimizer.core import actors, consts, domain, errors
+from poptimizer.domain.div import raw
+from poptimizer.domain.portfolio import forecasts
+
+_DUMP: Final = consts.ROOT / "dump" / "dividends.json"
+
+
+class Client:
+    async def migrate(self, ctx: actors.Ctx, last_version: str) -> bool:
+        migrated = await _migrate(ctx, last_version)
+
+        match divs := [div async for div in ctx.get_all(raw.DivRaw)]:
+            case []:
+                await _restore_dividends(ctx)
+            case _:
+                await _backup_dividends(ctx, divs)
+
+        return migrated
+
+
+async def _migrate(ctx: actors.Ctx, last_version: str) -> bool:
+    migrated = False
+    # 2025-11-23
+    if _normalized_ver(last_version) < _normalized_ver("3.3.0"):
+        await ctx.drop(forecasts.Forecast)
+        ctx.warning("forecasts data dropped due to new format")
+        migrated = True
+
+    return migrated
+
+
+async def _restore_dividends(ctx: actors.Ctx) -> None:
+    if not _DUMP.exists():
+        raise errors.AdapterError(f"can't restore raw dividends from {_DUMP}")
+
+    async with aiofiles.open(_DUMP) as backup_file:  # type: ignore[reportUnknownMemberType]
+        json_data = await backup_file.read()
+
+    try:
+        for doc in json.loads(json_data):
+            div = raw.DivRaw.model_validate(doc)
+            div_new = await ctx.get_for_update(raw.DivRaw, div.uid)
+            div_new.df = div.df
+    except ValidationError as err:
+        raise errors.AdapterError("can't restore raw dividends") from err
+
+    ctx.info("raw dividends restored")
+
+
+async def _backup_dividends(ctx: actors.Ctx, divs: list[raw.DivRaw]) -> None:
+    _DUMP.parent.mkdir(parents=True, exist_ok=True)
+
+    all_docs = [normalized for div in sorted(divs, key=lambda div: div.uid) if (normalized := _to_normalized_docs(div))]
+
+    async with aiofiles.open(_DUMP, "w") as backup_file:  # type: ignore[reportUnknownMemberType]
+        await backup_file.write(json.dumps(all_docs, indent=2, sort_keys=True))
+
+    ctx.info("raw dividends back up finished")
+
+
+def _to_normalized_docs(div: raw.DivRaw) -> dict[str, Any] | None:
+    if not div.df:
+        return None
+
+    div.ver = domain.Version(0)
+
+    return div.model_dump(mode="json", include={"df"})
+
+
+def _normalized_ver(ver: str) -> tuple[int, int, int]:
+    result = re.match(r"(\d+)\.(\d+)\.(\d+)", ver)
+    if not result:
+        raise errors.AdapterError(f"Invalid version {ver}")
+
+    return int(result.group(1)), int(result.group(2)), int(result.group(3))
