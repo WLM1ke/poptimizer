@@ -17,6 +17,8 @@ _GET_POSITIONS_URL: Final = f"{_URL_BASE}.OperationsService/GetPositions"
 _ACTIVE_ACCOUNT: Final = "ACCOUNT_STATUS_OPEN"
 _ACCOUNT_TYPES_DESC: Final = {"ACCOUNT_TYPE_TINKOFF", "ACCOUNT_TYPE_TINKOFF_IIS"}
 
+_TINKOFF_ETF_SUFFIX: Final = "@"
+
 
 class Account(BaseModel):
     id: str
@@ -84,4 +86,13 @@ class Client:
         ):
             json = await resp.json()
 
-            return positions.Positions.model_validate(json)
+            raw_positions = positions.Positions.model_validate(json)
+
+            for sec in raw_positions.securities:
+                sec.ticker = _normalize_tickers(sec.ticker)
+
+            return raw_positions
+
+
+def _normalize_tickers(tickers: domain.Ticker) -> domain.Ticker:
+    return domain.Ticker(tickers.removesuffix(_TINKOFF_ETF_SUFFIX))
