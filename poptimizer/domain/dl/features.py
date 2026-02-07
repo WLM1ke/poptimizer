@@ -23,6 +23,7 @@ class NumFeat(StrEnum):
     MEMMTRR = auto()
     MEOGTRR = auto()
     MESMTRR = auto()
+    MOEX10 = auto()
     IMOEX2 = auto()
     RVI = auto()
     RUGBITR1Y = auto()
