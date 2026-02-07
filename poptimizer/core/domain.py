@@ -13,7 +13,7 @@ Version = NewType("Version", int)
 
 class Versioned(BaseModel):
     uid: UID
-    ver: Version
+    ver: Version = Version(0)
 
 
 Day = Annotated[

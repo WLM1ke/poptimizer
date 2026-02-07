@@ -76,17 +76,9 @@ class System:
             state_type, msg_type = _actor_types(actor)
 
             if not isinstance(msg, msg_type):
-                lgr.warning(
-                    "skipping %r",
-                    msg,
-                )
+                lgr.warning("skipped unknown %r", msg)
 
                 continue
-
-            lgr.info(
-                "handling %r",
-                msg,
-            )
 
             await run.with_retry(
                 lgr,
@@ -99,16 +91,22 @@ class System:
 
 
 async def _run[S: actors.State, M: actors.Message](
-    ctx: actors.Ctx,
+    ctx: tx.Tx,
     actor: actors.Actor[S, M],
     state_type: type[S],
     msg: M,
 ) -> None:
     state = await ctx.get_for_update(state_type)
+    initial_state = str(state)
+
     await actor(ctx, state, msg)
 
+    ctx.info("%s handled %s -> %s", msg, initial_state, state)
 
-def _actor_types[S: actors.State, M: actors.Message](actor: actors.Actor[S, M]) -> tuple[type[S], tuple[type[M]]]:
+
+def _actor_types[S: actors.State, M: actors.Message](
+    actor: actors.Actor[S, M],
+) -> tuple[type[S], tuple[type[M]]]:
     type_hints = get_type_hints(actor.__call__)
 
     state_type = type_hints["state"]

@@ -104,6 +104,12 @@ class EvolutionHandler:
             else:
                 ctx.publish(await self._eval_model(ctx, evolution, model, good=good))
 
+        # Тут нужно вставить функцию проверки памяти
+        # Сама логика должна быть на уровне приложения
+        # Тут нужно просто дергать функцию без параметров
+        # Проверка должна быть на уровне приложения
+        # Проверка должна быть в конце, чтобы между перезагрузками хотя бы одна итерация эволюции происходит
+
     async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> tuple[evolve.Evolution, int]:
         evolution = await ctx.get_for_update(evolve.Evolution)
 
@@ -159,7 +165,7 @@ class EvolutionHandler:
     async def _make_child(self, ctx: Ctx, model: evolve.Model) -> evolve.Model:
         parents = await ctx.sample_models(_PARENT_COUNT)
         if len({parent.uid for parent in parents}) != _PARENT_COUNT:
-            parents = [evolve.Model(day=model.day, rev=model.rev) for _ in range(_PARENT_COUNT)]
+            parents = [evolve.Model(day=model.day, ver=model.ver, uid=model.uid) for _ in range(_PARENT_COUNT)]
 
         child = await ctx.get_for_update(evolve.Model, _random_uid())
         child.genes = model.make_child_genes(parents[0], parents[1], 1 / model.ver)

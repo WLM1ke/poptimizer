@@ -6,16 +6,17 @@ from pydantic import BaseModel
 from poptimizer.core import domain
 from poptimizer.domain.evolve import evolve
 
-Component = NewType("Component", str)
-
-
 AID = NewType("AID", str)
 
 
-class Message(BaseModel): ...
+class Message(BaseModel):
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
-class State(domain.Versioned): ...
+class State(domain.Versioned):
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
 class Handler[C, **I, O](Protocol):

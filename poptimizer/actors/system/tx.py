@@ -1,7 +1,7 @@
 import logging
 from collections.abc import AsyncIterator
 from types import TracebackType
-from typing import Any, Protocol
+from typing import Any, Protocol, Self
 
 from poptimizer.actors.system import run, uow
 from poptimizer.core import actors, domain
@@ -28,7 +28,7 @@ class Tx:
         self._uow = uow.UOW(repo)
         self._msgs: list[tuple[actors.Message, actors.AID]] = []
 
-    async def __aenter__(self) -> actors.Ctx:
+    async def __aenter__(self) -> Self:
         self._uow.clear()
         self._msgs.clear()
 
@@ -65,21 +65,21 @@ class Tx:
 
         return await run.with_retry(self._lgr, handler, tx, *args, **kwargs)
 
-    async def get[E: domain.Entity](
+    async def get[E: domain.Versioned](
         self,
         t_entity: type[E],
         uid: domain.UID | None = None,
     ) -> E:
         return await self._uow.get(t_entity, uid)
 
-    async def get_for_update[E: domain.Entity](
+    async def get_for_update[E: domain.Versioned](
         self,
         t_entity: type[E],
         uid: domain.UID | None = None,
     ) -> E:
         return await self._uow.get_for_update(t_entity, uid)
 
-    async def delete(self, entity: domain.Entity) -> None:
+    async def delete(self, entity: domain.Versioned) -> None:
         await self._uow.delete(entity)
 
     async def count_models(self) -> int:
@@ -91,11 +91,11 @@ class Tx:
     async def sample_models(self, n: int) -> list[evolve.Model]:
         return await self._uow.sample_models(n)
 
-    def get_all[E: domain.Entity](
+    def get_all[E: domain.Versioned](
         self,
         t_entity: type[E],
     ) -> AsyncIterator[E]:
         return self._uow.get_all(t_entity)
 
-    async def drop(self, entity_type: type[domain.Entity]) -> None:
+    async def drop(self, entity_type: type[domain.Versioned]) -> None:
         await self._uow.drop(entity_type)

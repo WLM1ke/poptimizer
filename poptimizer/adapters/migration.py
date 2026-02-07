@@ -7,7 +7,6 @@ from pydantic import ValidationError
 
 from poptimizer.core import actors, consts, domain, errors
 from poptimizer.domain.div import raw
-from poptimizer.domain.portfolio import forecasts
 
 _DUMP: Final = consts.ROOT / "dump" / "dividends.json"
 
@@ -25,13 +24,13 @@ class Client:
         return migrated
 
 
-async def _migrate(ctx: actors.Ctx, last_version: str) -> bool:
+async def _migrate(ctx: actors.Ctx, last_version: str) -> bool:  # noqa: ARG001
+    if not last_version:
+        return False
+
     migrated = False
-    # 2025-11-23
     if _normalized_ver(last_version) < _normalized_ver("3.3.0"):
-        await ctx.drop(forecasts.Forecast)
-        ctx.warning("forecasts data dropped due to new format")
-        migrated = True
+        ...
 
     return migrated
 

@@ -1,28 +1,17 @@
 import asyncio
 import contextlib
 import multiprocessing as mp
-import signal
 import sys
-from types import FrameType
-from typing import Any
 
 import torch
 import uvloop
 
-from poptimizer.actors import migrations
+from poptimizer.actors.data import data
 from poptimizer.actors.system import system
-from poptimizer.adapters import logger, mongo
+from poptimizer.adapters import http, logger, memory, migration, moex, mongo
 from poptimizer.cli import config
 from poptimizer.controllers.tg import tg
-from poptimizer.core import consts, message
-
-
-class _SignalHandler:
-    def __init__(self, task: asyncio.Task[Any]) -> None:
-        self._task = task
-
-    def __call__(self, sig: int, frame: FrameType | None) -> None:  # noqa: ARG002
-        self._task.cancel()
+from poptimizer.core import actors, message
 
 
 class Run(config.Cfg):
@@ -70,23 +59,35 @@ class Run(config.Cfg):
             sys.exit(runner.run(self._run(check_memory=True)))
 
     async def _run(self, *, check_memory: bool = False) -> int:
-        if check_memory and (main_task := asyncio.current_task()):
-            signal.signal(signal.SIGTERM, _SignalHandler(main_task))
-
         async with contextlib.AsyncExitStack() as stack:
+            http_client = await stack.enter_async_context(http.client())
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
             tg_bot = await stack.enter_async_context(tg.Bot(self.tg.token, self.tg.chat_id))
             await stack.enter_async_context(logger.init(tg_bot.send_message))
 
             repo = mongo.Repo(mongo_db)
             actor_system = await stack.enter_async_context(system.System(repo))
-            aid = await actor_system.start(migrations.MigrationActor())
+
+            main_task = None
+
+            if check_memory:
+                main_task = asyncio.current_task()
+
+            memory_client = memory.Checker(main_task)
+            migration_client = migration.Client()
+            moex_client = moex.Client(http_client)
+
+            data_updater = data.DataUpdater(
+                memory_client,
+                migration_client,
+                moex_client,
+                actors.AID(""),
+            )
+
+            aid = await actor_system.start(data_updater)
 
             actor_system.send(
-                message.AppStarted(
-                    version=consts.__version__,
-                    next_aid=aid,
-                ),
+                message.AppStarted(),
                 aid,
             )
 

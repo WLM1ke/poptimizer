@@ -1,9 +1,8 @@
-from poptimizer.core import actors
+from poptimizer.core import actors, consts
 
 
 class AppStarted(actors.Message):
-    version: str
-    next_aid: actors.AID
+    version: str = consts.__version__
 
 
-class MigrationFinished(actors.Message): ...
+class Continue(actors.Message): ...

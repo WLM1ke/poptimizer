@@ -118,7 +118,7 @@ class Repo:
         pipeline = [{"$sample": {"size": n}}]
 
         try:
-            return [self._create_entity(evolve.Model, doc) async for doc in await collection.aggregate(pipeline)]
+            return [self._create_versioned(evolve.Model, doc) async for doc in await collection.aggregate(pipeline)]
         except PyMongoError as err:
             raise errors.AdapterError("can't sample organisms") from err
 
@@ -131,28 +131,28 @@ class Repo:
         except PyMongoError as err:
             raise errors.AdapterError("can't count organisms") from err
 
-    async def get[E: domain.Entity](
+    async def get[E: domain.Versioned](
         self,
-        t_entity: type[E],
+        t_versioned: type[E],
         uid: domain.UID | None = None,
     ) -> E:
-        collection_name = t_entity.__name__
+        collection_name = t_versioned.__name__
         uid = uid or domain.UID(collection_name)
 
         doc = await self._load_or_create(collection_name, uid)
 
-        return self._create_entity(t_entity, doc)
+        return self._create_versioned(t_versioned, doc)
 
-    async def get_all[E: domain.Entity](
+    async def get_all[E: domain.Versioned](
         self,
-        t_entity: type[E],
+        t_versioned: type[E],
     ) -> AsyncIterator[E]:
-        collection_name = t_entity.__name__
+        collection_name = t_versioned.__name__
         db = self._db[collection_name]
 
         try:
             async for doc in db.find({}):
-                yield self._create_entity(t_entity, doc)
+                yield self._create_versioned(t_versioned, doc)
         except PyMongoError as err:
             raise errors.AdapterError(f"can't load entities from {collection_name}") from err
 
@@ -175,25 +175,25 @@ class Repo:
 
         return doc and (doc | {_UID: uid})
 
-    def _create_entity[E: domain.Entity](self, t_entity: type[E], doc: Any) -> E:
+    def _create_versioned[E: domain.Versioned](self, t_versioned: type[E], doc: Any) -> E:
         try:
-            return t_entity.model_validate(doc)
+            return t_versioned.model_validate(doc)
         except ValidationError as err:
-            collection_name = t_entity.__name__
+            collection_name = t_versioned.__name__
             uid = doc.get(_MONGO_ID)
 
-            raise errors.AdapterError(f"can't create entity {collection_name}.{uid} {err}") from err
+            raise errors.AdapterError(f"can't create {collection_name}.{uid} {err}") from err
 
-    async def save(self, entity: domain.Entity) -> None:
-        collection_name = entity.__class__.__name__
+    async def save(self, versioned: domain.Versioned) -> None:
+        collection_name = versioned.__class__.__name__
 
-        doc = entity.model_dump(exclude={_UID})
-        doc[_MONGO_ID] = entity.uid
+        doc = versioned.model_dump(exclude={_UID})
+        doc[_MONGO_ID] = versioned.uid
         doc[_VER] += 1
 
         try:
             replaced = await self._db[collection_name].find_one_and_replace(
-                {_MONGO_ID: entity.uid, _VER: entity.ver},
+                {_MONGO_ID: versioned.uid, _VER: versioned.ver},
                 doc,
                 projection={_MONGO_ID: False},
             )
@@ -201,22 +201,22 @@ class Repo:
             raise errors.AdapterError("can't save entities") from err
 
         if replaced is None:
-            raise errors.AdapterError(f"wrong version {collection_name}.{entity.uid}")
+            raise errors.AdapterError(f"wrong version {collection_name}.{versioned.uid}")
 
-    async def delete(self, entity: domain.Entity) -> None:
-        collection_name = entity.__class__.__name__
+    async def delete(self, versioned: domain.Versioned) -> None:
+        collection_name = versioned.__class__.__name__
         collection = self._db[collection_name]
 
         try:
-            result = await collection.delete_one({_MONGO_ID: entity.uid})
+            result = await collection.delete_one({_MONGO_ID: versioned.uid})
         except PyMongoError as err:
             raise errors.AdapterError("can't delete organisms") from err
 
         if result.deleted_count != 1:
-            raise errors.AdapterError(f"can't delete {collection_name}.{entity.uid}")
+            raise errors.AdapterError(f"can't delete {collection_name}.{versioned.uid}")
 
-    async def drop(self, entity_type: type[domain.Entity]) -> None:
-        collection_name = entity_type.__name__
+    async def drop(self, versioned_type: type[domain.Versioned]) -> None:
+        collection_name = versioned_type.__name__
         collection = self._db[collection_name]
 
         try:
