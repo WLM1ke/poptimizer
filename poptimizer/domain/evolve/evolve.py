@@ -82,7 +82,7 @@ class Model(domain.Entity):
         history = genes.batch.history_days
 
         return (
-            f"{self.__class__.__name__}(ver={self.ver}, risk_aversion={1 - risk_tol:.2%}, history={history:.2f}, "
+            f"{self.__class__.__name__}(risk_aversion={1 - risk_tol:.2%}, history={history:.2f}, "
             f"ret={self.ret:.2%}, alfa={self.alfa_mean:.2%}, llh={self.llh_mean:.4f})"
         )
 

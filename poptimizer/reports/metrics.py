@@ -1,13 +1,15 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from poptimizer.adapters import mongo
+from poptimizer.actors.system import uow
 from poptimizer.domain.evolve import evolve
 
 
-async def plot(repo: mongo.Repo) -> None:
+async def plot(repo: uow.UOW) -> None:
     dots = [
-        (model.alfa_mean, model.llh_mean, model.ver * 10) async for model in repo.get_all(evolve.Model) if model.ver
+        # Тут должна быть новая логика - размер был model.ver, не 10
+        (model.alfa_mean, model.llh_mean, 10)
+        async for model in repo.get_all(evolve.Model)
     ]
 
     df = pd.DataFrame(dots, columns=["alfa", "llh", "size"])

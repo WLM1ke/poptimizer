@@ -26,19 +26,19 @@ _DEFAULT_BACKOFF_FACTOR: Final = 2
 class Ctx(Protocol):
     def publish(self, msg: Event) -> None: ...
 
-    async def get[E: domain.Entity](
+    async def get[E: domain.Object](
         self,
-        t_entity: type[E],
+        t_obj: type[E],
         uid: domain.UID | None = None,
     ) -> E: ...
 
-    async def get_for_update[E: domain.Entity](
+    async def get_for_update[E: domain.Object](
         self,
-        t_entity: type[E],
+        t_obj: type[E],
         uid: domain.UID | None = None,
     ) -> E: ...
 
-    async def delete(self, entity: domain.Entity) -> None: ...
+    async def delete(self, obj: domain.Object) -> None: ...
 
     async def count_models(self) -> int: ...
 

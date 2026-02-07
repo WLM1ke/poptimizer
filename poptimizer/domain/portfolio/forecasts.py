@@ -10,6 +10,7 @@ from pydantic import (
     PositiveInt,
 )
 
+from poptimizer.actors.system import uow
 from poptimizer.core import domain
 
 _MINIMAL_FORECASTS_AMOUNT: Final = 4
@@ -35,7 +36,7 @@ class Forecast(domain.Entity):
             return_type=list,
         ),
     ] = Field(default_factory=set[domain.UID])
-    portfolio_ver: domain.Version = domain.Version(0)
+    portfolio_ver: uow.Version = uow.Version(0)
     forecast_days: PositiveInt = 1
     forecasts_count: PositiveInt = 1
     positions: Annotated[
@@ -57,7 +58,7 @@ class Forecast(domain.Entity):
         self.day = day
         self.models.clear()
 
-    def update_required(self, portfolio_ver: domain.Version) -> bool:
+    def update_required(self, portfolio_ver: uow.Version) -> bool:
         if len(self.models) < _MINIMAL_FORECASTS_AMOUNT:
             return False
 

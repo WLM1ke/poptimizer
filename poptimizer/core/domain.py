@@ -8,12 +8,10 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, PlainSerializer
 from poptimizer.core import consts
 
 UID = NewType("UID", str)
-Version = NewType("Version", int)
 
 
-class Versioned(BaseModel):
+class Object(BaseModel):
     uid: UID
-    ver: Version = Version(0)
 
 
 Day = Annotated[
@@ -44,7 +42,7 @@ class Currency(StrEnum):
     USD = auto()
 
 
-class Entity(Versioned):
+class Entity(Object):
     day: Day = consts.START_DAY
 
 

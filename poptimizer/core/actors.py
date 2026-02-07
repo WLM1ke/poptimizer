@@ -14,7 +14,7 @@ class Message(BaseModel):
         return self.__repr__()
 
 
-class State(domain.Versioned):
+class State(domain.Object):
     def __str__(self) -> str:
         return self.__repr__()
 

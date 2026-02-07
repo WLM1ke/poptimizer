@@ -14,6 +14,7 @@ from pydantic import (
     model_validator,
 )
 
+from poptimizer.actors.system import uow
 from poptimizer.core import consts, domain, errors
 
 type AccountData = dict[domain.AccName, NonNegativeInt]
@@ -44,6 +45,8 @@ class NormalizedPosition(BaseModel):
 
 
 class Portfolio(domain.Entity):
+    # Тут нужно менять логику
+    ver: uow.Version = uow.Version(0)
     trading_interval: float = Field(consts.INITIAL_FORECAST_DAYS, ge=1)
     sold: NonNegativeInt = 0
     account_names: Annotated[

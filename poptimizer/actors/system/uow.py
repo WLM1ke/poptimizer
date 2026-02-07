@@ -1,19 +1,21 @@
 import asyncio
 from collections.abc import AsyncIterator, Iterator
 from types import TracebackType
-from typing import Protocol, Self
+from typing import NewType, Protocol, Self
 
 from poptimizer.core import domain, errors
 from poptimizer.domain.evolve import evolve
 
+Version = NewType("Version", int)
+
 
 class _IdentityMap:
     def __init__(self) -> None:
-        self._seen: dict[tuple[type, domain.UID], tuple[domain.Versioned, bool]] = {}
+        self._seen: dict[tuple[type, domain.UID], tuple[domain.Object, Version, bool]] = {}
         self._lock = asyncio.Lock()
 
-    def __iter__(self) -> Iterator[domain.Versioned]:
-        yield from (versioned for versioned, dirty in self._seen.values() if dirty)
+    def __iter__(self) -> Iterator[tuple[domain.Object, Version]]:
+        yield from ((obj, ver) for obj, ver, dirty in self._seen.values() if dirty)
 
     async def __aenter__(self) -> Self:
         await self._lock.acquire()
@@ -28,66 +30,66 @@ class _IdentityMap:
     ) -> None:
         self._lock.release()
 
-    def get[E: domain.Versioned](self, t_versioned: type[E], uid: domain.UID) -> E | None:
-        saved = self._seen.get((t_versioned, uid))
+    def get[E: domain.Object](self, t_obj: type[E], uid: domain.UID) -> tuple[E, Version] | None:
+        saved = self._seen.get((t_obj, uid))
         if saved is None:
             return None
 
-        versioned, _ = saved
+        obj, ver, _ = saved
 
-        if not isinstance(versioned, t_versioned):
-            raise errors.ControllersError(f"type mismatch in identity map for {t_versioned}({uid})")
+        if not isinstance(obj, t_obj):
+            raise errors.ControllersError(f"type mismatch in identity map for {t_obj}({uid})")
 
-        return versioned
+        return obj, ver
 
-    def get_for_update[E: domain.Versioned](self, t_versioned: type[E], uid: domain.UID) -> E | None:
-        saved = self._seen.get((t_versioned, uid))
+    def get_for_update[E: domain.Object](self, t_obj: type[E], uid: domain.UID) -> tuple[E, Version] | None:
+        saved = self._seen.get((t_obj, uid))
         if saved is None:
             return None
 
-        versioned, dirty = saved
+        obj, ver, dirty = saved
         if not dirty:
-            self._seen[versioned.__class__, versioned.uid] = (versioned, True)
+            self._seen[obj.__class__, obj.uid] = (obj, ver, True)
 
-        if not isinstance(versioned, t_versioned):
-            raise errors.ControllersError(f"type mismatch in identity map for {t_versioned}({uid})")
+        if not isinstance(obj, t_obj):
+            raise errors.ControllersError(f"type mismatch in identity map for {t_obj}({uid})")
 
-        return versioned
+        return obj, ver
 
-    def save(self, versioned: domain.Versioned) -> None:
-        saved = self._seen.get((versioned.__class__, versioned.uid))
+    def save(self, obj: domain.Object, ver: Version) -> None:
+        saved = self._seen.get((obj.__class__, obj.uid))
         if saved is not None:
-            raise errors.ControllersError(f"{versioned.__class__}({versioned.uid}) in identity map")
+            raise errors.ControllersError(f"{obj.__class__}({obj.uid}) in identity map")
 
-        self._seen[versioned.__class__, versioned.uid] = (versioned, False)
+        self._seen[obj.__class__, obj.uid] = (obj, ver, False)
 
-    def save_for_update(self, versioned: domain.Versioned) -> None:
-        saved = self._seen.get((versioned.__class__, versioned.uid))
+    def save_for_update(self, obj: domain.Object, ver: Version) -> None:
+        saved = self._seen.get((obj.__class__, obj.uid))
         if saved is not None:
-            raise errors.ControllersError(f"{versioned.__class__}({versioned.uid}) in identity map")
+            raise errors.ControllersError(f"{obj.__class__}({obj.uid}) in identity map")
 
-        self._seen[versioned.__class__, versioned.uid] = (versioned, True)
+        self._seen[obj.__class__, obj.uid] = (obj, ver, True)
 
-    def delete(self, versioned: domain.Versioned) -> None:
-        self._seen.pop((versioned.__class__, versioned.uid), None)
+    def delete(self, obj: domain.Object) -> None:
+        self._seen.pop((obj.__class__, obj.uid), None)
 
     def clear(self) -> None:
         self._seen.clear()
 
 
 class Repo(Protocol):
-    async def get[E: domain.Versioned](
+    async def get[E: domain.Object](
         self,
-        t_versioned: type[E],
-        uid: domain.UID | None = None,
-    ) -> E: ...
-    async def delete(self, versioned: domain.Versioned) -> None: ...
+        t_obj: type[E],
+        uid: domain.UID,
+    ) -> tuple[E, Version]: ...
+    async def save(self, obj: domain.Object, ver: Version) -> None: ...
+    async def delete(self, obj: domain.Object) -> None: ...
     async def count_models(self) -> int: ...
-    async def next_model(self, uid: domain.UID) -> tuple[evolve.Model, bool]: ...
+    async def next_model(self, uid: domain.UID) -> tuple[evolve.Model, Version, bool]: ...
     async def sample_models(self, n: int) -> list[evolve.Model]: ...
-    async def save(self, versioned: domain.Versioned) -> None: ...
-    def get_all[E: domain.Versioned](self, t_versioned: type[E]) -> AsyncIterator[E]: ...
-    async def drop(self, versioned_type: type[domain.Versioned]) -> None: ...
+    def get_all[E: domain.Object](self, t_obj: type[E]) -> AsyncIterator[E]: ...
+    async def drop(self, obj_type: type[domain.Object]) -> None: ...
 
 
 class UOW:
@@ -95,78 +97,75 @@ class UOW:
         self._repo = repo
         self._identity_map = _IdentityMap()
 
-    async def get[E: domain.Versioned](
+    async def get[E: domain.Object](
         self,
-        t_versioned: type[E],
+        t_obj: type[E],
         uid: domain.UID | None = None,
     ) -> E:
-        uid = uid or domain.UID(t_versioned.__name__)
+        uid = uid or domain.UID(t_obj.__name__)
 
         async with self._identity_map as identity_map:
-            if loaded := identity_map.get(t_versioned, uid):
-                return loaded
+            if loaded := identity_map.get(t_obj, uid):
+                obj, _ = loaded
 
-            versioned = await self._repo.get(t_versioned, uid)
-            identity_map.save(versioned)
+                return obj
 
-            return versioned
+            obj, ver = await self._repo.get(t_obj, uid)
+            identity_map.save(obj, ver)
 
-    async def get_for_update[E: domain.Versioned](
+            return obj
+
+    async def get_for_update[E: domain.Object](
         self,
-        t_versioned: type[E],
+        t_obj: type[E],
         uid: domain.UID | None = None,
     ) -> E:
-        uid = uid or domain.UID(t_versioned.__name__)
+        uid = uid or domain.UID(t_obj.__name__)
 
         async with self._identity_map as identity_map:
-            if loaded := identity_map.get_for_update(t_versioned, uid):
-                return loaded
+            if loaded := identity_map.get_for_update(t_obj, uid):
+                obj, _ = loaded
 
-            versioned = await self._repo.get(t_versioned, uid)
-            identity_map.save_for_update(versioned)
+                return obj
 
-            return versioned
+            obj, ver = await self._repo.get(t_obj, uid)
+            identity_map.save_for_update(obj, ver)
 
-    async def delete(self, versioned: domain.Versioned) -> None:
+            return obj
+
+    async def delete(self, obj: domain.Object) -> None:
         async with self._identity_map as identity_map:
-            await self._repo.delete(versioned)
-            identity_map.delete(versioned)
+            await self._repo.delete(obj)
+            identity_map.delete(obj)
 
     async def count_models(self) -> int:
         return await self._repo.count_models()
 
     async def next_model_for_update(self, uid: domain.UID) -> tuple[evolve.Model, bool]:
-        versioned, good = await self._repo.next_model(uid)
+        obj, ver, good = await self._repo.next_model(uid)
 
         async with self._identity_map as identity_map:
-            if not identity_map.get_for_update(evolve.Model, versioned.uid):
-                identity_map.save_for_update(versioned)
+            if not identity_map.get_for_update(evolve.Model, obj.uid):
+                identity_map.save_for_update(obj, ver)
 
-            return versioned, good
+            return obj, good
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
-        models = await self._repo.sample_models(n)
+        return await self._repo.sample_models(n)
 
-        for model in models:
-            async with self._identity_map as identity_map:
-                if not identity_map.get(evolve.Model, model.uid):
-                    identity_map.save(model)
-
-        return models
-
-    def get_all[E: domain.Versioned](
+    def get_all[E: domain.Object](
         self,
-        t_versioned: type[E],
+        t_obj: type[E],
     ) -> AsyncIterator[E]:
-        return self._repo.get_all(t_versioned)
+        return self._repo.get_all(t_obj)
 
-    async def drop(self, versioned_type: type[domain.Versioned]) -> None:
-        await self._repo.drop(versioned_type)
+    async def drop(self, obj_type: type[domain.Object]) -> None:
+        await self._repo.drop(obj_type)
 
     async def save(self) -> None:
         async with asyncio.TaskGroup() as tg:
-            for versioned in self._identity_map:
-                tg.create_task(self._repo.save(versioned))
+            for obj, ver in self._identity_map:
+                tg.create_task(self._repo.save(obj, ver))
 
     def clear(self) -> None:
         self._identity_map.clear()

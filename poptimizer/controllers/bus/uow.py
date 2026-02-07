@@ -1,9 +1,9 @@
 import asyncio
-from collections.abc import Iterable, Iterator
+from collections.abc import AsyncIterator, Iterable, Iterator
 from types import TracebackType
-from typing import Self
+from typing import Protocol, Self
 
-from poptimizer.adapters import mongo
+from poptimizer.actors.system import uow
 from poptimizer.core import domain, errors
 from poptimizer.domain.evolve import evolve
 from poptimizer.use_cases.handler import Event
@@ -11,11 +11,11 @@ from poptimizer.use_cases.handler import Event
 
 class _IdentityMap:
     def __init__(self) -> None:
-        self._seen: dict[tuple[type, domain.UID], domain.Entity] = {}
+        self._seen: dict[tuple[type, domain.UID], tuple[domain.Object, uow.Version, bool]] = {}
         self._lock = asyncio.Lock()
 
-    def __iter__(self) -> Iterator[domain.Entity]:
-        yield from self._seen.values()
+    def __iter__(self) -> Iterator[tuple[domain.Object, uow.Version]]:
+        yield from ((obj, ver) for obj, ver, dirty in self._seen.values() if dirty)
 
     async def __aenter__(self) -> Self:
         await self._lock.acquire()
@@ -30,29 +30,70 @@ class _IdentityMap:
     ) -> None:
         self._lock.release()
 
-    def get[E: domain.Entity](self, t_entity: type[E], uid: domain.UID) -> E | None:
-        entity = self._seen.get((t_entity, uid))
-        if entity is None:
+    def get[E: domain.Object](self, t_obj: type[E], uid: domain.UID) -> tuple[E, uow.Version] | None:
+        saved = self._seen.get((t_obj, uid))
+        if saved is None:
             return None
 
-        if not isinstance(entity, t_entity):
-            raise errors.ControllersError(f"type mismatch in identity map for {t_entity}({uid})")
+        obj, ver, _ = saved
 
-        return entity
+        if not isinstance(obj, t_obj):
+            raise errors.ControllersError(f"type mismatch in identity map for {t_obj}({uid})")
 
-    def save(self, entity: domain.Entity) -> None:
-        saved = self._seen.get((entity.__class__, entity.uid))
+        return obj, ver
+
+    def get_for_update[E: domain.Object](self, t_obj: type[E], uid: domain.UID) -> tuple[E, uow.Version] | None:
+        saved = self._seen.get((t_obj, uid))
+        if saved is None:
+            return None
+
+        obj, ver, dirty = saved
+        if not dirty:
+            self._seen[obj.__class__, obj.uid] = (obj, ver, True)
+
+        if not isinstance(obj, t_obj):
+            raise errors.ControllersError(f"type mismatch in identity map for {t_obj}({uid})")
+
+        return obj, ver
+
+    def save(self, obj: domain.Object, ver: uow.Version) -> None:
+        saved = self._seen.get((obj.__class__, obj.uid))
         if saved is not None:
-            raise errors.ControllersError(f"{entity.__class__}({entity.uid}) in identity map ")
+            raise errors.ControllersError(f"{obj.__class__}({obj.uid}) in identity map")
 
-        self._seen[entity.__class__, entity.uid] = entity
+        self._seen[obj.__class__, obj.uid] = (obj, ver, False)
 
-    def delete(self, entity: domain.Entity) -> None:
-        self._seen.pop((entity.__class__, entity.uid), None)
+    def save_for_update(self, obj: domain.Object, ver: uow.Version) -> None:
+        saved = self._seen.get((obj.__class__, obj.uid))
+        if saved is not None:
+            raise errors.ControllersError(f"{obj.__class__}({obj.uid}) in identity map")
+
+        self._seen[obj.__class__, obj.uid] = (obj, ver, True)
+
+    def delete(self, obj: domain.Object) -> None:
+        self._seen.pop((obj.__class__, obj.uid), None)
+
+    def clear(self) -> None:
+        self._seen.clear()
+
+
+class Repo(Protocol):
+    async def get[E: domain.Object](
+        self,
+        t_obj: type[E],
+        uid: domain.UID,
+    ) -> tuple[E, uow.Version]: ...
+    async def save(self, obj: domain.Object, ver: uow.Version) -> None: ...
+    async def delete(self, obj: domain.Object) -> None: ...
+    async def count_models(self) -> int: ...
+    async def next_model(self, uid: domain.UID) -> tuple[evolve.Model, uow.Version, bool]: ...
+    async def sample_models(self, n: int) -> list[evolve.Model]: ...
+    def get_all[E: domain.Object](self, t_obj: type[E]) -> AsyncIterator[E]: ...
+    async def drop(self, obj_type: type[domain.Object]) -> None: ...
 
 
 class UOW:
-    def __init__(self, repo: mongo.Repo) -> None:
+    def __init__(self, repo: Repo) -> None:
         self._repo = repo
         self._identity_map = _IdentityMap()
         self._events: list[Event] = []
@@ -63,50 +104,78 @@ class UOW:
     def events(self) -> Iterable[Event]:
         yield from self._events
 
-    async def get[E: domain.Entity](
+    async def get[E: domain.Object](
         self,
-        t_entity: type[E],
+        t_obj: type[E],
         uid: domain.UID | None = None,
     ) -> E:
-        uid = uid or domain.UID(t_entity.__name__)
-        async with self._identity_map as identity_map:
-            return identity_map.get(t_entity, uid) or await self._repo.get(t_entity, uid)
+        uid = uid or domain.UID(t_obj.__name__)
 
-    async def get_for_update[E: domain.Entity](
+        async with self._identity_map as identity_map:
+            if loaded := identity_map.get(t_obj, uid):
+                obj, _ = loaded
+
+                return obj
+
+            obj, ver = await self._repo.get(t_obj, uid)
+            identity_map.save(obj, ver)
+
+            return obj
+
+    async def get_for_update[E: domain.Object](
         self,
-        t_entity: type[E],
+        t_obj: type[E],
         uid: domain.UID | None = None,
     ) -> E:
-        uid = uid or domain.UID(t_entity.__name__)
+        uid = uid or domain.UID(t_obj.__name__)
+
         async with self._identity_map as identity_map:
-            if loaded := identity_map.get(t_entity, uid):
-                return loaded
+            if loaded := identity_map.get_for_update(t_obj, uid):
+                obj, _ = loaded
 
-            entity = await self._repo.get(t_entity, uid)
+                return obj
 
-            identity_map.save(entity)
+            obj, ver = await self._repo.get(t_obj, uid)
+            identity_map.save_for_update(obj, ver)
 
-            return entity
+            return obj
 
-    async def delete(self, entity: domain.Entity) -> None:
+    async def delete(self, obj: domain.Object) -> None:
         async with self._identity_map as identity_map:
-            identity_map.delete(entity)
-            await self._repo.delete(entity)
+            await self._repo.delete(obj)
+            identity_map.delete(obj)
 
     async def count_models(self) -> int:
         return await self._repo.count_models()
 
     async def next_model_for_update(self, uid: domain.UID) -> tuple[evolve.Model, bool]:
+        obj, ver, good = await self._repo.next_model(uid)
+
         async with self._identity_map as identity_map:
-            entity, good = await self._repo.next_model(uid)
+            if not identity_map.get_for_update(evolve.Model, obj.uid):
+                identity_map.save_for_update(obj, ver)
 
-            if not identity_map.get(evolve.Model, entity.uid):
-                identity_map.save(entity)
-
-            return entity, good
+            return obj, good
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         return await self._repo.sample_models(n)
+
+    def get_all[E: domain.Object](
+        self,
+        t_obj: type[E],
+    ) -> AsyncIterator[E]:
+        return self._repo.get_all(t_obj)
+
+    async def drop(self, obj_type: type[domain.Object]) -> None:
+        await self._repo.drop(obj_type)
+
+    async def save(self) -> None:
+        async with asyncio.TaskGroup() as tg:
+            for obj, ver in self._identity_map:
+                tg.create_task(self._repo.save(obj, ver))
+
+    def clear(self) -> None:
+        self._identity_map.clear()
 
     async def __aenter__(self) -> Self:
         return self
@@ -122,4 +191,4 @@ class UOW:
 
         async with asyncio.TaskGroup() as tg:
             for entity in self._identity_map:
-                tg.create_task(self._repo.save(entity))
+                tg.create_task(self._repo.save(*entity))

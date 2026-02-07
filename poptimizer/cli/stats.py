@@ -1,5 +1,6 @@
 import contextlib
 
+from poptimizer.actors.system import uow
 from poptimizer.adapters import logger, mongo
 from poptimizer.cli import config, safe
 from poptimizer.reports.stats import report
@@ -15,4 +16,4 @@ class Stats(config.Cfg):
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
             repo = mongo.Repo(mongo_db)
 
-            await safe.run(lgr, report(repo))
+            await safe.run(lgr, report(uow.UOW(repo)))

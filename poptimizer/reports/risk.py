@@ -4,7 +4,7 @@ from typing import Final
 import pandas as pd
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
-from poptimizer.adapters import mongo
+from poptimizer.actors.system import uow
 from poptimizer.core import errors
 from poptimizer.domain.funds import funds
 from poptimizer.domain.moex import index
@@ -15,7 +15,7 @@ RF: Final = "RUGBITR1Y"
 _WIDTH: Final = len(PORTFOLIO)
 
 
-async def prepare_cum_returns(repo: mongo.Repo, months: int) -> pd.DataFrame:
+async def prepare_cum_returns(repo: uow.UOW, months: int) -> pd.DataFrame:
     fund = await repo.get(funds.Fund)
     index_table = await repo.get(index.Index, index.MCF2TRR)
     rf_table = await repo.get(index.Index, index.RUGBITR1Y)
@@ -51,7 +51,7 @@ async def prepare_cum_returns(repo: mongo.Repo, months: int) -> pd.DataFrame:
     return returns
 
 
-async def report(repo: mongo.Repo, months: int) -> None:
+async def report(repo: uow.UOW, months: int) -> None:
     lgr = logging.getLogger()
 
     returns = await prepare_cum_returns(repo, months)

@@ -1,7 +1,7 @@
 import logging
 from typing import Final
 
-from poptimizer.adapters import mongo
+from poptimizer.actors.system import uow
 from poptimizer.core import errors
 from poptimizer.domain import cpi
 from poptimizer.domain.funds import funds
@@ -15,7 +15,7 @@ _ROWS_PARAMS: Final = [
 
 
 async def report(
-    repo: mongo.Repo,
+    repo: uow.UOW,
     investor: funds.Investor,
     months: int,
 ) -> None:

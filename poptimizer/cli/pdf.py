@@ -4,6 +4,7 @@ from datetime import date
 from pydantic import Field
 from pydantic_settings import CliPositionalArg
 
+from poptimizer.actors.system import uow
 from poptimizer.adapters import logger, mongo
 from poptimizer.cli import config, safe
 from poptimizer.domain.funds import funds
@@ -29,4 +30,4 @@ class PDF(config.Cfg):
 
             inflows = {funds.Investor(investor): inflow for investor, inflow in self.inflows.items()}
 
-            await safe.run(lgr, report(repo, self.day, self.dividends, inflows))
+            await safe.run(lgr, report(uow.UOW(repo), self.day, self.dividends, inflows))

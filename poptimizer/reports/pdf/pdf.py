@@ -5,7 +5,7 @@ from typing import Final
 
 from reportlab.pdfgen.canvas import Canvas
 
-from poptimizer.adapters import mongo
+from poptimizer.actors.system import uow
 from poptimizer.core import consts, domain
 from poptimizer.domain.funds import funds
 from poptimizer.domain.moex import quotes
@@ -22,7 +22,7 @@ _THIRD_BLOCK_HEIGHT: Final = style.BLANK_HEIGHT * 0
 
 
 async def _price_for_day(
-    repo: mongo.Repo,
+    repo: uow.UOW,
     pos: portfolio.Position,
     day: domain.Day,
 ) -> None:
@@ -35,7 +35,7 @@ async def _price_for_day(
 
 
 async def _update_fund(
-    repo: mongo.Repo,
+    repo: uow.UOW,
     day: domain.Day,
     dividends: float,
     inflows: dict[funds.Investor, float],
@@ -47,7 +47,7 @@ async def _update_fund(
         for pos in port.positions:
             tg.create_task(_price_for_day(repo, pos, day))
 
-        fund = await repo.get(funds.Fund)
+        fund = await repo.get_for_update(funds.Fund)
 
     match len(fund.rows):
         case 0:
@@ -55,7 +55,7 @@ async def _update_fund(
         case _:
             fund.update(day=day, value=port.value(), dividends=dividends, inflows=inflows)
 
-    await repo.save(fund)
+    await repo.save()
 
     return fund, port
 
@@ -69,7 +69,7 @@ def _make_report_files_path(day: domain.Day) -> tuple[Path, Path]:
 
 
 async def _make_report(
-    repo: mongo.Repo,
+    repo: uow.UOW,
     fund: funds.Fund,
     port: portfolio.Portfolio,
 ) -> Path:
@@ -122,7 +122,7 @@ async def _make_report(
 
 
 async def report(
-    repo: mongo.Repo,
+    repo: uow.UOW,
     day: domain.Day,
     dividends: float,
     inflows: dict[funds.Investor, float],

@@ -4,11 +4,11 @@ from collections import Counter
 from datetime import timedelta
 from typing import Any
 
-from poptimizer.adapters import mongo
+from poptimizer.actors.system import uow
 from poptimizer.domain.evolve import evolve
 
 
-async def report(repo: mongo.Repo) -> None:
+async def report(repo: uow.UOW) -> None:
     lgr = logging.getLogger()
 
     evolution = await repo.get(evolve.Evolution)
@@ -27,7 +27,7 @@ async def report(repo: mongo.Repo) -> None:
     features: Counter[str] = Counter()
 
     async for model in repo.get_all(evolve.Model):
-        if not model.ver:
+        if not model.phenotype:
             continue
 
         count += 1

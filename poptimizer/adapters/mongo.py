@@ -8,6 +8,7 @@ from pydantic import MongoDsn, ValidationError
 from pymongo.asynchronous import collection, database
 from pymongo.errors import PyMongoError
 
+from poptimizer.actors.system import uow
 from poptimizer.core import domain, errors
 from poptimizer.domain.evolve import evolve
 
@@ -34,7 +35,7 @@ class Repo:
     def __init__(self, mongo_db: MongoDatabase) -> None:
         self._db = mongo_db
 
-    async def next_model(self, uid: domain.UID) -> tuple[evolve.Model, bool]:
+    async def next_model(self, uid: domain.UID) -> tuple[evolve.Model, uow.Version, bool]:
         collection_name = evolve.Model.__name__
         collection = self._db[collection_name]
 
@@ -46,7 +47,7 @@ class Repo:
 
         for doc in docs:
             if not doc.get("llh_mean") or not doc.get("alfa_mean"):
-                return await self.get(evolve.Model, domain.UID(doc["_id"])), True
+                return *(await self.get(evolve.Model, domain.UID(doc["_id"]))), True
 
             if doc["_id"] == uid:
                 target = doc
@@ -54,12 +55,12 @@ class Repo:
             min_day = min(min_day, doc["day"])
 
         if target is None:
-            return await self.get(evolve.Model, domain.UID(random.choice(docs)["_id"])), False  # noqa: S311
+            return *(await self.get(evolve.Model, domain.UID(random.choice(docs)["_id"]))), False  # noqa: S311
 
         docs = [doc for doc in docs if doc["day"] == min_day]
 
         if len(docs) == 1:
-            return await self.get(evolve.Model, domain.UID(docs[0]["_id"])), False
+            return *(await self.get(evolve.Model, domain.UID(docs[0]["_id"]))), False
 
         return await self._farthest_from_target(docs, target)
 
@@ -67,7 +68,7 @@ class Repo:
         self,
         docs: list[MongoDocument],
         target: MongoDocument,
-    ) -> tuple[evolve.Model, bool]:
+    ) -> tuple[evolve.Model, uow.Version, bool]:
         min_llh = docs[0]
         max_llh = docs[0]
         min_alfa = docs[0]
@@ -110,7 +111,7 @@ class Repo:
             key=lambda x: x[2],
         )
 
-        return await self.get(evolve.Model, domain.UID(selected[0]["_id"])), selected[1]
+        return *(await self.get(evolve.Model, domain.UID(selected[0]["_id"]))), selected[1]
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         collection_name = evolve.Model.__name__
@@ -118,7 +119,7 @@ class Repo:
         pipeline = [{"$sample": {"size": n}}]
 
         try:
-            return [self._create_versioned(evolve.Model, doc) async for doc in await collection.aggregate(pipeline)]
+            return [self._create_obj(evolve.Model, doc)[0] async for doc in await collection.aggregate(pipeline)]
         except PyMongoError as err:
             raise errors.AdapterError("can't sample organisms") from err
 
@@ -131,28 +132,29 @@ class Repo:
         except PyMongoError as err:
             raise errors.AdapterError("can't count organisms") from err
 
-    async def get[E: domain.Versioned](
+    async def get[E: domain.Object](
         self,
-        t_versioned: type[E],
-        uid: domain.UID | None = None,
-    ) -> E:
-        collection_name = t_versioned.__name__
-        uid = uid or domain.UID(collection_name)
+        t_obj: type[E],
+        uid: domain.UID,
+    ) -> tuple[E, uow.Version]:
+        collection_name = t_obj.__name__
 
         doc = await self._load_or_create(collection_name, uid)
 
-        return self._create_versioned(t_versioned, doc)
+        return self._create_obj(t_obj, doc)
 
-    async def get_all[E: domain.Versioned](
+    async def get_all[E: domain.Object](
         self,
-        t_versioned: type[E],
+        t_obj: type[E],
     ) -> AsyncIterator[E]:
-        collection_name = t_versioned.__name__
+        collection_name = t_obj.__name__
         db = self._db[collection_name]
 
         try:
             async for doc in db.find({}):
-                yield self._create_versioned(t_versioned, doc)
+                obj, _ = self._create_obj(t_obj, doc)
+
+                yield obj
         except PyMongoError as err:
             raise errors.AdapterError(f"can't load entities from {collection_name}") from err
 
@@ -167,6 +169,7 @@ class Repo:
                         _VER: 0,
                     },
                 },
+                projection={_MONGO_ID: False},
                 upsert=True,
                 return_document=pymongo.ReturnDocument.AFTER,
             )
@@ -175,48 +178,47 @@ class Repo:
 
         return doc and (doc | {_UID: uid})
 
-    def _create_versioned[E: domain.Versioned](self, t_versioned: type[E], doc: Any) -> E:
+    def _create_obj[E: domain.Object](self, t_obj: type[E], doc: Any) -> tuple[E, uow.Version]:
         try:
-            return t_versioned.model_validate(doc)
+            return t_obj.model_validate(doc), uow.Version(doc[_VER])
         except ValidationError as err:
-            collection_name = t_versioned.__name__
-            uid = doc.get(_MONGO_ID)
+            collection_name = t_obj.__name__
+            uid = doc.get(_UID)
 
             raise errors.AdapterError(f"can't create {collection_name}.{uid} {err}") from err
 
-    async def save(self, versioned: domain.Versioned) -> None:
-        collection_name = versioned.__class__.__name__
+    async def save(self, obj: domain.Object, ver: uow.Version) -> None:
+        collection_name = obj.__class__.__name__
 
-        doc = versioned.model_dump(exclude={_UID})
-        doc[_MONGO_ID] = versioned.uid
-        doc[_VER] += 1
+        doc = obj.model_dump(exclude={_UID})
+        doc[_MONGO_ID] = obj.uid
+        doc[_VER] = ver + 1
 
         try:
             replaced = await self._db[collection_name].find_one_and_replace(
-                {_MONGO_ID: versioned.uid, _VER: versioned.ver},
+                {_MONGO_ID: obj.uid, _VER: ver},
                 doc,
-                projection={_MONGO_ID: False},
             )
         except PyMongoError as err:
             raise errors.AdapterError("can't save entities") from err
 
         if replaced is None:
-            raise errors.AdapterError(f"wrong version {collection_name}.{versioned.uid}")
+            raise errors.AdapterError(f"wrong version {collection_name}.{obj.uid}")
 
-    async def delete(self, versioned: domain.Versioned) -> None:
-        collection_name = versioned.__class__.__name__
+    async def delete(self, obj: domain.Object) -> None:
+        collection_name = obj.__class__.__name__
         collection = self._db[collection_name]
 
         try:
-            result = await collection.delete_one({_MONGO_ID: versioned.uid})
+            result = await collection.delete_one({_MONGO_ID: obj.uid})
         except PyMongoError as err:
             raise errors.AdapterError("can't delete organisms") from err
 
         if result.deleted_count != 1:
-            raise errors.AdapterError(f"can't delete {collection_name}.{versioned.uid}")
+            raise errors.AdapterError(f"can't delete {collection_name}.{obj.uid}")
 
-    async def drop(self, versioned_type: type[domain.Versioned]) -> None:
-        collection_name = versioned_type.__name__
+    async def drop(self, obj_type: type[domain.Object]) -> None:
+        collection_name = obj_type.__name__
         collection = self._db[collection_name]
 
         try:

@@ -15,13 +15,13 @@ class Ctx(Protocol):
     def publish(self, msg: Event) -> None: ...
     async def get[E: domain.Entity](
         self,
-        t_entity: type[E],
+        t_obj: type[E],
         uid: domain.UID | None = None,
     ) -> E: ...
 
     async def get_for_update[E: domain.Entity](
         self,
-        t_entity: type[E],
+        t_obj: type[E],
         uid: domain.UID | None = None,
     ) -> E: ...
 

@@ -3,6 +3,7 @@ import contextlib
 from pydantic import Field
 from pydantic_settings import CliPositionalArg
 
+from poptimizer.actors.system import uow
 from poptimizer.adapters import logger, mongo
 from poptimizer.cli import config, safe
 from poptimizer.reports.risk import report
@@ -19,4 +20,4 @@ class Risk(config.Cfg):
             lgr = await stack.enter_async_context(logger.init())
             repo = mongo.Repo(mongo_db)
 
-            await safe.run(lgr, report(repo, self.months))
+            await safe.run(lgr, report(uow.UOW(repo), self.months))

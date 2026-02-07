@@ -65,21 +65,21 @@ class Tx:
 
         return await run.with_retry(self._lgr, handler, tx, *args, **kwargs)
 
-    async def get[E: domain.Versioned](
+    async def get[E: domain.Object](
         self,
         t_entity: type[E],
         uid: domain.UID | None = None,
     ) -> E:
         return await self._uow.get(t_entity, uid)
 
-    async def get_for_update[E: domain.Versioned](
+    async def get_for_update[E: domain.Object](
         self,
         t_entity: type[E],
         uid: domain.UID | None = None,
     ) -> E:
         return await self._uow.get_for_update(t_entity, uid)
 
-    async def delete(self, entity: domain.Versioned) -> None:
+    async def delete(self, entity: domain.Object) -> None:
         await self._uow.delete(entity)
 
     async def count_models(self) -> int:
@@ -91,11 +91,11 @@ class Tx:
     async def sample_models(self, n: int) -> list[evolve.Model]:
         return await self._uow.sample_models(n)
 
-    def get_all[E: domain.Versioned](
+    def get_all[E: domain.Object](
         self,
         t_entity: type[E],
     ) -> AsyncIterator[E]:
         return self._uow.get_all(t_entity)
 
-    async def drop(self, entity_type: type[domain.Versioned]) -> None:
+    async def drop(self, entity_type: type[domain.Object]) -> None:
         await self._uow.drop(entity_type)

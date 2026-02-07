@@ -1,11 +1,11 @@
 import json
 import re
-from typing import Any, Final
+from typing import Final
 
 import aiofiles
 from pydantic import ValidationError
 
-from poptimizer.core import actors, consts, domain, errors
+from poptimizer.core import actors, consts, errors
 from poptimizer.domain.div import raw
 
 _DUMP: Final = consts.ROOT / "dump" / "dividends.json"
@@ -56,21 +56,12 @@ async def _restore_dividends(ctx: actors.Ctx) -> None:
 async def _backup_dividends(ctx: actors.Ctx, divs: list[raw.DivRaw]) -> None:
     _DUMP.parent.mkdir(parents=True, exist_ok=True)
 
-    all_docs = [normalized for div in sorted(divs, key=lambda div: div.uid) if (normalized := _to_normalized_docs(div))]
+    docs_with_divs = sorted(filter(lambda div: div.df, divs), key=lambda div: div.uid)
 
-    async with aiofiles.open(_DUMP, "w") as backup_file:  # type: ignore[reportUnknownMemberType]
-        await backup_file.write(json.dumps(all_docs, indent=2, sort_keys=True))
+    async with aiofiles.open(_DUMP, "w") as backup_file:
+        await backup_file.write(json.dumps(docs_with_divs, indent=2, sort_keys=True))
 
     ctx.info("raw dividends back up finished")
-
-
-def _to_normalized_docs(div: raw.DivRaw) -> dict[str, Any] | None:
-    if not div.df:
-        return None
-
-    div.ver = domain.Version(0)
-
-    return div.model_dump(mode="json", include={"df"})
 
 
 def _normalized_ver(ver: str) -> tuple[int, int, int]:

@@ -33,17 +33,17 @@ class Ctx(Protocol):
     def publish(self, msg: handler.Event) -> None: ...
     async def get[E: domain.Entity](
         self,
-        t_entity: type[E],
+        t_obj: type[E],
         uid: domain.UID | None = None,
     ) -> E: ...
 
     async def get_for_update[E: domain.Entity](
         self,
-        t_entity: type[E],
+        t_obj: type[E],
         uid: domain.UID | None = None,
     ) -> E: ...
 
-    async def delete(self, entity: domain.Entity) -> None: ...
+    async def delete(self, obj: domain.Entity) -> None: ...
 
     async def count_models(self) -> int: ...
 
@@ -165,10 +165,11 @@ class EvolutionHandler:
     async def _make_child(self, ctx: Ctx, model: evolve.Model) -> evolve.Model:
         parents = await ctx.sample_models(_PARENT_COUNT)
         if len({parent.uid for parent in parents}) != _PARENT_COUNT:
-            parents = [evolve.Model(day=model.day, ver=model.ver, uid=model.uid) for _ in range(_PARENT_COUNT)]
+            parents = [evolve.Model(day=model.day, uid=model.uid) for _ in range(_PARENT_COUNT)]
 
         child = await ctx.get_for_update(evolve.Model, _random_uid())
-        child.genes = model.make_child_genes(parents[0], parents[1], 1 / model.ver)
+        # Тут должна быть какая-то новая логика - был масштаб 1 / model.ver
+        child.genes = model.make_child_genes(parents[0], parents[1], 1)
 
         return child
 
