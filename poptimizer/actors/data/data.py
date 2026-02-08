@@ -21,7 +21,7 @@ class _StateName(StrEnum):
     DATA_UPDATED = auto()
 
 
-class DataState(actors.State):
+class DataState(actors.State[_StateName]):
     state: _StateName = _StateName.NEW_DATA_AVAILABLE
     app_version: str = ""
     last_trading_day: domain.Day = consts.START_DAY
@@ -53,7 +53,7 @@ class DataUpdater:
         self._moex_client = moex_client
         self._evolution_aid = evolution_aid
 
-    async def __call__(self, ctx: actors.Ctx, state: DataState, msg: message.AppStarted | message.Continue) -> None:
+    async def __call__(self, ctx: actors.Ctx, state: DataState, msg: message.AppStarted | message.Next) -> None:
         aid: actors.AID | None = None
 
         match (msg, state.state):
@@ -65,23 +65,23 @@ class DataUpdater:
 
                 if await self._is_new_data_available(state):
                     state.state = _StateName.NEW_DATA_AVAILABLE
-            case (message.Continue(), _StateName.DATA_MIGRATED):
+            case (message.Next(), _StateName.DATA_MIGRATED):
                 await self._update_data_and_features(ctx, state)
-            case (message.Continue(), _StateName.DATA_CHECK_REQUIRED):
+            case (message.Next(), _StateName.DATA_CHECK_REQUIRED):
                 self._memory_checker.check_memory_usage(ctx)
 
                 state.state = _StateName.DATA_UPDATED
                 if await self._is_new_data_available(state):
                     state.state = _StateName.NEW_DATA_AVAILABLE
-            case (message.Continue(), _StateName.NEW_DATA_AVAILABLE):
+            case (message.Next(), _StateName.NEW_DATA_AVAILABLE):
                 await self._update_all(ctx, state)
                 state.state = _StateName.DATA_UPDATED
-            case (message.Continue(), _StateName.DATA_UPDATED):
+            case (message.Next(), _StateName.DATA_UPDATED):
                 await asyncio.sleep(60 * 60)
                 state.state = _StateName.DATA_CHECK_REQUIRED
                 aid = self._evolution_aid
 
-        ctx.send(message.Continue(), aid=aid)
+        ctx.send(message.Next(), aid=aid)
 
     async def _is_new_data_available(self, state: DataState) -> bool:
         last_finished_day = _last_finished_day()

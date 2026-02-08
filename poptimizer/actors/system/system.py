@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from types import TracebackType
-from typing import Self, get_args, get_type_hints
+from typing import Any, Self, get_args, get_type_hints
 
 from poptimizer.actors.system import run, tx, uow
 from poptimizer.core import actors
@@ -13,7 +13,7 @@ class _Dispatcher:
         self._last_aid = 0
         self._inboxes = dict[actors.AID, asyncio.Queue[actors.Message]()]()
 
-    def new_inbox[S: actors.State, M: actors.Message](
+    def new_inbox[S: actors.State[Any], M: actors.Message](
         self,
         actor: actors.Actor[S, M],
     ) -> tuple[actors.AID, asyncio.Queue[actors.Message]]:
@@ -53,7 +53,7 @@ class System:
     ) -> None:
         return await self._tg.__aexit__(exc_type, exc_value, traceback)
 
-    async def start[S: actors.State, M: actors.Message](self, actor: actors.Actor[S, M]) -> actors.AID:
+    async def start[S: actors.State[Any], M: actors.Message](self, actor: actors.Actor[S, M]) -> actors.AID:
         aid, inbox = self._dispatcher.new_inbox(actor)
 
         self._tg.create_task(self._loop(actor, aid, inbox))
@@ -63,7 +63,7 @@ class System:
     def send(self, msg: actors.Message, aid: actors.AID) -> None:
         self._dispatcher.send(msg, aid)
 
-    async def _loop[S: actors.State, M: actors.Message](
+    async def _loop[S: actors.State[Any], M: actors.Message](
         self,
         actor: actors.Actor[S, M],
         aid: actors.AID,
@@ -90,7 +90,7 @@ class System:
             )
 
 
-async def _run[S: actors.State, M: actors.Message](
+async def _run[S: actors.State[Any], M: actors.Message](
     ctx: tx.Tx,
     actor: actors.Actor[S, M],
     state_type: type[S],
@@ -101,10 +101,10 @@ async def _run[S: actors.State, M: actors.Message](
 
     await actor(ctx, state, msg)
 
-    ctx.info("%s handled %s -> %s", msg, initial_state, state)
+    ctx.info("Handled %s with state transition %s -> %s", msg, initial_state, state)
 
 
-def _actor_types[S: actors.State, M: actors.Message](
+def _actor_types[S: actors.State[Any], M: actors.Message](
     actor: actors.Actor[S, M],
 ) -> tuple[type[S], tuple[type[M]]]:
     type_hints = get_type_hints(actor.__call__)

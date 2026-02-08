@@ -14,9 +14,11 @@ class Message(BaseModel):
         return self.__repr__()
 
 
-class State(domain.Object):
+class State[S: str](domain.Object):
+    state: S
+
     def __str__(self) -> str:
-        return self.__repr__()
+        return f'{self.__class__.__name__}(state="{self.state}")'
 
 
 class Handler[C, **I, O](Protocol):
@@ -50,5 +52,5 @@ class Ctx(CoreCtx, Protocol):
     def send(self, msg: Message, aid: AID | None = None) -> None: ...
 
 
-class Actor[S: State, M: Message](Protocol):
+class Actor[S: State[Any], M: Message](Protocol):
     async def __call__(self, ctx: Ctx, state: S, msg: M) -> None: ...
