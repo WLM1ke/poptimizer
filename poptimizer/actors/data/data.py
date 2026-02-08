@@ -1,3 +1,4 @@
+import asyncio
 import zoneinfo
 from datetime import date, datetime, timedelta
 from enum import StrEnum, auto
@@ -76,6 +77,7 @@ class DataUpdater:
                 await self._update_all(ctx, state)
                 state.state = _StateName.DATA_UPDATED
             case (message.Continue(), _StateName.DATA_UPDATED):
+                await asyncio.sleep(60 * 60)
                 state.state = _StateName.DATA_CHECK_REQUIRED
                 aid = self._evolution_aid
 

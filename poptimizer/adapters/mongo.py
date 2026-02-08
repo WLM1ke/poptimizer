@@ -169,16 +169,16 @@ class Repo:
                         _VER: 0,
                     },
                 },
-                projection={_MONGO_ID: False},
                 upsert=True,
                 return_document=pymongo.ReturnDocument.AFTER,
             )
         except PyMongoError as err:
             raise errors.AdapterError(f"can't load {collection_name}.{uid}") from err
 
-        return doc and (doc | {_UID: uid})
+        return doc
 
     def _create_obj[E: domain.Object](self, t_obj: type[E], doc: Any) -> tuple[E, uow.Version]:
+        doc |= {_UID: doc[_MONGO_ID]}
         try:
             return t_obj.model_validate(doc), uow.Version(doc[_VER])
         except ValidationError as err:

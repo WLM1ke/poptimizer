@@ -56,10 +56,11 @@ async def _restore_dividends(ctx: actors.Ctx) -> None:
 async def _backup_dividends(ctx: actors.Ctx, divs: list[raw.DivRaw]) -> None:
     _DUMP.parent.mkdir(parents=True, exist_ok=True)
 
-    docs_with_divs = sorted(filter(lambda div: div.df, divs), key=lambda div: div.uid)
+    divs = sorted(filter(lambda div: div.df, divs), key=lambda div: div.uid)
+    docs = [div.model_dump(mode="json") for div in divs]
 
     async with aiofiles.open(_DUMP, "w") as backup_file:
-        await backup_file.write(json.dumps(docs_with_divs, indent=2, sort_keys=True))
+        await backup_file.write(json.dumps(docs, indent=2, sort_keys=True))
 
     ctx.info("raw dividends back up finished")
 
