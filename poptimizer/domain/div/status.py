@@ -23,7 +23,7 @@ def _must_be_sorted_by_ticker_and_day(df: list[Row]) -> list[Row]:
     return df
 
 
-class DivStatus(domain.Entity):
+class DivStatus(domain.EntityOld):
     df: Annotated[
         list[Row],
         AfterValidator(_must_be_sorted_by_ticker_and_day),

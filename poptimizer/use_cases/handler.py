@@ -13,13 +13,13 @@ class Event(BaseModel): ...
 
 class Ctx(Protocol):
     def publish(self, msg: Event) -> None: ...
-    async def get[E: domain.Entity](
+    async def get[E: domain.EntityOld](
         self,
         t_obj: type[E],
         uid: domain.UID | None = None,
     ) -> E: ...
 
-    async def get_for_update[E: domain.Entity](
+    async def get_for_update[E: domain.EntityOld](
         self,
         t_obj: type[E],
         uid: domain.UID | None = None,

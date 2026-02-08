@@ -44,7 +44,7 @@ class NormalizedPosition(BaseModel):
     accounts: list[domain.AccName]
 
 
-class Portfolio(domain.Entity):
+class Portfolio(domain.EntityOld):
     # Тут нужно менять логику
     ver: uow.Version = uow.Version(0)
     trading_interval: float = Field(consts.INITIAL_FORECAST_DAYS, ge=1)

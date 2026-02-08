@@ -14,6 +14,13 @@ class Object(BaseModel):
     uid: UID
 
 
+class Entity(Object): ...
+
+
+class EntityOld(Entity):
+    day: Day = consts.START_DAY
+
+
 Day = Annotated[
     date,
     PlainSerializer(
@@ -40,10 +47,6 @@ AccName = NewType("AccName", str)
 class Currency(StrEnum):
     RUR = auto()
     USD = auto()
-
-
-class Entity(Object):
-    day: Day = consts.START_DAY
 
 
 class Row(BaseModel):

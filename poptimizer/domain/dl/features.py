@@ -73,7 +73,7 @@ class EmbeddingSeqFeatDesc(BaseModel):
         return self
 
 
-class Features(domain.Entity):
+class Features(domain.EntityOld):
     numerical: list[dict[NumFeat, FiniteFloat]] = Field(default_factory=list[dict[NumFeat, FiniteFloat]])
     embedding: dict[EmbFeat, EmbeddingFeatDesc] = Field(default_factory=dict[EmbFeat, EmbeddingFeatDesc])
     embedding_seq: dict[EmbSeqFeat, EmbeddingSeqFeatDesc] = Field(

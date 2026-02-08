@@ -1,7 +1,7 @@
 from poptimizer.core import consts, domain
 
 
-class TradingDay(domain.Entity):
+class TradingDay(domain.EntityOld):
     last_check: domain.Day = consts.START_DAY
     poptimizer_ver: str = ""
 

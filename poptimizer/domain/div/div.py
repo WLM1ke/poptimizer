@@ -10,7 +10,7 @@ class Row(domain.Row):
     dividend: PositiveFloat
 
 
-class Dividends(domain.Entity):
+class Dividends(domain.EntityOld):
     df: Annotated[
         list[Row],
         AfterValidator(domain.sorted_by_day_validator),

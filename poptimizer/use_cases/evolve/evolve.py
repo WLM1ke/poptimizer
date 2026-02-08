@@ -31,19 +31,19 @@ def _extract_minimal_returns_days(err_group: BaseExceptionGroup[errors.DomainErr
 
 class Ctx(Protocol):
     def publish(self, msg: handler.Event) -> None: ...
-    async def get[E: domain.Entity](
+    async def get[E: domain.EntityOld](
         self,
         t_obj: type[E],
         uid: domain.UID | None = None,
     ) -> E: ...
 
-    async def get_for_update[E: domain.Entity](
+    async def get_for_update[E: domain.EntityOld](
         self,
         t_obj: type[E],
         uid: domain.UID | None = None,
     ) -> E: ...
 
-    async def delete(self, obj: domain.Entity) -> None: ...
+    async def delete(self, obj: domain.EntityOld) -> None: ...
 
     async def count_models(self) -> int: ...
 

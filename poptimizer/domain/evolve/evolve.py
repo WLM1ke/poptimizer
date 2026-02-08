@@ -41,7 +41,7 @@ class Stats(BaseModel):
         return cast("float", stats.beta(self.alfa, self.beta).sf(0.5))  # type: ignore[reportUnknownMemberType]
 
 
-class Model(domain.Entity):
+class Model(domain.EntityOld):
     tickers: domain.Tickers = Field(default_factory=tuple)
     forecast_days: PositiveInt = 1
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
@@ -120,7 +120,7 @@ class State(StrEnum):
     CREATE_NEW_MODEL = "creating new model"
 
 
-class Evolution(domain.Entity):
+class Evolution(domain.EntityOld):
     tickers: domain.Tickers = Field(default_factory=tuple)
     forecast_days: PositiveInt = 1
     state: State = State.EVAL_NEW_BASE_MODEL

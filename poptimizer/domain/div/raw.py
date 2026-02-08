@@ -25,7 +25,7 @@ def _sorted_by_date_and_div(df: list[Row]) -> list[Row]:
     return df
 
 
-class DivRaw(domain.Entity):
+class DivRaw(domain.EntityOld):
     df: Annotated[
         list[Row],
         AfterValidator(_sorted_by_date_and_div),

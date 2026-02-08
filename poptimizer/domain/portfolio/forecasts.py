@@ -28,7 +28,7 @@ class Position(BaseModel):
     accounts: list[domain.AccName]
 
 
-class Forecast(domain.Entity):
+class Forecast(domain.EntityOld):
     models: Annotated[
         set[domain.UID],
         PlainSerializer(

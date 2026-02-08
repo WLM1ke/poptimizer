@@ -20,7 +20,7 @@ class Row(domain.Row):
         return date
 
 
-class CPI(domain.Entity):
+class CPI(domain.EntityOld):
     df: Annotated[
         list[Row],
         AfterValidator(domain.sorted_by_day_validator),

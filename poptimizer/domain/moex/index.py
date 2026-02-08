@@ -31,7 +31,7 @@ class Row(domain.Row):
     close: float = Field(alias="close", gt=0)
 
 
-class Index(domain.Entity):
+class Index(domain.EntityOld):
     df: Annotated[
         list[Row],
         AfterValidator(domain.sorted_by_day_validator),

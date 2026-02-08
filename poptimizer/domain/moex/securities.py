@@ -48,7 +48,7 @@ class Row(domain.Row):
         return self.ticker
 
 
-class Securities(domain.Entity):
+class Securities(domain.EntityOld):
     df: Annotated[
         list[Row],
         AfterValidator(domain.sorted_with_ticker_field_validator),
