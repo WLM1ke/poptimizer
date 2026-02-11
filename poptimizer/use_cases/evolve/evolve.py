@@ -201,6 +201,7 @@ class EvolutionHandler:
                 self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
 
             evolution.test_days -= max(1, evolution.minimal_returns_days - minimal_returns_days_old)
+            self._lgr.warning("Test days decreased - %d", evolution.test_days)
 
             return False
 
