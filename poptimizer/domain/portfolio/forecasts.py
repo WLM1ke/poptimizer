@@ -72,6 +72,9 @@ class Forecast(domain.Entity):
             key=lambda pos: pos.grad_lower,
             reverse=True,
         )
+        best_lower_grad = buy[0].grad_lower
+        buy = [pos for pos in buy if pos.grad_upper > best_lower_grad]
+
         sell = sorted((pos for pos in self.positions if pos.accounts), key=lambda pos: pos.grad_upper)
 
         for i, (b, s) in enumerate(zip(buy, sell, strict=False)):
