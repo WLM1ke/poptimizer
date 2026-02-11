@@ -65,7 +65,7 @@ def gene_range(*, lower: float | None = None, upper: float | None = None) -> Aft
 
 
 def int_phenotype() -> PlainSerializer:
-    return PlainSerializer(lambda x: int(x), return_type=int)
+    return PlainSerializer(int, return_type=int)
 
 
 def float_phenotype() -> PlainSerializer:

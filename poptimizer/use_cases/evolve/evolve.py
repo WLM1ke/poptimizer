@@ -90,14 +90,20 @@ class EvolutionHandler:
             model,
         )
 
-        try:
-            await self._update_model_metrics(ctx, evolution, model)
-        except* errors.DomainError as err:
-            await self._delete_model_on_error(ctx, evolution, model, err)
+        try_again = True
 
-            ctx.publish(handler.ModelDeleted(day=evolution.day, uid=model.uid))
-        else:
-            ctx.publish(await self._eval_model(ctx, evolution, model, good=good))
+        while try_again:
+            try_again = False
+
+            try:
+                await self._update_model_metrics(ctx, evolution, model)
+            except* errors.DomainError as err:
+                if await self._is_deleted_on_error(ctx, evolution, model, err):
+                    ctx.publish(handler.ModelDeleted(day=evolution.day, uid=model.uid))
+                else:
+                    try_again = True
+            else:
+                ctx.publish(await self._eval_model(ctx, evolution, model, good=good))
 
     async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> tuple[evolve.Evolution, int]:
         evolution = await ctx.get_for_update(evolve.Evolution)
@@ -175,26 +181,31 @@ class EvolutionHandler:
         await tr.update_model_metrics(ctx, model, int(evolution.test_days))
         self._lgr.info(f"{model}")
 
-    async def _delete_model_on_error(
+    async def _is_deleted_on_error(
         self,
         ctx: Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
         err: BaseExceptionGroup[errors.DomainError],
-    ) -> None:
-        await ctx.delete(model)
-        self._lgr.info("Model deleted - %s...", err.exceptions[0])
-
+    ) -> bool:
         minimal_returns_days = _extract_minimal_returns_days(err)
+
         if minimal_returns_days is not None and evolution.state is not evolve.State.CREATE_NEW_MODEL:
             minimal_returns_days_old = evolution.minimal_returns_days
             evolution.minimal_returns_days = max(
-                evolution.minimal_returns_days
-                + ((minimal_returns_days + evolution.test_days) > evolution.minimal_returns_days),
+                evolution.minimal_returns_days,
                 minimal_returns_days,
             )
+
             if evolution.minimal_returns_days > minimal_returns_days_old:
                 self._lgr.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
+
+            evolution.test_days -= max(1, evolution.minimal_returns_days - minimal_returns_days_old)
+
+            return False
+
+        await ctx.delete(model)
+        self._lgr.info("Model deleted - %s...", err.exceptions[0])
 
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
@@ -207,6 +218,8 @@ class EvolutionHandler:
                 evolution.state = evolve.State.EVAL_NEW_BASE_MODEL
             case evolve.State.CREATE_NEW_MODEL:
                 evolution.state = evolve.State.EVAL_MODEL
+
+        return True
 
     async def _eval_model(
         self,
@@ -293,4 +306,4 @@ class EvolutionHandler:
 
 
 def _delta(target: list[float], base: list[float]) -> list[float]:
-    return list(map(operator.sub, target, base))
+    return list(map(operator.sub, target, base, strict=False))
