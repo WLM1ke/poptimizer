@@ -11,7 +11,7 @@ from poptimizer.use_cases.dl.features import index as index_features
 from poptimizer.use_cases.dl.features import quotes as quotes_features
 from poptimizer.use_cases.dl.features import securities as tickers_features
 from poptimizer.use_cases.evolve import evolve
-from poptimizer.use_cases.moex import data, index, quotes, securities, usd
+from poptimizer.use_cases.moex import data, index, quotes, usd
 from poptimizer.use_cases.portfolio import forecasts, portfolio, positions
 
 if TYPE_CHECKING:
@@ -32,7 +32,6 @@ def build(
     bus.register_event_handler(cpi.CPIHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(usd.USDHandler(http_client), msg.IgnoreErrorsPolicy)
     bus.register_event_handler(index.IndexesHandler(http_client), msg.IndefiniteRetryPolicy)
-    bus.register_event_handler(securities.SecuritiesHandler(http_client), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(quotes.QuotesHandler(http_client), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(div.DivHandler(), msg.IndefiniteRetryPolicy)
     bus.register_event_handler(portfolio.PortfolioHandler(), msg.IndefiniteRetryPolicy)

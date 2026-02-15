@@ -29,7 +29,7 @@ class SecFeatHandler:
         ctx.publish(handler.SecFeatUpdated(day=msg.day))
 
 
-def _sec_type(row: securities.Row) -> str:
+def _sec_type(row: securities.Security) -> str:
     return f"{row.board}.{row.type}.{row.instrument}"
 
 
