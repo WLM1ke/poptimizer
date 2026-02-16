@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 import aiomoex
 from pydantic import TypeAdapter
 
-from poptimizer.core import consts, domain
-from poptimizer.domain.moex import quotes, securities
+from poptimizer.actors.data.moex.models import securities
+from poptimizer.core import actors, consts, domain
+from poptimizer.domain.moex import quotes
 from poptimizer.use_cases import handler
 
 if TYPE_CHECKING:
@@ -17,7 +18,7 @@ class QuotesHandler:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.DivUpdated) -> None:
+    async def __call__(self, ctx: actors.Ctx, msg: handler.DivUpdated) -> None:
         sec_table = await ctx.get(securities.Securities)
 
         trading_days: set[domain.Day] = set()
@@ -26,11 +27,9 @@ class QuotesHandler:
             for sec in sec_table.df:
                 tg.create_task(self._update_one(ctx, sec.ticker, msg.day, trading_days))
 
-        ctx.publish(handler.QuotesUpdated(trading_days=sorted(trading_days)))
-
     async def _update_one(
         self,
-        ctx: handler.Ctx,
+        ctx: actors.Ctx,
         ticker: str,
         update_day: domain.Day,
         trading_days: set[domain.Day],

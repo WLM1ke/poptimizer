@@ -1,14 +1,13 @@
 import asyncio
 
-from poptimizer.core import domain
+from poptimizer.actors.data.moex.models import securities
+from poptimizer.core import actors, domain
 from poptimizer.domain.dl.features import EmbeddingFeatDesc, EmbFeat, Features
-from poptimizer.domain.moex import securities
 from poptimizer.domain.portfolio import portfolio
-from poptimizer.use_cases import handler
 
 
 class SecFeatHandler:
-    async def __call__(self, ctx: handler.Ctx, msg: handler.DayFeatUpdated) -> None:
+    async def __call__(self, ctx: actors.Ctx) -> None:
         async with asyncio.TaskGroup() as tg:
             sec_task = tg.create_task(ctx.get(securities.Securities))
             port = await ctx.get(portfolio.Portfolio)
@@ -25,8 +24,6 @@ class SecFeatHandler:
                 feat.embedding[EmbFeat.TICKER] = EmbeddingFeatDesc(value=n, size=pos_count)
                 feat.embedding[EmbFeat.TICKER_TYPE] = EmbeddingFeatDesc(value=sec_types[feat.uid], size=types_count)
                 feat.embedding[EmbFeat.SECTOR] = EmbeddingFeatDesc(value=sec_sectors[feat.uid], size=sectors_count)
-
-        ctx.publish(handler.SecFeatUpdated(day=msg.day))
 
 
 def _sec_type(row: securities.Security) -> str:

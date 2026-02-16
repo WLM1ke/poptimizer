@@ -2,9 +2,10 @@ import asyncio
 import logging
 import statistics
 
-from poptimizer.core import domain
+from poptimizer.actors.data.moex.models import securities
+from poptimizer.core import actors, domain
 from poptimizer.domain.evolve import evolve
-from poptimizer.domain.moex import quotes, securities
+from poptimizer.domain.moex import quotes
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
@@ -13,12 +14,10 @@ class PortfolioHandler:
     def __init__(self) -> None:
         self._lgr = logging.getLogger()
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.IndexesUpdated) -> None:
+    async def __call__(self, ctx: actors.Ctx, msg: handler.IndexesUpdated) -> None:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
         if port.day == msg.day:
-            ctx.publish(handler.PortfolioUpdated(trading_days=msg.trading_days))
-
             return
 
         old_forecast_days = port.forecast_days
@@ -39,11 +38,9 @@ class PortfolioHandler:
             change = new_value / old_value - 1
             self._lgr.warning(f"Portfolio value changed {change:.2%} - {old_value:_.0f} -> {new_value:_.0f}")
 
-        ctx.publish(handler.PortfolioUpdated(trading_days=msg.trading_days))
-
     async def _prepare_sec_cache(
         self,
-        ctx: handler.Ctx,
+        ctx: actors.Ctx,
         turnover_days: set[domain.Day],
     ) -> dict[domain.Ticker, portfolio.Position]:
         async with asyncio.TaskGroup() as tg:

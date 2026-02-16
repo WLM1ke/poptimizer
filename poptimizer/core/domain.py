@@ -17,10 +17,6 @@ class Object(BaseModel):
 class Entity(Object): ...
 
 
-class EntityOld(Entity):
-    day: Day = consts.START_DAY
-
-
 Day = Annotated[
     date,
     PlainSerializer(
@@ -32,6 +28,11 @@ Day = Annotated[
         return_type=datetime,
     ),
 ]
+
+
+class EntityOld(Entity):
+    day: Day = consts.START_DAY
+
 
 Ticker = NewType("Ticker", str)
 CashTicker: Final = Ticker("CASH")

@@ -72,13 +72,11 @@ class Security(domain.Row):
         return self.ticker
 
 
-class Securities(domain.EntityOld):
+class Securities(domain.Entity):
     df: Annotated[
         list[Security],
         AfterValidator(domain.sorted_with_ticker_field_validator),
     ] = Field(default_factory=list[Security])
 
-    def update(self, update_day: domain.Day, rows: list[Security]) -> None:
-        self.day = update_day
-
+    def update(self, rows: list[Security]) -> None:
         self.df = sorted(rows, key=lambda sec: sec.ticker)

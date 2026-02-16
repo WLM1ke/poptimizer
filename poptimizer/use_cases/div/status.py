@@ -6,9 +6,9 @@ from collections.abc import AsyncIterator, Iterable
 from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Final, TextIO
 
-from poptimizer.core import domain, errors
+from poptimizer.actors.data.moex.models import securities
+from poptimizer.core import actors, domain, errors
 from poptimizer.domain.div import raw, status
-from poptimizer.domain.moex import securities
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
@@ -26,7 +26,7 @@ class DivStatusHandler:
         self._lgr = logging.getLogger()
         self._http_client = http_client
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.PortfolioUpdated) -> None:
+    async def __call__(self, ctx: actors.Ctx, msg: handler.PortfolioUpdated) -> None:
         table = await ctx.get_for_update(status.DivStatus)
 
         csv_file = await self._download()
@@ -37,8 +37,6 @@ class DivStatusHandler:
         status_gen = _status_gen(parsed_rows, sec_table, port)
 
         table.update(msg.day, [row async for row in self._filter_missed(ctx, status_gen)])
-
-        ctx.publish(handler.DivStatusUpdated(day=msg.day))
 
     async def _download(self) -> TextIO:
         async with (
@@ -71,7 +69,7 @@ class DivStatusHandler:
 
             yield domain.Ticker(ticker_re[1]), day
 
-    async def _filter_missed(self, ctx: handler.Ctx, rows: Iterable[status.Row]) -> AsyncIterator[status.Row]:
+    async def _filter_missed(self, ctx: actors.Ctx, rows: Iterable[status.Row]) -> AsyncIterator[status.Row]:
         for row in rows:
             table = await ctx.get(raw.DivRaw, domain.UID(row.ticker))
 

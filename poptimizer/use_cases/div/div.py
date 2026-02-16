@@ -2,25 +2,23 @@ import asyncio
 from collections.abc import Iterator
 from datetime import date
 
-from poptimizer.core import consts, domain
+from poptimizer.actors.data.moex.models import securities
+from poptimizer.core import actors, consts, domain
 from poptimizer.domain.div import div, raw
-from poptimizer.domain.moex import securities
 from poptimizer.use_cases import handler
 
 
 class DivHandler:
-    async def __call__(self, ctx: handler.Ctx, msg: handler.SecuritiesUpdated) -> None:
+    async def __call__(self, ctx: actors.Ctx, msg: handler.SecuritiesUpdated) -> None:
         sec_table = await ctx.get(securities.Securities)
 
         async with asyncio.TaskGroup() as tg:
             for sec in sec_table.df:
                 tg.create_task(self._update_one(ctx, msg.day, domain.UID(sec.ticker)))
 
-        ctx.publish(handler.DivUpdated(day=msg.day))
-
     async def _update_one(
         self,
-        ctx: handler.Ctx,
+        ctx: actors.Ctx,
         update_day: date,
         ticker: domain.UID,
     ) -> None:

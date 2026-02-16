@@ -2,9 +2,10 @@ import asyncio
 import zoneinfo
 from datetime import date, datetime, timedelta
 from enum import StrEnum, auto
-from typing import Final, Protocol
+from typing import Final
 
-from poptimizer.core import actors, consts, domain, message
+from poptimizer.actors.data.moex import securities
+from poptimizer.core import actors, adapters, consts, domain, message
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -28,24 +29,12 @@ class DataState(actors.State[_StateName]):
     checked_at: domain.Day = consts.START_DAY
 
 
-class MemoryChecker(Protocol):
-    def check_memory_usage(self, ctx: actors.Ctx) -> None: ...
-
-
-class MigrationClient(Protocol):
-    async def migrate(self, ctx: actors.Ctx, last_version: str) -> bool: ...
-
-
-class MoexClient(Protocol):
-    async def last_trading_day(self) -> domain.Day: ...
-
-
 class DataUpdater:
     def __init__(
         self,
-        memory_checker: MemoryChecker,
-        migration_client: MigrationClient,
-        moex_client: MoexClient,
+        memory_checker: adapters.MemoryChecker,
+        migration_client: adapters.MigrationClient,
+        moex_client: adapters.MOEXClient,
         evolution_aid: actors.AID,
     ) -> None:
         self._memory_checker = memory_checker
@@ -98,9 +87,14 @@ class DataUpdater:
 
         return True
 
-    async def _update_all(self, ctx: actors.Ctx, state: DataState) -> None: ...
+    async def _update_all(self, ctx: actors.Ctx, state: DataState) -> None:
+        await self._update_data(ctx, state)
 
-    async def _update_data_and_features(self, ctx: actors.Ctx, state: DataState) -> None: ...
+    async def _update_data_and_features(self, ctx: actors.Ctx, state: DataState) -> None:
+        await self._update_data(ctx, state)
+
+    async def _update_data(self, ctx: actors.Ctx, state: DataState) -> None:  # noqa: ARG002
+        await ctx.run_with_retry(securities.update, self._moex_client)
 
 
 def _last_finished_day() -> date:
