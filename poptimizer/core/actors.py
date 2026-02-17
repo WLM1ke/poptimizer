@@ -34,6 +34,12 @@ class CoreCtx(Protocol):
         *args: I.args,
         **kwargs: I.kwargs,
     ) -> O: ...
+    async def run_safe[**I, O](
+        self,
+        handler: Handler[CoreCtx, I, None],
+        *args: I.args,
+        **kwargs: I.kwargs,
+    ) -> None: ...
     async def get[E: domain.Entity](
         self,
         t_entity: type[E],

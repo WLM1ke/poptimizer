@@ -8,7 +8,7 @@ from poptimizer.core import domain
 _MINIMUM_MONTHLY_CPI: Final = 0.99
 
 
-class Row(domain.Row):
+class CPIRow(domain.Row):
     day: domain.Day
     cpi: float = Field(gt=_MINIMUM_MONTHLY_CPI)
 
@@ -20,12 +20,11 @@ class Row(domain.Row):
         return date
 
 
-class CPI(domain.EntityOld):
+class CPI(domain.Entity):
     df: Annotated[
-        list[Row],
+        list[CPIRow],
         AfterValidator(domain.sorted_by_day_validator),
-    ] = Field(default_factory=list[Row])
+    ] = Field(default_factory=list[CPIRow])
 
-    def update(self, update_day: domain.Day, rows: list[Row]) -> None:
-        self.day = update_day
+    def update(self, rows: list[CPIRow]) -> None:
         self.df = rows

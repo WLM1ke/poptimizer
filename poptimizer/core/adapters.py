@@ -1,5 +1,6 @@
 from typing import Protocol
 
+from poptimizer.actors.data.cpi import models
 from poptimizer.actors.data.moex.models import securities
 from poptimizer.core import actors, domain
 
@@ -10,6 +11,10 @@ class MemoryChecker(Protocol):
 
 class MigrationClient(Protocol):
     async def migrate(self, ctx: actors.Ctx, last_version: str) -> bool: ...
+
+
+class CBRClient(Protocol):
+    async def download_cpi(self) -> list[models.CPIRow]: ...
 
 
 class MOEXClient(Protocol):

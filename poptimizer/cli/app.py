@@ -8,7 +8,7 @@ import uvloop
 
 from poptimizer.actors.data import data
 from poptimizer.actors.system import system
-from poptimizer.adapters import http, logger, memory, migration, moex, mongo
+from poptimizer.adapters import cbr, http, logger, memory, migration, moex, mongo
 from poptimizer.cli import config
 from poptimizer.controllers.tg import tg
 from poptimizer.core import actors, message
@@ -75,11 +75,13 @@ class Run(config.Cfg):
 
             memory_client = memory.Checker(main_task)
             migration_client = migration.Client()
+            cbr_client = cbr.Client(http_client)
             moex_client = moex.Client(http_client)
 
             data_updater = data.DataUpdater(
                 memory_client,
                 migration_client,
+                cbr_client,
                 moex_client,
                 actors.AID(""),
             )

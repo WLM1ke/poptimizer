@@ -46,6 +46,17 @@ async def with_retry[C, **I, O](
                 return output
 
 
+async def run_safe[C, **I](
+    lrg: logging.Logger,
+    handler: actors.Handler[C, I, None],
+    tx: _Tx[C],
+    *args: I.args,
+    **kwargs: I.kwargs,
+) -> None:
+    if (err := await _run_safe(handler, tx, *args, **kwargs)) is not None:
+        lrg.warning("failed with %s", err)
+
+
 async def _run_safe[C, **I, O](
     handler: actors.Handler[C, I, O],
     tx: _Tx[C],

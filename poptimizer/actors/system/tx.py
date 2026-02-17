@@ -65,6 +65,16 @@ class Tx:
 
         return await run.with_retry(self._lgr, handler, tx, *args, **kwargs)
 
+    async def run_safe[**I, O](
+        self,
+        handler: actors.Handler[actors.CoreCtx, I, None],
+        *args: I.args,
+        **kwargs: I.kwargs,
+    ) -> None:
+        tx = Tx(self._lgr, self._repo, self._sender, self._aid)
+
+        return await run.run_safe(self._lgr, handler, tx, *args, **kwargs)
+
     async def get[E: domain.Object](
         self,
         t_entity: type[E],

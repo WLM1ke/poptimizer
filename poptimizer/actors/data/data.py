@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from enum import StrEnum, auto
 from typing import Final
 
+from poptimizer.actors.data.cpi import cpi
 from poptimizer.actors.data.div import div
 from poptimizer.actors.data.moex import securities
 from poptimizer.core import actors, adapters, consts, domain, message
@@ -35,11 +36,13 @@ class DataUpdater:
         self,
         memory_checker: adapters.MemoryChecker,
         migration_client: adapters.MigrationClient,
+        cdr_client: adapters.CBRClient,
         moex_client: adapters.MOEXClient,
         evolution_aid: actors.AID,
     ) -> None:
         self._memory_checker = memory_checker
         self._migration_client = migration_client
+        self._cbr_client = cdr_client
         self._moex_client = moex_client
         self._evolution_aid = evolution_aid
 
@@ -96,6 +99,7 @@ class DataUpdater:
 
     async def _update_data(self, ctx: actors.Ctx, state: DataState) -> None:  # noqa: ARG002
         async with asyncio.TaskGroup() as tg:
+            tg.create_task(ctx.run_safe(cpi.update, self._cbr_client))
             sec_task = tg.create_task(ctx.run_with_retry(securities.update, self._moex_client))
             tg.create_task(ctx.run_with_retry(div.update, sec_task))
 

@@ -1,9 +1,9 @@
 import logging
 from typing import Final
 
+from poptimizer.actors.data.cpi import models
 from poptimizer.actors.system import uow
 from poptimizer.core import errors
-from poptimizer.domain import cpi
 from poptimizer.domain.funds import funds
 
 _WEEK_IN_MONTH: Final = 365.25 / 7 / 12
@@ -22,7 +22,7 @@ async def report(
     lgr = logging.getLogger()
 
     fund = await repo.get(funds.Fund)
-    cpi_table = await repo.get(cpi.CPI)
+    cpi_table = await repo.get(models.CPI)
 
     if len(fund.rows) <= months or len(cpi_table.df) <= months:
         raise errors.DomainError("too many months")
