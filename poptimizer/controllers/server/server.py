@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Final
 
 from aiohttp import abc, web
 
-from poptimizer.controllers.bus import msg
 from poptimizer.views.web.web import App
 
 if TYPE_CHECKING:
@@ -37,9 +36,9 @@ def _content_length(response: web.StreamResponse) -> str:
     return f"{size:.0f}Tb"
 
 
-async def run(lgr: logging.Logger, url: HttpUrl, bus: msg.Bus) -> None:
+async def run(lgr: logging.Logger, url: HttpUrl) -> None:
     runner = web.AppRunner(
-        App(bus),
+        App(),
         handle_signals=False,
         access_log_class=_AccessLogger,
     )

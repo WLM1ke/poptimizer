@@ -3,8 +3,8 @@ from typing import Annotated
 
 from pydantic import AfterValidator, Field
 
+from poptimizer.actors.data.div.models import raw
 from poptimizer.core import domain
-from poptimizer.domain.div import raw
 
 
 class Row(domain.Row):
@@ -23,14 +23,13 @@ def _must_be_sorted_by_ticker_and_day(df: list[Row]) -> list[Row]:
     return df
 
 
-class DivStatus(domain.EntityOld):
+class DivStatus(domain.Entity):
     df: Annotated[
         list[Row],
         AfterValidator(_must_be_sorted_by_ticker_and_day),
     ] = Field(default_factory=list[Row])
 
-    def update(self, update_day: domain.Day, rows: list[Row]) -> None:
-        self.day = update_day
+    def update(self, rows: list[Row]) -> None:
         rows.sort(key=lambda status: (status.ticker, status.day))
         self.df = rows
 

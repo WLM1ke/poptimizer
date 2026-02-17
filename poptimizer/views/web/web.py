@@ -8,10 +8,9 @@ from urllib import parse
 from aiohttp import typedefs, web
 from pydantic import TypeAdapter, ValidationError
 
-from poptimizer.controllers.bus import msg
-from poptimizer.core import domain, errors
+from poptimizer.actors.data.div.models import raw, status
+from poptimizer.core import actors, domain, errors
 from poptimizer.core.domain import date
-from poptimizer.domain.div import raw, reestry, status
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
 from poptimizer.views import utils
@@ -19,100 +18,18 @@ from poptimizer.views.web import models, view
 
 
 class App(web.Application):
-    def __init__(self, bus: msg.Bus) -> None:
+    def __init__(self) -> None:
         super().__init__(middlewares=[self._alerts_middleware])
         self._lgr = logging.getLogger()
         self._render = view.View()
 
-        routes = (
-            (
-                web.get,
-                "/",
-                self._portfolio,
-            ),
-            (
-                web.get,
-                "/accounts/{account}",
-                self._account,
-            ),
-            (
-                web.patch,
-                "/accounts/{account}",
-                self._account_toggle_positions,
-            ),
-            (
-                web.patch,
-                "/accounts/{account}/{ticker}",
-                self._update_position,
-            ),
-            (
-                web.get,
-                "/forecast",
-                self._forecast,
-            ),
-            (
-                web.get,
-                "/optimization",
-                self._optimization,
-            ),
-            (
-                web.get,
-                "/dividends/{ticker}",
-                self._dividends,
-            ),
-            (
-                web.patch,
-                "/dividends/{ticker}/add",
-                self._dividend_add,
-            ),
-            (
-                web.patch,
-                "/dividends/{ticker}/remove",
-                self._dividend_remove,
-            ),
-            (
-                web.get,
-                "/settings",
-                self._settings,
-            ),
-            (
-                web.patch,
-                "/settings/hide_zero_positions",
-                self._hide_zero_positions,
-            ),
-            (
-                web.post,
-                "/accounts",
-                self._create_acount,
-            ),
-            (
-                web.delete,
-                "/accounts/{account}",
-                self._remove_acount,
-            ),
-            (
-                web.post,
-                "/exclude",
-                self._exclude_ticker,
-            ),
-            (
-                web.delete,
-                "/exclude/{ticker}",
-                self._not_exclude_ticker,
-            ),
-            (
-                web.patch,
-                "/theme/{theme}",
-                self._theme,
-            ),
-        )
-
-        for method, path, unwrapped_handler in routes:
-            self.add_routes([method(path, bus.wrap(unwrapped_handler))])
+        # Поменять логику
+        # for method, path, unwrapped_handler in routes:
+        #     self.add_routes([method(path, bus.wrap(unwrapped_handler))])  # noqa: ERA001
 
         self.add_routes([web.get("/{path:.*}", self._static_file)])
 
-    async def _portfolio(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _portfolio(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         port = await ctx.get(portfolio.Portfolio)
 
         value = port.value()
@@ -149,7 +66,7 @@ class App(web.Application):
             main,
         )
 
-    async def _account(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _account(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
         cookie = models.Cookie.from_request(req)
 
@@ -165,7 +82,7 @@ class App(web.Application):
             main,
         )
 
-    async def _account_toggle_positions(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _account_toggle_positions(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
         cookie = models.Cookie.from_request(req)
 
@@ -195,7 +112,7 @@ class App(web.Application):
 
         return self._render.render_main(main)
 
-    async def _forecast(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _forecast(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
             port_task = tg.create_task(ctx.get(portfolio.Portfolio))
             forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
@@ -229,7 +146,7 @@ class App(web.Application):
             poll=poll,
         )
 
-    async def _optimization(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _optimization(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
             port_task = tg.create_task(ctx.get(portfolio.Portfolio))
             forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
@@ -267,12 +184,12 @@ class App(web.Application):
             poll=poll,
         )
 
-    async def _dividends(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _dividends(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = domain.UID(req.match_info["ticker"])
 
         async with asyncio.TaskGroup() as tg:
             raw_task = tg.create_task(ctx.get(raw.DivRaw, ticker))
-            reestry_task = tg.create_task(ctx.get(reestry.DivReestry, ticker))
+            reestry_task = tg.create_task(ctx.get(raw.DivReestry, ticker))
 
         return await self._render_page(
             ctx,
@@ -280,12 +197,12 @@ class App(web.Application):
             _prepare_dividends(await raw_task, await reestry_task),
         )
 
-    async def _dividend_add(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _dividend_add(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = domain.UID(req.match_info["ticker"])
 
         async with asyncio.TaskGroup() as tg:
             raw_task = tg.create_task(ctx.get_for_update(raw.DivRaw, ticker))
-            reestry_task = tg.create_task(ctx.get(reestry.DivReestry, ticker))
+            reestry_task = tg.create_task(ctx.get(raw.DivReestry, ticker))
             status_task = tg.create_task(ctx.get_for_update(status.DivStatus))
 
         raw_div = await raw_task
@@ -301,12 +218,12 @@ class App(web.Application):
 
         return self._render.render_main(_prepare_dividends(raw_div, reestry_div))
 
-    async def _dividend_remove(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _dividend_remove(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = domain.UID(req.match_info["ticker"])
 
         async with asyncio.TaskGroup() as tg:
             raw_task = tg.create_task(ctx.get_for_update(raw.DivRaw, ticker))
-            reestry_task = tg.create_task(ctx.get(reestry.DivReestry, ticker))
+            reestry_task = tg.create_task(ctx.get(raw.DivReestry, ticker))
 
         raw_div = await raw_task
         reestry_div = await reestry_task
@@ -319,7 +236,7 @@ class App(web.Application):
 
         return self._render.render_main(_prepare_dividends(raw_div, reestry_div))
 
-    async def _settings(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _settings(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         port = await ctx.get(portfolio.Portfolio)
 
         main = models.Settings(
@@ -340,7 +257,7 @@ class App(web.Application):
 
         return self._render.set_cookie(cookie)
 
-    async def _create_acount(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _create_acount(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         account = TypeAdapter(str).validate_python((await req.post()).get("account"))
         if account != parse.quote(account):
             raise errors.ControllersError("Invalid account name - use only english letters and numbers")
@@ -362,7 +279,7 @@ class App(web.Application):
             main,
         )
 
-    async def _remove_acount(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _remove_acount(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
         cookie = models.Cookie.from_request(req)
 
@@ -424,7 +341,7 @@ class App(web.Application):
 
     async def _render_page(
         self,
-        ctx: handler.Ctx,
+        ctx: actors.Ctx,
         req: web.Request,
         main: Any,
         *,
@@ -487,7 +404,7 @@ class App(web.Application):
         return web.FileResponse(file_path)
 
 
-def _prepare_dividends(raw_div: raw.DivRaw, reestry_div: reestry.DivReestry) -> models.Dividends:
+def _prepare_dividends(raw_div: raw.DivRaw, reestry_div: raw.DivReestry) -> models.Dividends:
     compare = [
         models.DivRow(
             day=row_source.day,

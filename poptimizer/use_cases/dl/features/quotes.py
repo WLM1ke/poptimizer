@@ -7,8 +7,8 @@ from typing import Final
 import numpy as np
 import pandas as pd
 
-from poptimizer.core import consts, domain
-from poptimizer.domain.div import div
+from poptimizer.actors.data.div.models import div
+from poptimizer.core import actors, consts, domain
 from poptimizer.domain.dl.features import Features, NumFeat
 from poptimizer.domain.moex import quotes
 from poptimizer.domain.portfolio import portfolio
@@ -53,7 +53,7 @@ async def _build_features(ctx: handler.Ctx, ticker: domain.UID, index: pd.Dateti
     feat.update_numerical(quotes_table.day, quotes_df)  # type: ignore[reportUnknownMemberType]
 
 
-async def _prepare_div(ctx: handler.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> pd.Series[float]:
+async def _prepare_div(ctx: actors.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> pd.Series[float]:
     div_table = await ctx.get(div.Dividends, ticker)
 
     first_day = index[1]

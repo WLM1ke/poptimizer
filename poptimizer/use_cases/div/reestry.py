@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, Final
 
 from lxml import html
 
-from poptimizer.core import domain, errors
-from poptimizer.domain.div import raw, reestry, status
+from poptimizer.actors.data.div.models import raw, status
+from poptimizer.core import actors, domain, errors
 from poptimizer.domain.moex import quotes, usd
 from poptimizer.use_cases import handler
 
@@ -28,20 +28,19 @@ class ReestryHandler:
         self._lgr = logging.getLogger()
         self._http_client = http_client
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.DivStatusUpdated) -> None:
+    async def __call__(self, ctx: actors.Ctx) -> None:
         status_table = await ctx.get(status.DivStatus)
 
         async with asyncio.TaskGroup() as tg:
             for row in status_table.df:
-                tg.create_task(self._update_one(ctx, msg.day, row))
+                tg.create_task(self._update_one(ctx, row))
 
     async def _update_one(
         self,
-        ctx: handler.Ctx,
-        update_day: domain.Day,
+        ctx: actors.Ctx,
         status_row: status.Row,
     ) -> None:
-        table = await ctx.get_for_update(reestry.DivReestry, domain.UID(status_row.ticker))
+        table = await ctx.get_for_update(raw.DivReestry, domain.UID(status_row.ticker))
 
         if table.has_day(status_row.day):
             return
@@ -53,9 +52,9 @@ class ReestryHandler:
 
             return
 
-        table.update(update_day, rows)
+        table.update(rows)
 
-    async def _prepare_rows(self, ctx: handler.Ctx, row: status.Row) -> list[raw.Row]:
+    async def _prepare_rows(self, ctx: actors.Ctx, row: status.Row) -> list[raw.Row]:
         url = await self._find_url(row.ticker_base)
         html_page = await self._load_html(url, row.ticker)
         quotes_table = await ctx.get(quotes.Quotes, domain.UID(row.ticker))
