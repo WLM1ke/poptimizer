@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from enum import StrEnum, auto
 from typing import Final
 
+from poptimizer.actors.data.div import div
 from poptimizer.actors.data.moex import securities
 from poptimizer.core import actors, adapters, consts, domain, message
 
@@ -94,7 +95,9 @@ class DataUpdater:
         await self._update_data(ctx, state)
 
     async def _update_data(self, ctx: actors.Ctx, state: DataState) -> None:  # noqa: ARG002
-        await ctx.run_with_retry(securities.update, self._moex_client)
+        async with asyncio.TaskGroup() as tg:
+            sec_task = tg.create_task(ctx.run_with_retry(securities.update, self._moex_client))
+            tg.create_task(ctx.run_with_retry(div.update, sec_task))
 
 
 def _last_finished_day() -> date:

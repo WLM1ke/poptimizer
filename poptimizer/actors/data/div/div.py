@@ -6,25 +6,22 @@ from poptimizer.actors.data.moex.models import securities
 from poptimizer.core import actors, consts, domain
 
 
-class DivHandler:
-    async def __call__(self, ctx: actors.Ctx) -> None:
-        sec_table = await ctx.get(securities.Securities)
+async def update(
+    ctx: actors.CoreCtx,
+    sec_task: asyncio.Task[list[securities.Security]],
+) -> None:
+    async with asyncio.TaskGroup() as tg:
+        for sec in await sec_task:
+            tg.create_task(_update_one(ctx, domain.UID(sec.ticker)))
 
-        async with asyncio.TaskGroup() as tg:
-            for sec in sec_table.df:
-                tg.create_task(self._update_one(ctx, domain.UID(sec.ticker)))
 
-    async def _update_one(
-        self,
-        ctx: actors.Ctx,
-        ticker: domain.UID,
-    ) -> None:
-        div_table = await ctx.get_for_update(div.Dividends, ticker)
-        raw_table = await ctx.get(raw.DivRaw, ticker)
+async def _update_one(ctx: actors.CoreCtx, ticker: domain.UID) -> None:
+    div_table = await ctx.get_for_update(div.Dividends, ticker)
+    raw_table = await ctx.get(raw.DivRaw, ticker)
 
-        rows = list(_prepare_rows(raw_table.df))
+    rows = list(_prepare_rows(raw_table.df))
 
-        div_table.update(rows)
+    div_table.update(rows)
 
 
 def _prepare_rows(raw_list: list[raw.Row]) -> Iterator[div.Row]:
