@@ -1,8 +1,8 @@
 import asyncio
-from typing import Final
+from typing import Final, Protocol
 
 from poptimizer.actors.data.moex.models import securities
-from poptimizer.core import actors, adapters, consts, domain, errors
+from poptimizer.core import actors, consts, domain, errors
 
 _MARKET: Final = "shares"
 _ETF_BOARDS: Final = "TQTF"
@@ -11,7 +11,15 @@ _SHARES_BOARDS: Final = "TQBR"
 type _Cache = dict[domain.Ticker, tuple[securities.Sector, domain.Day]]
 
 
-async def update(ctx: actors.CoreCtx, moex_client: adapters.MOEXClient) -> list[securities.Security]:
+class MOEXClient(Protocol):
+    async def get_board_securities(self, market: str, board: str) -> list[securities.Security]: ...
+
+    async def get_index_tickers(self, index: securities.SectorIndex) -> list[securities.SectorIndexRow]: ...
+
+    async def get_etf_desc(self) -> list[securities.ETFRow]: ...
+
+
+async def update(ctx: actors.CoreCtx, moex_client: MOEXClient) -> list[securities.Security]:
     async with asyncio.TaskGroup() as tg:
         etf_task = tg.create_task(_get_etf(moex_client))
         shares_task = tg.create_task(_get_shares(moex_client))
@@ -22,7 +30,7 @@ async def update(ctx: actors.CoreCtx, moex_client: adapters.MOEXClient) -> list[
     return table.df
 
 
-async def _get_etf(moex_client: adapters.MOEXClient) -> list[securities.Security]:
+async def _get_etf(moex_client: MOEXClient) -> list[securities.Security]:
     cache = {desc.ticker: desc.sector for desc in await moex_client.get_etf_desc()}
     rows = await moex_client.get_board_securities(_MARKET, _ETF_BOARDS)
 
@@ -32,7 +40,7 @@ async def _get_etf(moex_client: adapters.MOEXClient) -> list[securities.Security
     return rows
 
 
-async def _get_shares(moex_client: adapters.MOEXClient) -> list[securities.Security]:
+async def _get_shares(moex_client: MOEXClient) -> list[securities.Security]:
     cache: _Cache = {}
 
     async with asyncio.TaskGroup() as tg:
@@ -50,7 +58,7 @@ async def _get_shares(moex_client: adapters.MOEXClient) -> list[securities.Secur
 
 
 async def _update_shares_sector_cache(
-    moex_client: adapters.MOEXClient,
+    moex_client: MOEXClient,
     cache: _Cache,
     index: securities.SectorIndex,
 ) -> None:

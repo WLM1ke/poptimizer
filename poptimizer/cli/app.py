@@ -6,9 +6,11 @@ import sys
 import torch
 import uvloop
 
-from poptimizer.actors.data import data
+from poptimizer.actors.data import data, memory, migration
+from poptimizer.actors.data.cpi import cbr
+from poptimizer.actors.data.moex import moex
 from poptimizer.actors.system import system
-from poptimizer.adapters import cbr, http, logger, memory, migration, moex, mongo
+from poptimizer.adapters import http, logger, mongo
 from poptimizer.cli import config
 from poptimizer.controllers.tg import tg
 from poptimizer.core import actors, message

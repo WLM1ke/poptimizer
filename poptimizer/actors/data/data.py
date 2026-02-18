@@ -2,12 +2,12 @@ import asyncio
 import zoneinfo
 from datetime import date, datetime, timedelta
 from enum import StrEnum, auto
-from typing import Final
+from typing import Final, Protocol
 
 from poptimizer.actors.data.cpi import cpi
 from poptimizer.actors.data.div import div
 from poptimizer.actors.data.moex import securities
-from poptimizer.core import actors, adapters, consts, domain, message
+from poptimizer.core import actors, consts, domain, message
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -31,13 +31,25 @@ class DataState(actors.State[_StateName]):
     checked_at: domain.Day = consts.START_DAY
 
 
+class MemoryChecker(Protocol):
+    def check_memory_usage(self, ctx: actors.Ctx) -> None: ...
+
+
+class MigrationClient(Protocol):
+    async def migrate(self, ctx: actors.Ctx, last_version: str) -> bool: ...
+
+
+class MOEXClient(securities.MOEXClient, Protocol):
+    async def last_trading_day(self) -> domain.Day: ...
+
+
 class DataUpdater:
     def __init__(
         self,
-        memory_checker: adapters.MemoryChecker,
-        migration_client: adapters.MigrationClient,
-        cdr_client: adapters.CBRClient,
-        moex_client: adapters.MOEXClient,
+        memory_checker: MemoryChecker,
+        migration_client: MigrationClient,
+        cdr_client: cpi.CBRClient,
+        moex_client: MOEXClient,
         evolution_aid: actors.AID,
     ) -> None:
         self._memory_checker = memory_checker
