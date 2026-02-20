@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Final, TextIO
 
 from poptimizer.actors.data.div.models import raw, status
-from poptimizer.actors.data.moex.models import securities
+from poptimizer.actors.data.moex import securities
 from poptimizer.core import actors, domain, errors
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler

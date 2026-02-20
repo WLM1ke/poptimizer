@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import aiomoex
 from pydantic import TypeAdapter
 
-from poptimizer.actors.data.moex.models import securities
+from poptimizer.actors.data.moex import securities
 from poptimizer.core import actors, consts, domain
 from poptimizer.domain.moex import quotes
 from poptimizer.use_cases import handler

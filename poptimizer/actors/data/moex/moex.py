@@ -4,7 +4,7 @@ import aiohttp
 import aiomoex
 from pydantic import TypeAdapter
 
-from poptimizer.actors.data.moex.models import securities
+from poptimizer.actors.data.moex import securities
 from poptimizer.adapters.http import wrap_err
 from poptimizer.core import errors
 
@@ -24,7 +24,7 @@ class Client:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def get_board_securities(self, market: str, board: str) -> list[securities.Security]:
+    async def get_board_securities(self, market: str, board: str) -> list[securities.Row]:
         async with wrap_err(f"can't download {market} {board} data"):
             raw_data = await aiomoex.get_board_securities(
                 self._http_client,
@@ -33,7 +33,7 @@ class Client:
                 columns=_SECURITIES_COLUMNS,
             )
 
-            return TypeAdapter(list[securities.Security]).validate_python(raw_data)
+            return TypeAdapter(list[securities.Row]).validate_python(raw_data)
 
     async def get_index_tickers(self, index: securities.SectorIndex) -> list[securities.SectorIndexRow]:
         async with wrap_err(f"can't download index {index} data"):

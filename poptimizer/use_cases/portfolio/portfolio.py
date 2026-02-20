@@ -2,7 +2,7 @@ import asyncio
 import logging
 import statistics
 
-from poptimizer.actors.data.moex.models import securities
+from poptimizer.actors.data.moex import securities
 from poptimizer.core import actors, domain
 from poptimizer.domain.evolve import evolve
 from poptimizer.domain.moex import quotes

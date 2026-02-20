@@ -1,14 +1,33 @@
 import asyncio
 from collections.abc import Iterator
+from typing import Annotated
 
-from poptimizer.actors.data.div.models import div, raw
-from poptimizer.actors.data.moex.models import securities
+from pydantic import AfterValidator, Field, PositiveFloat
+
+from poptimizer.actors.data.div.models import raw
+from poptimizer.actors.data.moex import securities
 from poptimizer.core import actors, consts, domain
+
+
+class Row(domain.Row):
+    day: domain.Day
+    dividend: PositiveFloat
+
+
+class Dividends(domain.Entity):
+    df: Annotated[
+        list[Row],
+        AfterValidator(domain.sorted_by_day_validator),
+        AfterValidator(domain.after_start_date_validator),
+    ] = Field(default_factory=list[Row])
+
+    def update(self, rows: list[Row]) -> None:
+        self.df = rows
 
 
 async def update(
     ctx: actors.CoreCtx,
-    sec_task: asyncio.Task[list[securities.Security]],
+    sec_task: asyncio.Task[list[securities.Row]],
 ) -> None:
     async with asyncio.TaskGroup() as tg:
         for sec in await sec_task:
@@ -16,7 +35,7 @@ async def update(
 
 
 async def _update_one(ctx: actors.CoreCtx, ticker: domain.UID) -> None:
-    div_table = await ctx.get_for_update(div.Dividends, ticker)
+    div_table = await ctx.get_for_update(Dividends, ticker)
     raw_table = await ctx.get(raw.DivRaw, ticker)
 
     rows = list(_prepare_rows(raw_table.df))
@@ -24,7 +43,7 @@ async def _update_one(ctx: actors.CoreCtx, ticker: domain.UID) -> None:
     div_table.update(rows)
 
 
-def _prepare_rows(raw_list: list[raw.Row]) -> Iterator[div.Row]:
+def _prepare_rows(raw_list: list[raw.Row]) -> Iterator[Row]:
     div_amount = 0
     day = consts.START_DAY
     if raw_list:
@@ -32,7 +51,7 @@ def _prepare_rows(raw_list: list[raw.Row]) -> Iterator[div.Row]:
 
     for row in raw_list:
         if row.day > day:
-            yield div.Row(day=day, dividend=div_amount)
+            yield Row(day=day, dividend=div_amount)
 
             day = row.day
             div_amount = 0
@@ -40,4 +59,4 @@ def _prepare_rows(raw_list: list[raw.Row]) -> Iterator[div.Row]:
         div_amount += row.dividend
 
     if div_amount:
-        yield div.Row(day=day, dividend=div_amount)
+        yield Row(day=day, dividend=div_amount)

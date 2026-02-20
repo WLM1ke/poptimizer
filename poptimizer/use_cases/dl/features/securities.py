@@ -1,6 +1,6 @@
 import asyncio
 
-from poptimizer.actors.data.moex.models import securities
+from poptimizer.actors.data.moex import securities
 from poptimizer.core import actors, domain
 from poptimizer.domain.dl.features import EmbeddingFeatDesc, EmbFeat, Features
 from poptimizer.domain.portfolio import portfolio
@@ -26,7 +26,7 @@ class SecFeatHandler:
                 feat.embedding[EmbFeat.SECTOR] = EmbeddingFeatDesc(value=sec_sectors[feat.uid], size=sectors_count)
 
 
-def _sec_type(row: securities.Security) -> str:
+def _sec_type(row: securities.Row) -> str:
     return f"{row.board}.{row.type}.{row.instrument}"
 
 

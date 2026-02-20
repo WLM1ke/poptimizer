@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Final, cast
 import aiohttp
 from openpyxl.reader import excel
 
-from poptimizer.actors.data.cpi import models
+from poptimizer.actors.data.cpi import cpi
 from poptimizer.adapters import http
 from poptimizer.core import errors
 
@@ -33,7 +33,7 @@ class Client:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
-    async def download_cpi(self) -> list[models.CPIRow]:
+    async def download_cpi(self) -> list[cpi.CPIRow]:
         async with (
             http.wrap_err("can't download CPI data"),
             self._http_client.get(_URL) as resp,
@@ -44,18 +44,18 @@ class Client:
             return _parse_rows(io.BytesIO(await resp.read()))
 
 
-def _parse_rows(xlsx: io.BytesIO) -> list[models.CPIRow]:
+def _parse_rows(xlsx: io.BytesIO) -> list[cpi.CPIRow]:
     wb = excel.load_workbook(xlsx)
     ws = cast("worksheet.Worksheet", wb[_SHEET_NAME])
 
     _validate_data_position(ws)
 
-    rows: list[models.CPIRow] = []
+    rows: list[cpi.CPIRow] = []
 
     for row in ws.iter_cols(min_row=_MIN_ROW, max_row=_MAX_ROW, min_col=_MIN_COL, values_only=True):
         day, value = row
 
-        rows.append(models.CPIRow(day=_month_end(cast("datetime", day).date()), cpi=1 + cast("float", value) / 100))
+        rows.append(cpi.CPIRow(day=_month_end(cast("datetime", day).date()), cpi=1 + cast("float", value) / 100))
 
     return rows
 

@@ -7,7 +7,7 @@ from typing import Final
 import numpy as np
 import pandas as pd
 
-from poptimizer.actors.data.div.models import div
+from poptimizer.actors.data.div import div
 from poptimizer.core import actors, consts, domain
 from poptimizer.domain.dl.features import Features, NumFeat
 from poptimizer.domain.moex import quotes
