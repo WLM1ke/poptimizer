@@ -130,10 +130,10 @@ class EvolutionHandler:
         self._lgr.info("Creating start models")
         evolution.reset()
 
-        for _ in range(consts.INITIAL_TEST_DAYS - count):
+        for _ in range(_PARENT_COUNT - count):
             await ctx.get_for_update(evolve.Model, _random_uid())
 
-        return consts.INITIAL_TEST_DAYS
+        return _PARENT_COUNT
 
     async def _get_model(self, ctx: Ctx, evolution: evolve.Evolution) -> tuple[evolve.Model, bool]:
         match evolution.state:
