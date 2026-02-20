@@ -8,7 +8,7 @@ from pydantic import Field
 
 from poptimizer.actors.data.cpi import cpi
 from poptimizer.actors.data.div import div
-from poptimizer.actors.data.moex import securities
+from poptimizer.actors.data.moex import quotes, securities
 from poptimizer.core import actors, consts, domain, message
 
 # Часовой пояс MOEX
@@ -64,7 +64,7 @@ class MigrationClient(Protocol):
     async def migrate(self, ctx: actors.Ctx, last_version: str) -> bool: ...
 
 
-class MOEXClient(securities.MOEXClient, Protocol): ...
+class MOEXClient(securities.MOEXClient, quotes.MOEXClient, Protocol): ...
 
 
 class DataUpdater:
@@ -113,10 +113,11 @@ class DataUpdater:
             tg.create_task(cpi.update(ctx, self._cbr_client))
             sec_task = tg.create_task(securities.update(ctx, self._moex_client))
             tg.create_task(div.update(ctx, sec_task))
+            trading_days_task = tg.create_task(quotes.update(ctx, self._moex_client, next_check_day, sec_task))
 
         state.state = _StateName.UPDATING_PORTFOLIO
         state.check_day = next_check_day
-        state.data_day = state.check_day  # Исправить
+        state.data_day = (await trading_days_task)[-1]
 
     async def _update_portfolio(self, ctx: actors.Ctx, state: DataState) -> None:  # noqa: ARG002
         if state.portfolio_day < state.data_day:

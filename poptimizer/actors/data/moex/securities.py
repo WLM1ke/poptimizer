@@ -90,7 +90,7 @@ type _Cache = dict[domain.Ticker, tuple[Sector, domain.Day]]
 
 
 class MOEXClient(Protocol):
-    async def get_board_securities(self, market: str, board: str) -> list[Row]: ...
+    async def get_securities(self, market: str, board: str) -> list[Row]: ...
 
     async def get_index_tickers(self, index: SectorIndex) -> list[SectorIndexRow]: ...
 
@@ -110,7 +110,7 @@ async def update(ctx: actors.CoreCtx, moex_client: MOEXClient) -> list[Row]:
 
 async def _get_etf(moex_client: MOEXClient) -> list[Row]:
     cache = {desc.ticker: desc.sector for desc in await moex_client.get_etf_desc()}
-    rows = await moex_client.get_board_securities(_MARKET, _ETF_BOARD)
+    rows = await moex_client.get_securities(_MARKET, _ETF_BOARD)
 
     for row in rows:
         row.sector = cache.get(row.ticker, OtherETF)
@@ -122,7 +122,7 @@ async def _get_shares(moex_client: MOEXClient) -> list[Row]:
     cache: _Cache = {}
 
     async with asyncio.TaskGroup() as tg:
-        rows_task = tg.create_task(moex_client.get_board_securities(_MARKET, _SHARES_BOARD))
+        rows_task = tg.create_task(moex_client.get_securities(_MARKET, _SHARES_BOARD))
 
         for sector in SectorIndex:
             tg.create_task(_update_shares_sector_cache(moex_client, cache, sector))
