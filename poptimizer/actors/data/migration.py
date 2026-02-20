@@ -25,9 +25,6 @@ class Client:
 
 
 async def _migrate(ctx: actors.Ctx, last_version: str) -> bool:  # noqa: ARG001
-    if not last_version:
-        return False
-
     migrated = False
     if _normalized_ver(last_version) < _normalized_ver("3.3.0"):
         ...

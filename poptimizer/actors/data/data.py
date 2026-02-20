@@ -4,6 +4,8 @@ from datetime import date, datetime, timedelta
 from enum import StrEnum, auto
 from typing import Final, Protocol
 
+from pydantic import Field
+
 from poptimizer.actors.data.cpi import cpi
 from poptimizer.actors.data.div import div
 from poptimizer.actors.data.moex import securities
@@ -15,105 +17,6 @@ _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
 # Торги заканчиваются в 24.00, но данные публикуются 01.00
 _END_HOUR: Final = 1
 _END_MINUTE: Final = 0
-
-
-class _StateName(StrEnum):
-    DATA_MIGRATED = auto()
-    DATA_CHECK_REQUIRED = auto()
-    NEW_DATA_AVAILABLE = auto()
-    DATA_UPDATED = auto()
-
-
-class DataState(actors.State[_StateName]):
-    state: _StateName = _StateName.NEW_DATA_AVAILABLE
-    app_version: str = ""
-    last_trading_day: domain.Day = consts.START_DAY
-    checked_at: domain.Day = consts.START_DAY
-
-
-class MemoryChecker(Protocol):
-    def check_memory_usage(self, ctx: actors.Ctx) -> None: ...
-
-
-class MigrationClient(Protocol):
-    async def migrate(self, ctx: actors.Ctx, last_version: str) -> bool: ...
-
-
-class MOEXClient(securities.MOEXClient, Protocol):
-    async def last_trading_day(self) -> domain.Day: ...
-
-
-class DataUpdater:
-    def __init__(
-        self,
-        memory_checker: MemoryChecker,
-        migration_client: MigrationClient,
-        cdr_client: cpi.CBRClient,
-        moex_client: MOEXClient,
-        evolution_aid: actors.AID,
-    ) -> None:
-        self._memory_checker = memory_checker
-        self._migration_client = migration_client
-        self._cbr_client = cdr_client
-        self._moex_client = moex_client
-        self._evolution_aid = evolution_aid
-
-    async def __call__(self, ctx: actors.Ctx, state: DataState, msg: message.AppStarted | message.Next) -> None:
-        aid: actors.AID | None = None
-
-        match (msg, state.state):
-            case (message.AppStarted(), _):
-                if await self._migration_client.migrate(ctx, state.app_version):
-                    state.state = _StateName.DATA_MIGRATED
-
-                state.app_version = msg.version
-
-                if await self._is_new_data_available(state):
-                    state.state = _StateName.NEW_DATA_AVAILABLE
-            case (message.Next(), _StateName.DATA_MIGRATED):
-                await self._update_data_and_features(ctx, state)
-            case (message.Next(), _StateName.DATA_CHECK_REQUIRED):
-                self._memory_checker.check_memory_usage(ctx)
-
-                state.state = _StateName.DATA_UPDATED
-                if await self._is_new_data_available(state):
-                    state.state = _StateName.NEW_DATA_AVAILABLE
-            case (message.Next(), _StateName.NEW_DATA_AVAILABLE):
-                await self._update_all(ctx, state)
-                state.state = _StateName.DATA_UPDATED
-            case (message.Next(), _StateName.DATA_UPDATED):
-                await asyncio.sleep(60 * 60)
-                state.state = _StateName.DATA_CHECK_REQUIRED
-                aid = self._evolution_aid
-
-        ctx.send(message.Next(), aid=aid)
-
-    async def _is_new_data_available(self, state: DataState) -> bool:
-        last_finished_day = _last_finished_day()
-
-        if state.checked_at >= last_finished_day:
-            return False
-
-        new_last_trading_day = min(last_finished_day, await self._moex_client.last_trading_day())
-
-        if state.last_trading_day >= new_last_trading_day:
-            state.checked_at = last_finished_day
-
-            return False
-
-        return True
-
-    async def _update_all(self, ctx: actors.Ctx, state: DataState) -> None:
-        await self._update_data(ctx, state)
-
-    async def _update_data_and_features(self, ctx: actors.Ctx, state: DataState) -> None:
-        await self._update_data(ctx, state)
-
-    async def _update_data(self, ctx: actors.Ctx, state: DataState) -> None:  # noqa: ARG002
-        async with asyncio.TaskGroup() as tg:
-            tg.create_task(ctx.run_safe(cpi.update, self._cbr_client))
-            sec_task = tg.create_task(ctx.run_with_retry(securities.update, self._moex_client))
-            tg.create_task(ctx.run_with_retry(div.update, sec_task))
 
 
 def _last_finished_day() -> date:
@@ -135,3 +38,101 @@ def _last_finished_day() -> date:
         month=now.month,
         day=now.day,
     ) - timedelta(days=delta)
+
+
+class _StateName(StrEnum):
+    UPDATING_DATA = auto()
+    UPDATING_PORTFOLIO = auto()
+    UPDATING_FEATURES = auto()
+    WAITING_EVOLUTION = auto()
+
+
+class DataState(actors.State[_StateName]):
+    state: _StateName = _StateName.UPDATING_DATA
+    app_version: str = consts.__version__
+    check_day: domain.Day = Field(default_factory=_last_finished_day)
+    data_day: domain.Day = consts.START_DAY
+    portfolio_day: domain.Day = consts.START_DAY
+    features_day: domain.Day | None = None
+
+
+class MemoryChecker(Protocol):
+    def check_memory_usage(self, ctx: actors.Ctx) -> None: ...
+
+
+class MigrationClient(Protocol):
+    async def migrate(self, ctx: actors.Ctx, last_version: str) -> bool: ...
+
+
+class MOEXClient(securities.MOEXClient, Protocol): ...
+
+
+class DataUpdater:
+    def __init__(
+        self,
+        memory_checker: MemoryChecker,
+        migration_client: MigrationClient,
+        cdr_client: cpi.CBRClient,
+        moex_client: MOEXClient,
+        evolution_aid: actors.AID,
+    ) -> None:
+        self._memory_checker = memory_checker
+        self._migration_client = migration_client
+        self._cbr_client = cdr_client
+        self._moex_client = moex_client
+        self._evolution_aid = evolution_aid
+
+    async def __call__(self, ctx: actors.Ctx, state: DataState, msg: message.AppStarted | message.Next) -> None:
+        match (msg, state.state):
+            case (message.AppStarted(version=version), _):
+                await self._migrate(ctx, state, version)
+            case (message.Next(), _StateName.UPDATING_DATA):
+                await self._update_data(ctx, state)
+            case (message.Next(), _StateName.UPDATING_PORTFOLIO):
+                await self._update_portfolio(ctx, state)
+            case (message.Next(), _StateName.UPDATING_FEATURES):
+                await self._update_features(ctx, state)
+            case (message.Next(), _StateName.WAITING_EVOLUTION):
+                await self._check_day_changed(ctx, state)
+
+                return
+
+        ctx.send(message.Next())
+
+    async def _migrate(self, ctx: actors.Ctx, state: DataState, version: str) -> None:
+        if await self._migration_client.migrate(ctx, state.app_version):
+            state.state = _StateName.UPDATING_DATA
+            state.features_day = None
+
+        state.app_version = version
+
+    async def _update_data(self, ctx: actors.Ctx, state: DataState) -> None:
+        next_check_day = _last_finished_day()
+
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(cpi.update(ctx, self._cbr_client))
+            sec_task = tg.create_task(securities.update(ctx, self._moex_client))
+            tg.create_task(div.update(ctx, sec_task))
+
+        state.state = _StateName.UPDATING_PORTFOLIO
+        state.check_day = next_check_day
+        state.data_day = state.check_day  # Исправить
+
+    async def _update_portfolio(self, ctx: actors.Ctx, state: DataState) -> None:  # noqa: ARG002
+        if state.portfolio_day < state.data_day:
+            ...
+
+        state.state = _StateName.UPDATING_FEATURES
+        state.portfolio_day = state.data_day
+
+    async def _update_features(self, ctx: actors.Ctx, state: DataState) -> None:  # noqa: ARG002
+        if state.features_day is None or state.features_day < state.data_day:
+            ...
+
+        state.state = _StateName.WAITING_EVOLUTION
+        state.features_day = state.data_day
+
+    async def _check_day_changed(self, ctx: actors.Ctx, state: DataState) -> None:
+        if _last_finished_day() > state.check_day:
+            state.state = _StateName.UPDATING_DATA
+            ctx.send(message.Next())
