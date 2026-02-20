@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Final, cast
 import aiohttp
 from openpyxl.reader import excel
 
-from poptimizer.actors.data.cpi import cpi
 from poptimizer.adapters import http
 from poptimizer.core import errors
+from poptimizer.data.cpi import cpi
 
 if TYPE_CHECKING:
     import aiohttp

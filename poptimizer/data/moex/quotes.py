@@ -4,8 +4,8 @@ from typing import Annotated, Protocol
 
 from pydantic import AfterValidator, Field
 
-from poptimizer.actors.data.moex import securities
 from poptimizer.core import actors, consts, domain, errors
+from poptimizer.data.moex import securities
 
 
 class Row(domain.Row):

@@ -4,9 +4,9 @@ import aiohttp
 import aiomoex
 from pydantic import TypeAdapter
 
-from poptimizer.actors.data.moex import quotes, securities
 from poptimizer.adapters.http import wrap_err
 from poptimizer.core import domain, errors
+from poptimizer.data.moex import quotes, securities
 
 _ETF_URL: Final = "https://rusetfs.com/api/v1/screener"
 

@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from types import TracebackType
 from typing import Any, Protocol, Self
 
-from poptimizer.actors.system import run, uow
+from poptimizer.actors import run, uow
 from poptimizer.core import actors, domain
 from poptimizer.domain.evolve import evolve
 

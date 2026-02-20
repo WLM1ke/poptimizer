@@ -8,9 +8,9 @@ from urllib import parse
 from aiohttp import typedefs, web
 from pydantic import TypeAdapter, ValidationError
 
-from poptimizer.actors.data.div.models import raw, status
 from poptimizer.core import actors, domain, errors
 from poptimizer.core.domain import date
+from poptimizer.data.div.models import raw, status
 from poptimizer.domain.portfolio import forecasts, portfolio
 from poptimizer.use_cases import handler
 from poptimizer.views import utils

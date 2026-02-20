@@ -4,7 +4,7 @@ from typing import Final
 import pandas as pd
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
-from poptimizer.actors.system import uow
+from poptimizer.actors import uow
 from poptimizer.core import errors
 from poptimizer.domain.funds import funds
 from poptimizer.domain.moex import index

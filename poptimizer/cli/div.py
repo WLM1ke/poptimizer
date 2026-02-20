@@ -1,8 +1,8 @@
 import contextlib
 
-from poptimizer.actors.data.div.models import raw
 from poptimizer.adapters import logger, mongo
 from poptimizer.cli import config, safe
+from poptimizer.data.div.models import raw
 
 
 class Reset(config.Cfg):

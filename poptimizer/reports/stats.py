@@ -4,7 +4,7 @@ from collections import Counter
 from datetime import timedelta
 from typing import Any
 
-from poptimizer.actors.system import uow
+from poptimizer.actors import uow
 from poptimizer.domain.evolve import evolve
 
 

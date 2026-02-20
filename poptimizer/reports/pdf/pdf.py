@@ -5,9 +5,9 @@ from typing import Final
 
 from reportlab.pdfgen.canvas import Canvas
 
-from poptimizer.actors.data.moex import quotes
-from poptimizer.actors.system import uow
+from poptimizer.actors import uow
 from poptimizer.core import consts, domain
+from poptimizer.data.moex import quotes
 from poptimizer.domain.funds import funds
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.reports import risk

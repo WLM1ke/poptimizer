@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING, Final
 
 from lxml import html
 
-from poptimizer.actors.data.div.models import raw, status
-from poptimizer.actors.data.moex import quotes
 from poptimizer.core import actors, domain, errors
+from poptimizer.data.div.models import raw, status
+from poptimizer.data.moex import quotes
 from poptimizer.domain.moex import usd
 from poptimizer.use_cases import handler
 

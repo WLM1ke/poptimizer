@@ -4,9 +4,9 @@ from typing import Annotated
 
 from pydantic import AfterValidator, Field, PositiveFloat
 
-from poptimizer.actors.data.div.models import raw
-from poptimizer.actors.data.moex import securities
 from poptimizer.core import actors, consts, domain
+from poptimizer.data.div.models import raw
+from poptimizer.data.moex import securities
 
 
 class Row(domain.Row):

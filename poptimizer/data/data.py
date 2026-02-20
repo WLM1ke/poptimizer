@@ -6,10 +6,10 @@ from typing import Final, Protocol
 
 from pydantic import Field
 
-from poptimizer.actors.data.cpi import cpi
-from poptimizer.actors.data.div import div
-from poptimizer.actors.data.moex import quotes, securities
 from poptimizer.core import actors, consts, domain, message
+from poptimizer.data.cpi import cpi
+from poptimizer.data.div import div
+from poptimizer.data.moex import quotes, securities
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")

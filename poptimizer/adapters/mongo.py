@@ -8,7 +8,7 @@ from pydantic import MongoDsn, ValidationError
 from pymongo.asynchronous import collection, database
 from pymongo.errors import PyMongoError
 
-from poptimizer.actors.system import uow
+from poptimizer.actors import uow
 from poptimizer.core import domain, errors
 from poptimizer.domain.evolve import evolve
 

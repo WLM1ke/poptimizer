@@ -3,7 +3,7 @@ import contextlib
 from pydantic import Field
 from pydantic_settings import CliPositionalArg
 
-from poptimizer.actors.system import uow
+from poptimizer.actors import uow
 from poptimizer.adapters import logger, mongo
 from poptimizer.cli import config, safe
 from poptimizer.domain.funds import funds

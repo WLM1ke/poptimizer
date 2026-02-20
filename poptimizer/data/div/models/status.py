@@ -3,8 +3,8 @@ from typing import Annotated
 
 from pydantic import AfterValidator, Field
 
-from poptimizer.actors.data.div.models import raw
 from poptimizer.core import domain
+from poptimizer.data.div.models import raw
 
 
 class Row(domain.Row):

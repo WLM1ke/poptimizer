@@ -1,6 +1,6 @@
 import contextlib
 
-from poptimizer.actors.system import uow
+from poptimizer.actors import uow
 from poptimizer.adapters import logger, mongo
 from poptimizer.cli import config, safe
 from poptimizer.reports.stats import report

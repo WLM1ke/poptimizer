@@ -6,14 +6,14 @@ import sys
 import torch
 import uvloop
 
-from poptimizer.actors.data import data, memory, migration
-from poptimizer.actors.data.cpi import cbr
-from poptimizer.actors.data.moex import moex
-from poptimizer.actors.system import system
+from poptimizer.actors import system
 from poptimizer.adapters import http, logger, mongo
 from poptimizer.cli import config
 from poptimizer.controllers.tg import tg
 from poptimizer.core import actors, message
+from poptimizer.data import data, memory, migration
+from poptimizer.data.cpi import cbr
+from poptimizer.data.moex import moex
 
 
 class Run(config.Cfg):

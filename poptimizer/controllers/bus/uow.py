@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator, Iterable, Iterator
 from types import TracebackType
 from typing import Protocol, Self
 
-from poptimizer.actors.system import uow
+from poptimizer.actors import uow
 from poptimizer.core import domain, errors
 from poptimizer.domain.evolve import evolve
 from poptimizer.use_cases.handler import Event
