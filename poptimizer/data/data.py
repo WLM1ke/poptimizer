@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 from enum import StrEnum, auto
 from typing import Final, Protocol
 
-from pydantic import Field
+from pydantic import Field, NonNegativeInt
 
 from poptimizer.core import actors, consts, domain, message
 from poptimizer.data.cpi import cpi
@@ -52,7 +52,7 @@ class DataState(actors.State[_StateName]):
     app_version: str = consts.__version__
     check_day: domain.Day = Field(default_factory=_last_finished_day)
     data_day: domain.Day = consts.START_DAY
-    portfolio_day: domain.Day = consts.START_DAY
+    portfolio_days_passed: NonNegativeInt = 0
     features_day: domain.Day | None = None
 
 
@@ -101,30 +101,33 @@ class DataUpdater:
 
     async def _migrate(self, ctx: actors.Ctx, state: DataState, version: str) -> None:
         if await self._migration_client.migrate(ctx, state.app_version):
-            state.state = _StateName.UPDATING_DATA
             state.features_day = None
 
+        state.state = _StateName.UPDATING_DATA
         state.app_version = version
 
     async def _update_data(self, ctx: actors.Ctx, state: DataState) -> None:
-        next_check_day = _last_finished_day()
+        last_finished_day = _last_finished_day()
 
         async with asyncio.TaskGroup() as tg:
             tg.create_task(cpi.update(ctx, self._cbr_client))
             sec_task = tg.create_task(securities.update(ctx, self._moex_client))
             tg.create_task(div.update(ctx, sec_task))
-            trading_days_task = tg.create_task(quotes.update(ctx, self._moex_client, next_check_day, sec_task))
+            trading_days_task = tg.create_task(quotes.update(ctx, self._moex_client, last_finished_day, sec_task))
 
         state.state = _StateName.UPDATING_PORTFOLIO
-        state.check_day = next_check_day
-        state.data_day = (await trading_days_task)[-1]
+        state.check_day = last_finished_day
+
+        new_trading_days = [day for day in await trading_days_task if day >= state.data_day]
+        state.data_day = new_trading_days[-1]
+        state.portfolio_days_passed += len(new_trading_days) - 1
 
     async def _update_portfolio(self, ctx: actors.Ctx, state: DataState) -> None:  # noqa: ARG002
-        if state.portfolio_day < state.data_day:
+        if state.portfolio_days_passed:
             ...
 
         state.state = _StateName.UPDATING_FEATURES
-        state.portfolio_day = state.data_day
+        state.portfolio_days_passed = 0
 
     async def _update_features(self, ctx: actors.Ctx, state: DataState) -> None:  # noqa: ARG002
         if state.features_day is None or state.features_day < state.data_day:
