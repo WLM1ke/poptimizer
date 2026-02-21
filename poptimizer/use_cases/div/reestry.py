@@ -10,8 +10,7 @@ from lxml import html
 
 from poptimizer.core import actors, domain, errors
 from poptimizer.data.div.models import raw, status
-from poptimizer.data.moex import quotes
-from poptimizer.domain.moex import usd
+from poptimizer.data.moex import quotes, usd
 from poptimizer.use_cases import handler
 
 if TYPE_CHECKING:

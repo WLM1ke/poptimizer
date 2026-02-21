@@ -3,8 +3,8 @@ from datetime import date
 import pytest
 
 from poptimizer import errors
+from poptimizer.data.moex import usd
 from poptimizer.domain import domain
-from poptimizer.domain.moex import usd
 
 
 def test_row_parse():

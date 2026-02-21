@@ -97,11 +97,10 @@ async def _run[S: actors.State[Any], M: actors.Message](
     msg: M,
 ) -> None:
     state = await ctx.get_for_update(state_type)
-    initial_state = str(state)
 
     await actor(ctx, state, msg)
 
-    ctx.info("Handled %s with state transition %s -> %s", msg, initial_state, state)
+    ctx.info("Handled %s with state transition to %s", msg, state)
 
 
 def _actor_types[S: actors.State[Any], M: actors.Message](

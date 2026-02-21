@@ -6,7 +6,7 @@ from pydantic import TypeAdapter
 
 from poptimizer.adapters.http import wrap_err
 from poptimizer.core import domain, errors
-from poptimizer.data.moex import quotes, securities
+from poptimizer.data.moex import quotes, securities, usd
 
 _ETF_URL: Final = "https://rusetfs.com/api/v1/screener"
 
@@ -24,25 +24,43 @@ class Client:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
 
+    async def get_usd(
+        self,
+        start_day: domain.Day | None,
+        end_day: domain.Day,
+    ) -> list[usd.Row]:
+        async with wrap_err("can't download usd data"):
+            json = await aiomoex.get_market_candles(
+                session=self._http_client,
+                start=start_day and str(start_day),
+                end=str(end_day),
+                interval=24,
+                security="USD000UTSTOM",
+                market="selt",
+                engine="currency",
+            )
+
+            return TypeAdapter(list[usd.Row]).validate_python(json)
+
     async def get_securities(self, market: str, board: str) -> list[securities.Row]:
         async with wrap_err(f"can't download {market} {board} data"):
-            raw_data = await aiomoex.get_board_securities(
+            json = await aiomoex.get_board_securities(
                 self._http_client,
                 market=market,
                 board=board,
                 columns=_SECURITIES_COLUMNS,
             )
 
-            return TypeAdapter(list[securities.Row]).validate_python(raw_data)
+            return TypeAdapter(list[securities.Row]).validate_python(json)
 
     async def get_index_tickers(self, index: securities.SectorIndex) -> list[securities.SectorIndexRow]:
         async with wrap_err(f"can't download index {index} data"):
-            raw_data = await aiomoex.get_index_tickers(
+            json = await aiomoex.get_index_tickers(
                 self._http_client,
                 index,
             )
 
-            return TypeAdapter(list[securities.SectorIndexRow]).validate_python(raw_data)
+            return TypeAdapter(list[securities.SectorIndexRow]).validate_python(json)
 
     async def get_etf_desc(self) -> list[securities.ETFRow]:
         async with wrap_err("can't download etf data"):

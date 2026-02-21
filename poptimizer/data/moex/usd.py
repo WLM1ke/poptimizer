@@ -1,9 +1,8 @@
-from datetime import date
-from typing import Annotated
+from typing import Annotated, Protocol
 
 from pydantic import AfterValidator, Field
 
-from poptimizer.core import domain, errors
+from poptimizer.core import actors, domain, errors
 
 
 class Row(domain.Row):
@@ -15,15 +14,13 @@ class Row(domain.Row):
     turnover: float = Field(alias="value", gt=0)
 
 
-class USD(domain.EntityOld):
+class USD(domain.Entity):
     df: Annotated[
         list[Row],
         AfterValidator(domain.sorted_by_day_validator),
     ] = Field(default_factory=list[Row])
 
-    def update(self, update_day: domain.Day, rows: list[Row]) -> None:
-        self.day = update_day
-
+    def update(self, rows: list[Row]) -> None:
         if not self.df:
             self.df = rows
 
@@ -36,8 +33,25 @@ class USD(domain.EntityOld):
 
         self.df.extend(rows[1:])
 
-    def last_row_date(self) -> date | None:
+    def last_row_date(self) -> domain.Day | None:
         if not self.df:
             return None
 
         return self.df[-1].day
+
+
+class MOEXClient(Protocol):
+    async def get_usd(
+        self,
+        start_day: domain.Day | None,
+        end_day: domain.Day,
+    ) -> list[Row]: ...
+
+
+async def update(ctx: actors.CoreCtx, moex_client: MOEXClient, check_day: domain.Day) -> None:
+    table = await ctx.get_for_update(USD)
+
+    start_day = table.last_row_date()
+    rows = await moex_client.get_usd(start_day, check_day)
+
+    table.update(rows)

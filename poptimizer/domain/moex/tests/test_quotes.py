@@ -3,8 +3,8 @@ from datetime import date, timedelta
 import pytest
 
 from poptimizer import consts, errors
+from poptimizer.data.moex import quotes
 from poptimizer.domain import domain
-from poptimizer.domain.moex import quotes
 
 
 def test_row_parse():

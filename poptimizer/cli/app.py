@@ -80,7 +80,7 @@ class Run(config.Cfg):
             cbr_client = cbr.Client(http_client)
             moex_client = moex.Client(http_client)
 
-            data_updater = data.DataUpdater(
+            data_updater = data.Actor(
                 memory_client,
                 migration_client,
                 cbr_client,

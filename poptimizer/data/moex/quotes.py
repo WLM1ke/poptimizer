@@ -17,7 +17,7 @@ class Row(domain.Row):
     turnover: float = Field(alias="value", ge=0)
 
 
-class Quotes(domain.EntityOld):
+class Quotes(domain.Entity):
     df: Annotated[
         list[Row],
         AfterValidator(domain.sorted_by_day_validator),

@@ -9,7 +9,7 @@ from pydantic import Field, NonNegativeInt
 from poptimizer.core import actors, consts, domain, message
 from poptimizer.data.cpi import cpi
 from poptimizer.data.div import div
-from poptimizer.data.moex import quotes, securities
+from poptimizer.data.moex import quotes, securities, usd
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -64,10 +64,10 @@ class MigrationClient(Protocol):
     async def migrate(self, ctx: actors.Ctx, last_version: str) -> bool: ...
 
 
-class MOEXClient(securities.MOEXClient, quotes.MOEXClient, Protocol): ...
+class MOEXClient(usd.MOEXClient, securities.MOEXClient, quotes.MOEXClient, Protocol): ...
 
 
-class DataUpdater:
+class Actor:
     def __init__(
         self,
         memory_checker: MemoryChecker,
@@ -101,15 +101,16 @@ class DataUpdater:
 
     async def _migrate(self, ctx: actors.Ctx, state: DataState, version: str) -> None:
         if await self._migration_client.migrate(ctx, state.app_version):
+            state.state = _StateName.UPDATING_DATA
             state.features_day = None
 
-        state.state = _StateName.UPDATING_DATA
         state.app_version = version
 
     async def _update_data(self, ctx: actors.Ctx, state: DataState) -> None:
         last_finished_day = _last_finished_day()
 
         async with asyncio.TaskGroup() as tg:
+            tg.create_task(usd.update(ctx, self._moex_client, last_finished_day))
             tg.create_task(cpi.update(ctx, self._cbr_client))
             sec_task = tg.create_task(securities.update(ctx, self._moex_client))
             tg.create_task(div.update(ctx, sec_task))

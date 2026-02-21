@@ -3,8 +3,8 @@ from datetime import date
 import pytest
 from pydantic import ValidationError
 
+from poptimizer.data.moex import securities
 from poptimizer.domain import domain
-from poptimizer.domain.moex import securities
 
 
 def test_row_parse():
