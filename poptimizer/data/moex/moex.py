@@ -6,7 +6,7 @@ from pydantic import TypeAdapter
 
 from poptimizer.adapters.http import wrap_err
 from poptimizer.core import domain, errors
-from poptimizer.data.moex import quotes, securities, usd
+from poptimizer.data.moex import index, quotes, securities, usd
 
 _ETF_URL: Final = "https://rusetfs.com/api/v1/screener"
 
@@ -23,6 +23,25 @@ _SECURITIES_COLUMNS: Final = (
 class Client:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
+
+    async def get_index(
+        self,
+        ticker: domain.Ticker,
+        start_day: domain.Day | None,
+        end_day: domain.Day,
+    ) -> list[index.Row]:
+        async with wrap_err(f"can't download {index} data"):
+            json = await aiomoex.get_market_candles(
+                session=self._http_client,
+                start=start_day and str(start_day),
+                end=str(end_day),
+                interval=24,
+                security=ticker,
+                market="index",
+                engine="stock",
+            )
+
+            return _deduplicate_rows(TypeAdapter(list[index.Row]).validate_python(json))
 
     async def get_usd(
         self,
@@ -88,3 +107,17 @@ class Client:
             )
 
             return TypeAdapter(list[quotes.Row]).validate_python(json)
+
+
+def _deduplicate_rows(rows: list[index.Row]) -> list[index.Row]:
+    prev_row: index.Row | None = None
+    rows_deduplicated: list[index.Row] = []
+
+    for row in rows:
+        if row == prev_row:
+            continue
+
+        rows_deduplicated.append(row)
+        prev_row = row
+
+    return rows_deduplicated

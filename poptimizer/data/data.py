@@ -9,7 +9,7 @@ from pydantic import Field, NonNegativeInt
 from poptimizer.core import actors, consts, domain, message
 from poptimizer.data.cpi import cpi
 from poptimizer.data.div import div
-from poptimizer.data.moex import quotes, securities, usd
+from poptimizer.data.moex import index, quotes, securities, usd
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -64,10 +64,10 @@ class MigrationClient(Protocol):
     async def migrate(self, ctx: actors.Ctx, last_version: str) -> bool: ...
 
 
-class MOEXClient(usd.MOEXClient, securities.MOEXClient, quotes.MOEXClient, Protocol): ...
+class MOEXClient(usd.MOEXClient, index.MOEXClient, securities.MOEXClient, quotes.MOEXClient, Protocol): ...
 
 
-class Actor:
+class DataActor:
     def __init__(
         self,
         memory_checker: MemoryChecker,
@@ -110,6 +110,7 @@ class Actor:
         last_finished_day = _last_finished_day()
 
         async with asyncio.TaskGroup() as tg:
+            tg.create_task(index.update(ctx, self._moex_client, last_finished_day))
             tg.create_task(usd.update(ctx, self._moex_client, last_finished_day))
             tg.create_task(cpi.update(ctx, self._cbr_client))
             sec_task = tg.create_task(securities.update(ctx, self._moex_client))

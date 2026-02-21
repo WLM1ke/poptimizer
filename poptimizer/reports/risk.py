@@ -5,9 +5,9 @@ import pandas as pd
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
 from poptimizer.actors import uow
-from poptimizer.core import errors
+from poptimizer.core import domain, errors
+from poptimizer.data.moex import index
 from poptimizer.domain.funds import funds
-from poptimizer.domain.moex import index
 
 PORTFOLIO: Final = "PORTFOLIO"
 MOEX: Final = "MCFTRR"
@@ -17,8 +17,8 @@ _WIDTH: Final = len(PORTFOLIO)
 
 async def prepare_cum_returns(repo: uow.UOW, months: int) -> pd.DataFrame:
     fund = await repo.get(funds.Fund)
-    index_table = await repo.get(index.Index, index.MCF2TRR)
-    rf_table = await repo.get(index.Index, index.RUGBITR1Y)
+    index_table = await repo.get(index.Index, domain.UID(index.MCF2TRR))
+    rf_table = await repo.get(index.Index, domain.UID(index.RUGBITR1Y))
 
     if len(fund.rows) <= months:
         raise errors.DomainError("too many months")

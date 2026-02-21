@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 
-from poptimizer.core import domain
+from poptimizer.core import actors, domain
+from poptimizer.data.moex import index
 from poptimizer.domain.dl import features
-from poptimizer.domain.moex import index
 from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class IndexesFeatHandler:
-    async def __call__(self, ctx: handler.Ctx, msg: handler.QuotesFeatUpdated) -> None:
+    async def __call__(self, ctx: actors.Ctx, msg: handler.QuotesFeatUpdated) -> None:
         indexes = await _load_indexes(ctx, pd.DatetimeIndex(msg.trading_days))
         port = await ctx.get(portfolio.Portfolio)
 
@@ -23,12 +23,10 @@ class IndexesFeatHandler:
             for pos in port.positions:
                 tg.create_task(_add_indexes_features(ctx, domain.UID(pos.ticker), indexes))
 
-        ctx.publish(handler.IndexFeatUpdated(trading_days=msg.trading_days))
 
-
-async def _load_indexes(ctx: handler.Ctx, df_index: pd.DatetimeIndex) -> list[dict[features.NumFeat, FiniteFloat]]:
+async def _load_indexes(ctx: actors.Ctx, df_index: pd.DatetimeIndex) -> list[dict[features.NumFeat, FiniteFloat]]:
     async with asyncio.TaskGroup() as tg:
-        tasks = [tg.create_task(ctx.get(index.Index, uid)) for uid in index.INDEXES]
+        tasks = [tg.create_task(ctx.get(index.Index, domain.UID(uid))) for uid in index.INDEXES]
 
     indexes: list[pd.DataFrame] = []
 
@@ -53,7 +51,7 @@ async def _load_indexes(ctx: handler.Ctx, df_index: pd.DatetimeIndex) -> list[di
 
 
 async def _add_indexes_features(
-    ctx: handler.Ctx, ticker: domain.UID, indexes: list[dict[features.NumFeat, FiniteFloat]]
+    ctx: actors.Ctx, ticker: domain.UID, indexes: list[dict[features.NumFeat, FiniteFloat]]
 ) -> None:
     quotes_table = await ctx.get_for_update(features.Features, ticker)
 
