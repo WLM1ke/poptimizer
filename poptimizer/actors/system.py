@@ -76,7 +76,7 @@ class System:
             state_type, msg_type = _actor_types(actor)
 
             if not isinstance(msg, msg_type):
-                lgr.warning("skipped unknown %r", msg)
+                lgr.warning("Skipped unknown %r", msg)
 
                 continue
 

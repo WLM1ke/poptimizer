@@ -10,8 +10,8 @@ import pandas as pd
 from poptimizer.core import actors, consts, domain
 from poptimizer.data.div import div
 from poptimizer.data.moex import quotes
+from poptimizer.data.portfolio import portfolio
 from poptimizer.domain.dl.features import Features, NumFeat
-from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
 _T_PLUS_1_START: Final = datetime(2023, 7, 31)

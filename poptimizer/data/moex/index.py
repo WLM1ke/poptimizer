@@ -97,4 +97,4 @@ async def _update_one(
 
     last_date = table.last_row_date()
     if last_date is not None and (update_day - last_date) > _MAX_INDEX_LAG:
-        ctx.warning("index %s last value is too old - %s", ticker, last_date)
+        ctx.warning("Index %s last value is too old - %s", ticker, last_date)

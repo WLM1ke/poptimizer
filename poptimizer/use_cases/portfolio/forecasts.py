@@ -7,9 +7,10 @@ from numpy import random
 from numpy.typing import NDArray
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
-from poptimizer.core import consts
+from poptimizer.core import actors, consts
+from poptimizer.data.portfolio import portfolio
 from poptimizer.domain.evolve import evolve
-from poptimizer.domain.portfolio import forecasts, portfolio
+from poptimizer.domain.portfolio import forecasts
 from poptimizer.use_cases import handler
 
 
@@ -19,7 +20,7 @@ class ForecastHandler:
 
     async def __call__(
         self,
-        ctx: handler.Ctx,
+        ctx: actors.Ctx,
         msg: handler.ModelDeleted | handler.ModelEvaluated,
     ) -> None:
         forecast = await ctx.get_for_update(forecasts.Forecast)
@@ -32,37 +33,35 @@ class ForecastHandler:
             case handler.ModelEvaluated():
                 forecast.models.add(msg.uid)
 
-        port = await ctx.get(portfolio.Portfolio)
+        # port = await ctx.get(portfolio.Portfolio)  # noqa: ERA001
 
-        if forecast.update_required(port.ver):
-            await self._update(ctx, forecast, port)
-
-        ctx.publish(handler.ForecastsAnalyzed(day=forecast.day))
+        # if forecast.update_required(port.ver):
+        #     await self._update(ctx, forecast, port)  # noqa: ERA001
 
     async def _update(
         self,
-        ctx: handler.Ctx,
+        ctx: actors.Ctx,
         forecast: forecasts.Forecast,
         port: portfolio.Portfolio,
     ) -> None:
         positions = port.normalized_positions
-        port_tickers = tuple(pos.ticker for pos in positions)
+        # port_tickers = tuple(pos.ticker for pos in positions)  # noqa: ERA001
 
         models: list[evolve.Model] = []
 
         for uid in frozenset(forecast.models):
             model = await ctx.get(evolve.Model, uid)
-            if model.day != port.day or model.tickers != port_tickers or model.forecast_days != port.forecast_days:
-                forecast.models.remove(uid)
-                continue
+            # if model.day != port.day or model.tickers != port_tickers or model.forecast_days != port.forecast_days:
+            #     forecast.models.remove(uid)  # noqa: ERA001
+            #     continue  # noqa: ERA001
 
             models.append(model)
 
         if len(models) <= 1 or not any(pos.weight for pos in positions):
             return
 
-        forecast.day = port.day
-        forecast.portfolio_ver = port.ver
+        # forecast.day = port.day  # noqa: ERA001
+        # forecast.portfolio_ver = port.ver  # noqa: ERA001
         forecast.forecast_days = port.forecast_days
         forecast.illiquid = port.illiquid
         forecast.forecasts_count = len(models)

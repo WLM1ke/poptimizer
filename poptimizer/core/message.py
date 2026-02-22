@@ -1,8 +1,7 @@
-from poptimizer.core import actors, consts
+from poptimizer.core import actors
 
 
-class AppStarted(actors.Message):
-    version: str = consts.__version__
+class AppStarted(actors.Message): ...
 
 
 class Next(actors.Message): ...

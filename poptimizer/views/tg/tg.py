@@ -17,8 +17,9 @@ from aiogram.types import (
 
 from poptimizer.adapters import mongo
 from poptimizer.controllers.bus import msg
-from poptimizer.core import domain, errors
-from poptimizer.domain.portfolio import forecasts, portfolio
+from poptimizer.core import actors, domain, errors
+from poptimizer.data.portfolio import portfolio
+from poptimizer.domain.portfolio import forecasts
 from poptimizer.use_cases import handler
 from poptimizer.views.tg import model, view
 
@@ -53,14 +54,14 @@ def dispatcher(
     dp.message(aiogram.F.chat.id != chat_id)(_not_owner)
 
     dp.message(CommandStart())(_start_cmd)
-    dp.message(Command(_EDIT_CMD))(bus.wrap(_edit_cmd))
+    # dp.message(Command(_EDIT_CMD))(bus.wrap(_edit_cmd))  # noqa: ERA001
     dp.message(Command(_OPTIMIZE_CMD))(bus.wrap(_optimize_cmd))
 
-    dp.callback_query(EditState.choosing_account)(bus.wrap(_account_cb))
-    dp.callback_query(EditState.choosing_letter)(bus.wrap(_letter_cb))
-    dp.callback_query(EditState.choosing_ticker)(bus.wrap(_ticker_cb))
+    # dp.callback_query(EditState.choosing_account)(bus.wrap(_account_cb))  # noqa: ERA001
+    # dp.callback_query(EditState.choosing_letter)(bus.wrap(_letter_cb))  # noqa: ERA001
+    # dp.callback_query(EditState.choosing_ticker)(bus.wrap(_ticker_cb))  # noqa: ERA001
 
-    dp.message(EditState.entering_quantity)(bus.wrap(_quantity_msg))
+    # dp.message(EditState.entering_quantity)(bus.wrap(_quantity_msg))  # noqa: ERA001
 
     dp.message()(_unknown_msg)
 
@@ -94,7 +95,7 @@ async def _optimize_cmd(ctx: handler.Ctx, message: Message) -> None:
         await message.answer(view.optimize_sell_ticker(row, breakeven))
 
 
-async def _edit_cmd(ctx: handler.Ctx, message: Message, state: FSMContext, bot: Bot) -> None:
+async def _edit_cmd(ctx: actors.Ctx, message: Message, state: FSMContext, bot: Bot) -> None:  # type: ignore[PGH003]
     await _clear_old_keyboard(bot, message.chat.id, state)
     port = await ctx.get(portfolio.Portfolio)
 
@@ -142,7 +143,7 @@ def _first_ticker_letters(port: portfolio.Portfolio, *, with_escape: bool = Fals
     return first_ticker_letters
 
 
-async def _account_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
+async def _account_cb(ctx: actors.Ctx, callback: CallbackQuery, state: FSMContext) -> None:  # type: ignore[PGH003]
     async with _edit_cb_guard(callback, state) as (cb_data, cb_msg, state_data):
         port = await ctx.get(portfolio.Portfolio)
 
@@ -162,7 +163,7 @@ async def _escape(state: FSMContext, cb_msg: Message, state_data: model.Edit, ac
     await state.clear()
 
 
-async def _letter_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
+async def _letter_cb(ctx: actors.Ctx, callback: CallbackQuery, state: FSMContext) -> None:  # type: ignore[PGH003]
     async with _edit_cb_guard(callback, state) as (cb_data, cb_msg, state_data):
         port = await ctx.get(portfolio.Portfolio)
 
@@ -199,7 +200,7 @@ async def _letter_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContex
                 await state.set_state(EditState.choosing_ticker)
 
 
-async def _ticker_cb(ctx: handler.Ctx, callback: CallbackQuery, state: FSMContext) -> None:
+async def _ticker_cb(ctx: actors.Ctx, callback: CallbackQuery, state: FSMContext) -> None:  # type: ignore[PGH003]
     async with _edit_cb_guard(callback, state) as (cb_data, cb_msg, state_data):
         port = await ctx.get(portfolio.Portfolio)
         ticker = domain.Ticker(cb_data)
@@ -227,7 +228,7 @@ def _parse_quantity(message: Message) -> int:
         raise errors.ControllersError(f"quantity {quantity} should be number") from err
 
 
-async def _quantity_msg(ctx: handler.Ctx, message: Message, state: FSMContext) -> None:
+async def _quantity_msg(ctx: actors.Ctx, message: Message, state: FSMContext) -> None:  # type: ignore[PGH003]
     state_data = await model.edit(state)
     port = await ctx.get_for_update(portfolio.Portfolio)
 

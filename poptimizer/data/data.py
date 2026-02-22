@@ -4,12 +4,13 @@ from datetime import date, datetime, timedelta
 from enum import StrEnum, auto
 from typing import Final, Protocol
 
-from pydantic import Field, NonNegativeInt
+from pydantic import Field, NonNegativeInt, PositiveInt
 
 from poptimizer.core import actors, consts, domain, message
 from poptimizer.data.cpi import cpi
 from poptimizer.data.div import div
 from poptimizer.data.moex import index, quotes, securities, usd
+from poptimizer.data.portfolio import portfolio
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -52,8 +53,9 @@ class DataState(actors.State[_StateName]):
     app_version: str = consts.__version__
     check_day: domain.Day = Field(default_factory=_last_finished_day)
     data_day: domain.Day = consts.START_DAY
-    portfolio_days_passed: NonNegativeInt = 0
+    days_passed: NonNegativeInt = 0
     features_day: domain.Day | None = None
+    minimal_candles: PositiveInt = consts.INITIAL_MINIMAL_CANDLES
 
 
 class MemoryChecker(Protocol):
@@ -84,8 +86,8 @@ class DataActor:
 
     async def __call__(self, ctx: actors.Ctx, state: DataState, msg: message.AppStarted | message.Next) -> None:
         match (msg, state.state):
-            case (message.AppStarted(version=version), _):
-                await self._migrate(ctx, state, version)
+            case (message.AppStarted(), _):
+                await self._migrate(ctx, state)
             case (message.Next(), _StateName.UPDATING_DATA):
                 await self._update_data(ctx, state)
             case (message.Next(), _StateName.UPDATING_PORTFOLIO):
@@ -99,12 +101,12 @@ class DataActor:
 
         ctx.send(message.Next())
 
-    async def _migrate(self, ctx: actors.Ctx, state: DataState, version: str) -> None:
+    async def _migrate(self, ctx: actors.Ctx, state: DataState) -> None:
         if await self._migration_client.migrate(ctx, state.app_version):
             state.state = _StateName.UPDATING_DATA
             state.features_day = None
 
-        state.app_version = version
+        state.app_version = consts.__version__
 
     async def _update_data(self, ctx: actors.Ctx, state: DataState) -> None:
         last_finished_day = _last_finished_day()
@@ -115,21 +117,22 @@ class DataActor:
             tg.create_task(cpi.update(ctx, self._cbr_client))
             sec_task = tg.create_task(securities.update(ctx, self._moex_client))
             tg.create_task(div.update(ctx, sec_task))
-            trading_days_task = tg.create_task(quotes.update(ctx, self._moex_client, last_finished_day, sec_task))
+            tg.create_task(quotes.update(ctx, self._moex_client, last_finished_day, sec_task))
 
         state.state = _StateName.UPDATING_PORTFOLIO
         state.check_day = last_finished_day
+        sec_table = await sec_task
 
-        new_trading_days = [day for day in await trading_days_task if day >= state.data_day]
+        new_trading_days = [day for day in sec_table.trading_days if day >= state.data_day]
         state.data_day = new_trading_days[-1]
-        state.portfolio_days_passed += len(new_trading_days) - 1
+        state.days_passed += len(new_trading_days) - 1
 
-    async def _update_portfolio(self, ctx: actors.Ctx, state: DataState) -> None:  # noqa: ARG002
-        if state.portfolio_days_passed:
-            ...
+    async def _update_portfolio(self, ctx: actors.Ctx, state: DataState) -> None:
+        if state.days_passed:
+            await portfolio.update(ctx, state.minimal_candles, state.days_passed)
 
         state.state = _StateName.UPDATING_FEATURES
-        state.portfolio_days_passed = 0
+        state.days_passed = 0
 
     async def _update_features(self, ctx: actors.Ctx, state: DataState) -> None:  # noqa: ARG002
         if state.features_day is None or state.features_day < state.data_day:

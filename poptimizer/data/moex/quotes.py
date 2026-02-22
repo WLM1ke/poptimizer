@@ -57,15 +57,16 @@ async def update(
     ctx: actors.CoreCtx,
     moex_client: MOEXClient,
     update_day: domain.Day,
-    sec_task: asyncio.Task[list[securities.Row]],
-) -> list[domain.Day]:
+    sec_task: asyncio.Task[securities.Securities],
+) -> None:
     trading_days: set[domain.Day] = set()
+    sec_table = await sec_task
 
     async with asyncio.TaskGroup() as tg:
-        for sec in await sec_task:
+        for sec in sec_table.df:
             tg.create_task(_update_one(ctx, moex_client, sec.ticker, update_day, trading_days))
 
-    return sorted(trading_days)
+    sec_table.update_trading_days(trading_days)
 
 
 async def _update_one(

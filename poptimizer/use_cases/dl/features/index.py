@@ -6,8 +6,8 @@ import pandas as pd
 
 from poptimizer.core import actors, domain
 from poptimizer.data.moex import index
+from poptimizer.data.portfolio import portfolio
 from poptimizer.domain.dl import features
-from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
 if TYPE_CHECKING:

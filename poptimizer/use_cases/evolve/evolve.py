@@ -7,7 +7,6 @@ from pydantic import BaseModel, FiniteFloat, PositiveInt
 
 from poptimizer.core import consts, domain, errors
 from poptimizer.domain.evolve import evolve
-from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 from poptimizer.use_cases.dl import builder, trainer
 
@@ -115,16 +114,15 @@ class EvolutionHandler:
 
         count = await self._create_model(ctx, evolution)
 
-        match evolution.day == msg.day:
+        match evolution.day == msg.day:  # type: ignore  # noqa: PGH003
             case True:
                 evolution.step += 1
-            case False:
-                port = await ctx.get(portfolio.Portfolio)
-                evolution.init_new_day(
-                    msg.day,
-                    tuple(pos.ticker for pos in port.positions),
-                    port.forecast_days,
-                )
+            # case False:  # noqa: ERA001
+            # port = await ctx.get(portfolio.Portfolio)  # noqa: ERA001
+            # evolution.init_new_day(
+            #     msg.day,
+            #     tuple(pos.ticker for pos in port.positions),  # noqa: ERA001
+            #     port.forecast_days)
 
         return evolution, count
 

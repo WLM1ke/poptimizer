@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import Iterable
 from enum import StrEnum, auto
 from typing import Annotated, Final, NewType, Protocol
 
@@ -81,9 +82,13 @@ class Securities(domain.Entity):
         list[Row],
         AfterValidator(domain.sorted_with_ticker_field_validator),
     ] = Field(default_factory=list[Row])
+    trading_days: list[domain.Day] = Field(default_factory=list[domain.Day])
 
-    def update(self, rows: list[Row]) -> None:
+    def update_df(self, rows: list[Row]) -> None:
         self.df = sorted(rows, key=lambda sec: sec.ticker)
+
+    def update_trading_days(self, trading_days: Iterable[domain.Day]) -> None:
+        self.trading_days = sorted(trading_days)
 
 
 type _Cache = dict[domain.Ticker, tuple[Sector, domain.Day]]
@@ -97,15 +102,15 @@ class MOEXClient(Protocol):
     async def get_etf_desc(self) -> list[ETFRow]: ...
 
 
-async def update(ctx: actors.CoreCtx, moex_client: MOEXClient) -> list[Row]:
+async def update(ctx: actors.CoreCtx, moex_client: MOEXClient) -> Securities:
     async with asyncio.TaskGroup() as tg:
         etf_task = tg.create_task(_get_etf(moex_client))
         shares_task = tg.create_task(_get_shares(moex_client))
 
         table = await ctx.get_for_update(Securities)
-        table.update(await etf_task + await shares_task)
+        table.update_df(await etf_task + await shares_task)
 
-    return table.df
+    return table
 
 
 async def _get_etf(moex_client: MOEXClient) -> list[Row]:

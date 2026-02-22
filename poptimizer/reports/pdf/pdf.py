@@ -8,8 +8,8 @@ from reportlab.pdfgen.canvas import Canvas
 from poptimizer.actors import uow
 from poptimizer.core import consts, domain
 from poptimizer.data.moex import quotes
+from poptimizer.data.portfolio import portfolio
 from poptimizer.domain.funds import funds
-from poptimizer.domain.portfolio import portfolio
 from poptimizer.reports import risk
 from poptimizer.reports.pdf import lower, middle, style, upper
 
@@ -42,7 +42,6 @@ async def _update_fund(
 ) -> tuple[funds.Fund, portfolio.Portfolio]:
     async with asyncio.TaskGroup() as tg:
         port = await repo.get(portfolio.Portfolio)
-        port.day = day
 
         for pos in port.positions:
             tg.create_task(_price_for_day(repo, pos, day))

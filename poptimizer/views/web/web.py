@@ -11,7 +11,8 @@ from pydantic import TypeAdapter, ValidationError
 from poptimizer.core import actors, domain, errors
 from poptimizer.core.domain import date
 from poptimizer.data.div.models import raw, status
-from poptimizer.domain.portfolio import forecasts, portfolio
+from poptimizer.data.portfolio import portfolio
+from poptimizer.domain.portfolio import forecasts
 from poptimizer.use_cases import handler
 from poptimizer.views import utils
 from poptimizer.views.web import models, view
@@ -46,7 +47,7 @@ class App(web.Application):
         ]
 
         card = models.Card(
-            upper=f"Date: {port.day}",
+            upper="Date: ",  # {port.day}
             main=f"Value: {utils.format_float(value, 0)} ₽",
             row1=models.Row(label="Effective positions", value=f"{utils.format_float(port.effective_positions, 0)}"),
             row2=models.Row(label="Open positions", value=f"{port.open_positions()}"),
@@ -96,7 +97,7 @@ class App(web.Application):
 
         return self._render.render_main(main, cookie)
 
-    async def _update_position(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _update_position(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
         ticker = domain.Ticker(req.match_info["ticker"])
         quantity = TypeAdapter(int).validate_python((await req.post()).get("quantity"))
@@ -114,7 +115,7 @@ class App(web.Application):
 
     async def _forecast(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
-            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
+            # port_task = tg.create_task(ctx.get(portfolio.Portfolio))  # noqa: ERA001
             forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
 
         forecast = forecasts_task.result()
@@ -122,9 +123,9 @@ class App(web.Application):
         outdated = ""
         poll = False
 
-        if port_task.result().ver != forecast.portfolio_ver:
-            outdated = "outdated"
-            poll = True
+        # if port_task.result().ver != forecast.portfolio_ver:
+        #     outdated = "outdated"  # noqa: ERA001
+        #     poll = True  # noqa: ERA001
 
         card = models.Card(
             upper=f"Date: {forecast.day} {outdated}",
@@ -148,7 +149,7 @@ class App(web.Application):
 
     async def _optimization(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
-            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
+            # port_task = tg.create_task(ctx.get(portfolio.Portfolio))  # noqa: ERA001
             forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
 
         forecast = forecasts_task.result()
@@ -156,9 +157,9 @@ class App(web.Application):
         outdated = ""
         poll = False
 
-        if port_task.result().ver != forecast.portfolio_ver:
-            outdated = "outdated"
-            poll = True
+        # if port_task.result().ver != forecast.portfolio_ver:
+        #     outdated = "outdated"  # noqa: ERA001
+        #     poll = True  # noqa: ERA001
 
         breakeven, buy, sell = forecast.buy_sell()
 
@@ -298,7 +299,7 @@ class App(web.Application):
             main,
         )
 
-    async def _not_exclude_ticker(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _not_exclude_ticker(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = TypeAdapter(str).validate_python(req.match_info["ticker"])
         cookie = models.Cookie.from_request(req)
 
@@ -313,7 +314,7 @@ class App(web.Application):
 
         return self._render.render_main(main)
 
-    async def _exclude_ticker(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _exclude_ticker(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = TypeAdapter(str).validate_python((await req.post()).get("ticker"))
         cookie = models.Cookie.from_request(req)
 
@@ -464,7 +465,7 @@ def _prepare_account(
     ]
 
     card = models.Card(
-        upper=f"Date: {portfolio.day}",
+        upper="Date: ",  # {portfolio.day}
         main=f"Value: {utils.format_float(value, 0)} ₽",
         row1=models.Row(label="Share of portfolio", value=f"{view.format_percent(value / (portfolio.value() or 1))}"),
         row2=models.Row(label="Open positions", value=f"{portfolio.open_positions(account)}"),

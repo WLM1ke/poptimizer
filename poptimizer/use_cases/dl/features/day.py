@@ -1,23 +1,21 @@
 import asyncio
 
-from poptimizer.core import domain
+from poptimizer.core import actors, domain
+from poptimizer.data.portfolio import portfolio
 from poptimizer.domain.dl.features import EmbeddingSeqFeatDesc, EmbSeqFeat, Features
-from poptimizer.domain.portfolio import portfolio
 from poptimizer.use_cases import handler
 
 
 class DayFeatHandler:
-    async def __call__(self, ctx: handler.Ctx, msg: handler.IndexFeatUpdated) -> None:
+    async def __call__(self, ctx: actors.Ctx, msg: handler.IndexFeatUpdated) -> None:
         async with asyncio.TaskGroup() as tg:
             port = await ctx.get(portfolio.Portfolio)
 
             for pos in port.positions:
                 tg.create_task(_create_day_feats(ctx, domain.UID(pos.ticker), msg.trading_days))
 
-        ctx.publish(handler.DayFeatUpdated(day=msg.day))
 
-
-async def _create_day_feats(ctx: handler.Ctx, ticker: domain.UID, trading_days: domain.TradingDays) -> None:
+async def _create_day_feats(ctx: actors.Ctx, ticker: domain.UID, trading_days: domain.TradingDays) -> None:
     feat = await ctx.get_for_update(Features, ticker)
 
     feat.embedding_seq[EmbSeqFeat.WEEK_DAY] = EmbeddingSeqFeatDesc(

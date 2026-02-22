@@ -27,10 +27,10 @@ class Dividends(domain.Entity):
 
 async def update(
     ctx: actors.CoreCtx,
-    sec_task: asyncio.Task[list[securities.Row]],
+    sec_task: asyncio.Task[securities.Securities],
 ) -> None:
     async with asyncio.TaskGroup() as tg:
-        for sec in await sec_task:
+        for sec in (await sec_task).df:
             tg.create_task(_update_one(ctx, domain.UID(sec.ticker)))
 
 

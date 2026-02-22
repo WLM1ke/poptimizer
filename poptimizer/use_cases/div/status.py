@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Final, TextIO
 from poptimizer.core import actors, domain, errors
 from poptimizer.data.div.models import raw, status
 from poptimizer.data.moex import securities
-from poptimizer.domain.portfolio import portfolio
+from poptimizer.data.portfolio import portfolio
 from poptimizer.use_cases import handler
 
 if TYPE_CHECKING:

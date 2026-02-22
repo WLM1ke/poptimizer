@@ -6,8 +6,8 @@ from typing import Annotated, Final, Literal, Protocol
 from pydantic import BaseModel, Field
 from pydantic.functional_validators import BeforeValidator
 
-from poptimizer.core import domain
-from poptimizer.domain.portfolio import portfolio
+from poptimizer.core import actors, domain
+from poptimizer.data.portfolio import portfolio
 from poptimizer.use_cases import handler
 
 _UPDATE_INTERVAL: Final = timedelta(minutes=30)
@@ -69,7 +69,7 @@ class PositionsHandler:
         self._tinkoff_client = tinkoff_client
         self._last_check = datetime.now(UTC) - _UPDATE_INTERVAL
 
-    async def __call__(self, ctx: handler.Ctx, msg: handler.DataChecked) -> None:  # noqa: ARG002
+    async def __call__(self, ctx: actors.Ctx, msg: handler.DataChecked) -> None:  # noqa: ARG002
         if not self._need_update():
             return
 
@@ -90,7 +90,7 @@ class PositionsHandler:
 
     async def _add_accounts(
         self,
-        ctx: handler.Ctx,
+        ctx: actors.Ctx,
         new_accounts: set[domain.AccName],
     ) -> None:
         if not new_accounts:
@@ -105,7 +105,7 @@ class PositionsHandler:
 
     async def _update_account(
         self,
-        ctx: handler.Ctx,
+        ctx: actors.Ctx,
         port: portfolio.Portfolio,
         acc_name: domain.AccName,
     ) -> None:

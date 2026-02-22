@@ -47,7 +47,7 @@ async def _restore_dividends(ctx: actors.Ctx) -> None:
     except ValidationError as err:
         raise errors.AdapterError("can't restore raw dividends") from err
 
-    ctx.info("raw dividends restored")
+    ctx.info("Raw dividends restored")
 
 
 async def _backup_dividends(ctx: actors.Ctx, divs: list[raw.DivRaw]) -> None:
@@ -59,7 +59,7 @@ async def _backup_dividends(ctx: actors.Ctx, divs: list[raw.DivRaw]) -> None:
     async with aiofiles.open(_DUMP, "w") as backup_file:
         await backup_file.write(json.dumps(docs, indent=2, sort_keys=True))
 
-    ctx.info("raw dividends back up finished")
+    ctx.info("Raw dividends back up finished")
 
 
 def _normalized_ver(ver: str) -> tuple[int, int, int]:

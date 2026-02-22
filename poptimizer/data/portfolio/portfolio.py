@@ -1,4 +1,6 @@
+import asyncio
 import bisect
+import statistics
 from typing import Annotated, Self
 
 from pydantic import (
@@ -14,8 +16,8 @@ from pydantic import (
     model_validator,
 )
 
-from poptimizer.actors import uow
-from poptimizer.core import consts, domain, errors
+from poptimizer.core import actors, domain, errors
+from poptimizer.data.moex import quotes, securities
 
 type AccountData = dict[domain.AccName, NonNegativeInt]
 
@@ -44,11 +46,8 @@ class NormalizedPosition(BaseModel):
     accounts: list[domain.AccName]
 
 
-class Portfolio(domain.EntityOld):
-    # Тут нужно менять логику
-    ver: uow.Version = uow.Version(0)
-    trading_interval: float = Field(consts.INITIAL_FORECAST_DAYS, ge=1)
-    sold: NonNegativeInt = 0
+class Portfolio(domain.Entity):
+    holding_period: NonNegativeFloat = Field(0, ge=1)
     account_names: Annotated[
         set[domain.AccName],
         PlainSerializer(
@@ -100,28 +99,7 @@ class Portfolio(domain.EntityOld):
 
     @property
     def forecast_days(self) -> int:
-        return int(self.trading_interval)
-
-    def update_forecast_days(self, trading_days: list[domain.Day]) -> None:
-        old_day = self.day
-        self.day = trading_days[-1]
-
-        if not self.ver:
-            old_day = self.day
-
-        avg_sold_per_day = sum(1 for pos in self.positions if pos.accounts if pos.accounts) / int(self.trading_interval)
-        if not avg_sold_per_day:
-            self.sold = 0
-
-            return
-
-        for day in reversed(trading_days):
-            if day <= old_day:
-                break
-
-            self.trading_interval += 1 - self.sold / avg_sold_per_day
-            self.trading_interval = max(1, self.trading_interval)
-            self.sold = 0
+        return int(self.holding_period)
 
     def create_acount(self, name: domain.AccName) -> None:
         if name in self.account_names:
@@ -178,18 +156,18 @@ class Portfolio(domain.EntityOld):
 
         match self.find_position(ticker):
             case (_, None):
-                raise errors.DomainError(f"ticker {ticker} doesn't exist")
+                raise errors.DomainError(f"{ticker} not in portfolio")
             case (_, position):
                 if quantity % (lot := position.lot):
                     raise errors.DomainError(f"quantity {quantity} must be multiple of {lot}")
+
+                if not position.accounts and quantity:
+                    self.holding_period *= 1 - 1 / (self.open_positions() + 1)
 
                 position.accounts[acc_name] = quantity
 
                 if not quantity:
                     position.accounts.pop(acc_name)
-
-                if not position.accounts:
-                    self.sold += 1
 
     def normalized_turnover(self) -> list[float]:
         values = self.value()
@@ -227,13 +205,13 @@ class Portfolio(domain.EntityOld):
 
     def open_positions(self, account: domain.AccName | None = None) -> int:
         if account is None:
-            return sum(len(pos.accounts) > 0 for pos in self.positions)
+            return sum(bool(pos.accounts) for pos in self.positions)
 
-        return sum(pos.accounts.get(account, 0) > 0 for pos in self.positions)
+        return sum(account in pos.accounts for pos in self.positions)
 
     @property
     def effective_positions(self) -> float:
-        positions_value = self.value() - self.cash_value()
+        positions_value = sum(pos.value() for pos in self.positions)
 
         if not positions_value:
             return 0
@@ -253,3 +231,129 @@ class Portfolio(domain.EntityOld):
             raise errors.DomainError(f"ticker {ticker} is not excluded")
 
         self.exclude.remove(ticker)
+
+
+async def update(
+    ctx: actors.CoreCtx,
+    minimal_candles: PositiveInt,
+    days_passed: NonNegativeInt,
+) -> None:
+    port = await ctx.get_for_update(Portfolio)
+
+    port.holding_period += days_passed
+    port.illiquid.clear()
+
+    old_value = port.value()
+
+    sec_cache = await _prepare_sec_cache(ctx, port.forecast_days, minimal_candles)
+    min_turnover = _calc_min_turnover(port, sec_cache)
+
+    _update_existing_positions(ctx, port, sec_cache, min_turnover)
+    _add_new_liquid(ctx, port, sec_cache, min_turnover)
+
+    if old_value:
+        new_value = port.value()
+        change = new_value / old_value - 1
+        ctx.warning(f"Portfolio value changed {change:.2%} - {old_value:_.0f} -> {new_value:_.0f}")
+
+
+async def _prepare_sec_cache(
+    ctx: actors.CoreCtx,
+    forecast_days: PositiveInt,
+    minimal_candles: PositiveInt,
+) -> dict[domain.Ticker, Position]:
+    sec_table = await ctx.get(securities.Securities)
+
+    async with asyncio.TaskGroup() as tg:
+        quotes_tasks = [tg.create_task(ctx.get(quotes.Quotes, domain.UID(sec.ticker))) for sec in sec_table.df]
+
+    cache: dict[domain.Ticker, Position] = {}
+
+    turnover_days = set(sec_table.trading_days[-forecast_days:])
+
+    for sec, quotes_task in zip(sec_table.df, quotes_tasks, strict=True):
+        df = quotes_task.result().df
+
+        if not df:
+            continue
+
+        turnover = 0
+        if len(df) >= minimal_candles:
+            turnover_data = [row.turnover for row in df[-forecast_days:] if row.day in turnover_days]
+            if turnover_data:
+                turnover = statistics.median(turnover_data)
+
+        cache[sec.ticker] = Position(
+            ticker=sec.ticker,
+            lot=sec.lot,
+            price=df[-1].close,
+            turnover=turnover,
+        )
+
+    return cache
+
+
+def _calc_min_turnover(
+    port: Portfolio,
+    sec_cache: dict[domain.Ticker, Position],
+) -> float:
+    min_turnover = port.cash_value()
+
+    for position in port.positions:
+        if new_position := sec_cache.get(position.ticker):
+            min_turnover = max(min_turnover, new_position.value())
+
+    return min_turnover
+
+
+def _update_existing_positions(
+    ctx: actors.CoreCtx,
+    port: Portfolio,
+    sec_cache: dict[domain.Ticker, Position],
+    min_turnover: float,
+) -> None:
+    updated_positions: list[Position] = []
+
+    for position in port.positions:
+        match sec_cache.pop(position.ticker, None):
+            case None if not position.accounts:
+                ctx.info("Not traded %s is removed", position.ticker)
+            case None:
+                position.turnover = min_turnover
+                updated_positions.append(position)
+                port.illiquid.add(position.ticker)
+                ctx.warning("Not traded %s is not removed", position.ticker)
+            case new_position if new_position.turnover < min_turnover and not position.accounts:
+                ctx.info("Not liquid %s is removed", position.ticker)
+            case new_position if new_position.turnover < min_turnover:
+                new_position.accounts = position.accounts
+                new_position.turnover = min_turnover
+                updated_positions.append(new_position)
+                port.illiquid.add(position.ticker)
+                ctx.warning("Not liquid %s is not removed", position.ticker)
+            case new_position if new_position.ticker in port.exclude and not position.accounts:
+                ctx.info("%s from exclude list is removed", new_position.ticker)
+            case new_position if new_position.ticker in port.exclude:
+                new_position.accounts = position.accounts
+                updated_positions.append(new_position)
+                port.illiquid.add(position.ticker)
+                ctx.warning("%s from exclude list is not removed", position.ticker)
+            case new_position:
+                new_position.accounts = position.accounts
+                updated_positions.append(new_position)
+
+    port.positions = updated_positions
+
+
+def _add_new_liquid(
+    ctx: actors.CoreCtx,
+    port: Portfolio,
+    sec_cache: dict[domain.Ticker, Position],
+    min_turnover: float,
+) -> None:
+    for ticker, position in sec_cache.items():
+        if position.turnover > min_turnover and ticker not in port.exclude:
+            n, _ = port.find_position(position.ticker)
+            port.positions.insert(n, position)
+
+            ctx.info("%s is added", ticker)
