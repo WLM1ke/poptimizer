@@ -1,5 +1,5 @@
 import itertools
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Iterable
 from typing import Annotated, Protocol
 
 from pydantic import AfterValidator, Field
@@ -45,32 +45,27 @@ class DivStatus(domain.Entity):
 
 
 class Client(Protocol):
-    def get_status(self) -> AsyncIterable[tuple[domain.Ticker, domain.Day | None]]: ...
+    async def get_status(self) -> Iterable[tuple[domain.Ticker, domain.Day]]: ...
 
 
 async def update(ctx: actors.CoreCtx, status_client: Client) -> None:
     table = await ctx.get_for_update(DivStatus)
 
-    status = status_client.get_status()
+    status = await status_client.get_status()
 
     table.update([row async for row in _status_gen(ctx, status)])
 
 
 async def _status_gen(
     ctx: actors.CoreCtx,
-    raw_rows: AsyncIterable[tuple[domain.Ticker, domain.Day | None]],
+    raw_rows: Iterable[tuple[domain.Ticker, domain.Day]],
 ) -> AsyncIterable[Row]:
     sec = await ctx.get(securities.Securities)
     port = await ctx.get(portfolio.Portfolio)
 
     sec_cache = {row.ticker: row for row in sec.df if port.find_position(row.ticker)[1] is not None}
 
-    async for ticker, day in raw_rows:
-        if day is None:
-            ctx.warning("Unknown ticker %s in status data", ticker)
-
-            continue
-
+    for ticker, day in raw_rows:
         if not (sec_desc := sec_cache.get(ticker)):
             continue
 

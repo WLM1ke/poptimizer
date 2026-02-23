@@ -8,7 +8,7 @@ from poptimizer.core import actors, domain
 _MINIMUM_MONTHLY_CPI: Final = 0.99
 
 
-class CPIRow(domain.Row):
+class Row(domain.Row):
     day: domain.Day
     cpi: float = Field(gt=_MINIMUM_MONTHLY_CPI)
 
@@ -22,21 +22,21 @@ class CPIRow(domain.Row):
 
 class CPI(domain.Entity):
     df: Annotated[
-        list[CPIRow],
+        list[Row],
         AfterValidator(domain.sorted_by_day_validator),
-    ] = Field(default_factory=list[CPIRow])
+    ] = Field(default_factory=list[Row])
 
-    def update(self, rows: list[CPIRow]) -> None:
+    def update(self, rows: list[Row]) -> None:
         self.df = rows
 
 
-class CBRClient(Protocol):
-    async def download_cpi(self) -> list[CPIRow]: ...
+class Client(Protocol):
+    async def get_cpi(self) -> list[Row]: ...
 
 
-async def update(ctx: actors.CoreCtx, cbr_client: CBRClient) -> None:
+async def update(ctx: actors.CoreCtx, web_client: Client) -> None:
     table = await ctx.get_for_update(CPI)
 
-    row = await cbr_client.download_cpi()
+    row = await web_client.get_cpi()
 
     table.update(row)

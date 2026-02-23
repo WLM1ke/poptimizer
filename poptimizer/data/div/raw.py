@@ -1,10 +1,13 @@
+import asyncio
 import bisect
 import itertools
-from typing import Annotated
+from typing import Annotated, Protocol
 
 from pydantic import AfterValidator, Field, PositiveFloat
 
-from poptimizer.core import domain, errors
+from poptimizer.core import actors, domain, errors
+from poptimizer.data.div import status
+from poptimizer.data.moex import quotes
 
 
 class Row(domain.Row):
@@ -60,3 +63,32 @@ class DivRaw(domain.Entity):
 
 
 class DivReestry(DivRaw): ...
+
+
+class Client(Protocol):
+    async def get_divs(self, start_day: domain.Day, row: status.Row) -> list[Row]: ...
+
+
+async def update(ctx: actors.Ctx, web_client: Client) -> None:
+    status_table = await ctx.get(status.DivStatus)
+
+    async with asyncio.TaskGroup() as tg:
+        for row in status_table.df:
+            tg.create_task(_update_one(ctx, web_client, row))
+
+
+async def _update_one(
+    ctx: actors.Ctx,
+    web_client: Client,
+    status_row: status.Row,
+) -> None:
+    div_table = await ctx.get_for_update(DivReestry, domain.UID(status_row.ticker))
+
+    if div_table.has_day(status_row.day):
+        return
+
+    quotes_table = await ctx.get_for_update(quotes.Quotes, domain.UID(status_row.ticker))
+
+    rows = await web_client.get_divs(quotes_table.df[0].day, status_row)
+
+    div_table.update(rows)

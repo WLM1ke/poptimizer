@@ -1,19 +1,21 @@
-import csv
 import io
-import re
-from collections.abc import AsyncIterable, Iterable
-from datetime import date, datetime, timedelta
-from typing import Final, TextIO
+import logging
+from collections.abc import Iterable
+from typing import Final
 
 import aiohttp
 import aiomoex
+from lxml import html
 from pydantic import TypeAdapter
 
 from poptimizer.adapters import http
 from poptimizer.core import domain, errors
-from poptimizer.data.moex import index, quotes, securities, usd
-
-_ETF_URL: Final = "https://rusetfs.com/api/v1/screener"
+from poptimizer.data.clients.cpi import cpi_parser
+from poptimizer.data.clients.reestry import div_parser
+from poptimizer.data.clients.status import status_parser
+from poptimizer.data.cpi import cpi
+from poptimizer.data.div import raw, status
+from poptimizer.data.moex import index, quotes, securities
 
 _SECURITIES_COLUMNS: Final = (
     "SECID",
@@ -23,18 +25,18 @@ _SECURITIES_COLUMNS: Final = (
     "SECTYPE",
     "INSTRID",
 )
-
+_ETF_URL: Final = "https://rusetfs.com/api/v1/screener"
 _STATUS_URL: Final = (
     "https://web.moex.com/moex-web-icdb-api/api/v1/export/register-closing-dates/csv?separator=1&language=1"
 )
-_STATUS_LOOK_BACK_DAYS: Final = 14
-_STATUS_DATE_FMT: Final = "%m/%d/%Y %H:%M:%S"
-_STATUS_RE_TICKER: Final = re.compile(r",\s([A-Z]|[A-Z]{4}|[A-Z]{4}P|[A-Z][0-9])\s\[")
+_CBR_URL: Final = "https://www.cbr.ru/Content/Document/File/108632/indicators_cpd.xlsx"
+_REESTRY_URL: Final = "https://закрытияреестров.рф/_/"
 
 
 class Client:
     def __init__(self, http_client: aiohttp.ClientSession) -> None:
         self._http_client = http_client
+        self._lgr = logging.getLogger("DataClient")
 
     async def get_index(
         self,
@@ -54,24 +56,6 @@ class Client:
             )
 
             return _deduplicate_rows(TypeAdapter(list[index.Row]).validate_python(json))
-
-    async def get_usd(
-        self,
-        start_day: domain.Day | None,
-        end_day: domain.Day,
-    ) -> list[usd.Row]:
-        async with http.wrap_err("can't download usd data"):
-            json = await aiomoex.get_market_candles(
-                session=self._http_client,
-                start=start_day and str(start_day),
-                end=str(end_day),
-                interval=24,
-                security="USD000UTSTOM",
-                market="selt",
-                engine="currency",
-            )
-
-            return TypeAdapter(list[usd.Row]).validate_python(json)
 
     async def get_securities(self, market: str, board: str) -> list[securities.Row]:
         async with http.wrap_err(f"can't download {market} {board} data"):
@@ -122,7 +106,7 @@ class Client:
 
             return TypeAdapter(list[quotes.Row]).validate_python(json)
 
-    async def get_status(self) -> AsyncIterable[tuple[domain.Ticker, domain.Day | None]]:
+    async def get_status(self) -> Iterable[tuple[domain.Ticker, domain.Day]]:
         async with (
             http.wrap_err("can't download dividend status"),
             self._http_client.get(_STATUS_URL) as resp,
@@ -132,25 +116,47 @@ class Client:
 
             csv_file = io.StringIO(await resp.text(encoding="cp1251"), newline="")
 
-            for row in self._prepare_status(csv_file):
-                yield row
+            return status_parser(self._lgr, csv_file)
 
-    def _prepare_status(self, csv_file: TextIO) -> Iterable[tuple[domain.Ticker, domain.Day | None]]:
-        reader = csv.reader(csv_file)
-        next(reader)
+    async def get_cpi(self) -> list[cpi.Row]:
+        async with (
+            http.wrap_err("can't download CPI data"),
+            self._http_client.get(_CBR_URL) as resp,
+        ):
+            if not resp.ok:
+                raise errors.AdapterError(f"bad CPI respond status {resp.reason}")
 
-        for ticker_raw, date_raw, *_ in reader:
-            timestamp = datetime.strptime(date_raw, _STATUS_DATE_FMT)
-            day = date(timestamp.year, timestamp.month, timestamp.day)
+            return cpi_parser(io.BytesIO(await resp.read()))
 
-            if day < date.today() - timedelta(days=_STATUS_LOOK_BACK_DAYS):
-                continue
+    async def get_divs(self, start_day: domain.Day, row: status.Row) -> list[raw.Row]:
+        async with http.wrap_err(f"can't load dividends for {row.ticker}"):
+            url = await self._find_div_url(row.ticker_base)
+            html_page = await self._load_div_html(url, row.ticker)
 
-            match _STATUS_RE_TICKER.search(ticker_raw):
-                case None:
-                    yield domain.Ticker(ticker_raw), None
-                case match_re:
-                    yield domain.Ticker(match_re[1]), day
+        return div_parser(self._lgr, html_page, 1 + row.preferred, start_day)
+
+    async def _find_div_url(self, ticker_base: str) -> str:
+        async with self._http_client.get(_REESTRY_URL) as resp:
+            if not resp.ok:
+                raise errors.AdapterError(f"bad respond status {resp.reason}")
+
+            html_page = await resp.text()
+
+        links: list[html.HtmlElement] = html.document_fromstring(html_page).xpath("//*/a")  # type: ignore[reportUnknownMemberType]
+
+        for link in links:
+            link_text = link.text_content()
+            if ticker_base in link_text or ticker_base.lower() in link_text:
+                return _REESTRY_URL + link.attrib["href"]
+
+        raise errors.AdapterError(f"{ticker_base} dividends not found")
+
+    async def _load_div_html(self, url: str, ticker: domain.Ticker) -> str:
+        async with self._http_client.get(url) as resp:
+            if not resp.ok:
+                raise errors.AdapterError(f"{ticker} bad respond status {resp.reason}")
+
+            return await resp.text()
 
 
 def _deduplicate_rows(rows: list[index.Row]) -> list[index.Row]:

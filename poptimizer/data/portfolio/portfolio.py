@@ -269,6 +269,9 @@ async def _update_holding_period(ctx: actors.CoreCtx, port: Portfolio) -> bool:
 
         port.holding_period += 1
 
+    if port.day == consts.START_DAY:
+        port.holding_period = 1
+
     port.day = sec_table.trading_days[-1]
 
     return True

@@ -2,19 +2,14 @@ import io
 from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Final, cast
 
-import aiohttp
 from openpyxl.reader import excel
 
-from poptimizer.adapters import http
 from poptimizer.core import errors
 from poptimizer.data.cpi import cpi
 
 if TYPE_CHECKING:
-    import aiohttp
     from openpyxl.worksheet import worksheet
 
-
-_URL: Final = "https://www.cbr.ru/Content/Document/File/108632/indicators_cpd.xlsx"
 
 _SHEET_NAME: Final = "Лист1"
 _FIRST_DATE_CELL: Final = "B1"
@@ -29,33 +24,18 @@ _MIN_COL: Final = 2
 _MAX_MONTH_DAYS: Final = 31
 
 
-class Client:
-    def __init__(self, http_client: aiohttp.ClientSession) -> None:
-        self._http_client = http_client
-
-    async def download_cpi(self) -> list[cpi.CPIRow]:
-        async with (
-            http.wrap_err("can't download CPI data"),
-            self._http_client.get(_URL) as resp,
-        ):
-            if not resp.ok:
-                raise errors.AdapterError(f"bad CPI respond status {resp.reason}")
-
-            return _parse_rows(io.BytesIO(await resp.read()))
-
-
-def _parse_rows(xlsx: io.BytesIO) -> list[cpi.CPIRow]:
+def cpi_parser(xlsx: io.BytesIO) -> list[cpi.Row]:
     wb = excel.load_workbook(xlsx)
     ws = cast("worksheet.Worksheet", wb[_SHEET_NAME])
 
     _validate_data_position(ws)
 
-    rows: list[cpi.CPIRow] = []
+    rows: list[cpi.Row] = []
 
     for row in ws.iter_cols(min_row=_MIN_ROW, max_row=_MAX_ROW, min_col=_MIN_COL, values_only=True):
         day, value = row
 
-        rows.append(cpi.CPIRow(day=_month_end(cast("datetime", day).date()), cpi=1 + cast("float", value) / 100))
+        rows.append(cpi.Row(day=_month_end(cast("datetime", day).date()), cpi=1 + cast("float", value) / 100))
 
     return rows
 

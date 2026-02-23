@@ -10,10 +10,8 @@ from poptimizer.actors import system
 from poptimizer.adapters import http, logger, mongo
 from poptimizer.cli import config
 from poptimizer.controllers.tg import tg
-from poptimizer.core import actors, message
-from poptimizer.data import data, memory, migration
-from poptimizer.data.cpi import cbr
-from poptimizer.data.moex import moex
+from poptimizer.core import message
+from poptimizer.data import data
 
 
 class Run(config.Cfg):
@@ -75,20 +73,9 @@ class Run(config.Cfg):
             if check_memory:
                 main_task = asyncio.current_task()
 
-            memory_client = memory.Checker(main_task)
-            migration_client = migration.Client()
-            cbr_client = cbr.Client(http_client)
-            moex_client = moex.Client(http_client)
+            data_actor = data.build_actor(main_task, http_client)
 
-            data_updater = data.DataActor(
-                memory_client,
-                migration_client,
-                cbr_client,
-                moex_client,
-                actors.AID(""),
-            )
-
-            aid = await actor_system.start(data_updater)
+            aid = await actor_system.start(data_actor)
 
             actor_system.send(
                 message.AppStarted(),
