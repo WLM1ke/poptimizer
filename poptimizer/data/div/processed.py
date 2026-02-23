@@ -5,7 +5,7 @@ from typing import Annotated
 from pydantic import AfterValidator, Field, PositiveFloat
 
 from poptimizer.core import actors, consts, domain
-from poptimizer.data.div.models import raw
+from poptimizer.data.div import raw
 from poptimizer.data.moex import securities
 
 

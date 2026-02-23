@@ -82,7 +82,7 @@ class Securities(domain.Entity):
         list[Row],
         AfterValidator(domain.sorted_with_ticker_field_validator),
     ] = Field(default_factory=list[Row])
-    trading_days: list[domain.Day] = Field(default_factory=list[domain.Day])
+    trading_days: domain.TradingDays = Field(default_factory=list[domain.Day])
 
     def update_df(self, rows: list[Row]) -> None:
         self.df = sorted(rows, key=lambda sec: sec.ticker)
@@ -94,7 +94,7 @@ class Securities(domain.Entity):
 type _Cache = dict[domain.Ticker, tuple[Sector, domain.Day]]
 
 
-class MOEXClient(Protocol):
+class Client(Protocol):
     async def get_securities(self, market: str, board: str) -> list[Row]: ...
 
     async def get_index_tickers(self, index: SectorIndex) -> list[SectorIndexRow]: ...
@@ -102,7 +102,7 @@ class MOEXClient(Protocol):
     async def get_etf_desc(self) -> list[ETFRow]: ...
 
 
-async def update(ctx: actors.CoreCtx, moex_client: MOEXClient) -> Securities:
+async def update(ctx: actors.CoreCtx, moex_client: Client) -> Securities:
     async with asyncio.TaskGroup() as tg:
         etf_task = tg.create_task(_get_etf(moex_client))
         shares_task = tg.create_task(_get_shares(moex_client))
@@ -113,7 +113,7 @@ async def update(ctx: actors.CoreCtx, moex_client: MOEXClient) -> Securities:
     return table
 
 
-async def _get_etf(moex_client: MOEXClient) -> list[Row]:
+async def _get_etf(moex_client: Client) -> list[Row]:
     cache = {desc.ticker: desc.sector for desc in await moex_client.get_etf_desc()}
     rows = await moex_client.get_securities(_MARKET, _ETF_BOARD)
 
@@ -123,7 +123,7 @@ async def _get_etf(moex_client: MOEXClient) -> list[Row]:
     return rows
 
 
-async def _get_shares(moex_client: MOEXClient) -> list[Row]:
+async def _get_shares(moex_client: Client) -> list[Row]:
     cache: _Cache = {}
 
     async with asyncio.TaskGroup() as tg:
@@ -141,7 +141,7 @@ async def _get_shares(moex_client: MOEXClient) -> list[Row]:
 
 
 async def _update_shares_sector_cache(
-    moex_client: MOEXClient,
+    moex_client: Client,
     cache: _Cache,
     index: SectorIndex,
 ) -> None:

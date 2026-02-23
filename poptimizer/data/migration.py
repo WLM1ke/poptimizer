@@ -6,7 +6,7 @@ import aiofiles
 from pydantic import ValidationError
 
 from poptimizer.core import actors, consts, errors
-from poptimizer.data.div.models import raw
+from poptimizer.data.div import raw
 
 _DUMP: Final = consts.ROOT / "dump" / "dividends.json"
 

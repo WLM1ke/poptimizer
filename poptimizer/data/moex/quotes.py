@@ -44,7 +44,7 @@ class Quotes(domain.Entity):
         return self.df[-1].day
 
 
-class MOEXClient(Protocol):
+class Client(Protocol):
     async def get_quotes(
         self,
         ticker: domain.Ticker,
@@ -55,7 +55,7 @@ class MOEXClient(Protocol):
 
 async def update(
     ctx: actors.CoreCtx,
-    moex_client: MOEXClient,
+    moex_client: Client,
     update_day: domain.Day,
     sec_task: asyncio.Task[securities.Securities],
 ) -> None:
@@ -71,7 +71,7 @@ async def update(
 
 async def _update_one(
     ctx: actors.CoreCtx,
-    moex_client: MOEXClient,
+    moex_client: Client,
     ticker: domain.Ticker,
     update_day: domain.Day,
     trading_days: set[domain.Day],

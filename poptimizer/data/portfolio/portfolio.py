@@ -317,27 +317,27 @@ def _update_existing_positions(
     for position in port.positions:
         match sec_cache.pop(position.ticker, None):
             case None if not position.accounts:
-                ctx.info("Not traded %s is removed", position.ticker)
+                ctx.info("Not traded %s is removed from portfolio", position.ticker)
             case None:
                 position.turnover = min_turnover
                 updated_positions.append(position)
                 port.illiquid.add(position.ticker)
-                ctx.warning("Not traded %s is not removed", position.ticker)
+                ctx.warning("Not traded %s is not removed from portfolio", position.ticker)
             case new_position if new_position.turnover < min_turnover and not position.accounts:
-                ctx.info("Not liquid %s is removed", position.ticker)
+                ctx.info("Not liquid %s is removed from portfolio", position.ticker)
             case new_position if new_position.turnover < min_turnover:
                 new_position.accounts = position.accounts
                 new_position.turnover = min_turnover
                 updated_positions.append(new_position)
                 port.illiquid.add(position.ticker)
-                ctx.warning("Not liquid %s is not removed", position.ticker)
+                ctx.warning("Not liquid %s is not removed from portfolio", position.ticker)
             case new_position if new_position.ticker in port.exclude and not position.accounts:
-                ctx.info("%s from exclude list is removed", new_position.ticker)
+                ctx.info("%s from exclude list is removed from portfolio", new_position.ticker)
             case new_position if new_position.ticker in port.exclude:
                 new_position.accounts = position.accounts
                 updated_positions.append(new_position)
                 port.illiquid.add(position.ticker)
-                ctx.warning("%s from exclude list is not removed", position.ticker)
+                ctx.warning("%s from exclude list is not removed from portfolio", position.ticker)
             case new_position:
                 new_position.accounts = position.accounts
                 updated_positions.append(new_position)
@@ -356,4 +356,4 @@ def _add_new_liquid(
             n, _ = port.find_position(position.ticker)
             port.positions.insert(n, position)
 
-            ctx.info("%s is added", ticker)
+            ctx.info("%s is added to portfolio", ticker)

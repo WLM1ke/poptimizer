@@ -10,7 +10,8 @@ from pydantic import TypeAdapter, ValidationError
 
 from poptimizer.core import actors, domain, errors
 from poptimizer.core.domain import date
-from poptimizer.data.div.models import raw, status
+from poptimizer.data.div import raw
+from poptimizer.data.moex import status
 from poptimizer.data.portfolio import portfolio
 from poptimizer.domain.portfolio import forecasts
 from poptimizer.use_cases import handler

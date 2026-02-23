@@ -8,8 +8,8 @@ from pydantic import Field, NonNegativeInt, PositiveInt
 
 from poptimizer.core import actors, consts, domain, message
 from poptimizer.data.cpi import cpi
-from poptimizer.data.div import div
-from poptimizer.data.moex import index, quotes, securities, usd
+from poptimizer.data.div import processed
+from poptimizer.data.moex import index, quotes, securities, status, usd
 from poptimizer.data.portfolio import portfolio
 
 # Часовой пояс MOEX
@@ -66,7 +66,7 @@ class MigrationClient(Protocol):
     async def migrate(self, ctx: actors.Ctx, last_version: str) -> bool: ...
 
 
-class MOEXClient(usd.MOEXClient, index.MOEXClient, securities.MOEXClient, quotes.MOEXClient, Protocol): ...
+class Client(usd.Client, index.Client, securities.Client, quotes.Client, status.Client, Protocol): ...
 
 
 class DataActor:
@@ -75,7 +75,7 @@ class DataActor:
         memory_checker: MemoryChecker,
         migration_client: MigrationClient,
         cdr_client: cpi.CBRClient,
-        moex_client: MOEXClient,
+        moex_client: Client,
         evolution_aid: actors.AID,
     ) -> None:
         self._memory_checker = memory_checker
@@ -116,7 +116,7 @@ class DataActor:
             tg.create_task(usd.update(ctx, self._moex_client, last_finished_day))
             tg.create_task(cpi.update(ctx, self._cbr_client))
             sec_task = tg.create_task(securities.update(ctx, self._moex_client))
-            tg.create_task(div.update(ctx, sec_task))
+            tg.create_task(processed.update(ctx, sec_task))
             tg.create_task(quotes.update(ctx, self._moex_client, last_finished_day, sec_task))
 
         state.state = _StateName.UPDATING_PORTFOLIO
@@ -130,6 +130,7 @@ class DataActor:
     async def _update_portfolio(self, ctx: actors.Ctx, state: DataState) -> None:
         if state.days_passed:
             await portfolio.update(ctx, state.minimal_candles, state.days_passed)
+            await status.update(ctx, self._moex_client)
 
         state.state = _StateName.UPDATING_FEATURES
         state.days_passed = 0

@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from poptimizer.core import actors, consts, domain
-from poptimizer.data.div import div
+from poptimizer.data.div import processed
 from poptimizer.data.moex import quotes
 from poptimizer.data.portfolio import portfolio
 from poptimizer.domain.dl.features import Features, NumFeat
@@ -52,7 +52,7 @@ async def _build_features(ctx: actors.Ctx, ticker: domain.UID, index: pd.Datetim
 
 
 async def _prepare_div(ctx: actors.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> pd.Series[float]:
-    div_table = await ctx.get(div.Dividends, ticker)
+    div_table = await ctx.get(processed.Dividends, ticker)
 
     first_day = index[1]
     last_day = index[-1] + 2 * pd.tseries.offsets.BDay()

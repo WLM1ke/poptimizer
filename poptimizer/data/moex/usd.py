@@ -40,7 +40,7 @@ class USD(domain.Entity):
         return self.df[-1].day
 
 
-class MOEXClient(Protocol):
+class Client(Protocol):
     async def get_usd(
         self,
         start_day: domain.Day | None,
@@ -48,7 +48,7 @@ class MOEXClient(Protocol):
     ) -> list[Row]: ...
 
 
-async def update(ctx: actors.CoreCtx, moex_client: MOEXClient, check_day: domain.Day) -> None:
+async def update(ctx: actors.CoreCtx, moex_client: Client, check_day: domain.Day) -> None:
     table = await ctx.get_for_update(USD)
 
     start_day = table.last_row_date()
