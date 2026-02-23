@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 from enum import StrEnum, auto
 from typing import Final, Protocol
 
-from pydantic import Field, NonNegativeInt, PositiveInt
+from pydantic import Field, PositiveInt
 
 from poptimizer.core import actors, consts, domain, message
 from poptimizer.data.cpi import cpi
@@ -53,7 +53,6 @@ class DataState(actors.State[_StateName]):
     app_version: str = consts.__version__
     check_day: domain.Day = Field(default_factory=_last_finished_day)
     data_day: domain.Day = consts.START_DAY
-    days_passed: NonNegativeInt = 0
     features_day: domain.Day | None = None
     minimal_candles: PositiveInt = consts.INITIAL_MINIMAL_CANDLES
 
@@ -121,19 +120,15 @@ class DataActor:
 
         state.state = _StateName.UPDATING_PORTFOLIO
         state.check_day = last_finished_day
-        sec_table = await sec_task
 
-        new_trading_days = [day for day in sec_table.trading_days if day >= state.data_day]
-        state.data_day = new_trading_days[-1]
-        state.days_passed += len(new_trading_days) - 1
+        sec_table = await sec_task
+        state.data_day = sec_table.trading_days[-1]
 
     async def _update_portfolio(self, ctx: actors.Ctx, state: DataState) -> None:
-        if state.days_passed:
-            await portfolio.update(ctx, state.minimal_candles, state.days_passed)
-            await status.update(ctx, self._moex_client)
+        await portfolio.update(ctx, state.minimal_candles)
+        await status.update(ctx, self._moex_client)
 
         state.state = _StateName.UPDATING_FEATURES
-        state.days_passed = 0
 
     async def _update_features(self, ctx: actors.Ctx, state: DataState) -> None:  # noqa: ARG002
         if state.features_day is None or state.features_day < state.data_day:

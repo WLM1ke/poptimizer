@@ -16,7 +16,7 @@ from pydantic import (
     model_validator,
 )
 
-from poptimizer.core import actors, domain, errors
+from poptimizer.core import actors, consts, domain, errors
 from poptimizer.data.moex import quotes, securities
 
 type AccountData = dict[domain.AccName, NonNegativeInt]
@@ -47,6 +47,7 @@ class NormalizedPosition(BaseModel):
 
 
 class Portfolio(domain.Entity):
+    day: domain.Day = consts.START_DAY
     holding_period: NonNegativeFloat = Field(0, ge=1)
     account_names: Annotated[
         set[domain.AccName],
@@ -236,18 +237,17 @@ class Portfolio(domain.Entity):
 async def update(
     ctx: actors.CoreCtx,
     minimal_candles: PositiveInt,
-    days_passed: NonNegativeInt,
 ) -> None:
     port = await ctx.get_for_update(Portfolio)
 
-    port.holding_period += days_passed
+    if not await _update_holding_period(ctx, port):
+        return
+
     port.illiquid.clear()
-
-    old_value = port.value()
-
     sec_cache = await _prepare_sec_cache(ctx, port.forecast_days, minimal_candles)
     min_turnover = _calc_min_turnover(port, sec_cache)
 
+    old_value = port.value()
     _update_existing_positions(ctx, port, sec_cache, min_turnover)
     _add_new_liquid(ctx, port, sec_cache, min_turnover)
 
@@ -255,6 +255,23 @@ async def update(
         new_value = port.value()
         change = new_value / old_value - 1
         ctx.warning(f"Portfolio value changed {change:.2%} - {old_value:_.0f} -> {new_value:_.0f}")
+
+
+async def _update_holding_period(ctx: actors.CoreCtx, port: Portfolio) -> bool:
+    sec_table = await ctx.get(securities.Securities)
+
+    if port.day >= sec_table.trading_days[-1]:
+        return False
+
+    for day in reversed(sec_table.trading_days):
+        if day <= port.day:
+            break
+
+        port.holding_period += 1
+
+    port.day = sec_table.trading_days[-1]
+
+    return True
 
 
 async def _prepare_sec_cache(
