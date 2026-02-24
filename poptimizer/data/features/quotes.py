@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 from datetime import datetime
 from typing import Final
@@ -9,25 +7,25 @@ import pandas as pd
 
 from poptimizer.core import actors, consts, domain
 from poptimizer.data.div import processed
-from poptimizer.data.moex import quotes
+from poptimizer.data.features.features import Features, NumFeat
+from poptimizer.data.moex import quotes, securities
 from poptimizer.data.portfolio import portfolio
-from poptimizer.domain.dl.features import Features, NumFeat
-from poptimizer.use_cases import handler
 
 _T_PLUS_1_START: Final = datetime(2023, 7, 31)
 
 
-class QuotesFeatHandler:
-    async def __call__(self, ctx: actors.Ctx, msg: handler.PortfolioUpdated) -> None:
-        index = pd.DatetimeIndex(msg.trading_days)
-        port = await ctx.get(portfolio.Portfolio)
+async def update(ctx: actors.CoreCtx) -> None:
+    async with asyncio.TaskGroup() as tg:
+        port_task = tg.create_task(ctx.get(portfolio.Portfolio))
+        sec = await ctx.get(securities.Securities)
 
-        async with asyncio.TaskGroup() as tg:
-            for pos in port.positions:
-                tg.create_task(_build_features(ctx, domain.UID(pos.ticker), index))
+        index = pd.DatetimeIndex(sec.trading_days)
+
+        for pos in (await port_task).positions:
+            tg.create_task(_build_features(ctx, domain.UID(pos.ticker), index))
 
 
-async def _build_features(ctx: actors.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> None:
+async def _build_features(ctx: actors.CoreCtx, ticker: domain.UID, index: pd.DatetimeIndex) -> None:
     quotes_table = await ctx.get(quotes.Quotes, ticker)
 
     first_day = pd.Timestamp(quotes_table.df[0].day)
@@ -48,10 +46,10 @@ async def _build_features(ctx: actors.Ctx, ticker: domain.UID, index: pd.Datetim
     quotes_df[NumFeat.TURNOVER] = turnover_df  # type: ignore[reportUnknownMemberType]
 
     feat = await ctx.get_for_update(Features, quotes_table.uid)
-    feat.update_numerical(quotes_table.day, quotes_df)  # type: ignore[reportUnknownMemberType]
+    feat.update_numerical(quotes_df)  # type: ignore[reportUnknownMemberType]
 
 
-async def _prepare_div(ctx: actors.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> pd.Series[float]:
+async def _prepare_div(ctx: actors.CoreCtx, ticker: domain.UID, index: pd.DatetimeIndex) -> pd.Series[float]:
     div_table = await ctx.get(processed.Dividends, ticker)
 
     first_day = index[1]

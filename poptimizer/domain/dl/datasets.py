@@ -9,7 +9,7 @@ from pydantic import BaseModel, FiniteFloat
 from torch.utils import data
 
 from poptimizer.core import errors
-from poptimizer.domain.dl import features
+from poptimizer.data.features import features
 
 if TYPE_CHECKING:
     from poptimizer.core import domain

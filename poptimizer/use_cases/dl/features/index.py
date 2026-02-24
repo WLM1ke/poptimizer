@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 
 from poptimizer.core import actors, domain
+from poptimizer.data.features import features
 from poptimizer.data.moex import index
 from poptimizer.data.portfolio import portfolio
-from poptimizer.domain.dl import features
 from poptimizer.use_cases import handler
 
 if TYPE_CHECKING:

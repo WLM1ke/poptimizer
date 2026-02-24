@@ -1,9 +1,9 @@
 import asyncio
 
 from poptimizer.core import actors, domain
+from poptimizer.data.features.features import EmbeddingFeatDesc, EmbFeat, Features
 from poptimizer.data.moex import securities
 from poptimizer.data.portfolio import portfolio
-from poptimizer.domain.dl.features import EmbeddingFeatDesc, EmbFeat, Features
 
 
 class SecFeatHandler:

@@ -5,7 +5,7 @@ from typing import Final, Protocol, Self
 import bson
 from pydantic import BaseModel, FiniteFloat, PositiveInt
 
-from poptimizer.core import consts, domain, errors
+from poptimizer.core import actors, consts, domain, errors
 from poptimizer.domain.evolve import evolve
 from poptimizer.use_cases import handler
 from poptimizer.use_cases.dl import builder, trainer
@@ -74,11 +74,11 @@ class EvolutionHandler:
 
     async def __call__(
         self,
-        ctx: Ctx,
+        ctx: actors.Ctx,
         msg: handler.DataChecked,
     ) -> None:
         evolution, count = await self._init_step(ctx, msg)
-        model, good = await self._get_model(ctx, evolution)
+        model, _ = await self._get_model(ctx, evolution)
         self._lgr.info(
             "Day %s step %d models %d: %s - %s",
             evolution.day,
@@ -93,15 +93,15 @@ class EvolutionHandler:
         while try_again:
             try_again = False
 
-            try:
-                await self._update_model_metrics(ctx, evolution, model)
-            except* errors.DomainError as err:
-                if await self._is_deleted_on_error(ctx, evolution, model, err):
-                    ctx.publish(handler.ModelDeleted(day=evolution.day, uid=model.uid))
-                else:
-                    try_again = True
-            else:
-                ctx.publish(await self._eval_model(ctx, evolution, model, good=good))
+            # try:  # noqa: ERA001
+            #     await self._update_model_metrics(ctx, evolution, model)  # noqa: ERA001
+            # except* errors.DomainError as err:  # noqa: ERA001
+            #     if await self._is_deleted_on_error(ctx, evolution, model, err):
+            #         ctx.publish(handler.ModelDeleted(day=evolution.day, uid=model.uid))  # noqa: ERA001
+            #     else:  # noqa: ERA001
+            #         try_again = True  # noqa: ERA001
+            # else:  # noqa: ERA001
+            #     ctx.publish(await self._eval_model(ctx, evolution, model, good=good))  # noqa: ERA001
 
         # Тут нужно вставить функцию проверки памяти
         # Сама логика должна быть на уровне приложения
@@ -109,7 +109,7 @@ class EvolutionHandler:
         # Проверка должна быть на уровне приложения
         # Проверка должна быть в конце, чтобы между перезагрузками хотя бы одна итерация эволюции происходит
 
-    async def _init_step(self, ctx: Ctx, msg: handler.DataChecked) -> tuple[evolve.Evolution, int]:
+    async def _init_step(self, ctx: actors.Ctx, msg: handler.DataChecked) -> tuple[evolve.Evolution, int]:
         evolution = await ctx.get_for_update(evolve.Evolution)
 
         count = await self._create_model(ctx, evolution)
@@ -126,7 +126,7 @@ class EvolutionHandler:
 
         return evolution, count
 
-    async def _create_model(self, ctx: Ctx, evolution: evolve.Evolution) -> int:
+    async def _create_model(self, ctx: actors.Ctx, evolution: evolve.Evolution) -> int:
         if (count := await ctx.count_models()) >= _PARENT_COUNT:
             return count
 
@@ -138,7 +138,7 @@ class EvolutionHandler:
 
         return consts.INITIAL_TEST_DAYS
 
-    async def _get_model(self, ctx: Ctx, evolution: evolve.Evolution) -> tuple[evolve.Model, bool]:
+    async def _get_model(self, ctx: actors.Ctx, evolution: evolve.Evolution) -> tuple[evolve.Model, bool]:
         match evolution.state:
             case evolve.State.EVAL_NEW_BASE_MODEL:
                 return await ctx.next_model_for_update(evolution.base_model_uid)
@@ -160,7 +160,7 @@ class EvolutionHandler:
 
                 return await self._make_child(ctx, model), True
 
-    async def _make_child(self, ctx: Ctx, model: evolve.Model) -> evolve.Model:
+    async def _make_child(self, ctx: actors.Ctx, model: evolve.Model) -> evolve.Model:
         parents = await ctx.sample_models(_PARENT_COUNT)
         if len({parent.uid for parent in parents}) != _PARENT_COUNT:
             parents = [evolve.Model(day=model.day, uid=model.uid) for _ in range(_PARENT_COUNT)]
@@ -173,7 +173,7 @@ class EvolutionHandler:
 
     async def _update_model_metrics(
         self,
-        ctx: Ctx,
+        ctx: actors.Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
     ) -> None:
@@ -187,7 +187,7 @@ class EvolutionHandler:
 
     async def _is_deleted_on_error(
         self,
-        ctx: Ctx,
+        ctx: actors.Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
         err: BaseExceptionGroup[errors.DomainError],
@@ -228,7 +228,7 @@ class EvolutionHandler:
 
     async def _eval_model(
         self,
-        ctx: Ctx,
+        ctx: actors.Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
         *,
@@ -283,7 +283,7 @@ class EvolutionHandler:
 
     async def _should_delete(
         self,
-        ctx: Ctx,
+        ctx: actors.Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
     ) -> bool:

@@ -73,7 +73,7 @@ class EmbeddingSeqFeatDesc(BaseModel):
         return self
 
 
-class Features(domain.EntityOld):
+class Features(domain.Entity):
     numerical: list[dict[NumFeat, FiniteFloat]] = Field(default_factory=list[dict[NumFeat, FiniteFloat]])
     embedding: dict[EmbFeat, EmbeddingFeatDesc] = Field(default_factory=dict[EmbFeat, EmbeddingFeatDesc])
     embedding_seq: dict[EmbSeqFeat, EmbeddingSeqFeatDesc] = Field(
@@ -106,13 +106,5 @@ class Features(domain.EntityOld):
 
         return self
 
-    def _check_new_day(self, day: domain.Day) -> None:
-        if self.day != day:
-            self.day = day
-            self.numerical.clear()
-            self.embedding.clear()
-            self.embedding_seq.clear()
-
-    def update_numerical(self, day: domain.Day, num_feat_df: pd.DataFrame) -> None:
-        self._check_new_day(day)
+    def update_numerical(self, num_feat_df: pd.DataFrame) -> None:
         self.numerical = num_feat_df.to_dict("records")  # type: ignore[reportUnknownMemberType]

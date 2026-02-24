@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from poptimizer.core import consts, domain, errors
-from poptimizer.domain.dl import datasets, features
-
-if TYPE_CHECKING:
-    from poptimizer.use_cases import handler
+from poptimizer.core import actors, consts, domain, errors
+from poptimizer.data.features import features
+from poptimizer.domain.dl import datasets
 
 
 class NumFeatures(BaseModel):
@@ -72,7 +69,7 @@ class Builder:
 
     async def build(
         self,
-        ctx: handler.Ctx,
+        ctx: actors.Ctx,
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
         days: datasets.Days,
@@ -105,7 +102,7 @@ class Builder:
 
     async def _update_cache(
         self,
-        ctx: handler.Ctx,
+        ctx: actors.Ctx,
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
     ) -> None:
