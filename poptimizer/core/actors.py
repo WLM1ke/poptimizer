@@ -28,18 +28,6 @@ class Handler[C, **I, O](Protocol):
 class CoreCtx(Protocol):
     def info(self, msg: str, *args: Any) -> None: ...
     def warning(self, msg: str, *args: Any) -> None: ...
-    async def run_with_retry[**I, O](
-        self,
-        handler: Handler[CoreCtx, I, O],
-        *args: I.args,
-        **kwargs: I.kwargs,
-    ) -> O: ...
-    async def run_safe[**I, O](
-        self,
-        handler: Handler[CoreCtx, I, None],
-        *args: I.args,
-        **kwargs: I.kwargs,
-    ) -> None: ...
     async def get[E: domain.Entity](
         self,
         t_entity: type[E],

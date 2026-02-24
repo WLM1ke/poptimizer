@@ -42,7 +42,7 @@ async def with_retry[C, **I, O](
                 )
 
                 await asyncio.sleep(last_delay.total_seconds())
-            case _ as output:
+            case output:
                 return output
 
 

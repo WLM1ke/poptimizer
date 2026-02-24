@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from types import TracebackType
 from typing import Any, Protocol, Self
 
-from poptimizer.actors import run, uow
+from poptimizer.actors import uow
 from poptimizer.core import actors, domain
 from poptimizer.domain.evolve import evolve
 
@@ -54,26 +54,6 @@ class Tx:
 
     def send(self, msg: actors.Message, aid: actors.AID | None = None) -> None:
         self._msgs.append((msg, aid or self._aid))
-
-    async def run_with_retry[**I, O](
-        self,
-        handler: actors.Handler[actors.CoreCtx, I, O],
-        *args: I.args,
-        **kwargs: I.kwargs,
-    ) -> O:
-        tx = Tx(self._lgr, self._repo, self._sender, self._aid)
-
-        return await run.with_retry(self._lgr, handler, tx, *args, **kwargs)
-
-    async def run_safe[**I, O](
-        self,
-        handler: actors.Handler[actors.CoreCtx, I, None],
-        *args: I.args,
-        **kwargs: I.kwargs,
-    ) -> None:
-        tx = Tx(self._lgr, self._repo, self._sender, self._aid)
-
-        return await run.run_safe(self._lgr, handler, tx, *args, **kwargs)
 
     async def get[E: domain.Object](
         self,
