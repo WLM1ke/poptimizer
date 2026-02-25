@@ -9,6 +9,7 @@ from pydantic import Field, PositiveInt
 from poptimizer.core import actors, consts, domain, message
 from poptimizer.data.cpi import cpi
 from poptimizer.data.div import processed, raw, status
+from poptimizer.data.features import indexes as indexes_features
 from poptimizer.data.features import quotes as quotes_features
 from poptimizer.data.moex import index, quotes, securities
 from poptimizer.data.portfolio import portfolio
@@ -139,8 +140,10 @@ class DataActor:
 
     async def _update_features(self, ctx: actors.Ctx, state: DataState) -> None:
         if state.features_day is None or state.features_day < state.data_day:
+            await quotes_features.update(ctx)
+
             async with asyncio.TaskGroup() as tg:
-                tg.create_task(quotes_features.update(ctx))
+                tg.create_task(indexes_features.update(ctx))
 
         state.state = _StateName.WAITING_EVOLUTION
         state.features_day = state.data_day
