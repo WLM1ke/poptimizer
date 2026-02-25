@@ -1,10 +1,16 @@
 import asyncio
 import logging
+import random
+import traceback as tb
+from datetime import timedelta
 from types import TracebackType
-from typing import Any, Self, get_args, get_type_hints
+from typing import Any, Final, Self, get_args, get_type_hints
 
-from poptimizer.actors import run, tx, uow
-from poptimizer.core import actors
+from poptimizer.actors import tx, uow
+from poptimizer.core import actors, domain, errors
+
+_FIRST_RETRY: Final = timedelta(seconds=30)
+_BACKOFF_FACTOR: Final = 2
 
 
 class _Dispatcher:
@@ -70,37 +76,76 @@ class System:
         inbox: asyncio.Queue[actors.Message],
     ) -> None:
         lgr = logging.getLogger(actor.__class__.__name__)
+        ctx = tx.Tx(lgr, self._repo, self._dispatcher, aid)
+        state_type, msg_type = _actor_types(actor)
 
         while True:
             msg = await inbox.get()
-            state_type, msg_type = _actor_types(actor)
 
             if not isinstance(msg, msg_type):
                 lgr.warning("Skipped unknown %r", msg)
 
                 continue
 
-            await run.with_retry(
-                lgr,
-                _run,
-                tx.Tx(lgr, self._repo, self._dispatcher, aid),
+            await self._retry(
+                ctx,
                 actor,
                 state_type,
                 msg,
             )
 
+    async def _retry[S: actors.State[Any], M: actors.Message](
+        self,
+        tx: tx.Tx,
+        actor: actors.Actor[S, M],
+        state_type: type[S],
+        msg: M,
+    ) -> None:
+        last_delay = _FIRST_RETRY / _BACKOFF_FACTOR
 
-async def _run[S: actors.State[Any], M: actors.Message](
-    ctx: tx.Tx,
-    actor: actors.Actor[S, M],
-    state_type: type[S],
-    msg: M,
-) -> None:
-    state = await ctx.get_for_update(state_type)
+        while True:
+            match await self._run_safe(tx, actor, state_type, msg):
+                case errors.POError() as err:
+                    last_delay = await _next_delay(last_delay)
+                    tx.info("Failed with %s - retrying in %s", err, last_delay)
 
-    await actor(ctx, state, msg)
+                    await asyncio.sleep(last_delay.total_seconds())
+                case output:
+                    return output
 
-    ctx.info("Handled %s with state transition to %s", msg, state)
+    async def _run_safe[S: actors.State[Any], M: actors.Message](
+        self,
+        tx: tx.Tx,
+        actor: actors.Actor[S, M],
+        state_type: type[S],
+        msg: M,
+    ) -> None | errors.POError:
+        err_out: errors.POError = errors.POError()
+
+        try:
+            return await self._run(tx, actor, state_type, msg)
+        except* errors.POError as err:
+            tb.print_exception(err, colorize=True)  # type: ignore[reportCallIssue]
+
+            err_out = errors.get_root_poptimizer_error(err)
+
+        return err_out
+
+    async def _run[S: actors.State[Any], M: actors.Message](
+        self,
+        tx: tx.Tx,
+        actor: actors.Actor[S, M],
+        state_type: type[S],
+        msg: M,
+    ) -> None:
+        state, ver = await self._repo.get(state_type, domain.UID(state_type.__name__))
+
+        async with tx as ctx:
+            await actor(ctx, state, msg)
+
+        await self._repo.save(state, ver)
+
+        ctx.info("Handled %s with state transition to %s", msg, state)
 
 
 def _actor_types[S: actors.State[Any], M: actors.Message](
@@ -115,3 +160,7 @@ def _actor_types[S: actors.State[Any], M: actors.Message](
         msg_type_union = (type_hints["msg"],)
 
     return state_type, msg_type_union
+
+
+async def _next_delay(delay: timedelta) -> timedelta:
+    return timedelta(seconds=delay.total_seconds() * _BACKOFF_FACTOR * 2 * random.random())  # noqa: S311
