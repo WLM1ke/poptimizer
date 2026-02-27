@@ -75,11 +75,8 @@ class Run(config.Cfg):
 
             data_actor = data.build_actor(main_task, http_client)
 
-            aid = await actor_system.start(data_actor)
+            await actor_system.start(data_actor)
 
-            actor_system.send(
-                message.AppStarted(),
-                aid,
-            )
+            actor_system.send(message.AppStarted())
 
         return 1

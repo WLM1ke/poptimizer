@@ -15,29 +15,16 @@ _BACKOFF_FACTOR: Final = 2
 
 class _Dispatcher:
     def __init__(self) -> None:
-        self._lgr = logging.getLogger()
-        self._last_aid = 0
-        self._inboxes = dict[actors.AID, asyncio.Queue[actors.Message]()]()
+        self._inboxes = list[asyncio.Queue[actors.Message]()]()
 
-    def new_inbox[S: actors.State[Any], M: actors.Message](
-        self,
-        actor: actors.Actor[S, M],
-    ) -> tuple[actors.AID, asyncio.Queue[actors.Message]]:
-        self._last_aid += 1
-        name = actor.__class__.__name__
+    def new_inbox[S: actors.State[Any], M: actors.Message](self) -> asyncio.Queue[actors.Message]:
+        self._inboxes.append(asyncio.Queue[actors.Message]())
 
-        inbox = asyncio.Queue[actors.Message]()
-        aid = actors.AID(f"{name}-{self._last_aid}")
-        self._inboxes[aid] = inbox
+        return self._inboxes[-1]
 
-        return aid, inbox
-
-    def send(self, msg: actors.Message, aid: actors.AID) -> None:
-        match inbox := self._inboxes.get(aid):
-            case asyncio.Queue():
-                inbox.put_nowait(msg)
-            case None:
-                self._lgr.warning("Unknown inbox %d", aid)
+    def send(self, msg: actors.Message) -> None:
+        for inbox in self._inboxes:
+            inbox.put_nowait(msg)
 
 
 class System:
@@ -59,24 +46,18 @@ class System:
     ) -> None:
         return await self._tg.__aexit__(exc_type, exc_value, traceback)
 
-    async def start[S: actors.State[Any], M: actors.Message](self, actor: actors.Actor[S, M]) -> actors.AID:
-        aid, inbox = self._dispatcher.new_inbox(actor)
+    async def start[S: actors.State[Any], M: actors.Message](self, actor: actors.Actor[S, M]) -> None:
+        self._tg.create_task(self._loop(actor, self._dispatcher.new_inbox()))
 
-        self._tg.create_task(self._loop(actor, aid, inbox))
-
-        return aid
-
-    def send(self, msg: actors.Message, aid: actors.AID) -> None:
-        self._dispatcher.send(msg, aid)
+    def send(self, msg: actors.Message) -> None:
+        self._dispatcher.send(msg)
 
     async def _loop[S: actors.State[Any], M: actors.Message](
         self,
         actor: actors.Actor[S, M],
-        aid: actors.AID,
         inbox: asyncio.Queue[actors.Message],
     ) -> None:
         lgr = logging.getLogger(actor.__class__.__name__)
-        ctx = tx.Tx(lgr, self._repo, self._dispatcher, aid)
         state_type, msg_type = _actor_types(actor)
 
         while True:
@@ -88,7 +69,7 @@ class System:
                 continue
 
             await self._retry(
-                ctx,
+                lgr,
                 actor,
                 state_type,
                 msg,
@@ -96,7 +77,7 @@ class System:
 
     async def _retry[S: actors.State[Any], M: actors.Message](
         self,
-        tx: tx.Tx,
+        lgr: logging.Logger,
         actor: actors.Actor[S, M],
         state_type: type[S],
         msg: M,
@@ -104,10 +85,10 @@ class System:
         last_delay = _FIRST_RETRY / _BACKOFF_FACTOR
 
         while True:
-            match await self._run_safe(tx, actor, state_type, msg):
+            match await self._run_safe(lgr, actor, state_type, msg):
                 case errors.POError() as err:
                     last_delay = await _next_delay(last_delay)
-                    tx.info("Failed with %s - retrying in %s", err, last_delay)
+                    lgr.info("Failed with %s - retrying in %s", err, last_delay)
 
                     await asyncio.sleep(last_delay.total_seconds())
                 case output:
@@ -115,7 +96,7 @@ class System:
 
     async def _run_safe[S: actors.State[Any], M: actors.Message](
         self,
-        tx: tx.Tx,
+        lgr: logging.Logger,
         actor: actors.Actor[S, M],
         state_type: type[S],
         msg: M,
@@ -123,7 +104,7 @@ class System:
         err_out: errors.POError = errors.POError()
 
         try:
-            return await self._run(tx, actor, state_type, msg)
+            return await self._run(lgr, actor, state_type, msg)
         except* errors.POError as err:
             tb.print_exception(err, colorize=True)  # type: ignore[reportCallIssue]
 
@@ -133,19 +114,19 @@ class System:
 
     async def _run[S: actors.State[Any], M: actors.Message](
         self,
-        tx: tx.Tx,
+        lgr: logging.Logger,
         actor: actors.Actor[S, M],
         state_type: type[S],
         msg: M,
     ) -> None:
-        state, ver = await self._repo.get(state_type, domain.UID(state_type.__name__))
+        async with (
+            tx.Tx(lgr, self._repo, self._dispatcher) as ctx_state,
+            tx.Tx(lgr, self._repo, self._dispatcher) as ctx_entities,
+        ):
+            state = await ctx_state.get_for_update(state_type, domain.UID(state_type.__name__))
+            await actor(ctx_entities, state, msg)
 
-        async with tx as ctx:
-            await actor(ctx, state, msg)
-
-        await self._repo.save(state, ver)
-
-        ctx.info("Handled %s with state transition to %s", msg, state)
+        lgr.info("Handled %s with state transition to %s", msg, state)
 
 
 def _actor_types[S: actors.State[Any], M: actors.Message](

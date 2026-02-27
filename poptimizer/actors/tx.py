@@ -9,7 +9,7 @@ from poptimizer.domain.evolve import evolve
 
 
 class _Sender(Protocol):
-    def send(self, msg: actors.Message, aid: actors.AID) -> None: ...
+    def send(self, msg: actors.Message) -> None: ...
 
 
 class Tx:
@@ -18,15 +18,13 @@ class Tx:
         lgr: logging.Logger,
         repo: uow.Repo,
         sender: _Sender,
-        aid: actors.AID,
     ) -> None:
         self._lgr = lgr
         self._repo = repo
         self._sender = sender
-        self._aid = aid
 
         self._uow = uow.UOW(repo)
-        self._msgs: list[tuple[actors.Message, actors.AID]] = []
+        self._msgs: list[actors.Message] = []
 
     async def __aenter__(self) -> Self:
         self._uow.clear()
@@ -43,8 +41,8 @@ class Tx:
         if exc_type is None:
             await self._uow.save()
 
-            for msg, aid in self._msgs:
-                self._sender.send(msg, aid)
+            for msg in self._msgs:
+                self._sender.send(msg)
 
     def info(self, msg: str, *args: Any) -> None:
         self._lgr.info(msg, *args)
@@ -52,8 +50,8 @@ class Tx:
     def warning(self, msg: str, *args: Any) -> None:
         self._lgr.warning(msg, *args)
 
-    def send(self, msg: actors.Message, aid: actors.AID | None = None) -> None:
-        self._msgs.append((msg, aid or self._aid))
+    def send(self, msg: actors.Message) -> None:
+        self._msgs.append(msg)
 
     async def get[E: domain.Object](
         self,
