@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from poptimizer.actors import uow
 from poptimizer.domain.evolve import evolve
+from poptimizer.fsm import uow
 
 
 async def plot(repo: uow.UOW) -> None:

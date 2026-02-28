@@ -4,10 +4,10 @@ from typing import Final
 import pandas as pd
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
-from poptimizer.actors import uow
 from poptimizer.core import domain, errors
 from poptimizer.data.moex import index
 from poptimizer.domain.funds import funds
+from poptimizer.fsm import uow
 
 PORTFOLIO: Final = "PORTFOLIO"
 MOEX: Final = "MCFTRR"

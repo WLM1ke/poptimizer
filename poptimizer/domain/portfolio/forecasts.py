@@ -10,8 +10,8 @@ from pydantic import (
     PositiveInt,
 )
 
-from poptimizer.actors import uow
 from poptimizer.core import domain
+from poptimizer.fsm import uow
 
 _MINIMAL_FORECASTS_AMOUNT: Final = 4
 

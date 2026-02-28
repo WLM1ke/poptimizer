@@ -5,7 +5,7 @@ from typing import Any, Final
 
 import psutil
 
-from poptimizer.core import actors
+from poptimizer.core import fsms
 
 _MEMORY_PERCENTAGE_THRESHOLD: Final = 75
 
@@ -30,7 +30,7 @@ class Checker:
         if self._task_to_cancel:
             signal.signal(signal.SIGTERM, _SignalHandler(self._task_to_cancel))
 
-    def check_memory_usage(self, ctx: actors.Ctx) -> None:
+    def check_memory_usage(self, ctx: fsms.Ctx) -> None:
         if not self._task_to_cancel:
             return
 

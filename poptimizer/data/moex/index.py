@@ -4,7 +4,7 @@ from typing import Annotated, Final, Protocol
 
 from pydantic import AfterValidator, Field
 
-from poptimizer.core import actors, domain, errors
+from poptimizer.core import domain, errors, fsms
 
 _MAX_INDEX_LAG: Final = timedelta(days=7)
 RVI: Final = domain.Ticker("RVI")
@@ -69,7 +69,7 @@ class Client(Protocol):
 
 
 async def update(
-    ctx: actors.CoreCtx,
+    ctx: fsms.CoreCtx,
     moex_client: Client,
     update_day: domain.Day,
 ) -> None:
@@ -79,7 +79,7 @@ async def update(
 
 
 async def _update_one(
-    ctx: actors.CoreCtx,
+    ctx: fsms.CoreCtx,
     moex_client: Client,
     ticker: domain.Ticker,
     update_day: domain.Day,

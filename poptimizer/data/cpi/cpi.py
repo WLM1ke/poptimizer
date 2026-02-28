@@ -3,7 +3,7 @@ from typing import Annotated, Final, Protocol
 
 from pydantic import AfterValidator, Field, field_validator
 
-from poptimizer.core import actors, domain
+from poptimizer.core import domain, fsms
 
 _MINIMUM_MONTHLY_CPI: Final = 0.99
 
@@ -34,7 +34,7 @@ class Client(Protocol):
     async def get_cpi(self) -> list[Row]: ...
 
 
-async def update(ctx: actors.CoreCtx, web_client: Client) -> None:
+async def update(ctx: fsms.CoreCtx, web_client: Client) -> None:
     table = await ctx.get_for_update(CPI)
 
     row = await web_client.get_cpi()

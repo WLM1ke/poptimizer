@@ -4,7 +4,7 @@ from typing import Annotated, Protocol
 
 from pydantic import AfterValidator, Field
 
-from poptimizer.core import actors, domain
+from poptimizer.core import domain, fsms
 from poptimizer.data.div import raw
 from poptimizer.data.moex import securities
 from poptimizer.data.portfolio import portfolio
@@ -48,7 +48,7 @@ class Client(Protocol):
     async def get_status(self) -> Iterable[tuple[domain.Ticker, domain.Day]]: ...
 
 
-async def update(ctx: actors.CoreCtx, status_client: Client) -> None:
+async def update(ctx: fsms.CoreCtx, status_client: Client) -> None:
     table = await ctx.get_for_update(DivStatus)
 
     status = await status_client.get_status()
@@ -57,7 +57,7 @@ async def update(ctx: actors.CoreCtx, status_client: Client) -> None:
 
 
 async def _status_gen(
-    ctx: actors.CoreCtx,
+    ctx: fsms.CoreCtx,
     raw_rows: Iterable[tuple[domain.Ticker, domain.Day]],
 ) -> AsyncIterable[Row]:
     sec = await ctx.get(securities.Securities)

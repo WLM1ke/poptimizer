@@ -4,7 +4,7 @@ from typing import Annotated
 
 from pydantic import AfterValidator, Field, PositiveFloat
 
-from poptimizer.core import actors, consts, domain
+from poptimizer.core import consts, domain, fsms
 from poptimizer.data.div import raw
 from poptimizer.data.moex import securities
 
@@ -26,7 +26,7 @@ class Dividends(domain.Entity):
 
 
 async def update(
-    ctx: actors.CoreCtx,
+    ctx: fsms.CoreCtx,
     sec_task: asyncio.Task[securities.Securities],
 ) -> None:
     async with asyncio.TaskGroup() as tg:
@@ -34,7 +34,7 @@ async def update(
             tg.create_task(_update_one(ctx, domain.UID(sec.ticker)))
 
 
-async def _update_one(ctx: actors.CoreCtx, ticker: domain.UID) -> None:
+async def _update_one(ctx: fsms.CoreCtx, ticker: domain.UID) -> None:
     div_table = await ctx.get_for_update(Dividends, ticker)
     raw_table = await ctx.get(raw.DivRaw, ticker)
 

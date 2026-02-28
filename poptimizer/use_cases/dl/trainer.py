@@ -10,7 +10,7 @@ import tqdm
 from pydantic import BaseModel
 from torch import optim
 
-from poptimizer.core import actors, consts, errors
+from poptimizer.core import consts, errors, fsms
 from poptimizer.domain.dl import data_loaders, datasets, ledoit_wolf, risk
 from poptimizer.domain.dl.wave_net import backbone, wave_net
 from poptimizer.domain.evolve import evolve
@@ -80,7 +80,7 @@ class Trainer:
 
     async def update_model_metrics(
         self,
-        ctx: actors.Ctx,
+        ctx: fsms.Ctx,
         model: evolve.Model,
         test_days: int,
     ) -> None:

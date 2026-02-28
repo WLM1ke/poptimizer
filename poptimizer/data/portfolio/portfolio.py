@@ -16,7 +16,7 @@ from pydantic import (
     model_validator,
 )
 
-from poptimizer.core import actors, consts, domain, errors
+from poptimizer.core import consts, domain, errors, fsms
 from poptimizer.data.moex import quotes, securities
 
 type AccountData = dict[domain.AccName, NonNegativeInt]
@@ -235,7 +235,7 @@ class Portfolio(domain.Entity):
 
 
 async def update(
-    ctx: actors.CoreCtx,
+    ctx: fsms.CoreCtx,
     minimal_candles: PositiveInt,
 ) -> None:
     port = await ctx.get_for_update(Portfolio)
@@ -257,7 +257,7 @@ async def update(
         ctx.warning(f"Portfolio value changed {change:.2%} - {old_value:_.0f} -> {new_value:_.0f}")
 
 
-async def _update_holding_period(ctx: actors.CoreCtx, port: Portfolio) -> bool:
+async def _update_holding_period(ctx: fsms.CoreCtx, port: Portfolio) -> bool:
     sec_table = await ctx.get(securities.Securities)
 
     if port.day >= sec_table.trading_days[-1]:
@@ -278,7 +278,7 @@ async def _update_holding_period(ctx: actors.CoreCtx, port: Portfolio) -> bool:
 
 
 async def _prepare_sec_cache(
-    ctx: actors.CoreCtx,
+    ctx: fsms.CoreCtx,
     forecast_days: PositiveInt,
     minimal_candles: PositiveInt,
 ) -> dict[domain.Ticker, Position]:
@@ -327,7 +327,7 @@ def _calc_min_turnover(
 
 
 def _update_existing_positions(
-    ctx: actors.CoreCtx,
+    ctx: fsms.CoreCtx,
     port: Portfolio,
     sec_cache: dict[domain.Ticker, Position],
     min_turnover: float,
@@ -366,7 +366,7 @@ def _update_existing_positions(
 
 
 def _add_new_liquid(
-    ctx: actors.CoreCtx,
+    ctx: fsms.CoreCtx,
     port: Portfolio,
     sec_cache: dict[domain.Ticker, Position],
     min_turnover: float,

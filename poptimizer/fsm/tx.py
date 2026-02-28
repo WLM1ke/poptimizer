@@ -3,13 +3,13 @@ from collections.abc import AsyncIterator
 from types import TracebackType
 from typing import Any, Protocol, Self
 
-from poptimizer.actors import uow
-from poptimizer.core import actors, domain
+from poptimizer.core import domain, fsms
 from poptimizer.domain.evolve import evolve
+from poptimizer.fsm import uow
 
 
 class _Sender(Protocol):
-    def send(self, msg: actors.Message) -> None: ...
+    def send(self, event: fsms.Event) -> None: ...
 
 
 class Tx:
@@ -24,11 +24,11 @@ class Tx:
         self._sender = sender
 
         self._uow = uow.UOW(repo)
-        self._msgs: list[actors.Message] = []
+        self._events: list[fsms.Event] = []
 
     async def __aenter__(self) -> Self:
         self._uow.clear()
-        self._msgs.clear()
+        self._events.clear()
 
         return self
 
@@ -41,8 +41,8 @@ class Tx:
         if exc_type is None:
             await self._uow.save()
 
-            for msg in self._msgs:
-                self._sender.send(msg)
+            for event in self._events:
+                self._sender.send(event)
 
     def info(self, msg: str, *args: Any) -> None:
         self._lgr.info(msg, *args)
@@ -50,8 +50,8 @@ class Tx:
     def warning(self, msg: str, *args: Any) -> None:
         self._lgr.warning(msg, *args)
 
-    def send(self, msg: actors.Message) -> None:
-        self._msgs.append(msg)
+    def send(self, event: fsms.Event) -> None:
+        self._events.append(event)
 
     async def get[E: domain.Object](
         self,

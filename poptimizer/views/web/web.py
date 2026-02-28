@@ -8,7 +8,7 @@ from urllib import parse
 from aiohttp import typedefs, web
 from pydantic import TypeAdapter, ValidationError
 
-from poptimizer.core import actors, domain, errors
+from poptimizer.core import domain, errors, fsms
 from poptimizer.core.domain import date
 from poptimizer.data.div import raw, status
 from poptimizer.data.portfolio import portfolio
@@ -30,7 +30,7 @@ class App(web.Application):
 
         self.add_routes([web.get("/{path:.*}", self._static_file)])
 
-    async def _portfolio(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _portfolio(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         port = await ctx.get(portfolio.Portfolio)
 
         value = port.value()
@@ -67,7 +67,7 @@ class App(web.Application):
             main,
         )
 
-    async def _account(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _account(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
         cookie = models.Cookie.from_request(req)
 
@@ -83,7 +83,7 @@ class App(web.Application):
             main,
         )
 
-    async def _account_toggle_positions(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _account_toggle_positions(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
         cookie = models.Cookie.from_request(req)
 
@@ -97,7 +97,7 @@ class App(web.Application):
 
         return self._render.render_main(main, cookie)
 
-    async def _update_position(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _update_position(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
         ticker = domain.Ticker(req.match_info["ticker"])
         quantity = TypeAdapter(int).validate_python((await req.post()).get("quantity"))
@@ -113,7 +113,7 @@ class App(web.Application):
 
         return self._render.render_main(main)
 
-    async def _forecast(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _forecast(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
             # port_task = tg.create_task(ctx.get(portfolio.Portfolio))  # noqa: ERA001
             forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
@@ -147,7 +147,7 @@ class App(web.Application):
             poll=poll,
         )
 
-    async def _optimization(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _optimization(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
             # port_task = tg.create_task(ctx.get(portfolio.Portfolio))  # noqa: ERA001
             forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
@@ -185,7 +185,7 @@ class App(web.Application):
             poll=poll,
         )
 
-    async def _dividends(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _dividends(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = domain.UID(req.match_info["ticker"])
 
         async with asyncio.TaskGroup() as tg:
@@ -198,7 +198,7 @@ class App(web.Application):
             _prepare_dividends(await raw_task, await reestry_task),
         )
 
-    async def _dividend_add(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _dividend_add(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = domain.UID(req.match_info["ticker"])
 
         async with asyncio.TaskGroup() as tg:
@@ -219,7 +219,7 @@ class App(web.Application):
 
         return self._render.render_main(_prepare_dividends(raw_div, reestry_div))
 
-    async def _dividend_remove(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _dividend_remove(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = domain.UID(req.match_info["ticker"])
 
         async with asyncio.TaskGroup() as tg:
@@ -237,7 +237,7 @@ class App(web.Application):
 
         return self._render.render_main(_prepare_dividends(raw_div, reestry_div))
 
-    async def _settings(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _settings(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         port = await ctx.get(portfolio.Portfolio)
 
         main = models.Settings(
@@ -258,7 +258,7 @@ class App(web.Application):
 
         return self._render.set_cookie(cookie)
 
-    async def _create_acount(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _create_acount(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         account = TypeAdapter(str).validate_python((await req.post()).get("account"))
         if account != parse.quote(account):
             raise errors.ControllersError("Invalid account name - use only english letters and numbers")
@@ -280,7 +280,7 @@ class App(web.Application):
             main,
         )
 
-    async def _remove_acount(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _remove_acount(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
         cookie = models.Cookie.from_request(req)
 
@@ -299,7 +299,7 @@ class App(web.Application):
             main,
         )
 
-    async def _not_exclude_ticker(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _not_exclude_ticker(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = TypeAdapter(str).validate_python(req.match_info["ticker"])
         cookie = models.Cookie.from_request(req)
 
@@ -314,7 +314,7 @@ class App(web.Application):
 
         return self._render.render_main(main)
 
-    async def _exclude_ticker(self, ctx: actors.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _exclude_ticker(self, ctx: fsms.Ctx, req: web.Request) -> web.StreamResponse:
         ticker = TypeAdapter(str).validate_python((await req.post()).get("ticker"))
         cookie = models.Cookie.from_request(req)
 
@@ -342,7 +342,7 @@ class App(web.Application):
 
     async def _render_page(
         self,
-        ctx: actors.Ctx,
+        ctx: fsms.Ctx,
         req: web.Request,
         main: Any,
         *,

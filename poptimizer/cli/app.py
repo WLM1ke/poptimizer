@@ -6,12 +6,7 @@ import sys
 import torch
 import uvloop
 
-from poptimizer.actors import system
-from poptimizer.adapters import http, logger, mongo
 from poptimizer.cli import config
-from poptimizer.controllers.tg import tg
-from poptimizer.core import message
-from poptimizer.data import data
 
 
 class Run(config.Cfg):
@@ -59,24 +54,20 @@ class Run(config.Cfg):
             sys.exit(runner.run(self._run(check_memory=True)))
 
     async def _run(self, *, check_memory: bool = False) -> int:
-        async with contextlib.AsyncExitStack() as stack:
-            http_client = await stack.enter_async_context(http.client())
-            mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
-            tg_bot = await stack.enter_async_context(tg.Bot(self.tg.token, self.tg.chat_id))
-            await stack.enter_async_context(logger.init(tg_bot.send_message))
+        async with contextlib.AsyncExitStack():
+            # http_client = await stack.enter_async_context(http.client())  # noqa: ERA001
+            # mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))  # noqa: ERA001
+            # tg_bot = await stack.enter_async_context(tg.Bot(self.tg.token, self.tg.chat_id))  # noqa: ERA001
+            # await stack.enter_async_context(logger.init(tg_bot.send_message))  # noqa: ERA001
 
-            repo = mongo.Repo(mongo_db)
-            actor_system = await stack.enter_async_context(system.System(repo))
+            # repo = mongo.Repo(mongo_db)  # noqa: ERA001
 
             main_task = None
 
             if check_memory:
                 main_task = asyncio.current_task()
 
-            data_actor = data.build_actor(main_task, http_client)
-
-            await actor_system.start(data_actor)
-
-            actor_system.send(message.AppStarted())
+            if main_task:
+                await main_task
 
         return 1

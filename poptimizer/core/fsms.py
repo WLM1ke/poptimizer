@@ -1,28 +1,15 @@
 from collections.abc import AsyncIterator
-from typing import Any, NewType, Protocol
+from typing import Any, Protocol
 
 from pydantic import BaseModel
 
 from poptimizer.core import domain
 from poptimizer.domain.evolve import evolve
 
-AID = NewType("AID", str)
 
-
-class Message(BaseModel):
+class Event(BaseModel):
     def __str__(self) -> str:
         return self.__repr__()
-
-
-class State[S: str](domain.Object):
-    state: S
-
-    def __str__(self) -> str:
-        return f'{self.__class__.__name__}(state="{self.state}")'
-
-
-class Handler[C, **I, O](Protocol):
-    async def __call__(self, ctx: C, *args: I.args, **kwargs: I.kwargs) -> O: ...
 
 
 class CoreCtx(Protocol):
@@ -43,8 +30,4 @@ class Ctx(CoreCtx, Protocol):
     async def delete(self, entity: domain.Entity) -> None: ...
     def get_all[E: domain.Entity](self, t_entity: type[E]) -> AsyncIterator[E]: ...
     async def drop(self, entity_type: type[domain.Entity]) -> None: ...
-    def send(self, msg: Message) -> None: ...
-
-
-class Actor[S: State[Any], M: Message](Protocol):
-    async def __call__(self, ctx: Ctx, state: S, msg: M) -> None: ...
+    def send(self, event: Event) -> None: ...

@@ -4,8 +4,8 @@ from collections import Counter
 from datetime import timedelta
 from typing import Any
 
-from poptimizer.actors import uow
 from poptimizer.domain.evolve import evolve
+from poptimizer.fsm import uow
 
 
 async def report(repo: uow.UOW) -> None:

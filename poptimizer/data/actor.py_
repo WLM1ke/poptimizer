@@ -6,7 +6,7 @@ from typing import Final, Protocol
 
 from pydantic import Field, PositiveInt
 
-from poptimizer.core import actors, consts, domain, message
+from poptimizer.core import consts, domain, fsms, message
 from poptimizer.data.cpi import cpi
 from poptimizer.data.div import processed, raw, status
 from poptimizer.data.features import indexes as indexes_features
@@ -60,11 +60,11 @@ class DataState(actors.State[_StateName]):
 
 
 class MemoryChecker(Protocol):
-    def check_memory_usage(self, ctx: actors.Ctx) -> None: ...
+    def check_memory_usage(self, ctx: fsms.Ctx) -> None: ...
 
 
 class MigrationClient(Protocol):
-    async def migrate(self, ctx: actors.Ctx, last_version: str) -> bool: ...
+    async def migrate(self, ctx: fsms.Ctx, last_version: str) -> bool: ...
 
 
 class Client(
@@ -84,14 +84,12 @@ class DataActor:
         memory_checker: MemoryChecker,
         migration_client: MigrationClient,
         data_client: Client,
-        evolution_aid: actors.AID,
     ) -> None:
         self._memory_checker = memory_checker
         self._migration_client = migration_client
         self._data_client = data_client
-        self._evolution_aid = evolution_aid
 
-    async def __call__(self, ctx: actors.Ctx, state: DataState, msg: message.AppStarted | message.Next) -> None:
+    async def __call__(self, ctx: fsms.Ctx, state: DataState, msg: message.AppStarted | message.Next) -> None:
         match (msg, state.state):
             case (message.AppStarted(), _):
                 await self._migrate(ctx, state)
@@ -108,14 +106,14 @@ class DataActor:
 
         ctx.send(message.Next())
 
-    async def _migrate(self, ctx: actors.Ctx, state: DataState) -> None:
+    async def _migrate(self, ctx: fsms.Ctx, state: DataState) -> None:
         if await self._migration_client.migrate(ctx, state.app_version):
             state.state = _StateName.UPDATING_DATA
             state.features_day = None
 
         state.app_version = consts.__version__
 
-    async def _update_data(self, ctx: actors.Ctx, state: DataState) -> None:
+    async def _update_data(self, ctx: fsms.Ctx, state: DataState) -> None:
         last_finished_day = _last_finished_day()
 
         async with asyncio.TaskGroup() as tg:
@@ -131,14 +129,14 @@ class DataActor:
         sec_table = await sec_task
         state.data_day = sec_table.trading_days[-1]
 
-    async def _update_portfolio(self, ctx: actors.Ctx, state: DataState) -> None:
+    async def _update_portfolio(self, ctx: fsms.Ctx, state: DataState) -> None:
         await portfolio.update(ctx, state.minimal_candles)
         await status.update(ctx, self._data_client)
         await raw.update(ctx, self._data_client)
 
         state.state = _StateName.UPDATING_FEATURES
 
-    async def _update_features(self, ctx: actors.Ctx, state: DataState) -> None:
+    async def _update_features(self, ctx: fsms.Ctx, state: DataState) -> None:
         if state.features_day is None or state.features_day < state.data_day:
             await quotes_features.update(ctx)
 
@@ -148,7 +146,7 @@ class DataActor:
         state.state = _StateName.WAITING_EVOLUTION
         state.features_day = state.data_day
 
-    async def _check_day_changed(self, ctx: actors.Ctx, state: DataState) -> None:
+    async def _check_day_changed(self, ctx: fsms.Ctx, state: DataState) -> None:
         if _last_finished_day() > state.check_day:
             state.state = _StateName.UPDATING_DATA
             ctx.send(message.Next())
