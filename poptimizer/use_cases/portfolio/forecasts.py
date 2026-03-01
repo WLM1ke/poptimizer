@@ -7,7 +7,7 @@ from numpy import random
 from numpy.typing import NDArray
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
-from poptimizer.core import consts, fsms
+from poptimizer.core import consts, fsm
 from poptimizer.data.portfolio import portfolio
 from poptimizer.domain.evolve import evolve
 from poptimizer.domain.portfolio import forecasts
@@ -20,7 +20,7 @@ class ForecastHandler:
 
     async def __call__(
         self,
-        ctx: fsms.Ctx,
+        ctx: fsm.Ctx,
         msg: handler.ModelDeleted | handler.ModelEvaluated,
     ) -> None:
         forecast = await ctx.get_for_update(forecasts.Forecast)
@@ -40,7 +40,7 @@ class ForecastHandler:
 
     async def _update(
         self,
-        ctx: fsms.Ctx,
+        ctx: fsm.Ctx,
         forecast: forecasts.Forecast,
         port: portfolio.Portfolio,
     ) -> None:

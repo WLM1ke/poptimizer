@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 
-from poptimizer.core import domain, fsms
+from poptimizer.core import domain, fsm
 from poptimizer.data.features import features
 from poptimizer.data.moex import index, securities
 from poptimizer.data.portfolio import portfolio
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from pydantic import FiniteFloat
 
 
-async def update(ctx: fsms.CoreCtx) -> None:
+async def update(ctx: fsm.CoreCtx) -> None:
     async with asyncio.TaskGroup() as tg:
         port_task = tg.create_task(ctx.get(portfolio.Portfolio))
         sec = await ctx.get(securities.Securities)
@@ -23,7 +23,7 @@ async def update(ctx: fsms.CoreCtx) -> None:
             tg.create_task(_add_indexes_features(ctx, domain.UID(pos.ticker), indexes))
 
 
-async def _load_indexes(ctx: fsms.CoreCtx, trading_days: pd.DatetimeIndex) -> list[dict[features.NumFeat, FiniteFloat]]:
+async def _load_indexes(ctx: fsm.CoreCtx, trading_days: pd.DatetimeIndex) -> list[dict[features.NumFeat, FiniteFloat]]:
     async with asyncio.TaskGroup() as tg:
         tasks = [tg.create_task(ctx.get(index.Index, domain.UID(uid))) for uid in index.INDEXES]
 
@@ -50,7 +50,7 @@ async def _load_indexes(ctx: fsms.CoreCtx, trading_days: pd.DatetimeIndex) -> li
 
 
 async def _add_indexes_features(
-    ctx: fsms.CoreCtx,
+    ctx: fsm.CoreCtx,
     ticker: domain.UID,
     indexes: list[dict[features.NumFeat, FiniteFloat]],
 ) -> None:

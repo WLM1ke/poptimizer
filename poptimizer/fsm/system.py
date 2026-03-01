@@ -6,7 +6,7 @@ from datetime import timedelta
 from types import TracebackType
 from typing import Final, Self
 
-from poptimizer.core import errors, fsms
+from poptimizer.core import errors, fsm
 from poptimizer.fsm import graph, tx, uow
 
 _FIRST_RETRY: Final = timedelta(seconds=30)
@@ -15,14 +15,14 @@ _BACKOFF_FACTOR: Final = 2
 
 class _Dispatcher:
     def __init__(self) -> None:
-        self._inboxes = list[asyncio.Queue[fsms.Event]()]()
+        self._inboxes = list[asyncio.Queue[fsm.Event]()]()
 
-    def new_inbox(self) -> asyncio.Queue[fsms.Event]:
-        self._inboxes.append(asyncio.Queue[fsms.Event]())
+    def new_inbox(self) -> asyncio.Queue[fsm.Event]:
+        self._inboxes.append(asyncio.Queue[fsm.Event]())
 
         return self._inboxes[-1]
 
-    def send(self, event: fsms.Event) -> None:
+    def send(self, event: fsm.Event) -> None:
         for inbox in self._inboxes:
             inbox.put_nowait(event)
 
@@ -46,16 +46,16 @@ class System:
     ) -> None:
         return await self._tg.__aexit__(exc_type, exc_value, traceback)
 
-    async def start_fsm(self, graph: graph.Graph) -> None:
+    def start_fsm(self, graph: graph.Graph) -> None:
         self._tg.create_task(self._loop(graph, self._dispatcher.new_inbox()))
 
-    def send(self, msg: fsms.Event) -> None:
+    def send(self, msg: fsm.Event) -> None:
         self._dispatcher.send(msg)
 
     async def _loop(
         self,
         graph: graph.Graph,
-        inbox: asyncio.Queue[fsms.Event],
+        inbox: asyncio.Queue[fsm.Event],
     ) -> None:
         lgr = logging.getLogger(graph.name)
 
@@ -69,9 +69,9 @@ class System:
                     event,
                 )
 
-                lgr.info(f"Transition to {graph.state}")
+                lgr.info(f"Handled event {event}")
 
-    async def _retry[E: fsms.Event](
+    async def _retry[E: fsm.Event](
         self,
         lgr: logging.Logger,
         action: graph.Action[E],
@@ -80,13 +80,16 @@ class System:
         delay = _FIRST_RETRY
 
         while True:
-            if err := await self._run_safe(lgr, action, event):
-                lgr.info("Failed transition action with %s - retrying in %s", err, delay)
-                await asyncio.sleep(delay.total_seconds())
+            err = await self._run_safe(lgr, action, event)
+            if err is None:
+                return
 
-                delay = _next_delay(delay)
+            lgr.info("Failed transition action with %s - retrying in %s", err, delay)
+            await asyncio.sleep(delay.total_seconds())
 
-    async def _run_safe[E: fsms.Event](
+            delay = _next_delay(delay)
+
+    async def _run_safe[E: fsm.Event](
         self,
         lgr: logging.Logger,
         action: graph.Action[E],
@@ -96,7 +99,7 @@ class System:
 
         try:
             async with tx.Tx(lgr, self._repo, self._dispatcher) as ctx:
-                await action(ctx, event)
+                return await action(ctx, event)
         except* errors.POError as err:
             tb.print_exception(err, colorize=True)  # type: ignore[reportCallIssue]
 

@@ -4,7 +4,7 @@ import asyncio
 
 from pydantic import BaseModel
 
-from poptimizer.core import consts, domain, errors, fsms
+from poptimizer.core import consts, domain, errors, fsm
 from poptimizer.data.features import features
 from poptimizer.domain.dl import datasets
 
@@ -69,7 +69,7 @@ class Builder:
 
     async def build(
         self,
-        ctx: fsms.Ctx,
+        ctx: fsm.Ctx,
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
         days: datasets.Days,
@@ -102,7 +102,7 @@ class Builder:
 
     async def _update_cache(
         self,
-        ctx: fsms.Ctx,
+        ctx: fsm.Ctx,
         day: domain.Day,
         tickers: tuple[domain.Ticker, ...],
     ) -> None:

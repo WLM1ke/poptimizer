@@ -4,7 +4,7 @@ from typing import Annotated, Protocol
 
 from pydantic import AfterValidator, Field
 
-from poptimizer.core import consts, domain, errors, fsms
+from poptimizer.core import consts, domain, errors, fsm
 from poptimizer.data.moex import securities
 
 
@@ -54,7 +54,7 @@ class Client(Protocol):
 
 
 async def update(
-    ctx: fsms.CoreCtx,
+    ctx: fsm.CoreCtx,
     moex_client: Client,
     update_day: domain.Day,
     sec_task: asyncio.Task[securities.Securities],
@@ -70,7 +70,7 @@ async def update(
 
 
 async def _update_one(
-    ctx: fsms.CoreCtx,
+    ctx: fsm.CoreCtx,
     moex_client: Client,
     ticker: domain.Ticker,
     update_day: domain.Day,

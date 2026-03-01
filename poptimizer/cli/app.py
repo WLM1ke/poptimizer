@@ -6,7 +6,10 @@ import sys
 import torch
 import uvloop
 
+from poptimizer.adapters import logger, mongo
 from poptimizer.cli import config
+from poptimizer.data import data, events
+from poptimizer.fsm import system
 
 
 class Run(config.Cfg):
@@ -53,21 +56,26 @@ class Run(config.Cfg):
         ):
             sys.exit(runner.run(self._run(check_memory=True)))
 
-    async def _run(self, *, check_memory: bool = False) -> int:
-        async with contextlib.AsyncExitStack():
+    async def _run(self, *, check_memory: bool = False) -> int:  # noqa: ARG002
+        async with contextlib.AsyncExitStack() as stack:
             # http_client = await stack.enter_async_context(http.client())  # noqa: ERA001
-            # mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))  # noqa: ERA001
+            mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
             # tg_bot = await stack.enter_async_context(tg.Bot(self.tg.token, self.tg.chat_id))  # noqa: ERA001
-            # await stack.enter_async_context(logger.init(tg_bot.send_message))  # noqa: ERA001
+            await stack.enter_async_context(logger.init())
 
-            # repo = mongo.Repo(mongo_db)  # noqa: ERA001
+            repo = mongo.Repo(mongo_db)
 
-            main_task = None
+            # main_task = None  # noqa: ERA001
 
-            if check_memory:
-                main_task = asyncio.current_task()
+            # if check_memory:
+            #     main_task = asyncio.current_task()  # noqa: ERA001
 
-            if main_task:
-                await main_task
+            async with system.System(repo) as fsm_system:
+                fsm_system.start_fsm(data.build_graph())
+                fsm_system.send(events.AppStarted())
 
-        return 1
+        return 0
+
+
+if __name__ == "__main__":
+    Run().cli_cmd()

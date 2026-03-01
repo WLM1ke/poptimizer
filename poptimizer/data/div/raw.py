@@ -5,7 +5,7 @@ from typing import Annotated, Protocol
 
 from pydantic import AfterValidator, Field, PositiveFloat
 
-from poptimizer.core import domain, errors, fsms
+from poptimizer.core import domain, errors, fsm
 from poptimizer.data.div import status
 from poptimizer.data.moex import quotes
 
@@ -69,7 +69,7 @@ class Client(Protocol):
     async def get_divs(self, start_day: domain.Day, row: status.Row) -> list[Row]: ...
 
 
-async def update(ctx: fsms.Ctx, web_client: Client) -> None:
+async def update(ctx: fsm.Ctx, web_client: Client) -> None:
     status_table = await ctx.get(status.DivStatus)
 
     async with asyncio.TaskGroup() as tg:
@@ -78,7 +78,7 @@ async def update(ctx: fsms.Ctx, web_client: Client) -> None:
 
 
 async def _update_one(
-    ctx: fsms.Ctx,
+    ctx: fsm.Ctx,
     web_client: Client,
     status_row: status.Row,
 ) -> None:

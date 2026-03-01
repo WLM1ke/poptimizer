@@ -5,7 +5,7 @@ from typing import Final
 import numpy as np
 import pandas as pd
 
-from poptimizer.core import consts, domain, fsms
+from poptimizer.core import consts, domain, fsm
 from poptimizer.data.div import processed
 from poptimizer.data.features.features import Features, NumFeat
 from poptimizer.data.moex import quotes, securities
@@ -14,7 +14,7 @@ from poptimizer.data.portfolio import portfolio
 _T_PLUS_1_START: Final = datetime(2023, 7, 31)
 
 
-async def update(ctx: fsms.CoreCtx) -> None:
+async def update(ctx: fsm.CoreCtx) -> None:
     async with asyncio.TaskGroup() as tg:
         port_task = tg.create_task(ctx.get(portfolio.Portfolio))
         sec = await ctx.get(securities.Securities)
@@ -25,7 +25,7 @@ async def update(ctx: fsms.CoreCtx) -> None:
             tg.create_task(_build_features(ctx, domain.UID(pos.ticker), index))
 
 
-async def _build_features(ctx: fsms.CoreCtx, ticker: domain.UID, index: pd.DatetimeIndex) -> None:
+async def _build_features(ctx: fsm.CoreCtx, ticker: domain.UID, index: pd.DatetimeIndex) -> None:
     quotes_table = await ctx.get(quotes.Quotes, ticker)
 
     first_day = pd.Timestamp(quotes_table.df[0].day)
@@ -49,7 +49,7 @@ async def _build_features(ctx: fsms.CoreCtx, ticker: domain.UID, index: pd.Datet
     feat.update_numerical(quotes_df)  # type: ignore[reportUnknownMemberType]
 
 
-async def _prepare_div(ctx: fsms.CoreCtx, ticker: domain.UID, index: pd.DatetimeIndex) -> pd.Series[float]:
+async def _prepare_div(ctx: fsm.CoreCtx, ticker: domain.UID, index: pd.DatetimeIndex) -> pd.Series[float]:
     div_table = await ctx.get(processed.Dividends, ticker)
 
     first_day = index[1]

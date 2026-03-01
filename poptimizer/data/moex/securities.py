@@ -5,7 +5,7 @@ from typing import Annotated, Final, NewType, Protocol
 
 from pydantic import AfterValidator, BaseModel, Field, PositiveInt
 
-from poptimizer.core import consts, domain, errors, fsms
+from poptimizer.core import consts, domain, errors, fsm
 
 _MARKET: Final = "shares"
 _ETF_BOARD: Final = "TQTF"
@@ -102,7 +102,7 @@ class Client(Protocol):
     async def get_etf_desc(self) -> list[ETFRow]: ...
 
 
-async def update(ctx: fsms.CoreCtx, moex_client: Client) -> Securities:
+async def update(ctx: fsm.CoreCtx, moex_client: Client) -> Securities:
     async with asyncio.TaskGroup() as tg:
         etf_task = tg.create_task(_get_etf(moex_client))
         shares_task = tg.create_task(_get_shares(moex_client))

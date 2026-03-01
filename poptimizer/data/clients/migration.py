@@ -5,15 +5,15 @@ from typing import Final
 import aiofiles
 from pydantic import ValidationError
 
-from poptimizer.core import consts, errors, fsms
+from poptimizer.core import consts, errors, fsm
 from poptimizer.data.div import raw
 
 _DUMP: Final = consts.ROOT / "dump" / "dividends.json"
 
 
 class Client:
-    async def migrate(self, ctx: fsms.Ctx, last_version: str) -> bool:
-        migrated = await _migrate(ctx, last_version)
+    async def migrate(self, ctx: fsm.Ctx, last_version: str) -> None:
+        await _migrate(ctx, last_version)
 
         match divs := [div async for div in ctx.get_all(raw.DivRaw)]:
             case []:
@@ -21,18 +21,13 @@ class Client:
             case _:
                 await _backup_dividends(ctx, divs)
 
-        return migrated
 
-
-async def _migrate(ctx: fsms.Ctx, last_version: str) -> bool:  # noqa: ARG001
-    migrated = False
+async def _migrate(ctx: fsm.Ctx, last_version: str) -> None:  # noqa: ARG001
     if _normalized_ver(last_version) < _normalized_ver("3.3.0"):
         ...
 
-    return migrated
 
-
-async def _restore_dividends(ctx: fsms.Ctx) -> None:
+async def _restore_dividends(ctx: fsm.Ctx) -> None:
     if not _DUMP.exists():
         raise errors.AdapterError(f"can't restore raw dividends from {_DUMP}")
 
@@ -50,7 +45,7 @@ async def _restore_dividends(ctx: fsms.Ctx) -> None:
     ctx.info("Raw dividends restored")
 
 
-async def _backup_dividends(ctx: fsms.Ctx, divs: list[raw.DivRaw]) -> None:
+async def _backup_dividends(ctx: fsm.Ctx, divs: list[raw.DivRaw]) -> None:
     _DUMP.parent.mkdir(parents=True, exist_ok=True)
 
     divs = sorted(filter(lambda div: div.df, divs), key=lambda div: div.uid)

@@ -1,13 +1,13 @@
 import asyncio
 
-from poptimizer.core import domain, fsms
+from poptimizer.core import domain, fsm
 from poptimizer.data.features.features import EmbeddingFeatDesc, EmbFeat, Features
 from poptimizer.data.moex import securities
 from poptimizer.data.portfolio import portfolio
 
 
 class SecFeatHandler:
-    async def __call__(self, ctx: fsms.Ctx) -> None:
+    async def __call__(self, ctx: fsm.Ctx) -> None:
         async with asyncio.TaskGroup() as tg:
             sec_task = tg.create_task(ctx.get(securities.Securities))
             port = await ctx.get(portfolio.Portfolio)
