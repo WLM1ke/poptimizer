@@ -27,9 +27,6 @@ class Tx:
         self._events: list[fsm.Event] = []
 
     async def __aenter__(self) -> Self:
-        self._uow.clear()
-        self._events.clear()
-
         return self
 
     async def __aexit__(
@@ -43,6 +40,7 @@ class Tx:
 
             for event in self._events:
                 self._sender.send(event)
+                self._lgr.info(f"Sending {event}")
 
     def info(self, msg: str, *args: Any) -> None:
         self._lgr.info(msg, *args)

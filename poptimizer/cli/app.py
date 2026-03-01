@@ -70,7 +70,7 @@ class Run(config.Cfg):
             # if check_memory:
             #     main_task = asyncio.current_task()  # noqa: ERA001
 
-            async with system.System(repo) as fsm_system:
+            async with system.FSMSystem(repo) as fsm_system:
                 fsm_system.start_fsm(data.build_graph())
                 fsm_system.send(events.AppStarted())
 

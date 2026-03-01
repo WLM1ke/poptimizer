@@ -27,8 +27,9 @@ class _Dispatcher:
             inbox.put_nowait(event)
 
 
-class System:
+class FSMSystem:
     def __init__(self, repo: uow.Repo) -> None:
+        self._lgr = logging.getLogger(self.__class__.__name__)
         self._repo = repo
         self._dispatcher = _Dispatcher()
         self._tg = asyncio.TaskGroup()
@@ -49,8 +50,9 @@ class System:
     def start_fsm(self, graph: graph.Graph) -> None:
         self._tg.create_task(self._loop(graph, self._dispatcher.new_inbox()))
 
-    def send(self, msg: fsm.Event) -> None:
-        self._dispatcher.send(msg)
+    def send(self, event: fsm.Event) -> None:
+        self._lgr.info(f"Sending {event}")
+        self._dispatcher.send(event)
 
     async def _loop(
         self,
@@ -58,18 +60,24 @@ class System:
         inbox: asyncio.Queue[fsm.Event],
     ) -> None:
         lgr = logging.getLogger(graph.name)
+        lgr.info(f"Starting from {graph.state}")
 
         while True:
             event = await inbox.get()
+            action = graph.make_transition(event)
 
-            if action := graph.make_transition(event):
+            action_desc = "without action"
+            if action:
+                action_desc = f"with {action.__class__.__name__}()"
+
+            lgr.info(f"Transition to {event.__class__.__name__} {action_desc}")
+
+            if action:
                 await self._retry(
                     lgr,
                     action,
                     event,
                 )
-
-                lgr.info(f"Handled event {event}")
 
     async def _retry[E: fsm.Event](
         self,

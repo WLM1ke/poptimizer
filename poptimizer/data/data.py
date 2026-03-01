@@ -13,24 +13,28 @@ class CheckVersionAction:
 
         match state.app_version == consts.__version__:
             case True:
-                ctx.send(events.AppVersionNotChanged())
+                ctx.send(events.VersionNotChanged())
             case False:
-                ctx.send(events.AppVersionChanged())
+                ctx.send(events.VersionChanged())
 
 
 def build_graph() -> graph.Graph:
-    data_graph = graph.Graph("DataFSM", events.AppStarted)
+    data_graph = graph.Graph("DataFSM", events.AppStopped)
 
     data_graph.register_event(
+        events.AppStopped,
+        {events.AppStarted},
+    )
+    data_graph.register_event(
         events.AppStarted,
-        {events.AppStarted, events.AppVersionChanged, events.AppVersionNotChanged},
+        {events.VersionChanged, events.VersionNotChanged},
         CheckVersionAction(),
     )
     data_graph.register_event(
-        events.AppVersionChanged,
+        events.VersionChanged,
     )
     data_graph.register_event(
-        events.AppVersionNotChanged,
+        events.VersionNotChanged,
     )
 
     return data_graph
