@@ -9,6 +9,7 @@ import uvloop
 from poptimizer.adapters import logger, mongo
 from poptimizer.cli import config
 from poptimizer.data import data, events
+from poptimizer.data.clients import migration
 from poptimizer.fsm import system
 
 
@@ -71,7 +72,7 @@ class Run(config.Cfg):
             #     main_task = asyncio.current_task()  # noqa: ERA001
 
             async with system.FSMSystem(repo) as fsm_system:
-                fsm_system.start_fsm(data.build_graph())
+                fsm_system.start_fsm(data.build_graph(migration.Client()))
                 fsm_system.send(events.AppStarted())
 
         return 0
