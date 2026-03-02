@@ -6,18 +6,17 @@ import pandas as pd
 
 from poptimizer.core import domain, fsm
 from poptimizer.data.features import features
-from poptimizer.data.moex import index, securities
+from poptimizer.data.moex import index
 from poptimizer.data.portfolio import portfolio
 
 if TYPE_CHECKING:
     from pydantic import FiniteFloat
 
 
-async def update(ctx: fsm.CoreCtx) -> None:
+async def update(ctx: fsm.CoreCtx, trading_days: list[domain.Day]) -> None:
     async with asyncio.TaskGroup() as tg:
         port_task = tg.create_task(ctx.get(portfolio.Portfolio))
-        sec = await ctx.get(securities.Securities)
-        indexes = await _load_indexes(ctx, pd.DatetimeIndex(sec.trading_days))
+        indexes = await _load_indexes(ctx, pd.DatetimeIndex(trading_days))
 
         for pos in (await port_task).positions:
             tg.create_task(_add_indexes_features(ctx, domain.UID(pos.ticker), indexes))

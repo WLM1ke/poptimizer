@@ -8,18 +8,17 @@ import pandas as pd
 from poptimizer.core import consts, domain, fsm
 from poptimizer.data.div import processed
 from poptimizer.data.features.features import Features, NumFeat
-from poptimizer.data.moex import quotes, securities
+from poptimizer.data.moex import quotes
 from poptimizer.data.portfolio import portfolio
 
 _T_PLUS_1_START: Final = datetime(2023, 7, 31)
 
 
-async def update(ctx: fsm.CoreCtx) -> None:
+async def update(ctx: fsm.CoreCtx, trading_days: list[domain.Day]) -> None:
     async with asyncio.TaskGroup() as tg:
         port_task = tg.create_task(ctx.get(portfolio.Portfolio))
-        sec = await ctx.get(securities.Securities)
 
-        index = pd.DatetimeIndex(sec.trading_days)
+        index = pd.DatetimeIndex(trading_days)
 
         for pos in (await port_task).positions:
             tg.create_task(_build_features(ctx, domain.UID(pos.ticker), index))

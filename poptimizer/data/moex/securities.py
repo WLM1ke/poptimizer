@@ -1,5 +1,4 @@
 import asyncio
-from collections.abc import Iterable
 from enum import StrEnum, auto
 from typing import Annotated, Final, NewType, Protocol
 
@@ -82,13 +81,9 @@ class Securities(domain.Entity):
         list[Row],
         AfterValidator(domain.sorted_with_ticker_field_validator),
     ] = Field(default_factory=list[Row])
-    trading_days: domain.TradingDays = Field(default_factory=list[domain.Day])
 
     def update_df(self, rows: list[Row]) -> None:
         self.df = sorted(rows, key=lambda sec: sec.ticker)
-
-    def update_trading_days(self, trading_days: Iterable[domain.Day]) -> None:
-        self.trading_days = sorted(trading_days)
 
 
 type _Cache = dict[domain.Ticker, tuple[Sector, domain.Day]]

@@ -6,9 +6,10 @@ import sys
 import torch
 import uvloop
 
-from poptimizer.adapters import logger, mongo
+from poptimizer.adapters import http, logger, mongo
 from poptimizer.cli import config
 from poptimizer.data import data, events
+from poptimizer.data.clients import data as data_client
 from poptimizer.data.clients import migration
 from poptimizer.fsm import system
 
@@ -59,7 +60,7 @@ class Run(config.Cfg):
 
     async def _run(self, *, check_memory: bool = False) -> int:  # noqa: ARG002
         async with contextlib.AsyncExitStack() as stack:
-            # http_client = await stack.enter_async_context(http.client())  # noqa: ERA001
+            http_client = await stack.enter_async_context(http.client())
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
             # tg_bot = await stack.enter_async_context(tg.Bot(self.tg.token, self.tg.chat_id))  # noqa: ERA001
             await stack.enter_async_context(logger.init())
@@ -72,7 +73,7 @@ class Run(config.Cfg):
             #     main_task = asyncio.current_task()  # noqa: ERA001
 
             async with system.FSMSystem(repo) as fsm_system:
-                fsm_system.start_fsm(data.build_graph(migration.Client()))
+                fsm_system.start_fsm(data.build_graph(migration.Client(), data_client.Client(http_client)))
                 fsm_system.send(events.AppStarted())
 
         return 0

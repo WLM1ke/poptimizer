@@ -237,14 +237,15 @@ class Portfolio(domain.Entity):
 async def update(
     ctx: fsm.CoreCtx,
     minimal_candles: PositiveInt,
+    trading_days: list[domain.Day],
 ) -> None:
     port = await ctx.get_for_update(Portfolio)
 
-    if not await _update_holding_period(ctx, port):
+    if not _update_holding_period(port, trading_days):
         return
 
     port.illiquid.clear()
-    sec_cache = await _prepare_sec_cache(ctx, port.forecast_days, minimal_candles)
+    sec_cache = await _prepare_sec_cache(ctx, port.forecast_days, minimal_candles, trading_days)
     min_turnover = _calc_min_turnover(port, sec_cache)
 
     old_value = port.value()
@@ -257,13 +258,11 @@ async def update(
         ctx.warning(f"Portfolio value changed {change:.2%} - {old_value:_.0f} -> {new_value:_.0f}")
 
 
-async def _update_holding_period(ctx: fsm.CoreCtx, port: Portfolio) -> bool:
-    sec_table = await ctx.get(securities.Securities)
-
-    if port.day >= sec_table.trading_days[-1]:
+def _update_holding_period(port: Portfolio, trading_days: list[domain.Day]) -> bool:
+    if port.day >= trading_days[-1]:
         return False
 
-    for day in reversed(sec_table.trading_days):
+    for day in reversed(trading_days):
         if day <= port.day:
             break
 
@@ -272,7 +271,7 @@ async def _update_holding_period(ctx: fsm.CoreCtx, port: Portfolio) -> bool:
     if port.day == consts.START_DAY:
         port.holding_period = 1
 
-    port.day = sec_table.trading_days[-1]
+    port.day = trading_days[-1]
 
     return True
 
@@ -281,6 +280,7 @@ async def _prepare_sec_cache(
     ctx: fsm.CoreCtx,
     forecast_days: PositiveInt,
     minimal_candles: PositiveInt,
+    trading_days: list[domain.Day],
 ) -> dict[domain.Ticker, Position]:
     sec_table = await ctx.get(securities.Securities)
 
@@ -289,7 +289,7 @@ async def _prepare_sec_cache(
 
     cache: dict[domain.Ticker, Position] = {}
 
-    turnover_days = set(sec_table.trading_days[-forecast_days:])
+    turnover_days = set(trading_days[-forecast_days:])
 
     for sec, quotes_task in zip(sec_table.df, quotes_tasks, strict=True):
         df = quotes_task.result().df
