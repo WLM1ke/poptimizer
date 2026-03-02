@@ -8,7 +8,7 @@ class DataState(domain.Entity):
 
 
 class CheckVersionAction:
-    async def __call__(self, ctx: fsm.Ctx, event: events.AppStarted) -> None:  # noqa: ARG002
+    async def __call__(self, ctx: fsm.Ctx) -> None:
         state = await ctx.get(DataState)
 
         match state.app_version == consts.__version__:

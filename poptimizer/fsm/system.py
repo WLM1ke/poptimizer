@@ -4,7 +4,7 @@ import random
 import traceback as tb
 from datetime import timedelta
 from types import TracebackType
-from typing import Final, Self
+from typing import Final, Self, TypeIs, get_type_hints
 
 from poptimizer.core import errors, fsm
 from poptimizer.fsm import graph, tx, uow
@@ -82,7 +82,7 @@ class FSMSystem:
     async def _retry[E: fsm.Event](
         self,
         lgr: logging.Logger,
-        action: graph.Action[E],
+        action: graph.EventAction[E] | graph.SimpleAction,
         event: E,
     ) -> None:
         delay = _FIRST_RETRY
@@ -100,14 +100,17 @@ class FSMSystem:
     async def _run_safe[E: fsm.Event](
         self,
         lgr: logging.Logger,
-        action: graph.Action[E],
+        action: graph.EventAction[E] | graph.SimpleAction,
         event: E,
     ) -> None | errors.POError:
         err_out: errors.POError = errors.POError()
 
         try:
             async with tx.Tx(lgr, self._repo, self._dispatcher) as ctx:
-                return await action(ctx, event)
+                if _is_event_action(action):
+                    return await action(ctx, event)
+
+                return await action(ctx)
         except* errors.POError as err:
             tb.print_exception(err, colorize=True)  # type: ignore[reportCallIssue]
 
@@ -118,3 +121,7 @@ class FSMSystem:
 
 def _next_delay(delay: timedelta) -> timedelta:
     return timedelta(seconds=delay.total_seconds() * _BACKOFF_FACTOR * 2 * random.random())  # noqa: S311
+
+
+def _is_event_action[E: fsm.Event](action: graph.EventAction[E] | graph.SimpleAction) -> TypeIs[graph.EventAction[E]]:
+    return "event" in get_type_hints(action.__call__)

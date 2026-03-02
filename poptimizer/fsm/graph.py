@@ -1,13 +1,17 @@
-from typing import Any, Protocol, get_args, get_type_hints
+from typing import Any, Protocol
 
 from poptimizer.core import errors, fsm
 
 
-class Action[E: fsm.Event](Protocol):
+class EventAction[E: fsm.Event](Protocol):
     async def __call__(self, ctx: fsm.Ctx, event: E) -> None: ...
 
 
-type StateDesc = tuple[Action[Any] | None, set[type[fsm.Event]]]
+class SimpleAction(Protocol):
+    async def __call__(self, ctx: fsm.Ctx) -> None: ...
+
+
+type StateDesc = tuple[EventAction[Any] | SimpleAction | None, set[type[fsm.Event]]]
 
 
 class Graph:
@@ -28,7 +32,7 @@ class Graph:
         self,
         state: type[E],
         transitions: set[type[fsm.Event]] | None = None,
-        action: Action[E] | None = None,
+        action: EventAction[E] | SimpleAction | None = None,
     ) -> None:
         transitions = transitions or set()
 
@@ -37,7 +41,7 @@ class Graph:
 
         self._graph[state] = (action, transitions)
 
-    def make_transition[E: fsm.Event](self, event: E) -> Action[E] | None:
+    def make_transition[E: fsm.Event](self, event: E) -> EventAction[E] | SimpleAction | None:
         if not (desc := self._graph.get(self._state)):
             raise errors.ControllersError(f"unknown current state {self._state}")
 
@@ -54,22 +58,4 @@ class Graph:
 
         action, _ = desc
 
-        if not action:
-            return None
-
-        if not isinstance(event, _action_event_types(action)):
-            raise errors.ControllersError(f"can't handle {event.__class__.__name__} after transition to {next_state}")
-
         return action
-
-
-def _action_event_types[E: fsm.Event](
-    action: Action[E],
-) -> tuple[type[E]]:
-    type_hints = get_type_hints(action.__call__)
-
-    msg_type_union = get_args(type_hints["event"])
-    if not msg_type_union:
-        msg_type_union = (type_hints["event"],)
-
-    return msg_type_union
