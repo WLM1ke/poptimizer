@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from reportlab import platypus
 from reportlab.lib.units import inch
 
-from poptimizer.data.portfolio import portfolio
+from poptimizer.portfolio.port import portfolio
 from poptimizer.reports.pdf import style
 
 if TYPE_CHECKING:

@@ -11,8 +11,8 @@ from pydantic import TypeAdapter, ValidationError
 from poptimizer.core import domain, errors, fsm
 from poptimizer.core.domain import date
 from poptimizer.data.div import raw, status
-from poptimizer.data.portfolio import portfolio
 from poptimizer.domain.portfolio import forecasts
+from poptimizer.portfolio.port import portfolio
 from poptimizer.use_cases import handler
 from poptimizer.views import utils
 from poptimizer.views.web import models, view

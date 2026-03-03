@@ -8,9 +8,9 @@ from numpy.typing import NDArray
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
 from poptimizer.core import consts, fsm
-from poptimizer.data.portfolio import portfolio
 from poptimizer.domain.evolve import evolve
 from poptimizer.domain.portfolio import forecasts
+from poptimizer.portfolio.port import portfolio
 from poptimizer.use_cases import handler
 
 

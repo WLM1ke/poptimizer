@@ -41,7 +41,7 @@ class Graph:
 
         self._graph[state] = (action, transitions)
 
-    def make_transition[E: fsm.Event](self, event: E) -> EventAction[E] | SimpleAction | None:
+    def make_transition[E: fsm.Event](self, event: E) -> tuple[EventAction[E] | SimpleAction | None, bool]:
         if not (desc := self._graph.get(self._state)):
             raise errors.ControllersError(f"unknown current state {self._state}")
 
@@ -49,7 +49,7 @@ class Graph:
 
         next_state = event.__class__
         if next_state not in transitions:
-            return None
+            return None, False
 
         self._state = next_state
 
@@ -58,4 +58,4 @@ class Graph:
 
         action, _ = desc
 
-        return action
+        return action, True

@@ -2,7 +2,7 @@ import asyncio
 
 from poptimizer.core import domain, fsm
 from poptimizer.data.features.features import EmbeddingSeqFeatDesc, EmbSeqFeat, Features
-from poptimizer.data.portfolio import portfolio
+from poptimizer.portfolio.port import portfolio
 from poptimizer.use_cases import handler
 
 

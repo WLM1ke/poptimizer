@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from pydantic.functional_validators import BeforeValidator
 
 from poptimizer.core import domain, fsm
-from poptimizer.data.portfolio import portfolio
+from poptimizer.portfolio.port import portfolio
 from poptimizer.use_cases import handler
 
 _UPDATE_INTERVAL: Final = timedelta(minutes=30)

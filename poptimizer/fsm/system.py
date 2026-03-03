@@ -64,13 +64,14 @@ class FSMSystem:
 
         while True:
             event = await inbox.get()
-            action = graph.make_transition(event)
+            action, has_transition = graph.make_transition(event)
 
             action_desc = "without action"
             if action:
                 action_desc = f"with {action.__class__.__name__}()"
 
-            lgr.info(f"Transition to {event.__class__.__name__} {action_desc}")
+            if has_transition:
+                lgr.info(f"Transition to {event.__class__.__name__} {action_desc}")
 
             if action:
                 await self._retry(

@@ -12,6 +12,7 @@ from poptimizer.data import data, events
 from poptimizer.data.clients import data as data_client
 from poptimizer.data.clients import migration
 from poptimizer.fsm import system
+from poptimizer.portfolio import portfolio
 
 
 class Run(config.Cfg):
@@ -74,6 +75,7 @@ class Run(config.Cfg):
 
             async with system.FSMSystem(repo) as fsm_system:
                 fsm_system.start_fsm(data.build_graph(migration.Client(), data_client.Client(http_client)))
+                fsm_system.start_fsm(portfolio.build_graph())
                 fsm_system.send(events.AppStarted())
 
         return 0

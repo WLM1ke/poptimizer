@@ -9,7 +9,7 @@ from poptimizer.core import consts, domain, fsm
 from poptimizer.data.div import processed
 from poptimizer.data.features.features import Features, NumFeat
 from poptimizer.data.moex import quotes
-from poptimizer.data.portfolio import portfolio
+from poptimizer.portfolio.port import portfolio
 
 _T_PLUS_1_START: Final = datetime(2023, 7, 31)
 
