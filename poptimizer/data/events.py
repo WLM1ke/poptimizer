@@ -20,3 +20,6 @@ class UpdateRequired(fsm.Event): ...
 
 class DataUpdated(fsm.Event):
     trading_days: list[domain.Day] = Field(repr=False)
+
+
+class FeaturesUpdated(fsm.Event): ...

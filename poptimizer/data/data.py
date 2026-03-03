@@ -73,6 +73,20 @@ class MigrateAction:
         ctx.send(events.UpdateRequired())
 
 
+class CheckDayAction:
+    async def __call__(self, ctx: fsm.Ctx) -> None:
+        last_finished_day = _last_finished_day()
+        state = await ctx.get(DataState)
+
+        state.update_required |= state.check_day != last_finished_day
+
+        match state.update_required:
+            case True:
+                ctx.send(events.UpdateRequired())
+            case False:
+                ctx.send(events.FeaturesUpdated())
+
+
 class DataClient(
     index.Client,
     securities.Client,
@@ -132,6 +146,8 @@ def build_graph(
     )
     data_graph.register_event(
         events.VersionNotChanged,
+        {events.UpdateRequired, events.FeaturesUpdated},
+        CheckDayAction(),
     )
     data_graph.register_event(
         events.UpdateRequired,
@@ -140,6 +156,9 @@ def build_graph(
     )
     data_graph.register_event(
         events.DataUpdated,
+    )
+    data_graph.register_event(
+        events.FeaturesUpdated,
     )
 
     return data_graph
