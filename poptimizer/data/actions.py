@@ -97,7 +97,7 @@ class DataClient(
 ): ...
 
 
-class UpdateDataAction:
+class UpdateQuotesAction:
     def __init__(self, data_client: DataClient) -> None:
         self._data_client = data_client
 
@@ -120,4 +120,4 @@ class UpdateDataAction:
             state.data_day = data_day
             state.update_required = True
 
-        ctx.send(events.DataUpdated(trading_days=trading_days))
+        ctx.send(events.QuotesUpdated(trading_days=trading_days))

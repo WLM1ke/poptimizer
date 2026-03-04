@@ -6,7 +6,7 @@ from pydantic import (
 )
 
 from poptimizer.core import domain, fsm
-from poptimizer.data.events import DataUpdated
+from poptimizer.data.events import QuotesUpdated
 from poptimizer.data.evolve import evolve
 from poptimizer.data.moex import quotes, securities
 from poptimizer.portfolio import events
@@ -14,14 +14,13 @@ from poptimizer.portfolio.port import portfolio
 
 
 class RevaluePortfolioAction:
-    async def __call__(self, ctx: fsm.Ctx, event: DataUpdated) -> None:
+    async def __call__(self, ctx: fsm.Ctx, event: QuotesUpdated) -> None:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
         if _update_holding_period(port, event.trading_days):
             await self._update(ctx, port, event.trading_days)
 
         ctx.send(events.PortfolioRevalued(trading_days=event.trading_days))
-        ctx.send(events.PortfolioUpdated())
 
     async def _update(self, ctx: fsm.Ctx, port: portfolio.Portfolio, trading_days: list[domain.Day]) -> None:
         port.illiquid.clear()

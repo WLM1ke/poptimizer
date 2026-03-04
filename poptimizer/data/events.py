@@ -18,7 +18,7 @@ class VersionNotChanged(fsm.Event): ...
 class UpdateRequired(fsm.Event): ...
 
 
-class DataUpdated(fsm.Event):
+class QuotesUpdated(fsm.Event):
     trading_days: list[domain.Day] = Field(repr=False)
 
 

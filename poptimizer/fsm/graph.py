@@ -11,7 +11,7 @@ class SimpleAction(Protocol):
     async def __call__(self, ctx: fsm.Ctx) -> None: ...
 
 
-type StateDesc = tuple[EventAction[Any] | SimpleAction | None, set[type[fsm.Event]]]
+type StateDesc = tuple[EventAction[Any] | SimpleAction | None, dict[type[fsm.Event], type[fsm.Event]]]
 
 
 class Graph:
@@ -31,25 +31,33 @@ class Graph:
     def register_event[E: fsm.Event](
         self,
         state: type[E],
-        transitions: set[type[fsm.Event]] | None = None,
+        transitions: set[type[fsm.Event] | tuple[type[fsm.Event], type[fsm.Event]]] | None = None,
         action: EventAction[E] | SimpleAction | None = None,
     ) -> None:
-        transitions = transitions or set()
-
         if state in self._graph:
             raise errors.ControllersError("state {state} already in graph")
 
-        self._graph[state] = (action, transitions)
+        normalized_transitions = {}
+        for transition in transitions or set():
+            match transition:
+                case (start, end):
+                    normalized_transitions[start] = end
+                case start:
+                    normalized_transitions[start] = start
 
-    def make_transition[E: fsm.Event](self, event: E) -> tuple[EventAction[E] | SimpleAction | None, bool]:
+        self._graph[state] = (action, normalized_transitions)
+
+    def make_transition[E: fsm.Event](
+        self,
+        event: E,
+    ) -> tuple[EventAction[E] | SimpleAction | None, type[fsm.Event] | None]:
         if not (desc := self._graph.get(self._state)):
             raise errors.ControllersError(f"unknown current state {self._state}")
 
         _, transitions = desc
 
-        next_state = event.__class__
-        if next_state not in transitions:
-            return None, False
+        if (next_state := transitions.get(event.__class__)) is None:
+            return None, None
 
         self._state = next_state
 
@@ -58,4 +66,4 @@ class Graph:
 
         action, _ = desc
 
-        return action, True
+        return action, self._state

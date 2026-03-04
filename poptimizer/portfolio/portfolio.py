@@ -1,4 +1,4 @@
-from poptimizer.data.events import DataUpdated
+from poptimizer.data.events import QuotesUpdated
 from poptimizer.fsm import graph
 from poptimizer.portfolio import actions, events
 
@@ -8,11 +8,11 @@ def build_graph() -> graph.Graph:
 
     portfolio_graph.register_event(
         events.PortfolioUpdated,
-        {DataUpdated},
+        {QuotesUpdated},
     )
     portfolio_graph.register_event(
-        DataUpdated,
-        {events.PortfolioUpdated},
+        QuotesUpdated,
+        {(events.PortfolioRevalued, events.PortfolioUpdated)},
         actions.RevaluePortfolioAction(),
     )
 

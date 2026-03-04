@@ -30,11 +30,11 @@ def build_graph(
     )
     data_graph.register_event(
         events.UpdateRequired,
-        {events.DataUpdated},
-        actions.UpdateDataAction(data_client),
+        {events.QuotesUpdated},
+        actions.UpdateQuotesAction(data_client),
     )
     data_graph.register_event(
-        events.DataUpdated,
+        events.QuotesUpdated,
         {PortfolioRevalued},
     )
     data_graph.register_event(
