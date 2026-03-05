@@ -64,7 +64,11 @@ class FSMSystem:
 
         while True:
             event = await inbox.get()
-            action, destination = graph.make_transition(event)
+            after_transition = graph.make_transition(event)
+            if after_transition is None:
+                continue
+
+            action, destination = after_transition
 
             action_desc = "without action"
             if action:

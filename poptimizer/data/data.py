@@ -9,38 +9,40 @@ def build_graph(
 ) -> graph.Graph:
     data_graph = graph.Graph("DataFSM", events.AppStopped)
 
-    data_graph.register_event(
+    data_graph.add_state(
         events.AppStopped,
-        {events.AppStarted},
+        [(events.AppStarted, actions.CheckVersionAction())],
     )
-    data_graph.register_event(
+    data_graph.add_state(
         events.AppStarted,
-        {events.VersionChanged, events.VersionNotChanged},
-        actions.CheckVersionAction(),
+        [
+            (events.VersionChanged, actions.MigrateAction(migration_client)),
+            (events.VersionNotChanged, actions.CheckDayAction()),
+        ],
     )
-    data_graph.register_event(
+    data_graph.add_state(
         events.VersionChanged,
-        {events.UpdateRequired},
-        actions.MigrateAction(migration_client),
+        [(events.UpdateRequired, actions.UpdateQuotesAction(data_client))],
     )
-    data_graph.register_event(
+    data_graph.add_state(
         events.VersionNotChanged,
-        {events.UpdateRequired, events.FeaturesUpdated},
-        actions.CheckDayAction(),
+        [
+            (events.UpdateRequired, actions.UpdateQuotesAction(data_client)),
+            events.FeaturesUpdated,
+        ],
     )
-    data_graph.register_event(
+    data_graph.add_state(
         events.UpdateRequired,
-        {events.QuotesUpdated},
-        actions.UpdateQuotesAction(data_client),
+        [events.QuotesUpdated],
     )
-    data_graph.register_event(
+    data_graph.add_state(
         events.QuotesUpdated,
-        {PortfolioRevalued},
+        [PortfolioRevalued],
     )
-    data_graph.register_event(
+    data_graph.add_state(
         PortfolioRevalued,
     )
-    data_graph.register_event(
+    data_graph.add_state(
         events.FeaturesUpdated,
     )
     return data_graph

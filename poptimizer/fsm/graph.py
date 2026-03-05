@@ -11,14 +11,19 @@ class SimpleAction(Protocol):
     async def __call__(self, ctx: fsm.Ctx) -> None: ...
 
 
-type StateDesc = tuple[EventAction[Any] | SimpleAction | None, dict[type[fsm.Event], type[fsm.Event]]]
+type State[E: fsm.Event] = type[E]
+type Action[E: fsm.Event] = EventAction[E] | SimpleAction | None
+type Transition[S: fsm.Event, D: fsm.Event] = (
+    tuple[State[S], Action[S], State[D]] | tuple[State[S], Action[S]] | State[S]
+)
+type AfterTransition[S: fsm.Event, D: fsm.Event] = tuple[Action[S], State[D]]
 
 
 class Graph:
-    def __init__(self, name: str, initial_state: type[fsm.Event]) -> None:
+    def __init__(self, name: str, initial_state: State[Any]) -> None:
         self._name = name
         self._state = initial_state
-        self._graph = dict[type[fsm.Event], StateDesc]()
+        self._graph = dict[State[Any], dict[State[Any], tuple[Action[Any], State[Any]]]]()
 
     @property
     def name(self) -> str:
@@ -28,42 +33,40 @@ class Graph:
     def state(self) -> str:
         return self._state.__name__
 
-    def register_event[E: fsm.Event](
+    def add_state(
         self,
-        state: type[E],
-        transitions: set[type[fsm.Event] | tuple[type[fsm.Event], type[fsm.Event]]] | None = None,
-        action: EventAction[E] | SimpleAction | None = None,
+        state: State[Any],
+        transitions: list[Transition[Any, Any]] | None = None,
     ) -> None:
         if state in self._graph:
             raise errors.ControllersError("state {state} already in graph")
 
-        normalized_transitions = {}
-        for transition in transitions or set():
-            match transition:
-                case (start, end):
-                    normalized_transitions[start] = end
-                case start:
-                    normalized_transitions[start] = start
+        normalized = {_normalize_transition(transition) for transition in transitions or ()}
 
-        self._graph[state] = (action, normalized_transitions)
+        self._graph[state] = {event: (action, destination) for event, (action, destination) in normalized}
 
-    def make_transition[E: fsm.Event](
+    def make_transition[E: fsm.Event, D: fsm.Event](
         self,
         event: E,
-    ) -> tuple[EventAction[E] | SimpleAction | None, type[fsm.Event] | None]:
-        if not (desc := self._graph.get(self._state)):
+    ) -> AfterTransition[E, Any] | None:
+        if not (transitions := self._graph.get(self._state)):
             raise errors.ControllersError(f"unknown current state {self._state}")
 
-        _, transitions = desc
+        if (after_transition := transitions.get(event.__class__)) is None:
+            return None
 
-        if (next_state := transitions.get(event.__class__)) is None:
-            return None, None
-
-        self._state = next_state
-
-        if not (desc := self._graph.get(next_state)):
-            raise errors.ControllersError(f"unknown next state {next_state}")
-
-        action, _ = desc
+        action, self._state = after_transition
 
         return action, self._state
+
+
+def _normalize_transition[S: fsm.Event, D: fsm.Event](
+    transition: Transition[S, D],
+) -> tuple[State[S], AfterTransition[S, D] | AfterTransition[S, S]]:
+    match transition:
+        case (event, action, destination):
+            return event, (action, destination)
+        case (event, action):
+            return event, (action, event)
+        case event:
+            return event, (None, event)
