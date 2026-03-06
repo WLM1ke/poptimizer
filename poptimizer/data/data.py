@@ -7,7 +7,7 @@ def build_graph(
     migration_client: actions.MigrationClient,
     data_client: actions.DataClient,
 ) -> graph.Graph:
-    data_graph = graph.Graph("DataFSM", events.AppStopped)
+    data_graph = graph.Graph("DataFSM")
 
     data_graph.add_state(
         events.AppStopped,

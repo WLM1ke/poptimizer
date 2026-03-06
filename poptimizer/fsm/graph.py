@@ -20,9 +20,9 @@ type AfterTransition[S: fsm.Event, D: fsm.Event] = tuple[Action[S], State[D]]
 
 
 class Graph:
-    def __init__(self, name: str, initial_state: State[Any]) -> None:
+    def __init__(self, name: str) -> None:
         self._name = name
-        self._state = initial_state
+        self._state = fsm.Event
         self._graph = dict[State[Any], dict[State[Any], tuple[Action[Any], State[Any]]]]()
 
     @property
@@ -38,6 +38,9 @@ class Graph:
         state: State[Any],
         transitions: list[Transition[Any, Any]] | None = None,
     ) -> None:
+        if not self._graph:
+            self._state = state
+
         if state in self._graph:
             raise errors.ControllersError("state {state} already in graph")
 

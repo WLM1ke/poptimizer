@@ -4,7 +4,7 @@ from poptimizer.portfolio import actions, events
 
 
 def build_graph() -> graph.Graph:
-    portfolio_graph = graph.Graph("PortfolioFSM", events.PortfolioUpdated)
+    portfolio_graph = graph.Graph("PortfolioFSM")
 
     portfolio_graph.add_state(
         events.PortfolioUpdated,
