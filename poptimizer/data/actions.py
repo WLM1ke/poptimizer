@@ -9,6 +9,7 @@ from poptimizer.data.cpi import cpi
 from poptimizer.data.div import processed, raw, status
 from poptimizer.data.features import indexes as indexes_features
 from poptimizer.data.features import quotes as quotes_features
+from poptimizer.data.features import securities as securities_features
 from poptimizer.data.moex import index, quotes, securities
 from poptimizer.portfolio.events import PortfolioRevalued
 
@@ -135,6 +136,7 @@ class UpdateFeaturesAction:
             state_task = tg.create_task(ctx.get_for_update(DataState))
             await quotes_features.update(ctx, event.trading_days)
             tg.create_task(indexes_features.update(ctx, event.trading_days))
+            tg.create_task(securities_features.update(ctx))
 
         state = await state_task
         state.update_required = False

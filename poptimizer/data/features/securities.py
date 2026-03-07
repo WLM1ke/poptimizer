@@ -6,24 +6,23 @@ from poptimizer.data.moex import securities
 from poptimizer.portfolio.port import portfolio
 
 
-class SecFeatHandler:
-    async def __call__(self, ctx: fsm.Ctx) -> None:
-        async with asyncio.TaskGroup() as tg:
-            sec_task = tg.create_task(ctx.get(securities.Securities))
-            port = await ctx.get(portfolio.Portfolio)
-            feat = [tg.create_task(ctx.get_for_update(Features, domain.UID(pos.ticker))) for pos in port.positions]
+async def update(ctx: fsm.CoreCtx) -> None:
+    async with asyncio.TaskGroup() as tg:
+        sec_task = tg.create_task(ctx.get(securities.Securities))
+        port = await ctx.get(portfolio.Portfolio)
+        feat = [tg.create_task(ctx.get_for_update(Features, domain.UID(pos.ticker))) for pos in port.positions]
 
-            sec = await sec_task
+        sec = await sec_task
 
-            pos_count = len(port.positions)
-            sec_types, types_count = _prepare_sec_types(port, sec)
-            sec_sectors, sectors_count = _prepare_sectors(port, sec)
+        pos_count = len(port.positions)
+        sec_types, types_count = _prepare_sec_types(port, sec)
+        sec_sectors, sectors_count = _prepare_sectors(port, sec)
 
-            for n, feat_task in enumerate(feat):
-                feat = await feat_task
-                feat.embedding[EmbFeat.TICKER] = EmbeddingFeatDesc(value=n, size=pos_count)
-                feat.embedding[EmbFeat.TICKER_TYPE] = EmbeddingFeatDesc(value=sec_types[feat.uid], size=types_count)
-                feat.embedding[EmbFeat.SECTOR] = EmbeddingFeatDesc(value=sec_sectors[feat.uid], size=sectors_count)
+        for n, feat_task in enumerate(feat):
+            feat = await feat_task
+            feat.embedding[EmbFeat.TICKER] = EmbeddingFeatDesc(value=n, size=pos_count)
+            feat.embedding[EmbFeat.TICKER_TYPE] = EmbeddingFeatDesc(value=sec_types[feat.uid], size=types_count)
+            feat.embedding[EmbFeat.SECTOR] = EmbeddingFeatDesc(value=sec_sectors[feat.uid], size=sectors_count)
 
 
 def _sec_type(row: securities.Row) -> str:
