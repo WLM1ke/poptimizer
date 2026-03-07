@@ -7,7 +7,10 @@ from poptimizer.core import consts, domain, fsm
 from poptimizer.data import events
 from poptimizer.data.cpi import cpi
 from poptimizer.data.div import processed, raw, status
+from poptimizer.data.features import indexes as indexes_features
+from poptimizer.data.features import quotes as quotes_features
 from poptimizer.data.moex import index, quotes, securities
+from poptimizer.portfolio.events import PortfolioRevalued
 
 # Часовой пояс MOEX
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
@@ -121,3 +124,18 @@ class UpdateQuotesAction:
             state.update_required = True
 
         ctx.send(events.QuotesUpdated(trading_days=trading_days))
+
+
+class UpdateFeaturesAction:
+    def __init__(self, data_client: DataClient) -> None:
+        self._data_client = data_client
+
+    async def __call__(self, ctx: fsm.Ctx, event: PortfolioRevalued) -> None:
+        async with asyncio.TaskGroup() as tg:
+            state_task = tg.create_task(ctx.get_for_update(DataState))
+            await quotes_features.update(ctx, event.trading_days)
+            tg.create_task(indexes_features.update(ctx, event.trading_days))
+
+        state = await state_task
+        state.update_required = False
+        ctx.send(events.FeaturesUpdated())

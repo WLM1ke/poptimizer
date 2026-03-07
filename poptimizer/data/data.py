@@ -37,12 +37,14 @@ def build_graph(
     )
     data_graph.add_state(
         events.QuotesUpdated,
-        [PortfolioRevalued],
+        [(PortfolioRevalued, actions.UpdateFeaturesAction(data_client))],
     )
     data_graph.add_state(
         PortfolioRevalued,
+        [events.FeaturesUpdated],
     )
     data_graph.add_state(
         events.FeaturesUpdated,
     )
+
     return data_graph
