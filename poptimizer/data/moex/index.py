@@ -69,7 +69,7 @@ class Client(Protocol):
 
 
 async def update(
-    ctx: fsm.CoreCtx,
+    ctx: fsm.Ctx,
     moex_client: Client,
     update_day: domain.Day,
 ) -> None:
@@ -79,7 +79,7 @@ async def update(
 
 
 async def _update_one(
-    ctx: fsm.CoreCtx,
+    ctx: fsm.Ctx,
     moex_client: Client,
     ticker: domain.Ticker,
     update_day: domain.Day,

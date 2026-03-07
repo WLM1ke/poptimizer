@@ -48,7 +48,7 @@ class Client(Protocol):
     async def get_status(self) -> Iterable[tuple[domain.Ticker, domain.Day]]: ...
 
 
-async def update(ctx: fsm.CoreCtx, status_client: Client) -> None:
+async def update(ctx: fsm.Ctx, status_client: Client) -> None:
     table = await ctx.get_for_update(DivStatus)
 
     status = await status_client.get_status()
@@ -57,7 +57,7 @@ async def update(ctx: fsm.CoreCtx, status_client: Client) -> None:
 
 
 async def _status_gen(
-    ctx: fsm.CoreCtx,
+    ctx: fsm.Ctx,
     raw_rows: Iterable[tuple[domain.Ticker, domain.Day]],
 ) -> AsyncIterable[Row]:
     sec = await ctx.get(securities.Securities)

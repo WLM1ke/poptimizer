@@ -28,7 +28,7 @@ def build_graph(
         events.VersionNotChanged,
         [
             (events.UpdateRequired, actions.UpdateQuotesAction(data_client)),
-            events.FeaturesUpdated,
+            events.DataUpdated,
         ],
     )
     data_graph.add_state(
@@ -41,10 +41,10 @@ def build_graph(
     )
     data_graph.add_state(
         PortfolioRevalued,
-        [events.FeaturesUpdated],
+        [events.DataUpdated],
     )
     data_graph.add_state(
-        events.FeaturesUpdated,
+        events.DataUpdated,
     )
 
     return data_graph

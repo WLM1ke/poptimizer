@@ -3,16 +3,14 @@ import asyncio
 from poptimizer.core import domain, fsm
 from poptimizer.data.features.features import EmbeddingSeqFeatDesc, EmbSeqFeat, Features
 from poptimizer.portfolio.port import portfolio
-from poptimizer.use_cases import handler
 
 
-class DayFeatHandler:
-    async def __call__(self, ctx: fsm.Ctx, msg: handler.IndexFeatUpdated) -> None:
-        async with asyncio.TaskGroup() as tg:
-            port = await ctx.get(portfolio.Portfolio)
+async def update(ctx: fsm.Ctx, trading_days: list[domain.Day]) -> None:
+    async with asyncio.TaskGroup() as tg:
+        port = await ctx.get(portfolio.Portfolio)
 
-            for pos in port.positions:
-                tg.create_task(_create_day_feats(ctx, domain.UID(pos.ticker), msg.trading_days))
+        for pos in port.positions:
+            tg.create_task(_create_day_feats(ctx, domain.UID(pos.ticker), trading_days))
 
 
 async def _create_day_feats(ctx: fsm.Ctx, ticker: domain.UID, trading_days: domain.TradingDays) -> None:

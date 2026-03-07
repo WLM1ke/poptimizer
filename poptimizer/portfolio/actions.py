@@ -66,7 +66,7 @@ def _update_holding_period(port: portfolio.Portfolio, trading_days: list[domain.
 
 
 async def _prepare_sec_cache(
-    ctx: fsm.CoreCtx,
+    ctx: fsm.Ctx,
     forecast_days: PositiveInt,
     minimal_candles: PositiveInt,
     trading_days: list[domain.Day],
@@ -116,7 +116,7 @@ def _calc_min_turnover(
 
 
 def _update_existing_positions(
-    ctx: fsm.CoreCtx,
+    ctx: fsm.Ctx,
     port: portfolio.Portfolio,
     sec_cache: dict[domain.Ticker, portfolio.Position],
     min_turnover: float,
@@ -155,7 +155,7 @@ def _update_existing_positions(
 
 
 def _add_new_liquid(
-    ctx: fsm.CoreCtx,
+    ctx: fsm.Ctx,
     port: portfolio.Portfolio,
     sec_cache: dict[domain.Ticker, portfolio.Position],
     min_turnover: float,

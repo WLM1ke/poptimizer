@@ -14,7 +14,7 @@ from poptimizer.portfolio.port import portfolio
 _T_PLUS_1_START: Final = datetime(2023, 7, 31)
 
 
-async def update(ctx: fsm.CoreCtx, trading_days: list[domain.Day]) -> None:
+async def update(ctx: fsm.Ctx, trading_days: list[domain.Day]) -> None:
     async with asyncio.TaskGroup() as tg:
         port_task = tg.create_task(ctx.get(portfolio.Portfolio))
 
@@ -24,7 +24,7 @@ async def update(ctx: fsm.CoreCtx, trading_days: list[domain.Day]) -> None:
             tg.create_task(_build_features(ctx, domain.UID(pos.ticker), index))
 
 
-async def _build_features(ctx: fsm.CoreCtx, ticker: domain.UID, index: pd.DatetimeIndex) -> None:
+async def _build_features(ctx: fsm.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> None:
     quotes_table = await ctx.get(quotes.Quotes, ticker)
 
     first_day = pd.Timestamp(quotes_table.df[0].day)
@@ -48,7 +48,7 @@ async def _build_features(ctx: fsm.CoreCtx, ticker: domain.UID, index: pd.Dateti
     feat.update_numerical(quotes_df)  # type: ignore[reportUnknownMemberType]
 
 
-async def _prepare_div(ctx: fsm.CoreCtx, ticker: domain.UID, index: pd.DatetimeIndex) -> pd.Series[float]:
+async def _prepare_div(ctx: fsm.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> pd.Series[float]:
     div_table = await ctx.get(processed.Dividends, ticker)
 
     first_day = index[1]

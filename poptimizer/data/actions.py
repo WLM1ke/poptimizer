@@ -7,6 +7,7 @@ from poptimizer.core import consts, domain, fsm
 from poptimizer.data import events
 from poptimizer.data.cpi import cpi
 from poptimizer.data.div import processed, raw, status
+from poptimizer.data.features import day as day_features
 from poptimizer.data.features import indexes as indexes_features
 from poptimizer.data.features import quotes as quotes_features
 from poptimizer.data.features import securities as securities_features
@@ -87,7 +88,7 @@ class CheckDayAction:
             case True:
                 ctx.send(events.UpdateRequired())
             case False:
-                ctx.send(events.FeaturesUpdated())
+                ctx.send(events.DataUpdated())
 
 
 class DataClient(
@@ -137,7 +138,8 @@ class UpdateFeaturesAction:
             await quotes_features.update(ctx, event.trading_days)
             tg.create_task(indexes_features.update(ctx, event.trading_days))
             tg.create_task(securities_features.update(ctx))
+            tg.create_task(day_features.update(ctx, event.trading_days))
 
         state = await state_task
         state.update_required = False
-        ctx.send(events.FeaturesUpdated())
+        ctx.send(events.DataUpdated())

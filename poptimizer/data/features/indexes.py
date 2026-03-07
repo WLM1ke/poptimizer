@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from pydantic import FiniteFloat
 
 
-async def update(ctx: fsm.CoreCtx, trading_days: list[domain.Day]) -> None:
+async def update(ctx: fsm.Ctx, trading_days: list[domain.Day]) -> None:
     async with asyncio.TaskGroup() as tg:
         port_task = tg.create_task(ctx.get(portfolio.Portfolio))
         indexes = await _load_indexes(ctx, pd.DatetimeIndex(trading_days))
@@ -22,7 +22,7 @@ async def update(ctx: fsm.CoreCtx, trading_days: list[domain.Day]) -> None:
             tg.create_task(_add_indexes_features(ctx, domain.UID(pos.ticker), indexes))
 
 
-async def _load_indexes(ctx: fsm.CoreCtx, trading_days: pd.DatetimeIndex) -> list[dict[features.NumFeat, FiniteFloat]]:
+async def _load_indexes(ctx: fsm.Ctx, trading_days: pd.DatetimeIndex) -> list[dict[features.NumFeat, FiniteFloat]]:
     async with asyncio.TaskGroup() as tg:
         tasks = [tg.create_task(ctx.get(index.Index, domain.UID(uid))) for uid in index.INDEXES]
 
@@ -49,7 +49,7 @@ async def _load_indexes(ctx: fsm.CoreCtx, trading_days: pd.DatetimeIndex) -> lis
 
 
 async def _add_indexes_features(
-    ctx: fsm.CoreCtx,
+    ctx: fsm.Ctx,
     ticker: domain.UID,
     indexes: list[dict[features.NumFeat, FiniteFloat]],
 ) -> None:

@@ -6,7 +6,7 @@ from poptimizer.data.moex import securities
 from poptimizer.portfolio.port import portfolio
 
 
-async def update(ctx: fsm.CoreCtx) -> None:
+async def update(ctx: fsm.Ctx) -> None:
     async with asyncio.TaskGroup() as tg:
         sec_task = tg.create_task(ctx.get(securities.Securities))
         port = await ctx.get(portfolio.Portfolio)

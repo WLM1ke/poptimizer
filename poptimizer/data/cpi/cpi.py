@@ -34,7 +34,7 @@ class Client(Protocol):
     async def get_cpi(self) -> list[Row]: ...
 
 
-async def update(ctx: fsm.CoreCtx, web_client: Client) -> None:
+async def update(ctx: fsm.Ctx, web_client: Client) -> None:
     table = await ctx.get_for_update(CPI)
 
     row = await web_client.get_cpi()

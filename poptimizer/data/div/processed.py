@@ -26,7 +26,7 @@ class Dividends(domain.Entity):
 
 
 async def update(
-    ctx: fsm.CoreCtx,
+    ctx: fsm.Ctx,
     sec_task: asyncio.Task[securities.Securities],
 ) -> None:
     async with asyncio.TaskGroup() as tg:
@@ -34,7 +34,7 @@ async def update(
             tg.create_task(_update_one(ctx, domain.UID(sec.ticker)))
 
 
-async def _update_one(ctx: fsm.CoreCtx, ticker: domain.UID) -> None:
+async def _update_one(ctx: fsm.Ctx, ticker: domain.UID) -> None:
     div_table = await ctx.get_for_update(Dividends, ticker)
     raw_table = await ctx.get(raw.DivRaw, ticker)
 

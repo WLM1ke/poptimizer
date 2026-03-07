@@ -97,7 +97,7 @@ class Client(Protocol):
     async def get_etf_desc(self) -> list[ETFRow]: ...
 
 
-async def update(ctx: fsm.CoreCtx, moex_client: Client) -> Securities:
+async def update(ctx: fsm.Ctx, moex_client: Client) -> Securities:
     async with asyncio.TaskGroup() as tg:
         etf_task = tg.create_task(_get_etf(moex_client))
         shares_task = tg.create_task(_get_shares(moex_client))
