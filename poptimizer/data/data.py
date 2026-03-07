@@ -11,29 +11,26 @@ def build_graph(
 
     data_graph.add_state(
         events.AppStopped,
-        [(events.AppStarted, actions.CheckVersionAction())],
+        [(events.AppStarted, actions.CheckDataStatusAction())],
     )
     data_graph.add_state(
         events.AppStarted,
         [
             (events.VersionChanged, actions.MigrateAction(migration_client)),
-            (events.VersionNotChanged, actions.CheckDayAction()),
+            (events.QuotesUpdateRequired, actions.UpdateQuotesAction(data_client)),
+            (events.DataUpdated, actions.WaitNewDayAction()),
         ],
     )
     data_graph.add_state(
         events.VersionChanged,
-        [(events.UpdateRequired, actions.UpdateQuotesAction(data_client))],
+        [(events.QuotesUpdateRequired, actions.UpdateQuotesAction(data_client))],
     )
     data_graph.add_state(
-        events.VersionNotChanged,
+        events.QuotesUpdateRequired,
         [
-            (events.UpdateRequired, actions.UpdateQuotesAction(data_client)),
-            events.DataUpdated,
+            events.QuotesUpdated,
+            (events.DataUpdated, actions.WaitNewDayAction()),
         ],
-    )
-    data_graph.add_state(
-        events.UpdateRequired,
-        [events.QuotesUpdated],
     )
     data_graph.add_state(
         events.QuotesUpdated,
@@ -41,10 +38,11 @@ def build_graph(
     )
     data_graph.add_state(
         PortfolioRevalued,
-        [events.DataUpdated],
+        [(events.DataUpdated, actions.WaitNewDayAction())],
     )
     data_graph.add_state(
         events.DataUpdated,
+        [(events.QuotesUpdateRequired, actions.UpdateQuotesAction(data_client))],
     )
 
     return data_graph

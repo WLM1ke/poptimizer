@@ -6,7 +6,7 @@ import bson
 from pydantic import BaseModel, FiniteFloat, PositiveInt
 
 from poptimizer.core import consts, domain, errors, fsm
-from poptimizer.domain.evolve import evolve
+from poptimizer.evolve import evolve
 from poptimizer.use_cases import handler
 from poptimizer.use_cases.dl import builder, trainer
 

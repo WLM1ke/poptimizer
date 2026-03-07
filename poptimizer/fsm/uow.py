@@ -4,7 +4,7 @@ from types import TracebackType
 from typing import NewType, Protocol, Self
 
 from poptimizer.core import domain, errors
-from poptimizer.domain.evolve import evolve
+from poptimizer.evolve import evolve
 
 Version = NewType("Version", int)
 

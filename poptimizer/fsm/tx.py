@@ -4,7 +4,7 @@ from types import TracebackType
 from typing import Any, Protocol, Self
 
 from poptimizer.core import domain, fsm
-from poptimizer.domain.evolve import evolve
+from poptimizer.evolve import evolve
 from poptimizer.fsm import uow
 
 

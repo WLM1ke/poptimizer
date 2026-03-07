@@ -9,7 +9,7 @@ from pymongo.asynchronous import collection, database
 from pymongo.errors import PyMongoError
 
 from poptimizer.core import domain, errors
-from poptimizer.domain.evolve import evolve
+from poptimizer.evolve import evolve
 from poptimizer.fsm import uow
 
 _MONGO_ID: Final = "_id"

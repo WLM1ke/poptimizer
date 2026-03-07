@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import statistics
 from enum import StrEnum
 from typing import Final, Self, cast
@@ -17,7 +15,7 @@ from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
 from poptimizer.core import consts, domain
 from poptimizer.domain.dl import datasets
-from poptimizer.domain.evolve import genetics, genotype
+from poptimizer.evolve import genetics, genotype
 
 _INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.Days(
     history=consts.INITIAL_HISTORY_DAYS_END,

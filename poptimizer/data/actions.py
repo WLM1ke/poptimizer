@@ -43,22 +43,41 @@ def _last_finished_day() -> domain.Day:
     ) - timedelta(days=delta)
 
 
+def _next_check_delay(last_check_day: domain.Day) -> timedelta:
+    return (
+        datetime(
+            year=last_check_day.year,
+            month=last_check_day.month,
+            day=last_check_day.day,
+            hour=_END_HOUR,
+            minute=_END_MINUTE,
+            tzinfo=_MOEX_TZ,
+        )
+        + timedelta(days=2)
+        - datetime.now(_MOEX_TZ)
+    )
+
+
 class DataState(domain.Entity):
     app_version: str = consts.__version__
     check_day: domain.Day = consts.START_DAY
     data_day: domain.Day = consts.START_DAY
-    update_required: bool = True
+    outdated: bool = True
 
 
-class CheckVersionAction:
+class CheckDataStatusAction:
     async def __call__(self, ctx: fsm.Ctx) -> None:
         state = await ctx.get(DataState)
 
-        match state.app_version == consts.__version__:
-            case True:
-                ctx.send(events.VersionNotChanged())
-            case False:
-                ctx.send(events.VersionChanged())
+        event = events.DataUpdated()
+
+        if state.outdated or state.check_day != _last_finished_day():
+            event = events.QuotesUpdateRequired()
+
+        if state.app_version != consts.__version__:
+            event = events.VersionChanged()
+
+        ctx.send(event)
 
 
 class MigrationClient(Protocol):
@@ -73,22 +92,8 @@ class MigrateAction:
         state = await ctx.get_for_update(DataState)
         await self._migration_client.migrate(ctx, state.app_version)
         state.app_version = consts.__version__
-        state.update_required = True
-        ctx.send(events.UpdateRequired())
-
-
-class CheckDayAction:
-    async def __call__(self, ctx: fsm.Ctx) -> None:
-        last_finished_day = _last_finished_day()
-        state = await ctx.get(DataState)
-
-        state.update_required |= state.check_day != last_finished_day
-
-        match state.update_required:
-            case True:
-                ctx.send(events.UpdateRequired())
-            case False:
-                ctx.send(events.DataUpdated())
+        state.outdated = True
+        ctx.send(events.QuotesUpdateRequired())
 
 
 class DataClient(
@@ -123,9 +128,13 @@ class UpdateQuotesAction:
         data_day = trading_days[-1]
         if data_day > state.data_day:
             state.data_day = data_day
-            state.update_required = True
+            state.outdated = True
 
-        ctx.send(events.QuotesUpdated(trading_days=trading_days))
+        event = events.DataUpdated()
+        if state.outdated:
+            event = events.QuotesUpdated(trading_days=trading_days)
+
+        ctx.send(event)
 
 
 class UpdateFeaturesAction:
@@ -141,5 +150,17 @@ class UpdateFeaturesAction:
             tg.create_task(day_features.update(ctx, event.trading_days))
 
         state = await state_task
-        state.update_required = False
+        state.outdated = False
         ctx.send(events.DataUpdated())
+
+
+class WaitNewDayAction:
+    async def __call__(self, ctx: fsm.Ctx) -> None:
+        state = await ctx.get(DataState)
+
+        delay = _next_check_delay(state.check_day)
+        ctx.info(f"Waiting for new day {delay}")
+
+        await asyncio.sleep(delay.total_seconds())
+
+        ctx.send(events.QuotesUpdateRequired())

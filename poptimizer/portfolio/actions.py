@@ -7,8 +7,8 @@ from pydantic import (
 
 from poptimizer.core import domain, fsm
 from poptimizer.data.events import QuotesUpdated
-from poptimizer.data.evolve import evolve
 from poptimizer.data.moex import quotes, securities
+from poptimizer.evolve import evolve
 from poptimizer.portfolio import events
 from poptimizer.portfolio.port import portfolio
 
