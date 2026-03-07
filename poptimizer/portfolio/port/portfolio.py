@@ -45,7 +45,8 @@ class NormalizedPosition(BaseModel):
 
 class Portfolio(domain.Entity):
     day: domain.Day = consts.START_DAY
-    holding_period: NonNegativeFloat = Field(0, ge=1)
+    holding_period: NonNegativeFloat = 0
+    new_positions: NonNegativeInt = 0
     account_names: Annotated[
         set[domain.AccName],
         PlainSerializer(
@@ -97,7 +98,7 @@ class Portfolio(domain.Entity):
 
     @property
     def forecast_days(self) -> int:
-        return int(self.holding_period)
+        return int(max(1, self.holding_period))
 
     def create_acount(self, name: domain.AccName) -> None:
         if name in self.account_names:
@@ -160,7 +161,7 @@ class Portfolio(domain.Entity):
                     raise errors.DomainError(f"quantity {quantity} must be multiple of {lot}")
 
                 if not position.accounts and quantity:
-                    self.holding_period *= 1 - 1 / (self.open_positions() + 1)
+                    self.new_positions += 1
 
                 position.accounts[acc_name] = quantity
 
