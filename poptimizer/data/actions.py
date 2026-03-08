@@ -144,6 +144,8 @@ class UpdateFeaturesAction:
     async def __call__(self, ctx: fsm.Ctx, event: PortfolioRevalued) -> None:
         async with asyncio.TaskGroup() as tg:
             state_task = tg.create_task(ctx.get_for_update(DataState))
+            status_task = tg.create_task(status.update(ctx, self._data_client))
+            tg.create_task(raw.update(ctx, self._data_client, status_task))
             await quotes_features.update(ctx, event.trading_days)
             tg.create_task(indexes_features.update(ctx, event.trading_days))
             tg.create_task(securities_features.update(ctx))

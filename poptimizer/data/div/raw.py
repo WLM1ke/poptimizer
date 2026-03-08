@@ -69,11 +69,11 @@ class Client(Protocol):
     async def get_divs(self, start_day: domain.Day, row: status.Row) -> list[Row]: ...
 
 
-async def update(ctx: fsm.Ctx, web_client: Client) -> None:
-    status_table = await ctx.get(status.DivStatus)
+async def update(ctx: fsm.Ctx, web_client: Client, status_task: asyncio.Task[list[status.Row]]) -> None:
+    status_rows = await status_task
 
     async with asyncio.TaskGroup() as tg:
-        for row in status_table.df:
+        for row in status_rows:
             tg.create_task(_update_one(ctx, web_client, row))
 
 
@@ -89,6 +89,6 @@ async def _update_one(
 
     quotes_table = await ctx.get_for_update(quotes.Quotes, domain.UID(status_row.ticker))
 
-    rows = await web_client.get_divs(quotes_table.df[0].day, status_row)
-
-    div_table.update(rows)
+    async with errors.suppress_poptimizer(ctx, f"Failed to get dividends for {status_row.ticker}"):
+        rows = await web_client.get_divs(quotes_table.df[0].day, status_row)
+        div_table.update(rows)

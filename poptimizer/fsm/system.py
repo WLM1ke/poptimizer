@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import random
-import traceback as tb
 from datetime import timedelta
 from types import TracebackType
 from typing import Final, Self, TypeIs, get_type_hints
@@ -93,35 +92,17 @@ class FSMSystem:
         delay = _FIRST_RETRY
 
         while True:
-            err = await self._run_safe(lgr, action, event)
-            if err is None:
-                return
-
-            lgr.info("Failed transition action with %s - retrying in %s", err, delay)
-            await asyncio.sleep(delay.total_seconds())
-
-            delay = _next_delay(delay)
-
-    async def _run_safe[E: fsm.Event](
-        self,
-        lgr: logging.Logger,
-        action: graph.EventAction[E] | graph.SimpleAction,
-        event: E,
-    ) -> None | errors.POError:
-        err_out: errors.POError = errors.POError()
-
-        try:
-            async with tx.Tx(lgr, self._repo, self._dispatcher) as ctx:
+            async with (
+                errors.suppress_poptimizer(lgr, "Retrying failed action in %s"),
+                tx.Tx(lgr, self._repo, self._dispatcher) as ctx,
+            ):
                 if _is_event_action(action):
                     return await action(ctx, event)
 
                 return await action(ctx)
-        except* errors.POError as err:
-            tb.print_exception(err, colorize=True)  # type: ignore[reportCallIssue]
 
-            err_out = errors.get_root_poptimizer_error(err)
-
-        return err_out
+            await asyncio.sleep(delay.total_seconds())
+            delay = _next_delay(delay)
 
 
 def _next_delay(delay: timedelta) -> timedelta:
