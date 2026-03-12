@@ -8,9 +8,11 @@ import uvloop
 
 from poptimizer.adapters import http, logger, mongo
 from poptimizer.cli import config
-from poptimizer.data import data, events
+from poptimizer.core import fsm
+from poptimizer.data import data
 from poptimizer.data.clients import data as data_client
-from poptimizer.data.clients import migration
+from poptimizer.data.clients import memory, migration
+from poptimizer.evolve import evolve
 from poptimizer.fsm import system
 from poptimizer.portfolio import portfolio
 
@@ -59,7 +61,7 @@ class Run(config.Cfg):
         ):
             sys.exit(runner.run(self._run(check_memory=True)))
 
-    async def _run(self, *, check_memory: bool = False) -> int:  # noqa: ARG002
+    async def _run(self, *, check_memory: bool = False) -> int:
         async with contextlib.AsyncExitStack() as stack:
             http_client = await stack.enter_async_context(http.client())
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
@@ -68,15 +70,22 @@ class Run(config.Cfg):
 
             repo = mongo.Repo(mongo_db)
 
-            # main_task = None  # noqa: ERA001
+            main_task = None
 
-            # if check_memory:
-            #     main_task = asyncio.current_task()  # noqa: ERA001
+            if check_memory:
+                main_task = asyncio.current_task()
 
             async with system.FSMSystem(repo) as fsm_system:
-                fsm_system.start_fsm(data.build_graph(migration.Client(), data_client.Client(http_client)))
+                fsm_system.start_fsm(
+                    data.build_graph(
+                        migration.Client(),
+                        data_client.Client(http_client),
+                        memory.Checker(main_task),
+                    )
+                )
                 fsm_system.start_fsm(portfolio.build_graph())
-                fsm_system.send(events.AppStarted())
+                fsm_system.start_fsm(evolve.build_graph())
+                fsm_system.send(fsm.AppStarted())
 
         return 0
 

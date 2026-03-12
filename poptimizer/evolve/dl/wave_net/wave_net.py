@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 from poptimizer.core import errors
-from poptimizer.domain.dl.wave_net import backbone, head, inputs
+from poptimizer.evolve.dl.wave_net import backbone, head, inputs
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray

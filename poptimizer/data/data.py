@@ -1,4 +1,6 @@
+from poptimizer.core import fsm
 from poptimizer.data import actions, events
+from poptimizer.evolve.events import ModelDeleted
 from poptimizer.fsm import graph
 from poptimizer.portfolio.events import PortfolioRevalued
 
@@ -6,19 +8,20 @@ from poptimizer.portfolio.events import PortfolioRevalued
 def build_graph(
     migration_client: actions.MigrationClient,
     data_client: actions.DataClient,
+    memory_checker: actions.MemoryChecker,
 ) -> graph.Graph:
     data_graph = graph.Graph("DataFSM")
 
     data_graph.add_state(
-        events.AppStopped,
-        [(events.AppStarted, actions.CheckDataStatusAction())],
+        fsm.AppStopped,
+        [(fsm.AppStarted, actions.CheckDataStatusAction())],
     )
     data_graph.add_state(
-        events.AppStarted,
+        fsm.AppStarted,
         [
             (events.VersionChanged, actions.MigrateAction(migration_client)),
             (events.QuotesUpdateRequired, actions.UpdateQuotesAction(data_client)),
-            (events.DataUpdated, actions.WaitNewDayAction()),
+            events.DataUpdated,
         ],
     )
     data_graph.add_state(
@@ -29,7 +32,7 @@ def build_graph(
         events.QuotesUpdateRequired,
         [
             events.QuotesUpdated,
-            (events.DataUpdated, actions.WaitNewDayAction()),
+            events.DataUpdated,
         ],
     )
     data_graph.add_state(
@@ -38,11 +41,18 @@ def build_graph(
     )
     data_graph.add_state(
         PortfolioRevalued,
-        [(events.DataUpdated, actions.WaitNewDayAction())],
+        [events.DataUpdated],
     )
     data_graph.add_state(
         events.DataUpdated,
-        [(events.QuotesUpdateRequired, actions.UpdateQuotesAction(data_client))],
+        [(ModelDeleted, actions.CheckDayAction(memory_checker))],
+    )
+    data_graph.add_state(
+        ModelDeleted,
+        [
+            (events.QuotesUpdateRequired, actions.UpdateQuotesAction(data_client)),
+            (events.DayNotChanged, None, events.DataUpdated),
+        ],
     )
 
     return data_graph

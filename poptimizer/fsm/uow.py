@@ -4,7 +4,7 @@ from types import TracebackType
 from typing import NewType, Protocol, Self
 
 from poptimizer.core import domain, errors
-from poptimizer.evolve import evolve
+from poptimizer.evolve.evolution import evolve
 
 Version = NewType("Version", int)
 
@@ -86,7 +86,7 @@ class Repo(Protocol):
     async def save(self, obj: domain.Object, ver: Version) -> None: ...
     async def delete(self, obj: domain.Object) -> None: ...
     async def count_models(self) -> int: ...
-    async def next_model(self, uid: domain.UID) -> tuple[evolve.Model, Version, bool]: ...
+    async def next_model(self) -> domain.UID: ...
     async def sample_models(self, n: int) -> list[evolve.Model]: ...
     def get_all[E: domain.Object](self, t_obj: type[E]) -> AsyncIterator[E]: ...
     async def drop(self, obj_type: type[domain.Object]) -> None: ...
@@ -141,14 +141,8 @@ class UOW:
     async def count_models(self) -> int:
         return await self._repo.count_models()
 
-    async def next_model_for_update(self, uid: domain.UID) -> tuple[evolve.Model, bool]:
-        obj, ver, good = await self._repo.next_model(uid)
-
-        async with self._identity_map as identity_map:
-            if not identity_map.get_for_update(evolve.Model, obj.uid):
-                identity_map.save_for_update(obj, ver)
-
-            return obj, good
+    async def next_model(self) -> domain.UID:
+        return await self._repo.next_model()
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         return await self._repo.sample_models(n)

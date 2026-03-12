@@ -93,7 +93,7 @@ class FSMSystem:
 
         while True:
             async with (
-                errors.suppress_poptimizer(lgr, "Retrying failed action in %s"),
+                errors.suppress_poptimizer(lgr, f"Retrying failed action in {delay}"),
                 tx.Tx(lgr, self._repo, self._dispatcher) as ctx,
             ):
                 if _is_event_action(action):

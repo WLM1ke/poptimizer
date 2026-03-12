@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from poptimizer.core import consts, domain, errors, fsm
 from poptimizer.data.features import features
-from poptimizer.domain.dl import datasets
+from poptimizer.evolve.dl import datasets
 
 
 class NumFeatures(BaseModel):

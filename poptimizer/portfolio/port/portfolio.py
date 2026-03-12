@@ -100,6 +100,10 @@ class Portfolio(domain.Entity):
     def forecast_days(self) -> int:
         return int(max(1, self.holding_period))
 
+    @property
+    def tickers(self) -> domain.Tickers:
+        return tuple(pos.ticker for pos in self.positions)
+
     def create_acount(self, name: domain.AccName) -> None:
         if name in self.account_names:
             raise errors.DomainError(f"account {name} already exists")

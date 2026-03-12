@@ -1,7 +1,6 @@
 import asyncio
 import collections
 import itertools
-import logging
 import time
 from typing import Literal, cast
 
@@ -11,10 +10,9 @@ from pydantic import BaseModel
 from torch import optim
 
 from poptimizer.core import consts, errors, fsm
-from poptimizer.domain.dl import data_loaders, datasets, ledoit_wolf, risk
-from poptimizer.domain.dl.wave_net import backbone, wave_net
-from poptimizer.evolve import evolve
-from poptimizer.use_cases.dl import builder
+from poptimizer.evolve.dl import builder, data_loaders, datasets, ledoit_wolf, risk
+from poptimizer.evolve.dl.wave_net import backbone, wave_net
+from poptimizer.evolve.evolution import evolve
 
 
 class Optimizer(BaseModel):
@@ -73,7 +71,6 @@ def _get_device() -> Literal["cpu", "cuda", "mps"]:
 
 class Trainer:
     def __init__(self, builder: builder.Builder) -> None:
-        self._lgr = logging.getLogger()
         self._builder = builder
         self._device = _get_device()
         self._stopping = False
@@ -81,60 +78,77 @@ class Trainer:
     async def update_model_metrics(
         self,
         ctx: fsm.Ctx,
+        evolution: evolve.Evolution,
         model: evolve.Model,
-        test_days: int,
-    ) -> None:
-        start = time.monotonic()
+    ) -> evolve.TestResults:
+        ctx.info(
+            "Day %s step %d models %d delta radius %.2f - %s",
+            evolution.day,
+            evolution.step,
+            await ctx.count_models(),
+            evolution.radius,
+            model,
+        )
+
+        evolution.step += 1
+        model.day = evolution.day
 
         cfg = Cfg.model_validate(model.phenotype)
         days = datasets.Days(
             history=cfg.batch.history_days,
-            forecast=model.forecast_days,
-            test=test_days,
+            forecast=evolution.forecast_days,
+            test=evolution.test_days,
         )
+
         data, emb_size, emb_seq_size = await self._builder.build(
             ctx,
-            model.day,
-            model.tickers,
+            evolution.day,
+            evolution.tickers,
             days,
             cfg.batch,
         )
 
         try:
-            await asyncio.to_thread(
+            return await asyncio.to_thread(
                 self._run,
+                ctx,
                 model,
                 data,
                 emb_size,
                 emb_seq_size,
                 cfg,
-                model.forecast_days,
+                evolution.forecast_days,
             )
         except asyncio.CancelledError:
             self._stopping = True
 
             raise
 
-        model.risk_tolerance = cfg.risk.risk_tolerance
-        model.duration = time.monotonic() - start
-
     def _run(  # noqa: PLR0913
         self,
+        ctx: fsm.Ctx,
         model: evolve.Model,
         data: list[datasets.TickerData],
         emb_size: list[int],
         emb_seq_size: list[int],
         cfg: Cfg,
         forecast_days: int,
-    ) -> None:
+    ) -> evolve.TestResults:
+        start = time.monotonic()
         net = self._prepare_net(cfg, emb_size, emb_seq_size)
-        self._train(net, cfg.optimizer, cfg.scheduler, data, cfg.batch.size)
+        self._train(ctx, net, cfg.optimizer, cfg.scheduler, data, cfg.batch.size)
 
-        model.alfa, model.llh, model.ret = self._test(net, cfg, forecast_days, data)
+        test_results = self._test(ctx, net, cfg, forecast_days, data)
+        ctx.info(f"{model} trained with {test_results}")
+
         model.mean, model.cov = self._forecast(net, forecast_days, data)
+        model.duration = time.monotonic() - start
 
-    def _train(
+        return test_results
+
+    def _train(  # noqa: PLR0913
         self,
+        ctx: fsm.Ctx,
         net: wave_net.Net,
         optimizer: Optimizer,
         scheduler: Scheduler,
@@ -169,7 +183,7 @@ class Trainer:
             three_phase=scheduler.three_phase,
         )
 
-        self._log_net_stats(net, scheduler.epochs, len(train_dl.dataset))  # type: ignore[arg-type]
+        self._log_net_stats(ctx, net, scheduler.epochs, len(train_dl.dataset))  # type: ignore[arg-type]
 
         avg_llh = RunningMean(steps_per_epoch)
         net.train()
@@ -203,11 +217,12 @@ class Trainer:
 
     def _test(
         self,
+        ctx: fsm.Ctx,
         net: wave_net.Net,
         cfg: Cfg,
         forecast_days: int,
         data: list[datasets.TickerData],
-    ) -> tuple[list[float], list[float], float]:
+    ) -> evolve.TestResults:
         with torch.inference_mode():
             net.eval()
 
@@ -234,13 +249,13 @@ class Trainer:
                     forecast_days,
                 )
 
-                self._lgr.info("%s / LLH = %7.4f", rez, loss)
+                ctx.info("%s / LLH = %7.4f", rez, loss)
 
                 alfa.append(rez.ret - rez.avr)
                 llh.append(loss)
                 ret += rez.ret
 
-        return alfa, llh, ret / len(alfa)
+        return evolve.TestResults(alfa=alfa, llh=llh, ret=ret / len(alfa))
 
     def _forecast(
         self,
@@ -270,12 +285,12 @@ class Trainer:
 
         return cast("list[list[float]]", mean.tolist()), cov.tolist()
 
-    def _log_net_stats(self, net: wave_net.Net, epochs: float, steps_per_epoch: int) -> None:
-        self._lgr.info("Epochs - %.2f / Train size - %s", epochs, steps_per_epoch)
+    def _log_net_stats(self, ctx: fsm.Ctx, net: wave_net.Net, epochs: float, steps_per_epoch: int) -> None:
+        ctx.info("Epochs - %.2f / Train size - %s", epochs, steps_per_epoch)
 
         modules = sum(1 for _ in net.modules())
         model_params = sum(tensor.numel() for tensor in net.parameters())
-        self._lgr.info("Layers / parameters - %d / %d", modules, model_params)
+        ctx.info("Layers / parameters - %d / %d", modules, model_params)
 
     def _prepare_net(self, cfg: Cfg, emb_size: list[int], emb_seq_size: list[int]) -> wave_net.Net:
         return wave_net.Net(

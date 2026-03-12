@@ -1,4 +1,3 @@
-import random
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, Final
@@ -9,7 +8,7 @@ from pymongo.asynchronous import collection, database
 from pymongo.errors import PyMongoError
 
 from poptimizer.core import domain, errors
-from poptimizer.evolve import evolve
+from poptimizer.evolve.evolution import evolve
 from poptimizer.fsm import uow
 
 _MONGO_ID: Final = "_id"
@@ -20,6 +19,14 @@ type MongoDocument = dict[str, Any]
 type MongoClient = pymongo.AsyncMongoClient[MongoDocument]
 type MongoDatabase = database.AsyncDatabase[MongoDocument]
 type MongoCollection = collection.AsyncCollection[MongoDocument]
+
+
+@asynccontextmanager
+async def _wrap_err(msg: str) -> AsyncIterator[None]:
+    try:
+        yield
+    except PyMongoError as err:
+        raise errors.AdapterError(msg) from err
 
 
 @asynccontextmanager
@@ -35,102 +42,49 @@ class Repo:
     def __init__(self, mongo_db: MongoDatabase) -> None:
         self._db = mongo_db
 
-    async def next_model(self, uid: domain.UID) -> tuple[evolve.Model, uow.Version, bool]:
+    async def next_model(self) -> domain.UID:
         collection_name = evolve.Model.__name__
         collection = self._db[collection_name]
 
-        projection = ["_id", "day", "llh_mean", "alfa_mean"]
-        docs = [doc async for doc in collection.find({}, projection=projection)]
+        async with _wrap_err("can't get next model"):
+            min_doc = await collection.find_one(
+                projection={"day": 1, "_id": 0},
+                sort=[("day", pymongo.ASCENDING)],
+            )
 
-        target: MongoDocument | None = None
-        min_day = docs[0]["day"]
+        min_doc = min_doc or {}
 
-        for doc in docs:
-            if not doc.get("llh_mean") or not doc.get("alfa_mean"):
-                return *(await self.get(evolve.Model, domain.UID(doc["_id"]))), True
+        query = {"day": {"$exists": False}}
+        if min_day := min_doc.get("day"):
+            query = {"day": min_day}
 
-            if doc["_id"] == uid:
-                target = doc
-
-            min_day = min(min_day, doc["day"])
-
-        if target is None:
-            return *(await self.get(evolve.Model, domain.UID(random.choice(docs)["_id"]))), False  # noqa: S311
-
-        docs = [doc for doc in docs if doc["day"] == min_day]
-
-        if len(docs) == 1:
-            return *(await self.get(evolve.Model, domain.UID(docs[0]["_id"]))), False
-
-        return await self._farthest_from_target(docs, target)
-
-    async def _farthest_from_target(
-        self,
-        docs: list[MongoDocument],
-        target: MongoDocument,
-    ) -> tuple[evolve.Model, uow.Version, bool]:
-        min_llh = docs[0]
-        max_llh = docs[0]
-        min_alfa = docs[0]
-        max_alfa = docs[0]
-
-        for doc in docs:
-            if doc["llh_mean"] < min_llh["llh_mean"]:
-                min_llh = doc
-
-            if doc["llh_mean"] > max_llh["llh_mean"]:
-                max_llh = doc
-
-            if doc["alfa_mean"] < min_alfa["alfa_mean"]:
-                min_alfa = doc
-
-            if doc["alfa_mean"] > max_alfa["alfa_mean"]:
-                max_alfa = doc
-
-        selected = max(
-            (
-                min_llh,
-                False,
-                (target["llh_mean"] - min_llh["llh_mean"]) / (max_llh["llh_mean"] - min_llh["llh_mean"]),
-            ),
-            (
-                max_llh,
-                True,
-                (max_llh["llh_mean"] - target["llh_mean"]) / (max_llh["llh_mean"] - min_llh["llh_mean"]),
-            ),
-            (
-                min_alfa,
-                False,
-                (target["alfa_mean"] - min_alfa["alfa_mean"]) / (max_alfa["alfa_mean"] - min_alfa["alfa_mean"]),
-            ),
-            (
-                max_alfa,
-                True,
-                (max_alfa["alfa_mean"] - target["alfa_mean"]) / (max_alfa["alfa_mean"] - min_alfa["alfa_mean"]),
-            ),
-            key=lambda x: x[2],
+        cursor = await collection.aggregate(
+            [
+                {"$match": query},
+                {"$sample": {"size": 1}},
+                {"$project": {"_id": 1}},
+            ]
         )
 
-        return *(await self.get(evolve.Model, domain.UID(selected[0]["_id"]))), selected[1]
+        async with _wrap_err("can't get next model"):
+            result, *_ = await cursor.to_list(length=1)
+
+        return domain.UID(result["_id"])
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         collection_name = evolve.Model.__name__
         collection = self._db[collection_name]
         pipeline = [{"$sample": {"size": n}}]
 
-        try:
+        async with _wrap_err("can't sample model"):
             return [self._create_obj(evolve.Model, doc)[0] async for doc in await collection.aggregate(pipeline)]
-        except PyMongoError as err:
-            raise errors.AdapterError("can't sample organisms") from err
 
     async def count_models(self) -> int:
         collection_name = evolve.Model.__name__
         collection = self._db[collection_name]
 
-        try:
+        async with _wrap_err("can't count models"):
             return await collection.count_documents({})
-        except PyMongoError as err:
-            raise errors.AdapterError("can't count organisms") from err
 
     async def get[E: domain.Object](
         self,
@@ -150,19 +104,17 @@ class Repo:
         collection_name = t_obj.__name__
         db = self._db[collection_name]
 
-        try:
+        async with _wrap_err(f"can't load entities from {collection_name}"):
             async for doc in db.find({}):
                 obj, _ = self._create_obj(t_obj, doc)
 
                 yield obj
-        except PyMongoError as err:
-            raise errors.AdapterError(f"can't load entities from {collection_name}") from err
 
     async def _load_or_create(self, collection_name: str, uid: domain.UID) -> MongoDocument | None:
         collection = self._db[collection_name]
 
-        try:
-            doc = await collection.find_one_and_update(
+        async with _wrap_err(f"can't load {collection_name}.{uid}"):
+            return await collection.find_one_and_update(
                 {_MONGO_ID: uid},
                 {
                     "$setOnInsert": {
@@ -172,10 +124,6 @@ class Repo:
                 upsert=True,
                 return_document=pymongo.ReturnDocument.AFTER,
             )
-        except PyMongoError as err:
-            raise errors.AdapterError(f"can't load {collection_name}.{uid}") from err
-
-        return doc
 
     def _create_obj[E: domain.Object](self, t_obj: type[E], doc: Any) -> tuple[E, uow.Version]:
         doc |= {_UID: doc[_MONGO_ID]}
@@ -194,13 +142,11 @@ class Repo:
         doc[_MONGO_ID] = obj.uid
         doc[_VER] = ver + 1
 
-        try:
+        async with _wrap_err("can't save entities"):
             replaced = await self._db[collection_name].find_one_and_replace(
                 {_MONGO_ID: obj.uid, _VER: ver},
                 doc,
             )
-        except PyMongoError as err:
-            raise errors.AdapterError("can't save entities") from err
 
         if replaced is None:
             raise errors.AdapterError(f"wrong version {collection_name}.{obj.uid}")
@@ -209,10 +155,8 @@ class Repo:
         collection_name = obj.__class__.__name__
         collection = self._db[collection_name]
 
-        try:
+        async with _wrap_err("can't delete entity"):
             result = await collection.delete_one({_MONGO_ID: obj.uid})
-        except PyMongoError as err:
-            raise errors.AdapterError("can't delete organisms") from err
 
         if result.deleted_count != 1:
             raise errors.AdapterError(f"can't delete {collection_name}.{obj.uid}")
@@ -221,7 +165,5 @@ class Repo:
         collection_name = obj_type.__name__
         collection = self._db[collection_name]
 
-        try:
+        async with _wrap_err(f"can't delete {collection_name}"):
             await collection.drop()
-        except PyMongoError as err:
-            raise errors.AdapterError(f"can't delete {collection_name}") from err

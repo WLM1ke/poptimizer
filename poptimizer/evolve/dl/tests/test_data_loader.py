@@ -1,9 +1,9 @@
 import pytest
 import torch
 
-from poptimizer import errors
-from poptimizer.domain import domain
-from poptimizer.domain.dl import data_loaders, datasets, features
+from poptimizer.core import domain, errors
+from poptimizer.data.features import features
+from poptimizer.evolve.dl import data_loaders, datasets
 
 
 @pytest.fixture(name="days")

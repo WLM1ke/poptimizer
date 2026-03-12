@@ -43,21 +43,6 @@ def _last_finished_day() -> domain.Day:
     ) - timedelta(days=delta)
 
 
-def _next_check_delay(last_check_day: domain.Day) -> timedelta:
-    return (
-        datetime(
-            year=last_check_day.year,
-            month=last_check_day.month,
-            day=last_check_day.day,
-            hour=_END_HOUR,
-            minute=_END_MINUTE,
-            tzinfo=_MOEX_TZ,
-        )
-        + timedelta(days=2)
-        - datetime.now(_MOEX_TZ)
-    )
-
-
 class DataState(domain.Entity):
     app_version: str = consts.__version__
     check_day: domain.Day = consts.START_DAY
@@ -69,7 +54,7 @@ class CheckDataStatusAction:
     async def __call__(self, ctx: fsm.Ctx) -> None:
         state = await ctx.get(DataState)
 
-        event = events.DataUpdated()
+        event = events.DataUpdated(day=state.data_day)
 
         if state.outdated or state.check_day != _last_finished_day():
             event = events.QuotesUpdateRequired()
@@ -130,7 +115,7 @@ class UpdateQuotesAction:
             state.data_day = data_day
             state.outdated = True
 
-        event = events.DataUpdated()
+        event = events.DataUpdated(day=state.data_day)
         if state.outdated:
             event = events.QuotesUpdated(trading_days=trading_days)
 
@@ -153,16 +138,25 @@ class UpdateFeaturesAction:
 
         state = await state_task
         state.outdated = False
-        ctx.send(events.DataUpdated())
+        ctx.send(events.DataUpdated(day=state.data_day))
 
 
-class WaitNewDayAction:
+class MemoryChecker(Protocol):
+    def check_memory_usage(self, ctx: fsm.Ctx) -> None: ...
+
+
+class CheckDayAction:
+    def __init__(self, memory_checker: MemoryChecker) -> None:
+        self._memory_checker = memory_checker
+
     async def __call__(self, ctx: fsm.Ctx) -> None:
+        self._memory_checker.check_memory_usage(ctx)
+
         state = await ctx.get(DataState)
 
-        delay = _next_check_delay(state.check_day)
-        ctx.info(f"Waiting for new day {delay}")
+        event = events.DayNotChanged()
 
-        await asyncio.sleep(delay.total_seconds())
+        if state.check_day != _last_finished_day():
+            event = events.QuotesUpdateRequired()
 
-        ctx.send(events.QuotesUpdateRequired())
+        ctx.send(event)

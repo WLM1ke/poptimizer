@@ -4,7 +4,7 @@ from types import TracebackType
 from typing import Any, Protocol, Self
 
 from poptimizer.core import domain, fsm
-from poptimizer.evolve import evolve
+from poptimizer.evolve.evolution import evolve
 from poptimizer.fsm import uow
 
 
@@ -71,8 +71,8 @@ class Tx:
     async def count_models(self) -> int:
         return await self._uow.count_models()
 
-    async def next_model_for_update(self, uid: domain.UID) -> tuple[evolve.Model, bool]:
-        return await self._uow.next_model_for_update(uid)
+    async def next_model(self) -> domain.UID:
+        return await self._uow.next_model()
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         return await self._uow.sample_models(n)
