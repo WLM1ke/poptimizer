@@ -80,7 +80,7 @@ class Trainer:
         ctx: fsm.Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
-    ) -> evolve.TestResults:
+    ) -> evolve.TestResults | errors.POError:
         ctx.info(
             "Day %s step %d models %d delta radius %.2f - %s",
             evolution.day,
@@ -93,6 +93,53 @@ class Trainer:
         evolution.step += 1
         model.day = evolution.day
 
+        err_result: errors.POError | None = None
+
+        while err_result is None:
+            try:
+                return await self._update_metrics(ctx, evolution, model)
+            except* errors.TooShortHistoryError as err:
+                err_result = self._handle_too_short_history_error(
+                    ctx,
+                    evolution,
+                    model,
+                    errors.get_root_poptimizer_error(err),
+                )
+            except* errors.DomainError as err:
+                err_result = errors.get_root_poptimizer_error(err)
+
+        return err_result
+
+    def _handle_too_short_history_error(
+        self,
+        ctx: fsm.Ctx,
+        evolution: evolve.Evolution,
+        model: evolve.Model,
+        err: errors.TooShortHistoryError,
+    ) -> errors.POError | None:
+        if model.is_new():
+            return err
+
+        minimal_returns_days_old = evolution.minimal_returns_days
+        evolution.minimal_returns_days = max(
+            evolution.minimal_returns_days,
+            err.minimal_returns_days,
+        )
+
+        if evolution.minimal_returns_days > minimal_returns_days_old:
+            ctx.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
+
+        evolution.test_days -= max(1, evolution.minimal_returns_days - minimal_returns_days_old)
+        ctx.warning("Test days decreased - %d", evolution.test_days)
+
+        return None
+
+    async def _update_metrics(
+        self,
+        ctx: fsm.Ctx,
+        evolution: evolve.Evolution,
+        model: evolve.Model,
+    ) -> evolve.TestResults:
         cfg = Cfg.model_validate(model.phenotype)
         days = datasets.Days(
             history=cfg.batch.history_days,

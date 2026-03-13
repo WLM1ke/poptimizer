@@ -26,6 +26,7 @@ def build_graph() -> graph.Graph:
         events.BaseModelNotEvaluated,
         [
             (events.NewModelCreated, actions.EvaluateNewModelAction(trainer)),
+            (events.BaseModelNotEvaluated, actions.EvaluateBaseModelAction(trainer)),
         ],
     )
     data_graph.add_state(

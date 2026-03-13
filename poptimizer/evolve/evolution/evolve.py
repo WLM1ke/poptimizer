@@ -13,7 +13,7 @@ from pydantic import (
 )
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
-from poptimizer.core import consts, domain, fsm
+from poptimizer.core import consts, domain, errors, fsm
 from poptimizer.evolve.dl import datasets
 from poptimizer.evolve.evolution import genetics, genotype
 from poptimizer.portfolio.port import portfolio
@@ -37,7 +37,10 @@ class TestResults(BaseModel):
     ret: float
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(alfa={statistics.mean(self.alfa):.2%}, ret={self.ret:.2%}, llh={statistics.mean(self.llh):.2f})"
+        alfa = statistics.mean(self.alfa)
+        llh = statistics.mean(self.llh)
+
+        return f"{self.__class__.__name__}(alfa={alfa:.2%}, ret={self.ret:.2%}, llh={llh:.2f})"
 
 
 class Model(domain.Entity):
@@ -46,6 +49,9 @@ class Model(domain.Entity):
     duration: float = 0
     mean: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
     cov: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
+
+    def is_new(self) -> bool:
+        return self.duration == 0
 
     @model_validator(mode="after")
     def _match_length(self) -> Self:
@@ -114,9 +120,10 @@ class Evolution(domain.Entity):
         self.llh = []
         self.step = 1
 
-    def new_base(self, results: TestResults) -> None:
-        self.alfa = results.alfa
-        self.llh = results.llh
+    def new_base(self, results: TestResults | errors.POError) -> None:
+        if not isinstance(results, errors.POError):
+            self.alfa = results.alfa
+            self.llh = results.llh
 
     def model_rejected(self) -> None:
         self.radius += _OPTIMAL_ACCEPTANCE_RATE / (1 - _OPTIMAL_ACCEPTANCE_RATE)
@@ -144,8 +151,14 @@ async def is_deleted(
     ctx: fsm.Ctx,
     evolution: Evolution,
     model: Model,
-    results: TestResults,
+    results: TestResults | errors.POError,
 ) -> bool:
+    if isinstance(results, errors.POError):
+        await ctx.delete(model)
+        ctx.info("Deleted - %s...", results)
+
+        return True
+
     alfa_p = _probability(results.alfa, evolution.alfa)
 
     ctx.info(f"Alfa quality: {alfa_p:.2%}")

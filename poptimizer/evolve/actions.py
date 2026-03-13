@@ -1,4 +1,4 @@
-from poptimizer.core import fsm
+from poptimizer.core import errors, fsm
 from poptimizer.data.events import DataUpdated
 from poptimizer.evolve import events
 from poptimizer.evolve.dl import trainer
@@ -29,19 +29,22 @@ class EvaluateBaseModelAction:
 
     async def __call__(self, ctx: fsm.Ctx) -> None:
         evolution = await ctx.get_for_update(evolve.Evolution)
-        model = await ctx.get(evolve.Model, evolution.next_model)
+        model = await ctx.get_for_update(evolve.Model, evolution.next_model)
 
         results = await self._trainer.update_model_metrics(
             ctx,
             evolution,
             model,
         )
-        evolution.alfa = results.alfa
-        evolution.llh = results.llh
-
+        evolution.new_base(results)
         await evolve.make_new_model(ctx, evolution, model)
 
-        ctx.send(events.NewModelCreated())
+        event = events.NewModelCreated()
+        if isinstance(results, errors.POError):
+            await ctx.delete(model)
+            event = events.BaseModelNotEvaluated()
+
+        ctx.send(event)
 
 
 class EvaluateNewModelAction:
@@ -50,7 +53,7 @@ class EvaluateNewModelAction:
 
     async def __call__(self, ctx: fsm.Ctx) -> None:
         evolution = await ctx.get_for_update(evolve.Evolution)
-        model = await ctx.get(evolve.Model, evolution.next_model)
+        model = await ctx.get_for_update(evolve.Model, evolution.next_model)
 
         results = await self._trainer.update_model_metrics(
             ctx,
@@ -80,7 +83,7 @@ class EvaluateExistingModelAction:
 
     async def __call__(self, ctx: fsm.Ctx) -> None:
         evolution = await ctx.get_for_update(evolve.Evolution)
-        model = await ctx.get(evolve.Model, evolution.next_model)
+        model = await ctx.get_for_update(evolve.Model, evolution.next_model)
 
         results = await self._trainer.update_model_metrics(
             ctx,
@@ -88,7 +91,7 @@ class EvaluateExistingModelAction:
             model,
         )
 
-        evolution.new_base(results)
         await evolve.is_deleted(ctx, evolution, model, results)
+        evolution.new_base(results)
         await evolve.make_new_model(ctx, evolution, model)
         ctx.send(events.NewModelCreated())

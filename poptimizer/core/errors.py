@@ -27,7 +27,7 @@ class AdapterError(POError): ...
 class ControllersError(POError): ...
 
 
-def get_root_poptimizer_error(exc: POError | ExceptionGroup[POError]) -> POError:
+def get_root_poptimizer_error[E: POError](exc: E | ExceptionGroup[E]) -> E:
     while isinstance(exc, ExceptionGroup):
         exc = exc.exceptions[0]
 
