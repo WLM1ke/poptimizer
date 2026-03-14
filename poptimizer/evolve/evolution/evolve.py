@@ -13,7 +13,7 @@ from pydantic import (
 )
 from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
-from poptimizer.core import consts, domain, errors, fsm
+from poptimizer.core import consts, domain, fsm
 from poptimizer.evolve.dl import datasets
 from poptimizer.evolve.evolution import genetics, genotype
 from poptimizer.portfolio.port import portfolio
@@ -49,9 +49,6 @@ class Model(domain.Entity):
     duration: float = 0
     mean: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
     cov: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
-
-    def is_new(self) -> bool:
-        return self.duration == 0
 
     @model_validator(mode="after")
     def _match_length(self) -> Self:
@@ -120,23 +117,22 @@ class Evolution(domain.Entity):
         self.llh = []
         self.step = 1
 
-    def new_base(self, results: TestResults | errors.POError) -> None:
-        if not isinstance(results, errors.POError):
-            self.alfa = results.alfa
-            self.llh = results.llh
+    def new_base(self, results: TestResults) -> None:
+        self.alfa = results.alfa
+        self.llh = results.llh
 
     def model_rejected(self) -> None:
-        self.radius += _OPTIMAL_ACCEPTANCE_RATE / (1 - _OPTIMAL_ACCEPTANCE_RATE)
+        self.radius += 1
 
     def model_accepted(self) -> None:
-        self.radius -= 1
+        self.radius -= (1 - _OPTIMAL_ACCEPTANCE_RATE) / _OPTIMAL_ACCEPTANCE_RATE
 
         if self.radius < 1:
-            self.radius += 1
+            self.radius = 1
             self.test_days += 1
 
 
-async def make_new_model(ctx: fsm.Ctx, evolution: Evolution, model: Model) -> None:
+async def make_new_model(ctx: fsm.Ctx, evolution: Evolution, model: Model) -> domain.UID:
     parents = await ctx.sample_models(_PARENT_COUNT)
     if len({parent.uid for parent in parents}) != _PARENT_COUNT:
         parents = [Model(uid=model.uid) for _ in range(_PARENT_COUNT)]
@@ -144,41 +140,34 @@ async def make_new_model(ctx: fsm.Ctx, evolution: Evolution, model: Model) -> No
     new_model = await ctx.get_for_update(Model, random_model_uid())
     new_model.genes = model.child_genes(parents[0], parents[1], 1 / evolution.radius)
 
-    evolution.next_model = new_model.uid
+    return new_model.uid
 
 
-async def is_deleted(
+async def accepted(
     ctx: fsm.Ctx,
     evolution: Evolution,
     model: Model,
-    results: TestResults | errors.POError,
+    results: TestResults,
 ) -> bool:
-    if isinstance(results, errors.POError):
-        await ctx.delete(model)
-        ctx.info("Deleted - %s...", results)
-
-        return True
-
     alfa_p = _probability(results.alfa, evolution.alfa)
-
-    ctx.info(f"Alfa quality: {alfa_p:.2%}")
-
     llh_p = _probability(results.llh, evolution.llh)
-    ctx.info(f"LLH quality: {llh_p:.2%}")
+    ctx.info(f"Alfa probability - {alfa_p:.2%} / LLH probability - {llh_p:.2%}")
 
     if alfa_p < consts.P_VALUE / 2:
-        ctx.info("Deleted - very low alfa quality")
+        ctx.info(f"{model} rejected with {results} - low alfa probability")
         await ctx.delete(model)
 
-        return True
+        return False
 
     if llh_p < consts.P_VALUE / 2:
-        ctx.info("Deleted - very low llh quality")
+        ctx.info(f"{model} rejected with {results} - low llh probability")
         await ctx.delete(model)
 
-        return True
+        return False
 
-    return False
+    ctx.info(f"{model} accepted with {results}")
+
+    return True
 
 
 def _probability(target: list[float], base: list[float]) -> float:

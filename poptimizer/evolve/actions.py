@@ -1,4 +1,4 @@
-from poptimizer.core import errors, fsm
+from poptimizer.core import fsm
 from poptimizer.data.events import DataUpdated
 from poptimizer.evolve import events
 from poptimizer.evolve.dl import trainer
@@ -36,15 +36,15 @@ class EvaluateBaseModelAction:
             evolution,
             model,
         )
+
+        if not results:
+            ctx.send(events.BaseModelNotEvaluated())
+
+            return
+
         evolution.new_base(results)
-        await evolve.make_new_model(ctx, evolution, model)
-
-        event = events.NewModelCreated()
-        if isinstance(results, errors.POError):
-            await ctx.delete(model)
-            event = events.BaseModelNotEvaluated()
-
-        ctx.send(event)
+        evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
+        ctx.send(events.NewModelCreated())
 
 
 class EvaluateNewModelAction:
@@ -61,20 +61,25 @@ class EvaluateNewModelAction:
             model,
         )
 
-        match await evolve.is_deleted(ctx, evolution, model, results):
-            case True if await ctx.count_models() >= 1:
+        if not results:
+            ctx.send(events.ModelDeleted())
+
+            return
+
+        match await evolve.accepted(ctx, evolution, model, results):
+            case True:
+                evolution.model_accepted()
+                evolution.new_base(results)
+                evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
+                ctx.send(events.NewModelCreated())
+            case False if await ctx.count_models() >= 1:
                 evolution.model_rejected()
                 evolution.next_model = await ctx.next_model()
                 ctx.send(events.ModelDeleted())
-            case True:
-                evolution.model_rejected()
-                ctx.send(events.NoModelsLeft())
             case False:
-                evolution.model_accepted()
-                evolution.new_base(results)
-                await evolve.make_new_model(ctx, evolution, model)
-
-                ctx.send(events.NewModelCreated())
+                evolution.model_rejected()
+                evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
+                ctx.send(events.BaseModelNotEvaluated())
 
 
 class EvaluateExistingModelAction:
@@ -91,7 +96,8 @@ class EvaluateExistingModelAction:
             model,
         )
 
-        await evolve.is_deleted(ctx, evolution, model, results)
-        evolution.new_base(results)
-        await evolve.make_new_model(ctx, evolution, model)
+        if results and await evolve.accepted(ctx, evolution, model, results):
+            evolution.new_base(results)
+
+        evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
         ctx.send(events.NewModelCreated())

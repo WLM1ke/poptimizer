@@ -80,61 +80,61 @@ class Trainer:
         ctx: fsm.Ctx,
         evolution: evolve.Evolution,
         model: evolve.Model,
-    ) -> evolve.TestResults | errors.POError:
+    ) -> evolve.TestResults | None:
+        prefix = ""
+        if model.day != evolution.day:
+            prefix = "outdated "
+
+        if not model.mean:
+            prefix = "new "
+
         ctx.info(
-            "Day %s step %d models %d delta radius %.2f - %s",
+            "Day %s step %d models %d delta radius %.2f - %s%s",
             evolution.day,
             evolution.step,
             await ctx.count_models(),
             evolution.radius,
+            prefix,
             model,
         )
 
         evolution.step += 1
         model.day = evolution.day
 
-        err_result: errors.POError | None = None
+        retry = True
 
-        while err_result is None:
+        while retry:
             try:
-                return await self._update_metrics(ctx, evolution, model)
-            except* errors.TooShortHistoryError as err:
-                err_result = self._handle_too_short_history_error(
-                    ctx,
-                    evolution,
-                    model,
-                    errors.get_root_poptimizer_error(err),
-                )
-            except* errors.DomainError as err:
-                err_result = errors.get_root_poptimizer_error(err)
-
-        return err_result
-
-    def _handle_too_short_history_error(
-        self,
-        ctx: fsm.Ctx,
-        evolution: evolve.Evolution,
-        model: evolve.Model,
-        err: errors.TooShortHistoryError,
-    ) -> errors.POError | None:
-        if model.is_new():
-            return err
-
-        minimal_returns_days_old = evolution.minimal_returns_days
-        evolution.minimal_returns_days = max(
-            evolution.minimal_returns_days,
-            err.minimal_returns_days,
-        )
-
-        if evolution.minimal_returns_days > minimal_returns_days_old:
-            ctx.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
-
-        evolution.test_days -= max(1, evolution.minimal_returns_days - minimal_returns_days_old)
-        ctx.warning("Test days decreased - %d", evolution.test_days)
+                return await self._evaluate_in_thread(ctx, evolution, model)
+            except* errors.POError as err:
+                root_error = errors.get_root_poptimizer_error(err)
+                if not self._retry_root_error(ctx, evolution, root_error):
+                    ctx.info(f"{model} deleted with {root_error!r}")
+                    retry = False
 
         return None
 
-    async def _update_metrics(
+    def _retry_root_error(
+        self,
+        ctx: fsm.Ctx,
+        evolution: evolve.Evolution,
+        err: errors.POError,
+    ) -> bool:
+        if not isinstance(err, errors.TooShortHistoryError):
+            return False
+
+        evolution.minimal_returns_days += 1
+        ctx.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
+
+        if evolution.test_days == 1:
+            return False
+
+        evolution.test_days = 1
+        ctx.warning("Test days reset - %d", evolution.test_days)
+
+        return True
+
+    async def _evaluate_in_thread(
         self,
         ctx: fsm.Ctx,
         evolution: evolve.Evolution,
@@ -157,7 +157,7 @@ class Trainer:
 
         try:
             return await asyncio.to_thread(
-                self._run,
+                self._evaluate,
                 ctx,
                 model,
                 data,
@@ -171,7 +171,7 @@ class Trainer:
 
             raise
 
-    def _run(  # noqa: PLR0913
+    def _evaluate(  # noqa: PLR0913
         self,
         ctx: fsm.Ctx,
         model: evolve.Model,
@@ -182,11 +182,11 @@ class Trainer:
         forecast_days: int,
     ) -> evolve.TestResults:
         start = time.monotonic()
+
         net = self._prepare_net(cfg, emb_size, emb_seq_size)
         self._train(ctx, net, cfg.optimizer, cfg.scheduler, data, cfg.batch.size)
 
         test_results = self._test(ctx, net, cfg, forecast_days, data)
-        ctx.info(f"{model} trained with {test_results}")
 
         model.mean, model.cov = self._forecast(net, forecast_days, data)
         model.duration = time.monotonic() - start

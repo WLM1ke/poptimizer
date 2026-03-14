@@ -33,7 +33,7 @@ def build_graph() -> graph.Graph:
         events.NewModelCreated,
         [
             (events.NewModelCreated, actions.EvaluateNewModelAction(trainer)),
-            (events.NoModelsLeft, actions.EvaluateBaseModelAction(trainer), events.BaseModelNotEvaluated),
+            (events.BaseModelNotEvaluated, actions.EvaluateBaseModelAction(trainer)),
             events.ModelDeleted,
         ],
     )
