@@ -18,7 +18,8 @@ class InitEvolutionAction:
             case 0:
                 ctx.send(events.BaseModelNotEvaluated())
             case _:
-                await ctx.get(evolve.Model, evolution.next_model)
+                model = await ctx.get(evolve.Model, evolution.next_model)
+                evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
 
                 ctx.send(events.NewModelCreated())
 
