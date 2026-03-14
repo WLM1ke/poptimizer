@@ -24,6 +24,7 @@ class NumFeatures(BaseModel):
     imoex2: bool
     rvi: bool
     rugbitr1y: bool
+    rugbitr5y: bool
     rugbitr10y: bool
     rucbitrl3: bool
     mredc: bool

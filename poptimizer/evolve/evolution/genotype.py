@@ -71,6 +71,10 @@ class NumFeatures(genetics.Chromosome):
         float,
         genetics.bool_phenotype(),
     ] = genetics.random_default_range(-1, 1)
+    rugbitr5y: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
     rugbitr10y: Annotated[
         float,
         genetics.bool_phenotype(),

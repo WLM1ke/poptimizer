@@ -27,6 +27,7 @@ class NumFeat(StrEnum):
     IMOEX2 = auto()
     RVI = auto()
     RUGBITR1Y = auto()
+    RUGBITR5Y = auto()
     RUGBITR10Y = auto()
     RUCBITRL3 = auto()
     MREDC = auto()
