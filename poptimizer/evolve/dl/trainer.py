@@ -109,6 +109,7 @@ class Trainer:
             except* errors.POError as err:
                 root_error = errors.get_root_poptimizer_error(err)
                 if not self._retry_root_error(ctx, evolution, root_error):
+                    await ctx.delete(model)
                     ctx.info(f"{model} deleted with {root_error!r}")
                     retry = False
 
