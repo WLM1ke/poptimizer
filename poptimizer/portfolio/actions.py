@@ -110,7 +110,7 @@ def _calc_min_turnover(
 
     for position in port.positions:
         if new_position := sec_cache.get(position.ticker):
-            min_turnover = max(min_turnover, new_position.value())
+            min_turnover = max(min_turnover, new_position.price * position.quantity())
 
     return min_turnover
 
