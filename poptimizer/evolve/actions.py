@@ -97,8 +97,9 @@ class EvaluateExistingModelAction:
             model,
         )
 
-        if results and await evolve.accepted(ctx, evolution, model, results):
+        if results:
             evolution.new_base(results)
+            await evolve.accepted(ctx, evolution, model, results)
 
         evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
         ctx.send(events.NewModelCreated())
