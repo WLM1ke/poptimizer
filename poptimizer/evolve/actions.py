@@ -63,22 +63,17 @@ class EvaluateNewModelAction:
             model,
         )
 
-        if not results:
-            ctx.send(events.ModelDeleted())
-
-            return
-
-        match await evolve.accepted(ctx, evolution, model, results):
-            case True:
+        match results:
+            case evolve.TestResults() if await evolve.accepted(ctx, evolution, model, results):
                 evolution.model_accepted()
                 evolution.new_base(results)
                 evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
                 ctx.send(events.NewModelCreated())
-            case False if await ctx.count_models() >= 1:
+            case _ if await ctx.count_models() >= 1:
                 evolution.model_rejected()
                 evolution.next_model = await ctx.next_model()
                 ctx.send(events.ModelDeleted())
-            case False:
+            case _:
                 evolution.model_rejected()
                 evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
                 ctx.send(events.BaseModelNotEvaluated())
@@ -98,9 +93,16 @@ class EvaluateExistingModelAction:
             model,
         )
 
+        match results:
+            case evolve.TestResults() if await evolve.accepted(ctx, evolution, model, results):
+                evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
+                ctx.send(events.NewModelCreated())
+            case _ if await ctx.count_models() >= 1:
+                evolution.next_model = await ctx.next_model()
+                ctx.send(events.ModelDeleted())
+            case _:
+                evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
+                ctx.send(events.BaseModelNotEvaluated())
+
         if results:
             evolution.new_base(results)
-            await evolve.accepted(ctx, evolution, model, results)
-
-        evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
-        ctx.send(events.NewModelCreated())

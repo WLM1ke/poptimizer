@@ -48,6 +48,8 @@ def build_graph() -> graph.Graph:
         DayNotChanged,
         [
             (events.NewModelCreated, actions.EvaluateNewModelAction(trainer)),
+            (events.BaseModelNotEvaluated, actions.EvaluateBaseModelAction(trainer)),
+            events.ModelDeleted,
         ],
     )
 
