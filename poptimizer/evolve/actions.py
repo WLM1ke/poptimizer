@@ -38,13 +38,14 @@ class EvaluateBaseModelAction:
             model,
         )
 
+        evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
+
         if not results:
             ctx.send(events.BaseModelNotEvaluated())
 
             return
 
         evolution.new_base(results)
-        evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
         ctx.send(events.NewModelCreated())
 
 
