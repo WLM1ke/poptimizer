@@ -41,6 +41,7 @@ def build_graph() -> graph.Graph:
         events.ModelDeleted,
         [
             (DayNotChanged, actions.EvaluateExistingModelAction(trainer)),
+            (DataUpdated, actions.InitEvolutionAction()),
         ],
     )
     data_graph.add_state(
