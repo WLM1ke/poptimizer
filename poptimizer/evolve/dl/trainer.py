@@ -124,13 +124,14 @@ class Trainer:
         if not isinstance(err, errors.TooShortHistoryError):
             return False
 
-        evolution.minimal_returns_days += 1
-        ctx.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
+        if err.minimal_returns_days > evolution.minimal_returns_days:
+            evolution.minimal_returns_days = err.minimal_returns_days
+            ctx.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
 
         if evolution.test_days == 1:
             return False
 
-        evolution.test_days = 1
+        evolution.test_days -= 1
         ctx.warning("Test days reset - %d", evolution.test_days)
 
         return True
