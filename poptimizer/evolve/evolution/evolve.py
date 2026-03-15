@@ -122,10 +122,10 @@ class Evolution(domain.Entity):
         self.llh = results.llh
 
     def model_rejected(self) -> None:
-        self.radius += 1
+        self.radius += 1 / self.step
 
     def model_accepted(self) -> None:
-        self.radius -= (1 - _OPTIMAL_ACCEPTANCE_RATE) / _OPTIMAL_ACCEPTANCE_RATE
+        self.radius -= (1 - _OPTIMAL_ACCEPTANCE_RATE) / _OPTIMAL_ACCEPTANCE_RATE / self.step
 
         if self.radius < 1:
             self.radius = 1

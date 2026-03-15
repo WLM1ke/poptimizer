@@ -94,15 +94,14 @@ class EvaluateExistingModelAction:
         )
 
         match results:
-            case evolve.TestResults() if await evolve.accepted(ctx, evolution, model, results):
+            case evolve.TestResults():
+                await evolve.accepted(ctx, evolution, model, results)
                 evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
+                evolution.new_base(results)
                 ctx.send(events.NewModelCreated())
-            case _ if await ctx.count_models() >= 1:
+            case None if await ctx.count_models() >= 1:
                 evolution.next_model = await ctx.next_model()
                 ctx.send(events.ModelDeleted())
-            case _:
+            case None:
                 evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
                 ctx.send(events.BaseModelNotEvaluated())
-
-        if results:
-            evolution.new_base(results)
