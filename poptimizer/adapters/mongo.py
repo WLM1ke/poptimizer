@@ -47,29 +47,14 @@ class Repo:
         collection = self._db[collection_name]
 
         async with _wrap_err("can't get next model"):
-            min_doc = await collection.find_one(
-                projection={"day": 1, "_id": 0},
-                sort=[("day", pymongo.ASCENDING)],
-            )
+            result = (
+                await collection.find_one(
+                    projection={"_id": 1},
+                    sort=[("day", pymongo.ASCENDING), ("train_load", pymongo.ASCENDING)],
+                )
+            ) or {}
 
-        min_doc = min_doc or {}
-
-        query = {"day": {"$exists": False}}
-        if min_day := min_doc.get("day"):
-            query = {"day": min_day}
-
-        cursor = await collection.aggregate(
-            [
-                {"$match": query},
-                {"$sample": {"size": 1}},
-                {"$project": {"_id": 1}},
-            ]
-        )
-
-        async with _wrap_err("can't get next model"):
-            result, *_ = await cursor.to_list(length=1)
-
-        return domain.UID(result["_id"])
+            return domain.UID(result["_id"])
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         collection_name = evolve.Model.__name__

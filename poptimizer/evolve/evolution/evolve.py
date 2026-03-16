@@ -7,6 +7,7 @@ from pydantic import (
     BaseModel,
     Field,
     FiniteFloat,
+    NonNegativeInt,
     PositiveFloat,
     PositiveInt,
     model_validator,
@@ -46,7 +47,7 @@ class TestResults(BaseModel):
 class Model(domain.Entity):
     day: domain.Day = consts.START_DAY
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
-    duration: float = 0
+    train_load: NonNegativeInt = 0
     mean: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
     cov: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
 
@@ -69,7 +70,7 @@ class Model(domain.Entity):
         risk_tol = self.genotype.risk.risk_tolerance
         history = self.genotype.batch.history_days
 
-        return f"{self.__class__.__name__}(risk_aversion={1 - risk_tol:.2%}, history={history:.2f})"
+        return f"{self.__class__.__name__}(train_load={self.train_load}, risk_aversion={1 - risk_tol:.2%}, history={history:.2f})"
 
     @cached_property
     def genotype(self) -> genotype.Genotype:
@@ -122,10 +123,10 @@ class Evolution(domain.Entity):
         self.llh = results.llh
 
     def model_rejected(self) -> None:
-        self.radius += 1 / self.step
+        self.radius += 1 / self.test_days
 
     def model_accepted(self) -> None:
-        self.radius -= (1 - _OPTIMAL_ACCEPTANCE_RATE) / _OPTIMAL_ACCEPTANCE_RATE / self.step
+        self.radius -= (1 - _OPTIMAL_ACCEPTANCE_RATE) / _OPTIMAL_ACCEPTANCE_RATE / self.test_days
 
         if self.radius < 1:
             self.radius = 1
@@ -139,6 +140,7 @@ async def make_new_model(ctx: fsm.Ctx, evolution: Evolution, model: Model) -> do
 
     new_model = await ctx.get_for_update(Model, random_model_uid())
     new_model.genes = model.child_genes(parents[0], parents[1], 1 / evolution.radius)
+    new_model.train_load = model.train_load
 
     return new_model.uid
 

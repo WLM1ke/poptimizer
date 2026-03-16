@@ -85,11 +85,12 @@ class Trainer:
         if model.day != evolution.day:
             prefix = "outdated "
 
-        if not model.mean:
+        new = not model.mean
+        if new:
             prefix = "new "
 
         ctx.info(
-            "Day %s step %d models %d delta radius %.2f - %s%s",
+            "Day %s step %d models %d radius %.2f - %s%s",
             evolution.day,
             evolution.step,
             await ctx.count_models(),
@@ -108,7 +109,7 @@ class Trainer:
                 return await self._evaluate_in_thread(ctx, evolution, model)
             except* errors.POError as err:
                 root_error = errors.get_root_poptimizer_error(err)
-                if not self._retry_root_error(ctx, evolution, root_error):
+                if new or not self._retry_root_error(ctx, evolution, root_error):
                     await ctx.delete(model)
                     ctx.info(f"{model} deleted with {root_error!r}")
                     retry = False
@@ -191,7 +192,7 @@ class Trainer:
         test_results = self._test(ctx, net, cfg, forecast_days, data)
 
         model.mean, model.cov = self._forecast(net, forecast_days, data)
-        model.duration = time.monotonic() - start
+        model.train_load += int((1 + time.monotonic() - start) ** 0.5)
 
         return test_results
 
