@@ -70,7 +70,7 @@ class Model(domain.Entity):
         risk_tol = self.genotype.risk.risk_tolerance
         history = self.genotype.batch.history_days
 
-        return f"{self.__class__.__name__}(train_load={self.train_load}, risk_aversion={1 - risk_tol:.2%}, history={history:.2f})"
+        return f"{self.__class__.__name__}(risk_aversion={1 - risk_tol:.2%}, history={history:.2f})"
 
     @cached_property
     def genotype(self) -> genotype.Genotype:
@@ -145,7 +145,7 @@ async def make_new_model(ctx: fsm.Ctx, evolution: Evolution, model: Model) -> do
     return new_model.uid
 
 
-async def accepted(
+async def is_accepted(
     ctx: fsm.Ctx,
     evolution: Evolution,
     model: Model,
@@ -155,15 +155,19 @@ async def accepted(
     llh_p = _probability(results.llh, evolution.llh)
     ctx.info(f"Alfa probability - {alfa_p:.2%} / LLH probability - {llh_p:.2%}")
 
+    count = await ctx.count_models()
+
     if alfa_p < consts.P_VALUE / 2:
         ctx.info(f"{model} rejected with {results} - low alfa probability")
-        await ctx.delete(model)
+        if count > evolution.test_days:
+            await ctx.delete(model)
 
         return False
 
     if llh_p < consts.P_VALUE / 2:
         ctx.info(f"{model} rejected with {results} - low llh probability")
-        await ctx.delete(model)
+        if count > evolution.test_days:
+            await ctx.delete(model)
 
         return False
 
