@@ -8,3 +8,6 @@ class PortfolioUpdated(fsm.Event): ...
 
 class PortfolioRevalued(fsm.Event):
     trading_days: list[domain.Day] = Field(repr=False)
+
+
+class PositionUpdated(fsm.Event): ...

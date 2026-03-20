@@ -1,8 +1,10 @@
 import bisect
-from typing import Annotated, Self
+from datetime import UTC, datetime, timedelta
+from typing import Annotated, Final, Self
 
 from pydantic import (
     AfterValidator,
+    AwareDatetime,
     BaseModel,
     Field,
     NonNegativeFloat,
@@ -15,6 +17,8 @@ from pydantic import (
 )
 
 from poptimizer.core import consts, domain, errors
+
+_UPDATE_INTERVAL: Final = timedelta(minutes=30)
 
 type AccountData = dict[domain.AccName, NonNegativeInt]
 
@@ -45,6 +49,10 @@ class NormalizedPosition(BaseModel):
 
 class Portfolio(domain.Entity):
     day: domain.Day = consts.START_DAY
+    updated_at: Annotated[
+        AwareDatetime,
+        PlainSerializer(lambda dt: int(dt.timestamp()), return_type=int),
+    ] = Field(default_factory=lambda: datetime.now(UTC) - _UPDATE_INTERVAL)
     holding_period: NonNegativeFloat = 0
     new_positions: NonNegativeInt = 0
     account_names: Annotated[
@@ -73,6 +81,9 @@ class Portfolio(domain.Entity):
             return_type=list,
         ),
     ] = Field(default_factory=set[domain.Ticker])
+
+    def need_update(self) -> bool:
+        return datetime.now(UTC) - self.updated_at > _UPDATE_INTERVAL
 
     @model_validator(mode="after")
     def _positions_have_know_accounts(self) -> Self:
@@ -146,6 +157,8 @@ class Portfolio(domain.Entity):
                 return True
 
     def update_position(self, acc_name: domain.AccName, ticker: domain.Ticker, quantity: NonNegativeInt) -> None:
+        self.updated_at = datetime.now(UTC)
+
         if acc_name not in self.account_names:
             raise errors.DomainError(f"account {acc_name} doesn't exist")
 

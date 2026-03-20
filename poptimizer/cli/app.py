@@ -15,6 +15,7 @@ from poptimizer.data.clients import memory, migration
 from poptimizer.evolve import evolve
 from poptimizer.fsm import system
 from poptimizer.portfolio import portfolio
+from poptimizer.portfolio.clients import tinkoff
 
 
 class Run(config.Cfg):
@@ -83,7 +84,11 @@ class Run(config.Cfg):
                         memory.Checker(main_task),
                     )
                 )
-                fsm_system.start_fsm(portfolio.build_graph())
+                fsm_system.start_fsm(
+                    portfolio.build_graph(
+                        tinkoff.Client(http_client, self.brokers.tinkoff),
+                    )
+                )
                 fsm_system.start_fsm(evolve.build_graph())
                 fsm_system.send(fsm.AppStarted())
 

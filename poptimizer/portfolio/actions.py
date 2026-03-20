@@ -1,7 +1,11 @@
 import asyncio
 import statistics
+from typing import Annotated, Final, Literal, Protocol
 
 from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    Field,
     PositiveInt,
 )
 
@@ -11,6 +15,8 @@ from poptimizer.data.moex import quotes, securities
 from poptimizer.evolve.evolution import evolve
 from poptimizer.portfolio import events
 from poptimizer.portfolio.port import portfolio
+
+_NANOS_IN_RUB: Final = 10**9
 
 
 class RevaluePortfolioAction:
@@ -154,6 +160,55 @@ def _update_existing_positions(
     port.positions = updated_positions
 
 
+def _str_to_int(v: str | int) -> int:
+    if isinstance(v, str):
+        return int(v)
+
+    return v
+
+
+type Int = Annotated[int, BeforeValidator(_str_to_int)]
+
+
+class Money(BaseModel):
+    currency: Literal["rub"]
+    units: Int
+    nano: int
+
+
+class Position(BaseModel):
+    ticker: domain.Ticker
+    # Бумаг после блокировки под заявки на продажу
+    balance: Int
+    # Бумаг заблокировано под заявки на продажу
+    blocked: Int
+
+    @property
+    def total(self) -> int:
+        return self.balance + self.blocked
+
+
+class Positions(BaseModel):
+    # Денег после блокировки под заявки на покупку
+    money: list[Money] = Field(min_length=1, max_length=1)
+    # Денег заблокировано под заявки на покупку
+    blocked: list[Money] = Field(min_length=0, max_length=1)
+    securities: list[Position]
+
+    def cash(self) -> int:
+        return int(
+            sum(m.units for m in self.money)
+            + sum(m.units for m in self.blocked)
+            + (sum(m.nano for m in self.money) + sum(m.nano for m in self.blocked)) / _NANOS_IN_RUB
+        )
+
+
+class TinkoffClient(Protocol):
+    def updatable_accounts(self) -> set[domain.AccName]: ...
+
+    async def get_positions(self, account_name: domain.AccName) -> Positions: ...
+
+
 def _add_new_liquid(
     ctx: fsm.Ctx,
     port: portfolio.Portfolio,
@@ -166,3 +221,83 @@ def _add_new_liquid(
             port.positions.insert(n, position)
 
             ctx.info("%s is added to portfolio", ticker)
+
+
+class AutoUpdatePositionsAction:
+    def __init__(self, tinkoff_client: TinkoffClient) -> None:
+        self._tinkoff_client = tinkoff_client
+
+    async def __call__(self, ctx: fsm.Ctx) -> None:
+        port = await ctx.get(portfolio.Portfolio)
+
+        if port.need_update():
+            updatable_accounts = self._tinkoff_client.updatable_accounts()
+
+            await self._add_accounts(ctx, updatable_accounts - port.account_names)
+
+            async with asyncio.TaskGroup() as tg:
+                for acc_name in updatable_accounts:
+                    tg.create_task(self._update_account(ctx, port, acc_name))
+
+        ctx.send(events.PositionUpdated())
+
+    async def _add_accounts(
+        self,
+        ctx: fsm.Ctx,
+        new_accounts: set[domain.AccName],
+    ) -> None:
+        if not new_accounts:
+            return
+
+        port = await ctx.get_for_update(portfolio.Portfolio)
+
+        for acc_name in new_accounts:
+            port.create_acount(acc_name)
+
+        ctx.warning("New accounts created: %s", ", ".join(sorted(new_accounts)))
+
+    async def _update_account(
+        self,
+        ctx: fsm.Ctx,
+        port: portfolio.Portfolio,
+        acc_name: domain.AccName,
+    ) -> None:
+        positions = await self._tinkoff_client.get_positions(acc_name)
+        for_update: list[tuple[domain.Ticker, int, int]] = []
+
+        cash_current = port.cash_value(acc_name)
+        cash_new = positions.cash()
+        if cash_current != cash_new:
+            for_update.append((domain.CashTicker, cash_current, cash_new))
+
+        position_cache = {pos.ticker: pos.total for pos in positions.securities}
+
+        for pos in port.positions:
+            quantity_current = pos.accounts.get(acc_name, 0)
+            quantity_new = position_cache.pop(pos.ticker, 0)
+            if quantity_current != quantity_new:
+                for_update.append((pos.ticker, quantity_current, quantity_new))
+
+        for ticker, quantity in sorted(position_cache.items()):
+            ctx.warning(
+                "Account %s can't be updated with unknown %s: %d",
+                acc_name,
+                ticker,
+                quantity,
+            )
+
+        if not for_update:
+            return
+
+        port = await ctx.get_for_update(portfolio.Portfolio)
+
+        for ticker, quantity_current, quantity_new in for_update:
+            port.update_position(acc_name, ticker, quantity_new)
+
+            ctx.warning(
+                "%s: %s %d -> %d",
+                acc_name,
+                ticker,
+                quantity_current,
+                quantity_new,
+            )
