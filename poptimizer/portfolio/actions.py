@@ -228,33 +228,37 @@ class AutoUpdatePositionsAction:
         self._tinkoff_client = tinkoff_client
 
     async def __call__(self, ctx: fsm.Ctx) -> None:
-        port = await ctx.get(portfolio.Portfolio)
+        port = await ctx.get_for_update(portfolio.Portfolio)
 
         if port.need_update():
-            updatable_accounts = self._tinkoff_client.updatable_accounts()
-
-            await self._add_accounts(ctx, updatable_accounts - port.account_names)
+            accounts = await self._ensure_accounts(ctx, port)
 
             async with asyncio.TaskGroup() as tg:
-                for acc_name in updatable_accounts:
+                for acc_name in accounts:
                     tg.create_task(self._update_account(ctx, port, acc_name))
+
+            port.update_finished()
 
         ctx.send(events.PositionUpdated())
 
-    async def _add_accounts(
+    async def _ensure_accounts(
         self,
         ctx: fsm.Ctx,
-        new_accounts: set[domain.AccName],
-    ) -> None:
-        if not new_accounts:
-            return
+        port: portfolio.Portfolio,
+    ) -> set[domain.AccName]:
+        updatable_accounts = self._tinkoff_client.updatable_accounts()
 
-        port = await ctx.get_for_update(portfolio.Portfolio)
+        new_accounts = updatable_accounts - port.account_names
 
-        for acc_name in new_accounts:
-            port.create_acount(acc_name)
+        if new_accounts:
+            port = await ctx.get_for_update(portfolio.Portfolio)
 
-        ctx.warning("New accounts created: %s", ", ".join(sorted(new_accounts)))
+            for acc_name in new_accounts:
+                port.create_acount(acc_name)
+
+            ctx.warning("New accounts created: %s", ", ".join(sorted(new_accounts)))
+
+        return updatable_accounts
 
     async def _update_account(
         self,
@@ -288,8 +292,6 @@ class AutoUpdatePositionsAction:
 
         if not for_update:
             return
-
-        port = await ctx.get_for_update(portfolio.Portfolio)
 
         for ticker, quantity_current, quantity_new in for_update:
             port.update_position(acc_name, ticker, quantity_new)

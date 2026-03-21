@@ -85,6 +85,9 @@ class Portfolio(domain.Entity):
     def need_update(self) -> bool:
         return datetime.now(UTC) - self.updated_at > _UPDATE_INTERVAL
 
+    def update_finished(self) -> None:
+        self.updated_at = datetime.now(UTC)
+
     @model_validator(mode="after")
     def _positions_have_know_accounts(self) -> Self:
         for position in self.positions:
@@ -157,8 +160,6 @@ class Portfolio(domain.Entity):
                 return True
 
     def update_position(self, acc_name: domain.AccName, ticker: domain.Ticker, quantity: NonNegativeInt) -> None:
-        self.updated_at = datetime.now(UTC)
-
         if acc_name not in self.account_names:
             raise errors.DomainError(f"account {acc_name} doesn't exist")
 
