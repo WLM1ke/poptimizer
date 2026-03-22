@@ -231,15 +231,17 @@ class AutoUpdatePositionsAction:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
         if port.need_update():
-            accounts = await self._ensure_accounts(ctx, port)
+            return
 
-            async with asyncio.TaskGroup() as tg:
-                for acc_name in accounts:
-                    tg.create_task(self._update_account(ctx, port, acc_name))
+        accounts = await self._ensure_accounts(ctx, port)
 
-            port.update_finished()
+        async with asyncio.TaskGroup() as tg:
+            updated = [tg.create_task(self._update_account(ctx, port, acc_name)) for acc_name in accounts]
 
-        ctx.send(events.PositionUpdated())
+        port.update_finished()
+
+        if any([await task for task in updated]):
+            ctx.send(events.PositionUpdated())
 
     async def _ensure_accounts(
         self,
@@ -265,7 +267,7 @@ class AutoUpdatePositionsAction:
         ctx: fsm.Ctx,
         port: portfolio.Portfolio,
         acc_name: domain.AccName,
-    ) -> None:
+    ) -> bool:
         positions = await self._tinkoff_client.get_positions(acc_name)
         for_update: list[tuple[domain.Ticker, int, int]] = []
 
@@ -291,7 +293,7 @@ class AutoUpdatePositionsAction:
             )
 
         if not for_update:
-            return
+            return False
 
         for ticker, quantity_current, quantity_new in for_update:
             port.update_position(acc_name, ticker, quantity_new)
@@ -303,3 +305,5 @@ class AutoUpdatePositionsAction:
                 quantity_current,
                 quantity_new,
             )
+
+        return True
