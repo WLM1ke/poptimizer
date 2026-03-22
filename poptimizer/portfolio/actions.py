@@ -238,8 +238,6 @@ class AutoUpdatePositionsAction:
         async with asyncio.TaskGroup() as tg:
             updated = [tg.create_task(self._update_account(ctx, port, acc_name)) for acc_name in accounts]
 
-        port.update_finished()
-
         if any([await task for task in updated]):
             ctx.send(events.PositionUpdated())
 
