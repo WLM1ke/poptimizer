@@ -1,8 +1,10 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Any, Final
 
 import pymongo
+from bson.errors import BSONError
 from pydantic import MongoDsn, ValidationError
 from pymongo.asynchronous import collection, database
 from pymongo.errors import PyMongoError
@@ -25,7 +27,7 @@ type MongoCollection = collection.AsyncCollection[MongoDocument]
 async def _wrap_err(msg: str) -> AsyncIterator[None]:
     try:
         yield
-    except PyMongoError as err:
+    except (PyMongoError, BSONError) as err:
         raise errors.AdapterError(msg) from err
 
 
@@ -55,6 +57,15 @@ class Repo:
             ) or {}
 
             return domain.UID(result["_id"])
+
+    async def get_models(self, day: domain.Day) -> list[evolve.Model]:
+        collection_name = evolve.Model.__name__
+        collection = self._db[collection_name]
+
+        dt = datetime(day.year, day.month, day.day)
+
+        async with _wrap_err("can't get models"):
+            return [self._create_obj(evolve.Model, doc)[0] async for doc in collection.find({"day": dt})]
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
         collection_name = evolve.Model.__name__

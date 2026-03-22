@@ -107,7 +107,7 @@ class Evolution(domain.Entity):
 
         return self
 
-    def init_new_day(
+    def init_day(
         self,
         port: portfolio.Portfolio,
     ) -> None:

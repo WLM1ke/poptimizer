@@ -1,6 +1,6 @@
 import bisect
-from datetime import UTC, datetime, timedelta
-from typing import Annotated, Final, Self
+from datetime import UTC, datetime
+from typing import Annotated, Self
 
 from pydantic import (
     AfterValidator,
@@ -18,13 +18,7 @@ from pydantic import (
 
 from poptimizer.core import consts, domain, errors
 
-_UPDATE_INTERVAL: Final = timedelta(minutes=30)
-
 type AccountData = dict[domain.AccName, NonNegativeInt]
-
-
-def _now() -> datetime:
-    return datetime.now(UTC)
 
 
 class Position(BaseModel):
@@ -53,10 +47,14 @@ class NormalizedPosition(BaseModel):
 
 class Portfolio(domain.Entity):
     day: domain.Day = consts.START_DAY
+    checked_at: Annotated[
+        AwareDatetime,
+        PlainSerializer(lambda dt: int(dt.timestamp()), return_type=int),
+    ] = datetime.fromtimestamp(0, UTC)
     updated_at: Annotated[
         AwareDatetime,
         PlainSerializer(lambda dt: int(dt.timestamp()), return_type=int),
-    ] = Field(default_factory=lambda: _now() - _UPDATE_INTERVAL)
+    ] = datetime.fromtimestamp(0, UTC)
     holding_period: NonNegativeFloat = 0
     new_positions: NonNegativeInt = 0
     account_names: Annotated[
@@ -85,9 +83,6 @@ class Portfolio(domain.Entity):
             return_type=list,
         ),
     ] = Field(default_factory=set[domain.Ticker])
-
-    def need_update(self) -> bool:
-        return _now() - self.updated_at > _UPDATE_INTERVAL
 
     @model_validator(mode="after")
     def _positions_have_know_accounts(self) -> Self:
@@ -160,29 +155,21 @@ class Portfolio(domain.Entity):
 
                 return True
 
-    def update_position(self, acc_name: domain.AccName, ticker: domain.Ticker, quantity: NonNegativeInt) -> bool:
-        self.updated_at = _now()
-
+    def update_position(self, acc_name: domain.AccName, ticker: domain.Ticker, quantity: NonNegativeInt) -> None:
         if acc_name not in self.account_names:
             raise errors.DomainError(f"account {acc_name} doesn't exist")
 
         if ticker == domain.CashTicker:
-            if self.cash.get(acc_name, 0) == quantity:
-                return False
-
             self.cash[acc_name] = quantity
 
             if not quantity:
                 self.cash.pop(acc_name)
 
-            return True
+            return
 
         _, position = self.find_position(ticker)
         if position is None:
             raise errors.DomainError(f"{ticker} not in portfolio")
-
-        if position.accounts.get(acc_name, 0) == quantity:
-            return False
 
         if quantity % (lot := position.lot):
             raise errors.DomainError(f"quantity {quantity} must be multiple of {lot}")
@@ -195,7 +182,7 @@ class Portfolio(domain.Entity):
         if not quantity:
             position.accounts.pop(acc_name)
 
-        return True
+        return
 
     def normalized_turnover(self) -> list[float]:
         values = self.value()

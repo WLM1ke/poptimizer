@@ -11,7 +11,7 @@ from pydantic import TypeAdapter, ValidationError
 from poptimizer.core import domain, errors, fsm
 from poptimizer.core.domain import date
 from poptimizer.data.div import raw, status
-from poptimizer.domain.portfolio import forecasts
+from poptimizer.forecast.forecasts import forecasts
 from poptimizer.portfolio.port import portfolio
 from poptimizer.use_cases import handler
 from poptimizer.views import utils
@@ -132,7 +132,7 @@ class App(web.Application):
             main=(f"Mean: {view.format_percent(forecast.mean)} / Std: {view.format_percent(forecast.std)}"),
             row1=models.Row(label="Trading interval", value=f"{forecast.forecast_days} days"),
             row2=models.Row(label="Risk aversion", value=f"{view.format_percent(1 - forecast.risk_tolerance)}"),
-            row3=models.Row(label="Forecasts", value=f"{forecast.forecasts_count}"),
+            row3=models.Row(label="Forecasts", value=f"{forecast.forecasts_cnt}"),
         )
 
         main = models.Forecast(
@@ -168,7 +168,7 @@ class App(web.Application):
             main=(f"Mean: {view.format_percent(forecast.mean)} / Std: {view.format_percent(forecast.std)}"),
             row1=models.Row(label="Trading interval", value=f"{forecast.forecast_days} days"),
             row2=models.Row(label="Risk aversion", value=f"{view.format_percent(1 - forecast.risk_tolerance)}"),
-            row3=models.Row(label="Forecasts", value=f"{forecast.forecasts_count}"),
+            row3=models.Row(label="Forecasts", value=f"{forecast.forecasts_cnt}"),
         )
 
         main = models.Optimize(

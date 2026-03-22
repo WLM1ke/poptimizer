@@ -13,6 +13,7 @@ from poptimizer.data import data
 from poptimizer.data.clients import data as data_client
 from poptimizer.data.clients import memory, migration
 from poptimizer.evolve import evolve
+from poptimizer.forecast import forecast
 from poptimizer.fsm import system
 from poptimizer.portfolio import portfolio
 from poptimizer.portfolio.clients import tinkoff
@@ -90,6 +91,7 @@ class Run(config.Cfg):
                     )
                 )
                 fsm_system.start_fsm(evolve.build_graph())
+                fsm_system.start_fsm(forecast.build_graph())
                 fsm_system.send(fsm.AppStarted())
 
         return 0

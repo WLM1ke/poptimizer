@@ -74,6 +74,9 @@ class Tx:
     async def next_model(self) -> domain.UID:
         return await self._uow.next_model()
 
+    async def get_models(self, day: domain.Day) -> list[evolve.Model]:
+        return await self._uow.get_models(day)
+
     async def sample_models(self, n: int) -> list[evolve.Model]:
         return await self._uow.sample_models(n)
 

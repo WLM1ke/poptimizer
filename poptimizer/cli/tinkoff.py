@@ -6,7 +6,7 @@ from pydantic_settings import CliPositionalArg
 
 from poptimizer.adapters import http, logger
 from poptimizer.cli import safe
-from poptimizer.portfolio import tinkoff
+from poptimizer.portfolio.clients import tinkoff
 
 
 class Tinkoff(BaseModel):

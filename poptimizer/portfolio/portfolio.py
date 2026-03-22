@@ -11,7 +11,7 @@ def build_graph(tinkoff_client: actions.TinkoffClient) -> graph.Graph:
         events.PortfolioUpdated,
         [
             (QuotesUpdated, actions.RevaluePortfolioAction(), events.PortfolioUpdated),
-            (ModelDeleted, actions.AutoUpdatePositionsAction(tinkoff_client), events.PortfolioUpdated),
+            (ModelDeleted, actions.CheckPositionsAction(tinkoff_client), events.PortfolioUpdated),
         ],
     )
 

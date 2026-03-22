@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from poptimizer.core import domain
 from poptimizer.core.domain import AccName, Ticker
-from poptimizer.domain.portfolio import forecasts
+from poptimizer.forecast.forecasts import forecasts
 
 
 class Theme(StrEnum):

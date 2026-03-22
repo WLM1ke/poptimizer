@@ -1,5 +1,6 @@
 import asyncio
 import statistics
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Final, Literal, Protocol
 
 from pydantic import (
@@ -17,6 +18,7 @@ from poptimizer.portfolio import events
 from poptimizer.portfolio.port import portfolio
 
 _NANOS_IN_RUB: Final = 10**9
+_CHECKED_INTERVAL: Final = timedelta(minutes=30)
 
 
 class RevaluePortfolioAction:
@@ -223,15 +225,18 @@ def _add_new_liquid(
             ctx.info("%s is added to portfolio", ticker)
 
 
-class AutoUpdatePositionsAction:
+class CheckPositionsAction:
     def __init__(self, tinkoff_client: TinkoffClient) -> None:
         self._tinkoff_client = tinkoff_client
 
     async def __call__(self, ctx: fsm.Ctx) -> None:
         port = await ctx.get_for_update(portfolio.Portfolio)
 
-        if port.need_update():
+        now = _now()
+        if now - port.checked_at < _CHECKED_INTERVAL:
             return
+
+        port.checked_at = now
 
         accounts = await self._ensure_accounts(ctx, port)
 
@@ -239,7 +244,9 @@ class AutoUpdatePositionsAction:
             updated = [tg.create_task(self._update_account(ctx, port, acc_name)) for acc_name in accounts]
 
         if any([await task for task in updated]):
-            ctx.send(events.PositionUpdated())
+            port.updated_at = now
+
+        ctx.send(events.PositionChecked(updated_at=port.updated_at))
 
     async def _ensure_accounts(
         self,
@@ -305,3 +312,7 @@ class AutoUpdatePositionsAction:
             )
 
         return True
+
+
+def _now() -> datetime:
+    return datetime.now(UTC)

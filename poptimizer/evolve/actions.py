@@ -12,7 +12,7 @@ class InitEvolutionAction:
 
         if evolution.day != event.day:
             port = await ctx.get(portfolio.Portfolio)
-            evolution.init_new_day(port)
+            evolution.init_day(port)
 
         match len(evolution.alfa):
             case 0:
