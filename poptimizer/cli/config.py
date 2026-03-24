@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Final
 
 import keyring
-from pydantic import BaseModel, Field, HttpUrl, MongoDsn
+from pydantic import BaseModel, EmailStr, Field, HttpUrl, MongoDsn
 from pydantic_settings import (
     BaseSettings,
     CliSuppress,
@@ -69,6 +69,11 @@ class Telegram(BaseModel):
     chat_id: int = 0
 
 
+class Gmail(BaseModel):
+    login: EmailStr | None = None
+    password: str = ""
+
+
 class Server(BaseModel):
     url: HttpUrl = HttpUrl("http://localhost:5000")
 
@@ -90,6 +95,7 @@ class Brokers(BaseModel):
 
 class Cfg(BaseSettings):
     tg: CliSuppress[Telegram] = Telegram()
+    gmail: CliSuppress[Gmail] = Gmail()
     server: CliSuppress[Server] = Server()
     mongo: CliSuppress[Mongo] = Mongo()
     brokers: CliSuppress[Brokers] = Brokers()

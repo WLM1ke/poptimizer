@@ -8,6 +8,9 @@ server:
 tg:
   token: "keychain:YOUR_TG_TOKEN_KEY"
   chat_id: YOUR_CHAT_ID
+gmail:
+  login: "some_name@gmail.com"
+  password: "keychain:gmail_password"
 brokers:
   tinkoff:
     - token: "keychain:YOUR_TOKEN_KEY"
