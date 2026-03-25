@@ -64,13 +64,8 @@ class _KeychainYamlSource(YamlConfigSettingsSource):
         return self._replace_from_keychain(yaml_data)
 
 
-class Telegram(BaseModel):
-    token: str = ""
-    chat_id: int = 0
-
-
 class Gmail(BaseModel):
-    login: EmailStr | None = None
+    email: EmailStr | None = None
     password: str = ""
 
 
@@ -94,7 +89,6 @@ class Brokers(BaseModel):
 
 
 class Cfg(BaseSettings):
-    tg: CliSuppress[Telegram] = Telegram()
     gmail: CliSuppress[Gmail] = Gmail()
     server: CliSuppress[Server] = Server()
     mongo: CliSuppress[Mongo] = Mongo()

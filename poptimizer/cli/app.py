@@ -9,12 +9,11 @@ from typing import TYPE_CHECKING, Any
 import torch
 import uvloop
 
-from poptimizer.adapters import http_session, logger, mongo
+from poptimizer.adapters import gmail, http_session, logger, mongo
 from poptimizer.adapters.brokers import tinkoff
 from poptimizer.cli import config, safe
 from poptimizer.controllers.bus import bus
 from poptimizer.controllers.server import server
-from poptimizer.controllers.tg import tg
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -82,14 +81,13 @@ class Run(config.Cfg):
             http_client = await stack.enter_async_context(http_session.client())
             tinkoff_client = tinkoff.Client(http_client, self.brokers.tinkoff)
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
-            tg_bot = await stack.enter_async_context(tg.Bot(self.tg.token, self.tg.chat_id))
-            lgr = await stack.enter_async_context(
-                logger.init(
-                    self.gmail.login,
-                    self.gmail.password,
-                    tg_bot.send_message,
-                )
-            )
+
+            send_fn: Callable[[str], None] | None = None
+            if self.gmail.email and self.gmail.password:
+                gmail_sender = await stack.enter_async_context(gmail.Sender(self.gmail.email, self.gmail.password))
+                send_fn = gmail_sender.send
+
+            lgr = await stack.enter_async_context(logger.init(send_fn))
 
             msg_bus = bus.build(lgr, http_client, tinkoff_client, mongo_db, stop_fn)
 
@@ -97,7 +95,6 @@ class Run(config.Cfg):
                 lgr,
                 msg_bus.run(),
                 server.run(lgr, self.server.url, msg_bus),
-                tg_bot.run(lgr, mongo_db, msg_bus),
             )
 
         return 1
