@@ -177,20 +177,23 @@ class ForecastHandler:
     def _send_new_recommendation(self, forecast: forecasts.Forecast) -> None:
         _, buy, sell = forecast.buy_sell()
 
-        match not sell:
-            case False:
-                self._lgr.warning(
-                    "New %d forecasts update - sell %s and buy %s",
-                    forecast.forecasts_count,
-                    sell[-1].ticker,
-                    buy[0].ticker,
-                )
-            case True:
-                self._lgr.warning(
-                    "New %d forecasts update - portfolio is close to optimal, allocate free cash to %s",
-                    forecast.forecasts_count,
-                    buy[0].ticker,
-                )
+        if not sell:
+            self._lgr.warning(
+                "New %d forecasts update - portfolio is close to optimal, allocate free cash to %s",
+                forecast.forecasts_count,
+                buy[0].ticker,
+            )
+
+            return
+
+        self._lgr.warning(f"New {forecast.forecasts_count} forecasts update has trade recommendations")
+
+        for pos in buy:
+            self._lgr.warning(f"Buy {pos.ticker} with weight {pos.weight:.2%}")
+
+        for pos in sell:
+            accounts = ", ".join(sorted(pos.accounts))
+            self._lgr.warning(f"Sell {pos.ticker} with weight {pos.weight:.2%} from {accounts}")
 
 
 def _median(*args: tuple[NDArray[np.double], ...]) -> list[NDArray[np.double]]:
