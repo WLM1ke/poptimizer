@@ -55,7 +55,6 @@ class Sender:
     async def _send_buffer(self) -> None:
         current_batch = self._buffer
         self._buffer = []
-        self._flush_scheduled = False
 
         if not current_batch:
             return
