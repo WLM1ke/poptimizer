@@ -19,6 +19,7 @@ def build_graph() -> graph.Graph:
         DataUpdated,
         [
             (events.BaseModelNotEvaluated, actions.EvaluateBaseModelAction(trainer)),
+            (events.BaseModelEvaluated, actions.EvaluateExistingModelAction(trainer)),
             (events.NewModelCreated, actions.EvaluateNewModelAction(trainer)),
         ],
     )
@@ -30,15 +31,23 @@ def build_graph() -> graph.Graph:
         ],
     )
     data_graph.add_state(
+        events.BaseModelEvaluated,
+        [
+            (events.NewModelCreated, actions.EvaluateNewModelAction(trainer)),
+            (events.BaseModelNotEvaluated, actions.EvaluateBaseModelAction(trainer)),
+            events.ModelRejected,
+        ],
+    )
+    data_graph.add_state(
         events.NewModelCreated,
         [
             (events.NewModelCreated, actions.EvaluateNewModelAction(trainer)),
             (events.BaseModelNotEvaluated, actions.EvaluateBaseModelAction(trainer)),
-            events.ModelDeleted,
+            events.ModelRejected,
         ],
     )
     data_graph.add_state(
-        events.ModelDeleted,
+        events.ModelRejected,
         [
             (DayNotChanged, actions.EvaluateExistingModelAction(trainer)),
             (DataUpdated, actions.InitEvolutionAction()),
@@ -49,7 +58,7 @@ def build_graph() -> graph.Graph:
         [
             (events.NewModelCreated, actions.EvaluateNewModelAction(trainer)),
             (events.BaseModelNotEvaluated, actions.EvaluateBaseModelAction(trainer)),
-            events.ModelDeleted,
+            events.ModelRejected,
         ],
     )
 

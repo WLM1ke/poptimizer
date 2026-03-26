@@ -44,19 +44,16 @@ class Repo:
     def __init__(self, mongo_db: MongoDatabase) -> None:
         self._db = mongo_db
 
-    async def next_model(self) -> domain.UID:
+    async def next_model_for_update(self) -> tuple[evolve.Model, uow.Version]:
         collection_name = evolve.Model.__name__
         collection = self._db[collection_name]
 
         async with _wrap_err("can't get next model"):
-            result = (
-                await collection.find_one(
-                    projection={"_id": 1},
-                    sort=[("day", pymongo.ASCENDING), ("train_load", pymongo.ASCENDING)],
-                )
-            ) or {}
+            doc = await collection.find_one(
+                sort=[("day", pymongo.ASCENDING), ("train_load", pymongo.ASCENDING)],
+            )
 
-            return domain.UID(result["_id"])
+            return self._create_obj(evolve.Model, doc)
 
     async def get_models(self, day: domain.Day) -> list[evolve.Model]:
         collection_name = evolve.Model.__name__

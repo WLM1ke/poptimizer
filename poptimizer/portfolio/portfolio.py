@@ -1,5 +1,5 @@
 from poptimizer.data.events import QuotesUpdated
-from poptimizer.evolve.events import ModelDeleted
+from poptimizer.evolve.events import ModelRejected
 from poptimizer.fsm import graph
 from poptimizer.portfolio import actions, events
 
@@ -11,7 +11,7 @@ def build_graph(tinkoff_client: actions.TinkoffClient) -> graph.Graph:
         events.PortfolioUpdated,
         [
             (QuotesUpdated, actions.RevaluePortfolioAction(), events.PortfolioUpdated),
-            (ModelDeleted, actions.CheckPositionsAction(tinkoff_client), events.PortfolioUpdated),
+            (ModelRejected, actions.CheckPositionsAction(tinkoff_client), events.PortfolioUpdated),
         ],
     )
 

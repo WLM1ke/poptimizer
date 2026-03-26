@@ -1,6 +1,6 @@
 from poptimizer.core import fsm
 from poptimizer.data import actions, events
-from poptimizer.evolve.events import ModelDeleted
+from poptimizer.evolve.events import ModelRejected
 from poptimizer.fsm import graph
 from poptimizer.portfolio.events import PortfolioRevalued
 
@@ -45,10 +45,10 @@ def build_graph(
     )
     data_graph.add_state(
         events.DataUpdated,
-        [(ModelDeleted, actions.CheckDayAction(memory_checker))],
+        [(ModelRejected, actions.CheckDayAction(memory_checker))],
     )
     data_graph.add_state(
-        ModelDeleted,
+        ModelRejected,
         [
             (events.QuotesUpdateRequired, actions.UpdateQuotesAction(data_client)),
             (events.DayNotChanged, None, events.DataUpdated),

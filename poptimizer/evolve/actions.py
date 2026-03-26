@@ -14,14 +14,11 @@ class InitEvolutionAction:
             port = await ctx.get(portfolio.Portfolio)
             evolution.init_day(port)
 
-        match len(evolution.alfa):
-            case 0:
+        match not evolution.alfa or not await ctx.count_models():
+            case True:
                 ctx.send(events.BaseModelNotEvaluated())
             case _:
-                model = await ctx.get(evolve.Model, evolution.next_model)
-                evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
-
-                ctx.send(events.NewModelCreated())
+                ctx.send(events.BaseModelEvaluated())
 
 
 class EvaluateBaseModelAction:
@@ -69,10 +66,9 @@ class EvaluateNewModelAction:
                 evolution.new_base(results)
                 evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
                 ctx.send(events.NewModelCreated())
-            case _ if await ctx.count_models() >= 1:
+            case _ if await ctx.count_models() != 0:
                 evolution.model_rejected()
-                evolution.next_model = await ctx.next_model()
-                ctx.send(events.ModelDeleted())
+                ctx.send(events.ModelRejected())
             case _:
                 evolution.model_rejected()
                 evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
@@ -85,7 +81,8 @@ class EvaluateExistingModelAction:
 
     async def __call__(self, ctx: fsm.Ctx) -> None:
         evolution = await ctx.get_for_update(evolve.Evolution)
-        model = await ctx.get_for_update(evolve.Model, evolution.next_model)
+        model = await ctx.next_model_for_update()
+        evolution.next_model = model.uid
 
         results = await self._trainer.update_model_metrics(
             ctx,
@@ -97,9 +94,8 @@ class EvaluateExistingModelAction:
             case evolve.TestResults() if await evolve.is_accepted(ctx, evolution, model, results):
                 evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
                 ctx.send(events.NewModelCreated())
-            case _ if await ctx.count_models() >= 1:
-                evolution.next_model = await ctx.next_model()
-                ctx.send(events.ModelDeleted())
+            case _ if await ctx.count_models() != 0:
+                ctx.send(events.ModelRejected())
             case _:
                 evolution.model_rejected()
                 evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
