@@ -50,8 +50,18 @@ class DataState(domain.Entity):
     outdated: bool = True
 
 
+class MigrationClient(Protocol):
+    async def migrate(self, ctx: fsm.Ctx, last_version: str) -> None: ...
+    async def ensure_dividends(self, ctx: fsm.Ctx) -> None: ...
+
+
 class CheckDataStatusAction:
+    def __init__(self, migration_client: MigrationClient) -> None:
+        self._migration_client = migration_client
+
     async def __call__(self, ctx: fsm.Ctx) -> None:
+        await self._migration_client.ensure_dividends(ctx)
+
         state = await ctx.get(DataState)
 
         event = events.DataUpdated(day=state.data_day)
@@ -63,10 +73,6 @@ class CheckDataStatusAction:
             event = events.VersionChanged()
 
         ctx.send(event)
-
-
-class MigrationClient(Protocol):
-    async def migrate(self, ctx: fsm.Ctx, last_version: str) -> None: ...
 
 
 class MigrateAction:

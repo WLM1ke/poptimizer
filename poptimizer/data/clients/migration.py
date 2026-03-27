@@ -12,19 +12,16 @@ _DUMP: Final = consts.ROOT / "dump" / "dividends.json"
 
 
 class Client:
-    async def migrate(self, ctx: fsm.Ctx, last_version: str) -> None:
-        await _migrate(ctx, last_version)
+    async def migrate(self, ctx: fsm.Ctx, last_version: str) -> None:  # noqa: ARG002
+        if _normalized_ver(last_version) < _normalized_ver("3.3.0"):
+            ...
 
-        match divs := [div async for div in ctx.get_all(raw.DivRaw)]:
+    async def ensure_dividends(self, ctx: fsm.Ctx) -> None:
+        match [div async for div in ctx.get_all(raw.DivRaw)]:
             case []:
                 await _restore_dividends(ctx)
-            case _:
+            case divs:
                 await _backup_dividends(ctx, divs)
-
-
-async def _migrate(ctx: fsm.Ctx, last_version: str) -> None:  # noqa: ARG001
-    if _normalized_ver(last_version) < _normalized_ver("3.3.0"):
-        ...
 
 
 async def _restore_dividends(ctx: fsm.Ctx) -> None:

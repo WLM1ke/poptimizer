@@ -14,7 +14,7 @@ def build_graph(
 
     data_graph.add_state(
         fsm.AppStopped,
-        [(fsm.AppStarted, actions.CheckDataStatusAction())],
+        [(fsm.AppStarted, actions.CheckDataStatusAction(migration_client))],
     )
     data_graph.add_state(
         fsm.AppStarted,
