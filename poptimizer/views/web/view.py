@@ -6,7 +6,6 @@ from typing import Final
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from poptimizer.views.utils import format_float, format_percent
 from poptimizer.views.web import models
 
 _YEAR_IN_SECONDS: Final = int(timedelta(days=365).total_seconds())
@@ -85,3 +84,19 @@ class View:
             text=self._env.get_template("components/alert.html").render(alert=alert),
             content_type="text/html",
         )
+
+
+def format_float(num: float, decimals: int | None = None) -> str:
+    match decimals:
+        case None if num % 1:
+            rez = f"{num:_}"
+        case None:
+            rez = f"{int(num):_}"
+        case _:
+            rez = f"{num:_.{decimals}f}"
+
+    return rez.replace("_", " ").replace(".", ",")
+
+
+def format_percent(num: float) -> str:
+    return f"{format_float(num * 100, 1)} %"
