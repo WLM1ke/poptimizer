@@ -1,15 +1,26 @@
+import asyncio
 import logging
 from collections.abc import AsyncIterator
 from types import TracebackType
-from typing import Any, Protocol, Self
+from typing import Any, Self
 
 from poptimizer.core import domain, fsm
 from poptimizer.evolve.evolution import evolve
 from poptimizer.fsm import uow
 
 
-class _Sender(Protocol):
-    def send(self, event: fsm.Event) -> None: ...
+class Dispatcher:
+    def __init__(self) -> None:
+        self._inboxes = list[asyncio.Queue[fsm.Event]()]()
+
+    def new_inbox(self) -> asyncio.Queue[fsm.Event]:
+        self._inboxes.append(asyncio.Queue[fsm.Event]())
+
+        return self._inboxes[-1]
+
+    def send(self, event: fsm.Event) -> None:
+        for inbox in self._inboxes:
+            inbox.put_nowait(event)
 
 
 class Tx:
@@ -17,11 +28,11 @@ class Tx:
         self,
         lgr: logging.Logger,
         repo: uow.Repo,
-        sender: _Sender,
+        dispatcher: Dispatcher,
     ) -> None:
         self._lgr = lgr
         self._repo = repo
-        self._sender = sender
+        self._dispatcher = dispatcher
 
         self._uow = uow.UOW(repo)
         self._events: list[fsm.Event] = []
@@ -39,7 +50,7 @@ class Tx:
             await self._uow.save()
 
             for event in self._events:
-                self._sender.send(event)
+                self._dispatcher.send(event)
                 self._lgr.info(f"Sending {event}")
 
     def info(self, msg: str, *args: Any) -> None:

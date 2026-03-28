@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Final
 
 from aiohttp import abc, web
 
+from poptimizer.fsm import tx, uow
 from poptimizer.views.web.web import App
 
 if TYPE_CHECKING:
@@ -36,9 +37,11 @@ def _content_length(response: web.StreamResponse) -> str:
     return f"{size:.0f}Tb"
 
 
-async def run(lgr: logging.Logger, url: HttpUrl) -> None:
+async def run(repo: uow.Repo, dispatcher: tx.Dispatcher, url: HttpUrl) -> None:
+    lgr = logging.getLogger("Server")
+
     runner = web.AppRunner(
-        App(),
+        App(lgr, repo, dispatcher),
         handle_signals=False,
         access_log_class=_AccessLogger,
     )
@@ -53,10 +56,10 @@ async def run(lgr: logging.Logger, url: HttpUrl) -> None:
 
     await site.start()
 
-    lgr.info("Server started on %s - press CTRL+C to quit", url)
+    lgr.info("Started on %s - press CTRL+C to quit", url)
 
     try:
         await asyncio.Event().wait()
     except asyncio.CancelledError:
         await runner.cleanup()
-        lgr.info("Server shutdown finished")
+        lgr.info("Shutdown finished")

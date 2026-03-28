@@ -12,25 +12,11 @@ _FIRST_RETRY: Final = timedelta(seconds=30)
 _BACKOFF_FACTOR: Final = 2
 
 
-class _Dispatcher:
-    def __init__(self) -> None:
-        self._inboxes = list[asyncio.Queue[fsm.Event]()]()
-
-    def new_inbox(self) -> asyncio.Queue[fsm.Event]:
-        self._inboxes.append(asyncio.Queue[fsm.Event]())
-
-        return self._inboxes[-1]
-
-    def send(self, event: fsm.Event) -> None:
-        for inbox in self._inboxes:
-            inbox.put_nowait(event)
-
-
 class FSMSystem:
-    def __init__(self, repo: uow.Repo) -> None:
+    def __init__(self, repo: uow.Repo, dispatcher: tx.Dispatcher) -> None:
         self._lgr = logging.getLogger(self.__class__.__name__)
         self._repo = repo
-        self._dispatcher = _Dispatcher()
+        self._dispatcher = dispatcher
         self._tg = asyncio.TaskGroup()
 
     async def __aenter__(self) -> Self:

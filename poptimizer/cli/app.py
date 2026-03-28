@@ -14,9 +14,10 @@ from poptimizer.data.clients import data as data_client
 from poptimizer.data.clients import memory, migration
 from poptimizer.evolve import evolve
 from poptimizer.forecast import forecast
-from poptimizer.fsm import system
+from poptimizer.fsm import system, tx
 from poptimizer.portfolio import portfolio
 from poptimizer.portfolio.clients import tinkoff
+from poptimizer.views.web import server
 
 
 class Run(config.Cfg):
@@ -67,7 +68,6 @@ class Run(config.Cfg):
         async with contextlib.AsyncExitStack() as stack:
             http_client = await stack.enter_async_context(http.client())
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
-            # tg_bot = await stack.enter_async_context(tg.Bot(self.tg.token, self.tg.chat_id))  # noqa: ERA001
             await stack.enter_async_context(logger.init())
 
             repo = mongo.Repo(mongo_db)
@@ -77,7 +77,9 @@ class Run(config.Cfg):
             if check_memory:
                 main_task = asyncio.current_task()
 
-            async with system.FSMSystem(repo) as fsm_system:
+            dispatcher = tx.Dispatcher()
+
+            async with system.FSMSystem(repo, dispatcher) as fsm_system:
                 fsm_system.start_fsm(
                     data.build_graph(
                         migration.Client(),
@@ -93,6 +95,7 @@ class Run(config.Cfg):
                 fsm_system.start_fsm(evolve.build_graph())
                 fsm_system.start_fsm(forecast.build_graph())
                 fsm_system.send(fsm.AppStarted())
+                await server.run(repo, dispatcher, self.server.url)
 
         return 0
 

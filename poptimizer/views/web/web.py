@@ -1,6 +1,9 @@
 import asyncio
+import functools
 import http
 import logging
+from collections.abc import Awaitable, Callable
+from datetime import date
 from pathlib import Path
 from typing import Any
 from urllib import parse
@@ -9,26 +12,119 @@ from aiohttp import typedefs, web
 from pydantic import TypeAdapter, ValidationError
 
 from poptimizer.core import domain, errors, fsm
-from poptimizer.core.domain import date
 from poptimizer.data.div import raw, status
 from poptimizer.forecast.forecasts import forecasts
+from poptimizer.fsm import tx, uow
 from poptimizer.portfolio.port import portfolio
-from poptimizer.use_cases import handler
-from poptimizer.views import utils
 from poptimizer.views.web import models, view
 
 
 class App(web.Application):
-    def __init__(self) -> None:
+    def __init__(self, lgr: logging.Logger, repo: uow.Repo, dispatcher: tx.Dispatcher) -> None:
         super().__init__(middlewares=[self._alerts_middleware])
-        self._lgr = logging.getLogger()
+        self._lgr = lgr
         self._render = view.View()
+        self._repo = repo
+        self._dispatcher = dispatcher
 
-        # Поменять логику
-        # for method, path, unwrapped_handler in routes:
-        #     self.add_routes([method(path, bus.wrap(unwrapped_handler))])  # noqa: ERA001
+        routes = (
+            (
+                web.get,
+                "/",
+                self._portfolio,
+            ),
+            (
+                web.get,
+                "/accounts/{account}",
+                self._account,
+            ),
+            (
+                web.patch,
+                "/accounts/{account}",
+                self._account_toggle_positions,
+            ),
+            (
+                web.patch,
+                "/accounts/{account}/{ticker}",
+                self._update_position,
+            ),
+            (
+                web.get,
+                "/forecast",
+                self._forecast,
+            ),
+            (
+                web.get,
+                "/optimization",
+                self._optimization,
+            ),
+            (
+                web.get,
+                "/dividends/{ticker}",
+                self._dividends,
+            ),
+            (
+                web.patch,
+                "/dividends/{ticker}/add",
+                self._dividend_add,
+            ),
+            (
+                web.patch,
+                "/dividends/{ticker}/remove",
+                self._dividend_remove,
+            ),
+            (
+                web.get,
+                "/settings",
+                self._settings,
+            ),
+            (
+                web.patch,
+                "/settings/hide_zero_positions",
+                self._hide_zero_positions,
+            ),
+            (
+                web.post,
+                "/accounts",
+                self._create_acount,
+            ),
+            (
+                web.delete,
+                "/accounts/{account}",
+                self._remove_acount,
+            ),
+            (
+                web.post,
+                "/exclude",
+                self._exclude_ticker,
+            ),
+            (
+                web.delete,
+                "/exclude/{ticker}",
+                self._not_exclude_ticker,
+            ),
+            (
+                web.patch,
+                "/theme/{theme}",
+                self._theme,
+            ),
+        )
+
+        for method, path, unwrapped_handler in routes:
+            self.add_routes([method(path, self._wrap(unwrapped_handler))])
 
         self.add_routes([web.get("/{path:.*}", self._static_file)])
+
+    def _wrap(
+        self,
+        handler: Callable[[fsm.Ctx, web.Request], Awaitable[web.StreamResponse]],
+    ) -> Callable[[web.Request], Awaitable[web.StreamResponse]]:
+        @functools.wraps(handler)
+        async def wrapped(req: web.Request) -> web.StreamResponse:
+            async with tx.Tx(self._lgr, self._repo, self._dispatcher) as ctx:
+                return await handler(ctx, req)
+
+        return wrapped
 
     async def _portfolio(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
         port = await ctx.get(portfolio.Portfolio)
@@ -47,11 +143,11 @@ class App(web.Application):
         ]
 
         card = models.Card(
-            upper="Date: ",  # {port.day}
-            main=f"Value: {utils.format_float(value, 0)} ₽",
-            row1=models.Row(label="Effective positions", value=f"{utils.format_float(port.effective_positions, 0)}"),
+            upper=f"Date: {port.day}",
+            main=f"Value: {view.format_float(value, 0)} ₽",
+            row1=models.Row(label="Effective positions", value=f"{view.format_float(port.effective_positions, 0)}"),
             row2=models.Row(label="Open positions", value=f"{port.open_positions()}"),
-            row3=models.Row(label="Total positions", value=f"{utils.format_float(len(port.positions), 0)}"),
+            row3=models.Row(label="Total positions", value=f"{view.format_float(len(port.positions), 0)}"),
         )
 
         main = models.Portfolio(
@@ -115,17 +211,18 @@ class App(web.Application):
 
     async def _forecast(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
-            # port_task = tg.create_task(ctx.get(portfolio.Portfolio))  # noqa: ERA001
+            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
             forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
 
-        forecast = forecasts_task.result()
+        forecast = await forecasts_task
+        port = await port_task
 
         outdated = ""
         poll = False
 
-        # if port_task.result().ver != forecast.portfolio_ver:
-        #     outdated = "outdated"  # noqa: ERA001
-        #     poll = True  # noqa: ERA001
+        if port.updated_at != forecast.portfolio_updated_at:
+            outdated = "outdated"
+            poll = True
 
         card = models.Card(
             upper=f"Date: {forecast.day} {outdated}",
@@ -149,17 +246,18 @@ class App(web.Application):
 
     async def _optimization(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
-            # port_task = tg.create_task(ctx.get(portfolio.Portfolio))  # noqa: ERA001
+            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
             forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
 
         forecast = forecasts_task.result()
+        port = await port_task
 
         outdated = ""
         poll = False
 
-        # if port_task.result().ver != forecast.portfolio_ver:
-        #     outdated = "outdated"  # noqa: ERA001
-        #     poll = True  # noqa: ERA001
+        if port.updated_at != forecast.portfolio_updated_at:
+            outdated = "outdated"
+            poll = True
 
         breakeven, buy, sell = forecast.buy_sell()
 
@@ -252,7 +350,7 @@ class App(web.Application):
             main,
         )
 
-    async def _hide_zero_positions(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:  # noqa: ARG002
+    async def _hide_zero_positions(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:  # noqa: ARG002
         cookie = models.Cookie.from_request(req)
         cookie.hide_zero_positions = (await req.post()).get("hide") is not None
 
@@ -329,7 +427,7 @@ class App(web.Application):
 
         return self._render.render_main(main)
 
-    async def _theme(self, ctx: handler.Ctx, req: web.Request) -> web.StreamResponse:  # noqa: ARG002
+    async def _theme(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:  # noqa: ARG002
         theme = req.match_info["theme"]
 
         if theme not in models.Theme:
@@ -465,11 +563,11 @@ def _prepare_account(
     ]
 
     card = models.Card(
-        upper="Date: ",  # {portfolio.day}
-        main=f"Value: {utils.format_float(value, 0)} ₽",
+        upper=f"Date: {portfolio.day}",
+        main=f"Value: {view.format_float(value, 0)} ₽",
         row1=models.Row(label="Share of portfolio", value=f"{view.format_percent(value / (portfolio.value() or 1))}"),
         row2=models.Row(label="Open positions", value=f"{portfolio.open_positions(account)}"),
-        row3=models.Row(label="Total positions", value=f"{utils.format_float(len(portfolio.positions), 0)}"),
+        row3=models.Row(label="Total positions", value=f"{view.format_float(len(portfolio.positions), 0)}"),
     )
 
     return models.Account(

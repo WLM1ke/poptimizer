@@ -6,7 +6,6 @@ from aiohttp import web
 from pydantic import BaseModel, Field
 
 from poptimizer.core import domain
-from poptimizer.core.domain import AccName, Ticker
 from poptimizer.forecast.forecasts import forecasts
 
 
@@ -32,8 +31,8 @@ class Layout(BaseModel):
     selected_path: str
     poll: bool
     theme: Theme
-    accounts: list[AccName]
-    dividends: list[Ticker]
+    accounts: list[domain.AccName]
+    dividends: list[domain.Ticker]
 
 
 class Page(StrEnum):
@@ -84,7 +83,7 @@ class Portfolio(BasePage):
 
 class Account(BasePage):
     page: Page = Page.ACCOUNT
-    account: AccName
+    account: domain.AccName
     card: Card
     value: float
     cash: int
@@ -151,5 +150,5 @@ class Dividends(BasePage):
 class Settings(BasePage):
     page: Page = Page.SETTINGS
     hide_accounts_zero_positions: bool = Field(default=False)
-    accounts: list[AccName]
+    accounts: list[domain.AccName]
     exclude: list[domain.Ticker]
