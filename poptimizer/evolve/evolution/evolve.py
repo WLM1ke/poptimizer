@@ -48,6 +48,7 @@ class Model(domain.Entity):
     day: domain.Day = consts.START_DAY
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
     train_load: NonNegativeInt = 0
+    test_days: NonNegativeInt = 0
     mean: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
     cov: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
 
