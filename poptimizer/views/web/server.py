@@ -43,6 +43,7 @@ async def run(repo: uow.Repo, dispatcher: tx.Dispatcher, url: HttpUrl) -> None:
     runner = web.AppRunner(
         App(lgr, repo, dispatcher),
         handle_signals=False,
+        access_log=lgr,
         access_log_class=_AccessLogger,
     )
 

@@ -10,7 +10,6 @@ class Reset(config.Cfg):
 
     async def cli_cmd(self) -> None:
         async with contextlib.AsyncExitStack() as stack:
-            lgr = await stack.enter_async_context(logger.init())
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
 
-            await safe.run(lgr, mongo.Repo(mongo_db).drop(raw.DivRaw))
+            await safe.run(logger.init(), mongo.Repo(mongo_db).drop(raw.DivRaw))

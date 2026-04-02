@@ -2,8 +2,7 @@ import asyncio
 import logging
 import random
 from datetime import timedelta
-from types import TracebackType
-from typing import Final, Self, TypeIs, get_type_hints
+from typing import Final, TypeIs, get_type_hints
 
 from poptimizer.core import errors, fsm
 from poptimizer.fsm import graph, tx, uow
@@ -17,27 +16,15 @@ class FSMSystem:
         self._lgr = logging.getLogger(self.__class__.__name__)
         self._repo = repo
         self._dispatcher = dispatcher
-        self._tg = asyncio.TaskGroup()
 
-    async def __aenter__(self) -> Self:
-        await self._tg.__aenter__()
+    async def start(self, *graphs: graph.Graph) -> None:
+        async with asyncio.TaskGroup() as tg:
+            for graph in graphs:
+                tg.create_task(self._loop(graph, self._dispatcher.new_inbox()))
 
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        traceback: TracebackType | None,
-    ) -> None:
-        return await self._tg.__aexit__(exc_type, exc_value, traceback)
-
-    def start_fsm(self, graph: graph.Graph) -> None:
-        self._tg.create_task(self._loop(graph, self._dispatcher.new_inbox()))
-
-    def send(self, event: fsm.Event) -> None:
-        self._lgr.info(f"Sending {event}")
-        self._dispatcher.send(event)
+            start_event = fsm.AppStarted()
+            self._lgr.info(f"Sending {start_event}")
+            self._dispatcher.send(start_event)
 
     async def _loop(
         self,

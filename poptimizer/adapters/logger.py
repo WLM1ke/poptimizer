@@ -1,53 +1,31 @@
-import asyncio
 import logging
 import sys
-import time
 import types
-from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import asynccontextmanager
+from collections.abc import Callable
 from copy import copy
 from typing import Final, Literal
 
 from aiogram import loggers
-from aiogram.exceptions import AiogramError
 
-_TELEGRAM_LOGGER_NAME: Final = "telegram"
-_IGNORE_LOGGER_NAMES: Final = (_TELEGRAM_LOGGER_NAME, loggers.dispatcher.name)
-_TELEGRAM_MAX_RPS: Final = 1
+from poptimizer.adapters import gmail
 
-_LOGGER_NAME_SIZE: Final = 11
+_IGNORE_LOGGER_NAMES: Final = (gmail.LOGGER_NAME, loggers.dispatcher.name)
+_LOGGER_NAME_SIZE: Final = 13
 
 
-class _TelegramHandler(logging.Handler):
+class _GmailHandler(logging.Handler):
     def __init__(
         self,
-        tg: asyncio.TaskGroup,
-        send_fn: Callable[[str], Awaitable[None]],
+        send_fn: Callable[[str], None],
     ) -> None:
         super().__init__(logging.WARNING)
-        self._tg = tg
         self._send_fn = send_fn
-        self._next_send = time.monotonic()
-        self._lgr = logging.getLogger(name=_TELEGRAM_LOGGER_NAME)
 
     def filter(self, record: logging.LogRecord) -> bool:
         return record.name not in _IGNORE_LOGGER_NAMES
 
     def emit(self, record: logging.LogRecord) -> None:
-        self._tg.create_task(self._emit(record.getMessage()))
-
-    async def _emit(self, msg: str) -> None:
-        await self._wait_to_send()
-
-        try:
-            await self._send_fn(msg)
-        except (TimeoutError, AiogramError) as err:
-            self._lgr.warning("can't send Telegram message - %s", err)
-
-    async def _wait_to_send(self) -> None:
-        cur = time.monotonic()
-        self._next_send = max(cur, self._next_send + 1.0 / _TELEGRAM_MAX_RPS)
-        await asyncio.sleep(self._next_send - cur)
+        self._send_fn(record.getMessage())
 
 
 class _ColorFormatter(logging.Formatter):
@@ -63,7 +41,7 @@ class _ColorFormatter(logging.Formatter):
 
     def __init__(
         self,
-        fmt: str = "{asctime} {levelname} {name}: {message}",
+        fmt: str = "{asctime} {levelname} {name} {message}",
         datefmt: str = "%Y-%m-%d %H:%M:%S",
         style: Literal["%", "{", "$"] = "{",
     ) -> None:
@@ -72,22 +50,18 @@ class _ColorFormatter(logging.Formatter):
     def formatMessage(self, record: logging.LogRecord) -> str:  # noqa: N802
         record = copy(record)
         record.levelname = self.levels[record.levelno]
+        record.name = f"{record.name}:".ljust(_LOGGER_NAME_SIZE)
 
         return super().formatMessage(record)
 
 
-@asynccontextmanager
-async def init(
-    send_fn: Callable[[str], Awaitable[None]] | None = None,
-) -> AsyncIterator[logging.Logger]:
+def init(send_fn: Callable[[str], None] | None = None) -> logging.Logger:
     color_handler = logging.StreamHandler(sys.stdout)
     color_handler.setFormatter(_ColorFormatter())
     handlers: list[logging.Handler] = [color_handler]
 
-    tg = asyncio.TaskGroup()
-
     if send_fn is not None:
-        handlers.append(_TelegramHandler(tg, send_fn))
+        handlers.append(_GmailHandler(send_fn))
 
     logging.basicConfig(
         level=logging.INFO,
@@ -95,5 +69,4 @@ async def init(
     )
     logging.getLogger("pymongo").setLevel(logging.CRITICAL)
 
-    async with tg:
-        yield logging.getLogger("App")
+    return logging.getLogger("App")

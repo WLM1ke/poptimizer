@@ -1,5 +1,3 @@
-import contextlib
-
 import keyring
 from pydantic import BaseModel, Field
 from pydantic_settings import CliApp, CliPositionalArg, CliSubCommand
@@ -15,11 +13,10 @@ class Save(BaseModel):
     value: CliPositionalArg[str] = Field(description="Secret value to set")
 
     async def cli_cmd(self) -> None:
-        async with contextlib.AsyncExitStack() as stack:
-            lgr = await stack.enter_async_context(logger.init())
+        lgr = logger.init()
 
-            keyring.set_password(config.KEYCHAIN_APP, self.key, self.value)
-            lgr.info(f'Keychain secret {self.key} saved - use "{config.KEYCHAIN_PREFIX}{self.key}" in cfg.yaml')
+        keyring.set_password(config.KEYCHAIN_APP, self.key, self.value)
+        lgr.info(f'Keychain secret {self.key} saved - use "{config.KEYCHAIN_PREFIX}{self.key}" in cfg.yaml')
 
 
 class Get(BaseModel):
@@ -28,16 +25,15 @@ class Get(BaseModel):
     key: CliPositionalArg[str] = Field(description="Secret name to get")
 
     async def cli_cmd(self) -> None:
-        async with contextlib.AsyncExitStack() as stack:
-            lgr = await stack.enter_async_context(logger.init())
+        lgr = logger.init()
 
-            secret = keyring.get_password(config.KEYCHAIN_APP, self.key)
+        secret = keyring.get_password(config.KEYCHAIN_APP, self.key)
 
-            match secret:
-                case None:
-                    lgr.error(f"Keychain secret {self.key} not found")
-                case _:
-                    lgr.info(f"Keychain secret {self.key} is {secret}")
+        match secret:
+            case None:
+                lgr.error(f"Keychain secret {self.key} not found")
+            case _:
+                lgr.info(f"Keychain secret {self.key} is {secret}")
 
 
 class Delete(BaseModel):
@@ -46,17 +42,16 @@ class Delete(BaseModel):
     key: CliPositionalArg[str] = Field(description="Secret name to delete")
 
     async def cli_cmd(self) -> None:
-        async with contextlib.AsyncExitStack() as stack:
-            lgr = await stack.enter_async_context(logger.init())
+        lgr = logger.init()
 
-            secret = keyring.get_password(config.KEYCHAIN_APP, self.key)
+        secret = keyring.get_password(config.KEYCHAIN_APP, self.key)
 
-            match secret:
-                case None:
-                    lgr.error(f"Keychain secret {self.key} not found")
-                case _:
-                    keyring.delete_password(config.KEYCHAIN_APP, self.key)
-                    lgr.info(f"Keychain secret {self.key} is deleted")
+        match secret:
+            case None:
+                lgr.error(f"Keychain secret {self.key} not found")
+            case _:
+                keyring.delete_password(config.KEYCHAIN_APP, self.key)
+                lgr.info(f"Keychain secret {self.key} is deleted")
 
 
 class Keychain(BaseModel):

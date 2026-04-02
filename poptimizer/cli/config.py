@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Final
 
 import keyring
-from pydantic import BaseModel, Field, HttpUrl, MongoDsn
+from pydantic import BaseModel, EmailStr, Field, HttpUrl, MongoDsn
 from pydantic_settings import (
     BaseSettings,
     CliSuppress,
@@ -63,9 +63,9 @@ class _KeychainYamlSource(YamlConfigSettingsSource):
         return self._replace_from_keychain(yaml_data)
 
 
-class Telegram(BaseModel):
-    token: str = ""
-    chat_id: int = 0
+class Gmail(BaseModel):
+    email: EmailStr | None = None
+    password: str = ""
 
 
 class Server(BaseModel):
@@ -88,7 +88,7 @@ class Brokers(BaseModel):
 
 
 class Cfg(BaseSettings):
-    tg: CliSuppress[Telegram] = Telegram()
+    gmail: CliSuppress[Gmail] = Gmail()
     server: CliSuppress[Server] = Server()
     mongo: CliSuppress[Mongo] = Mongo()
     brokers: CliSuppress[Brokers] = Brokers()

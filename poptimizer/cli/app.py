@@ -2,13 +2,13 @@ import asyncio
 import contextlib
 import multiprocessing as mp
 import sys
+from collections.abc import Callable, Coroutine
 
 import torch
 import uvloop
 
-from poptimizer.adapters import http, logger, mongo
-from poptimizer.cli import config
-from poptimizer.core import fsm
+from poptimizer.adapters import gmail, http, logger, mongo
+from poptimizer.cli import config, safe
 from poptimizer.data import data
 from poptimizer.data.clients import data as data_client
 from poptimizer.data.clients import memory, migration
@@ -68,7 +68,15 @@ class Run(config.Cfg):
         async with contextlib.AsyncExitStack() as stack:
             http_client = await stack.enter_async_context(http.client())
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
-            await stack.enter_async_context(logger.init())
+
+            send_fn: Callable[[str], None] | None = None
+            coro: list[Coroutine[None, None, None]] = []
+            if self.gmail.email and self.gmail.password:
+                gmail_sender = await stack.enter_async_context(gmail.Sender(self.gmail.email, self.gmail.password))
+                send_fn = gmail_sender.send
+                coro.append(gmail_sender.run())
+
+            lgr = logger.init(send_fn)
 
             repo = mongo.Repo(mongo_db)
 
@@ -79,23 +87,24 @@ class Run(config.Cfg):
 
             dispatcher = tx.Dispatcher()
 
-            async with system.FSMSystem(repo, dispatcher) as fsm_system:
-                fsm_system.start_fsm(
+            fsm_system = system.FSMSystem(repo, dispatcher)
+            coro.append(
+                fsm_system.start(
                     data.build_graph(
                         migration.Client(),
                         data_client.Client(http_client),
                         memory.Checker(main_task),
-                    )
-                )
-                fsm_system.start_fsm(
+                    ),
                     portfolio.build_graph(
                         tinkoff.Client(http_client, self.brokers.tinkoff),
-                    )
+                    ),
+                    evolve.build_graph(),
+                    forecast.build_graph(),
                 )
-                fsm_system.start_fsm(evolve.build_graph())
-                fsm_system.start_fsm(forecast.build_graph())
-                fsm_system.send(fsm.AppStarted())
-                await server.run(repo, dispatcher, self.server.url)
+            )
+            coro.append(server.run(repo, dispatcher, self.server.url))
+
+            await safe.run(lgr, *coro)
 
         return 0
 

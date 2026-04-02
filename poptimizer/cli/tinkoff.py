@@ -16,11 +16,10 @@ class Tinkoff(BaseModel):
 
     async def cli_cmd(self) -> None:
         async with contextlib.AsyncExitStack() as stack:
-            lgr = await stack.enter_async_context(logger.init())
             http_client = await stack.enter_async_context(http.client())
             tinkoff_client = tinkoff.Client(http_client, [])
 
-            await safe.run(lgr, self._run(lgr, tinkoff_client))
+            await safe.run(logger.init(), self._run(logger.init(), tinkoff_client))
 
     async def _run(self, lgr: logging.Logger, tinkoff_client: tinkoff.Client) -> None:
         accounts = await tinkoff_client.get_accounts(self.token)
