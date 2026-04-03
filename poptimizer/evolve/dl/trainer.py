@@ -81,16 +81,11 @@ class Trainer:
         evolution: evolve.Evolution,
         model: evolve.Model,
     ) -> None:
-        if not model.test_days:
-            return
-
-        if evolution.test_days > model.test_days + 1:
-            evolution.test_days = model.test_days + 1
-            ctx.warning("Test days decreased - %d", evolution.test_days)
-
         if evolution.test_days == model.test_days:
             evolution.test_days += 1
             ctx.warning("Test days increased - %d", evolution.test_days)
+
+        model.test_days = evolution.test_days
 
     async def update_model_metrics(
         self,
@@ -165,7 +160,7 @@ class Trainer:
         days = datasets.Days(
             history=cfg.batch.history_days,
             forecast=evolution.forecast_days,
-            test=evolution.test_days,
+            test=model.test_days,
         )
 
         data, emb_size, emb_seq_size = await self._builder.build(
@@ -211,7 +206,6 @@ class Trainer:
 
         model.mean, model.cov = self._forecast(net, forecast_days, data)
         model.train_load += int((1 + time.monotonic() - start) ** 0.5)
-        model.test_days = len(test_results.alfa)
 
         return test_results
 
