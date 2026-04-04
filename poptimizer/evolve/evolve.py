@@ -41,7 +41,7 @@ def build_graph() -> graph.Graph:
     data_graph.add_state(
         events.NewModelCreated,
         [
-            (events.NewModelCreated, actions.EvaluateNewModelAction(trainer)),
+            (events.BaseModelEvaluated, actions.EvaluateExistingModelAction(trainer)),
             (events.BaseModelNotEvaluated, actions.EvaluateBaseModelAction(trainer)),
             events.ModelRejected,
         ],

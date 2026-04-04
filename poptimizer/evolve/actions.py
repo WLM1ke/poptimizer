@@ -65,7 +65,7 @@ class EvaluateNewModelAction:
                 evolution.model_accepted()
                 evolution.new_base(results)
                 evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
-                ctx.send(events.NewModelCreated())
+                ctx.send(events.BaseModelEvaluated())
             case _ if await ctx.count_models() != 0:
                 evolution.model_rejected()
                 ctx.send(events.ModelRejected())
