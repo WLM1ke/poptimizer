@@ -50,7 +50,10 @@ class Repo:
 
         async with _wrap_err("can't get next model"):
             doc = await collection.find_one(
-                sort=[("train_load", pymongo.ASCENDING)],
+                sort=[
+                    ("day", pymongo.ASCENDING),
+                    ("train_load", pymongo.ASCENDING),
+                ],
             )
 
             return self._create_obj(evolve.Model, doc)
