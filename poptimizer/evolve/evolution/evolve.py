@@ -156,13 +156,14 @@ async def is_accepted(
     llh_p = _probability(results.llh, evolution.llh)
     ctx.info(f"Alfa probability - {alfa_p:.2%} / LLH probability - {llh_p:.2%}")
 
+    count = await ctx.count_models()
+
     if llh_p < consts.P_VALUE / 2:
         ctx.info(f"{model} rejected with {results} - low llh probability")
-        await ctx.delete(model)
+        if count > evolution.test_days:
+            await ctx.delete(model)
 
         return False
-
-    count = await ctx.count_models()
 
     if alfa_p < consts.P_VALUE / 2:
         ctx.info(f"{model} rejected with {results} - low alfa probability")
