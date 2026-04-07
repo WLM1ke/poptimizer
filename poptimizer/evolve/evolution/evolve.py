@@ -37,6 +37,9 @@ class TestResults(BaseModel):
     llh: list[float]
     ret: float
 
+    def is_low_return(self) -> bool:
+        return self.ret < 0 or statistics.mean(self.alfa) < 0
+
     def __str__(self) -> str:
         alfa = statistics.mean(self.alfa)
         llh = statistics.mean(self.llh)
@@ -165,7 +168,7 @@ async def is_accepted(
 
         return False
 
-    if alfa_p < consts.P_VALUE / 2:
+    if results.is_low_return() and alfa_p < consts.P_VALUE / 2:
         ctx.info(f"{model} rejected with {results} - low alfa probability")
         if count > evolution.test_days:
             await ctx.delete(model)
