@@ -1,7 +1,7 @@
 import asyncio
 import collections
 import itertools
-import time
+import statistics
 from typing import Literal, cast
 
 import torch
@@ -142,7 +142,7 @@ class Trainer:
             evolution.minimal_returns_days = err.minimal_returns_days
             ctx.warning("Minimal return days increased - %d", evolution.minimal_returns_days)
 
-        if evolution.test_days == 1:
+        if evolution.test_days == evolve.MINIMAL_TEST_DAYS:
             return False
 
         evolution.test_days -= 1
@@ -197,15 +197,13 @@ class Trainer:
         cfg: Cfg,
         forecast_days: int,
     ) -> evolve.TestResults:
-        start = time.monotonic()
-
         net = self._prepare_net(cfg, emb_size, emb_seq_size)
         self._train(ctx, net, cfg.optimizer, cfg.scheduler, data, cfg.batch.size)
 
         test_results = self._test(ctx, net, cfg, forecast_days, data)
 
         model.mean, model.cov = self._forecast(net, forecast_days, data)
-        model.train_load += int((1 + time.monotonic() - start) ** 0.5)
+        model.llh = statistics.mean(test_results.llh)
 
         return test_results
 
@@ -289,8 +287,8 @@ class Trainer:
         with torch.inference_mode():
             net.eval()
 
-            alfa: list[float] = []
             llh: list[float] = []
+            alfa = 0
             ret = 0
 
             for batch in data_loaders.test(data):
@@ -314,11 +312,11 @@ class Trainer:
 
                 ctx.info("%s / LLH = %7.4f", rez, loss)
 
-                alfa.append(rez.ret - rez.avr)
                 llh.append(loss)
+                alfa += rez.ret - rez.avr
                 ret += rez.ret
 
-        return evolve.TestResults(alfa=alfa, llh=llh, ret=ret / len(alfa))
+        return evolve.TestResults(llh=llh, alfa=alfa / len(llh), ret=ret / len(llh))
 
     def _forecast(
         self,

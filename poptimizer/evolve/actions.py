@@ -14,7 +14,7 @@ class InitEvolutionAction:
             port = await ctx.get(portfolio.Portfolio)
             evolution.init_day(port)
 
-        match not evolution.alfa or not await ctx.count_models():
+        match not evolution.llh or not await ctx.count_models():
             case True:
                 ctx.send(events.BaseModelNotEvaluated())
             case _:
@@ -64,7 +64,8 @@ class EvaluateNewModelAction:
             case evolve.TestResults() if await evolve.is_accepted(ctx, evolution, model, results):
                 evolution.model_accepted()
                 evolution.new_base(results)
-                ctx.send(events.BaseModelEvaluated())
+                evolution.next_model = await evolve.make_new_model(ctx, evolution, model)
+                ctx.send(events.NewModelCreated())
             case _ if await ctx.count_models() != 0:
                 evolution.model_rejected()
                 ctx.send(events.ModelRejected())

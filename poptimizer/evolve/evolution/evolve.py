@@ -26,6 +26,7 @@ _INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.Days(
 ).minimal_returns_days
 _PARENT_COUNT: Final = 2
 _OPTIMAL_ACCEPTANCE_RATE: Final = 0.234
+MINIMAL_TEST_DAYS: Final = 2
 
 
 def random_model_uid() -> domain.UID:
@@ -33,24 +34,23 @@ def random_model_uid() -> domain.UID:
 
 
 class TestResults(BaseModel):
-    alfa: list[float]
-    llh: list[float]
-    ret: float
+    llh: list[FiniteFloat]
+    alfa: FiniteFloat
+    ret: FiniteFloat
 
     def is_low_return(self) -> bool:
-        return self.ret < 0 or statistics.mean(self.alfa) < 0
+        return min(self.alfa, self.ret) < 0
 
     def __str__(self) -> str:
-        alfa = statistics.mean(self.alfa)
         llh = statistics.mean(self.llh)
 
-        return f"{self.__class__.__name__}(alfa={alfa:.2%}, ret={self.ret:.2%}, llh={llh:.2f})"
+        return f"{self.__class__.__name__}(alfa={self.alfa:.2%}, ret={self.ret:.2%}, llh={llh:.2f})"
 
 
 class Model(domain.Entity):
     day: domain.Day = consts.START_DAY
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
-    train_load: NonNegativeInt = 0
+    llh: FiniteFloat = 0
     test_days: NonNegativeInt = 0
     mean: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
     cov: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
@@ -74,7 +74,7 @@ class Model(domain.Entity):
         risk_tol = self.genotype.risk.risk_tolerance
         history = self.genotype.batch.history_days
 
-        return f"{self.__class__.__name__}(risk_aversion={1 - risk_tol:.2%}, history={history:.2f})"
+        return f"{self.__class__.__name__}(risk_aversion={1 - risk_tol:.2%}, history={history:.2f}, llh={self.llh:.2f})"
 
     @cached_property
     def genotype(self) -> genotype.Genotype:
@@ -96,20 +96,13 @@ class Evolution(domain.Entity):
     day: domain.Day = consts.START_DAY
     tickers: domain.Tickers = Field(default_factory=tuple)
     forecast_days: PositiveInt = 1
-    test_days: PositiveInt = 1
+    test_days: int = Field(2, ge=MINIMAL_TEST_DAYS)
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
     step: PositiveInt = 1
-    alfa: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
+    alfa: FiniteFloat = 0
     llh: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
     next_model: domain.UID = Field(default_factory=random_model_uid, min_length=1)
     radius: PositiveFloat = Field(default=1, ge=1)
-
-    @model_validator(mode="after")
-    def _match_length(self) -> Self:
-        if len(self.llh) != len(self.alfa):
-            raise ValueError("alfas and llh mismatch")
-
-        return self
 
     def init_day(
         self,
@@ -118,7 +111,7 @@ class Evolution(domain.Entity):
         self.day = port.day
         self.tickers = port.tickers
         self.forecast_days = port.forecast_days
-        self.alfa = []
+        self.alfa = 0
         self.llh = []
         self.step = 1
 
@@ -144,7 +137,6 @@ async def make_new_model(ctx: fsm.Ctx, evolution: Evolution, model: Model) -> do
 
     new_model = await ctx.get_for_update(Model, random_model_uid())
     new_model.genes = model.child_genes(parents[0], parents[1], 1 / evolution.radius)
-    new_model.train_load = model.train_load
 
     return new_model.uid
 
@@ -155,21 +147,20 @@ async def is_accepted(
     model: Model,
     results: TestResults,
 ) -> bool:
-    alfa_p = _probability(results.alfa, evolution.alfa)
-    llh_p = _probability(results.llh, evolution.llh)
-    ctx.info(f"Alfa probability - {alfa_p:.2%} / LLH probability - {llh_p:.2%}")
-
     count = await ctx.count_models()
 
-    if llh_p < consts.P_VALUE / 2:
-        ctx.info(f"{model} rejected with {results} - low llh probability")
+    if results.is_low_return() and results.alfa < evolution.alfa:
+        ctx.info(f"{model} rejected with {results} - low alfa")
         if count > evolution.test_days:
             await ctx.delete(model)
 
         return False
 
-    if results.is_low_return() and alfa_p < consts.P_VALUE / 2:
-        ctx.info(f"{model} rejected with {results} - low alfa probability")
+    llh_p = _probability(results.llh, evolution.llh)
+    ctx.info(f"LLH probability - {llh_p:.2%}")
+
+    if llh_p < consts.P_VALUE:
+        ctx.info(f"{model} rejected with {results} - low llh probability")
         if count > evolution.test_days:
             await ctx.delete(model)
 
@@ -181,10 +172,12 @@ async def is_accepted(
 
 
 def _probability(target: list[float], base: list[float]) -> float:
-    alfa, beta = 1, 1
-    for t, b in zip(target, base, strict=False):
-        sign = t > b
-        alfa += sign
-        beta += 1 - sign
 
-    return cast("float", stats.beta(alfa, beta).sf(0.5))  # type: ignore[reportUnknownMemberType]
+    return cast(
+        "float",
+        stats.ttest_1samp(  # type: ignore[reportUnknownMemberType]
+            [t - b for t, b in zip(target, base, strict=False)],
+            0,
+            alternative="less",
+        ).pvalue,  # pyright: ignore[reportAttributeAccessIssue]
+    )
