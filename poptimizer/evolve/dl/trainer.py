@@ -75,18 +75,6 @@ class Trainer:
         self._device = _get_device()
         self._stopping = False
 
-    def _adjust_test_days(
-        self,
-        ctx: fsm.Ctx,
-        evolution: evolve.Evolution,
-        model: evolve.Model,
-    ) -> None:
-        if evolution.test_days == model.test_days:
-            evolution.test_days += 1
-            ctx.warning("Test days increased - %d", evolution.test_days)
-
-        model.test_days = evolution.test_days
-
     async def update_model_metrics(
         self,
         ctx: fsm.Ctx,
@@ -97,7 +85,7 @@ class Trainer:
         if model.day != evolution.day:
             prefix = "outdated "
 
-        new = not model.test_days
+        new = not model.mean
         if new:
             prefix = "new "
 
@@ -113,7 +101,6 @@ class Trainer:
 
         evolution.step += 1
         model.day = evolution.day
-        self._adjust_test_days(ctx, evolution, model)
 
         retry = True
 
@@ -160,7 +147,7 @@ class Trainer:
         days = datasets.Days(
             history=cfg.batch.history_days,
             forecast=evolution.forecast_days,
-            test=model.test_days,
+            test=evolution.test_days,
         )
 
         data, emb_size, emb_seq_size = await self._builder.build(
@@ -203,6 +190,7 @@ class Trainer:
         test_results = self._test(ctx, net, cfg, forecast_days, data)
 
         model.mean, model.cov = self._forecast(net, forecast_days, data)
+        model.negative_alfa = min(0, test_results.alfa, test_results.ret)
         model.llh = statistics.mean(test_results.llh)
 
         return test_results

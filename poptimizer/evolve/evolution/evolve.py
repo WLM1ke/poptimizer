@@ -7,7 +7,7 @@ from pydantic import (
     BaseModel,
     Field,
     FiniteFloat,
-    NonNegativeInt,
+    NonPositiveFloat,
     PositiveFloat,
     PositiveInt,
     model_validator,
@@ -50,8 +50,8 @@ class TestResults(BaseModel):
 class Model(domain.Entity):
     day: domain.Day = consts.START_DAY
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
+    negative_alfa: NonPositiveFloat = 0
     llh: FiniteFloat = 0
-    test_days: NonNegativeInt = 0
     mean: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
     cov: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
 
@@ -147,26 +147,19 @@ async def is_accepted(
     model: Model,
     results: TestResults,
 ) -> bool:
-    count = await ctx.count_models()
-
     if results.is_low_return() and results.alfa < evolution.alfa:
         ctx.info(f"{model} rejected with {results} - low alfa")
-        if count > evolution.test_days:
-            await ctx.delete(model)
 
         return False
 
     llh_p = _probability(results.llh, evolution.llh)
-    ctx.info(f"LLH probability - {llh_p:.2%}")
 
     if llh_p < consts.P_VALUE:
-        ctx.info(f"{model} rejected with {results} - low llh probability")
-        if count > evolution.test_days:
-            await ctx.delete(model)
+        ctx.info(f"{model} rejected with {results} - low llh probability {llh_p:.2%}")
 
         return False
 
-    ctx.info(f"{model} accepted with {results}")
+    ctx.info(f"{model} accepted with {results} - high llh probability {llh_p:.2%}")
 
     return True
 

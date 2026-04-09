@@ -58,6 +58,19 @@ class Repo:
 
             return self._create_obj(evolve.Model, doc)
 
+    async def delete_worst_model(self) -> None:
+        collection_name = evolve.Model.__name__
+        collection = self._db[collection_name]
+
+        async with _wrap_err("can't get next model"):
+            await collection.find_one_and_delete(
+                {},
+                sort=[
+                    ("negative_alfa", pymongo.ASCENDING),
+                    ("llh", pymongo.ASCENDING),
+                ],
+            )
+
     async def get_models(self, day: domain.Day) -> list[evolve.Model]:
         collection_name = evolve.Model.__name__
         collection = self._db[collection_name]

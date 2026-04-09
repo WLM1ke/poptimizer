@@ -85,6 +85,9 @@ class Tx:
     async def next_model_for_update(self) -> evolve.Model:
         return await self._uow.next_model_for_update()
 
+    async def delete_worst_model(self) -> None:
+        await self._uow.delete_worst_model()
+
     async def get_models(self, day: domain.Day) -> list[evolve.Model]:
         return await self._uow.get_models(day)
 

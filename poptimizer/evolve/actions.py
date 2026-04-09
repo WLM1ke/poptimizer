@@ -81,6 +81,11 @@ class EvaluateExistingModelAction:
 
     async def __call__(self, ctx: fsm.Ctx) -> None:
         evolution = await ctx.get_for_update(evolve.Evolution)
+
+        if await ctx.count_models() > evolution.test_days:
+            await ctx.delete_worst_model()
+            ctx.info("Deleting worst model")
+
         model = await ctx.next_model_for_update()
         evolution.next_model = model.uid
 
