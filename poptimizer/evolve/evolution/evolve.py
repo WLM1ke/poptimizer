@@ -96,7 +96,7 @@ class Evolution(domain.Entity):
     day: domain.Day = consts.START_DAY
     tickers: domain.Tickers = Field(default_factory=tuple)
     forecast_days: PositiveInt = 1
-    test_days: int = Field(2, ge=MINIMAL_TEST_DAYS)
+    test_days: float = Field(2, ge=MINIMAL_TEST_DAYS)
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
     step: PositiveInt = 1
     alfa: FiniteFloat = 0
@@ -126,8 +126,8 @@ class Evolution(domain.Entity):
         self.radius -= (1 - _OPTIMAL_ACCEPTANCE_RATE) / _OPTIMAL_ACCEPTANCE_RATE / self.test_days
 
         if self.radius < 1:
+            self.test_days += 1 - self.radius
             self.radius = 1
-            self.test_days += 1
 
 
 async def make_new_model(ctx: fsm.Ctx, evolution: Evolution, model: Model) -> domain.UID:
@@ -149,8 +149,11 @@ async def is_accepted(
 ) -> bool:
     if results.is_low_return() and results.alfa < evolution.alfa:
         ctx.info(f"{model} rejected with {results} - low alfa")
+        evolution.test_days += 1
 
         return False
+
+    evolution.test_days = max(MINIMAL_TEST_DAYS, evolution.test_days - consts.P_VALUE / (1 - consts.P_VALUE))
 
     llh_p = _probability(results.llh, evolution.llh)
 

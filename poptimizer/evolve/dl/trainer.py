@@ -132,8 +132,8 @@ class Trainer:
         if evolution.test_days == evolve.MINIMAL_TEST_DAYS:
             return False
 
-        evolution.test_days -= 1
-        ctx.warning("Test days reset - %d", evolution.test_days)
+        evolution.test_days = max(evolve.MINIMAL_TEST_DAYS, evolution.test_days - 1)
+        ctx.warning("Test days reset - %d", int(evolution.test_days))
 
         return True
 
@@ -147,7 +147,7 @@ class Trainer:
         days = datasets.Days(
             history=cfg.batch.history_days,
             forecast=evolution.forecast_days,
-            test=evolution.test_days,
+            test=int(evolution.test_days),
         )
 
         data, emb_size, emb_seq_size = await self._builder.build(
