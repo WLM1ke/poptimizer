@@ -75,8 +75,6 @@ class Repo:
     ) -> tuple[evolve.Model, bool]:
         min_llh = docs[0]
         max_llh = docs[0]
-        min_alfa = docs[0]
-        max_alfa = docs[0]
 
         for doc in docs:
             if doc["llh_mean"] < min_llh["llh_mean"]:
@@ -84,12 +82,6 @@ class Repo:
 
             if doc["llh_mean"] > max_llh["llh_mean"]:
                 max_llh = doc
-
-            if doc["alfa_mean"] < min_alfa["alfa_mean"]:
-                min_alfa = doc
-
-            if doc["alfa_mean"] > max_alfa["alfa_mean"]:
-                max_alfa = doc
 
         selected = max(
             (
@@ -101,16 +93,6 @@ class Repo:
                 max_llh,
                 True,
                 (max_llh["llh_mean"] - target["llh_mean"]) / (max_llh["llh_mean"] - min_llh["llh_mean"]),
-            ),
-            (
-                min_alfa,
-                False,
-                (target["alfa_mean"] - min_alfa["alfa_mean"]) / (max_alfa["alfa_mean"] - min_alfa["alfa_mean"]),
-            ),
-            (
-                max_alfa,
-                True,
-                (max_alfa["alfa_mean"] - target["alfa_mean"]) / (max_alfa["alfa_mean"] - min_alfa["alfa_mean"]),
             ),
             key=lambda x: x[2],
         )
