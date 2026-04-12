@@ -7,7 +7,7 @@ from pydantic import (
     BaseModel,
     Field,
     FiniteFloat,
-    NonPositiveFloat,
+    NonNegativeFloat,
     PositiveFloat,
     PositiveInt,
     model_validator,
@@ -50,8 +50,9 @@ class TestResults(BaseModel):
 class Model(domain.Entity):
     day: domain.Day = consts.START_DAY
     genes: genetics.Genes = Field(default_factory=lambda: genotype.Genotype.model_validate({}).genes)
-    negative_alfa: NonPositiveFloat = 0
+    alfa: FiniteFloat = 0
     llh: FiniteFloat = 0
+    duration: NonNegativeFloat = 0
     mean: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
     cov: list[list[FiniteFloat]] = Field(default_factory=list[list[FiniteFloat]])
 
@@ -96,12 +97,13 @@ class Evolution(domain.Entity):
     day: domain.Day = consts.START_DAY
     tickers: domain.Tickers = Field(default_factory=tuple)
     forecast_days: PositiveInt = 1
+    cnt: PositiveInt = 1
     test_days: float = Field(2, ge=MINIMAL_TEST_DAYS)
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
     step: PositiveInt = 1
     alfa: FiniteFloat = 0
     llh: list[FiniteFloat] = Field(default_factory=list[FiniteFloat])
-    next_model: domain.UID = Field(default_factory=random_model_uid, min_length=1)
+    previous_model: domain.UID = Field(default_factory=random_model_uid, min_length=1)
     radius: PositiveFloat = Field(default=1, ge=1)
 
     def init_day(
@@ -120,10 +122,10 @@ class Evolution(domain.Entity):
         self.llh = results.llh
 
     def model_rejected(self) -> None:
-        self.radius += 1 / self.test_days
+        self.radius += 1 / self.cnt
 
     def model_accepted(self) -> None:
-        self.radius -= (1 - _OPTIMAL_ACCEPTANCE_RATE) / _OPTIMAL_ACCEPTANCE_RATE / self.test_days
+        self.radius -= (1 - _OPTIMAL_ACCEPTANCE_RATE) / _OPTIMAL_ACCEPTANCE_RATE / self.cnt
 
         if self.radius < 1:
             self.test_days += 1 - self.radius

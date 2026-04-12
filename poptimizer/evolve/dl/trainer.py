@@ -2,6 +2,7 @@ import asyncio
 import collections
 import itertools
 import statistics
+from datetime import datetime
 from typing import Literal, cast
 
 import torch
@@ -185,13 +186,16 @@ class Trainer:
         forecast_days: int,
     ) -> evolve.TestResults:
         net = self._prepare_net(cfg, emb_size, emb_seq_size)
+
+        start = datetime.now()
         self._train(ctx, net, cfg.optimizer, cfg.scheduler, data, cfg.batch.size)
 
         test_results = self._test(ctx, net, cfg, forecast_days, data)
 
         model.mean, model.cov = self._forecast(net, forecast_days, data)
-        model.negative_alfa = min(0, test_results.alfa, test_results.ret)
+        model.alfa = test_results.alfa
         model.llh = statistics.mean(test_results.llh)
+        model.duration = (datetime.now() - start).total_seconds()
 
         return test_results
 

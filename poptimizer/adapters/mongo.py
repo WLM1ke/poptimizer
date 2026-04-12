@@ -1,3 +1,4 @@
+import random
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -66,8 +67,14 @@ class Repo:
             await collection.find_one_and_delete(
                 {},
                 sort=[
-                    ("negative_alfa", pymongo.ASCENDING),
-                    ("llh", pymongo.ASCENDING),
+                    ("day", pymongo.ASCENDING),
+                    random.choice(  # noqa: S311
+                        [
+                            ("alfa", pymongo.ASCENDING),
+                            ("llh", pymongo.ASCENDING),
+                            ("duration", pymongo.DESCENDING),
+                        ]
+                    ),
                 ],
             )
 
