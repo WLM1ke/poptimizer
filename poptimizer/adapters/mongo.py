@@ -66,16 +66,13 @@ class Repo:
         async with _wrap_err("can't get next model"):
             await collection.find_one_and_delete(
                 {},
-                sort=[
-                    ("day", pymongo.ASCENDING),
-                    random.choice(  # noqa: S311
-                        [
-                            ("alfa", pymongo.ASCENDING),
-                            ("llh", pymongo.ASCENDING),
-                            ("duration", pymongo.DESCENDING),
-                        ]
-                    ),
-                ],
+                sort=random.choice(  # noqa: S311
+                    [
+                        [("alfa", pymongo.ASCENDING)],
+                        [("llh", pymongo.ASCENDING)],
+                        [("day", pymongo.ASCENDING), ("duration", pymongo.DESCENDING)],
+                    ]
+                ),
             )
 
     async def get_models(self, day: domain.Day) -> list[evolve.Model]:
