@@ -6,8 +6,8 @@ from pydantic_settings import CliPositionalArg
 
 from poptimizer.adapters import logger, mongo
 from poptimizer.cli import config, safe
-from poptimizer.domain.funds import funds
 from poptimizer.fsm import uow
+from poptimizer.reports.funds import funds
 from poptimizer.reports.pdf.pdf import report
 
 
@@ -23,9 +23,10 @@ class PDF(config.Cfg):
 
     async def cli_cmd(self) -> None:
         async with contextlib.AsyncExitStack() as stack:
+            lgr = logger.init()
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
             repo = mongo.Repo(mongo_db)
 
             inflows = {funds.Investor(investor): inflow for investor, inflow in self.inflows.items()}
 
-            await safe.run(logger.init(), report(uow.UOW(repo), self.day, self.dividends, inflows))
+            await safe.run(lgr, report(lgr, uow.UOW(repo), self.day, self.dividends, inflows))

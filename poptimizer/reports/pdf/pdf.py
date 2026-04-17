@@ -7,10 +7,10 @@ from reportlab.pdfgen.canvas import Canvas
 
 from poptimizer.core import consts, domain
 from poptimizer.data.moex import quotes
-from poptimizer.domain.funds import funds
 from poptimizer.fsm import uow
 from poptimizer.portfolio.port import portfolio
 from poptimizer.reports import risk
+from poptimizer.reports.funds import funds
 from poptimizer.reports.pdf import lower, middle, style, upper
 
 _PATH: Final = consts.ROOT / "reports"
@@ -121,13 +121,12 @@ async def _make_report(
 
 
 async def report(
+    lgr: logging.Logger,
     repo: uow.UOW,
     day: domain.Day,
     dividends: float,
     inflows: dict[funds.Investor, float],
 ) -> None:
-    lgr = logging.getLogger()
-
     fund, port = await _update_fund(repo, day, dividends, inflows)
     lgr.info("Fund and Portfolio prices updated for %s", day)
 

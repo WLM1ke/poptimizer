@@ -2,7 +2,7 @@ import sys
 
 from pydantic_settings import BaseSettings, CliApp, CliSubCommand
 
-from poptimizer.cli import app, div, income, keychain, pdf, risk, tinkoff
+from poptimizer.cli import app, div, income, keychain, metrics, pdf, risk, stats, tinkoff
 
 
 class App(
@@ -16,8 +16,8 @@ class App(
 
     keychain: CliSubCommand[keychain.Keychain]
     run: CliSubCommand[app.Run]
-    # stats: CliSubCommand[stats.Stats] # noqa: ERA001
-    # metrics: CliSubCommand[metrics.Metrics]  # noqa: ERA001
+    stats: CliSubCommand[stats.Stats]
+    metrics: CliSubCommand[metrics.Metrics]
     income: CliSubCommand[income.Income]
     risk: CliSubCommand[risk.Risk]
     pdf: CliSubCommand[pdf.PDF]

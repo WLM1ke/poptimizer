@@ -3,8 +3,8 @@ from typing import Final
 
 from poptimizer.core import errors
 from poptimizer.data.cpi import cpi
-from poptimizer.domain.funds import funds
 from poptimizer.fsm import uow
+from poptimizer.reports.funds import funds
 
 _WEEK_IN_MONTH: Final = 365.25 / 7 / 12
 _ROWS_PARAMS: Final = [
@@ -15,12 +15,11 @@ _ROWS_PARAMS: Final = [
 
 
 async def report(
+    lgr: logging.Logger,
     repo: uow.UOW,
     investor: funds.Investor,
     months: int,
 ) -> None:
-    lgr = logging.getLogger()
-
     fund = await repo.get(funds.Fund)
     cpi_table = await repo.get(cpi.CPI)
 

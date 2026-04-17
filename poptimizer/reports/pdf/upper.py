@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Final
 
 from reportlab import platypus
 
-from poptimizer.domain.funds import funds
+from poptimizer.reports.funds import funds
 from poptimizer.reports.pdf import style
 
 if TYPE_CHECKING:

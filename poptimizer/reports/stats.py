@@ -8,9 +8,7 @@ from poptimizer.evolve.evolution import evolve
 from poptimizer.fsm import uow
 
 
-async def report(repo: uow.UOW) -> None:
-    lgr = logging.getLogger()
-
+async def report(lgr: logging.Logger, repo: uow.UOW) -> None:
     evolution = await repo.get(evolve.Evolution)
 
     data: list[tuple[str, Any]] = [
@@ -27,7 +25,7 @@ async def report(repo: uow.UOW) -> None:
     features: Counter[str] = Counter()
 
     async for model in repo.get_all(evolve.Model):
-        if not model.phenotype:
+        if not model.duration:
             continue
 
         count += 1

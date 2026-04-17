@@ -16,7 +16,9 @@ class Risk(config.Cfg):
 
     async def cli_cmd(self) -> None:
         async with contextlib.AsyncExitStack() as stack:
+            lgr = logger.init()
+
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
             repo = mongo.Repo(mongo_db)
 
-            await safe.run(logger.init(), report(uow.UOW(repo), self.months))
+            await safe.run(lgr, report(lgr, uow.UOW(repo), self.months))

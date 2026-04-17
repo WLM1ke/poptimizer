@@ -6,8 +6,8 @@ from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
 from poptimizer.core import domain, errors
 from poptimizer.data.moex import index
-from poptimizer.domain.funds import funds
 from poptimizer.fsm import uow
+from poptimizer.reports.funds import funds
 
 PORTFOLIO: Final = "PORTFOLIO"
 MOEX: Final = "MCFTRR"
@@ -51,9 +51,7 @@ async def prepare_cum_returns(repo: uow.UOW, months: int) -> pd.DataFrame:
     return returns
 
 
-async def report(repo: uow.UOW, months: int) -> None:
-    lgr = logging.getLogger()
-
+async def report(lgr: logging.Logger, repo: uow.UOW, months: int) -> None:
     returns = await prepare_cum_returns(repo, months)
     returns = returns.pct_change(fill_method=None).dropna()  # type: ignore[reportUnknownMemberType]
 
