@@ -1,5 +1,5 @@
-from poptimizer.domain.evolve import genotype
-from poptimizer.use_cases.dl import trainer
+from poptimizer.evolve.dl import trainer
+from poptimizer.evolve.evolution import genotype
 
 
 def _check_keys(phenotype, cfg) -> None:
