@@ -19,7 +19,6 @@ class PDF(config.Cfg):
         default_factory=dict[str, float],
         description="Inflows from last report date for investors",
     )
-    dividends: float = Field(default=0, description="Dividends from last report date")
 
     async def cli_cmd(self) -> None:
         async with contextlib.AsyncExitStack() as stack:
@@ -29,4 +28,4 @@ class PDF(config.Cfg):
 
             inflows = {funds.Investor(investor): inflow for investor, inflow in self.inflows.items()}
 
-            await safe.run(lgr, report(lgr, uow.UOW(repo), self.day, self.dividends, inflows))
+            await safe.run(lgr, report(lgr, uow.UOW(repo), self.day, inflows))

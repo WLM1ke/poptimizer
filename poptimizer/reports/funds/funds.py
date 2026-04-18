@@ -10,7 +10,6 @@ Investor = NewType("Investor", str)
 class Row(BaseModel):
     day: domain.Day
     value: PositiveFloat
-    dividends: NonNegativeFloat
     inflows: dict[Investor, float]
     shares: dict[Investor, NonNegativeFloat]
 
@@ -43,9 +42,6 @@ class Row(BaseModel):
     def get_pre_inflow_share(self, investor: Investor) -> float:
         return (self.shares.get(investor, 0) * self.value - self.get_inflow(investor)) / self.pre_inflow_value
 
-    def get_dividends(self, investor: Investor) -> float:
-        return self.shares.get(investor, 0) * self.dividends
-
     @property
     def pre_inflow_value(self) -> float:
         return self.value - sum(self.inflows.values())
@@ -76,7 +72,6 @@ class Fund(domain.EntityOld):
             Row(
                 day=day,
                 value=all_inflows,
-                dividends=0,
                 inflows=inflows,
                 shares={investor: inflow / all_inflows for investor, inflow in inflows.items()},
             )
@@ -86,7 +81,6 @@ class Fund(domain.EntityOld):
         self,
         day: domain.Day,
         value: float,
-        dividends: float,
         inflows: dict[Investor, float],
     ) -> None:
         if not self.rows:
@@ -114,7 +108,6 @@ class Fund(domain.EntityOld):
             Row(
                 day=day,
                 value=value,
-                dividends=dividends,
                 inflows=inflows,
                 shares=shares,
             )

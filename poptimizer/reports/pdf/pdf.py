@@ -37,7 +37,6 @@ async def _price_for_day(
 async def _update_fund(
     repo: uow.UOW,
     day: domain.Day,
-    dividends: float,
     inflows: dict[funds.Investor, float],
 ) -> tuple[funds.Fund, portfolio.Portfolio]:
     async with asyncio.TaskGroup() as tg:
@@ -52,7 +51,7 @@ async def _update_fund(
         case 0:
             fund.init(day=day, inflows=inflows)
         case _:
-            fund.update(day=day, value=port.value(), dividends=dividends, inflows=inflows)
+            fund.update(day=day, value=port.value(), inflows=inflows)
 
     await repo.save()
 
@@ -124,10 +123,9 @@ async def report(
     lgr: logging.Logger,
     repo: uow.UOW,
     day: domain.Day,
-    dividends: float,
     inflows: dict[funds.Investor, float],
 ) -> None:
-    fund, port = await _update_fund(repo, day, dividends, inflows)
+    fund, port = await _update_fund(repo, day, inflows)
     lgr.info("Fund and Portfolio prices updated for %s", day)
 
     if len(fund.rows) <= _REPORT_MONTHS:

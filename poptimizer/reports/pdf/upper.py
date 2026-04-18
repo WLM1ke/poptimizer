@@ -117,62 +117,9 @@ def _add_flow_block(
     left_frame.addFromList([left_block_header, left_table], canvas)
 
 
-def _prepare_dividends_data(fund: funds.Fund) -> list[list[str]]:
-    table_data = [["Period", "Dividends"]]
-
-    table_data.append(
-        [f"{fund.rows[-2].day} - {fund.rows[-1].day}", style.format_value(fund.rows[-1].dividends)],
-    )
-
-    table_data.extend(
-        [
-            f"{fund.rows[-12 * year - 13].day} - {fund.rows[-12 * year - 1].day}",
-            style.format_value(sum(fund.rows[-12 * year - 1 - month].dividends for month in range(12))),
-        ]
-        for year in range(5)
-    )
-
-    return table_data
-
-
-def _make_dividends_table(fund: funds.Fund) -> platypus.Table:
-    return platypus.Table(
-        data=_prepare_dividends_data(fund),
-        style=(
-            ("LINEBEFORE", (1, 0), (1, -1), style.LINE_WIDTH, style.LINE_COLOR),
-            ("LINEABOVE", (0, 1), (-1, 2), style.LINE_WIDTH, style.LINE_COLOR),
-            ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
-            ("ALIGN", (0, 0), (0, -1), "CENTRE"),
-        ),
-        hAlign="LEFT",
-    )
-
-
-def _add_dividends_block(
-    canvas: Canvas,
-    block_position: style.BlockPosition,
-    fund: funds.Fund,
-) -> None:
-    right_block_header = platypus.Paragraph("Portfolio Dividends", style.BLOCK_HEADER_STYLE)
-    right_table = _make_dividends_table(fund)
-    right_frame = platypus.Frame(
-        block_position.x + block_position.width * _LEFT_PART_OF_BLOCK,
-        block_position.y,
-        block_position.width * (1 - _LEFT_PART_OF_BLOCK),
-        block_position.height,
-        leftPadding=0,
-        bottomPadding=0,
-        rightPadding=0,
-        topPadding=6,
-        showBoundary=0,
-    )
-    right_frame.addFromList([right_block_header, right_table], canvas)
-
-
 def add_block(
     canvas: Canvas,
     block_position: style.BlockPosition,
     fund: funds.Fund,
 ) -> None:
     _add_flow_block(canvas, block_position, fund)
-    _add_dividends_block(canvas, block_position, fund)
