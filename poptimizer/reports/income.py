@@ -26,14 +26,18 @@ async def report(
     if len(fund.rows) <= months or len(cpi_table.df) <= months:
         raise errors.DomainError("too many months")
 
-    income = -fund.rows[-months - 1].get_value(investor)
+    value = fund.rows[-months - 1].get_value(investor)
+    shortfall = 0
 
     for lag in reversed(range(1, months + 1)):
-        income *= cpi_table.df[-lag].cpi
-        income -= fund.rows[-lag].get_inflow(investor)
+        value *= cpi_table.df[-lag].cpi
+        value += fund.rows[-lag].get_inflow(investor)
+
+        shortfall *= cpi_table.df[-lag].cpi
+        shortfall = max(shortfall, value - fund.rows[-lag].get_value(investor))
 
     params = sorted([*_ROWS_PARAMS, (months, f"{months}M")], key=lambda x: x[0], reverse=True)
-    income += fund.rows[-1].get_value(investor)
+    income = fund.rows[-1].get_value(investor) - value
     income /= months
 
     label_align = len(str(months)) + 1
@@ -43,3 +47,5 @@ async def report(
     lgr.info("CPI-adjusted report for %s", investor)
     for factor, label in params:
         lgr.info(f"{label:<{label_align}}: {round(income * factor, -3):>{income_align}_.0f}")
+
+    lgr.info(f"Real shortfall - {round(shortfall, -5):_.0f}")

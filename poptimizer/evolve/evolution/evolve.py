@@ -44,7 +44,7 @@ class TestResults(BaseModel):
     def __str__(self) -> str:
         llh = statistics.mean(self.llh)
 
-        return f"{self.__class__.__name__}(alfa={self.alfa:.2%}, ret={self.ret:.2%}, llh={llh:.2f})"
+        return f"{self.__class__.__name__}(alfa={self.alfa:.2%}, ret={self.ret:.2%}, llh={llh:.4f})"
 
 
 class Model(domain.Entity):
