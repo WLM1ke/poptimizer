@@ -115,6 +115,7 @@ class Evolution(domain.Entity):
         self.forecast_days = port.forecast_days
         self.alfa = 0
         self.llh = []
+        self.cnt = min(self.cnt, self.step // 2 + 1)
         self.step = 1
 
     def new_base(self, results: TestResults) -> None:
