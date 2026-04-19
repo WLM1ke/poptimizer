@@ -75,7 +75,7 @@ class Model(domain.Entity):
         risk_tol = self.genotype.risk.risk_tolerance
         history = self.genotype.batch.history_days
 
-        return f"{self.__class__.__name__}(risk_aversion={1 - risk_tol:.2%}, history={history:.2f}, llh={self.llh:.2f})"
+        return f"{self.__class__.__name__}(risk_aversion={1 - risk_tol:.2%}, history={history:.2f}, llh={self.llh:.4f})"
 
     @cached_property
     def genotype(self) -> genotype.Genotype:
