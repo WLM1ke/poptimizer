@@ -16,7 +16,7 @@ from pydantic import (
     PlainSerializer,
     PositiveInt,
 )
-from scipy import stats  # type: ignore[reportMissingTypeStubs]
+from scipy import stats
 
 from poptimizer.core import consts, domain, fsm
 from poptimizer.evolve.evolution import evolve
@@ -129,9 +129,11 @@ async def update(ctx: fsm.Ctx) -> None:
     if len(models) < _MINIMAL_FORECASTS_AMOUNT:
         return
 
+    _, buy, sell = forecast.buy_sell()
+
     await asyncio.to_thread(_update, forecast, models)
 
-    _send_new_recommendation(ctx, forecast)
+    _send_new_recommendation(ctx, forecast, buy, sell)
 
 
 def _update(forecast: Forecast, models: list[evolve.Model]) -> None:
@@ -226,11 +228,17 @@ def _update(forecast: Forecast, models: list[evolve.Model]) -> None:
         pos.grad_upper = median_grads_upper[n]
 
 
-def _send_new_recommendation(ctx: fsm.Ctx, forecast: Forecast) -> None:
+def _send_new_recommendation(
+    ctx: fsm.Ctx, forecast: Forecast, old_buy: list[Position], old_sell: list[Position]
+) -> None:
     _, buy, sell = forecast.buy_sell()
 
+    log_fn = ctx.warning
+    if _pos_tickers(buy) == _pos_tickers(old_buy) and _pos_tickers(sell) == _pos_tickers(old_sell):
+        log_fn = ctx.info
+
     if not sell:
-        ctx.warning(
+        log_fn(
             "New %d forecasts update - portfolio is close to optimal, allocate free cash to %s",
             forecast.forecasts_cnt,
             buy[0].ticker,
@@ -238,14 +246,18 @@ def _send_new_recommendation(ctx: fsm.Ctx, forecast: Forecast) -> None:
 
         return
 
-    ctx.warning(f"New {forecast.forecasts_cnt} forecasts update has trade recommendations")
+    log_fn(f"New {forecast.forecasts_cnt} forecasts update has trade recommendations")
 
     for pos in buy:
-        ctx.warning(f"Buy {pos.ticker} with weight {pos.weight:.2%}")
+        log_fn(f"Buy {pos.ticker} with weight {pos.weight:.2%}")
 
     for pos in sell:
         accounts = ", ".join(sorted(pos.accounts))
-        ctx.warning(f"Sell {pos.ticker} with weight {pos.weight:.2%} from {accounts}")
+        log_fn(f"Sell {pos.ticker} with weight {pos.weight:.2%} from {accounts}")
+
+
+def _pos_tickers(positions: list[Position]) -> set[domain.Ticker]:
+    return {pos.ticker for pos in positions}
 
 
 def _median(*args: tuple[NDArray[np.double], ...]) -> list[NDArray[np.double]]:
