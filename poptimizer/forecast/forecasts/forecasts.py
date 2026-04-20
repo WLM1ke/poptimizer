@@ -229,20 +229,23 @@ def _update(forecast: Forecast, models: list[evolve.Model]) -> None:
 def _send_new_recommendation(ctx: fsm.Ctx, forecast: Forecast) -> None:
     _, buy, sell = forecast.buy_sell()
 
-    match not sell:
-        case False:
-            ctx.warning(
-                "New %d forecasts update - sell %s and buy %s",
-                forecast.forecasts_cnt,
-                sell[-1].ticker,
-                buy[0].ticker,
-            )
-        case True:
-            ctx.warning(
-                "New %d forecasts update - portfolio is close to optimal, allocate free cash to %s",
-                forecast.forecasts_cnt,
-                buy[0].ticker,
-            )
+    if not sell:
+        ctx.warning(
+            "New %d forecasts update - portfolio is close to optimal, allocate free cash to %s",
+            forecast.forecasts_cnt,
+            buy[0].ticker,
+        )
+
+        return
+
+    ctx.warning(f"New {forecast.forecasts_cnt} forecasts update has trade recommendations")
+
+    for pos in buy:
+        ctx.warning(f"Buy {pos.ticker} with weight {pos.weight:.2%}")
+
+    for pos in sell:
+        accounts = ", ".join(sorted(pos.accounts))
+        ctx.warning(f"Sell {pos.ticker} with weight {pos.weight:.2%} from {accounts}")
 
 
 def _median(*args: tuple[NDArray[np.double], ...]) -> list[NDArray[np.double]]:
