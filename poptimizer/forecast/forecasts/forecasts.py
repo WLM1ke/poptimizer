@@ -16,7 +16,7 @@ from pydantic import (
     PlainSerializer,
     PositiveInt,
 )
-from scipy import stats
+from scipy import stats  # pyright: ignore[reportMissingTypeStubs]
 
 from poptimizer.core import consts, domain, fsm
 from poptimizer.evolve.evolution import evolve
@@ -229,7 +229,10 @@ def _update(forecast: Forecast, models: list[evolve.Model]) -> None:
 
 
 def _send_new_recommendation(
-    ctx: fsm.Ctx, forecast: Forecast, old_buy: list[Position], old_sell: list[Position]
+    ctx: fsm.Ctx,
+    forecast: Forecast,
+    old_buy: list[Position],
+    old_sell: list[Position],
 ) -> None:
     _, buy, sell = forecast.buy_sell()
 
