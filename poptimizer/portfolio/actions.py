@@ -198,10 +198,13 @@ class Positions(BaseModel):
     securities: list[Position]
 
     def cash(self) -> int:
-        return int(
-            sum(m.units for m in self.money)
-            + sum(m.units for m in self.blocked)
-            + (sum(m.nano for m in self.money) + sum(m.nano for m in self.blocked)) / _NANOS_IN_RUB
+        return max(
+            0,
+            int(
+                sum(m.units for m in self.money)
+                + sum(m.units for m in self.blocked)
+                + (sum(m.nano for m in self.money) + sum(m.nano for m in self.blocked)) / _NANOS_IN_RUB
+            ),
         )
 
 
