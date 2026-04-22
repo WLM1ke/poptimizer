@@ -92,7 +92,7 @@ class EvaluateExistingModelAction:
         model = await ctx.next_model_for_update()
         evolution.previous_model = model.uid
 
-        evolution.cnt += deleted and evolution.day == model.day and evolution.cnt * 2 < evolution.step
+        evolution.cnt += deleted and evolution.cnt * 2 < evolution.step
 
         results = await self._trainer.update_model_metrics(
             ctx,
