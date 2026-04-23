@@ -21,7 +21,7 @@ class App(
     income: CliSubCommand[income.Income]
     risk: CliSubCommand[risk.Risk]
     pdf: CliSubCommand[pdf.PDF]
-    div_reset: CliSubCommand[div.Reset]
+    reset_div: CliSubCommand[div.Reset]
     tinkoff: CliSubCommand[tinkoff.Tinkoff]
 
     def cli_cmd(self) -> None:
