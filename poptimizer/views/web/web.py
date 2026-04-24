@@ -403,6 +403,8 @@ class App(web.Application):
 
         port = await ctx.get_for_update(portfolio.Portfolio)
         port.not_exclude_ticker(domain.Ticker(ticker.upper()))
+        forecast = await ctx.get_for_update(forecasts.Forecast)
+        forecast.illiquid = port.illiquid
 
         main = models.Settings(
             hide_accounts_zero_positions=cookie.hide_zero_positions,
@@ -418,6 +420,8 @@ class App(web.Application):
 
         port = await ctx.get_for_update(portfolio.Portfolio)
         port.exclude_ticker(domain.Ticker(ticker.upper()))
+        forecast = await ctx.get_for_update(forecasts.Forecast)
+        forecast.illiquid = port.illiquid
 
         main = models.Settings(
             hide_accounts_zero_positions=cookie.hide_zero_positions,
