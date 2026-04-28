@@ -1,4 +1,3 @@
-import statistics
 from functools import cached_property
 from typing import Final, Self, cast
 
@@ -42,9 +41,7 @@ class TestResults(BaseModel):
         return min(self.alfa, self.ret) < 0
 
     def __str__(self) -> str:
-        llh = statistics.mean(self.llh)
-
-        return f"{self.__class__.__name__}(alfa={self.alfa:.2%}, ret={self.ret:.2%}, llh={llh:.4f})"
+        return f"{self.__class__.__name__}(ret={self.ret:.2%})"
 
 
 class Model(domain.Entity):
@@ -75,7 +72,10 @@ class Model(domain.Entity):
         risk_tol = self.genotype.risk.risk_tolerance
         history = self.genotype.batch.history_days
 
-        return f"{self.__class__.__name__}(risk_aversion={1 - risk_tol:.2%}, history={history:.2f}, llh={self.llh:.4f})"
+        return (
+            f"{self.__class__.__name__}(risk_aversion={1 - risk_tol:.2%}, "
+            f"history={history:.2f}, llh={self.llh:.4f}, alfa={self.alfa:.2%})"
+        )
 
     @cached_property
     def genotype(self) -> genotype.Genotype:

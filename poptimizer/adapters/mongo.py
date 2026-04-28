@@ -53,7 +53,7 @@ class Repo:
             doc = await collection.find_one(
                 sort=[
                     ("day", pymongo.ASCENDING),
-                    ("llh", pymongo.DESCENDING),
+                    ("alfa", pymongo.DESCENDING),
                 ],
             )
 
