@@ -1,5 +1,5 @@
 import random
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any, Final
@@ -25,7 +25,7 @@ type MongoCollection = collection.AsyncCollection[MongoDocument]
 
 
 @asynccontextmanager
-async def _wrap_err(msg: str) -> AsyncIterator[None]:
+async def _wrap_err(msg: str) -> AsyncGenerator[None]:
     try:
         yield
     except (PyMongoError, BSONError) as err:
@@ -33,7 +33,7 @@ async def _wrap_err(msg: str) -> AsyncIterator[None]:
 
 
 @asynccontextmanager
-async def db(uri: MongoDsn, db: str) -> AsyncIterator[MongoDatabase]:
+async def db(uri: MongoDsn, db: str) -> AsyncGenerator[MongoDatabase]:
     mongo_client: MongoClient = pymongo.AsyncMongoClient(str(uri), tz_aware=False)
     try:
         yield mongo_client[db]

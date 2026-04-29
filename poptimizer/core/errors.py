@@ -1,5 +1,5 @@
 import traceback as tb
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any, Protocol
 
@@ -46,7 +46,7 @@ class Warner(Protocol):
 
 
 @asynccontextmanager
-async def suppress_poptimizer(warner: Warner, log_msg: str) -> AsyncIterator[None]:
+async def suppress_poptimizer(warner: Warner, log_msg: str) -> AsyncGenerator[None]:
     try:
         yield
     except* POError as err:

@@ -1,5 +1,5 @@
 import ssl
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Final
@@ -30,7 +30,7 @@ def client(on_per_host: int = _MAX_ISS_CON) -> aiohttp.ClientSession:
 
 
 @asynccontextmanager
-async def wrap_err(msg: str) -> AsyncIterator[None]:
+async def wrap_err(msg: str) -> AsyncGenerator[None]:
     try:
         yield
     except (TimeoutError, aiohttp.ClientError, ValidationError) as err:
