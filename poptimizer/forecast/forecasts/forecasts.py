@@ -1,3 +1,6 @@
+# pyright: reportUnknownMemberType=false
+# pyright: reportUnknownVariableType= false
+# pyright: reportUnknownArgumentType= false
 import asyncio
 from datetime import UTC, datetime
 from typing import Annotated, Final, cast
@@ -189,9 +192,9 @@ def _update(forecast: Forecast, models: list[evolve.Model]) -> None:
 
         risk_tol.append(risk_tolerance)
 
-    forecast.mean = np.median(port_means).item()  # type: ignore[reportUnknownMemberType]
-    forecast.std = np.median(port_stds).item()  # type: ignore[reportUnknownMemberType]
-    forecast.risk_tolerance = np.median(risk_tol).item()  # type: ignore[reportUnknownMemberType]
+    forecast.mean = np.median(port_means).item()
+    forecast.std = np.median(port_stds).item()
+    forecast.risk_tolerance = np.median(risk_tol).item()
 
     median_mean = np.median(np.hstack(means), axis=1)
     median_std = np.median(np.hstack(stds), axis=1)
@@ -201,23 +204,23 @@ def _update(forecast: Forecast, models: list[evolve.Model]) -> None:
     median_grads = np.median(stacked_grads, axis=1)
 
     stacked_costs = np.hstack(costs)
-    median_grads_lower = stats.bootstrap(  # type: ignore[reportUnknownMemberType]
+    median_grads_lower = stats.bootstrap(
         stacked_grads - stacked_costs,
         _median,
         confidence_level=(1 - p_value),
         paired=True,
         rng=random.default_rng(0),
     ).confidence_interval.low
-    median_grads_lower: NDArray[np.double] = np.nan_to_num(median_grads_lower, nan=-np.inf)  # type: ignore[reportUnknownMemberType]
+    median_grads_lower: NDArray[np.double] = np.nan_to_num(median_grads_lower, nan=-np.inf)
 
-    median_grads_upper = stats.bootstrap(  # type: ignore[reportUnknownMemberType]
+    median_grads_upper = stats.bootstrap(
         stacked_grads + stacked_costs,
         _median,
         confidence_level=(1 - p_value),
         paired=True,
         rng=random.default_rng(0),
     ).confidence_interval.high
-    median_grads_upper: NDArray[np.double] = np.nan_to_num(median_grads_upper, nan=np.inf)  # type: ignore[reportUnknownMemberType]
+    median_grads_upper: NDArray[np.double] = np.nan_to_num(median_grads_upper, nan=np.inf)
 
     for n, pos in enumerate(forecast.positions):
         pos.mean = median_mean[n]
