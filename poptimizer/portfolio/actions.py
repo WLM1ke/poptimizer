@@ -192,7 +192,7 @@ class Position(BaseModel):
 
 class Positions(BaseModel):
     # Денег после блокировки под заявки на покупку
-    money: list[Money] = Field(min_length=1, max_length=1)
+    money: list[Money] = Field(min_length=0, max_length=1)
     # Денег заблокировано под заявки на покупку
     blocked: list[Money] = Field(min_length=0, max_length=1)
     securities: list[Position]
