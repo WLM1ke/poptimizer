@@ -1,3 +1,4 @@
+# pyright: reportPrivateImportUsage=false
 from typing import TYPE_CHECKING, NamedTuple
 
 import numpy as np

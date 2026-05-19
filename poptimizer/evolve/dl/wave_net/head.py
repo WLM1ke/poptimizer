@@ -1,3 +1,4 @@
+# pyright: reportPrivateImportUsage=false
 import torch
 from pydantic import BaseModel
 from torch.distributions import Categorical, MixtureSameFamily
