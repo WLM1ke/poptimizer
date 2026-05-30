@@ -27,6 +27,7 @@ class NumFeatures(BaseModel):
     rugbitr5y: bool
     rugbitr10y: bool
     rucbitrl3: bool
+    rumbitr1y: bool
     mredc: bool
     rtsusdcur: bool
 

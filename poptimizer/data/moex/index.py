@@ -24,6 +24,7 @@ INDEXES: Final = {
     domain.Ticker("RUGBITR5Y"): None,
     domain.Ticker("RUGBITR10Y"): None,
     domain.Ticker("RUCBITRL3"): None,
+    domain.Ticker("RUMBITR1Y"): None,
     domain.Ticker("MREDC"): None,
     domain.Ticker("RTSUSDCUR"): None,
 }
