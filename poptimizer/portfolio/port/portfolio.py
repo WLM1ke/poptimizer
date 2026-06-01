@@ -56,7 +56,7 @@ class Portfolio(domain.Entity):
         PlainSerializer(lambda dt: int(dt.timestamp()), return_type=int),
     ] = datetime.fromtimestamp(0, UTC)
     holding_period: NonNegativeFloat = 0
-    new_positions: NonNegativeInt = 0
+    bought_value: NonNegativeFloat = 0
     account_names: Annotated[
         set[domain.AccName],
         PlainSerializer(
@@ -174,8 +174,7 @@ class Portfolio(domain.Entity):
         if quantity % (lot := position.lot):
             raise errors.DomainError(f"quantity {quantity} must be multiple of {lot}")
 
-        if not position.accounts and quantity:
-            self.new_positions += 1
+        self.bought_value += position.price * max(0, quantity - position.quantity(acc_name))
 
         position.accounts[acc_name] = quantity
 

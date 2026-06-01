@@ -60,14 +60,14 @@ def _update_holding_period(port: portfolio.Portfolio, trading_days: list[domain.
 
         new_days += 1
 
-    match port.open_positions():
+    match port.value() - port.cash_value():
         case 0:
             port.holding_period = 0
-        case open_positions:
-            port.holding_period *= 1 - min(open_positions, port.new_positions) / open_positions
+        case pos_value:
+            port.holding_period *= 1 - min(pos_value, port.bought_value) / pos_value
             port.holding_period += new_days
 
-    port.new_positions = 0
+    port.bought_value = 0
     port.day = trading_days[-1]
 
     return True
