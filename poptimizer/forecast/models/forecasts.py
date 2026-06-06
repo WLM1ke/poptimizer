@@ -41,7 +41,7 @@ class Position(BaseModel):
     accounts: list[domain.AccName]
 
 
-class Forecast(domain.EntityOld):
+class Forecast(domain.Entity):
     day: domain.Day = consts.START_DAY
     portfolio_updated_at: Annotated[
         AwareDatetime,

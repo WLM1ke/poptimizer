@@ -51,7 +51,7 @@ class Row(BaseModel):
         return sum(self.inflows.values())
 
 
-class Fund(domain.EntityOld):
+class Fund(domain.Entity):
     rows: Annotated[
         list[Row],
         AfterValidator(domain.sorted_by_day_validator),

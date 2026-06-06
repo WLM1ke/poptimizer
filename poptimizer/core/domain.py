@@ -30,10 +30,6 @@ Day = Annotated[
 ]
 
 
-class EntityOld(Entity):
-    day: Day = consts.START_DAY
-
-
 Ticker = NewType("Ticker", str)
 CashTicker: Final = Ticker("CASH")
 
