@@ -7,7 +7,7 @@ import pandas as pd
 from poptimizer.core import domain, fsm
 from poptimizer.data.features import features
 from poptimizer.data.moex import index
-from poptimizer.portfolio.port import portfolio
+from poptimizer.portfolio.models import portfolio
 
 if TYPE_CHECKING:
     from pydantic import FiniteFloat

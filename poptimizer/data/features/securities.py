@@ -3,7 +3,7 @@ import asyncio
 from poptimizer.core import domain, fsm
 from poptimizer.data.features.features import EmbeddingFeatDesc, EmbFeat, Features
 from poptimizer.data.moex import securities
-from poptimizer.portfolio.port import portfolio
+from poptimizer.portfolio.models import portfolio
 
 
 async def update(ctx: fsm.Ctx) -> None:

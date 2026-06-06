@@ -7,7 +7,7 @@ from pydantic import AfterValidator, Field
 from poptimizer.core import domain, fsm
 from poptimizer.data.div import raw
 from poptimizer.data.moex import securities
-from poptimizer.portfolio.port import portfolio
+from poptimizer.portfolio.models import portfolio
 
 
 class Row(domain.Row):

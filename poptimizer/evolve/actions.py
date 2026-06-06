@@ -2,8 +2,8 @@ from poptimizer.core import fsm
 from poptimizer.data.events import DataUpdated
 from poptimizer.evolve import events
 from poptimizer.evolve.dl import trainer
-from poptimizer.evolve.evolution import evolve
-from poptimizer.portfolio.port import portfolio
+from poptimizer.evolve.models import evolve
+from poptimizer.portfolio.models import portfolio
 
 
 class InitEvolutionAction:

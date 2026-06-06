@@ -3,7 +3,7 @@ from typing import Annotated
 from pydantic import PlainSerializer
 
 from poptimizer.core import consts
-from poptimizer.evolve.evolution import genetics
+from poptimizer.evolve.models import genetics
 
 
 class NumFeatures(genetics.Chromosome):

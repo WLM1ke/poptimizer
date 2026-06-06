@@ -4,7 +4,7 @@ from typing import Any, Protocol
 from pydantic import BaseModel
 
 from poptimizer.core import domain
-from poptimizer.evolve.evolution import evolve
+from poptimizer.evolve.models import evolve
 
 
 class Event(BaseModel):

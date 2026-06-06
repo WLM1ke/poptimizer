@@ -1,7 +1,7 @@
 from poptimizer.core import fsm
-from poptimizer.forecast.forecasts import forecasts
+from poptimizer.forecast.models import forecasts
 from poptimizer.portfolio.events import PositionChecked
-from poptimizer.portfolio.port import portfolio
+from poptimizer.portfolio.models import portfolio
 
 
 class InitForecastAction:

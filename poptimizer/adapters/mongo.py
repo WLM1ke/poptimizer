@@ -11,7 +11,7 @@ from pymongo.asynchronous import collection, database
 from pymongo.errors import PyMongoError
 
 from poptimizer.core import domain, errors
-from poptimizer.evolve.evolution import evolve
+from poptimizer.evolve.models import evolve
 from poptimizer.fsm import uow
 
 _MONGO_ID: Final = "_id"

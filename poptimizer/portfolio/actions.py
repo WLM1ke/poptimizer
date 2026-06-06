@@ -13,9 +13,9 @@ from pydantic import (
 from poptimizer.core import domain, fsm
 from poptimizer.data.events import QuotesUpdated
 from poptimizer.data.moex import quotes, securities
-from poptimizer.evolve.evolution import evolve
+from poptimizer.evolve.models import evolve
 from poptimizer.portfolio import events
-from poptimizer.portfolio.port import portfolio
+from poptimizer.portfolio.models import portfolio
 
 _NANOS_IN_RUB: Final = 10**9
 _CHECKED_INTERVAL: Final = timedelta(minutes=30)

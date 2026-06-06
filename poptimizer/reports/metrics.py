@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from poptimizer.evolve.evolution import evolve
+from poptimizer.evolve.models import evolve
 from poptimizer.fsm import uow
 
 

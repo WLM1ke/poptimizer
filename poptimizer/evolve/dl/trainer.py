@@ -13,7 +13,7 @@ from torch import optim
 from poptimizer.core import consts, errors, fsm
 from poptimizer.evolve.dl import builder, data_loaders, datasets, ledoit_wolf, risk
 from poptimizer.evolve.dl.wave_net import backbone, wave_net
-from poptimizer.evolve.evolution import evolve
+from poptimizer.evolve.models import evolve
 
 
 class Optimizer(BaseModel):

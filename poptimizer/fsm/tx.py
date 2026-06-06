@@ -5,7 +5,7 @@ from types import TracebackType
 from typing import Any, Self
 
 from poptimizer.core import domain, fsm
-from poptimizer.evolve.evolution import evolve
+from poptimizer.evolve.models import evolve
 from poptimizer.fsm import uow
 
 

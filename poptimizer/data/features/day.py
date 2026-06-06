@@ -2,7 +2,7 @@ import asyncio
 
 from poptimizer.core import domain, fsm
 from poptimizer.data.features.features import EmbeddingSeqFeatDesc, EmbSeqFeat, Features
-from poptimizer.portfolio.port import portfolio
+from poptimizer.portfolio.models import portfolio
 
 
 async def update(ctx: fsm.Ctx, trading_days: list[domain.Day]) -> None:

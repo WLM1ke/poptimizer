@@ -15,8 +15,8 @@ from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
 from poptimizer.core import consts, domain, fsm
 from poptimizer.evolve.dl import datasets
-from poptimizer.evolve.evolution import genetics, genotype
-from poptimizer.portfolio.port import portfolio
+from poptimizer.evolve.models import genetics, genotype
+from poptimizer.portfolio.models import portfolio
 
 _INITIAL_MINIMAL_RETURNS_DAYS: Final = datasets.Days(
     history=consts.INITIAL_HISTORY_DAYS_END,

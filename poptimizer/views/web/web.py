@@ -13,9 +13,9 @@ from pydantic import TypeAdapter, ValidationError
 
 from poptimizer.core import domain, errors, fsm
 from poptimizer.data.div import raw, status
-from poptimizer.forecast.forecasts import forecasts
+from poptimizer.forecast.models import forecasts
 from poptimizer.fsm import tx, uow
-from poptimizer.portfolio.port import portfolio
+from poptimizer.portfolio.models import portfolio
 from poptimizer.views.web import models, view
 
 

@@ -22,8 +22,8 @@ from pydantic import (
 from scipy import stats  # pyright: ignore[reportMissingTypeStubs]
 
 from poptimizer.core import consts, domain, fsm
-from poptimizer.evolve.evolution import evolve
-from poptimizer.portfolio.port import portfolio
+from poptimizer.evolve.models import evolve
+from poptimizer.portfolio.models import portfolio
 
 _MINIMAL_FORECASTS_AMOUNT: Final = 4
 

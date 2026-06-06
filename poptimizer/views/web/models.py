@@ -6,7 +6,7 @@ from aiohttp import web
 from pydantic import BaseModel, Field
 
 from poptimizer.core import domain
-from poptimizer.forecast.forecasts import forecasts
+from poptimizer.forecast.models import forecasts
 
 
 class Theme(StrEnum):
