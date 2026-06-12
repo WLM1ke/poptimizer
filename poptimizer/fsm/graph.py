@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any, Protocol
 
 from poptimizer.core import errors, fsm
@@ -13,10 +14,14 @@ class SimpleAction(Protocol):
 
 type State[E: fsm.Event] = type[E]
 type Action[E: fsm.Event] = EventAction[E] | SimpleAction | None
-type Transition[S: fsm.Event, D: fsm.Event] = (
-    tuple[State[S], Action[S], State[D]] | tuple[State[S], Action[S]] | State[S]
-)
 type AfterTransition[S: fsm.Event, D: fsm.Event] = tuple[Action[S], State[D]]
+
+
+@dataclass
+class Transition[O: fsm.Event, D: fsm.Event]:
+    on: type[O]
+    dst: type[D]
+    action: Action[O] | None = None
 
 
 class Graph:
@@ -44,9 +49,7 @@ class Graph:
         if state in self._graph:
             raise errors.ControllersError("state {state} already in graph")
 
-        normalized = {_normalize_transition(transition) for transition in transitions or ()}
-
-        self._graph[state] = {event: (action, destination) for event, (action, destination) in normalized}
+        self._graph[state] = {t.on: (t.action, t.dst) for t in transitions or ()}
 
     def make_transition[E: fsm.Event, D: fsm.Event](
         self,
@@ -61,15 +64,3 @@ class Graph:
         action, self._state = after_transition
 
         return action, self._state
-
-
-def _normalize_transition[S: fsm.Event, D: fsm.Event](
-    transition: Transition[S, D],
-) -> tuple[State[S], AfterTransition[S, D] | AfterTransition[S, S]]:
-    match transition:
-        case (event, action, destination):
-            return event, (action, destination)
-        case (event, action):
-            return event, (action, event)
-        case event:
-            return event, (None, event)

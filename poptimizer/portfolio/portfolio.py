@@ -10,8 +10,16 @@ def build_graph(tinkoff_client: actions.TinkoffClient) -> graph.Graph:
     portfolio_graph.add_state(
         events.PortfolioUpdated,
         [
-            (QuotesUpdated, actions.RevaluePortfolioAction(), events.PortfolioUpdated),
-            (ModelRejected, actions.CheckPositionsAction(tinkoff_client), events.PortfolioUpdated),
+            graph.Transition(
+                on=QuotesUpdated,
+                action=actions.RevaluePortfolioAction(),
+                dst=events.PortfolioUpdated,
+            ),
+            graph.Transition(
+                on=ModelRejected,
+                action=actions.CheckPositionsAction(tinkoff_client),
+                dst=events.PortfolioUpdated,
+            ),
         ],
     )
 

@@ -14,44 +14,102 @@ def build_graph(
 
     data_graph.add_state(
         fsm.AppStopped,
-        [(fsm.AppStarted, actions.CheckDataStatusAction(migration_client))],
+        [
+            graph.Transition(
+                on=fsm.AppStarted,
+                action=actions.CheckDataStatusAction(migration_client),
+                dst=fsm.AppStarted,
+            ),
+        ],
     )
     data_graph.add_state(
         fsm.AppStarted,
         [
-            (events.VersionChanged, actions.MigrateAction(migration_client)),
-            (events.QuotesUpdateRequired, actions.UpdateQuotesAction(data_client)),
-            events.DataUpdated,
+            graph.Transition(
+                on=events.VersionChanged,
+                action=actions.MigrateAction(migration_client),
+                dst=events.VersionChanged,
+            ),
+            graph.Transition(
+                on=events.QuotesUpdateRequired,
+                action=actions.UpdateQuotesAction(data_client),
+                dst=events.QuotesUpdateRequired,
+            ),
+            graph.Transition(
+                on=events.DataUpdated,
+                action=None,
+                dst=events.DataUpdated,
+            ),
         ],
     )
     data_graph.add_state(
         events.VersionChanged,
-        [(events.QuotesUpdateRequired, actions.UpdateQuotesAction(data_client))],
+        [
+            graph.Transition(
+                on=events.QuotesUpdateRequired,
+                action=actions.UpdateQuotesAction(data_client),
+                dst=events.QuotesUpdateRequired,
+            ),
+        ],
     )
     data_graph.add_state(
         events.QuotesUpdateRequired,
         [
-            events.QuotesUpdated,
-            events.DataUpdated,
+            graph.Transition(
+                on=events.QuotesUpdated,
+                action=None,
+                dst=events.QuotesUpdated,
+            ),
+            graph.Transition(
+                on=events.DataUpdated,
+                action=None,
+                dst=events.DataUpdated,
+            ),
         ],
     )
     data_graph.add_state(
         events.QuotesUpdated,
-        [(PortfolioRevalued, actions.UpdateFeaturesAction(data_client))],
+        [
+            graph.Transition(
+                on=PortfolioRevalued,
+                action=actions.UpdateFeaturesAction(data_client),
+                dst=PortfolioRevalued,
+            ),
+        ],
     )
     data_graph.add_state(
         PortfolioRevalued,
-        [events.DataUpdated],
+        [
+            graph.Transition(
+                on=events.DataUpdated,
+                action=None,
+                dst=events.DataUpdated,
+            ),
+        ],
     )
     data_graph.add_state(
         events.DataUpdated,
-        [(ModelRejected, actions.CheckDayAction(memory_checker))],
+        [
+            graph.Transition(
+                on=ModelRejected,
+                action=actions.CheckDayAction(memory_checker),
+                dst=ModelRejected,
+            ),
+        ],
     )
     data_graph.add_state(
         ModelRejected,
         [
-            (events.QuotesUpdateRequired, actions.UpdateQuotesAction(data_client)),
-            (events.DayNotChanged, None, events.DataUpdated),
+            graph.Transition(
+                on=events.QuotesUpdateRequired,
+                action=actions.UpdateQuotesAction(data_client),
+                dst=events.QuotesUpdateRequired,
+            ),
+            graph.Transition(
+                on=events.DayNotChanged,
+                action=None,
+                dst=events.DataUpdated,
+            ),
         ],
     )
 

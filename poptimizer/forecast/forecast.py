@@ -9,8 +9,16 @@ def build_graph() -> graph.Graph:
     data_graph.add_state(
         events.ForecastUpdated,
         [
-            (PortfolioRevalued, actions.InitForecastAction(), events.ForecastUpdated),
-            (PositionChecked, actions.UpdateForecastAction(), events.ForecastUpdated),
+            graph.Transition(
+                on=PortfolioRevalued,
+                action=actions.InitForecastAction(),
+                dst=events.ForecastUpdated,
+            ),
+            graph.Transition(
+                on=PositionChecked,
+                action=actions.UpdateForecastAction(),
+                dst=events.ForecastUpdated,
+            ),
         ],
     )
 

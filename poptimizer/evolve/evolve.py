@@ -13,52 +13,122 @@ def build_graph() -> graph.Graph:
 
     data_graph.add_state(
         fsm.AppStopped,
-        [(DataUpdated, actions.InitEvolutionAction())],
+        [
+            graph.Transition(
+                on=DataUpdated,
+                action=actions.InitEvolutionAction(),
+                dst=DataUpdated,
+            ),
+        ],
     )
     data_graph.add_state(
         DataUpdated,
         [
-            (events.BaseModelNotEvaluated, actions.EvaluateBaseModelAction(trainer)),
-            (events.BaseModelEvaluated, actions.EvaluateExistingModelAction(trainer)),
-            (events.NewModelCreated, actions.EvaluateNewModelAction(trainer)),
+            graph.Transition(
+                on=events.BaseModelNotEvaluated,
+                action=actions.EvaluateBaseModelAction(trainer),
+                dst=events.BaseModelNotEvaluated,
+            ),
+            graph.Transition(
+                on=events.BaseModelEvaluated,
+                action=actions.EvaluateExistingModelAction(trainer),
+                dst=events.BaseModelEvaluated,
+            ),
+            graph.Transition(
+                on=events.NewModelCreated,
+                action=actions.EvaluateNewModelAction(trainer),
+                dst=events.NewModelCreated,
+            ),
         ],
     )
     data_graph.add_state(
         events.BaseModelNotEvaluated,
         [
-            (events.NewModelCreated, actions.EvaluateNewModelAction(trainer)),
-            (events.BaseModelNotEvaluated, actions.EvaluateBaseModelAction(trainer)),
+            graph.Transition(
+                on=events.NewModelCreated,
+                action=actions.EvaluateNewModelAction(trainer),
+                dst=events.NewModelCreated,
+            ),
+            graph.Transition(
+                on=events.BaseModelNotEvaluated,
+                action=actions.EvaluateBaseModelAction(trainer),
+                dst=events.BaseModelNotEvaluated,
+            ),
         ],
     )
     data_graph.add_state(
         events.BaseModelEvaluated,
         [
-            (events.NewModelCreated, actions.EvaluateNewModelAction(trainer)),
-            (events.BaseModelNotEvaluated, actions.EvaluateBaseModelAction(trainer)),
-            events.ModelRejected,
+            graph.Transition(
+                on=events.NewModelCreated,
+                action=actions.EvaluateNewModelAction(trainer),
+                dst=events.NewModelCreated,
+            ),
+            graph.Transition(
+                on=events.BaseModelNotEvaluated,
+                action=actions.EvaluateBaseModelAction(trainer),
+                dst=events.BaseModelNotEvaluated,
+            ),
+            graph.Transition(
+                on=events.ModelRejected,
+                action=None,
+                dst=events.ModelRejected,
+            ),
         ],
     )
     data_graph.add_state(
         events.NewModelCreated,
         [
-            (events.NewModelCreated, actions.EvaluateNewModelAction(trainer)),
-            (events.BaseModelNotEvaluated, actions.EvaluateBaseModelAction(trainer)),
-            events.ModelRejected,
+            graph.Transition(
+                on=events.NewModelCreated,
+                action=actions.EvaluateNewModelAction(trainer),
+                dst=events.NewModelCreated,
+            ),
+            graph.Transition(
+                on=events.BaseModelNotEvaluated,
+                action=actions.EvaluateBaseModelAction(trainer),
+                dst=events.BaseModelNotEvaluated,
+            ),
+            graph.Transition(
+                on=events.ModelRejected,
+                action=None,
+                dst=events.ModelRejected,
+            ),
         ],
     )
     data_graph.add_state(
         events.ModelRejected,
         [
-            (DayNotChanged, actions.EvaluateExistingModelAction(trainer)),
-            (DataUpdated, actions.InitEvolutionAction()),
+            graph.Transition(
+                on=DayNotChanged,
+                action=actions.EvaluateExistingModelAction(trainer),
+                dst=DayNotChanged,
+            ),
+            graph.Transition(
+                on=DataUpdated,
+                action=actions.InitEvolutionAction(),
+                dst=DataUpdated,
+            ),
         ],
     )
     data_graph.add_state(
         DayNotChanged,
         [
-            (events.NewModelCreated, actions.EvaluateNewModelAction(trainer)),
-            (events.BaseModelNotEvaluated, actions.EvaluateBaseModelAction(trainer)),
-            events.ModelRejected,
+            graph.Transition(
+                on=events.NewModelCreated,
+                action=actions.EvaluateNewModelAction(trainer),
+                dst=events.NewModelCreated,
+            ),
+            graph.Transition(
+                on=events.BaseModelNotEvaluated,
+                action=actions.EvaluateBaseModelAction(trainer),
+                dst=events.BaseModelNotEvaluated,
+            ),
+            graph.Transition(
+                on=events.ModelRejected,
+                action=None,
+                dst=events.ModelRejected,
+            ),
         ],
     )
 
