@@ -98,7 +98,8 @@ async def _prepare_sec_cache(
         if len(df) >= minimal_candles:
             turnover_data = [row.turnover for row in df[-minimal_candles:] if row.day in turnover_days]
             turnover_data_short = [row.turnover for row in df[-forecast_days:] if row.day in turnover_days]
-            turnover = min(statistics.median(turnover_data), statistics.median(turnover_data_short))
+            if turnover_data_short:
+                turnover = min(statistics.median(turnover_data), statistics.median(turnover_data_short))
 
         cache[sec.ticker] = portfolio.Position(
             ticker=sec.ticker,
