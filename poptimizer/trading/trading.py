@@ -4,7 +4,7 @@ from poptimizer.portfolio.events import PortfolioRevalued
 from poptimizer.trading import actions, events
 
 
-def build_graph() -> graph.Graph:
+def build_graph(tinkoff_client: actions.TinkoffClient) -> graph.Graph:
     trading_graph = graph.Graph("TradingFSM")
 
     trading_graph.add_state(
@@ -17,7 +17,7 @@ def build_graph() -> graph.Graph:
             ),
             graph.Transition(
                 on=ForecastUpdated,
-                action=actions.CancelStaleOrdersAction(),
+                action=actions.CancelStaleOrdersAction(tinkoff_client),
                 dst=events.ReadyForTrading,
             ),
         ],

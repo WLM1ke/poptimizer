@@ -1,4 +1,5 @@
 from poptimizer.core import fsm
+from poptimizer.forecast import events
 from poptimizer.forecast.models import forecasts
 from poptimizer.portfolio.events import PositionChecked
 from poptimizer.portfolio.models import portfolio
@@ -21,3 +22,4 @@ class UpdateForecastAction:
             forecast.update_positions(port)
 
         await forecasts.update(ctx)
+        ctx.send(events.ForecastUpdated())

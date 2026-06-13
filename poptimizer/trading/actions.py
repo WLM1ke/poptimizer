@@ -1,6 +1,13 @@
-from poptimizer.core import fsm
+from typing import Protocol
+
+from poptimizer.core import domain, fsm
 from poptimizer.portfolio.models import portfolio
 from poptimizer.trading.models import trading
+
+
+class TinkoffClient(Protocol):
+    def updatable_accounts(self) -> set[domain.AccName]: ...
+    async def get_orders(self, account_name: domain.AccName) -> list[domain.Ticker]: ...
 
 
 class InitTradingStateAction:
@@ -13,5 +20,11 @@ class InitTradingStateAction:
 
 
 class CancelStaleOrdersAction:
+    def __init__(self, tinkoff_client: TinkoffClient) -> None:
+        self._tinkoff_client = tinkoff_client
+
     async def __call__(self, ctx: fsm.Ctx) -> None:
-        ctx.warning("CancelStaleOrdersAction")
+        for account_name in self._tinkoff_client.updatable_accounts():
+            tickers = await self._tinkoff_client.get_orders(account_name)
+            if tickers:
+                ctx.warning("%s active orders - %s", account_name, ", ".join(tickers))

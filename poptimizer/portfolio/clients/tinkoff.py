@@ -1,7 +1,7 @@
 from typing import Final
 
 import aiohttp
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from poptimizer.adapters.http import wrap_err
 from poptimizer.cli import config
@@ -38,8 +38,9 @@ class _AccountsResponse(BaseModel):
 
 
 class _OrderState(BaseModel):
-    order_id: str
+    order_id: str = Field(alias="orderId")
     ticker: domain.Ticker
+    status: str = Field(alias="executionReportStatus")
 
 
 class _OrdersResponse(BaseModel):
@@ -109,18 +110,19 @@ class Client:
             self._http_session.post(
                 _GET_ORDERS_URL,
                 headers=self._headers(account.token),
-                json={
-                    "accountId": account.id,
-                    "advanced_filters": {
-                        "execution_status": _ACTIVE_ORDER_STATUSES,
-                    },
-                },
+                json={"accountId": account.id},
             ) as resp,
         ):
             json = await resp.json()
             orders_response = _OrdersResponse.model_validate(json)
 
-        return sorted({_normalize_tickers(order.ticker) for order in orders_response.orders})
+        return sorted(
+            {
+                _normalize_tickers(order.ticker)
+                for order in orders_response.orders
+                if order.status in _ACTIVE_ORDER_STATUSES
+            }
+        )
 
 
 def _normalize_tickers(tickers: domain.Ticker) -> domain.Ticker:

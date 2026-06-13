@@ -88,6 +88,8 @@ class Run(config.Cfg):
 
             dispatcher = tx.Dispatcher()
 
+            tinkoff_client = tinkoff.Client(http_client, self.brokers.tinkoff)
+
             fsm_system = system.FSMSystem(repo, dispatcher)
             coro.append(
                 fsm_system.start(
@@ -96,12 +98,10 @@ class Run(config.Cfg):
                         data_client.Client(http_client),
                         memory.Checker(main_task),
                     ),
-                    portfolio.build_graph(
-                        tinkoff.Client(http_client, self.brokers.tinkoff),
-                    ),
+                    portfolio.build_graph(tinkoff_client),
                     evolve.build_graph(),
                     forecast.build_graph(),
-                    trading.build_graph(),
+                    trading.build_graph(tinkoff_client),
                 )
             )
             coro.append(server.run(repo, dispatcher, self.server.url))
