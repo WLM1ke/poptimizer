@@ -11,11 +11,17 @@ from poptimizer.portfolio import actions
 _URL_BASE: Final = "https://invest-public-api.tbank.ru/rest/tinkoff.public.invest.api.contract.v1"
 _GET_ACCOUNTS_URL: Final = f"{_URL_BASE}.UsersService/GetAccounts"
 _GET_POSITIONS_URL: Final = f"{_URL_BASE}.OperationsService/GetPositions"
+_GET_ORDERS_URL: Final = f"{_URL_BASE}.OrdersService/GetOrders"
 
 _ACTIVE_ACCOUNT: Final = "ACCOUNT_STATUS_OPEN"
 _ACCOUNT_TYPES_DESC: Final = {"ACCOUNT_TYPE_TINKOFF", "ACCOUNT_TYPE_TINKOFF_IIS"}
 
 _TINKOFF_ETF_SUFFIX: Final = "@"
+
+_ACTIVE_ORDER_STATUSES: Final = [
+    "EXECUTION_REPORT_STATUS_NEW",
+    "EXECUTION_REPORT_STATUS_PARTIALLYFILL",
+]
 
 
 class Account(BaseModel):
@@ -29,6 +35,15 @@ class Account(BaseModel):
 
 class _AccountsResponse(BaseModel):
     accounts: list[Account]
+
+
+class _OrderState(BaseModel):
+    order_id: str
+    ticker: domain.Ticker
+
+
+class _OrdersResponse(BaseModel):
+    orders: list[_OrderState]
 
 
 class Client:
@@ -82,6 +97,30 @@ class Client:
                 sec.ticker = _normalize_tickers(sec.ticker)
 
             return raw_positions
+
+    async def get_orders(self, account_name: domain.AccName) -> list[domain.Ticker]:
+        """Возвращает отсортированный список тикеров, по которым есть активные заявки."""
+        account = self._accounts.get(account_name)
+        if account is None:
+            raise errors.ControllersError(f"Account {account_name} not found")
+
+        async with (
+            wrap_err("failed to get orders"),
+            self._http_session.post(
+                _GET_ORDERS_URL,
+                headers=self._headers(account.token),
+                json={
+                    "accountId": account.id,
+                    "advanced_filters": {
+                        "execution_status": _ACTIVE_ORDER_STATUSES,
+                    },
+                },
+            ) as resp,
+        ):
+            json = await resp.json()
+            orders_response = _OrdersResponse.model_validate(json)
+
+        return sorted({_normalize_tickers(order.ticker) for order in orders_response.orders})
 
 
 def _normalize_tickers(tickers: domain.Ticker) -> domain.Ticker:
