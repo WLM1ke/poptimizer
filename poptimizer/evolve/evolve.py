@@ -71,7 +71,6 @@ def build_graph() -> graph.Graph:
             ),
             graph.Transition(
                 on=events.ModelRejected,
-                action=None,
                 dst=events.ModelRejected,
             ),
         ],
@@ -91,7 +90,6 @@ def build_graph() -> graph.Graph:
             ),
             graph.Transition(
                 on=events.ModelRejected,
-                action=None,
                 dst=events.ModelRejected,
             ),
         ],
@@ -126,7 +124,6 @@ def build_graph() -> graph.Graph:
             ),
             graph.Transition(
                 on=events.ModelRejected,
-                action=None,
                 dst=events.ModelRejected,
             ),
         ],

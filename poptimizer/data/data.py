@@ -37,7 +37,6 @@ def build_graph(
             ),
             graph.Transition(
                 on=events.DataUpdated,
-                action=None,
                 dst=events.DataUpdated,
             ),
         ],
@@ -57,12 +56,10 @@ def build_graph(
         [
             graph.Transition(
                 on=events.QuotesUpdated,
-                action=None,
                 dst=events.QuotesUpdated,
             ),
             graph.Transition(
                 on=events.DataUpdated,
-                action=None,
                 dst=events.DataUpdated,
             ),
         ],
@@ -82,7 +79,6 @@ def build_graph(
         [
             graph.Transition(
                 on=events.DataUpdated,
-                action=None,
                 dst=events.DataUpdated,
             ),
         ],
@@ -107,7 +103,6 @@ def build_graph(
             ),
             graph.Transition(
                 on=events.DayNotChanged,
-                action=None,
                 dst=events.DataUpdated,
             ),
         ],

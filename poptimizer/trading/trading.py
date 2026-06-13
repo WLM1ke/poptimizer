@@ -11,7 +11,6 @@ def build_graph() -> graph.Graph:
         [
             graph.Transition(
                 on=events.TradingNotRequired,
-                action=None,
                 dst=events.TradingNotRequired,
             ),
             graph.Transition(
