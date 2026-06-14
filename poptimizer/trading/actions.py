@@ -1,8 +1,8 @@
+import random
 from typing import Protocol
 
 from poptimizer.core import domain, fsm
-from poptimizer.portfolio.models import portfolio
-from poptimizer.trading.models import trading
+from poptimizer.trading import events
 
 
 class TinkoffClient(Protocol):
@@ -10,21 +10,38 @@ class TinkoffClient(Protocol):
     async def get_orders(self, account_name: domain.AccName) -> list[domain.Ticker]: ...
 
 
-class InitTradingStateAction:
+class CheckMarketStateAction:
     async def __call__(self, ctx: fsm.Ctx) -> None:
-        trading_state = await ctx.get_for_update(trading.TradingState)
-        port = await ctx.get(portfolio.Portfolio)
+        event = random.choice(  # noqa: S311
+            [
+                events.TradingDayChanged(),
+                events.MarketClosed(),
+                events.MarketOpened(),
+            ]
+        )
+        ctx.send(event)
 
-        if trading_state.day != port.day:
-            trading_state.init_day(port)
+
+class InitTradingDayAction:
+    async def __call__(self, ctx: fsm.Ctx) -> None: ...
 
 
-class CancelStaleOrdersAction:
-    def __init__(self, tinkoff_client: TinkoffClient) -> None:
-        self._tinkoff_client = tinkoff_client
-
+class CancelObsoleteOrdersAction:
     async def __call__(self, ctx: fsm.Ctx) -> None:
-        for account_name in self._tinkoff_client.updatable_accounts():
-            tickers = await self._tinkoff_client.get_orders(account_name)
-            if tickers:
-                ctx.warning("%s active orders - %s", account_name, ", ".join(tickers))
+        ctx.send(events.ObsoleteOrdersCanceled())
+
+
+class SubmitBuyOrdersAction:
+    async def __call__(self, ctx: fsm.Ctx) -> None:
+        event = random.choice(  # noqa: S311
+            [
+                events.FreeCashLeft(),
+                events.BuyOrdersSubmitted(),
+            ]
+        )
+        ctx.send(event)
+
+
+class SubmitSellOrdersAction:
+    async def __call__(self, ctx: fsm.Ctx) -> None:
+        ctx.send(events.SellOrdersSubmitted())
