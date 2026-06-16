@@ -1,3 +1,4 @@
+import uuid
 from typing import Final
 
 import aiohttp
@@ -12,6 +13,8 @@ _URL_BASE: Final = "https://invest-public-api.tbank.ru/rest/tinkoff.public.inves
 _GET_ACCOUNTS_URL: Final = f"{_URL_BASE}.UsersService/GetAccounts"
 _GET_POSITIONS_URL: Final = f"{_URL_BASE}.OperationsService/GetPositions"
 _GET_ORDERS_URL: Final = f"{_URL_BASE}.OrdersService/GetOrders"
+_GET_SHARES_URL: Final = f"{_URL_BASE}.InstrumentsService/Shares"
+_GET_ETFS_URL: Final = f"{_URL_BASE}.InstrumentsService/Etfs"
 
 _ACTIVE_ACCOUNT: Final = "ACCOUNT_STATUS_OPEN"
 _ACCOUNT_TYPES_DESC: Final = {"ACCOUNT_TYPE_TINKOFF", "ACCOUNT_TYPE_TINKOFF_IIS"}
@@ -45,6 +48,19 @@ class _OrderState(BaseModel):
 
 class _OrdersResponse(BaseModel):
     orders: list[_OrderState]
+
+
+class _Instrument(BaseModel):
+    ticker: domain.Ticker
+    isin: str
+    uid: uuid.UUID
+    api_trade_available_flag: bool = Field(alias="apiTradeAvailableFlag")
+    buy_available_flag: bool = Field(alias="buyAvailableFlag")
+    sell_available_flag: bool = Field(alias="sellAvailableFlag")
+
+
+class _InstrumentsResponse(BaseModel):
+    instruments: list[_Instrument]
 
 
 class Client:
@@ -123,6 +139,30 @@ class Client:
                 if order.status in _ACTIVE_ORDER_STATUSES
             }
         )
+
+    async def get_instruments(self, token: str) -> dict[tuple[domain.Ticker, str], uuid.UUID]:
+        result: dict[tuple[domain.Ticker, str], uuid.UUID] = {}
+
+        for url in (_GET_SHARES_URL, _GET_ETFS_URL):
+            async with (
+                wrap_err(f"failed to get {url}"),
+                self._http_session.post(
+                    url,
+                    headers=self._headers(token),
+                    json={},
+                ) as resp,
+            ):
+                json = await resp.json()
+                instruments_response = _InstrumentsResponse.model_validate(json)
+
+            for inst in instruments_response.instruments:
+                if not (inst.api_trade_available_flag and inst.buy_available_flag and inst.sell_available_flag):
+                    continue
+
+                ticker = _normalize_tickers(inst.ticker)
+                result[(ticker, inst.isin)] = inst.uid
+
+        return result
 
 
 def _normalize_tickers(tickers: domain.Ticker) -> domain.Ticker:

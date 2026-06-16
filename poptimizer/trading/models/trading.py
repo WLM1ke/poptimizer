@@ -1,5 +1,15 @@
+import uuid
+
+from pydantic import BaseModel
+
 from poptimizer.core import consts, domain
 from poptimizer.portfolio.models import portfolio
+
+
+class Instrument(BaseModel):
+    uuid: uuid.UUID
+    ticker: domain.Ticker
+    isin: str
 
 
 class TradingState(domain.Entity):
