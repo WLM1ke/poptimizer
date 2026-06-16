@@ -9,10 +9,10 @@ from lxml import html
 from pydantic import TypeAdapter
 
 from poptimizer.adapters import http
+from poptimizer.clients.cpi import cpi_parser
+from poptimizer.clients.reestry import div_parser
+from poptimizer.clients.status import status_parser
 from poptimizer.core import domain, errors
-from poptimizer.data.clients.cpi import cpi_parser
-from poptimizer.data.clients.reestry import div_parser
-from poptimizer.data.clients.status import status_parser
 from poptimizer.data.cpi import cpi
 from poptimizer.data.div import raw, status
 from poptimizer.data.moex import index, quotes, securities

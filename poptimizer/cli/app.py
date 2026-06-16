@@ -9,14 +9,13 @@ import uvloop
 
 from poptimizer.adapters import gmail, http, logger, mongo
 from poptimizer.cli import config, safe
+from poptimizer.clients import data as data_client
+from poptimizer.clients import memory, migration, tinkoff
 from poptimizer.data import data
-from poptimizer.data.clients import data as data_client
-from poptimizer.data.clients import memory, migration
 from poptimizer.evolve import evolve
 from poptimizer.forecast import forecast
 from poptimizer.fsm import system, tx
 from poptimizer.portfolio import portfolio
-from poptimizer.portfolio.clients import tinkoff
 from poptimizer.trading import trading
 from poptimizer.views.web import server
 
