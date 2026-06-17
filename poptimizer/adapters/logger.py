@@ -5,11 +5,9 @@ from collections.abc import Callable
 from copy import copy
 from typing import Final, Literal
 
-from aiogram import loggers
-
 from poptimizer.adapters import gmail
 
-_IGNORE_LOGGER_NAMES: Final = (gmail.LOGGER_NAME, loggers.dispatcher.name)
+_IGNORE_LOGGER_NAMES: Final = gmail.LOGGER_NAME
 _LOGGER_NAME_SIZE: Final = 13
 
 
