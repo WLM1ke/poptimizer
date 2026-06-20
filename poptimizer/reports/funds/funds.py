@@ -103,7 +103,6 @@ class Fund(domain.Entity):
         all_shares = sum(shares.values())
         shares = {investor: share / all_shares for investor, share in shares.items()}
 
-        self.day = day
         self.rows.append(
             Row(
                 day=day,

@@ -68,10 +68,10 @@ def _make_report_files_path(day: domain.Day) -> tuple[Path, Path]:
 
 async def _make_report(
     repo: uow.UOW,
+    day: domain.Day,
     fund: funds.Fund,
     port: portfolio.Portfolio,
 ) -> Path:
-    day = fund.day
     pdf_path, fund_path = _make_report_files_path(day)
 
     with fund_path.open("w") as json_file:
@@ -133,5 +133,5 @@ async def report(
 
         return
 
-    pdf_path = await _make_report(repo, fund, port)
+    pdf_path = await _make_report(repo, day, fund, port)
     lgr.info("Report saved to %s", pdf_path.resolve())
