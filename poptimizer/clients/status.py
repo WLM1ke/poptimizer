@@ -9,7 +9,7 @@ from poptimizer.core import domain
 
 _STATUS_LOOK_BACK_DAYS: Final = 14
 _STATUS_DATE_FMT: Final = "%m/%d/%Y %H:%M:%S"
-_STATUS_RE_TICKER: Final = re.compile(r",\s([A-Z]|[A-Z]{4}|[A-Z]{4}P|[A-Z][0-9])\s\[")
+_STATUS_RE_TICKER: Final = re.compile(r",\s([A-Z]|[A-Z]{4,5}|[A-Z][0-9])\s\[")
 
 
 def status_parser(lgr: logging.Logger, csv_file: TextIO) -> Iterable[tuple[domain.Ticker, domain.Day]]:
