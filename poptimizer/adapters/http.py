@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Final
 
 import aiohttp
+import certifi
 from pydantic import ValidationError
 
 from poptimizer.core import errors
@@ -18,11 +19,11 @@ _CERTS: Final = Path(__file__).parent / "certs" / "all_certs.pem"
 
 
 def client(on_per_host: int = _MAX_ISS_CON) -> aiohttp.ClientSession:
-    ctx = ssl.create_default_context()
+    ctx = ssl.create_default_context(cafile=certifi.where())
     ctx.load_verify_locations(cafile=_CERTS)
     return aiohttp.ClientSession(
         connector=aiohttp.TCPConnector(
-            ssl_context=ctx,
+            ssl=ctx,
             limit_per_host=on_per_host,
         ),
         headers=_HEADERS,

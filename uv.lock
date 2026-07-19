@@ -135,6 +135,15 @@ wheels = [
 ]
 
 [[package]]
+name = "certifi"
+version = "2026.6.17"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c9/c7/424b75da314c1045981bd9777432fad05a9e0c69daa4ed7e308bbaffe405/certifi-2026.6.17.tar.gz", hash = "sha256:024c88eeec92ca068db80f02b8b07c9cef7b9fe261d1d535abfd5abd6f6af432", size = 134594, upload-time = "2026-06-17T10:31:07.894Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ef/2f/c5464532e965badff2f4c4c1a3a83f5697f0d7c407ed0cda44aaa99bb451/certifi-2026.6.17-py3-none-any.whl", hash = "sha256:2227dcbaafe0d2f59279d1762ddddc37783ed4354594f194ffc31d20f41fc3db", size = 133289, upload-time = "2026-06-17T10:31:06.348Z" },
+]
+
+[[package]]
 name = "cffi"
 version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1162,6 +1171,7 @@ dependencies = [
     { name = "aiohttp" },
     { name = "aiomoex" },
     { name = "aiosmtplib" },
+    { name = "certifi" },
     { name = "email-validator" },
     { name = "jinja2" },
     { name = "keyring" },
@@ -1198,6 +1208,7 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.14.1" },
     { name = "aiomoex", specifier = ">=2.2.0" },
     { name = "aiosmtplib", specifier = ">=5.1.0" },
+    { name = "certifi", specifier = ">=2026.6.17" },
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "jinja2", specifier = ">=3.1.4" },
     { name = "keyring", specifier = ">=25.7.0" },
