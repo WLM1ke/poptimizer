@@ -39,7 +39,7 @@ class OptimizationResult(BaseModel):
         )
 
 
-def optimize(  # noqa: PLR0913
+def optimize(  # noqa: PLR0913, PLR0917
     mean: NDArray[np.double],
     std: NDArray[np.double],
     labels: NDArray[np.double],

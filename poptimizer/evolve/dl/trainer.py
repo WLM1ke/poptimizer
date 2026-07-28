@@ -175,7 +175,7 @@ class Trainer:
 
             raise
 
-    def _evaluate(  # noqa: PLR0913
+    def _evaluate(  # noqa: PLR0913, PLR0917
         self,
         ctx: fsm.Ctx,
         model: evolve.Model,
@@ -199,7 +199,7 @@ class Trainer:
 
         return test_results
 
-    def _train(  # noqa: PLR0913
+    def _train(  # noqa: PLR0913, PLR0917
         self,
         ctx: fsm.Ctx,
         net: wave_net.Net,

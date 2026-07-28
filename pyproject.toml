@@ -42,7 +42,7 @@ dev = [
     "pyright>=1.1.410",
     "pytest>=8.3.2",
     "pytest-cov>=5.0.0",
-    "ruff>=0.14.9",
+    "ruff>=0.16.0",
     "pandas-stubs>=2.2.2.240807",
     "pytest-asyncio>=0.24.0",
     "lxml-stubs>=0.5.1",
@@ -77,6 +77,7 @@ ignore = [
     "A003",   # Class attribute is shadowing a python builtin
     "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
     "COM812", # Missing-trailing-comma - ruff format recommendations
+    "CPY001", # Missing copyright notice at top of file
     "D100",   # Missing docstring in public module
     "D101",   # Missing docstring in public class
     "D102",   # Missing docstring in public method

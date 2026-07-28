@@ -43,8 +43,10 @@ async def report(lgr: logging.Logger, repo: uow.UOW) -> None:
     data.append(
         (
             "Duration",
-            f"{timedelta(seconds=round(min(duration)))} - "
-            f"{timedelta(seconds=round(statistics.median(duration)))} - {timedelta(seconds=round(max(duration)))}",
+            (
+                f"{timedelta(seconds=round(min(duration)))} - "
+                f"{timedelta(seconds=round(statistics.median(duration)))} - {timedelta(seconds=round(max(duration)))}"
+            ),
         )
     )
     data.append(

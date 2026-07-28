@@ -32,7 +32,7 @@ class TrainBatch(NamedTuple):
 
 
 class TickerTrainDataSet(data.Dataset[TrainBatch]):
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         days: Days,
         num_feat: torch.Tensor,
@@ -76,7 +76,7 @@ class TestBatch(NamedTuple):
 
 
 class TickerTestDataSet(data.Dataset[TestBatch]):
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         days: Days,
         num_feat: torch.Tensor,
@@ -125,7 +125,7 @@ class ForecastBatch(NamedTuple):
 
 
 class TickerForecastDataSet(data.Dataset[ForecastBatch]):
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         days: Days,
         num_feat: torch.Tensor,

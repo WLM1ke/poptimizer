@@ -52,11 +52,11 @@ def shrinkage(returns: NDArray[np.double]) -> tuple[NDArray[np.double], float, f
     rho = np.diag(phi_mat).sum() + average_cor * (1 / sqrt_var @ sqrt_var.transpose() * theta_mat).sum()
 
     # gamma-hat
-    gamma = np.linalg.norm(sample_cov - prior, "fro") ** 2
+    gamma = np.linalg.norm(sample_cov - prior, "fro") ** 2  # pyright: ignore[reportUnknownVariableType]
 
     # shrinkage constant
-    kappa = (phi - rho) / gamma
-    shrink = max(0, min(1, kappa / t))
+    kappa = (phi - rho) / gamma  # pyright: ignore[reportUnknownVariableType]
+    shrink = max(0, min(1, kappa / t))  # pyright: ignore[reportUnknownArgumentType]
 
     # estimator
     sigma = shrink * prior + (1 - shrink) * sample_cov
