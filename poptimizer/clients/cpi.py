@@ -35,16 +35,23 @@ def cpi_parser(xlsx: io.BytesIO) -> list[cpi.Row]:
     for row in ws.iter_cols(min_row=_MIN_ROW, max_row=_MAX_ROW, min_col=_MIN_COL, values_only=True):
         day, value = row
 
-        rows.append(cpi.Row(day=_month_end(cast("datetime", day).date()), cpi=1 + cast("float", value) / 100))
+        rows.append(cpi.Row(day=_month_end(_as_date(day)), cpi=1 + cast("float", value) / 100))
 
     return rows
 
 
 def _validate_data_position(ws: worksheet.Worksheet) -> None:
-    if (first_date := ws[_FIRST_DATE_CELL].value.date()) != _FIRST_DATE_VALUE:
+    if (first_date := _as_date(ws[_FIRST_DATE_CELL].value)) != _FIRST_DATE_VALUE:
         raise errors.AdapterError(f"first date {first_date}")
     if (header := ws[_VALUE_HEADER_CELL].value) != _VALUE_HEADER_VALUE:
         raise errors.AdapterError(f"wrong header {header}")
+
+
+def _as_date(value: object) -> date:
+    if isinstance(value, datetime):
+        return value.date()
+
+    raise errors.AdapterError(f"unexpected date cell value {value!r}")
 
 
 def _month_end(day: date) -> date:
