@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Final, cast
 
 from openpyxl.reader import excel
+from openpyxl.utils.cell import get_column_letter
 
 from poptimizer.core import errors
 from poptimizer.data.cpi import cpi
@@ -12,14 +13,11 @@ if TYPE_CHECKING:
 
 
 _SHEET_NAME: Final = "Лист1"
-_FIRST_DATE_CELL: Final = "B1"
-_FIRST_DATE_VALUE: Final = date(year=2002, month=1, day=1)
-_VALUE_HEADER_CELL: Final = "A2"
-_VALUE_HEADER_VALUE: Final = "Все товары и услуги"
 
-_MIN_ROW: Final = 1
-_MAX_ROW: Final = 2
-_MIN_COL: Final = 2
+_DATES_ROW: Final = 1
+_FIRST_DATE_COL: Final = 3
+_FIRST_DATE_VALUE: Final = date(year=2002, month=1, day=1)
+_CPI_HEADER_VALUE: Final = "Все товары и услуги"
 
 _MAX_MONTH_DAYS: Final = 31
 
@@ -32,7 +30,12 @@ def cpi_parser(xlsx: io.BytesIO) -> list[cpi.Row]:
 
     rows: list[cpi.Row] = []
 
-    for row in ws.iter_cols(min_row=_MIN_ROW, max_row=_MAX_ROW, min_col=_MIN_COL, values_only=True):
+    for row in ws.iter_cols(
+        min_row=_DATES_ROW,
+        max_row=_DATES_ROW + 1,
+        min_col=_FIRST_DATE_COL,
+        values_only=True,
+    ):
         day, value = row
 
         rows.append(cpi.Row(day=_month_end(_as_date(day)), cpi=1 + cast("float", value) / 100))
@@ -41,9 +44,12 @@ def cpi_parser(xlsx: io.BytesIO) -> list[cpi.Row]:
 
 
 def _validate_data_position(ws: worksheet.Worksheet) -> None:
-    if (first_date := _as_date(ws[_FIRST_DATE_CELL].value)) != _FIRST_DATE_VALUE:
+    first_date_cell = f"{get_column_letter(_FIRST_DATE_COL)}{_DATES_ROW}"
+    if (first_date := _as_date(ws[first_date_cell].value)) != _FIRST_DATE_VALUE:
         raise errors.AdapterError(f"first date {first_date}")
-    if (header := ws[_VALUE_HEADER_CELL].value) != _VALUE_HEADER_VALUE:
+
+    value_header_cell = f"{get_column_letter(_FIRST_DATE_COL - 1)}{_DATES_ROW + 1}"
+    if (header := ws[value_header_cell].value) != _CPI_HEADER_VALUE:
         raise errors.AdapterError(f"wrong header {header}")
 
 
