@@ -30,6 +30,7 @@ class NumFeat(StrEnum):
     RUGBITR3Y = auto()
     RUGBITR5Y = auto()
     RUGBITR10Y = auto()
+    RUCBITRL1 = auto()
     RUCBITRL2 = auto()
     RUCBITRL3 = auto()
     RUMBITR1Y = auto()
