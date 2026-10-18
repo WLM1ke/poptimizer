@@ -108,6 +108,11 @@ class Client:
         ):
             json = await resp.json()
 
+            if not resp.ok:
+                raise errors.AdapterError(
+                    f"failed to get positions for account {account_name} (id={account.id}): HTTP {resp.status}, {json}"
+                )
+
             raw_positions = actions.Positions.model_validate(json)
 
             for sec in raw_positions.securities:
