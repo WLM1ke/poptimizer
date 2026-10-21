@@ -1,4 +1,3 @@
-import random
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -17,6 +16,8 @@ from poptimizer.fsm import uow
 _MONGO_ID: Final = "_id"
 _VER: Final = "ver"
 _UID: Final = "uid"
+_DAY_IN_SECONDS: Final = 24 * 60 * 60
+_MIN_MODELS: Final = 4
 
 type MongoDocument = dict[str, Any]
 type MongoClient = pymongo.AsyncMongoClient[MongoDocument]
@@ -64,15 +65,26 @@ class Repo:
         collection = self._db[collection_name]
 
         async with _wrap_err("can't get next model"):
+            count = await collection.count_documents({})
+
+            if count < _MIN_MODELS:
+                return
+
+            await collection.find_one_and_delete(
+                {"duration": {"$gt": _DAY_IN_SECONDS / count}},
+                sort=[
+                    ("day", pymongo.ASCENDING),
+                    ("duration", pymongo.DESCENDING),
+                ],
+            )
+
             await collection.find_one_and_delete(
                 {},
-                sort=random.choice(  # noqa: S311
-                    [
-                        [("alfa", pymongo.ASCENDING)],
-                        [("llh", pymongo.ASCENDING)],
-                        [("day", pymongo.ASCENDING), ("duration", pymongo.DESCENDING)],
-                    ]
-                ),
+                sort=[("alfa", pymongo.ASCENDING)],
+            )
+            await collection.find_one_and_delete(
+                {},
+                sort=[("llh", pymongo.ASCENDING)],
             )
 
     async def get_models(self, day: domain.Day) -> list[evolve.Model]:
