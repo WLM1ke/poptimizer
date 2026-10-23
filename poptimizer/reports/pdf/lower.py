@@ -23,7 +23,12 @@ def _prepare_positions_data(port: portfolio.Portfolio) -> list[tuple[str, float,
         key=lambda pos: pos[1],
         reverse=True,
     )[:_MAX_POSITIONS]
-    values.append(("Other", value - sum(pos[1] for pos in values)))
+    values = [pos for pos in values if pos[1] > 0]
+
+    other = value - sum(pos[1] for pos in values)
+    if other > 0:
+        values.append(("Other", other))
+
     values.append(("Portfolio", value))
 
     return [(name, pos, pos / value) for name, pos in values]
