@@ -61,7 +61,7 @@ class Portfolio(domain.Entity):
         set[domain.AccName],
         PlainSerializer(
             list,
-            return_type=list,
+            return_type=list[domain.AccName],
         ),
     ] = Field(default_factory=set[domain.AccName])
     cash: AccountData = Field(default_factory=dict[domain.AccName, int])
@@ -73,14 +73,14 @@ class Portfolio(domain.Entity):
         set[domain.Ticker],
         PlainSerializer(
             list,
-            return_type=list,
+            return_type=list[domain.Ticker],
         ),
     ] = Field(default_factory=set[domain.Ticker])
     illiquid: Annotated[
         set[domain.Ticker],
         PlainSerializer(
             list,
-            return_type=list,
+            return_type=list[domain.Ticker],
         ),
     ] = Field(default_factory=set[domain.Ticker])
 
