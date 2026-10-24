@@ -124,7 +124,7 @@ class Evolution(domain.Entity):
     def model_rejected(self, day: domain.Day) -> None:
         self.radius += 1 / self.cnt
 
-        if day != self.day:
+        if consts.START_DAY < day < self.day:
             self.cnt = max(1, self.cnt - 1)
 
     def model_accepted(self) -> None:
