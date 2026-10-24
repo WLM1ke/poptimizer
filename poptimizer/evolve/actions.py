@@ -54,8 +54,6 @@ class EvaluateNewModelAction:
         evolution = await ctx.get_for_update(evolve.Evolution)
         model = await ctx.get_for_update(evolve.Model, evolution.previous_model)
 
-        model_initial_day = model.day
-
         results = await self._trainer.update_model_metrics(
             ctx,
             evolution,
@@ -64,15 +62,15 @@ class EvaluateNewModelAction:
 
         match results:
             case evolve.TestResults() if await evolve.is_accepted(ctx, evolution, model, results):
-                evolution.model_accepted(model_initial_day)
+                evolution.model_accepted()
                 evolution.new_base(results)
                 evolution.previous_model = await evolve.make_new_model(ctx, evolution, model)
                 ctx.send(events.NewModelCreated())
             case _ if await ctx.count_models() != 0:
-                evolution.model_rejected(model_initial_day)
+                evolution.model_rejected()
                 ctx.send(events.ModelRejected())
             case _:
-                evolution.model_rejected(model_initial_day)
+                evolution.model_rejected()
                 evolution.previous_model = await evolve.make_new_model(ctx, evolution, model)
                 ctx.send(events.BaseModelNotEvaluated())
 
@@ -84,14 +82,20 @@ class EvaluateExistingModelAction:
     async def __call__(self, ctx: fsm.Ctx) -> None:
         evolution = await ctx.get_for_update(evolve.Evolution)
 
+        deleted = False
+
         if await ctx.count_models() > evolution.cnt:
+            deleted = True
             await ctx.delete_worst_model()
             ctx.info("Deleting worst model")
 
         model = await ctx.next_model_for_update()
         evolution.previous_model = model.uid
 
-        model_initial_day = model.day
+        if model.day < evolution.day:
+            evolution.cnt = max(1, evolution.cnt - 1)
+        elif deleted:
+            evolution.cnt += 1
 
         results = await self._trainer.update_model_metrics(
             ctx,
@@ -106,7 +110,7 @@ class EvaluateExistingModelAction:
             case _ if await ctx.count_models() != 0:
                 ctx.send(events.ModelRejected())
             case _:
-                evolution.model_rejected(model_initial_day)
+                evolution.model_rejected()
                 evolution.previous_model = await evolve.make_new_model(ctx, evolution, model)
                 ctx.send(events.BaseModelNotEvaluated())
 
