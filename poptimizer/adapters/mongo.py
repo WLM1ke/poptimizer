@@ -80,11 +80,17 @@ class Repo:
 
             await collection.find_one_and_delete(
                 {},
-                sort=[("alfa", pymongo.ASCENDING)],
+                sort=[
+                    ("day", pymongo.ASCENDING),
+                    ("alfa", pymongo.ASCENDING),
+                ],
             )
             await collection.find_one_and_delete(
                 {},
-                sort=[("llh", pymongo.ASCENDING)],
+                sort=[
+                    ("day", pymongo.ASCENDING),
+                    ("llh", pymongo.ASCENDING),
+                ],
             )
 
     async def get_models(self, day: domain.Day) -> list[evolve.Model]:
