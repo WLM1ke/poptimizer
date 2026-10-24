@@ -64,7 +64,7 @@ class EvaluateNewModelAction:
 
         match results:
             case evolve.TestResults() if await evolve.is_accepted(ctx, evolution, model, results):
-                evolution.model_accepted()
+                evolution.model_accepted(model_initial_day)
                 evolution.new_base(results)
                 evolution.previous_model = await evolve.make_new_model(ctx, evolution, model)
                 ctx.send(events.NewModelCreated())
