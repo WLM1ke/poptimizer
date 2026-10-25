@@ -1,7 +1,8 @@
+import random
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, Final, NamedTuple
+from typing import Any, Final, NamedTuple, cast
 
 import pymongo
 from bson.errors import BSONError
@@ -32,8 +33,11 @@ class _FrontPoint(NamedTuple):
     def is_worse_than(self, other: _FrontPoint) -> bool:
         return self.llh < other.llh and self.alfa < other.alfa
 
-    def is_on_front(self, points: list[_FrontPoint]) -> bool:
+    def is_on_anti_pareto_front(self, points: list[_FrontPoint]) -> bool:
         return not any(other.is_worse_than(self) for other in points)
+
+    def is_on_pareto_front(self, points: list[_FrontPoint]) -> bool:
+        return not any(self.is_worse_than(other) for other in points)
 
 
 @asynccontextmanager
@@ -62,12 +66,20 @@ class Repo:
         collection = self._db[collection_name]
 
         async with _wrap_err("can't get next model"):
-            doc = await collection.find_one(
-                sort=[
-                    ("day", pymongo.ASCENDING),
-                    ("llh", pymongo.DESCENDING),
-                ],
+            oldest_doc = cast(
+                "MongoDocument",
+                await collection.find_one(
+                    {},
+                    {"day": True},
+                    sort=[("day", pymongo.ASCENDING)],
+                ),
             )
+            points = await self._load_points(collection, {"day": oldest_doc["day"]})
+
+            pareto_front = [point for point in points if point.is_on_pareto_front(points)]
+
+            chosen_uid = random.choice(pareto_front).uid  # noqa: S311
+            doc = await collection.find_one({_MONGO_ID: chosen_uid})
 
             return self._create_obj(evolve.Model, doc)
 
@@ -92,17 +104,14 @@ class Repo:
             ):
                 worst_count += 1
 
-            points = [
-                _FrontPoint(doc[_MONGO_ID], doc["llh"], doc["alfa"])
-                async for doc in collection.find({}, {"llh": True, "alfa": True})
-            ]
+            points = await self._load_points(collection, {})
 
-            front = [point for point in points if point.is_on_front(points)]
+            anti_pareto_front = [point for point in points if point.is_on_anti_pareto_front(points)]
 
-            if len(front) == len(points):
+            if len(anti_pareto_front) == len(points):
                 return worst_count
 
-            result = await collection.delete_many({_MONGO_ID: {"$in": [point.uid for point in front]}})
+            result = await collection.delete_many({_MONGO_ID: {"$in": [point.uid for point in anti_pareto_front]}})
             worst_count += result.deleted_count
 
             return worst_count
@@ -179,6 +188,16 @@ class Repo:
             uid = doc.get(_UID)
 
             raise errors.AdapterError(f"can't create {collection_name}.{uid} {err}") from err
+
+    async def _load_points(
+        self,
+        collection: MongoCollection,
+        query: MongoDocument,
+    ) -> list[_FrontPoint]:
+        return [
+            _FrontPoint(doc[_MONGO_ID], doc["llh"], doc["alfa"])
+            async for doc in collection.find(query, {"llh": True, "alfa": True})
+        ]
 
     async def save(self, obj: domain.Object, ver: uow.Version) -> None:
         collection_name = obj.__class__.__name__
