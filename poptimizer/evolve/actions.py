@@ -86,8 +86,8 @@ class EvaluateExistingModelAction:
 
         if await ctx.count_models() > evolution.cnt:
             deleted = True
-            await ctx.delete_worst_model()
-            ctx.info("Deleting worst model")
+            worst_count = await ctx.delete_worst_model()
+            ctx.info("Deleting %d worst models", worst_count)
 
         model = await ctx.next_model_for_update()
         evolution.previous_model = model.uid

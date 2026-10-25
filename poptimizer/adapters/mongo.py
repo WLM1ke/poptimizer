@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, Final
+from typing import Any, Final, NamedTuple
 
 import pymongo
 from bson.errors import BSONError
@@ -17,12 +17,23 @@ _MONGO_ID: Final = "_id"
 _VER: Final = "ver"
 _UID: Final = "uid"
 _DAY_IN_SECONDS: Final = 24 * 60 * 60
-_MIN_MODELS: Final = 4
 
 type MongoDocument = dict[str, Any]
 type MongoClient = pymongo.AsyncMongoClient[MongoDocument]
 type MongoDatabase = database.AsyncDatabase[MongoDocument]
 type MongoCollection = collection.AsyncCollection[MongoDocument]
+
+
+class _FrontPoint(NamedTuple):
+    uid: domain.UID
+    llh: float
+    alfa: float
+
+    def is_worse_than(self, other: _FrontPoint) -> bool:
+        return self.llh < other.llh and self.alfa < other.alfa
+
+    def is_on_front(self, points: list[_FrontPoint]) -> bool:
+        return not any(other.is_worse_than(self) for other in points)
 
 
 @asynccontextmanager
@@ -60,38 +71,41 @@ class Repo:
 
             return self._create_obj(evolve.Model, doc)
 
-    async def delete_worst_model(self) -> None:
+    async def delete_worst_model(self) -> int:
         collection_name = evolve.Model.__name__
         collection = self._db[collection_name]
 
-        async with _wrap_err("can't get next model"):
+        async with _wrap_err("can't delete worst models"):
             count = await collection.count_documents({})
 
-            if count < _MIN_MODELS:
-                return
+            if count <= 1:
+                return 0
 
-            await collection.find_one_and_delete(
+            worst_count = 0
+
+            if await collection.find_one_and_delete(
                 {"duration": {"$gt": _DAY_IN_SECONDS / count}},
                 sort=[
                     ("day", pymongo.ASCENDING),
                     ("duration", pymongo.DESCENDING),
                 ],
-            )
+            ):
+                worst_count += 1
 
-            await collection.find_one_and_delete(
-                {},
-                sort=[
-                    ("day", pymongo.ASCENDING),
-                    ("alfa", pymongo.ASCENDING),
-                ],
-            )
-            await collection.find_one_and_delete(
-                {},
-                sort=[
-                    ("day", pymongo.ASCENDING),
-                    ("llh", pymongo.ASCENDING),
-                ],
-            )
+            points = [
+                _FrontPoint(doc[_MONGO_ID], doc["llh"], doc["alfa"])
+                async for doc in collection.find({}, {"llh": True, "alfa": True})
+            ]
+
+            front = [point for point in points if point.is_on_front(points)]
+
+            if len(front) == len(points):
+                return worst_count
+
+            result = await collection.delete_many({_MONGO_ID: {"$in": [point.uid for point in front]}})
+            worst_count += result.deleted_count
+
+            return worst_count
 
     async def get_models(self, day: domain.Day) -> list[evolve.Model]:
         collection_name = evolve.Model.__name__
