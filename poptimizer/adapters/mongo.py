@@ -80,7 +80,7 @@ class Repo:
 
             pareto_front = [point for point in points if point.is_on_pareto_front(points)]
 
-            weights = [1 / max(point.duration, _MIN_DURATION) ** 2 for point in pareto_front]
+            weights = [(1 / max(point.duration, _MIN_DURATION)) ** 0.5 for point in pareto_front]
             chosen_uid = random.choices(pareto_front, weights=weights, k=1)[0].uid  # noqa: S311
             doc = await collection.find_one({_MONGO_ID: chosen_uid})
 
