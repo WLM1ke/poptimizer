@@ -89,7 +89,7 @@ class EvaluateExistingModelAction:
 
         if await ctx.count_models() > evolution.cnt:
             worst_count = await ctx.delete_worst_model()
-            ctx.warning("Deleting %d worst models", worst_count)
+            ctx.info("Deleting %d worst models", worst_count)
 
         model, longest_duration = await ctx.next_model_for_update()
 
@@ -97,7 +97,7 @@ class EvaluateExistingModelAction:
 
         if _is_slow_outdated(evolution, model):
             await ctx.delete(model)
-            ctx.warning("Deleting slow outdated model - %s", model)
+            ctx.info("Deleting slow outdated model - %s", model)
         else:
             evolution.previous_model = model.uid
             _move_target_count(evolution, model, longest_duration)
