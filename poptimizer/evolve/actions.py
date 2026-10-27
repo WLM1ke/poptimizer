@@ -1,9 +1,13 @@
+from typing import Final
+
 from poptimizer.core import fsm
 from poptimizer.data.events import DataUpdated
 from poptimizer.evolve import events
 from poptimizer.evolve.dl import trainer
 from poptimizer.evolve.models import evolve
 from poptimizer.portfolio.models import portfolio
+
+_DAY_IN_SECONDS: Final = 24 * 60 * 60
 
 
 class InitEvolutionAction:
@@ -82,26 +86,22 @@ class EvaluateExistingModelAction:
     async def __call__(self, ctx: fsm.Ctx) -> None:
         evolution = await ctx.get_for_update(evolve.Evolution)
 
-        deleted = False
-
         if await ctx.count_models() > evolution.cnt:
-            deleted = True
             worst_count = await ctx.delete_worst_model()
             ctx.info("Deleting %d worst models", worst_count)
 
-        model = await ctx.next_model_for_update()
-        evolution.previous_model = model.uid
+        model, per_day = await ctx.next_model_for_update()
 
-        if model.day < evolution.day:
-            evolution.cnt = max(1, evolution.cnt - 1)
-        elif deleted:
-            evolution.cnt += 1
+        results: evolve.TestResults | None = None
 
-        results = await self._trainer.update_model_metrics(
-            ctx,
-            evolution,
-            model,
-        )
+        if _is_slow_outdated(evolution, model):
+            await ctx.delete(model)
+            ctx.warning("Deleting slow outdated model - %s", model)
+        else:
+            evolution.previous_model = model.uid
+            _move_target_count(evolution, model, per_day)
+
+            results = await self._trainer.update_model_metrics(ctx, evolution, model)
 
         match results:
             case evolve.TestResults() if await evolve.is_accepted(ctx, evolution, model, results):
@@ -116,3 +116,17 @@ class EvaluateExistingModelAction:
 
         if results:
             evolution.new_base(results)
+
+
+def _is_slow_outdated(evolution: evolve.Evolution, model: evolve.Model) -> bool:
+    return model.day != evolution.day and model.duration * evolution.cnt > _DAY_IN_SECONDS
+
+
+def _move_target_count(evolution: evolve.Evolution, model: evolve.Model, per_day: int) -> None:
+    if model.day != evolution.day:
+        return
+
+    if evolution.cnt < per_day:
+        evolution.cnt += 1
+    elif evolution.cnt > 1:
+        evolution.cnt -= 1

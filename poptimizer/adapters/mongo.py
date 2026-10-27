@@ -18,6 +18,7 @@ _MONGO_ID: Final = "_id"
 _VER: Final = "ver"
 _UID: Final = "uid"
 _DAY_IN_SECONDS: Final = 24 * 60 * 60
+_MIN_DURATION: Final = 1e-9
 
 type MongoDocument = dict[str, Any]
 type MongoClient = pymongo.AsyncMongoClient[MongoDocument]
@@ -29,6 +30,7 @@ class _FrontPoint(NamedTuple):
     uid: domain.UID
     llh: float
     alfa: float
+    duration: float
 
     def is_worse_than(self, other: _FrontPoint) -> bool:
         return self.llh < other.llh and self.alfa < other.alfa
@@ -61,7 +63,7 @@ class Repo:
     def __init__(self, mongo_db: MongoDatabase) -> None:
         self._db = mongo_db
 
-    async def next_model_for_update(self) -> tuple[evolve.Model, uow.Version]:
+    async def next_model_for_update(self) -> tuple[evolve.Model, uow.Version, int]:
         collection_name = evolve.Model.__name__
         collection = self._db[collection_name]
 
@@ -78,10 +80,14 @@ class Repo:
 
             pareto_front = [point for point in points if point.is_on_pareto_front(points)]
 
-            chosen_uid = random.choice(pareto_front).uid  # noqa: S311
+            weights = [1 / max(point.duration, _MIN_DURATION) ** 2 for point in pareto_front]
+            chosen_uid = random.choices(pareto_front, weights=weights, k=1)[0].uid  # noqa: S311
             doc = await collection.find_one({_MONGO_ID: chosen_uid})
 
-            return self._create_obj(evolve.Model, doc)
+            longest_duration = max(point.duration for point in pareto_front)
+            per_day = round(_DAY_IN_SECONDS / max(longest_duration, _MIN_DURATION))
+
+            return *self._create_obj(evolve.Model, doc), per_day
 
     async def delete_worst_model(self) -> int:
         collection_name = evolve.Model.__name__
@@ -93,28 +99,16 @@ class Repo:
             if count <= 1:
                 return 0
 
-            worst_count = 0
-
-            if await collection.find_one_and_delete(
-                {"duration": {"$gt": _DAY_IN_SECONDS / count}},
-                sort=[
-                    ("day", pymongo.ASCENDING),
-                    ("duration", pymongo.DESCENDING),
-                ],
-            ):
-                worst_count += 1
-
             points = await self._load_points(collection, {})
 
             anti_pareto_front = [point for point in points if point.is_on_anti_pareto_front(points)]
 
             if len(anti_pareto_front) == len(points):
-                return worst_count
+                return 0
 
             result = await collection.delete_many({_MONGO_ID: {"$in": [point.uid for point in anti_pareto_front]}})
-            worst_count += result.deleted_count
 
-            return worst_count
+            return result.deleted_count
 
     async def get_models(self, day: domain.Day) -> list[evolve.Model]:
         collection_name = evolve.Model.__name__
@@ -195,8 +189,8 @@ class Repo:
         query: MongoDocument,
     ) -> list[_FrontPoint]:
         return [
-            _FrontPoint(doc[_MONGO_ID], doc["llh"], doc["alfa"])
-            async for doc in collection.find(query, {"llh": True, "alfa": True})
+            _FrontPoint(doc[_MONGO_ID], doc["llh"], doc["alfa"], doc["duration"])
+            async for doc in collection.find(query, {"llh": True, "alfa": True, "duration": True})
         ]
 
     async def save(self, obj: domain.Object, ver: uow.Version) -> None:

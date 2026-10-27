@@ -86,7 +86,7 @@ class Repo(Protocol):
     async def save(self, obj: domain.Object, ver: Version) -> None: ...
     async def delete(self, obj: domain.Object) -> None: ...
     async def count_models(self) -> int: ...
-    async def next_model_for_update(self) -> tuple[evolve.Model, Version]: ...
+    async def next_model_for_update(self) -> tuple[evolve.Model, Version, int]: ...
     async def delete_worst_model(self) -> int: ...
     async def get_models(self, day: domain.Day) -> list[evolve.Model]: ...
     async def sample_models(self, n: int) -> list[evolve.Model]: ...
@@ -143,17 +143,17 @@ class UOW:
     async def count_models(self) -> int:
         return await self._repo.count_models()
 
-    async def next_model_for_update(self) -> evolve.Model:
+    async def next_model_for_update(self) -> tuple[evolve.Model, int]:
         async with self._identity_map as identity_map:
-            model, ver = await self._repo.next_model_for_update()
+            model, ver, per_day = await self._repo.next_model_for_update()
             if loaded := identity_map.get_for_update(evolve.Model, model.uid):
                 obj, _ = loaded
 
-                return obj
+                return obj, per_day
 
             identity_map.save_for_update(model, ver)
 
-            return model
+            return model, per_day
 
     async def delete_worst_model(self) -> int:
         return await self._repo.delete_worst_model()
