@@ -82,7 +82,7 @@ class Tx:
     async def count_models(self) -> int:
         return await self._uow.count_models()
 
-    async def next_model_for_update(self) -> tuple[evolve.Model, int]:
+    async def next_model_for_update(self) -> tuple[evolve.Model, float]:
         return await self._uow.next_model_for_update()
 
     async def delete_worst_model(self) -> int:

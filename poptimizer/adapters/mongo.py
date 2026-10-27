@@ -17,7 +17,6 @@ from poptimizer.fsm import uow
 _MONGO_ID: Final = "_id"
 _VER: Final = "ver"
 _UID: Final = "uid"
-_DAY_IN_SECONDS: Final = 24 * 60 * 60
 _MIN_DURATION: Final = 1e-9
 
 type MongoDocument = dict[str, Any]
@@ -63,7 +62,7 @@ class Repo:
     def __init__(self, mongo_db: MongoDatabase) -> None:
         self._db = mongo_db
 
-    async def next_model_for_update(self) -> tuple[evolve.Model, uow.Version, int]:
+    async def next_model_for_update(self) -> tuple[evolve.Model, uow.Version, float]:
         collection_name = evolve.Model.__name__
         collection = self._db[collection_name]
 
@@ -85,9 +84,8 @@ class Repo:
             doc = await collection.find_one({_MONGO_ID: chosen_uid})
 
             longest_duration = max(point.duration for point in pareto_front)
-            per_day = round(_DAY_IN_SECONDS / max(longest_duration, _MIN_DURATION))
 
-            return *self._create_obj(evolve.Model, doc), per_day
+            return *self._create_obj(evolve.Model, doc), longest_duration
 
     async def delete_worst_model(self) -> int:
         collection_name = evolve.Model.__name__

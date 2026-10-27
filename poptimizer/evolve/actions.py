@@ -8,6 +8,7 @@ from poptimizer.evolve.models import evolve
 from poptimizer.portfolio.models import portfolio
 
 _DAY_IN_SECONDS: Final = 24 * 60 * 60
+_MIN_DURATION: Final = 1e-9
 
 
 class InitEvolutionAction:
@@ -88,9 +89,9 @@ class EvaluateExistingModelAction:
 
         if await ctx.count_models() > evolution.cnt:
             worst_count = await ctx.delete_worst_model()
-            ctx.info("Deleting %d worst models", worst_count)
+            ctx.warning("Deleting %d worst models", worst_count)
 
-        model, per_day = await ctx.next_model_for_update()
+        model, longest_duration = await ctx.next_model_for_update()
 
         results: evolve.TestResults | None = None
 
@@ -99,7 +100,7 @@ class EvaluateExistingModelAction:
             ctx.warning("Deleting slow outdated model - %s", model)
         else:
             evolution.previous_model = model.uid
-            _move_target_count(evolution, model, per_day)
+            _move_target_count(evolution, model, longest_duration)
 
             results = await self._trainer.update_model_metrics(ctx, evolution, model)
 
@@ -122,9 +123,11 @@ def _is_slow_outdated(evolution: evolve.Evolution, model: evolve.Model) -> bool:
     return model.day != evolution.day and model.duration * evolution.cnt > _DAY_IN_SECONDS
 
 
-def _move_target_count(evolution: evolve.Evolution, model: evolve.Model, per_day: int) -> None:
+def _move_target_count(evolution: evolve.Evolution, model: evolve.Model, longest_duration: float) -> None:
     if model.day != evolution.day:
         return
+
+    per_day = _DAY_IN_SECONDS / max(longest_duration, _MIN_DURATION)
 
     if evolution.cnt < per_day:
         evolution.cnt += 1
