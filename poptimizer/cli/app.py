@@ -16,7 +16,6 @@ from poptimizer.evolve import evolve
 from poptimizer.forecast import forecast
 from poptimizer.fsm import system, tx
 from poptimizer.portfolio import portfolio
-from poptimizer.trading import trading
 from poptimizer.views.web import server
 
 
@@ -100,7 +99,6 @@ class Run(config.Cfg):
                     portfolio.build_graph(tinkoff_client),
                     evolve.build_graph(),
                     forecast.build_graph(),
-                    trading.build_graph(),
                 )
             )
             coro.append(server.run(repo, dispatcher, self.server.url))
