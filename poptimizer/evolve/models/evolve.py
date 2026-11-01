@@ -116,6 +116,7 @@ class Evolution(domain.Entity):
         self.alfa = 0
         self.llh = []
         self.step = 1
+        self.minimal_returns_days -= 1
 
     def new_base(self, results: TestResults) -> None:
         self.alfa = results.alfa
