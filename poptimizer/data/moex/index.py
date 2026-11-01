@@ -13,6 +13,7 @@ MCF2TRR: Final = domain.Ticker("MCF2TRR")
 RUGBITR1Y: Final = domain.Ticker("RUGBITR1Y")
 INDEXES: Final = {
     MCF2TRR: domain.Ticker("MCFTRR"),
+    domain.Ticker("MEBCTRR"): None,
     domain.Ticker("MECNTRR"): None,
     domain.Ticker("MEFNTRR"): None,
     domain.Ticker("MEMMTRR"): None,

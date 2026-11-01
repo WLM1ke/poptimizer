@@ -39,6 +39,10 @@ class NumFeatures(genetics.Chromosome):
         float,
         genetics.bool_phenotype(),
     ] = genetics.random_default_range(-1, 1)
+    mebctrr: Annotated[
+        float,
+        genetics.bool_phenotype(),
+    ] = genetics.random_default_range(-1, 1)
     mecntrr: Annotated[
         float,
         genetics.bool_phenotype(),
