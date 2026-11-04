@@ -5,14 +5,15 @@ from datetime import timedelta
 from typing import Final, TypeIs, get_type_hints
 
 from poptimizer.core import errors, fsm
-from poptimizer.fsm import graph, tx, uow
+from poptimizer.fsm import graph, tx
+from poptimizer.runtime import uow
 
 _FIRST_RETRY: Final = timedelta(seconds=30)
 _BACKOFF_FACTOR: Final = 2
 
 
 class FSMSystem:
-    def __init__(self, repo: uow.Repo, dispatcher: tx.Dispatcher) -> None:
+    def __init__(self, repo: uow.Store, dispatcher: tx.Dispatcher) -> None:
         self._lgr = logging.getLogger(self.__class__.__name__)
         self._repo = repo
         self._dispatcher = dispatcher

@@ -12,7 +12,7 @@ from pymongo.errors import PyMongoError
 
 from poptimizer.core import domain, errors
 from poptimizer.evolve.models import evolve
-from poptimizer.fsm import uow
+from poptimizer.runtime import uow
 
 _MONGO_ID: Final = "_id"
 _VER: Final = "ver"
@@ -59,7 +59,7 @@ async def db(uri: MongoDsn, db: str) -> AsyncGenerator[MongoDatabase]:
         await mongo_client.aclose()
 
 
-class Repo:
+class Store:
     def __init__(self, mongo_db: MongoDatabase) -> None:
         self._db = mongo_db
 

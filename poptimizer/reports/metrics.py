@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from poptimizer.evolve.models import evolve
-from poptimizer.fsm import uow
+from poptimizer.runtime import uow
 
 
 async def plot(repo: uow.UOW) -> None:

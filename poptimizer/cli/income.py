@@ -5,9 +5,9 @@ from pydantic_settings import CliPositionalArg
 
 from poptimizer.adapters import logger, mongo
 from poptimizer.cli import config, safe
-from poptimizer.fsm import uow
 from poptimizer.reports.funds import funds
 from poptimizer.reports.income import report
+from poptimizer.runtime import uow
 
 
 class Income(config.Cfg):
@@ -19,7 +19,7 @@ class Income(config.Cfg):
     async def cli_cmd(self) -> None:
         async with contextlib.AsyncExitStack() as stack:
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
-            repo = mongo.Repo(mongo_db)
+            repo = mongo.Store(mongo_db)
 
             lgr = logger.init()
 

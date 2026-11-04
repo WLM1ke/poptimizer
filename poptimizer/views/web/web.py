@@ -14,13 +14,14 @@ from pydantic import TypeAdapter, ValidationError
 from poptimizer.core import domain, errors, fsm
 from poptimizer.data.div import raw, status
 from poptimizer.forecast.models import forecasts
-from poptimizer.fsm import tx, uow
+from poptimizer.fsm import tx
 from poptimizer.portfolio.models import portfolio
+from poptimizer.runtime import uow
 from poptimizer.views.web import models, view
 
 
 class App(web.Application):
-    def __init__(self, lgr: logging.Logger, repo: uow.Repo, dispatcher: tx.Dispatcher) -> None:
+    def __init__(self, lgr: logging.Logger, repo: uow.Store, dispatcher: tx.Dispatcher) -> None:
         super().__init__(middlewares=[self._alerts_middleware])
         self._lgr = lgr
         self._render = view.View()

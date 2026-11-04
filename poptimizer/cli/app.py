@@ -77,7 +77,7 @@ class Run(config.Cfg):
 
             lgr = logger.init(send_fn)
 
-            repo = mongo.Repo(mongo_db)
+            repo = mongo.Store(mongo_db)
 
             main_task = None
 

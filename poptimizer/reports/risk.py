@@ -6,8 +6,8 @@ from scipy import stats  # type: ignore[reportMissingTypeStubs]
 
 from poptimizer.core import domain, errors
 from poptimizer.data.moex import index
-from poptimizer.fsm import uow
 from poptimizer.reports.funds import funds
+from poptimizer.runtime import uow
 
 PORTFOLIO: Final = "PORTFOLIO"
 MOEX: Final = "MCFTRR"

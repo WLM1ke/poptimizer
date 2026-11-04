@@ -3,8 +3,8 @@ from typing import Final
 
 from poptimizer.core import errors
 from poptimizer.data.cpi import cpi
-from poptimizer.fsm import uow
 from poptimizer.reports.funds import funds
+from poptimizer.runtime import uow
 
 _WEEK_IN_MONTH: Final = 365.25 / 7 / 12
 _ROWS_PARAMS: Final = [

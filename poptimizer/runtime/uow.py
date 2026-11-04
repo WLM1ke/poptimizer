@@ -77,26 +77,26 @@ class _IdentityMap:
         self._seen.clear()
 
 
-class Repo(Protocol):
+class Store(Protocol):
     async def get[E: domain.Object](
         self,
         t_obj: type[E],
         uid: domain.UID,
     ) -> tuple[E, Version]: ...
-    async def save(self, obj: domain.Object, ver: Version) -> None: ...
+    def get_all[E: domain.Object](self, t_obj: type[E]) -> AsyncIterator[E]: ...
     async def delete(self, obj: domain.Object) -> None: ...
+    async def drop(self, obj_type: type[domain.Object]) -> None: ...
+    async def save(self, obj: domain.Object, ver: Version) -> None: ...
     async def count_models(self) -> int: ...
     async def next_model_for_update(self) -> tuple[evolve.Model, Version, float]: ...
     async def delete_worst_model(self) -> int: ...
     async def get_models(self, day: domain.Day) -> list[evolve.Model]: ...
     async def sample_models(self, n: int) -> list[evolve.Model]: ...
-    def get_all[E: domain.Object](self, t_obj: type[E]) -> AsyncIterator[E]: ...
-    async def drop(self, obj_type: type[domain.Object]) -> None: ...
 
 
 class UOW:
-    def __init__(self, repo: Repo) -> None:
-        self._repo = repo
+    def __init__(self, store: Store) -> None:
+        self._store = store
         self._identity_map = _IdentityMap()
 
     async def get[E: domain.Object](
@@ -112,7 +112,7 @@ class UOW:
 
                 return obj
 
-            obj, ver = await self._repo.get(t_obj, uid)
+            obj, ver = await self._store.get(t_obj, uid)
             identity_map.save(obj, ver)
 
             return obj
@@ -130,22 +130,22 @@ class UOW:
 
                 return obj
 
-            obj, ver = await self._repo.get(t_obj, uid)
+            obj, ver = await self._store.get(t_obj, uid)
             identity_map.save_for_update(obj, ver)
 
             return obj
 
     async def delete(self, obj: domain.Object) -> None:
         async with self._identity_map as identity_map:
-            await self._repo.delete(obj)
+            await self._store.delete(obj)
             identity_map.delete(obj)
 
     async def count_models(self) -> int:
-        return await self._repo.count_models()
+        return await self._store.count_models()
 
     async def next_model_for_update(self) -> tuple[evolve.Model, float]:
         async with self._identity_map as identity_map:
-            model, ver, max_llh_duration = await self._repo.next_model_for_update()
+            model, ver, max_llh_duration = await self._store.next_model_for_update()
             if loaded := identity_map.get_for_update(evolve.Model, model.uid):
                 obj, _ = loaded
 
@@ -156,27 +156,27 @@ class UOW:
             return model, max_llh_duration
 
     async def delete_worst_model(self) -> int:
-        return await self._repo.delete_worst_model()
+        return await self._store.delete_worst_model()
 
     async def get_models(self, day: domain.Day) -> list[evolve.Model]:
-        return await self._repo.get_models(day)
+        return await self._store.get_models(day)
 
     async def sample_models(self, n: int) -> list[evolve.Model]:
-        return await self._repo.sample_models(n)
+        return await self._store.sample_models(n)
 
     def get_all[E: domain.Object](
         self,
         t_obj: type[E],
     ) -> AsyncIterator[E]:
-        return self._repo.get_all(t_obj)
+        return self._store.get_all(t_obj)
 
     async def drop(self, obj_type: type[domain.Object]) -> None:
-        await self._repo.drop(obj_type)
+        await self._store.drop(obj_type)
 
     async def save(self) -> None:
         async with asyncio.TaskGroup() as tg:
             for obj, ver in self._identity_map:
-                tg.create_task(self._repo.save(obj, ver))
+                tg.create_task(self._store.save(obj, ver))
 
     def clear(self) -> None:
         self._identity_map.clear()

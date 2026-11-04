@@ -5,7 +5,7 @@ from datetime import timedelta
 from typing import Any
 
 from poptimizer.evolve.models import evolve
-from poptimizer.fsm import uow
+from poptimizer.runtime import uow
 
 
 async def report(lgr: logging.Logger, repo: uow.UOW) -> None:

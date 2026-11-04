@@ -6,7 +6,7 @@ from typing import Any, Self
 
 from poptimizer.core import domain, fsm
 from poptimizer.evolve.models import evolve
-from poptimizer.fsm import uow
+from poptimizer.runtime import uow
 
 
 class Dispatcher:
@@ -27,7 +27,7 @@ class Tx:
     def __init__(
         self,
         lgr: logging.Logger,
-        repo: uow.Repo,
+        repo: uow.Store,
         dispatcher: Dispatcher,
     ) -> None:
         self._lgr = lgr

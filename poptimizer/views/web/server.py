@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING, Final
 
 from aiohttp import abc, web
 
-from poptimizer.fsm import tx, uow
+from poptimizer.fsm import tx
+from poptimizer.runtime import uow
 from poptimizer.views.web.web import App
 
 if TYPE_CHECKING:
@@ -37,7 +38,7 @@ def _content_length(response: web.StreamResponse) -> str:
     return f"{size:.0f}Tb"
 
 
-async def run(repo: uow.Repo, dispatcher: tx.Dispatcher, url: HttpUrl) -> None:
+async def run(repo: uow.Store, dispatcher: tx.Dispatcher, url: HttpUrl) -> None:
     lgr = logging.getLogger("Server")
 
     runner = web.AppRunner(
