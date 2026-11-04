@@ -20,5 +20,8 @@ jobs:
       - name: Lint
         run: task lint
 
+      - name: Start MongoDB
+        run: task mongo
+
       - name: Test
         run: task test

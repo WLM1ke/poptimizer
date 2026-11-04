@@ -77,7 +77,7 @@ class Run(config.Cfg):
 
             lgr = logger.init(send_fn)
 
-            repo = mongo.Store(mongo_db)
+            store = mongo.Store(mongo_db)
 
             main_task = None
 
@@ -88,7 +88,7 @@ class Run(config.Cfg):
 
             tinkoff_client = tinkoff.Client(http_client, self.brokers.tinkoff)
 
-            fsm_system = system.FSMSystem(repo, dispatcher)
+            fsm_system = system.FSMSystem(store, dispatcher)
             coro.append(
                 fsm_system.start(
                     data.build_graph(
@@ -101,7 +101,7 @@ class Run(config.Cfg):
                     forecast.build_graph(),
                 )
             )
-            coro.append(server.run(repo, dispatcher, self.server.url))
+            coro.append(server.run(store, dispatcher, self.server.url))
 
             await safe.run(lgr, *coro)
 

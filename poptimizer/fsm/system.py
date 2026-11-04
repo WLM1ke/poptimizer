@@ -13,9 +13,9 @@ _BACKOFF_FACTOR: Final = 2
 
 
 class FSMSystem:
-    def __init__(self, repo: uow.Store, dispatcher: tx.Dispatcher) -> None:
+    def __init__(self, store: uow.Store, dispatcher: tx.Dispatcher) -> None:
         self._lgr = logging.getLogger(self.__class__.__name__)
-        self._repo = repo
+        self._store = store
         self._dispatcher = dispatcher
 
     async def start(self, *graphs: graph.Graph) -> None:
@@ -68,7 +68,7 @@ class FSMSystem:
         while True:
             async with (
                 errors.suppress_poptimizer(lgr, f"Retrying failed action in {delay}"),
-                tx.Tx(lgr, self._repo, self._dispatcher) as ctx,
+                tx.Tx(lgr, self._store, self._dispatcher) as ctx,
             ):
                 if _is_event_action(action):
                     return await action(ctx, event)

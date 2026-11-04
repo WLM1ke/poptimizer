@@ -73,9 +73,6 @@ class _IdentityMap:
     def delete(self, obj: domain.Object) -> None:
         self._seen.pop((obj.__class__, obj.uid), None)
 
-    def clear(self) -> None:
-        self._seen.clear()
-
 
 class Store(Protocol):
     async def get[E: domain.Object](
@@ -94,10 +91,10 @@ class Store(Protocol):
     async def sample_models(self, n: int) -> list[evolve.Model]: ...
 
 
-class UOW:
-    def __init__(self, store: Store) -> None:
+class Repo:
+    def __init__(self, store: Store, identity_map: _IdentityMap) -> None:
         self._store = store
-        self._identity_map = _IdentityMap()
+        self._identity_map = identity_map
 
     async def get[E: domain.Object](
         self,
@@ -173,10 +170,28 @@ class UOW:
     async def drop(self, obj_type: type[domain.Object]) -> None:
         await self._store.drop(obj_type)
 
-    async def save(self) -> None:
-        async with asyncio.TaskGroup() as tg:
-            for obj, ver in self._identity_map:
-                tg.create_task(self._store.save(obj, ver))
 
-    def clear(self) -> None:
-        self._identity_map.clear()
+class UOW:
+    def __init__(self, store: Store) -> None:
+        self._store = store
+        self._identity_map = _IdentityMap()
+        self._entered = False
+
+    async def __aenter__(self) -> Repo:
+        if self._entered:
+            raise errors.ControllersError("unit of work already entered")
+
+        self._entered = True
+
+        return Repo(self._store, self._identity_map)
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        if exc_type is None:
+            async with asyncio.TaskGroup() as tg:
+                for obj, ver in self._identity_map:
+                    tg.create_task(self._store.save(obj, ver))

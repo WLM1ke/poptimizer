@@ -5,7 +5,7 @@ from poptimizer.evolve.models import evolve
 from poptimizer.runtime import uow
 
 
-async def plot(repo: uow.UOW) -> None:
+async def plot(repo: uow.Repo) -> None:
     dots = [(model.alfa, model.llh, model.duration) async for model in repo.get_all(evolve.Model) if model.duration]
     df = pd.DataFrame(dots, columns=["alfa", "llh", "duration"])
 

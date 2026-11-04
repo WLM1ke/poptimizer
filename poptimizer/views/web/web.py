@@ -21,11 +21,11 @@ from poptimizer.views.web import models, view
 
 
 class App(web.Application):
-    def __init__(self, lgr: logging.Logger, repo: uow.Store, dispatcher: tx.Dispatcher) -> None:
+    def __init__(self, lgr: logging.Logger, store: uow.Store, dispatcher: tx.Dispatcher) -> None:
         super().__init__(middlewares=[self._alerts_middleware])
         self._lgr = lgr
         self._render = view.View()
-        self._repo = repo
+        self._store = store
         self._dispatcher = dispatcher
 
         routes = (
@@ -122,7 +122,7 @@ class App(web.Application):
     ) -> Callable[[web.Request], Awaitable[web.StreamResponse]]:
         @functools.wraps(handler)
         async def wrapped(req: web.Request) -> web.StreamResponse:
-            async with tx.Tx(self._lgr, self._repo, self._dispatcher) as ctx:
+            async with tx.Tx(self._lgr, self._store, self._dispatcher) as ctx:
                 return await handler(ctx, req)
 
         return wrapped

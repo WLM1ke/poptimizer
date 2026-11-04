@@ -16,7 +16,7 @@ _ROWS_PARAMS: Final = [
 
 async def report(
     lgr: logging.Logger,
-    repo: uow.UOW,
+    repo: uow.Repo,
     investor: funds.Investor,
     months: int,
 ) -> None:
@@ -37,7 +37,7 @@ async def report(
     lgr.info(f"Real shortfall - {round(shortfall, -5):_.0f}")
 
 
-async def _deflator(repo: uow.UOW, months: int) -> list[float]:
+async def _deflator(repo: uow.Repo, months: int) -> list[float]:
     cpi_table = await repo.get(cpi.CPI)
 
     if len(cpi_table.df) < months:
@@ -51,7 +51,7 @@ async def _deflator(repo: uow.UOW, months: int) -> list[float]:
     return list(reversed(deflator))
 
 
-async def _real_income(repo: uow.UOW, investor: funds.Investor, deflator: list[float]) -> list[float]:
+async def _real_income(repo: uow.Repo, investor: funds.Investor, deflator: list[float]) -> list[float]:
     fund = await repo.get(funds.Fund)
 
     months = len(deflator) - 1

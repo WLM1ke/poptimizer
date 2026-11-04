@@ -15,7 +15,7 @@ RF: Final = "RUGBITR1Y"
 _WIDTH: Final = len(PORTFOLIO)
 
 
-async def prepare_cum_returns(repo: uow.UOW, months: int) -> pd.DataFrame:
+async def prepare_cum_returns(repo: uow.Repo, months: int) -> pd.DataFrame:
     fund = await repo.get(funds.Fund)
     index_table = await repo.get(index.Index, domain.UID(index.MCF2TRR))
     rf_table = await repo.get(index.Index, domain.UID(index.RUGBITR1Y))
@@ -51,7 +51,7 @@ async def prepare_cum_returns(repo: uow.UOW, months: int) -> pd.DataFrame:
     return returns
 
 
-async def report(lgr: logging.Logger, repo: uow.UOW, months: int) -> None:
+async def report(lgr: logging.Logger, repo: uow.Repo, months: int) -> None:
     returns = await prepare_cum_returns(repo, months)
     returns = returns.pct_change(fill_method=None).dropna()  # type: ignore[reportUnknownMemberType]
 

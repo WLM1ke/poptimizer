@@ -38,11 +38,11 @@ def _content_length(response: web.StreamResponse) -> str:
     return f"{size:.0f}Tb"
 
 
-async def run(repo: uow.Store, dispatcher: tx.Dispatcher, url: HttpUrl) -> None:
+async def run(store: uow.Store, dispatcher: tx.Dispatcher, url: HttpUrl) -> None:
     lgr = logging.getLogger("Server")
 
     runner = web.AppRunner(
-        App(lgr, repo, dispatcher),
+        App(lgr, store, dispatcher),
         handle_signals=False,
         access_log=lgr,
         access_log_class=_AccessLogger,

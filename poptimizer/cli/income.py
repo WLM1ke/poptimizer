@@ -19,8 +19,9 @@ class Income(config.Cfg):
     async def cli_cmd(self) -> None:
         async with contextlib.AsyncExitStack() as stack:
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
-            repo = mongo.Store(mongo_db)
+            store = mongo.Store(mongo_db)
 
             lgr = logger.init()
 
-            await safe.run(lgr, report(lgr, uow.UOW(repo), self.investor, self.months))
+            async with uow.UOW(store) as repo:
+                await safe.run(lgr, report(lgr, repo, self.investor, self.months))

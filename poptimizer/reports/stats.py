@@ -8,7 +8,7 @@ from poptimizer.evolve.models import evolve
 from poptimizer.runtime import uow
 
 
-async def report(lgr: logging.Logger, repo: uow.UOW) -> None:
+async def report(lgr: logging.Logger, repo: uow.Repo) -> None:
     evolution = await repo.get(evolve.Evolution)
 
     data: list[tuple[str, Any]] = [

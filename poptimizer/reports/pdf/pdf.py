@@ -22,7 +22,7 @@ _THIRD_BLOCK_HEIGHT: Final = style.BLANK_HEIGHT * 0
 
 
 async def _price_for_day(
-    repo: uow.UOW,
+    repo: uow.Repo,
     pos: portfolio.Position,
     day: domain.Day,
 ) -> None:
@@ -35,7 +35,7 @@ async def _price_for_day(
 
 
 async def _update_fund(
-    repo: uow.UOW,
+    repo: uow.Repo,
     day: domain.Day,
     inflows: dict[funds.Investor, float],
 ) -> tuple[funds.Fund, portfolio.Portfolio]:
@@ -53,8 +53,6 @@ async def _update_fund(
         case _:
             fund.update(day=day, value=port.value(), inflows=inflows)
 
-    await repo.save()
-
     return fund, port
 
 
@@ -67,7 +65,7 @@ def _make_report_files_path(day: domain.Day) -> tuple[Path, Path]:
 
 
 async def _make_report(
-    repo: uow.UOW,
+    repo: uow.Repo,
     day: domain.Day,
     fund: funds.Fund,
     port: portfolio.Portfolio,
@@ -121,7 +119,7 @@ async def _make_report(
 
 async def report(
     lgr: logging.Logger,
-    repo: uow.UOW,
+    repo: uow.Repo,
     day: domain.Day,
     inflows: dict[funds.Investor, float],
 ) -> None:

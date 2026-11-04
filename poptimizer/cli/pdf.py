@@ -24,8 +24,9 @@ class PDF(config.Cfg):
         async with contextlib.AsyncExitStack() as stack:
             lgr = logger.init()
             mongo_db = await stack.enter_async_context(mongo.db(self.mongo.uri, self.mongo.db))
-            repo = mongo.Store(mongo_db)
+            store = mongo.Store(mongo_db)
 
             inflows = {funds.Investor(investor): inflow for investor, inflow in self.inflows.items()}
 
-            await safe.run(lgr, report(lgr, uow.UOW(repo), self.day, inflows))
+            async with uow.UOW(store) as repo:
+                await safe.run(lgr, report(lgr, repo, self.day, inflows))
