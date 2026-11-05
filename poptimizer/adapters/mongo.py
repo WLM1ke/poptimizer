@@ -2,7 +2,7 @@ import random
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, Final, NamedTuple, cast
+from typing import Any, Final, NamedTuple
 
 import pymongo
 from bson.errors import BSONError
@@ -27,12 +27,13 @@ type MongoCollection = collection.AsyncCollection[MongoDocument]
 
 class _FrontPoint(NamedTuple):
     uid: domain.UID
+    day: datetime
     llh: float
     alfa: float
     duration: float
 
     def is_worse_than(self, other: _FrontPoint) -> bool:
-        return self.llh < other.llh and self.alfa < other.alfa
+        return self.day >= other.day and self.llh < other.llh and self.alfa < other.alfa
 
     def is_on_anti_pareto_front(self, points: list[_FrontPoint]) -> bool:
         return not any(other.is_worse_than(self) for other in points)
@@ -67,15 +68,7 @@ class Repo:
         collection = self._db[collection_name]
 
         async with _wrap_err("can't get next model"):
-            oldest_doc = cast(
-                "MongoDocument",
-                await collection.find_one(
-                    {},
-                    {"day": True},
-                    sort=[("day", pymongo.ASCENDING)],
-                ),
-            )
-            points = await self._load_points(collection, {"day": oldest_doc["day"]})
+            points = await self._load_points(collection, {})
 
             pareto_front = [point for point in points if point.is_on_pareto_front(points)]
 
@@ -187,8 +180,8 @@ class Repo:
         query: MongoDocument,
     ) -> list[_FrontPoint]:
         return [
-            _FrontPoint(doc[_MONGO_ID], doc["llh"], doc["alfa"], doc["duration"])
-            async for doc in collection.find(query, {"llh": True, "alfa": True, "duration": True})
+            _FrontPoint(doc[_MONGO_ID], doc["day"], doc["llh"], doc["alfa"], doc["duration"])
+            async for doc in collection.find(query, {"day": True, "llh": True, "alfa": True, "duration": True})
         ]
 
     async def save(self, obj: domain.Object, ver: uow.Version) -> None:
