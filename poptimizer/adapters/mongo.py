@@ -46,7 +46,7 @@ class _FrontPoint(NamedTuple):
 async def _wrap_err(msg: str) -> AsyncGenerator[None]:
     try:
         yield
-    except (PyMongoError, BSONError) as err:
+    except (PyMongoError, BSONError, UnicodeError) as err:
         raise errors.AdapterError(msg) from err
 
 
