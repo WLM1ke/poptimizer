@@ -1,13 +1,13 @@
 from poptimizer.core import fsm
 from poptimizer.data.events import DataUpdated, DayNotChanged
 from poptimizer.evolve import actions, events
-from poptimizer.evolve.dl import builder
+from poptimizer.evolve.dl import builder, training
 from poptimizer.evolve.dl.trainer import Trainer
 from poptimizer.fsm import graph
 
 
-def build_graph() -> graph.Graph:
-    trainer = Trainer(builder.Builder())
+def build_graph(runner: training.TrainingRunner) -> graph.Graph:
+    trainer = Trainer(runner, builder.Builder())
 
     data_graph = graph.Graph("EvolveFSM")
 

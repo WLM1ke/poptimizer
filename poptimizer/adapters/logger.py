@@ -68,3 +68,13 @@ def init(send_fn: Callable[[str], None] | None = None) -> logging.Logger:
     logging.getLogger("pymongo").setLevel(logging.CRITICAL)
 
     return logging.getLogger("App")
+
+
+def init_worker_logger(name: str) -> logging.Logger:
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(_ColorFormatter())
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
+    root_logger.setLevel(logging.INFO)
+
+    return logging.getLogger(name)

@@ -147,17 +147,8 @@ class UpdateFeaturesAction:
         ctx.send(events.DataUpdated(day=state.data_day))
 
 
-class MemoryChecker(Protocol):
-    def check_memory_usage(self, ctx: fsm.Ctx) -> None: ...
-
-
 class CheckDayAction:
-    def __init__(self, memory_checker: MemoryChecker) -> None:
-        self._memory_checker = memory_checker
-
     async def __call__(self, ctx: fsm.Ctx) -> None:
-        self._memory_checker.check_memory_usage(ctx)
-
         state = await ctx.get(DataState)
 
         event = events.DayNotChanged()

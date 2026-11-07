@@ -29,7 +29,6 @@ dependencies = [
     "reportlab>=4.4.5",
     "matplotlib>=3.11.1",
     "numpy>=2.3.3",
-    "psutil>=7.0.0",
     "jinja2>=3.1.4",
     "keyring>=25.7.0",
     "aiosmtplib>=5.1.0",
@@ -110,9 +109,10 @@ unfixable = [
 "test_*.py" = [
     "ANN001",  # Missing type annotation for function argument
     "ANN201",  # Missing return type annotation for public function
-    "S101",    # Use of `assert` detected
-    "SLF001",  # Private member accessed
     "PLR2004", # Magic value used in comparison
+    "S101",    # Use of `assert` detected
+    "S301",    # Pickle of trusted own objects in tests
+    "SLF001",  # Private member accessed
 ]
 
 [tool.ruff.lint.pep8-naming]

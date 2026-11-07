@@ -77,16 +77,45 @@ async def test_count_models(test_db):
     assert await store.count_models() == 3
 
 
-async def test_next_model_for_update_picks_from_pareto_front_with_longest_duration(test_db):
+async def test_next_model_for_update_picks_from_pareto_front(test_db):
     await test_db[_MODELS].insert_one(_model_doc(domain.UID("worse"), datetime(2020, 1, 2), 1, 1, 1))
     await test_db[_MODELS].insert_one(_model_doc(domain.UID("best"), datetime(2020, 1, 1), 2, 2, 9))
     store = mongo.Store(test_db)
 
-    model, ver, longest_duration = await store.next_model_for_update()
+    model, ver, _ = await store.next_model_for_update()
 
     assert model.uid == domain.UID("best")
     assert ver == uow.Version(0)
-    assert longest_duration == 9
+
+
+async def test_next_model_for_update_returns_duration_of_max_llh_model(test_db):
+    await test_db[_MODELS].insert_one(_model_doc(domain.UID("fast"), datetime(2020, 1, 1), 2, 1, 1))
+    await test_db[_MODELS].insert_one(_model_doc(domain.UID("slow"), datetime(2020, 1, 2), 1, 2, 9))
+    store = mongo.Store(test_db)
+
+    _, _, max_llh_duration = await store.next_model_for_update()
+
+    assert max_llh_duration == 1
+
+
+async def test_next_model_for_update_prefers_fastest_duration_on_llh_tie(test_db):
+    await test_db[_MODELS].insert_one(_model_doc(domain.UID("slow"), datetime(2020, 1, 1), 2, 1, 9))
+    await test_db[_MODELS].insert_one(_model_doc(domain.UID("fast"), datetime(2020, 1, 2), 2, 2, 1))
+    store = mongo.Store(test_db)
+
+    _, _, max_llh_duration = await store.next_model_for_update()
+
+    assert max_llh_duration == 1
+
+
+async def test_next_model_for_update_counts_unevaluated_model(test_db):
+    await test_db[_MODELS].insert_one(_model_doc(domain.UID("evaluated"), datetime(2020, 1, 1), -0.5, 1, 300))
+    await test_db[_MODELS].insert_one(_model_doc(domain.UID("fresh"), datetime(2017, 1, 1), 0, 0, 0))
+    store = mongo.Store(test_db)
+
+    _, _, max_llh_duration = await store.next_model_for_update()
+
+    assert max_llh_duration == 0
 
 
 async def test_delete_worst_model_keeps_at_least_one_and_removes_dominated(test_db):

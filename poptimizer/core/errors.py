@@ -15,7 +15,11 @@ class DomainError(POError): ...
 class TooShortHistoryError(DomainError):
     def __init__(self, ticker: domain.Ticker, minimal_returns_days: int) -> None:
         super().__init__(f"{ticker} has too short history - required {minimal_returns_days} returns")
+        self._ticker = ticker
         self.minimal_returns_days = minimal_returns_days
+
+    def __reduce__(self) -> tuple[type[TooShortHistoryError], tuple[domain.Ticker, int]]:
+        return (TooShortHistoryError, (self._ticker, self.minimal_returns_days))
 
 
 class UseCasesError(POError): ...

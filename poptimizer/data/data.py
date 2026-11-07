@@ -8,7 +8,6 @@ from poptimizer.portfolio.events import PortfolioRevalued
 def build_graph(
     migration_client: actions.MigrationClient,
     data_client: actions.DataClient,
-    memory_checker: actions.MemoryChecker,
 ) -> graph.Graph:
     data_graph = graph.Graph("DataFSM")
 
@@ -88,7 +87,7 @@ def build_graph(
         [
             graph.Transition(
                 on=ModelRejected,
-                action=actions.CheckDayAction(memory_checker),
+                action=actions.CheckDayAction(),
                 dst=ModelRejected,
             ),
         ],
