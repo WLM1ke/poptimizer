@@ -76,9 +76,9 @@ class Repo:
             chosen_uid = random.choices(pareto_front, weights=weights, k=1)[0].uid  # noqa: S311
             doc = await collection.find_one({_MONGO_ID: chosen_uid})
 
-            longest_duration = max(point.duration for point in pareto_front)
+            max_llh_duration = max(points, key=lambda point: (point.llh, -point.duration)).duration
 
-            return *self._create_obj(evolve.Model, doc), longest_duration
+            return *self._create_obj(evolve.Model, doc), max_llh_duration
 
     async def delete_worst_model(self) -> int:
         collection_name = evolve.Model.__name__

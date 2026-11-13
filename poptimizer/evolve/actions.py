@@ -91,7 +91,7 @@ class EvaluateExistingModelAction:
             worst_count = await ctx.delete_worst_model()
             ctx.info("Deleting %d worst models", worst_count)
 
-        model, longest_duration = await ctx.next_model_for_update()
+        model, max_llh_duration = await ctx.next_model_for_update()
 
         results: evolve.TestResults | None = None
 
@@ -100,7 +100,7 @@ class EvaluateExistingModelAction:
             ctx.info("Deleting slow outdated model - %s", model)
         else:
             evolution.previous_model = model.uid
-            _move_target_count(evolution, model, longest_duration)
+            _move_target_count(evolution, model, max_llh_duration)
 
             results = await self._trainer.update_model_metrics(ctx, evolution, model)
 
@@ -123,11 +123,11 @@ def _is_slow_outdated(evolution: evolve.Evolution, model: evolve.Model) -> bool:
     return model.day != evolution.day and model.duration * evolution.cnt > _DAY_IN_SECONDS
 
 
-def _move_target_count(evolution: evolve.Evolution, model: evolve.Model, longest_duration: float) -> None:
+def _move_target_count(evolution: evolve.Evolution, model: evolve.Model, max_llh_duration: float) -> None:
     if model.day != evolution.day:
         return
 
-    per_day = _DAY_IN_SECONDS / max(longest_duration, _MIN_DURATION)
+    per_day = _DAY_IN_SECONDS / max(max_llh_duration, _MIN_DURATION)
 
     if evolution.cnt < per_day:
         evolution.cnt += 1

@@ -145,15 +145,15 @@ class UOW:
 
     async def next_model_for_update(self) -> tuple[evolve.Model, float]:
         async with self._identity_map as identity_map:
-            model, ver, longest_duration = await self._repo.next_model_for_update()
+            model, ver, max_llh_duration = await self._repo.next_model_for_update()
             if loaded := identity_map.get_for_update(evolve.Model, model.uid):
                 obj, _ = loaded
 
-                return obj, longest_duration
+                return obj, max_llh_duration
 
             identity_map.save_for_update(model, ver)
 
-            return model, longest_duration
+            return model, max_llh_duration
 
     async def delete_worst_model(self) -> int:
         return await self._repo.delete_worst_model()
