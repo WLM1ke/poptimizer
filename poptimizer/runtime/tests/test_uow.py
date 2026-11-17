@@ -47,6 +47,21 @@ async def test_read_without_update_leaves_document_untouched(test_db: mongo.Mong
     assert await test_db[COLLECTION].find_one({"_id": UID}) == {"_id": UID, "ver": 0, "value": 1}
 
 
+async def test_read_then_update_marks_the_document_dirty(test_db: mongo.MongoDatabase) -> None:
+    await test_db[COLLECTION].insert_one({"_id": UID, "ver": 0, "value": 1})
+    store = mongo.Store(test_db)
+
+    async with uow.UOW(store) as repo:
+        doc = await repo.get(Doc, UID)
+        same = await repo.get_for_update(Doc, UID)
+
+        assert same is doc
+
+        same.value = 7
+
+    assert await test_db[COLLECTION].find_one({"_id": UID}) == {"_id": UID, "ver": 1, "value": 7}
+
+
 async def test_clean_body_flushes_every_dirty_document(test_db: mongo.MongoDatabase) -> None:
     other_uid = domain.UID("other")
     await test_db[COLLECTION].insert_one({"_id": UID, "ver": 0, "value": 1})
