@@ -24,7 +24,8 @@ _ACCOUNT_ID_RE: Final = re.compile(r"^[0-9]{10}$")
 
 
 def _ensure_config(file: Path) -> None:
-    file.parent.mkdir(parents=True, exist_ok=True)
+    file.parent.mkdir(mode=0o700, parents=True, exist_ok=True, parent_mode=0o700)
+    file.parent.chmod(0o700)
     file.touch()
 
 

@@ -55,7 +55,7 @@ async def _backup_dividends(ctx: fsm.Ctx, divs: list[raw.DivRaw]) -> None:
 
 
 def _normalized_ver(ver: str) -> tuple[int, int, int]:
-    result = re.match(r"(\d+)\.(\d+)\.(\d+)", ver)
+    result = re.prefixmatch(r"(\d+)\.(\d+)\.(\d+)", ver)
     if not result:
         raise errors.AdapterError(f"Invalid version {ver}")
 

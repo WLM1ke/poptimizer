@@ -1,21 +1,10 @@
 import asyncio
-import contextlib
 import multiprocessing as mp
 import signal
 from collections.abc import Callable
-from concurrent.futures import Future, InvalidStateError
+from concurrent.futures import ProcessPoolExecutor
 from types import TracebackType
 from typing import Self
-
-
-def _finish[R](future: Future[R], result: R) -> None:
-    with contextlib.suppress(InvalidStateError):
-        future.set_result(result)
-
-
-def _fail[R](future: Future[R], err: BaseException) -> None:
-    with contextlib.suppress(InvalidStateError):
-        future.set_exception(err)
 
 
 def _ignore_sigint() -> None:
@@ -27,22 +16,15 @@ def _ignore_sigint() -> None:
 class PoolTrainingRunner[J, D, R]:
     def __init__(self, worker: Callable[[J, D], R]) -> None:
         self._worker = worker
-        self._pool = mp.get_context("spawn").Pool(
-            processes=1,
-            maxtasksperchild=1,
+        self._executor = ProcessPoolExecutor(
+            max_workers=1,
+            mp_context=mp.get_context("spawn"),
             initializer=_ignore_sigint,
+            max_tasks_per_child=1,
         )
 
     async def __call__(self, job: J, data: D) -> R:
-        future = Future[R]()
-        self._pool.apply_async(
-            self._worker,
-            (job, data),
-            callback=lambda result: _finish(future, result),
-            error_callback=lambda err: _fail(future, err),
-        )
-
-        return await asyncio.wrap_future(future)
+        return await asyncio.wrap_future(self._executor.submit(self._worker, job, data))
 
     async def __aenter__(self) -> Self:
         return self
@@ -53,5 +35,5 @@ class PoolTrainingRunner[J, D, R]:
         _exc_value: BaseException | None,
         _traceback: TracebackType | None,
     ) -> None:
-        self._pool.terminate()
-        self._pool.join()
+        self._executor.terminate_workers()
+        self._executor.shutdown(wait=True)

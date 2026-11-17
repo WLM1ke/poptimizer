@@ -53,7 +53,7 @@ async def test_exit_terminates_in_flight_run():
         await asyncio.sleep(1)
 
     assert not run_task.done()
-    with pytest.raises(ValueError, match="Pool not running"):
+    with pytest.raises(RuntimeError, match="cannot schedule new futures after shutdown"):
         await runner(1, 0)
 
     run_task.cancel()
@@ -98,7 +98,7 @@ async def test_context_manager_closes_pool():
     async with pool.PoolTrainingRunner(_double_worker) as runner:
         assert await runner(21, 0) == 42
 
-    with pytest.raises(ValueError, match="Pool not running"):
+    with pytest.raises(RuntimeError, match="cannot schedule new futures after shutdown"):
         await runner(1, 0)
 
 
@@ -107,5 +107,5 @@ async def test_context_manager_closes_pool_after_error():
         async with pool.PoolTrainingRunner(_double_worker) as runner:
             raise RuntimeError("boom")
 
-    with pytest.raises(ValueError, match="Pool not running"):
+    with pytest.raises(RuntimeError, match="cannot schedule new futures after shutdown"):
         await runner(1, 0)
