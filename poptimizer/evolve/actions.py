@@ -87,11 +87,14 @@ class EvaluateExistingModelAction:
     async def __call__(self, ctx: fsm.Ctx) -> None:
         evolution = await ctx.get_for_update(evolve.Evolution)
 
-        if await ctx.count_models() > evolution.cnt:
+        if cleaning_fired := await ctx.count_models() > evolution.cnt:
             worst_count = await ctx.delete_worst_model()
             ctx.info("Deleting %d worst models", worst_count)
 
         model, max_llh_duration = await ctx.next_model_for_update()
+
+        if cleaning_fired:
+            _move_target_count(evolution, max_llh_duration)
 
         results: evolve.TestResults | None = None
 
@@ -100,7 +103,6 @@ class EvaluateExistingModelAction:
             ctx.info("Deleting slow outdated model - %s", model)
         else:
             evolution.previous_model = model.uid
-            _move_target_count(evolution, model, max_llh_duration)
 
             results = await self._trainer.update_model_metrics(ctx, evolution, model)
 
@@ -123,10 +125,7 @@ def _is_slow_outdated(evolution: evolve.Evolution, model: evolve.Model) -> bool:
     return model.day != evolution.day and model.duration * evolution.cnt > _DAY_IN_SECONDS
 
 
-def _move_target_count(evolution: evolve.Evolution, model: evolve.Model, max_llh_duration: float) -> None:
-    if model.day != evolution.day:
-        return
-
+def _move_target_count(evolution: evolve.Evolution, max_llh_duration: float) -> None:
     per_day = _DAY_IN_SECONDS / max(max_llh_duration, _MIN_DURATION)
 
     if evolution.cnt < per_day:
