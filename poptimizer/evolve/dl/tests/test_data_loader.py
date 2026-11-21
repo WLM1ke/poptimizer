@@ -1,13 +1,21 @@
+from collections.abc import Iterator
+from typing import cast
+
 import pytest
 import torch
+from torch.utils import data
 
 from poptimizer.core import domain, errors
 from poptimizer.data.features import features
 from poptimizer.evolve.dl import data_loaders, datasets
 
 
+def _loader_batches[T](loader: data.DataLoader[T]) -> Iterator[T]:
+    return cast("Iterator[T]", iter(loader))
+
+
 @pytest.fixture(name="days")
-def make_days():
+def make_days() -> datasets.Days:
     return datasets.Days(
         history=4,
         forecast=2,
@@ -15,7 +23,7 @@ def make_days():
     )
 
 
-def test_no_features_error(days) -> None:
+def test_no_features_error(days: datasets.Days) -> None:
     with pytest.raises(errors.DomainError, match="no features"):
         datasets.TickerData(
             ticker=domain.Ticker("GAZP"),
@@ -28,7 +36,7 @@ def test_no_features_error(days) -> None:
         )
 
 
-def test_short_history_error(days) -> None:
+def test_short_history_error(days: datasets.Days) -> None:
     with pytest.raises(errors.TooShortHistoryError):
         datasets.TickerData(
             ticker=domain.Ticker("GAZP"),
@@ -49,7 +57,7 @@ def test_short_history_error(days) -> None:
 
 
 @pytest.fixture(name="one_ticker_data")
-def make_one_ticker_data(days):
+def make_one_ticker_data(days: datasets.Days) -> datasets.TickerData:
     return datasets.TickerData(
         ticker=domain.Ticker("GAZP"),
         days=days,
@@ -69,12 +77,12 @@ def make_one_ticker_data(days):
 
 
 class TestOneTickerData:
-    def test_train_dataset_size(self, one_ticker_data) -> None:
+    def test_train_dataset_size(self, one_ticker_data: datasets.TickerData) -> None:
         train_dataset = one_ticker_data.train_dataset()
 
         assert len(train_dataset) == 2
 
-    def test_train_dataset_first(self, one_ticker_data) -> None:
+    def test_train_dataset_first(self, one_ticker_data: datasets.TickerData) -> None:
         case_first = one_ticker_data.train_dataset()[0]
 
         assert torch.allclose(
@@ -92,7 +100,7 @@ class TestOneTickerData:
             ),
         )
 
-    def test_train_dataset_last(self, one_ticker_data) -> None:
+    def test_train_dataset_last(self, one_ticker_data: datasets.TickerData) -> None:
         case_last = one_ticker_data.train_dataset()[1]
 
         assert torch.allclose(
@@ -110,12 +118,12 @@ class TestOneTickerData:
             ),
         )
 
-    def test_test_dataset_size(self, one_ticker_data) -> None:
+    def test_test_dataset_size(self, one_ticker_data: datasets.TickerData) -> None:
         test_dataset = one_ticker_data.test_dataset()
 
         assert len(test_dataset) == 3
 
-    def test_test_dataset_first(self, one_ticker_data) -> None:
+    def test_test_dataset_first(self, one_ticker_data: datasets.TickerData) -> None:
         case_first = one_ticker_data.test_dataset()[0]
 
         assert torch.allclose(
@@ -137,7 +145,7 @@ class TestOneTickerData:
             ),
         )
 
-    def test_test_dataset_last(self, one_ticker_data) -> None:
+    def test_test_dataset_last(self, one_ticker_data: datasets.TickerData) -> None:
         case_last = one_ticker_data.test_dataset()[2]
 
         assert torch.allclose(
@@ -159,7 +167,7 @@ class TestOneTickerData:
             ),
         )
 
-    def test_forecast_dataset(self, one_ticker_data) -> None:
+    def test_forecast_dataset(self, one_ticker_data: datasets.TickerData) -> None:
         forecast_dataset = one_ticker_data.forecast_dataset()
 
         assert len(forecast_dataset) == 1
@@ -179,7 +187,7 @@ class TestOneTickerData:
         )
 
 
-def test_train_data_loader(one_ticker_data) -> None:
+def test_train_data_loader(one_ticker_data: datasets.TickerData) -> None:
     batch_size = 1024
 
     loader = data_loaders.train(
@@ -189,14 +197,14 @@ def test_train_data_loader(one_ticker_data) -> None:
 
     assert len(loader) == 2
 
-    batch = next(iter(loader))
+    batch = next(_loader_batches(loader))
 
     assert batch.labels.shape == (batch_size, 1)
     assert batch.num_feat.shape == (batch_size, 2, 4)
 
 
 @pytest.fixture(name="second_ticker_data")
-def make_second_ticker_data(days):
+def make_second_ticker_data(days: datasets.Days) -> datasets.TickerData:
     return datasets.TickerData(
         ticker=domain.Ticker("GAZP"),
         days=days,
@@ -216,18 +224,21 @@ def make_second_ticker_data(days):
 
 
 @pytest.fixture(name="test_data_loader")
-def make_test_data_loader(one_ticker_data, second_ticker_data):
+def make_test_data_loader(
+    one_ticker_data: datasets.TickerData,
+    second_ticker_data: datasets.TickerData,
+) -> data.DataLoader[datasets.TestBatch]:
     return data_loaders.test(
         [one_ticker_data, second_ticker_data],
     )
 
 
 class TestTestDataLoader:
-    def test_size(self, test_data_loader) -> None:
+    def test_size(self, test_data_loader: data.DataLoader[datasets.TestBatch]) -> None:
         assert len(test_data_loader) == 3
 
-    def test_first_batch(self, test_data_loader) -> None:
-        loader_iter = iter(test_data_loader)
+    def test_first_batch(self, test_data_loader: data.DataLoader[datasets.TestBatch]) -> None:
+        loader_iter = _loader_batches(test_data_loader)
         batch = next(loader_iter)
         ret = batch.labels
         assert ret.shape == (2, 1)
@@ -261,8 +272,8 @@ class TestTestDataLoader:
             ),
         )
 
-    def test_last_batch(self, test_data_loader) -> None:
-        loader_iter = iter(test_data_loader)
+    def test_last_batch(self, test_data_loader: data.DataLoader[datasets.TestBatch]) -> None:
+        loader_iter = _loader_batches(test_data_loader)
         next(loader_iter)
         next(loader_iter)
 
@@ -285,14 +296,14 @@ class TestTestDataLoader:
         assert num.shape == (2, 2, 4)
 
 
-def test_forecast_data_loader(one_ticker_data, second_ticker_data) -> None:
+def test_forecast_data_loader(one_ticker_data: datasets.TickerData, second_ticker_data: datasets.TickerData) -> None:
     loader = data_loaders.forecast(
         [one_ticker_data, second_ticker_data, one_ticker_data],
     )
 
     assert len(loader) == 1
 
-    batch = next(iter(loader))
+    batch = next(_loader_batches(loader))
 
     ret = batch.returns
     assert ret.shape == (3, 4)

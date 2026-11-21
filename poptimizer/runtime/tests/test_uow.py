@@ -1,3 +1,5 @@
+from typing import cast
+
 import pytest
 
 from poptimizer.adapters import mongo
@@ -13,7 +15,7 @@ UID = domain.UID("doc")
 COLLECTION = Doc.__name__
 
 
-async def test_document_loads_once_per_uow_and_flush_observes_it(test_db):
+async def test_document_loads_once_per_uow_and_flush_observes_it(test_db: mongo.MongoDatabase) -> None:
     await test_db[COLLECTION].insert_one({"_id": UID, "ver": 0, "value": 1})
     store = mongo.Store(test_db)
 
@@ -30,7 +32,7 @@ async def test_document_loads_once_per_uow_and_flush_observes_it(test_db):
     assert await test_db[COLLECTION].find_one({"_id": UID}) == {"_id": UID, "ver": 1, "value": 5}
 
 
-async def test_read_without_update_leaves_document_untouched(test_db):
+async def test_read_without_update_leaves_document_untouched(test_db: mongo.MongoDatabase) -> None:
     await test_db[COLLECTION].insert_one({"_id": UID, "ver": 0, "value": 1})
     store = mongo.Store(test_db)
 
@@ -45,7 +47,7 @@ async def test_read_without_update_leaves_document_untouched(test_db):
     assert await test_db[COLLECTION].find_one({"_id": UID}) == {"_id": UID, "ver": 0, "value": 1}
 
 
-async def test_clean_body_flushes_every_dirty_document(test_db):
+async def test_clean_body_flushes_every_dirty_document(test_db: mongo.MongoDatabase) -> None:
     other_uid = domain.UID("other")
     await test_db[COLLECTION].insert_one({"_id": UID, "ver": 0, "value": 1})
     await test_db[COLLECTION].insert_one({"_id": other_uid, "ver": 0, "value": 2})
@@ -61,7 +63,7 @@ async def test_clean_body_flushes_every_dirty_document(test_db):
     assert await test_db[COLLECTION].find_one({"_id": other_uid}) == {"_id": other_uid, "ver": 1, "value": 20}
 
 
-async def test_body_exception_flushes_nothing(test_db):
+async def test_body_exception_flushes_nothing(test_db: mongo.MongoDatabase) -> None:
     await test_db[COLLECTION].insert_one({"_id": UID, "ver": 0, "value": 1})
     store = mongo.Store(test_db)
 
@@ -77,7 +79,7 @@ async def test_body_exception_flushes_nothing(test_db):
     assert await test_db[COLLECTION].find_one({"_id": UID}) == {"_id": UID, "ver": 0, "value": 1}
 
 
-async def test_get_creates_missing_singleton_at_version_zero(test_db):
+async def test_get_creates_missing_singleton_at_version_zero(test_db: mongo.MongoDatabase) -> None:
     store = mongo.Store(test_db)
 
     async with uow.UOW(store) as repo:
@@ -88,7 +90,7 @@ async def test_get_creates_missing_singleton_at_version_zero(test_db):
     assert await test_db[COLLECTION].find_one({"_id": doc.uid}) == {"_id": doc.uid, "ver": 0}
 
 
-async def test_delete_is_immediate_and_outside_the_flush(test_db):
+async def test_delete_is_immediate_and_outside_the_flush(test_db: mongo.MongoDatabase) -> None:
     await test_db[COLLECTION].insert_one({"_id": UID, "ver": 0, "value": 1})
     store = mongo.Store(test_db)
 
@@ -107,7 +109,7 @@ async def test_delete_is_immediate_and_outside_the_flush(test_db):
     assert await test_db[COLLECTION].find_one({"_id": UID}) is None
 
 
-async def test_version_conflict_surfaces_and_a_fresh_retry_succeeds(test_db):
+async def test_version_conflict_surfaces_and_a_fresh_retry_succeeds(test_db: mongo.MongoDatabase) -> None:
     await test_db[COLLECTION].insert_one({"_id": UID, "ver": 0, "value": 1})
     store = mongo.Store(test_db)
 
@@ -126,7 +128,7 @@ async def test_version_conflict_surfaces_and_a_fresh_retry_succeeds(test_db):
     with pytest.raises(ExceptionGroup) as err:
         await _stale_flush()
 
-    conflict = errors.get_root_poptimizer_error(err.value)
+    conflict = errors.get_root_poptimizer_error(cast("ExceptionGroup[errors.POError]", err.value))
     assert isinstance(conflict, errors.POError)
     assert "wrong version" in str(conflict)
 
@@ -137,7 +139,7 @@ async def test_version_conflict_surfaces_and_a_fresh_retry_succeeds(test_db):
     assert await test_db[COLLECTION].find_one({"_id": UID}) == {"_id": UID, "ver": 2, "value": 3}
 
 
-async def test_uow_is_single_use(test_db):
+async def test_uow_is_single_use(test_db: mongo.MongoDatabase) -> None:
     store = mongo.Store(test_db)
     one = uow.UOW(store)
 

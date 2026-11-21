@@ -103,7 +103,7 @@ class Evolution(domain.Entity):
     tickers: domain.Tickers = Field(default_factory=tuple)
     forecast_days: PositiveInt = 1
     cnt: PositiveInt = 1
-    test_days: float = Field(2, ge=MINIMAL_TEST_DAYS)
+    test_days: float = Field(default=2, ge=MINIMAL_TEST_DAYS)
     minimal_returns_days: int = _INITIAL_MINIMAL_RETURNS_DAYS
     step: PositiveInt = 1
     alfa: FiniteFloat = 0

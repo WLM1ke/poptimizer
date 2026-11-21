@@ -1,4 +1,5 @@
 import pickle
+from typing import cast
 
 import pytest
 from pydantic import ValidationError
@@ -37,7 +38,7 @@ def _job() -> training.TrainingJob:
     return training.TrainingJob(model=model, evolution=evolution)
 
 
-def test_job_and_result_are_frozen():
+def test_job_and_result_are_frozen() -> None:
     job = _job()
     result = training.TrainingResult(
         forecast=training.Forecast(mean=[[0.01]], cov=[[0.0004]]),
@@ -46,42 +47,42 @@ def test_job_and_result_are_frozen():
     )
 
     with pytest.raises(ValidationError):
-        job.evolution = evolve.Evolution()  # type: ignore[misc]
+        job.evolution = evolve.Evolution(uid=evolve.random_model_uid())
     with pytest.raises(ValidationError):
-        result.duration = 2.0  # type: ignore[misc]
+        result.duration = 2.0
     with pytest.raises(ValidationError):
-        result.forecast = training.Forecast(mean=[[0.02]], cov=[[0.0004]])  # type: ignore[misc]
+        result.forecast = training.Forecast(mean=[[0.02]], cov=[[0.0004]])
 
 
-def test_job_pickle_round_trip():
+def test_job_pickle_round_trip() -> None:
     job = _job()
 
-    restored = pickle.loads(pickle.dumps(job))
+    restored = cast("training.TrainingJob", pickle.loads(pickle.dumps(job)))  # noqa: S301
 
     assert restored == job
 
 
-def test_data_pickle_round_trip():
+def test_data_pickle_round_trip() -> None:
     data = training.TrainingData(
         tickers_data=[_ticker_data()],
         emb_size=[3],
         emb_seq_size=[2],
     )
 
-    restored = pickle.loads(pickle.dumps(data))
+    restored = cast("training.TrainingData", pickle.loads(pickle.dumps(data)))  # noqa: S301
 
     assert len(restored.tickers_data) == 1
     assert restored.emb_size == [3]
     assert restored.emb_seq_size == [2]
 
 
-def test_result_pickle_round_trip():
+def test_result_pickle_round_trip() -> None:
     result = training.TrainingResult(
         forecast=training.Forecast(mean=[[0.01], [0.02]], cov=[[0.0004, 0.0001], [0.0001, 0.0009]]),
         duration=1.5,
         test=evolve.TestResults(llh=[0.5, 0.6], alfa=0.01, ret=0.02),
     )
 
-    restored = pickle.loads(pickle.dumps(result))
+    restored = cast("training.TrainingResult", pickle.loads(pickle.dumps(result)))  # noqa: S301
 
     assert restored == result

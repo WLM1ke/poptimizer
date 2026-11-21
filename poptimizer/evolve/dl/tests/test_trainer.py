@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from datetime import date
-from typing import cast, override
+from typing import cast
 
 import pytest
 from pydantic import ValidationError
@@ -9,29 +10,28 @@ from poptimizer.evolve.dl import builder, datasets, trainer, training, worker
 from poptimizer.evolve.models import evolve, genotype
 
 
-def _check_keys(phenotype, cfg) -> None:
+def _check_keys(phenotype: Mapping[str, object], cfg: Mapping[str, object]) -> None:
     for k, v in phenotype.items():
         assert k in cfg
 
         if isinstance(v, dict):
-            _check_keys(v, cfg[k])
+            _check_keys(cast("Mapping[str, object]", v), cast("Mapping[str, object]", cfg[k]))
 
 
-def test_cfg_match_phenotype():
+def test_cfg_match_phenotype() -> None:
     phenotype = genotype.Genotype().phenotype
     cfg = worker.Cfg.model_validate(phenotype).model_dump()
     _check_keys(phenotype, cfg)
 
 
 class _FakeRunner:
-    def __init__(self, script: list[training.TrainingResult | Exception]) -> None:
-        self._script = script
+    def __init__(self, script: Sequence[training.TrainingResult | Exception]) -> None:
+        self._script = list(script)
 
-    @override
     async def __call__(
         self,
-        job: training.TrainingJob,
-        data: training.TrainingData,
+        job: training.TrainingJob,  # noqa: ARG002
+        data: training.TrainingData,  # noqa: ARG002
     ) -> training.TrainingResult:
         item = self._script.pop(0)
         if isinstance(item, Exception):
@@ -45,10 +45,9 @@ class _FakeBuilder(builder.Builder):
         super().__init__()
         self.built: list[tuple[domain.Day, domain.Tickers, datasets.Days, builder.Batch]] = []
 
-    @override
     async def build(
         self,
-        ctx: fsm.Ctx,
+        ctx: fsm.Ctx,  # noqa: ARG002
         day: domain.Day,
         tickers: domain.Tickers,
         days: datasets.Days,
@@ -78,6 +77,10 @@ class _FakeCtx:
         self.deleted.append(entity)
 
 
+def _ctx(fake: _FakeCtx) -> fsm.Ctx:
+    return cast("fsm.Ctx", fake)  # pyright: ignore[reportInvalidCast]
+
+
 def _result() -> training.TrainingResult:
     return training.TrainingResult(
         forecast=training.Forecast(mean=[[1.0]], cov=[[2.0]]),
@@ -86,14 +89,14 @@ def _result() -> training.TrainingResult:
     )
 
 
-async def test_success_applies_result():
+async def test_success_applies_result() -> None:
     result = _result()
     step = trainer.Trainer(_FakeRunner([result]), _FakeBuilder())
     ctx = _FakeCtx()
     model = evolve.Model(uid=evolve.random_model_uid())
     evolution = evolve.Evolution(uid=evolve.random_model_uid())
 
-    test = await step.update_model_metrics(cast("fsm.Ctx", ctx), evolution, model)
+    test = await step.update_model_metrics(_ctx(ctx), evolution, model)
 
     assert test == result.test
     assert model.mean == [[1.0]]
@@ -107,17 +110,17 @@ async def test_success_applies_result():
     assert not ctx.warnings
 
 
-async def test_short_history_adjusts_and_retries():
+async def test_short_history_adjusts_and_retries() -> None:
     result = _result()
     step = trainer.Trainer(
-        _FakeRunner([errors.TooShortHistoryError("TEST", 1000), result]),
+        _FakeRunner([errors.TooShortHistoryError(domain.Ticker("TEST"), 1000), result]),
         _FakeBuilder(),
     )
     ctx = _FakeCtx()
     model = evolve.Model(uid=evolve.random_model_uid(), mean=[[0.0]], cov=[[0.0]])
     evolution = evolve.Evolution(uid=evolve.random_model_uid(), test_days=5)
 
-    test = await step.update_model_metrics(cast("fsm.Ctx", ctx), evolution, model)
+    test = await step.update_model_metrics(_ctx(ctx), evolution, model)
 
     assert test == result.test
     assert model.mean == [[1.0]]
@@ -130,37 +133,35 @@ async def test_short_history_adjusts_and_retries():
     assert not ctx.deleted
 
 
-async def test_other_error_deletes_model():
+async def test_other_error_deletes_model() -> None:
     step = trainer.Trainer(_FakeRunner([errors.UseCasesError("boom")]), _FakeBuilder())
     ctx = _FakeCtx()
     model = evolve.Model(uid=evolve.random_model_uid())
     evolution = evolve.Evolution(uid=evolve.random_model_uid())
 
-    assert await step.update_model_metrics(cast("fsm.Ctx", ctx), evolution, model) is None
+    assert await step.update_model_metrics(_ctx(ctx), evolution, model) is None
 
     assert ctx.deleted == [model]
 
 
-async def test_failed_evaluation_advances_step_and_day():
+async def test_failed_evaluation_advances_step_and_day() -> None:
     step = trainer.Trainer(_FakeRunner([errors.UseCasesError("boom")]), _FakeBuilder())
     ctx = _FakeCtx()
     model = evolve.Model(uid=evolve.random_model_uid())
     day = date(2020, 2, 2)
-    evolution = evolve.Evolution(uid=evolve.random_model_uid(), day=day, tickers=("TEST",))
+    evolution = evolve.Evolution(uid=evolve.random_model_uid(), day=day, tickers=(domain.Ticker("TEST"),))
 
-    assert await step.update_model_metrics(cast("fsm.Ctx", ctx), evolution, model) is None
+    assert await step.update_model_metrics(_ctx(ctx), evolution, model) is None
 
     assert evolution.step == 2
     assert model.day == day
 
 
-async def test_invalid_batch_config_fails_validation():
+async def test_invalid_batch_config_fails_validation() -> None:
     genes = genotype.Genotype().genes
     genes["batch"] = 1.0
     model = evolve.Model(uid=evolve.random_model_uid(), genes=genes)
     step = trainer.Trainer(_FakeRunner([]), _FakeBuilder())
 
     with pytest.raises(ValidationError):
-        await step.update_model_metrics(
-            cast("fsm.Ctx", _FakeCtx()), evolve.Evolution(uid=evolve.random_model_uid()), model
-        )
+        await step.update_model_metrics(_ctx(_FakeCtx()), evolve.Evolution(uid=evolve.random_model_uid()), model)

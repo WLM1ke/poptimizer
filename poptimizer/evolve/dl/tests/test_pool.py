@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from poptimizer.core import errors
+from poptimizer.core import domain, errors
 from poptimizer.evolve.dl import pool
 
 
@@ -14,7 +14,7 @@ def _double_worker(num: int, _: int) -> int:
 
 
 def _raise_too_short_history(num: int, _: int) -> int:
-    raise errors.TooShortHistoryError("TEST", num)
+    raise errors.TooShortHistoryError(domain.Ticker("TEST"), num)
 
 
 def _sleep_worker(seconds: int, _: int) -> int:
@@ -23,23 +23,23 @@ def _sleep_worker(seconds: int, _: int) -> int:
     return seconds
 
 
-def _signal_handler_worker(_: int, __: int) -> bool:
+def _signal_handler_worker(_: int, _second: int) -> bool:
     return signal.getsignal(signal.SIGINT) is signal.SIG_IGN
 
 
-def _self_sigint_worker(_: int, __: int) -> str:
+def _self_sigint_worker(_: int, _second: int) -> str:
     os.kill(os.getpid(), signal.SIGINT)
     time.sleep(0.1)
 
     return "alive"
 
 
-async def test_result_round_trip():
+async def test_result_round_trip() -> None:
     async with pool.PoolTrainingRunner(_double_worker) as runner:
         assert await runner(21, 0) == 42
 
 
-async def test_exception_pickle_round_trip():
+async def test_exception_pickle_round_trip() -> None:
     async with pool.PoolTrainingRunner(_raise_too_short_history) as runner:
         with pytest.raises(errors.TooShortHistoryError) as exc_info:
             await runner(42, 0)
@@ -47,7 +47,7 @@ async def test_exception_pickle_round_trip():
         assert exc_info.value.minimal_returns_days == 42
 
 
-async def test_exit_terminates_in_flight_run():
+async def test_exit_terminates_in_flight_run() -> None:
     async with pool.PoolTrainingRunner(_sleep_worker) as runner:
         run_task = asyncio.create_task(runner(60, 0))
         await asyncio.sleep(1)
@@ -61,7 +61,7 @@ async def test_exit_terminates_in_flight_run():
         await run_task
 
 
-async def test_cancellation_propagates_promptly():
+async def test_cancellation_propagates_promptly() -> None:
     async with pool.PoolTrainingRunner(_sleep_worker) as runner:
         run_task = asyncio.create_task(runner(60, 0))
         await asyncio.sleep(1)
@@ -71,7 +71,7 @@ async def test_cancellation_propagates_promptly():
             await asyncio.wait_for(run_task, timeout=5)
 
 
-async def test_cancelled_future_does_not_break_result_handler():
+async def test_cancelled_future_does_not_break_result_handler() -> None:
     async with pool.PoolTrainingRunner(_sleep_worker) as runner:
         run_task = asyncio.create_task(runner(1, 0))
         await asyncio.sleep(0.2)
@@ -84,17 +84,17 @@ async def test_cancelled_future_does_not_break_result_handler():
         assert await asyncio.wait_for(runner(0, 0), timeout=10) == 0
 
 
-async def test_worker_starts_with_ignored_sigint():
+async def test_worker_starts_with_ignored_sigint() -> None:
     async with pool.PoolTrainingRunner(_signal_handler_worker) as runner:
         assert await asyncio.wait_for(runner(0, 0), timeout=30) is True
 
 
-async def test_worker_survives_sigint():
+async def test_worker_survives_sigint() -> None:
     async with pool.PoolTrainingRunner(_self_sigint_worker) as runner:
         assert await asyncio.wait_for(runner(0, 0), timeout=30) == "alive"
 
 
-async def test_context_manager_closes_pool():
+async def test_context_manager_closes_pool() -> None:
     async with pool.PoolTrainingRunner(_double_worker) as runner:
         assert await runner(21, 0) == 42
 
@@ -102,10 +102,13 @@ async def test_context_manager_closes_pool():
         await runner(1, 0)
 
 
-async def test_context_manager_closes_pool_after_error():
+async def test_context_manager_closes_pool_after_error() -> None:
+    runner: pool.PoolTrainingRunner[int, int, int] | None = None
+
     with pytest.raises(RuntimeError, match="boom"):
         async with pool.PoolTrainingRunner(_double_worker) as runner:
             raise RuntimeError("boom")
 
+    assert runner is not None
     with pytest.raises(RuntimeError, match="cannot schedule new futures after shutdown"):
         await runner(1, 0)

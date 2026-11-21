@@ -58,7 +58,7 @@ class Forecast(domain.Entity):
         list[Position],
         AfterValidator(domain.sorted_with_ticker_field_validator),
     ] = Field(default_factory=list[Position])
-    risk_tolerance: float = Field(0, ge=0, le=1)
+    risk_tolerance: float = Field(default=0, ge=0, le=1)
     mean: FiniteFloat = 0
     std: NonNegativeFloat = 0
 
