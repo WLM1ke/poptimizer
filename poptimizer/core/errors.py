@@ -1,7 +1,7 @@
 import traceback as tb
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any, Protocol
+from typing import Protocol
 
 from poptimizer.core import domain
 
@@ -46,7 +46,7 @@ def get_root_error(exc: Exception | BaseExceptionGroup[Exception]) -> Exception:
 
 
 class Warner(Protocol):
-    def warning(self, msg: str, *args: Any) -> None: ...
+    def warning(self, msg: str, *args: object) -> None: ...
 
 
 @asynccontextmanager
@@ -54,5 +54,5 @@ async def suppress_poptimizer(warner: Warner, log_msg: str) -> AsyncGenerator[No
     try:
         yield
     except* POError as err:
-        tb.print_exception(err, colorize=True)  # type: ignore[reportCallIssue]
+        tb.print_exception(err, colorize=True)  # pyright: ignore[reportCallIssue]
         warner.warning(f"{log_msg} - {get_root_poptimizer_error(err)}")

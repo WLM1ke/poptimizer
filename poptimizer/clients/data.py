@@ -1,20 +1,20 @@
 import io
 import logging
 from collections.abc import Iterable
-from typing import Final
+from typing import Final, cast
 
 import aiohttp
 import aiomoex
-from lxml import html
 from pydantic import TypeAdapter
 
 from poptimizer.adapters import http
+from poptimizer.clients import parsing
 from poptimizer.clients.cpi import cpi_parser
 from poptimizer.clients.reestry import div_parser
 from poptimizer.clients.status import status_parser
 from poptimizer.core import domain, errors
 from poptimizer.data.cpi import cpi
-from poptimizer.data.div import raw, status
+from poptimizer.data.div import raw
 from poptimizer.data.moex import index, quotes, securities
 
 _SECURITIES_COLUMNS: Final = (
@@ -128,7 +128,7 @@ class Client:
 
             return cpi_parser(io.BytesIO(await resp.read()))
 
-    async def get_divs(self, start_day: domain.Day, row: status.Row) -> list[raw.Row]:
+    async def get_divs(self, start_day: domain.Day, row: raw.StatusRow) -> list[raw.Row]:
         async with http.wrap_err(f"can't load dividends for {row.ticker}"):
             url = await self._find_div_url(row.ticker_base)
             html_page = await self._load_div_html(url, row.ticker)
@@ -142,12 +142,12 @@ class Client:
 
             html_page = await resp.text()
 
-        links: list[html.HtmlElement] = html.document_fromstring(html_page).xpath("//*/a")  # type: ignore[reportUnknownMemberType]
+        links = parsing.xpath_elements(html_page, "//*/a")
 
         for link in links:
-            link_text = link.text_content()
+            link_text = parsing.element_text(link)
             if ticker_base in link_text or ticker_base.lower() in link_text:
-                return _REESTRY_URL + link.attrib["href"]
+                return _REESTRY_URL + cast("str", link.attrib["href"])
 
         raise errors.AdapterError(f"{ticker_base} dividends not found")
 

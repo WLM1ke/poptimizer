@@ -1,8 +1,9 @@
 import logging
-from typing import Final
+import math
+from typing import Final, cast
 
 import pandas as pd
-from scipy import stats  # type: ignore[reportMissingTypeStubs]
+from scipy import stats
 
 from poptimizer.core import domain, errors
 from poptimizer.data.moex import index
@@ -34,12 +35,20 @@ async def prepare_cum_returns(repo: uow.Repo, months: int) -> pd.DataFrame:
             ),
         )
 
-    portfolio = pd.DataFrame(cum_return, columns=["day", PORTFOLIO]).set_index("day")  # type: ignore[reportUnknownMemberType]
+    portfolio = pd.DataFrame(cum_return, columns=["day", PORTFOLIO]).set_index("day")
 
-    market = pd.DataFrame(index_table.model_dump()["df"]).set_index("day").reindex(portfolio.index, method="ffill")  # type: ignore[reportUnknownMemberType]
+    market = (
+        pd.DataFrame([row.model_dump() for row in index_table.df])
+        .set_index("day")
+        .reindex(portfolio.index, method="ffill")
+    )
     market = market / market.iloc[0]
 
-    rf = pd.DataFrame(rf_table.model_dump()["df"]).set_index("day").reindex(portfolio.index, method="ffill")  # type: ignore[reportUnknownMemberType]
+    rf = (
+        pd.DataFrame([row.model_dump() for row in rf_table.df])
+        .set_index("day")
+        .reindex(portfolio.index, method="ffill")
+    )
     rf = rf / rf.iloc[0]
 
     returns = pd.concat([portfolio, market, rf], axis=1, sort=True)
@@ -53,28 +62,28 @@ async def prepare_cum_returns(repo: uow.Repo, months: int) -> pd.DataFrame:
 
 async def report(lgr: logging.Logger, repo: uow.Repo, months: int) -> None:
     returns = await prepare_cum_returns(repo, months)
-    returns = returns.pct_change(fill_method=None).dropna()  # type: ignore[reportUnknownMemberType]
+    returns = returns.pct_change(fill_method=None).dropna()
 
     lgr.info("Risk-return analysis for %dM", months)
     lgr.info(f"{'':<{_WIDTH}} {PORTFOLIO:>{_WIDTH}} {MOEX:>{_WIDTH}} {RF:>{_WIDTH}}")
 
-    mean = returns.mean() * 12  # type: ignore[reportUnknownMemberType]
+    mean = cast("pd.Series[float]", returns.mean()) * 12
     lgr.info(f"{'MEAN':<{_WIDTH}} {mean[PORTFOLIO]:>{_WIDTH}.2%} {mean[MOEX]:>{_WIDTH}.2%} {mean[RF]:>{_WIDTH}.2%}")
 
-    std = returns.std() * 12**0.5  # type: ignore[reportUnknownMemberType]
+    std = cast("pd.Series[float]", returns.std()) * math.sqrt(12)
     lgr.info(f"{'STD':<{_WIDTH}} {std[PORTFOLIO]:>{_WIDTH}.2%} {std[MOEX]:>{_WIDTH}.2%} {std[RF]:>{_WIDTH}.2%}")
 
-    returns = returns.sub(returns[RF], axis=0)  # type: ignore[reportUnknownMemberType]
+    returns = returns.sub(returns[RF], axis=0)
 
-    mean = returns.mean() * 12  # type: ignore[reportUnknownMemberType]
+    mean = cast("pd.Series[float]", returns.mean()) * 12
     lgr.info(f"{'MEAN - RF':<{_WIDTH}} {mean[PORTFOLIO]:>{_WIDTH}.2%} {mean[MOEX]:>{_WIDTH}.2%}")
 
-    std = returns.std() * 12**0.5  # type: ignore[reportUnknownMemberType]
+    std = cast("pd.Series[float]", returns.std()) * math.sqrt(12)
     lgr.info(f"{'STD':<{_WIDTH}} {std[PORTFOLIO]:>{_WIDTH}.2%} {std[MOEX]:>{_WIDTH}.2%}")
     lgr.info(
         f"{'SHARPE':<{_WIDTH}} {mean[PORTFOLIO] / std[PORTFOLIO]:>{_WIDTH}.2%} {mean[MOEX] / std[MOEX]:>{_WIDTH}.2%}"
     )
 
-    result = stats.linregress(returns[MOEX], returns[PORTFOLIO])  # type: ignore[reportUnknownMemberType]
-    lgr.info(f"{'BETA':<{_WIDTH}} {result.slope:>{_WIDTH}.2f}")  # type: ignore[reportUnknownMemberType]
-    lgr.info(f"{'ALPHA':<{_WIDTH}} {result.intercept * 12:>{_WIDTH}.2%}")  # type: ignore[reportUnknownMemberType]
+    result = stats.linregress(returns[MOEX], returns[PORTFOLIO])
+    lgr.info(f"{'BETA':<{_WIDTH}} {result.slope:>{_WIDTH}.2f}")
+    lgr.info(f"{'ALPHA':<{_WIDTH}} {result.intercept * 12:>{_WIDTH}.2%}")

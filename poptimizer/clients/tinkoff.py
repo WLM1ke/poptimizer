@@ -1,5 +1,5 @@
 import uuid
-from typing import Final
+from typing import Final, cast
 
 import aiohttp
 from pydantic import BaseModel, Field
@@ -84,7 +84,7 @@ class Client:
                 json={"status": _ACTIVE_ACCOUNT},
             ) as resp,
         ):
-            json = await resp.json()
+            json = cast("object", await resp.json())
 
             acc_resp = _AccountsResponse.model_validate(json)
 
@@ -106,7 +106,7 @@ class Client:
                 json={"accountId": account.id},
             ) as resp,
         ):
-            json = await resp.json()
+            json = cast("object", await resp.json())
 
             if not resp.ok:
                 raise errors.AdapterError(
@@ -134,7 +134,7 @@ class Client:
                 json={"accountId": account.id},
             ) as resp,
         ):
-            json = await resp.json()
+            json = cast("object", await resp.json())
             orders_response = _OrdersResponse.model_validate(json)
 
         return sorted(
@@ -157,7 +157,7 @@ class Client:
                     json={},
                 ) as resp,
             ):
-                json = await resp.json()
+                json = cast("object", await resp.json())
                 instruments_response = _InstrumentsResponse.model_validate(json)
 
             for inst in instruments_response.instruments:

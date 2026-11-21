@@ -45,11 +45,11 @@ def cpi_parser(xlsx: io.BytesIO) -> list[cpi.Row]:
 
 def _validate_data_position(ws: worksheet.Worksheet) -> None:
     first_date_cell = f"{get_column_letter(_FIRST_DATE_COL)}{_DATES_ROW}"
-    if (first_date := _as_date(ws[first_date_cell].value)) != _FIRST_DATE_VALUE:
+    if (first_date := _as_date(cast("object", ws[first_date_cell].value))) != _FIRST_DATE_VALUE:
         raise errors.AdapterError(f"first date {first_date}")
 
     value_header_cell = f"{get_column_letter(_FIRST_DATE_COL - 1)}{_DATES_ROW + 1}"
-    if (header := ws[value_header_cell].value) != _CPI_HEADER_VALUE:
+    if (header := cast("object", ws[value_header_cell].value)) != _CPI_HEADER_VALUE:
         raise errors.AdapterError(f"wrong header {header}")
 
 

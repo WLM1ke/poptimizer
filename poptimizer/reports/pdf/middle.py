@@ -1,15 +1,16 @@
 import io
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, cast
 
-import matplotlib.pyplot as plt
 from reportlab import platypus
 from reportlab.lib.units import inch
 
-from poptimizer.reports import risk
+from poptimizer.reports import plotting, risk
 from poptimizer.reports.pdf import style
 
 if TYPE_CHECKING:
+    import numpy as np
     import pandas as pd
+    from numpy.typing import NDArray
     from reportlab.pdfgen.canvas import Canvas
 
 _LEFT_PART_OF_BLOCK: Final = 1 / 3
@@ -20,16 +21,16 @@ _MONTH_IN_YEAR: Final = 12
 def _prepare_returns_data(returns: pd.DataFrame) -> list[list[str]]:
     table_data = [["Period", "Portfolio", "MOEX", "RF"]]
 
-    returns = returns.sort_index(ascending=False)  # type: ignore[reportUnknownMemberType]
+    returns = returns.sort_index(ascending=False)
 
-    portfolio: pd.Series[float] = returns[risk.PORTFOLIO]  # type: ignore[reportUnknownMemberType]
-    portfolio = portfolio.iloc[0] / portfolio - 1  # type: ignore[reportUnknownMemberType]
+    portfolio: pd.Series[float] = returns[risk.PORTFOLIO]
+    portfolio = portfolio.iloc[0] / portfolio - 1
 
-    market: pd.Series[float] = returns[risk.MOEX]  # type: ignore[reportUnknownMemberType]
-    market = market.iloc[0] / market - 1  # type: ignore[reportUnknownMemberType]
+    market: pd.Series[float] = returns[risk.MOEX]
+    market = market.iloc[0] / market - 1
 
-    rf: pd.Series[float] = returns[risk.RF]  # type: ignore[reportUnknownMemberType]
-    rf = rf.iloc[0] / rf - 1  # type: ignore[reportUnknownMemberType]
+    rf: pd.Series[float] = returns[risk.RF]
+    rf = rf.iloc[0] / rf - 1
 
     table_data.append(
         [
@@ -94,31 +95,27 @@ def _make_plot(
     width: float,
     height: float,
 ) -> platypus.Image:
-    _, ax = plt.subplots(  # type: ignore[reportUnknownMemberType]
-        1,
-        1,
-        figsize=(width / inch, height / inch),
-    )
+    _, ax = plotting.subplots(1, 1, figsize=(width / inch, height / inch))
     ax.spines["top"].set_visible(False)
     ax.spines["bottom"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
     ax.yaxis.set_major_formatter("{x:.0f}%")
-    plt.grid(visible=True, which="major", lw=0.5, c="black", alpha=0.3)  # type: ignore[reportUnknownMemberType]
-    plt.tick_params(bottom=False, top=False, left=False, right=False)  # type: ignore[reportUnknownMemberType]
+    plotting.grid(visible=True, which="major", lw=0.5, c="black", alpha=0.3)
+    plotting.tick_params(bottom=False, top=False, left=False, right=False)
 
-    returns = returns.sub(1).mul(100)  # type: ignore[reportUnknownMemberType]
-    plt.plot(returns[risk.PORTFOLIO].to_numpy())  # type: ignore[reportUnknownMemberType]
-    plt.plot(returns[risk.MOEX].to_numpy())  # type: ignore[reportUnknownMemberType]
-    plt.plot(returns[risk.RF].to_numpy())  # type: ignore[reportUnknownMemberType]
+    returns = returns.sub(1).mul(100)
+    plotting.plot(cast("NDArray[np.float64]", returns[risk.PORTFOLIO].to_numpy()))
+    plotting.plot(cast("NDArray[np.float64]", returns[risk.MOEX].to_numpy()))
+    plotting.plot(cast("NDArray[np.float64]", returns[risk.RF].to_numpy()))
 
-    x_ticks_labels = returns.index.astype(str).str.slice(stop=7)  # type: ignore[reportUnknownMemberType]
-    x_ticks_loc = range(0, len(x_ticks_labels), _MONTH_IN_YEAR)  # type: ignore[reportUnknownMemberType]
-    x_ticks_labels = x_ticks_labels[x_ticks_loc]  # type: ignore[reportUnknownMemberType]
+    x_ticks_labels: pd.Index[str] = returns.index.astype(str).str.slice(stop=7)
+    x_ticks_loc = range(0, len(x_ticks_labels), _MONTH_IN_YEAR)
+    x_ticks_labels = x_ticks_labels[x_ticks_loc]
 
-    plt.yticks(fontsize=8)  # type: ignore[reportUnknownMemberType]
-    plt.xticks(x_ticks_loc, x_ticks_labels, fontsize=8)  # type: ignore[reportUnknownMemberType]
-    plt.legend(  # type: ignore[reportUnknownMemberType]
+    plotting.yticks(fontsize=8)
+    plotting.xticks(x_ticks_loc, [str(label) for label in x_ticks_labels], fontsize=8)
+    plotting.legend(
         (
             "Portfolio",
             "MOEX Russia Net Total Return (Resident)",
@@ -129,7 +126,7 @@ def _make_plot(
     )
 
     chart = io.BytesIO()
-    plt.savefig(chart, dpi=_DPI, format="png", transparent=True)  # type: ignore[reportUnknownMemberType]
+    plotting.savefig(chart, dpi=_DPI, transparent=True)
 
     return platypus.Image(chart, width, height)
 

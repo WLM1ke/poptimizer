@@ -6,8 +6,14 @@ from typing import Annotated, Protocol
 from pydantic import AfterValidator, Field, PositiveFloat
 
 from poptimizer.core import domain, errors, fsm
-from poptimizer.data.div import status
 from poptimizer.data.moex import quotes
+
+
+class StatusRow(Protocol):
+    ticker: domain.Ticker
+    ticker_base: str
+    preferred: bool
+    day: domain.Day
 
 
 class Row(domain.Row):
@@ -66,10 +72,14 @@ class DivReestry(DivRaw): ...
 
 
 class Client(Protocol):
-    async def get_divs(self, start_day: domain.Day, row: status.Row) -> list[Row]: ...
+    async def get_divs(self, start_day: domain.Day, row: StatusRow) -> list[Row]: ...
 
 
-async def update(ctx: fsm.Ctx, web_client: Client, status_task: asyncio.Task[list[status.Row]]) -> None:
+async def update[R: StatusRow](
+    ctx: fsm.Ctx,
+    web_client: Client,
+    status_task: asyncio.Task[list[R]],
+) -> None:
     status_rows = await status_task
 
     async with asyncio.TaskGroup() as tg:
@@ -80,7 +90,7 @@ async def update(ctx: fsm.Ctx, web_client: Client, status_task: asyncio.Task[lis
 async def _update_one(
     ctx: fsm.Ctx,
     web_client: Client,
-    status_row: status.Row,
+    status_row: StatusRow,
 ) -> None:
     div_table = await ctx.get_for_update(DivReestry, domain.UID(status_row.ticker))
 

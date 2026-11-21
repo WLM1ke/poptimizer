@@ -18,7 +18,7 @@ async def run(
         lgr.info("Shutdown finished gracefully")
     except Exception as exc:  # noqa: BLE001
         lgr.warning("Shutdown abnormally: %s", errors.get_root_error(exc))
-        traceback.print_exception(exc, colorize=True)  # type: ignore[reportCallIssue]
+        traceback.print_exception(exc, colorize=True)  # pyright: ignore[reportCallIssue]
 
         return 1
 

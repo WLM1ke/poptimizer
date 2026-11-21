@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Final
+from typing import Final, cast
 
 import aiofiles
 from pydantic import ValidationError
@@ -12,7 +12,7 @@ _DUMP: Final = consts.ROOT / "dump" / "dividends.json"
 
 
 class Client:
-    async def migrate(self, ctx: fsm.Ctx, last_version: str) -> None:  # noqa: ARG002
+    async def migrate(self, _ctx: fsm.Ctx, last_version: str) -> None:
         if _normalized_ver(last_version) < _normalized_ver("3.3.0"):
             ...
 
@@ -28,11 +28,11 @@ async def _restore_dividends(ctx: fsm.Ctx) -> None:
     if not _DUMP.exists():
         raise errors.AdapterError(f"can't restore raw dividends from {_DUMP}")
 
-    async with aiofiles.open(_DUMP) as backup_file:  # type: ignore[reportUnknownMemberType]
+    async with aiofiles.open(_DUMP) as backup_file:
         json_data = await backup_file.read()
 
     try:
-        for doc in json.loads(json_data):
+        for doc in cast("list[object]", json.loads(json_data)):
             div = raw.DivRaw.model_validate(doc)
             div_new = await ctx.get_for_update(raw.DivRaw, div.uid)
             div_new.df = div.df

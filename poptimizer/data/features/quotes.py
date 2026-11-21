@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime
-from typing import Final
+from typing import Final, cast
 
 import numpy as np
 import pandas as pd
@@ -28,24 +28,30 @@ async def _build_features(ctx: fsm.Ctx, ticker: domain.UID, index: pd.DatetimeIn
     quotes_table = await ctx.get(quotes.Quotes, ticker)
 
     first_day = pd.Timestamp(quotes_table.df[0].day)
-    quotes_df = pd.DataFrame(quotes_table.model_dump()["df"]).set_index("day").reindex(index).loc[first_day:]  # type: ignore[reportUnknownMemberType]
+    quotes_df = (
+        pd.DataFrame([row.model_dump() for row in quotes_table.df]).set_index("day").reindex(index).loc[first_day:]
+    )
     quotes_df.columns = [NumFeat(col) for col in quotes_df.columns]
 
-    turnover_df = np.log1p(quotes_df[NumFeat.TURNOVER].fillna(0).iloc[1:])  # type: ignore[reportUnknownMemberType]
+    turnover_df = np.log1p(quotes_df[NumFeat.TURNOVER].fillna(0).iloc[1:])
 
-    quotes_df[NumFeat.CLOSE] = quotes_df[NumFeat.CLOSE].ffill()  # type: ignore[reportUnknownMemberType]
-    quotes_df = quotes_df[[NumFeat.CLOSE, NumFeat.OPEN, NumFeat.HIGH, NumFeat.LOW]].ffill(axis=1)  # type: ignore[reportUnknownMemberType]
-    close_prev = quotes_df[NumFeat.CLOSE].shift(1).iloc[1:]  # type: ignore[reportUnknownMemberType]
+    quotes_df[NumFeat.CLOSE] = quotes_df[NumFeat.CLOSE].ffill()
+    quotes_df = quotes_df[[NumFeat.CLOSE, NumFeat.OPEN, NumFeat.HIGH, NumFeat.LOW]].ffill(axis=1)
+    close_prev = quotes_df[NumFeat.CLOSE].shift(1).iloc[1:]
     quotes_df = quotes_df.iloc[1:]
 
-    dividends = await _prepare_div(ctx, quotes_table.uid, quotes_df.index)  # type: ignore[reportUnknownMemberType]
+    dividends = await _prepare_div(ctx, quotes_table.uid, pd.DatetimeIndex(quotes_df.index))
     quotes_df[NumFeat.DIVIDENDS] = dividends + close_prev
     quotes_df[NumFeat.RETURNS] = dividends + quotes_df[NumFeat.CLOSE]
-    quotes_df = np.log(quotes_df.div(close_prev, axis="index"))  # type: ignore[reportUnknownMemberType]
-    quotes_df[NumFeat.TURNOVER] = turnover_df  # type: ignore[reportUnknownMemberType]
+    quotes_df = pd.DataFrame(
+        np.log(quotes_df.div(close_prev, axis="index")),
+        index=quotes_df.index,
+        columns=quotes_df.columns,
+    )
+    quotes_df[NumFeat.TURNOVER] = turnover_df
 
     feat = await ctx.get_for_update(Features, quotes_table.uid)
-    feat.update_numerical(quotes_df)  # type: ignore[reportUnknownMemberType]
+    feat.update_numerical(quotes_df)
 
 
 async def _prepare_div(ctx: fsm.Ctx, ticker: domain.UID, index: pd.DatetimeIndex) -> pd.Series[float]:
@@ -71,4 +77,4 @@ def _ex_div_date(index: pd.DatetimeIndex, date: datetime) -> int:
     if date > _T_PLUS_1_START:
         shift = 1
 
-    return index.get_indexer([date], method="ffill")[0] - (shift - 1)  # type: ignore[reportUnknownArgumentType]
+    return cast("int", index.get_indexer(pd.DatetimeIndex([date]), method="ffill")[0]) - (shift - 1)

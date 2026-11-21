@@ -4,8 +4,7 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Final
 
-from lxml import html
-
+from poptimizer.clients import parsing
 from poptimizer.core import domain, errors
 from poptimizer.data.div import raw
 
@@ -15,7 +14,7 @@ _DIV_TRANSLATE: Final = str.maketrans({",": ".", " ": ""})
 
 
 def div_parser(lgr: logging.Logger, html_page: str, data_col: int, first_day: domain.Day) -> list[raw.Row]:
-    rows: list[html.HtmlElement] = html.document_fromstring(html_page).xpath("//*/table/tbody/tr")  # type: ignore[reportUnknownMemberType]
+    rows = parsing.xpath_elements(html_page, "//*/table/tbody/tr")
 
     rows_iter = iter(rows)
     _validate_div_header(next(rows_iter), data_col)
@@ -25,15 +24,15 @@ def div_parser(lgr: logging.Logger, html_page: str, data_col: int, first_day: do
 
 def _parse_rows(
     lgr: logging.Logger,
-    rows_iter: Iterable[html.HtmlElement],
+    rows_iter: Iterable[parsing.Element],
     data_col: int,
     first_day: domain.Day,
 ) -> Iterable[raw.Row]:
     for row in rows_iter:
-        if "ИТОГО" in (date_raw := "".join(row[0].itertext())):
+        if "ИТОГО" in (date_raw := parsing.element_text(row[0])):
             continue
 
-        if "НЕ ВЫПЛАЧИВАТЬ" in (raw_row := "".join(row[data_col].itertext())):
+        if "НЕ ВЫПЛАЧИВАТЬ" in (raw_row := parsing.element_text(row[data_col])):
             continue
 
         date_re = _RE_DATE.search(date_raw)
@@ -55,12 +54,12 @@ def _parse_rows(
         yield raw.Row(day=day, dividend=float(div_re[1].translate(_DIV_TRANSLATE)))
 
 
-def _validate_div_header(row: html.HtmlElement, data_col: int) -> None:
+def _validate_div_header(row: parsing.Element, data_col: int) -> None:
     share_type: tuple[str, ...] = ("привилегированную",)
     if data_col == 1:
         share_type = ("обыкновенную", "ГДР")
 
-    header = html.tostring(row[data_col], encoding="unicode")
+    header = parsing.element_html(row[data_col])
 
     if not any(word in header for word in share_type):
         raise errors.AdapterError(f"wrong dividends table header {header}")

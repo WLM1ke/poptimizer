@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING
+import math
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -28,35 +29,35 @@ def shrinkage(returns: NDArray[np.double]) -> tuple[NDArray[np.double], float, f
     :return:
         Covariance matrix, sample average correlation, shrinkage.
     """
-    t, n = returns.shape
+    t, n = cast("tuple[int, int]", returns.shape)
     mean_returns = np.mean(returns, axis=0, keepdims=True)
     returns -= mean_returns
     sample_cov = returns.transpose() @ returns / t
 
     # sample average correlation
-    variance = np.diag(sample_cov).reshape(-1, 1)
-    sqrt_var = variance**0.5
+    variance = np.reshape(np.diag(sample_cov), (-1, 1))
+    sqrt_var = np.sqrt(variance)
     unit_cor_var = sqrt_var * sqrt_var.transpose()
-    average_cor = ((sample_cov / unit_cor_var).sum() - n) / n / (n - 1)
+    average_cor = (float(np.sum(sample_cov / unit_cor_var)) - n) / n / (n - 1)
     prior = average_cor * unit_cor_var
     np.fill_diagonal(prior, variance)
 
     # pi-hat
-    y = returns**2
-    phi_mat = (y.transpose() @ y) / t - sample_cov**2
-    phi = phi_mat.sum()
+    y = np.square(returns)
+    phi_mat = (y.transpose() @ y) / t - np.square(sample_cov)
+    phi = float(np.sum(phi_mat))
 
     # rho-hat
-    theta_mat = ((returns**3).transpose() @ returns) / t - variance * sample_cov
+    theta_mat = (np.power(returns, 3).transpose() @ returns) / t - variance * sample_cov
     np.fill_diagonal(theta_mat, 0)
-    rho = np.diag(phi_mat).sum() + average_cor * (1 / sqrt_var @ sqrt_var.transpose() * theta_mat).sum()
+    rho = float(np.sum(np.diag(phi_mat))) + average_cor * float(np.sum(1 / sqrt_var @ sqrt_var.transpose() * theta_mat))
 
     # gamma-hat
-    gamma = np.linalg.norm(sample_cov - prior, "fro") ** 2  # pyright: ignore[reportUnknownVariableType]
+    gamma = math.pow(float(np.linalg.norm(sample_cov - prior, "fro")), 2)
 
     # shrinkage constant
-    kappa = (phi - rho) / gamma  # pyright: ignore[reportUnknownVariableType]
-    shrink = max(0, min(1, kappa / t))  # pyright: ignore[reportUnknownArgumentType]
+    kappa = (phi - rho) / gamma
+    shrink = max(0.0, min(1.0, kappa / t))
 
     # estimator
     sigma = shrink * prior + (1 - shrink) * sample_cov

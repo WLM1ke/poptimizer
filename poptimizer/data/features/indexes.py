@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 
-from poptimizer.core import domain, fsm
+from poptimizer.core import domain, errors, fsm
 from poptimizer.data.features import features
 from poptimizer.data.moex import index
 from poptimizer.portfolio.models import portfolio
@@ -30,7 +30,7 @@ async def _load_indexes(ctx: fsm.Ctx, trading_days: pd.DatetimeIndex) -> list[di
 
     for task in tasks:
         index_table = await task
-        index_df = pd.DataFrame(index_table.model_dump()["df"]).set_index("day")
+        index_df = pd.DataFrame([row.model_dump() for row in index_table.df]).set_index("day")
         combined_index = index_df.index.union(trading_days, sort=True)
         index_df = index_df.reindex(combined_index).ffill().loc[trading_days]
 
@@ -38,14 +38,28 @@ async def _load_indexes(ctx: fsm.Ctx, trading_days: pd.DatetimeIndex) -> list[di
             case index.RVI:
                 index_df = index_df / 100
             case _:
-                index_df: pd.DataFrame = np.log1p(index_df.pct_change())  # type: ignore[reportUnknownMemberType]
+                index_df = pd.DataFrame(
+                    np.log1p(index_df.pct_change()),
+                    index=index_df.index,
+                    columns=index_df.columns,
+                )
 
         indexes.append(index_df)
 
     return [
-        {features.NumFeat(uid.lower()): indexes[col].iloc[row, 0] for col, uid in enumerate(index.INDEXES)}  # type: ignore[reportUnknownMemberType]
+        {
+            features.NumFeat(uid.lower()): _as_finite_float(indexes[col].iloc[row, 0])
+            for col, uid in enumerate(index.INDEXES)
+        }
         for row in range(1, len(trading_days))
     ]
+
+
+def _as_finite_float(value: object) -> FiniteFloat:
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise errors.DomainError(f"index value {value!r} is not a number")
+
+    return float(value)
 
 
 async def _add_indexes_features(

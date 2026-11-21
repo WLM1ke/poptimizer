@@ -1,7 +1,7 @@
 import itertools
 from datetime import date, datetime
 from enum import StrEnum, auto, unique
-from typing import Annotated, Final, NewType, Protocol
+from typing import Annotated, ClassVar, Final, NewType, Protocol
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, PlainSerializer
 
@@ -17,16 +17,17 @@ class Object(BaseModel):
 class Entity(Object): ...
 
 
+def _day_to_datetime(value: date) -> datetime:
+    return datetime(year=value.year, month=value.month, day=value.day)
+
+
+def datetime_to_timestamp(value: datetime) -> int:
+    return int(value.timestamp())
+
+
 Day = Annotated[
     date,
-    PlainSerializer(
-        lambda date: datetime(
-            year=date.year,
-            month=date.month,
-            day=date.day,
-        ),
-        return_type=datetime,
-    ),
+    PlainSerializer(_day_to_datetime, return_type=datetime),
 ]
 
 
@@ -44,7 +45,7 @@ class Currency(StrEnum):
 
 
 class Row(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
 
 
 class _RowWithDate(Protocol):

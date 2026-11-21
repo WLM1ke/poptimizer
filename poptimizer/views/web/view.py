@@ -1,7 +1,8 @@
 import http
+from collections.abc import Iterable
 from datetime import timedelta
 from pathlib import Path
-from typing import Final
+from typing import Final, cast
 
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -13,7 +14,7 @@ _YEAR_IN_SECONDS: Final = int(timedelta(days=365).total_seconds())
 
 def _with_cookie(resp: web.Response, cookie: models.Cookie | None) -> web.Response:
     if cookie:
-        for name, value in cookie:
+        for name, value in cast("Iterable[tuple[str, str]]", cookie):
             resp.set_cookie(
                 name,
                 value,
@@ -32,7 +33,7 @@ class View:
             autoescape=select_autoescape(["html"]),
         )
 
-    def render_page(self, layout: models.Layout, main: models.BaseModel, *, first_load: bool) -> web.StreamResponse:
+    def render_page(self, layout: models.Layout, main: models.BasePage, *, first_load: bool) -> web.StreamResponse:
         match first_load:
             case True:
                 template = "index.html"

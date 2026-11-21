@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Any, Final
+from typing import Final, cast
 
 import keyring
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, MongoDsn
@@ -22,6 +22,8 @@ _ACCOUNT_TOKEN_RE: Final = re.compile(r"^t[.][A-Za-z0-9._-]{86}$")
 _ACCOUNT_NAME_RE: Final = re.compile(r"^[A-Za-z0-9]+$")
 _ACCOUNT_ID_RE: Final = re.compile(r"^[0-9]{10}$")
 
+type YamlValue = str | int | float | bool | dict[str, YamlValue] | list[YamlValue] | None
+
 
 def _ensure_config(file: Path) -> None:
     file.parent.mkdir(mode=0o700, parents=True, exist_ok=True, parent_mode=0o700)
@@ -41,7 +43,7 @@ class _KeychainYamlSource(YamlConfigSettingsSource):
         _restrict_permissions_to_600(yaml_file)
         super().__init__(settings_cls, yaml_file, yaml_file_encoding)
 
-    def _replace_from_keychain(self, data: dict[str, Any] | list[Any] | str) -> Any:
+    def _replace_from_keychain(self, data: YamlValue) -> YamlValue:
         match data:
             case dict():
                 return {k: self._replace_from_keychain(v) for k, v in data.items()}
@@ -58,10 +60,10 @@ class _KeychainYamlSource(YamlConfigSettingsSource):
             case _:
                 return data
 
-    def __call__(self) -> dict[str, Any]:
+    def __call__(self) -> dict[str, YamlValue]:
         yaml_data = super().__call__()
 
-        return self._replace_from_keychain(yaml_data)
+        return cast("dict[str, YamlValue]", self._replace_from_keychain(yaml_data))
 
 
 class Gmail(BaseModel):

@@ -1,10 +1,13 @@
 import collections
 import itertools
 import logging
+import math
 import threading
+from collections.abc import Iterable
 from datetime import datetime
 from typing import Literal, cast
 
+import numpy as np
 import torch
 import tqdm
 from pydantic import BaseModel
@@ -74,8 +77,7 @@ def _get_device() -> Literal["cpu", "cuda", "mps"]:
 def _set_tqdm_thread_lock() -> None:
     # tqdm's default write lock is a multiprocessing semaphore created at the first bar; a spawn
     # worker never shares it, and a terminated worker leaves it registered as a leaked resource.
-    # `set_lock` takes an unannotated parameter upstream, hence the narrowed type ignore.
-    tqdm.tqdm.set_lock(threading.RLock())  # type: ignore[reportUnknownMemberType]
+    tqdm.tqdm.set_lock(threading.RLock())  # pyright: ignore[reportUnknownMemberType]
 
 
 def train_worker(
@@ -139,7 +141,7 @@ class _TrainingRun:
         scheduler = self._cfg.scheduler
         total_steps = 1 + int(steps_per_epoch * scheduler.epochs)
 
-        sch = optim.lr_scheduler.OneCycleLR(  # type: ignore[attr-defined]
+        sch = optim.lr_scheduler.OneCycleLR(
             opt,
             max_lr=scheduler.max_lr,
             total_steps=total_steps,
@@ -153,7 +155,7 @@ class _TrainingRun:
             three_phase=scheduler.three_phase,
         )
 
-        self._log_net_stats(net, scheduler.epochs, len(train_dl.dataset))  # type: ignore[arg-type]
+        self._log_net_stats(net, scheduler.epochs, len(train_dl.dataset))  # pyright: ignore[reportArgumentType]
 
         avg_llh = RunningMean(steps_per_epoch)
         net.train()
@@ -166,7 +168,8 @@ class _TrainingRun:
             total=total_steps,
             desc="Train",
         ) as progress_bar:
-            for batch in progress_bar:
+            train_batches = cast("Iterable[datasets.TrainBatch]", progress_bar)
+            for batch in train_batches:
                 opt.zero_grad()
 
                 loss = -net.llh(
@@ -175,8 +178,8 @@ class _TrainingRun:
                     batch.emb_seq_feat.to(self._device),
                     batch.labels.to(self._device),
                 )
-                loss.backward()  # type: ignore[no-untyped-call]
-                opt.step()  # type: ignore[reportUnknownMemberType]
+                loss.backward()  # pyright: ignore[reportUnknownMemberType]
+                opt.step()  # pyright: ignore[reportUnknownMemberType]
                 sch.step()
 
                 avg_llh.append(-loss.item())
@@ -195,7 +198,8 @@ class _TrainingRun:
             alfa = 0
             ret = 0
 
-            for batch in data_loaders.test(data):
+            test_batches = cast("Iterable[datasets.TestBatch]", data_loaders.test(data))
+            for batch in test_batches:
                 loss, mean, std = net.loss_and_forecast_mean_and_std(
                     batch.num_feat.to(self._device),
                     batch.emb_feat.to(self._device),
@@ -231,7 +235,8 @@ class _TrainingRun:
             if len(forecast_dl) != 1:
                 raise errors.UseCasesError("invalid forecast dataloader")
 
-            batch = next(iter(forecast_dl))
+            forecast_batches = cast("Iterable[datasets.ForecastBatch]", forecast_dl)
+            batch = next(iter(forecast_batches))
             mean, std = net.forecast_mean_and_std(
                 batch.num_feat.to(self._device),
                 batch.emb_feat.to(self._device),
@@ -240,14 +245,14 @@ class _TrainingRun:
 
             year_multiplier = consts.YEAR_IN_TRADING_DAYS / forecast_days
             mean *= year_multiplier
-            std *= year_multiplier**0.5
+            std *= math.sqrt(year_multiplier)
 
             total_ret = batch.returns.numpy()
-            cov = std.T * ledoit_wolf.ledoit_wolf_cor(total_ret)[0] * std
+            cov = np.transpose(std) * ledoit_wolf.ledoit_wolf_cor(total_ret)[0] * std
 
         return training.Forecast(
             mean=cast("list[list[float]]", mean.tolist()),
-            cov=cov.tolist(),
+            cov=cast("list[list[float]]", cov.tolist()),
         )
 
     def _log_net_stats(self, net: wave_net.Net, epochs: float, train_size: int) -> None:

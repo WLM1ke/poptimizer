@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING
+import math
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import torch
@@ -25,7 +26,7 @@ class Net(torch.nn.Module):
         emb_size: list[int],
         emb_seq_size: list[int],
     ) -> None:
-        super().__init__()  # type: ignore[reportUnknownMemberType]
+        super().__init__()
 
         self._input = inputs.Net(
             num_feat_count=num_feat_count,
@@ -35,7 +36,7 @@ class Net(torch.nn.Module):
             residual_channels=cfg.residual_channels,
         )
         self._backbone = backbone.Net(
-            blocks=int(np.log2(history_days - 1)) + 1,
+            blocks=int(math.log2(history_days - 1)) + 1,
             cfg=cfg,
         )
         self._head = head.Net(
@@ -50,10 +51,10 @@ class Net(torch.nn.Module):
         emb_feat: torch.Tensor,
         emb_seq_feat: torch.Tensor,
     ) -> MixtureSameFamily:
-        norm_input = self._input(num_feat, emb_feat, emb_seq_feat)
-        end = self._backbone(norm_input)
+        norm_input = cast("torch.Tensor", self._input(num_feat, emb_feat, emb_seq_feat))
+        end = cast("torch.Tensor", self._backbone(norm_input))
 
-        return self._head(end)  # type: ignore[no-any-return]
+        return cast("MixtureSameFamily", self._head(end))
 
     def llh(
         self,
@@ -62,10 +63,10 @@ class Net(torch.nn.Module):
         emb_seq_feat: torch.Tensor,
         labels: torch.Tensor,
     ) -> torch.Tensor:
-        dist = self(num_feat, emb_feat, emb_seq_feat)
+        dist = cast("MixtureSameFamily", self(num_feat, emb_feat, emb_seq_feat))
 
         try:
-            return dist.log_prob(labels).mean()
+            return dist.log_prob(labels).mean()  # pyright: ignore[reportUnknownMemberType]
         except ValueError as err:
             raise errors.DomainError("error in categorical distribution") from err
 
@@ -77,14 +78,14 @@ class Net(torch.nn.Module):
         labels: torch.Tensor,
     ) -> tuple[float, NDArray[np.double], NDArray[np.double]]:
         """Minus Normal Log Likelihood and forecast means and vars."""
-        dist = self(num_feat, emb_feat, emb_seq_feat)
+        dist = cast("MixtureSameFamily", self(num_feat, emb_feat, emb_seq_feat))
 
         try:
-            llh = dist.log_prob(labels).mean()
+            llh = dist.log_prob(labels).mean()  # pyright: ignore[reportUnknownMemberType]
         except ValueError as err:
             raise errors.DomainError("error in categorical distribution") from err
 
-        return llh.item(), dist.mean.cpu().numpy() - 1, dist.variance.cpu().numpy() ** 0.5
+        return llh.item(), dist.mean.cpu().numpy() - 1, np.sqrt(dist.variance.cpu().numpy())
 
     def forecast_mean_and_std(
         self,
@@ -92,6 +93,6 @@ class Net(torch.nn.Module):
         emb_feat: torch.Tensor,
         emb_seq_feat: torch.Tensor,
     ) -> tuple[NDArray[np.double], NDArray[np.double]]:
-        dist = self(num_feat, emb_feat, emb_seq_feat)
+        dist = cast("MixtureSameFamily", self(num_feat, emb_feat, emb_seq_feat))
 
-        return dist.mean.cpu().numpy() - 1, dist.variance.cpu().numpy() ** 0.5
+        return dist.mean.cpu().numpy() - 1, np.sqrt(dist.variance.cpu().numpy())

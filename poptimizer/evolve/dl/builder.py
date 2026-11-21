@@ -1,4 +1,6 @@
 import asyncio
+from collections.abc import Iterable
+from typing import cast
 
 from pydantic import BaseModel
 
@@ -61,7 +63,7 @@ class Batch(BaseModel):
 
     @property
     def num_feat_count(self) -> int:
-        return sum(on for _, on in self.num_feats)
+        return sum(on for _, on in cast("Iterable[tuple[str, bool]]", self.num_feats))
 
 
 class Builder:
@@ -82,8 +84,12 @@ class Builder:
     ) -> tuple[list[datasets.TickerData], list[int], list[int]]:
         await self._update_cache(ctx, day, tickers)
 
-        emb_feat_selected = sorted(features.EmbFeat(feat) for feat, on in batch.emb_feats if on)
-        emb_seq_feat_selected = sorted(features.EmbSeqFeat(feat) for feat, on in batch.emb_seq_feats if on)
+        emb_feat_selected = sorted(
+            features.EmbFeat(feat) for feat, on in cast("Iterable[tuple[str, bool]]", batch.emb_feats) if on
+        )
+        emb_seq_feat_selected = sorted(
+            features.EmbSeqFeat(feat) for feat, on in cast("Iterable[tuple[str, bool]]", batch.emb_seq_feats) if on
+        )
         emb_seq_feat_size = [self._embedding_seq_sizes[feat] for feat in emb_seq_feat_selected]
         if batch.use_lag_feat:
             emb_seq_feat_size.append(days.history)
@@ -94,7 +100,9 @@ class Builder:
                     ticker=ticker,
                     days=days,
                     num_feat=feat.numerical,
-                    num_feat_selected=sorted(features.NumFeat(feat) for feat, on in batch.num_feats if on),
+                    num_feat_selected=sorted(
+                        features.NumFeat(feat) for feat, on in cast("Iterable[tuple[str, bool]]", batch.num_feats) if on
+                    ),
                     emb_feat=[feat.embedding[selected].value for selected in emb_feat_selected],
                     emb_seq_feat=[feat.embedding_seq[selected].sequence for selected in emb_seq_feat_selected],
                     lag_feat=batch.use_lag_feat,

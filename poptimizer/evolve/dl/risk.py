@@ -1,7 +1,8 @@
+import math
 from typing import TYPE_CHECKING
 
 import numpy as np
-import scipy  # type: ignore[reportMissingTypeStubs]
+import scipy
 from pydantic import BaseModel, FiniteFloat, ValidationError
 
 from poptimizer.core import consts, errors
@@ -50,17 +51,17 @@ def optimize(  # noqa: PLR0913, PLR0917
     year_multiplier = consts.YEAR_IN_TRADING_DAYS / forecast_days
 
     mean *= year_multiplier
-    std *= year_multiplier**0.5
+    std *= math.sqrt(year_multiplier)
 
     weights, sigma = _opt_weight(mean, std, tot_ret, cfg)
     port_variance: float = (weights.T @ sigma @ weights).item()
 
     try:
         return OptimizationResult(
-            ret=np.log1p((weights.T @ labels).item()) * year_multiplier,
-            avr=np.log1p(labels.mean()) * year_multiplier,
+            ret=math.log1p((np.transpose(weights) @ labels).item()) * year_multiplier,
+            avr=math.log1p(float(labels.mean())) * year_multiplier,
             e_ret=(weights * mean).sum(),
-            e_std=port_variance**0.5,
+            e_std=math.sqrt(port_variance),
             pos=int(1 / (weights**2).sum()),
             weight_max=weights.max(),
         )

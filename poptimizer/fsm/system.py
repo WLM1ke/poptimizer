@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import random
+from collections.abc import Awaitable, Callable
 from datetime import timedelta
 from typing import Final, TypeIs, get_type_hints
 
@@ -57,11 +58,11 @@ class FSMSystem:
                     event,
                 )
 
-    async def _retry[E: fsm.Event](
+    async def _retry(
         self,
         lgr: logging.Logger,
-        action: graph.EventAction[E] | graph.SimpleAction,
-        event: E,
+        action: Callable[..., Awaitable[None]],
+        event: fsm.Event,
     ) -> None:
         delay = _FIRST_RETRY
 
@@ -75,7 +76,8 @@ class FSMSystem:
 
                 return await action(ctx)
 
-            await asyncio.sleep(delay.total_seconds())
+            # suppress_poptimizer turns a POError into a normal exit, so this sleep is reachable.
+            await asyncio.sleep(delay.total_seconds())  # pyright: ignore[reportUnreachable]
             delay = _next_delay(delay)
 
 
@@ -83,5 +85,5 @@ def _next_delay(delay: timedelta) -> timedelta:
     return timedelta(seconds=delay.total_seconds() * _BACKOFF_FACTOR * 2 * random.random())  # noqa: S311
 
 
-def _is_event_action[E: fsm.Event](action: graph.EventAction[E] | graph.SimpleAction) -> TypeIs[graph.EventAction[E]]:
+def _is_event_action(action: Callable[..., Awaitable[None]]) -> TypeIs[graph.EventAction]:
     return "event" in get_type_hints(action.__call__)

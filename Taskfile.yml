@@ -78,7 +78,7 @@ tasks:
     cmds:
       - uv run ruff format {{.APP}} --check
       - uv run ruff check {{.APP}} --unsafe-fixes --exit-non-zero-on-fix
-      - uv run pyright {{.APP}}
+      - uv run basedpyright
 
   test:
     desc: Test

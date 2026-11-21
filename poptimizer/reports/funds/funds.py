@@ -2,7 +2,7 @@ from typing import Annotated, NewType, Self
 
 from pydantic import AfterValidator, BaseModel, Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
-from poptimizer.core import domain
+from poptimizer.core import consts, domain
 
 Investor = NewType("Investor", str)
 
@@ -52,6 +52,7 @@ class Row(BaseModel):
 
 
 class Fund(domain.Entity):
+    day: domain.Day = consts.START_DAY
     rows: Annotated[
         list[Row],
         AfterValidator(domain.sorted_by_day_validator),

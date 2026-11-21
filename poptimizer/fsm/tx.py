@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator
 from types import TracebackType
-from typing import Any, Self
+from typing import Self
 
 from poptimizer.core import domain, errors, fsm
 from poptimizer.evolve.models import evolve
@@ -11,7 +11,7 @@ from poptimizer.runtime import uow
 
 class Dispatcher:
     def __init__(self) -> None:
-        self._inboxes = list[asyncio.Queue[fsm.Event]()]()
+        self._inboxes = list[asyncio.Queue[fsm.Event]]()
 
     def new_inbox(self) -> asyncio.Queue[fsm.Event]:
         self._inboxes.append(asyncio.Queue[fsm.Event]())
@@ -62,10 +62,10 @@ class Tx:
 
         return self._repo
 
-    def info(self, msg: str, *args: Any) -> None:
+    def info(self, msg: str, *args: object) -> None:
         self._lgr.info(msg, *args)
 
-    def warning(self, msg: str, *args: Any) -> None:
+    def warning(self, msg: str, *args: object) -> None:
         self._lgr.warning(msg, *args)
 
     def send(self, event: fsm.Event) -> None:

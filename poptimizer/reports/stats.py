@@ -2,16 +2,15 @@ import logging
 import statistics
 from collections import Counter
 from datetime import timedelta
-from typing import Any
 
-from poptimizer.evolve.models import evolve
+from poptimizer.evolve.models import evolve, genetics
 from poptimizer.runtime import uow
 
 
 async def report(lgr: logging.Logger, repo: uow.Repo) -> None:
     evolution = await repo.get(evolve.Evolution)
 
-    data: list[tuple[str, Any]] = [
+    data: list[tuple[str, object]] = [
         ("Tickers", len(evolution.tickers)),
         ("Forecast days", evolution.forecast_days),
         ("Test days", int(evolution.test_days)),
@@ -30,14 +29,15 @@ async def report(lgr: logging.Logger, repo: uow.Repo) -> None:
 
         count += 1
         phenotype = model.phenotype
-        risk_aversion.append(1 - phenotype["risk"]["risk_tolerance"])
-        batch = phenotype["batch"]
-        history_days.append(batch["history_days"])
+        risk = genetics.phenotype_mapping(phenotype, "risk")
+        risk_aversion.append(1 - genetics.phenotype_float(risk, "risk_tolerance"))
+        batch = genetics.phenotype_mapping(phenotype, "batch")
+        history_days.append(genetics.phenotype_int(batch, "history_days"))
         duration.append(model.duration)
-        features.update({"use_lag_feat": batch["use_lag_feat"]})
-        features.update(batch["num_feats"])
-        features.update(batch["emb_feats"])
-        features.update(batch["emb_seq_feats"])
+        features.update({"use_lag_feat": genetics.phenotype_bool(batch, "use_lag_feat")})
+        features.update(genetics.phenotype_flags(batch, "num_feats"))
+        features.update(genetics.phenotype_flags(batch, "emb_feats"))
+        features.update(genetics.phenotype_flags(batch, "emb_seq_feats"))
 
     data.append(("Model count", count))
     data.append(

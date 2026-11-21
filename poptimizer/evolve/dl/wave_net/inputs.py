@@ -1,3 +1,5 @@
+from typing import cast
+
 import torch
 from pydantic import BaseModel
 from torch import nn
@@ -20,7 +22,7 @@ class Net(torch.nn.Module):
         use_bn: bool,
         residual_channels: int,
     ) -> None:
-        super().__init__()  # type: ignore[reportUnknownMemberType]
+        super().__init__()
 
         if num_feat_count == 0:
             raise errors.DomainError("no features")
@@ -45,12 +47,12 @@ class Net(torch.nn.Module):
             self._emb_seq_list.append(nn.Embedding(num_embeddings=size, embedding_dim=residual_channels))
 
     def forward(self, num_feat: torch.Tensor, emb_feat: torch.Tensor, emb_seq_feat: torch.Tensor) -> torch.Tensor:
-        output = self._output(self._bn(num_feat))
+        output = cast("torch.Tensor", self._output(cast("torch.Tensor", self._bn(num_feat))))
 
         for n, layer in enumerate(self._emb_list):
-            output = output + layer(emb_feat[:, n]).unsqueeze(2)
+            output = output + cast("torch.Tensor", layer(emb_feat[:, n])).unsqueeze(2)
 
         for n, layer in enumerate(self._emb_seq_list):
-            output = output + layer(emb_seq_feat[:, n, :]).permute((0, 2, 1))
+            output = output + cast("torch.Tensor", layer(emb_seq_feat[:, n, :])).permute((0, 2, 1))
 
         return output

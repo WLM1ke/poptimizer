@@ -1,5 +1,4 @@
-# pyright: reportPrivateImportUsage=false
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 import numpy as np
 import pandas as pd
@@ -11,7 +10,13 @@ from poptimizer.core import errors
 from poptimizer.data.features import features
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
     from poptimizer.core import domain
+
+
+def _from_numpy(array: NDArray[np.float32]) -> torch.Tensor:
+    return torch.from_numpy(array)  # pyright: ignore[reportUnknownMemberType]
 
 
 class Days(BaseModel):
@@ -184,9 +189,8 @@ class TickerData:
 
         all_feat_df = pd.DataFrame(num_feat)
 
-        self._num_feat = torch.from_numpy(  # type: ignore[reportUnknownMemberType]
-            all_feat_df[num_feat_selected].to_numpy(np.float32).copy(),  # type: ignore[reportUnknownMemberType]
-        ).T
+        selected = [feat.value for feat in num_feat_selected]
+        self._num_feat = _from_numpy(all_feat_df[selected].to_numpy(np.float32).copy()).T
 
         self._emb_feat = torch.tensor(emb_feat, dtype=torch.long)
         self._emb_seq_feat = torch.tensor(emb_seq_feat, dtype=torch.long)
@@ -194,21 +198,15 @@ class TickerData:
         if lag_feat:
             self._lag_feat = torch.tensor([list(reversed(range(days.history)))], dtype=torch.long)
 
-        self._labels = torch.from_numpy(  # type: ignore[reportUnknownMemberType]
-            all_feat_df[features.NumFeat.RETURNS]
-            .rolling(days.forecast)  # type: ignore[reportUnknownMemberType]
-            .sum()
-            .shift(-(days.forecast + days.history - 1))
-            .to_numpy(np.float32),
+        returns = all_feat_df[features.NumFeat.RETURNS.value]
+        self._labels = _from_numpy(
+            cast(
+                "NDArray[np.float32]",
+                returns.rolling(days.forecast).sum().shift(-(days.forecast + days.history - 1)).to_numpy(np.float32),
+            ),
         ).exp()
 
-        self._returns = (
-            torch.from_numpy(  # type: ignore[reportUnknownMemberType]
-                all_feat_df[features.NumFeat.RETURNS].to_numpy(np.float32),  # type: ignore[reportUnknownMemberType]
-            )
-            .exp()
-            .sub(1)
-        )
+        self._returns = _from_numpy(cast("NDArray[np.float32]", returns.to_numpy(np.float32))).exp().sub(1)
 
     def train_dataset(self) -> TickerTrainDataSet:
         return TickerTrainDataSet(

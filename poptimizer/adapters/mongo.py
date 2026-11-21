@@ -2,7 +2,7 @@ import random
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, Final, NamedTuple
+from typing import Any, Final, NamedTuple, cast
 
 import pymongo
 from bson.errors import BSONError
@@ -19,7 +19,7 @@ _VER: Final = "ver"
 _UID: Final = "uid"
 _MIN_DURATION: Final = 1e-9
 
-type MongoDocument = dict[str, Any]
+type MongoDocument = dict[str, Any]  # pyright: ignore[reportExplicitAny]
 type MongoClient = pymongo.AsyncMongoClient[MongoDocument]
 type MongoDatabase = database.AsyncDatabase[MongoDocument]
 type MongoCollection = collection.AsyncCollection[MongoDocument]
@@ -75,6 +75,8 @@ class Store:
             weights = [(1 / max(point.duration, _MIN_DURATION)) ** 0.5 for point in pareto_front]
             chosen_uid = random.choices(pareto_front, weights=weights, k=1)[0].uid  # noqa: S311
             doc = await collection.find_one({_MONGO_ID: chosen_uid})
+            if doc is None:
+                raise errors.AdapterError(f"can't get next model - {chosen_uid} not found")
 
             max_llh_duration = max(points, key=lambda point: (point.llh, -point.duration)).duration
 
@@ -133,6 +135,8 @@ class Store:
         collection_name = t_obj.__name__
 
         doc = await self._load_or_create(collection_name, uid)
+        if doc is None:
+            raise errors.AdapterError(f"can't load {collection_name}.{uid}")
 
         return self._create_obj(t_obj, doc)
 
@@ -164,10 +168,10 @@ class Store:
                 return_document=pymongo.ReturnDocument.AFTER,
             )
 
-    def _create_obj[E: domain.Object](self, t_obj: type[E], doc: Any) -> tuple[E, uow.Version]:
+    def _create_obj[E: domain.Object](self, t_obj: type[E], doc: MongoDocument) -> tuple[E, uow.Version]:
         doc |= {_UID: doc[_MONGO_ID]}
         try:
-            return t_obj.model_validate(doc), uow.Version(doc[_VER])
+            return t_obj.model_validate(doc), uow.Version(cast("int", doc[_VER]))
         except ValidationError as err:
             collection_name = t_obj.__name__
             uid = doc.get(_UID)

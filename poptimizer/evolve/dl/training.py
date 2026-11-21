@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import ClassVar, Protocol
 
 from pydantic import BaseModel, ConfigDict
 
@@ -7,14 +7,14 @@ from poptimizer.evolve.models import evolve
 
 
 class TrainingJob(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     model: evolve.Model
     evolution: evolve.Evolution
 
 
 class TrainingData(BaseModel):
-    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True, arbitrary_types_allowed=True)
 
     tickers_data: list[datasets.TickerData]
     emb_size: list[int]
@@ -22,14 +22,14 @@ class TrainingData(BaseModel):
 
 
 class Forecast(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     mean: list[list[float]]
     cov: list[list[float]]
 
 
 class TrainingResult(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     forecast: Forecast
     duration: float

@@ -1,5 +1,5 @@
 from enum import StrEnum, auto, unique
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Self, cast
 
 from pydantic import BaseModel, Field, FiniteFloat, NonNegativeInt, field_validator, model_validator
 
@@ -114,4 +114,4 @@ class Features(domain.Entity):
         return self
 
     def update_numerical(self, num_feat_df: pd.DataFrame) -> None:
-        self.numerical = num_feat_df.to_dict("records")  # type: ignore[reportUnknownMemberType]
+        self.numerical = cast("list[dict[NumFeat, FiniteFloat]]", num_feat_df.to_dict("records"))

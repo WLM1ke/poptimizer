@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Final, Self, cast
+from typing import Final, Protocol, Self, cast
 
 import bson
 from pydantic import (
@@ -11,7 +11,7 @@ from pydantic import (
     PositiveInt,
     model_validator,
 )
-from scipy import stats  # type: ignore[reportMissingTypeStubs]
+from scipy import stats
 
 from poptimizer.core import consts, domain, fsm
 from poptimizer.evolve.dl import datasets
@@ -93,6 +93,11 @@ class Model(domain.Entity):
         return model.make_child(model1, model2, scale).genes
 
 
+class EvolveCtx(fsm.Ctx, Protocol):
+    async def next_model_for_update(self) -> tuple[Model, float]: ...
+    async def sample_models(self, n: int) -> list[Model]: ...
+
+
 class Evolution(domain.Entity):
     day: domain.Day = consts.START_DAY
     tickers: domain.Tickers = Field(default_factory=tuple)
@@ -133,7 +138,7 @@ class Evolution(domain.Entity):
             self.radius = 1
 
 
-async def make_new_model(ctx: fsm.Ctx, evolution: Evolution, model: Model) -> domain.UID:
+async def make_new_model(ctx: EvolveCtx, evolution: Evolution, model: Model) -> domain.UID:
     parents = await ctx.sample_models(_PARENT_COUNT)
     if len({parent.uid for parent in parents}) != _PARENT_COUNT:
         parents = [Model(uid=model.uid) for _ in range(_PARENT_COUNT)]
@@ -174,9 +179,9 @@ def _probability(target: list[float], base: list[float]) -> float:
 
     return cast(
         "float",
-        stats.ttest_1samp(  # type: ignore[reportUnknownMemberType]
+        stats.ttest_1samp(
             [t - b for t, b in zip(target, base, strict=False)],
             0,
             alternative="less",
-        ).pvalue,  # pyright: ignore[reportAttributeAccessIssue]
+        ).pvalue,
     )

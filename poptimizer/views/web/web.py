@@ -5,7 +5,6 @@ import logging
 from collections.abc import Awaitable, Callable
 from datetime import date
 from pathlib import Path
-from typing import Any
 from urllib import parse
 
 from aiohttp import typedefs, web
@@ -351,7 +350,7 @@ class App(web.Application):
             main,
         )
 
-    async def _hide_zero_positions(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:  # noqa: ARG002
+    async def _hide_zero_positions(self, _ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
         cookie = models.Cookie.from_request(req)
         cookie.hide_zero_positions = (await req.post()).get("hide") is not None
 
@@ -432,7 +431,7 @@ class App(web.Application):
 
         return self._render.render_main(main)
 
-    async def _theme(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:  # noqa: ARG002
+    async def _theme(self, _ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
         theme = req.match_info["theme"]
 
         if theme not in models.Theme:
@@ -447,7 +446,7 @@ class App(web.Application):
         self,
         ctx: fsm.Ctx,
         req: web.Request,
-        main: Any,
+        main: models.BasePage,
         *,
         poll: bool = False,
     ) -> web.StreamResponse:

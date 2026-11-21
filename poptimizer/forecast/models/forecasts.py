@@ -1,9 +1,7 @@
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType= false
-# pyright: reportUnknownArgumentType= false
 import asyncio
+import math
 from datetime import UTC, datetime
-from typing import Annotated, Final, cast
+from typing import Annotated, Final, Protocol, cast
 
 import numpy as np
 from numpy import random
@@ -19,7 +17,7 @@ from pydantic import (
     PlainSerializer,
     PositiveInt,
 )
-from scipy import stats  # pyright: ignore[reportMissingTypeStubs]
+from scipy import stats
 
 from poptimizer.core import consts, domain, fsm
 from poptimizer.evolve.models import evolve
@@ -45,7 +43,7 @@ class Forecast(domain.Entity):
     day: domain.Day = consts.START_DAY
     portfolio_updated_at: Annotated[
         AwareDatetime,
-        PlainSerializer(lambda dt: int(dt.timestamp()), return_type=int),
+        PlainSerializer(domain.datetime_to_timestamp, return_type=int),
     ] = datetime.fromtimestamp(0, tz=UTC)
     forecast_days: PositiveInt = 1
     forecasts_cnt: NonNegativeInt = 0
@@ -53,7 +51,7 @@ class Forecast(domain.Entity):
         set[domain.Ticker],
         PlainSerializer(
             list,
-            return_type=list,
+            return_type=list[domain.Ticker],
         ),
     ] = Field(default_factory=set[domain.Ticker])
     positions: Annotated[
@@ -125,7 +123,11 @@ class Forecast(domain.Entity):
         return 0, [], []
 
 
-async def update(ctx: fsm.Ctx) -> None:
+class ModelsCtx(fsm.Ctx, Protocol):
+    async def get_models(self, day: domain.Day) -> list[evolve.Model]: ...
+
+
+async def update(ctx: ModelsCtx) -> None:
     forecast = await ctx.get_for_update(Forecast)
     models = await ctx.get_models(forecast.day)
 
@@ -165,7 +167,7 @@ def _update(forecast: Forecast, models: list[evolve.Model]) -> None:
         port_means.append(port_mean.item())
 
         cov: NDArray[np.double] = np.array(model.cov)
-        std = np.diag(cov).reshape(-1, 1) ** 0.5
+        std = np.sqrt(np.reshape(np.diag(cov), (-1, 1)))
         stds.append(std)
         covs = cov @ weights
         port_var = weights.reshape(1, -1) @ covs
@@ -186,7 +188,9 @@ def _update(forecast: Forecast, models: list[evolve.Model]) -> None:
             (consts.YEAR_IN_TRADING_DAYS / forecast.forecast_days)
             * (
                 consts.COSTS
-                + (std / consts.YEAR_IN_TRADING_DAYS**0.5) * consts.IMPACT_COSTS_SCALE * (weights / turnover) ** 0.5
+                + (std / math.sqrt(consts.YEAR_IN_TRADING_DAYS))
+                * consts.IMPACT_COSTS_SCALE
+                * np.sqrt(weights / turnover)
             )
         )
 
@@ -204,23 +208,23 @@ def _update(forecast: Forecast, models: list[evolve.Model]) -> None:
     median_grads = np.median(stacked_grads, axis=1)
 
     stacked_costs = np.hstack(costs)
-    median_grads_lower = stats.bootstrap(
-        stacked_grads - stacked_costs,
+    lower = stats.bootstrap(
+        list(stacked_grads - stacked_costs),
         _median,
         confidence_level=(1 - p_value),
         paired=True,
         rng=random.default_rng(0),
     ).confidence_interval.low
-    median_grads_lower: NDArray[np.double] = np.nan_to_num(median_grads_lower, nan=-np.inf)
+    median_grads_lower: NDArray[np.double] = np.nan_to_num(cast("NDArray[np.float64]", lower), nan=-np.inf)
 
-    median_grads_upper = stats.bootstrap(
-        stacked_grads + stacked_costs,
+    upper = stats.bootstrap(
+        list(stacked_grads + stacked_costs),
         _median,
         confidence_level=(1 - p_value),
         paired=True,
         rng=random.default_rng(0),
     ).confidence_interval.high
-    median_grads_upper: NDArray[np.double] = np.nan_to_num(median_grads_upper, nan=np.inf)
+    median_grads_upper: NDArray[np.double] = np.nan_to_num(cast("NDArray[np.float64]", upper), nan=np.inf)
 
     for n, pos in enumerate(forecast.positions):
         pos.mean = median_mean[n]
@@ -266,5 +270,5 @@ def _pos_tickers(positions: list[Position]) -> set[domain.Ticker]:
     return {pos.ticker for pos in positions}
 
 
-def _median(*args: tuple[NDArray[np.double], ...]) -> list[NDArray[np.double]]:
-    return [cast("NDArray[np.double]", np.median(sample)) for sample in args]
+def _median(*args: NDArray[np.float64]) -> list[float]:
+    return [float(np.median(sample)) for sample in args]

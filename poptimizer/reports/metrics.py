@@ -1,7 +1,7 @@
-import matplotlib.pyplot as plt
 import pandas as pd
 
 from poptimizer.evolve.models import evolve
+from poptimizer.reports import plotting
 from poptimizer.runtime import uow
 
 
@@ -9,9 +9,9 @@ async def plot(repo: uow.Repo) -> None:
     dots = [(model.alfa, model.llh, model.duration) async for model in repo.get_all(evolve.Model) if model.duration]
     df = pd.DataFrame(dots, columns=["alfa", "llh", "duration"])
 
-    plt.figure(figsize=(10, 6))  # type: ignore[reportUnknownMemberType]
+    plotting.figure(figsize=(10, 6))
 
-    scatter = plt.scatter(  # type: ignore[reportUnknownMemberType]
+    scatter = plotting.scatter(
         df["llh"],
         df["alfa"],
         c=df["duration"],
@@ -20,10 +20,10 @@ async def plot(repo: uow.Repo) -> None:
         alpha=0.6,
     )
 
-    plt.colorbar(scatter, label="Seconds")  # type: ignore[reportUnknownMemberType]
+    plotting.colorbar(scatter, label="Seconds")
 
-    plt.xlabel("llh")  # type: ignore[reportUnknownMemberType]
-    plt.ylabel("alfa")  # type: ignore[reportUnknownMemberType]
-    plt.grid(visible=True, linestyle="--", alpha=0.5)  # type: ignore[reportUnknownMemberType]
+    plotting.xlabel("llh")
+    plotting.ylabel("alfa")
+    plotting.grid(visible=True, linestyle="--", alpha=0.5)
 
-    plt.show()  # type: ignore[reportUnknownMemberType]
+    plotting.show()

@@ -15,9 +15,6 @@ wheels/
 # dotenv
 .env
 
-# VSCode
-.vscode
-
 # pytest
 .coverage
 

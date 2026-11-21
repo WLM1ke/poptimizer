@@ -1,7 +1,5 @@
 from typing import Annotated
 
-from pydantic import PlainSerializer
-
 from poptimizer.core import consts
 from poptimizer.evolve.models import genetics
 
@@ -266,7 +264,7 @@ class Scheduler(genetics.Chromosome):
     ] = genetics.random_default_range(0.299, 0.301)
     anneal_strategy: Annotated[
         float,
-        PlainSerializer(lambda x: {True: "linear", False: "cos"}[x > 0]),
+        genetics.anneal_strategy_phenotype(),
     ] = genetics.random_default_range(-1, 1)
     cycle_momentum: Annotated[
         float,

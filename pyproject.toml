@@ -38,20 +38,35 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pyright>=1.1.410",
+    "basedpyright>=1.40.2",
     "pytest>=8.3.2",
     "pytest-cov>=5.0.0",
     "ruff>=0.16.3",
     "pandas-stubs>=2.2.2.240807",
     "pytest-asyncio>=0.24.0",
     "lxml-stubs>=0.5.1",
+    "scipy-stubs>=1.18.1.1",
+    "types-tqdm>=4.70.0.20261106",
 ]
 
-[tool.pyright]
-verboseOutput = true
-pythonVersion = "3.15"
-typeCheckingMode = "strict"
+[tool.basedpyright]
+include = ["poptimizer"]
+# Tests join the check in a later stage; scripts/ are ad-hoc analysis, not application code.
 exclude = ["**/tests/*"]
+pythonVersion = "3.15"
+typeCheckingMode = "all"
+failOnWarnings = true
+# In "all" mode a bare `# type: ignore` is inert: every suppression must name its rule.
+enableTypeIgnoreComments = false
+# Every finding was an intentional discarded result (tg.create_task, net.train, plt.*), so the
+# rule would only add `_ =` noise; reportUnusedCoroutine still catches a missing `await`.
+reportUnusedCallResult = "none"
+# An inferred `self.x = value` is not annotated; the enabled
+# reportIncompatibleUnannotatedOverride still catches a subclass that changes its type.
+reportUnannotatedClassAttribute = "none"
+# Explicit @override markers are not required; reportIncompatibleMethodOverride still
+# checks every real override's signature.
+reportImplicitOverride = "none"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

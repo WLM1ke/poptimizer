@@ -1,11 +1,11 @@
 from io import BytesIO
 from typing import TYPE_CHECKING, Final
 
-import matplotlib.pyplot as plt
 from reportlab import platypus
 from reportlab.lib.units import inch
 
 from poptimizer.portfolio.models import portfolio
+from poptimizer.reports import plotting
 from poptimizer.reports.pdf import style
 
 if TYPE_CHECKING:
@@ -77,19 +77,20 @@ def _make_plot(positions: list[tuple[str, float, float]], width: float, height: 
     share = [share for _, _, share in positions]
     labels = [f"{ticker} {style.format_percent(share)}" for ticker, _, share in positions]
 
-    _, ax = plt.subplots(1, 1, figsize=(width / inch, height / inch))  # type: ignore[reportUnknownMemberType]
-    _, texts = ax.pie(  # type: ignore[reportUnknownMemberType]
+    _, ax = plotting.subplots(1, 1, figsize=(width / inch, height / inch))
+    texts = plotting.pie(
+        ax,
         share,
         labels=labels,
         startangle=90,
         counterclock=False,
         labeldistance=1.1,
     )
-    plt.setp(texts, size=8)  # type: ignore[reportUnknownMemberType]
+    plotting.setp(texts, size=8)
     ax.axis("equal")
 
     file = BytesIO()
-    plt.savefig(file, dpi=300, format="png", transparent=True)  # type: ignore[reportUnknownMemberType]
+    plotting.savefig(file, dpi=300, transparent=True)
 
     return platypus.Image(file, width, height)
 

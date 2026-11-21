@@ -1,11 +1,12 @@
-# pyright: reportPrivateImportUsage=false
+from typing import cast
+
 import torch
 from pydantic import BaseModel
 
 
 class _GatedBlock(torch.nn.Module):
     def __init__(self, residual_channels: int, gate_channels: int, kernels: int) -> None:
-        super().__init__()  # type: ignore[reportUnknownMemberType]
+        super().__init__()
 
         self._pad = torch.nn.ConstantPad1d(
             padding=(kernels - 1, 0),
@@ -30,13 +31,13 @@ class _GatedBlock(torch.nn.Module):
         )
 
     def forward(self, in_tensor: torch.Tensor) -> torch.Tensor:
-        padded_input = self._pad(in_tensor)
+        padded_input = cast("torch.Tensor", self._pad(in_tensor))
 
-        signal = torch.relu(self._signal(padded_input))
-        gate = torch.sigmoid(self._gate(padded_input))
-        gated_signal = self._output(signal * gate)
+        signal = torch.relu(cast("torch.Tensor", self._signal(padded_input)))
+        gate = torch.sigmoid(cast("torch.Tensor", self._gate(padded_input)))
+        gated_signal = cast("torch.Tensor", self._output(signal * gate))
 
-        return in_tensor + gated_signal  # type: ignore[no-any-return]
+        return in_tensor + gated_signal
 
 
 class Cfg(BaseModel):
@@ -52,7 +53,7 @@ class Cfg(BaseModel):
 
 class _Blocks(torch.nn.Module):
     def __init__(self, cfg: Cfg) -> None:
-        super().__init__()  # type: ignore[reportUnknownMemberType]
+        super().__init__()
 
         self._blocks = torch.nn.Sequential()
         for _ in range(cfg.sub_blocks):
@@ -81,10 +82,10 @@ class _Blocks(torch.nn.Module):
         )
 
     def forward(self, in_tensor: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        gated = self._blocks(in_tensor)
+        gated = cast("torch.Tensor", self._blocks(in_tensor))
 
-        dilated = self._dilated(self._dilated_pad(gated))
-        skip = self._skip(gated[:, :, -1:])
+        dilated = cast("torch.Tensor", self._dilated(cast("torch.Tensor", self._dilated_pad(gated))))
+        skip = cast("torch.Tensor", self._skip(gated[:, :, -1:]))
 
         return dilated, skip
 
@@ -96,7 +97,7 @@ class Net(torch.nn.Module):
         blocks: int,
         cfg: Cfg,
     ) -> None:
-        super().__init__()  # type: ignore[reportUnknownMemberType]
+        super().__init__()
 
         self._blocks = torch.nn.ModuleList()
 
@@ -111,12 +112,12 @@ class Net(torch.nn.Module):
 
     def forward(self, in_tensor: torch.Tensor) -> torch.Tensor:
         block_iter = iter(self._blocks)
-        in_tensor, skips = next(block_iter)(in_tensor)
+        in_tensor, skips = cast("tuple[torch.Tensor, torch.Tensor]", next(block_iter)(in_tensor))
 
         for block in block_iter:
-            in_tensor, skip = block(in_tensor)
+            in_tensor, skip = cast("tuple[torch.Tensor, torch.Tensor]", block(in_tensor))
             skips = skips + skip
 
-        skips = skips + self._final_skip_conv(in_tensor)
+        skips = skips + cast("torch.Tensor", self._final_skip_conv(in_tensor))
 
         return torch.relu(skips)

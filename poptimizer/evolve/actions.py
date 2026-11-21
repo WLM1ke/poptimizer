@@ -30,7 +30,7 @@ class EvaluateBaseModelAction:
     def __init__(self, trainer: trainer.Trainer) -> None:
         self._trainer = trainer
 
-    async def __call__(self, ctx: fsm.Ctx) -> None:
+    async def __call__(self, ctx: evolve.EvolveCtx) -> None:
         evolution = await ctx.get_for_update(evolve.Evolution)
         model = await ctx.get_for_update(evolve.Model, evolution.previous_model)
 
@@ -55,7 +55,7 @@ class EvaluateNewModelAction:
     def __init__(self, trainer: trainer.Trainer) -> None:
         self._trainer = trainer
 
-    async def __call__(self, ctx: fsm.Ctx) -> None:
+    async def __call__(self, ctx: evolve.EvolveCtx) -> None:
         evolution = await ctx.get_for_update(evolve.Evolution)
         model = await ctx.get_for_update(evolve.Model, evolution.previous_model)
 
@@ -84,7 +84,7 @@ class EvaluateExistingModelAction:
     def __init__(self, trainer: trainer.Trainer) -> None:
         self._trainer = trainer
 
-    async def __call__(self, ctx: fsm.Ctx) -> None:
+    async def __call__(self, ctx: evolve.EvolveCtx) -> None:
         evolution = await ctx.get_for_update(evolve.Evolution)
 
         if cleaning_fired := await ctx.count_models() > evolution.cnt:

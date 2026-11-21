@@ -49,11 +49,11 @@ class Portfolio(domain.Entity):
     day: domain.Day = consts.START_DAY
     checked_at: Annotated[
         AwareDatetime,
-        PlainSerializer(lambda dt: int(dt.timestamp()), return_type=int),
+        PlainSerializer(domain.datetime_to_timestamp, return_type=int),
     ] = datetime.fromtimestamp(0, UTC)
     updated_at: Annotated[
         AwareDatetime,
-        PlainSerializer(lambda dt: int(dt.timestamp()), return_type=int),
+        PlainSerializer(domain.datetime_to_timestamp, return_type=int),
     ] = datetime.fromtimestamp(0, UTC)
     holding_period: NonNegativeFloat = 0
     bought_value: NonNegativeFloat = 0
