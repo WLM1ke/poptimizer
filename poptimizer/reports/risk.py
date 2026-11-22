@@ -81,7 +81,7 @@ async def report(lgr: logging.Logger, repo: uow.Repo, months: int) -> None:
     std = cast("pd.Series[float]", returns.std()) * math.sqrt(12)
     lgr.info(f"{'STD':<{_WIDTH}} {std[PORTFOLIO]:>{_WIDTH}.2%} {std[MOEX]:>{_WIDTH}.2%}")
     lgr.info(
-        f"{'SHARPE':<{_WIDTH}} {mean[PORTFOLIO] / std[PORTFOLIO]:>{_WIDTH}.2%} {mean[MOEX] / std[MOEX]:>{_WIDTH}.2%}"
+        f"{'SHARPE':<{_WIDTH}} {mean[PORTFOLIO] / std[PORTFOLIO]:>{_WIDTH}.2%} {mean[MOEX] / std[MOEX]:>{_WIDTH}.2%}",
     )
 
     result = stats.linregress(returns[MOEX], returns[PORTFOLIO])

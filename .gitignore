@@ -1,37 +1,19 @@
-# python generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
-
-# MacOS
+# macOS
 .DS_Store
 
-# venv
+# Python
+__pycache__/
 .venv
 
-# dotenv
-.env
-
-# pytest
+# Tests and coverage
 .coverage
 
-# Frontend build
-/static
+# Local config
+/cfg/cfg.yaml
+
+# Runtime data
+/backup
+/reports
 
 # Personal scripts
 /scripts
-
-# Previous version backup
-/backup
-
-# PDF reports
-/reports
-
-# Qwen
-/.qwen
-
-# сап
-/cfg/cfg.yaml

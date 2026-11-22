@@ -207,7 +207,7 @@ class Positions(BaseModel):
             int(
                 sum(m.units for m in self.money)
                 + sum(m.units for m in self.blocked)
-                + (sum(m.nano for m in self.money) + sum(m.nano for m in self.blocked)) / _NANOS_IN_RUB
+                + (sum(m.nano for m in self.money) + sum(m.nano for m in self.blocked)) / _NANOS_IN_RUB,
             ),
         )
 

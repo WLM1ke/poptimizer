@@ -75,7 +75,7 @@ class Fund(domain.Entity):
                 value=all_inflows,
                 inflows=inflows,
                 shares={investor: inflow / all_inflows for investor, inflow in inflows.items()},
-            )
+            ),
         ]
 
     def update(
@@ -110,5 +110,5 @@ class Fund(domain.Entity):
                 value=value,
                 inflows=inflows,
                 shares=shares,
-            )
+            ),
         )

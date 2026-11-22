@@ -145,7 +145,8 @@ async def test_cancellation_is_not_retried(test_db: mongo.MongoDatabase) -> None
 
 
 async def test_each_failure_warns_once_with_the_step_name_and_the_next_delay(
-    test_db: mongo.MongoDatabase, caplog: pytest.LogCaptureFixture
+    test_db: mongo.MongoDatabase,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     calls: list[uow.Repo] = []
 

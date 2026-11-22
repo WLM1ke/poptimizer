@@ -58,7 +58,7 @@ class Run(config.Cfg):
                     portfolio.build_graph(tinkoff_client),
                     evolve.build_graph(runner),
                     forecast.build_graph(),
-                )
+                ),
             )
             coro.append(server.run(uow.UOWFactory(store), self.server.url))
 

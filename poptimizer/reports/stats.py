@@ -47,19 +47,19 @@ async def report(lgr: logging.Logger, repo: uow.Repo) -> None:
                 f"{timedelta(seconds=round(min(duration)))} - "
                 f"{timedelta(seconds=round(statistics.median(duration)))} - {timedelta(seconds=round(max(duration)))}"
             ),
-        )
+        ),
     )
     data.append(
         (
             "Risk aversion",
             f"{min(risk_aversion):.2%} - {statistics.median(risk_aversion):.2%} - {max(risk_aversion):.2%}",
-        )
+        ),
     )
     data.append(
         (
             "History days",
             f"{min(history_days)} - {statistics.median(history_days):.0f} - {max(history_days)}",
-        )
+        ),
     )
 
     for feature, feat_count in features.most_common():

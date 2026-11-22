@@ -67,8 +67,10 @@ reportUnannotatedClassAttribute = "none"
 reportImplicitOverride = "none"
 
 [tool.pytest.ini_options]
+testpaths = ["poptimizer"]
 asyncio_mode = "auto"
-addopts = "--cov-report=term-missing --setup-show --verbose"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "--strict-markers --strict-config -W error --cov=poptimizer --cov-report=term-missing"
 
 [tool.coverage.run]
 branch = true
@@ -86,14 +88,10 @@ select = ["ALL"]
 fixable = ["ALL"]
 
 ignore = [
-    "A003",   # Class attribute is shadowing a python builtin
-    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
-    "COM812", # Missing-trailing-comma - ruff format recommendations
     "CPY001", # Missing copyright notice at top of file
     "D100",   # Missing docstring in public module
     "D101",   # Missing docstring in public class
     "D102",   # Missing docstring in public method
-    "D103",   # Missing docstring in public function
     "D103",   # Missing docstring in public function
     "D104",   # Missing docstring in public package
     "D105",   # Missing docstring in magic method
@@ -103,13 +101,14 @@ ignore = [
     "DTZ",    # The use of `datetime` without `tzinfo` argument is not allowed - one tz zone
     "EM101",  # Exception must not use a string literal, assign to variable first - don't like many exceptions
     "EM102",  # Exception must not use an f-string literal, assign to variable first - don't like many exceptions
-    "ISC001", # Single-line-implicit-string-concatenation - ruff format recommendations
     "RUF001", # Ambiguous-unicode-character-string - russian
     "RUF002", # Ambiguous-unicode-character-docstring - russian
     "RUF003", # Ambiguous-unicode-character-comment - russian
-    "TC001",  # Move application import into a type-checking block - needed for typer and bus logic
-    "TC002",  # Move third-party import into a type-checking block - needed for typer and bus logic
-    "TC003",  # Move standard library import into a type-checking block - needed for typer and bus logic
+    # Runtime annotation consumers (the pydantic-settings CLI and the FSM's get_type_hints)
+    # need these imports at runtime; moving them under TYPE_CHECKING breaks the CLI.
+    "TC001",
+    "TC002",
+    "TC003",
     "TRY003", # Avoid specifying long messages outside the exception class - don't like many exceptions
 ]
 

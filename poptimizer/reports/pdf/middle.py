@@ -50,7 +50,7 @@ def _prepare_returns_data(returns: pd.DataFrame) -> list[list[str]]:
                 style.format_percent(rf.iloc[year * _MONTH_IN_YEAR]),
             ]
             for year in range(1, 6)
-        ]
+        ],
     )
 
     return table_data

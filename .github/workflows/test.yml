@@ -11,17 +11,19 @@ jobs:
       - name: Checkout poptimizer
         uses: actions/checkout@v3
 
-      - name: Install go-task
-        run: brew install go-task
+      - name: Install mise
+        uses: jdx/mise-action@v5
 
       - name: Setup venv, install tools and dependencies
-        run: task install
+        run: mise run install
 
       - name: Lint
-        run: task lint
+        run: mise run lint
 
-      - name: Start MongoDB
-        run: task mongo
+      - name: Install and start MongoDB
+        run: |
+          mise run mongo_install
+          mise run mongo_start
 
       - name: Test
-        run: task test
+        run: mise run test

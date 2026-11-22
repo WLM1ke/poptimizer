@@ -125,7 +125,7 @@ def analytical_shrinkage(returns: NDArray[np.double], k: int = 1) -> NDArray[np.
 
     # Its Hilbert transform
     hftemp = (-3 / (10 * np.pi)) * x + (3 / (4 * math.sqrt(5) * np.pi)) * (1 - x**2 / 5) * np.log(
-        np.abs((math.sqrt(5) - x) / (math.sqrt(5) + x))
+        np.abs((math.sqrt(5) - x) / (math.sqrt(5) + x)),
     )
     hftemp[np.isclose(np.abs(x), math.sqrt(5))] = (-3 / (10 * np.pi)) * x[np.isclose(np.abs(x), math.sqrt(5))]
     hftilde = np.mean(hftemp / hlocal, axis=1)

@@ -179,7 +179,7 @@ def _update(forecast: Forecast, models: list[evolve.Model]) -> None:
                 + (std / math.sqrt(consts.YEAR_IN_TRADING_DAYS))
                 * consts.IMPACT_COSTS_SCALE
                 * np.sqrt(weights / turnover)
-            )
+            ),
         )
 
         risk_tol.append(risk_tolerance)

@@ -110,7 +110,7 @@ class Client:
 
             if not resp.ok:
                 raise errors.AdapterError(
-                    f"failed to get positions for account {account_name} (id={account.id}): HTTP {resp.status}, {json}"
+                    f"failed to get positions for account {account_name} (id={account.id}): HTTP {resp.status}, {json}",
                 )
 
             raw_positions = actions.Positions.model_validate(json)
@@ -142,7 +142,7 @@ class Client:
                 _normalize_tickers(order.ticker)
                 for order in orders_response.orders
                 if order.status in _ACTIVE_ORDER_STATUSES
-            }
+            },
         )
 
     async def get_instruments(self, token: str) -> dict[tuple[domain.Ticker, str], uuid.UUID]:

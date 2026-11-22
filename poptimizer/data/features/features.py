@@ -84,7 +84,7 @@ class Features(domain.Entity):
     numerical: list[dict[NumFeat, FiniteFloat]] = Field(default_factory=list[dict[NumFeat, FiniteFloat]])
     embedding: dict[EmbFeat, EmbeddingFeatDesc] = Field(default_factory=dict[EmbFeat, EmbeddingFeatDesc])
     embedding_seq: dict[EmbSeqFeat, EmbeddingSeqFeatDesc] = Field(
-        default_factory=dict[EmbSeqFeat, EmbeddingSeqFeatDesc]
+        default_factory=dict[EmbSeqFeat, EmbeddingSeqFeatDesc],
     )
 
     @field_validator("numerical")

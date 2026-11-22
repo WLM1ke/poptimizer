@@ -1,0 +1,125 @@
+[tools]
+uv = "latest"
+python = "latest"
+
+[settings]
+lockfile = true
+locked = true
+lockfile_platforms = ["macos-arm64"]
+python.uv_venv_auto = "source"
+
+[env]
+UV_PYTHON = { value = "{{ tools.python.path }}", tools = true }
+
+[vars]
+APP = "poptimizer"
+
+# Installation and upgrades
+
+[tasks.install]
+description = "Install the locked tools, project dependencies and the git hooks"
+depends = ["install-deps", "install-git-hooks"]
+
+[tasks.install-tools]
+description = "Install the tools from mise.lock"
+run = "mise install --locked"
+
+[tasks.install-deps]
+description = "Install the project's locked dependencies"
+depends = ["install-tools"]
+run = "uv sync --locked"
+
+[tasks.install-git-hooks]
+description = "Install the git hook that guards commits"
+run = "mise generate git-pre-commit --write --task check"
+
+[tasks.update]
+description = "Move the tools and dependencies to the newest versions, then audit them"
+run = [
+    "mise lock --bump",
+    "mise install --locked",
+    "uv lock --upgrade",
+    "uv sync --locked",
+    "curl -o poptimizer/views/web/static/js/htmx.min.js https://cdn.jsdelivr.net/npm/htmx.org/dist/htmx.min.js",
+    "curl -o poptimizer/views/web/static/js/idiomorph.min.js https://cdn.jsdelivr.net/npm/idiomorph/dist/idiomorph-ext.min.js",
+    "uv audit",
+]
+
+# Version updates
+
+[tasks.update_ver]
+description = "Update POptimizer to the newest version"
+run = [
+    "mkdir -p backup",
+    "git rev-parse HEAD > backup/HEAD",
+    "git fetch",
+    "git reset --hard @{upstream}",
+    "mise run install",
+]
+
+[tasks.revert_ver]
+description = "Revert POptimizer to the version from the backup"
+run = [
+    "git reset --hard $(cat backup/HEAD)",
+    "mise run install",
+]
+
+
+# Local services
+
+[tasks.mongo_install]
+description = "Install the local MongoDB and MongoDB Compass"
+run = [
+    "brew tap mongodb/brew",
+    "brew trust mongodb/brew",
+    "brew install mongodb-community",
+    "brew install --cask mongodb-compass",
+]
+
+[tasks.mongo_start]
+description = "Start the local MongoDB"
+run = "brew services start mongodb-community"
+
+[tasks.mongo_stop]
+description = "Stop the local MongoDB"
+run = "brew services stop mongodb-community"
+
+# Application
+
+[tasks.run]
+description = "Run POptimizer"
+run = "uv run {{ vars.APP }} run"
+
+[tasks.reset_div]
+description = "Reset dividends to reload from the backup on the next start"
+run = "uv run {{ vars.APP }} reset_div"
+
+# Checks
+
+[tasks.format]
+description = "Format"
+run = [
+    "uv run ruff check {{ vars.APP }} --unsafe-fixes --exit-zero",
+    "uv run ruff format {{ vars.APP }}",
+]
+
+[tasks.check]
+description = "Run the commit gate"
+depends = ["lint", "lock-check", "test"]
+
+[tasks.lint]
+description = "Lint"
+run = [
+    "uv run ruff check {{ vars.APP }} --unsafe-fixes --exit-non-zero-on-fix",
+    "uv run ruff format {{ vars.APP }} --check",
+    "uv run basedpyright",
+]
+
+[tasks.test]
+description = "Test"
+run = "uv run pytest"
+
+
+[tasks.lock-check]
+description = "Check that both lockfiles match their configs"
+run = ["uv lock --check", "mise install --locked"]
