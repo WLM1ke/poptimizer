@@ -29,7 +29,6 @@ class Cookie(BaseModel):
 
 class Layout(BaseModel):
     selected_path: str
-    poll: bool
     theme: Theme
     accounts: list[domain.AccName]
     dividends: list[domain.Ticker]
@@ -150,5 +149,4 @@ class Dividends(BasePage):
 class Settings(BasePage):
     page: Page = Page.SETTINGS
     hide_accounts_zero_positions: bool = Field(default=False)
-    accounts: list[domain.AccName]
     exclude: list[domain.Ticker]

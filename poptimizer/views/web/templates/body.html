@@ -200,14 +200,7 @@
 <header>
     <h1>{{ main.title }}</h1>
 </header>
-<main
-    {% if layout.poll %}
-    hx-get="{{ layout.selected_path }}"
-    hx-trigger="every 10s"
-    hx-target="body"
-    hx-swap="morph:innerHTML"
-    {% endif %}
->
+<main>
     {% include 'main/' + main.page + '.html' %}
 </main>
 <ol class="alerts">

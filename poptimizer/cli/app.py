@@ -15,6 +15,7 @@ from poptimizer.evolve.dl import pool, worker
 from poptimizer.forecast import forecast
 from poptimizer.fsm import system, tx
 from poptimizer.portfolio import portfolio
+from poptimizer.runtime import uow
 from poptimizer.views.web import server
 
 
@@ -59,7 +60,7 @@ class Run(config.Cfg):
                     forecast.build_graph(),
                 )
             )
-            coro.append(server.run(store, dispatcher, self.server.url))
+            coro.append(server.run(uow.UOWFactory(store), self.server.url))
 
             await safe.run(lgr, *coro)
 

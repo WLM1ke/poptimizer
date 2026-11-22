@@ -1,31 +1,47 @@
 import asyncio
-import functools
 import http
 import logging
 from collections.abc import Awaitable, Callable
+from contextlib import AbstractAsyncContextManager
 from datetime import date
 from pathlib import Path
-from urllib import parse
 
 from aiohttp import typedefs, web
 from pydantic import TypeAdapter, ValidationError
 
-from poptimizer.core import domain, errors, fsm
+from poptimizer.core import domain, errors
 from poptimizer.data.div import raw, status
 from poptimizer.forecast.models import forecasts
-from poptimizer.fsm import tx
 from poptimizer.portfolio.models import portfolio
+from poptimizer.portfolio.models.settings import Settings
 from poptimizer.runtime import uow
 from poptimizer.views.web import models, view
 
 
+class _UOWHandler:
+    def __init__(
+        self,
+        handler: Callable[[uow.Repo, web.Request], Awaitable[web.StreamResponse]],
+        uow_factory: Callable[[], AbstractAsyncContextManager[uow.Repo]],
+    ) -> None:
+        self._handler = handler
+        self._uow_factory = uow_factory
+
+    async def __call__(self, req: web.Request) -> web.StreamResponse:
+        async with self._uow_factory() as repo:
+            return await self._handler(repo, req)
+
+
 class App(web.Application):
-    def __init__(self, lgr: logging.Logger, store: uow.Store, dispatcher: tx.Dispatcher) -> None:
+    def __init__(
+        self,
+        lgr: logging.Logger,
+        uow_factory: Callable[[], AbstractAsyncContextManager[uow.Repo]],
+    ) -> None:
         super().__init__(middlewares=[self._alerts_middleware])
         self._lgr = lgr
         self._render = view.View()
-        self._store = store
-        self._dispatcher = dispatcher
+        self._uow_factory = uow_factory
 
         routes = (
             (
@@ -42,11 +58,6 @@ class App(web.Application):
                 web.patch,
                 "/accounts/{account}",
                 self._account_toggle_positions,
-            ),
-            (
-                web.patch,
-                "/accounts/{account}/{ticker}",
-                self._update_position,
             ),
             (
                 web.get,
@@ -85,16 +96,6 @@ class App(web.Application):
             ),
             (
                 web.post,
-                "/accounts",
-                self._create_acount,
-            ),
-            (
-                web.delete,
-                "/accounts/{account}",
-                self._remove_acount,
-            ),
-            (
-                web.post,
                 "/exclude",
                 self._exclude_ticker,
             ),
@@ -110,24 +111,13 @@ class App(web.Application):
             ),
         )
 
-        for method, path, unwrapped_handler in routes:
-            self.add_routes([method(path, self._wrap(unwrapped_handler))])
+        for method, path, handler in routes:
+            self.add_routes([method(path, _UOWHandler(handler, self._uow_factory))])
 
         self.add_routes([web.get("/{path:.*}", self._static_file)])
 
-    def _wrap(
-        self,
-        handler: Callable[[fsm.Ctx, web.Request], Awaitable[web.StreamResponse]],
-    ) -> Callable[[web.Request], Awaitable[web.StreamResponse]]:
-        @functools.wraps(handler)
-        async def wrapped(req: web.Request) -> web.StreamResponse:
-            async with tx.Tx(self._lgr, self._store, self._dispatcher) as ctx:
-                return await handler(ctx, req)
-
-        return wrapped
-
-    async def _portfolio(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
-        port = await ctx.get(portfolio.Portfolio)
+    async def _portfolio(self, repo: uow.Repo, req: web.Request) -> web.StreamResponse:
+        port = await repo.get(portfolio.Portfolio)
 
         value = port.value()
         positions = [
@@ -158,74 +148,46 @@ class App(web.Application):
         )
 
         return await self._render_page(
-            ctx,
+            repo,
             req,
             main,
         )
 
-    async def _account(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _account(self, repo: uow.Repo, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
         cookie = models.Cookie.from_request(req)
 
         main = _prepare_account(
-            await ctx.get(portfolio.Portfolio),
+            await repo.get(portfolio.Portfolio),
             account,
             hide_zero_positions=cookie.hide_zero_positions,
         )
 
         return await self._render_page(
-            ctx,
+            repo,
             req,
             main,
         )
 
-    async def _account_toggle_positions(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _account_toggle_positions(self, repo: uow.Repo, req: web.Request) -> web.StreamResponse:
         account = domain.AccName(req.match_info["account"])
         cookie = models.Cookie.from_request(req)
 
         cookie.toggle_zero_positions()
 
         main = _prepare_account(
-            await ctx.get(portfolio.Portfolio),
+            await repo.get(portfolio.Portfolio),
             account,
             hide_zero_positions=cookie.hide_zero_positions,
         )
 
         return self._render.render_main(main, cookie)
 
-    async def _update_position(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
-        account = domain.AccName(req.match_info["account"])
-        ticker = domain.Ticker(req.match_info["ticker"])
-        quantity = TypeAdapter(int).validate_python((await req.post()).get("quantity"))
-
-        port = await ctx.get_for_update(portfolio.Portfolio)
-        port.update_position(account, ticker, quantity)
-
-        main = _prepare_account(
-            port,
-            account,
-            hide_zero_positions=models.Cookie.from_request(req).hide_zero_positions,
-        )
-
-        return self._render.render_main(main)
-
-    async def _forecast(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
-        async with asyncio.TaskGroup() as tg:
-            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
-            forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
-
-        forecast = await forecasts_task
-        port = await port_task
-
-        outdated = ""
-        poll = False
-
-        if port.updated_at != forecast.portfolio_updated_at:
-            outdated = "outdated"
-            poll = True
+    async def _forecast(self, repo: uow.Repo, req: web.Request) -> web.StreamResponse:
+        forecast = await repo.get(forecasts.Forecast)
 
         card = models.Card(
-            upper=f"Date: {forecast.day} {outdated}",
+            upper=f"Date: {forecast.day}",
             main=(f"Mean: {view.format_percent(forecast.mean)} / Std: {view.format_percent(forecast.std)}"),
             row1=models.Row(label="Trading interval", value=f"{forecast.forecast_days} days"),
             row2=models.Row(label="Risk aversion", value=f"{view.format_percent(1 - forecast.risk_tolerance)}"),
@@ -238,31 +200,20 @@ class App(web.Application):
         )
 
         return await self._render_page(
-            ctx,
+            repo,
             req,
             main,
-            poll=poll,
         )
 
-    async def _optimization(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
-        async with asyncio.TaskGroup() as tg:
-            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
-            forecasts_task = tg.create_task(ctx.get(forecasts.Forecast))
+    async def _optimization(self, repo: uow.Repo, req: web.Request) -> web.StreamResponse:
+        forecast = await repo.get(forecasts.Forecast)
+        port = await repo.get(portfolio.Portfolio)
+        settings = await repo.get(Settings)
 
-        forecast = forecasts_task.result()
-        port = await port_task
-
-        outdated = ""
-        poll = False
-
-        if port.updated_at != forecast.portfolio_updated_at:
-            outdated = "outdated"
-            poll = True
-
-        breakeven, buy, sell = forecast.buy_sell()
+        breakeven, buy, sell = forecast.buy_sell(port.illiquid | settings.exclude)
 
         card = models.Card(
-            upper=f"Date: {forecast.day} {outdated}",
+            upper=f"Date: {forecast.day}",
             main=(f"Mean: {view.format_percent(forecast.mean)} / Std: {view.format_percent(forecast.std)}"),
             row1=models.Row(label="Trading interval", value=f"{forecast.forecast_days} days"),
             row2=models.Row(label="Risk aversion", value=f"{view.format_percent(1 - forecast.risk_tolerance)}"),
@@ -277,32 +228,31 @@ class App(web.Application):
         )
 
         return await self._render_page(
-            ctx,
+            repo,
             req,
             main,
-            poll=poll,
         )
 
-    async def _dividends(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _dividends(self, repo: uow.Repo, req: web.Request) -> web.StreamResponse:
         ticker = domain.UID(req.match_info["ticker"])
 
         async with asyncio.TaskGroup() as tg:
-            raw_task = tg.create_task(ctx.get(raw.DivRaw, ticker))
-            reestry_task = tg.create_task(ctx.get(raw.DivReestry, ticker))
+            raw_task = tg.create_task(repo.get(raw.DivRaw, ticker))
+            reestry_task = tg.create_task(repo.get(raw.DivReestry, ticker))
 
         return await self._render_page(
-            ctx,
+            repo,
             req,
             _prepare_dividends(await raw_task, await reestry_task),
         )
 
-    async def _dividend_add(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _dividend_add(self, repo: uow.Repo, req: web.Request) -> web.StreamResponse:
         ticker = domain.UID(req.match_info["ticker"])
 
         async with asyncio.TaskGroup() as tg:
-            raw_task = tg.create_task(ctx.get_for_update(raw.DivRaw, ticker))
-            reestry_task = tg.create_task(ctx.get(raw.DivReestry, ticker))
-            status_task = tg.create_task(ctx.get_for_update(status.DivStatus))
+            raw_task = tg.create_task(repo.get_for_update(raw.DivRaw, ticker))
+            reestry_task = tg.create_task(repo.get(raw.DivReestry, ticker))
+            status_task = tg.create_task(repo.get_for_update(status.DivStatus))
 
         raw_div = await raw_task
         reestry_div = await reestry_task
@@ -317,12 +267,12 @@ class App(web.Application):
 
         return self._render.render_main(_prepare_dividends(raw_div, reestry_div))
 
-    async def _dividend_remove(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _dividend_remove(self, repo: uow.Repo, req: web.Request) -> web.StreamResponse:
         ticker = domain.UID(req.match_info["ticker"])
 
         async with asyncio.TaskGroup() as tg:
-            raw_task = tg.create_task(ctx.get_for_update(raw.DivRaw, ticker))
-            reestry_task = tg.create_task(ctx.get(raw.DivReestry, ticker))
+            raw_task = tg.create_task(repo.get_for_update(raw.DivRaw, ticker))
+            reestry_task = tg.create_task(repo.get(raw.DivReestry, ticker))
 
         raw_div = await raw_task
         reestry_div = await reestry_task
@@ -335,103 +285,43 @@ class App(web.Application):
 
         return self._render.render_main(_prepare_dividends(raw_div, reestry_div))
 
-    async def _settings(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
-        port = await ctx.get(portfolio.Portfolio)
-
-        main = models.Settings(
-            hide_accounts_zero_positions=models.Cookie.from_request(req).hide_zero_positions,
-            accounts=sorted(port.account_names),
-            exclude=sorted(port.exclude),
-        )
-
+    async def _settings(self, repo: uow.Repo, req: web.Request) -> web.StreamResponse:
         return await self._render_page(
-            ctx,
+            repo,
             req,
-            main,
+            await self._settings_page(repo, req),
         )
 
-    async def _hide_zero_positions(self, _ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _hide_zero_positions(self, _repo: uow.Repo, req: web.Request) -> web.StreamResponse:
         cookie = models.Cookie.from_request(req)
         cookie.hide_zero_positions = (await req.post()).get("hide") is not None
 
         return self._render.set_cookie(cookie)
 
-    async def _create_acount(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
-        account = TypeAdapter(str).validate_python((await req.post()).get("account"))
-        if account != parse.quote(account):
-            raise errors.ControllersError("Invalid account name - use only english letters and numbers")
+    async def _not_exclude_ticker(self, repo: uow.Repo, req: web.Request) -> web.StreamResponse:
+        ticker = domain.Ticker(TypeAdapter(str).validate_python(req.match_info["ticker"]).upper())
+        settings = await repo.get_for_update(Settings)
 
-        cookie = models.Cookie.from_request(req)
+        if ticker not in settings.exclude:
+            raise errors.DomainError(f"ticker {ticker} is not excluded")
 
-        port = await ctx.get_for_update(portfolio.Portfolio)
-        port.create_acount(domain.AccName(account))
+        settings.exclude.remove(ticker)
 
-        main = models.Settings(
-            hide_accounts_zero_positions=cookie.hide_zero_positions,
-            accounts=sorted(port.account_names),
-            exclude=sorted(port.exclude),
-        )
+        return self._render.render_main(await self._settings_page(repo, req))
 
-        return await self._render_page(
-            ctx,
-            req,
-            main,
-        )
+    async def _exclude_ticker(self, repo: uow.Repo, req: web.Request) -> web.StreamResponse:
+        ticker = domain.Ticker(TypeAdapter(str).validate_python((await req.post()).get("ticker")).upper())
+        port = await repo.get(portfolio.Portfolio)
 
-    async def _remove_acount(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
-        account = domain.AccName(req.match_info["account"])
-        cookie = models.Cookie.from_request(req)
+        if ticker not in port.tickers:
+            raise errors.DomainError(f"ticker {ticker} is not in portfolio")
 
-        port = await ctx.get_for_update(portfolio.Portfolio)
-        port.remove_acount(account)
+        settings = await repo.get_for_update(Settings)
+        settings.exclude.add(ticker)
 
-        main = models.Settings(
-            hide_accounts_zero_positions=cookie.hide_zero_positions,
-            accounts=sorted(port.account_names),
-            exclude=sorted(port.exclude),
-        )
+        return self._render.render_main(await self._settings_page(repo, req))
 
-        return await self._render_page(
-            ctx,
-            req,
-            main,
-        )
-
-    async def _not_exclude_ticker(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
-        ticker = TypeAdapter(str).validate_python(req.match_info["ticker"])
-        cookie = models.Cookie.from_request(req)
-
-        port = await ctx.get_for_update(portfolio.Portfolio)
-        port.not_exclude_ticker(domain.Ticker(ticker.upper()))
-        forecast = await ctx.get_for_update(forecasts.Forecast)
-        forecast.illiquid = port.illiquid
-
-        main = models.Settings(
-            hide_accounts_zero_positions=cookie.hide_zero_positions,
-            accounts=sorted(port.account_names),
-            exclude=sorted(port.exclude),
-        )
-
-        return self._render.render_main(main)
-
-    async def _exclude_ticker(self, ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
-        ticker = TypeAdapter(str).validate_python((await req.post()).get("ticker"))
-        cookie = models.Cookie.from_request(req)
-
-        port = await ctx.get_for_update(portfolio.Portfolio)
-        port.exclude_ticker(domain.Ticker(ticker.upper()))
-        forecast = await ctx.get_for_update(forecasts.Forecast)
-        forecast.illiquid = port.illiquid
-
-        main = models.Settings(
-            hide_accounts_zero_positions=cookie.hide_zero_positions,
-            accounts=sorted(port.account_names),
-            exclude=sorted(port.exclude),
-        )
-
-        return self._render.render_main(main)
-
-    async def _theme(self, _ctx: fsm.Ctx, req: web.Request) -> web.StreamResponse:
+    async def _theme(self, _repo: uow.Repo, req: web.Request) -> web.StreamResponse:
         theme = req.match_info["theme"]
 
         if theme not in models.Theme:
@@ -442,21 +332,26 @@ class App(web.Application):
 
         return self._render.render_theme(cookie)
 
+    async def _settings_page(self, repo: uow.Repo, req: web.Request) -> models.Settings:
+        settings = await repo.get(Settings)
+
+        return models.Settings(
+            hide_accounts_zero_positions=models.Cookie.from_request(req).hide_zero_positions,
+            exclude=sorted(settings.exclude),
+        )
+
     async def _render_page(
         self,
-        ctx: fsm.Ctx,
+        repo: uow.Repo,
         req: web.Request,
         main: models.BasePage,
-        *,
-        poll: bool = False,
     ) -> web.StreamResponse:
         async with asyncio.TaskGroup() as tg:
-            port_task = tg.create_task(ctx.get(portfolio.Portfolio))
-            div_task = tg.create_task(ctx.get(status.DivStatus))
+            port_task = tg.create_task(repo.get(portfolio.Portfolio))
+            div_task = tg.create_task(repo.get(status.DivStatus))
 
         layout = models.Layout(
             selected_path=req.path,
-            poll=poll,
             theme=models.Cookie.from_request(req).theme,
             accounts=sorted(port_task.result().account_names),
             dividends=sorted({row.ticker for row in div_task.result().df}),

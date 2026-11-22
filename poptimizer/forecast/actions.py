@@ -16,7 +16,8 @@ class InitForecastAction:
 class UpdateForecastAction:
     async def __call__(self, ctx: forecasts.ModelsCtx, event: PositionChecked) -> None:
         forecast = await ctx.get_for_update(forecasts.Forecast)
-        if event.updated_at != forecast.portfolio_updated_at:
+
+        if event.changed:
             port = await ctx.get(portfolio.Portfolio)
             forecast.update_positions(port)
 

@@ -69,13 +69,6 @@ class Portfolio(domain.Entity):
         list[Position],
         AfterValidator(domain.sorted_with_ticker_field_validator),
     ] = Field(default_factory=list[Position])
-    exclude: Annotated[
-        set[domain.Ticker],
-        PlainSerializer(
-            list,
-            return_type=list[domain.Ticker],
-        ),
-    ] = Field(default_factory=set[domain.Ticker])
     illiquid: Annotated[
         set[domain.Ticker],
         PlainSerializer(
@@ -127,12 +120,10 @@ class Portfolio(domain.Entity):
         if name not in self.account_names:
             raise errors.DomainError(f"account {name} doesn't exist")
 
-        if name in self.cash:
-            raise errors.DomainError(f"account {name} has not zero cash")
+        self.cash.pop(name, None)
 
         for position in self.positions:
-            if name in position.accounts:
-                raise errors.DomainError(f"account {name} has not zero {position.ticker}")
+            position.accounts.pop(name, None)
 
         self.account_names.remove(name)
 
@@ -231,17 +222,3 @@ class Portfolio(domain.Entity):
             return 0
 
         return positions_value**2 / sum(pos.value() ** 2 for pos in self.positions)
-
-    def exclude_ticker(self, ticker: domain.Ticker) -> None:
-        _, pos = self.find_position(ticker)
-        if pos is None:
-            raise errors.DomainError(f"ticker {ticker} is not in portfolio")
-
-        self.exclude.add(ticker)
-        self.illiquid.add(ticker)
-
-    def not_exclude_ticker(self, ticker: domain.Ticker) -> None:
-        if ticker not in self.exclude:
-            raise errors.DomainError(f"ticker {ticker} is not excluded")
-
-        self.exclude.remove(ticker)

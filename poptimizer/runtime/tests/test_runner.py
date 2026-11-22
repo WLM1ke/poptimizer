@@ -85,18 +85,18 @@ async def _cancelled(repo: uow.Repo, calls: list[uow.Repo]) -> None:
     raise asyncio.CancelledError
 
 
-async def test_a_narrow_repo_protocol_step_fits_the_retrier(test_db):
+async def test_a_narrow_repo_protocol_step_fits_the_retrier(test_db: mongo.MongoDatabase) -> None:
     assert await _retrier(test_db)(_count) == 0
 
 
-async def test_po_error_is_retried_until_success(test_db):
+async def test_po_error_is_retried_until_success(test_db: mongo.MongoDatabase) -> None:
     calls: list[uow.Repo] = []
 
     assert await _retrier(test_db)(_flaky, calls) == "ok"
     assert len(calls) == 3
 
 
-async def test_every_attempt_gets_a_fresh_unit_of_work(test_db):
+async def test_every_attempt_gets_a_fresh_unit_of_work(test_db: mongo.MongoDatabase) -> None:
     await test_db[COLLECTION].insert_one({"_id": UID, "ver": 0, "value": 1})
     values: list[int] = []
 
@@ -106,14 +106,14 @@ async def test_every_attempt_gets_a_fresh_unit_of_work(test_db):
     assert await test_db[COLLECTION].find_one({"_id": UID}) == {"_id": UID, "ver": 1, "value": 10}
 
 
-async def test_exception_group_po_error_is_retried(test_db):
+async def test_exception_group_po_error_is_retried(test_db: mongo.MongoDatabase) -> None:
     calls: list[uow.Repo] = []
 
     assert await _retrier(test_db)(_grouped, calls) == "ok"
     assert len(calls) == 2
 
 
-async def test_a_mixed_group_is_not_retried(test_db, caplog):
+async def test_a_mixed_group_is_not_retried(test_db: mongo.MongoDatabase, caplog: pytest.LogCaptureFixture) -> None:
     calls: list[uow.Repo] = []
 
     async with asyncio.timeout(1):
@@ -125,7 +125,7 @@ async def test_a_mixed_group_is_not_retried(test_db, caplog):
     assert not caplog.records
 
 
-async def test_non_poptimizer_error_propagates_at_once(test_db):
+async def test_non_poptimizer_error_propagates_at_once(test_db: mongo.MongoDatabase) -> None:
     calls: list[uow.Repo] = []
 
     async with asyncio.timeout(1):
@@ -135,7 +135,7 @@ async def test_non_poptimizer_error_propagates_at_once(test_db):
     assert len(calls) == 1
 
 
-async def test_cancellation_is_not_retried(test_db):
+async def test_cancellation_is_not_retried(test_db: mongo.MongoDatabase) -> None:
     calls: list[uow.Repo] = []
 
     with pytest.raises(asyncio.CancelledError):
@@ -144,7 +144,9 @@ async def test_cancellation_is_not_retried(test_db):
     assert len(calls) == 1
 
 
-async def test_each_failure_warns_once_with_the_step_name_and_the_next_delay(test_db, caplog):
+async def test_each_failure_warns_once_with_the_step_name_and_the_next_delay(
+    test_db: mongo.MongoDatabase, caplog: pytest.LogCaptureFixture
+) -> None:
     calls: list[uow.Repo] = []
 
     retrier = runner.Retrier(

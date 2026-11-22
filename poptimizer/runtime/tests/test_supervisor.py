@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime, timedelta
+from typing import cast
 
 import pytest
 
@@ -8,12 +9,18 @@ from poptimizer.runtime import supervisor, uow
 from poptimizer.runtime.runner import Step
 from poptimizer.runtime.supervisor import Runner
 
+_until_publication = supervisor._until_publication  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+_sleep_until_publication = supervisor._sleep_until_publication  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+
 
 class ScriptedProbe:
     def __init__(self, answers: list[bool]) -> None:
         self._answers = answers
 
-    async def __call__(self, _repo: uow.Repo) -> bool:
+    async def __call__(
+        self,
+        repo: uow.Repo,  # noqa: ARG002
+    ) -> bool:
         assert self._answers, "probe script exhausted"
 
         return self._answers.pop(0)
@@ -38,13 +45,16 @@ class RecordingDayStart:
     def __init__(self, log: list[str]) -> None:
         self._log = log
 
-    async def __call__(self, _runner: Runner[uow.Repo]) -> None:
+    async def __call__(
+        self,
+        runner: Runner[uow.Repo],  # noqa: ARG002
+    ) -> None:
         self._log.append("day start")
 
 
 class RecordingRunner:
     async def __call__[**P, T](self, step: Step[uow.Repo, P, T], *args: P.args, **kwargs: P.kwargs) -> T:
-        return await step(None, *args, **kwargs)
+        return await step(cast("uow.Repo", object()), *args, **kwargs)
 
 
 class RecordingLoop:
@@ -53,7 +63,11 @@ class RecordingLoop:
         self._name = name
         self._fail = fail
 
-    async def __call__(self, _runner: Runner[uow.Repo], stop: asyncio.Event) -> None:
+    async def __call__(
+        self,
+        runner: Runner[uow.Repo],  # noqa: ARG002
+        stop: asyncio.Event,
+    ) -> None:
         assert not stop.is_set()
 
         self._log.append(f"{self._name} started")
@@ -70,12 +84,19 @@ class RecordingMigrations:
     def __init__(self, log: list[str]) -> None:
         self._log = log
 
-    async def __call__(self, _repo: uow.Repo) -> None:
+    async def __call__(
+        self,
+        repo: uow.Repo,  # noqa: ARG002
+    ) -> None:
         self._log.append("migrations")
 
 
 def _patch_sleep(monkeypatch: pytest.MonkeyPatch, sleeps: list[bool]) -> None:
     monkeypatch.setattr(supervisor, "_sleep_until_publication", ScriptedSleep(sleeps))
+
+
+def _ten_milliseconds(_now: datetime) -> timedelta:
+    return timedelta(milliseconds=10)
 
 
 async def _never_publication(_stop: asyncio.Event) -> bool:
@@ -103,43 +124,43 @@ def _supervisor(
     )
 
 
-def test_the_time_until_publication_is_the_publication_hour_of_the_same_day_before_it():
-    assert supervisor._until_publication(datetime(2026, 1, 1, 0, 30)) == timedelta(minutes=30)
+def test_the_time_until_publication_is_the_publication_hour_of_the_same_day_before_it() -> None:
+    assert _until_publication(datetime(2026, 1, 1, 0, 30)) == timedelta(minutes=30)
 
 
-def test_the_time_until_publication_moves_to_the_next_day_after_the_publication_hour():
-    assert supervisor._until_publication(datetime(2026, 1, 1, 2)) == timedelta(hours=23)
+def test_the_time_until_publication_moves_to_the_next_day_after_the_publication_hour() -> None:
+    assert _until_publication(datetime(2026, 1, 1, 2)) == timedelta(hours=23)
 
 
-def test_the_time_until_publication_moves_to_the_next_day_at_the_publication_hour_itself():
-    assert supervisor._until_publication(datetime(2026, 1, 1, 1)) == timedelta(days=1)
+def test_the_time_until_publication_moves_to_the_next_day_at_the_publication_hour_itself() -> None:
+    assert _until_publication(datetime(2026, 1, 1, 1)) == timedelta(days=1)
 
 
-async def test_a_stop_during_the_wait_is_reported():
+async def test_a_stop_during_the_wait_is_reported() -> None:
     stop = asyncio.Event()
     stop.set()
 
-    assert await supervisor._sleep_until_publication(stop) is False
+    assert await _sleep_until_publication(stop) is False
 
 
-async def test_the_wait_ends_at_the_publication_without_a_stop(monkeypatch):
-    monkeypatch.setattr(supervisor, "_until_publication", lambda _now: timedelta(milliseconds=10))
+async def test_the_wait_ends_at_the_publication_without_a_stop(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(supervisor, "_until_publication", _ten_milliseconds)
 
-    assert await supervisor._sleep_until_publication(asyncio.Event()) is True
+    assert await _sleep_until_publication(asyncio.Event()) is True
 
 
-async def test_a_stop_set_during_the_wait_is_reported(monkeypatch):
-    monkeypatch.setattr(supervisor, "_until_publication", lambda _now: timedelta(milliseconds=10))
+async def test_a_stop_set_during_the_wait_is_reported(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(supervisor, "_until_publication", _ten_milliseconds)
     stop = asyncio.Event()
 
     async with asyncio.TaskGroup() as tg:
         tg.create_task(_set_stop_after(stop))
 
-        assert await supervisor._sleep_until_publication(stop) is False
+        assert await _sleep_until_publication(stop) is False
 
 
-async def test_every_loop_runs_and_is_stopped_with_the_group(monkeypatch):
-    log = []
+async def test_every_loop_runs_and_is_stopped_with_the_group(monkeypatch: pytest.MonkeyPatch) -> None:
+    log: list[str] = []
     _patch_sleep(monkeypatch, [False])
     sup = _supervisor(
         ScriptedProbe([False]),
@@ -154,8 +175,8 @@ async def test_every_loop_runs_and_is_stopped_with_the_group(monkeypatch):
     assert sorted(log[1:]) == ["a started", "a stopped", "b started", "b stopped"]
 
 
-async def test_each_run_gives_the_loops_a_fresh_stop_event(monkeypatch):
-    log = []
+async def test_each_run_gives_the_loops_a_fresh_stop_event(monkeypatch: pytest.MonkeyPatch) -> None:
+    log: list[str] = []
     _patch_sleep(monkeypatch, [True, True, False])
     sup = _supervisor(ScriptedProbe([False, True, True]), log, RecordingLoop(log, name="a"))
 
@@ -174,8 +195,8 @@ async def test_each_run_gives_the_loops_a_fresh_stop_event(monkeypatch):
     ]
 
 
-async def test_a_loop_failure_propagates_and_stops_the_group(monkeypatch):
-    log = []
+async def test_a_loop_failure_propagates_and_stops_the_group(monkeypatch: pytest.MonkeyPatch) -> None:
+    log: list[str] = []
     _patch_sleep(monkeypatch, [False])
     sup = _supervisor(
         ScriptedProbe([False]),
@@ -191,8 +212,8 @@ async def test_a_loop_failure_propagates_and_stops_the_group(monkeypatch):
     assert log == ["migrations", "a started", "b started"]
 
 
-async def test_migrations_run_before_the_first_probe(monkeypatch):
-    log = []
+async def test_migrations_run_before_the_first_probe(monkeypatch: pytest.MonkeyPatch) -> None:
+    log: list[str] = []
     _patch_sleep(monkeypatch, [False])
 
     await _supervisor(ScriptedProbe([False]), log)(asyncio.Event())
@@ -200,8 +221,8 @@ async def test_migrations_run_before_the_first_probe(monkeypatch):
     assert log == ["migrations"]
 
 
-async def test_the_boot_probe_runs_the_day_start_before_the_loops_start(monkeypatch):
-    log = []
+async def test_the_boot_probe_runs_the_day_start_before_the_loops_start(monkeypatch: pytest.MonkeyPatch) -> None:
+    log: list[str] = []
     _patch_sleep(monkeypatch, [False])
     sup = _supervisor(ScriptedProbe([True]), log, RecordingLoop(log))
 
@@ -210,8 +231,10 @@ async def test_the_boot_probe_runs_the_day_start_before_the_loops_start(monkeypa
     assert log == ["migrations", "day start", "loop started", "loop stopped"]
 
 
-async def test_silence_then_a_new_day_stops_the_loops_runs_the_day_start_and_restarts_them(monkeypatch):
-    log = []
+async def test_silence_then_a_new_day_stops_the_loops_runs_the_day_start_and_restarts_them(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    log: list[str] = []
     _patch_sleep(monkeypatch, [True, True])
     sup = _supervisor(ScriptedProbe([False, False, True]), log, RecordingLoop(log))
 
@@ -220,8 +243,8 @@ async def test_silence_then_a_new_day_stops_the_loops_runs_the_day_start_and_res
     assert log == ["migrations", "loop started", "loop stopped", "day start", "loop started", "loop stopped"]
 
 
-async def test_a_stop_during_the_sleep_returns_without_the_day_start(monkeypatch):
-    log = []
+async def test_a_stop_during_the_sleep_returns_without_the_day_start(monkeypatch: pytest.MonkeyPatch) -> None:
+    log: list[str] = []
     _patch_sleep(monkeypatch, [False])
     sup = _supervisor(ScriptedProbe([False]), log, RecordingLoop(log))
 
@@ -230,8 +253,8 @@ async def test_a_stop_during_the_sleep_returns_without_the_day_start(monkeypatch
     assert log == ["migrations", "loop started", "loop stopped"]
 
 
-async def test_a_stop_before_the_start_runs_nothing():
-    log = []
+async def test_a_stop_before_the_start_runs_nothing() -> None:
+    log: list[str] = []
     stop = asyncio.Event()
     stop.set()
     sup = _supervisor(ScriptedProbe([]), log, RecordingLoop(log))
@@ -241,8 +264,8 @@ async def test_a_stop_before_the_start_runs_nothing():
     assert log == []
 
 
-async def test_a_loop_failure_propagates_at_once(monkeypatch):
-    log = []
+async def test_a_loop_failure_propagates_at_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    log: list[str] = []
     monkeypatch.setattr(supervisor, "_sleep_until_publication", _never_publication)
     sup = _supervisor(ScriptedProbe([False]), log, RecordingLoop(log, fail=True))
 

@@ -24,18 +24,8 @@
             <td class="table__label-cell">
                 Cash
             </td>
-            <td>
-                <input
-                    hx-patch="/accounts/{{ main.account }}/CASH"
-                    hx-target="main"
-                    hx-swap="morph:innerHTML"
-                    class="table__input"
-                    name="quantity"
-                    value="{{ main.cash }}"
-                    type="number"
-                    min="0"
-                    step="1"
-                >
+            <td class="table__data-cell">
+                {{ format_float(main.cash) }}
             </td>
             <td class="table__data-cell">
             </td>
@@ -56,19 +46,8 @@
             >
                 {{ pos.ticker }}
             </td>
-            <td>
-                <input
-                    hx-patch="/accounts/{{ main.account }}/{{ pos.ticker }}"
-                    hx-target="main"
-                    hx-swap="morph:innerHTML"
-                    class="table__input"
-                    name="quantity"
-                    value="{{ pos.quantity }}"
-                    type="number"
-                    min="0"
-                    step="{{ pos.lot }}"
-                >
-                </input>
+            <td class="table__data-cell">
+                {{ format_float(pos.quantity, 0) }}
             </td>
             <td class="table__data-cell">
                 {{ format_float(pos.lot, 0) }}

@@ -16,6 +16,7 @@ from poptimizer.data.moex import quotes, securities
 from poptimizer.evolve.models import evolve
 from poptimizer.portfolio import events
 from poptimizer.portfolio.models import portfolio
+from poptimizer.portfolio.models.settings import Settings
 
 _NANOS_IN_RUB: Final = 10**9
 _CHECKED_INTERVAL: Final = timedelta(minutes=30)
@@ -34,13 +35,14 @@ class RevaluePortfolioAction:
         port.illiquid.clear()
 
         evolution = await ctx.get_for_update(evolve.Evolution)
+        settings = await ctx.get(Settings)
 
         sec_cache = await _prepare_sec_cache(ctx, port.forecast_days, evolution.minimal_returns_days + 1, trading_days)
         min_turnover = _calc_min_turnover(port, sec_cache)
 
         old_value = port.value()
-        _update_existing_positions(ctx, port, sec_cache, min_turnover)
-        _add_new_liquid(ctx, port, sec_cache, min_turnover)
+        _update_existing_positions(ctx, port, sec_cache, min_turnover, settings.exclude)
+        _add_new_liquid(ctx, port, sec_cache, min_turnover, settings.exclude)
 
         if old_value:
             new_value = port.value()
@@ -129,6 +131,7 @@ def _update_existing_positions(
     port: portfolio.Portfolio,
     sec_cache: dict[domain.Ticker, portfolio.Position],
     min_turnover: float,
+    exclude: set[domain.Ticker],
 ) -> None:
     updated_positions: list[portfolio.Position] = []
 
@@ -149,9 +152,9 @@ def _update_existing_positions(
                 updated_positions.append(new_position)
                 port.illiquid.add(position.ticker)
                 ctx.warning("Not liquid %s is not removed from portfolio", position.ticker)
-            case new_position if new_position.ticker in port.exclude and not position.accounts:
+            case new_position if new_position.ticker in exclude and not position.accounts:
                 ctx.info("%s from exclude list is removed from portfolio", new_position.ticker)
-            case new_position if new_position.ticker in port.exclude:
+            case new_position if new_position.ticker in exclude:
                 new_position.accounts = position.accounts
                 updated_positions.append(new_position)
                 port.illiquid.add(position.ticker)
@@ -220,9 +223,10 @@ def _add_new_liquid(
     port: portfolio.Portfolio,
     sec_cache: dict[domain.Ticker, portfolio.Position],
     min_turnover: float,
+    exclude: set[domain.Ticker],
 ) -> None:
     for ticker, position in sec_cache.items():
-        if position.turnover > min_turnover and ticker not in port.exclude:
+        if position.turnover > min_turnover and ticker not in exclude:
             n, _ = port.find_position(position.ticker)
             port.positions.insert(n, position)
 
@@ -247,10 +251,12 @@ class CheckPositionsAction:
         async with asyncio.TaskGroup() as tg:
             updated = [tg.create_task(self._update_account(ctx, port, acc_name)) for acc_name in accounts]
 
-        if any([await task for task in updated]):
+        changed = any([await task for task in updated])
+
+        if changed:
             port.updated_at = now
 
-        ctx.send(events.PositionChecked(updated_at=port.updated_at))
+        ctx.send(events.PositionChecked(changed=changed))
 
     async def _ensure_accounts(
         self,

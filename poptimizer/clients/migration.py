@@ -3,18 +3,27 @@ import re
 from typing import Final, cast
 
 import aiofiles
-from pydantic import ValidationError
+from pydantic import Field, ValidationError
 
-from poptimizer.core import consts, errors, fsm
+from poptimizer.core import consts, domain, errors, fsm
 from poptimizer.data.div import raw
+from poptimizer.portfolio.models import portfolio
+from poptimizer.portfolio.models.settings import Settings
 
 _DUMP: Final = consts.ROOT / "dump" / "dividends.json"
+_EXCLUDE_MOVED_IN: Final = "5.0.0"
+
+
+class Portfolio(domain.Entity):
+    """The pre-cut stored shape — read only, so the removed `exclude` can still be migrated."""
+
+    exclude: set[domain.Ticker] = Field(default_factory=set[domain.Ticker])
 
 
 class Client:
-    async def migrate(self, _ctx: fsm.Ctx, last_version: str) -> None:
-        if _normalized_ver(last_version) < _normalized_ver("3.3.0"):
-            ...
+    async def migrate(self, ctx: fsm.Ctx, last_version: str) -> None:
+        if _normalized_ver(last_version) < _normalized_ver(_EXCLUDE_MOVED_IN):
+            await _move_exclude_to_settings(ctx)
 
     async def ensure_dividends(self, ctx: fsm.Ctx) -> None:
         match [div async for div in ctx.get_all(raw.DivRaw)]:
@@ -22,6 +31,14 @@ class Client:
                 await _restore_dividends(ctx)
             case divs:
                 await _backup_dividends(ctx, divs)
+
+
+async def _move_exclude_to_settings(ctx: fsm.Ctx) -> None:
+    old = await ctx.get(Portfolio)
+    settings = await ctx.get_for_update(Settings)
+    settings.exclude |= old.exclude
+
+    await ctx.get_for_update(portfolio.Portfolio)
 
 
 async def _restore_dividends(ctx: fsm.Ctx) -> None:

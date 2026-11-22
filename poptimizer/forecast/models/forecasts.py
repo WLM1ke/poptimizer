@@ -1,6 +1,5 @@
 import asyncio
 import math
-from datetime import UTC, datetime
 from typing import Annotated, Final, Protocol, cast
 
 import numpy as np
@@ -8,13 +7,11 @@ from numpy import random
 from numpy.typing import NDArray
 from pydantic import (
     AfterValidator,
-    AwareDatetime,
     BaseModel,
     Field,
     FiniteFloat,
     NonNegativeFloat,
     NonNegativeInt,
-    PlainSerializer,
     PositiveInt,
 )
 from scipy import stats
@@ -22,6 +19,7 @@ from scipy import stats
 from poptimizer.core import consts, domain, fsm
 from poptimizer.evolve.models import evolve
 from poptimizer.portfolio.models import portfolio
+from poptimizer.portfolio.models.settings import Settings
 
 _MINIMAL_FORECASTS_AMOUNT: Final = 4
 
@@ -41,19 +39,8 @@ class Position(BaseModel):
 
 class Forecast(domain.Entity):
     day: domain.Day = consts.START_DAY
-    portfolio_updated_at: Annotated[
-        AwareDatetime,
-        PlainSerializer(domain.datetime_to_timestamp, return_type=int),
-    ] = datetime.fromtimestamp(0, tz=UTC)
     forecast_days: PositiveInt = 1
     forecasts_cnt: NonNegativeInt = 0
-    illiquid: Annotated[
-        set[domain.Ticker],
-        PlainSerializer(
-            list,
-            return_type=list[domain.Ticker],
-        ),
-    ] = Field(default_factory=set[domain.Ticker])
     positions: Annotated[
         list[Position],
         AfterValidator(domain.sorted_with_ticker_field_validator),
@@ -66,8 +53,6 @@ class Forecast(domain.Entity):
         self.day = port.day
         self.forecast_days = port.forecast_days
         self.forecasts_cnt = 0
-        self.illiquid = port.illiquid
-        self.portfolio_updated_at = port.updated_at
         self._build_positions(port)
 
     def _build_positions(self, port: portfolio.Portfolio) -> None:
@@ -89,15 +74,14 @@ class Forecast(domain.Entity):
         ]
 
     def update_positions(self, port: portfolio.Portfolio) -> None:
-        self.portfolio_updated_at = port.updated_at
         self._build_positions(port)
 
-    def buy_sell(self) -> tuple[float, list[Position], list[Position]]:
+    def buy_sell(self, illiquid: set[domain.Ticker]) -> tuple[float, list[Position], list[Position]]:
         if self.forecasts_cnt == 0:
             return 0, [], []
 
         buy = sorted(
-            (pos for pos in self.positions if pos.ticker not in self.illiquid),
+            (pos for pos in self.positions if pos.ticker not in illiquid),
             key=lambda pos: pos.grad_lower,
             reverse=True,
         )
@@ -134,11 +118,15 @@ async def update(ctx: ModelsCtx) -> None:
     if len(models) < _MINIMAL_FORECASTS_AMOUNT:
         return
 
-    _, buy, sell = forecast.buy_sell()
+    port = await ctx.get(portfolio.Portfolio)
+    settings = await ctx.get(Settings)
+    illiquid = port.illiquid | settings.exclude
+
+    _, buy, sell = forecast.buy_sell(illiquid)
 
     await asyncio.to_thread(_update, forecast, models)
 
-    _send_new_recommendation(ctx, forecast, buy, sell)
+    _send_new_recommendation(ctx, forecast, illiquid, buy, sell)
 
 
 def _update(forecast: Forecast, models: list[evolve.Model]) -> None:
@@ -238,10 +226,11 @@ def _update(forecast: Forecast, models: list[evolve.Model]) -> None:
 def _send_new_recommendation(
     ctx: fsm.Ctx,
     forecast: Forecast,
+    illiquid: set[domain.Ticker],
     old_buy: list[Position],
     old_sell: list[Position],
 ) -> None:
-    _, buy, sell = forecast.buy_sell()
+    _, buy, sell = forecast.buy_sell(illiquid)
 
     log_fn = ctx.warning
     if _pos_tickers(buy) == _pos_tickers(old_buy) and _pos_tickers(sell) == _pos_tickers(old_sell):

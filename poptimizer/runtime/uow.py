@@ -195,3 +195,11 @@ class UOW:
             async with asyncio.TaskGroup() as tg:
                 for obj, ver in self._identity_map:
                     tg.create_task(self._store.save(obj, ver))
+
+
+class UOWFactory:
+    def __init__(self, store: Store) -> None:
+        self._store = store
+
+    def __call__(self) -> UOW:
+        return UOW(self._store)

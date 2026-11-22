@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from pydantic import Field
 
 from poptimizer.core import domain, fsm
@@ -13,4 +11,4 @@ class PortfolioRevalued(fsm.Event):
 
 
 class PositionChecked(fsm.Event):
-    updated_at: datetime
+    changed: bool

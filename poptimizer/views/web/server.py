@@ -1,10 +1,11 @@
 import asyncio
 import logging
+from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
 from typing import TYPE_CHECKING, Final
 
 from aiohttp import abc, web
 
-from poptimizer.fsm import tx
 from poptimizer.runtime import uow
 from poptimizer.views.web.web import App
 
@@ -38,11 +39,14 @@ def _content_length(response: web.StreamResponse) -> str:
     return f"{size:.0f}Tb"
 
 
-async def run(store: uow.Store, dispatcher: tx.Dispatcher, url: HttpUrl) -> None:
+async def run(
+    uow_factory: Callable[[], AbstractAsyncContextManager[uow.Repo]],
+    url: HttpUrl,
+) -> None:
     lgr = logging.getLogger("Server")
 
     runner = web.AppRunner(
-        App(lgr, store, dispatcher),
+        App(lgr, uow_factory),
         handle_signals=False,
         access_log=lgr,
         access_log_class=_AccessLogger,
