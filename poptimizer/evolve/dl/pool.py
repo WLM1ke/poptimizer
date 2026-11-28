@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import multiprocessing as mp
 import signal
 from collections.abc import Callable
@@ -13,12 +14,28 @@ def _ignore_sigint() -> None:
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
+def _preload(worker: Callable[..., object]) -> list[str]:
+    # The forkserver imports the worker module and the entry point once; every fork inherits them,
+    # so a fresh worker per run does not pay the torch and application import again.
+    module = inspect.getmodule(worker)
+    if module is None or module.__name__ == "__main__":
+        return ["__main__"]
+
+    return [module.__name__, "__main__"]
+
+
 class PoolTrainingRunner[J, D, R]:
     def __init__(self, worker: Callable[[J, D], R]) -> None:
         self._worker = worker
+
+        # A fresh worker per run bounds the PyTorch/MPS leak to one run. The forkserver must stay
+        # MPS-free: the worker initializes MPS after the fork, never inheriting a live context.
+        context = mp.get_context("forkserver")
+        context.set_forkserver_preload(_preload(worker))
+
         self._executor = ProcessPoolExecutor(
             max_workers=1,
-            mp_context=mp.get_context("spawn"),
+            mp_context=context,
             initializer=_ignore_sigint,
             max_tasks_per_child=1,
         )

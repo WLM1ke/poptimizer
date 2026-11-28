@@ -4,9 +4,10 @@ import signal
 import time
 
 import pytest
+import torch
 
 from poptimizer.core import domain, errors
-from poptimizer.evolve.dl import pool
+from poptimizer.evolve.dl import pool, worker
 
 
 def _double_worker(num: int, _: int) -> int:
@@ -32,6 +33,16 @@ def _self_sigint_worker(_: int, _second: int) -> str:
     time.sleep(0.1)
 
     return "alive"
+
+
+def _pid_worker(_: int, _second: int) -> int:
+    return os.getpid()
+
+
+def _seed_worker(_: int, _second: int) -> int:
+    worker._seed_everything()  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+
+    return torch.initial_seed()
 
 
 async def test_result_round_trip() -> None:
@@ -82,6 +93,18 @@ async def test_cancelled_future_does_not_break_result_handler() -> None:
         await asyncio.sleep(1.5)  # the worker finishes and its callback hits the cancelled future
 
         assert await asyncio.wait_for(runner(0, 0), timeout=10) == 0
+
+
+async def test_each_run_gets_a_fresh_worker() -> None:
+    async with pool.PoolTrainingRunner(_pid_worker) as runner:
+        assert await runner(0, 0) != await runner(0, 0)
+
+
+async def test_each_worker_gets_a_fresh_rng_seed() -> None:
+    async with pool.PoolTrainingRunner(_seed_worker) as runner:
+        seeds = {await runner(0, 0), await runner(0, 0)}
+
+    assert len(seeds) == 2
 
 
 async def test_worker_starts_with_ignored_sigint() -> None:

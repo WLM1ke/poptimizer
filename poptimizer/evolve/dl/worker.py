@@ -2,6 +2,8 @@ import collections
 import itertools
 import logging
 import math
+import random
+import secrets
 import threading
 from collections.abc import Iterable
 from datetime import datetime
@@ -75,15 +77,28 @@ def _get_device() -> Literal["cpu", "cuda", "mps"]:
 
 
 def _set_tqdm_thread_lock() -> None:
-    # tqdm's default write lock is a multiprocessing semaphore created at the first bar; a spawn
-    # worker never shares it, and a terminated worker leaves it registered as a leaked resource.
+    # tqdm's default write lock is a multiprocessing semaphore created at the first bar; a worker
+    # process never shares it, and a terminated worker leaves it registered as a leaked resource.
     tqdm.tqdm.set_lock(threading.RLock())  # pyright: ignore[reportUnknownMemberType]
+
+
+def _seed_everything() -> None:
+    # The forkserver imports this module once and forks every worker from the same process, so
+    # forked workers inherit its RNG state. Reseed from the OS for every run; otherwise every
+    # model gets the same weights initialization and the same DataLoader shuffle order.
+    seed = secrets.randbits(64)
+    random.seed(seed)
+    torch.manual_seed(seed)  # pyright: ignore[reportUnknownMemberType]
+
+    if torch.backends.mps.is_available():
+        torch.mps.manual_seed(seed)
 
 
 def train_worker(
     job: training.TrainingJob,
     data: training.TrainingData,
 ) -> training.TrainingResult:
+    _seed_everything()
     run = _TrainingRun(
         Cfg.model_validate(job.model.phenotype),
         logger.init_worker_logger("Train"),
